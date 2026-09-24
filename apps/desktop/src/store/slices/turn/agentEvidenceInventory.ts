@@ -5,7 +5,7 @@ import {
   type AgentInventoryAssembly,
 } from '../../../features/context/agentInventory';
 import { invokeEvidenceInventoryRecord } from '../../../features/workflows/workflows';
-import { inferAgentKindFromName, type AgentKind } from '../../../features/session/agent-kind';
+import { classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
 import type { GetFn } from './types';
 
@@ -21,10 +21,10 @@ const assemble = ({ get, sessionId, agentId }: Params): AgentInventoryAssembly =
   const state = get();
   const agents = (state.sessionPhaseRuns ?? {})[sessionId] ?? [];
   const agent = agents.find((candidate) => candidate.id === agentId) ?? null;
-  const kind: AgentKind =
-    (agent?.kind as AgentKind | undefined) ??
-    (state.agentKindOverride ?? {})[agentId] ??
-    inferAgentKindFromName(agent?.name ?? '');
+  const kind: AgentKind = classifyAgent({
+    agent: agent ?? { name: '' },
+    override: (state.agentKindOverride ?? {})[agentId] ?? null,
+  });
   return buildAgentInventory({
     agentId,
     agents,

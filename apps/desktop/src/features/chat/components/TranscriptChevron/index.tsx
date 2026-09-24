@@ -12,7 +12,7 @@ export const TranscriptChevron = ({ open }: Props) => (
     aria-hidden
     data-testid="transcript-chevron"
     className={cn(
-      'shrink-0 text-muted-foreground/60 motion-safe:transition-transform',
+      'shrink-0 text-faint-foreground motion-safe:transition-transform',
       open && 'rotate-90',
     )}
   />

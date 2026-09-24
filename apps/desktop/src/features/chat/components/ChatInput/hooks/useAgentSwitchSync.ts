@@ -1,9 +1,8 @@
 import { useEffect, useRef, type RefObject } from 'react';
-import type { AgentId, ProviderId, Session } from '@goodboy/types';
+import type { AgentId, EffortLevel, ProviderId, Session, VerbosityLevel } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { VerbosityLevel } from '../../../../../features/settings/verbosity';
-import type { EffortLevel } from '../../../utils/chat-constants';
 import { asEffortLevel, asProvider } from '../lib';
+import { resolveSessionSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 
 type UseAgentSwitchSyncArgs = {
   readonly session: Session;
@@ -40,7 +39,7 @@ export const useAgentSwitchSync = ({
 }: UseAgentSwitchSyncArgs) => {
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const workspaceDefaultVerbosity = useAppStore(
-    (s) => s.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? null,
+    (s) => resolveSessionSettings({ state: s, session }).defaultVerbosityOverride ?? null,
   );
   const lastAgentIdRef = useRef(selectedAgentId);
 

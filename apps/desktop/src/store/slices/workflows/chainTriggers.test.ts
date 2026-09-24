@@ -370,11 +370,13 @@ describe('startWorkflowRun', () => {
 
     expect(state['emitNotification']).toHaveBeenCalledTimes(1);
     expect(state['emitNotification']).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'workflow step held back',
-      expect.stringContaining('Open questions'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Workflow step held back',
+        body: expect.stringContaining('Open questions'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 
@@ -456,6 +458,9 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get, setCalls } = harness(state);
@@ -481,6 +486,9 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, a, b])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
@@ -508,6 +516,9 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, other])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
@@ -525,6 +536,9 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
@@ -541,6 +555,9 @@ describe('discardWorkflow chain flip', () => {
       sessions: [makeSession([target, chained])],
       sessionPhaseRuns: { [SESSION_ID]: [] as ReadonlyArray<Agent> },
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
     };
     const { set, get } = harness(state);
@@ -559,6 +576,9 @@ describe('attachWorkflowToSession trigger modes', () => {
       providers: [],
       transcripts: {},
       agentTurnState: {},
+      workflowContinueAttempts: {},
+      decisionRestartMarks: {},
+      clusterStepStartAttempts: {},
       recordSessionEvent: vi.fn(async () => undefined),
       agentModelOverride: {} as Record<string, string>,
       agentKindOverride: {} as Record<string, string>,

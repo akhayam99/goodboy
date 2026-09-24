@@ -36,7 +36,7 @@ const KIND_COLOR: Record<AgentKind, string> = {
   'pr-reviewer': 'var(--color-agent-pr-reviewer)',
   docs: 'var(--color-agent-docs)',
   report: 'var(--color-agent-report)',
-  wireframe: 'var(--color-agent-planner)',
+  wireframe: 'var(--color-agent-wireframe)',
   resolver: 'var(--color-agent-resolver)',
 };
 

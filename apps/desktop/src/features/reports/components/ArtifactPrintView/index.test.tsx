@@ -122,6 +122,51 @@ describe('ArtifactPrintView', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('drops a leading heading that is the title minus a suffix', async () => {
+    listSpy.mockResolvedValueOnce([
+      {
+        ...report,
+        title: 'ACME-412: checkout card missing on start, final report',
+        sourceText: '# ACME-412 checkout card missing on /start\n\nwhat landed',
+      },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByText('what landed')).toBeDefined();
+    });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('prints the lead before the contents, as the cover of the document', async () => {
+    listSpy.mockResolvedValueOnce([
+      {
+        ...report,
+        sourceText: [
+          '<<summary>>',
+          'the key expired',
+          '<</summary>>',
+          '',
+          '## One',
+          'a',
+          '## Two',
+          'b',
+          '## Three',
+          'c',
+        ].join('\n'),
+      },
+    ]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByText('the key expired')).toBeDefined();
+    });
+    const lead = document.querySelector('.print-lead');
+    const contents = document.querySelector('.print-contents');
+    expect(lead?.nextElementSibling).toBe(contents);
+    expect(document.querySelector('.print-body:not(.print-lead)')?.textContent).not.toContain(
+      'the key expired',
+    );
+  });
+
   it('keeps a leading heading that is not the title', async () => {
     listSpy.mockResolvedValueOnce([{ ...report, sourceText: '# Outcome\n\nwhat landed' }]);
     render(<ArtifactPrintView request={request} />);
@@ -129,6 +174,17 @@ describe('ArtifactPrintView', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Outcome' })).toBeDefined();
     });
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(2);
+  });
+
+  it('prints the mark as a plain image, since WebKit drops a css mask on paper', async () => {
+    listSpy.mockResolvedValueOnce([report]);
+    render(<ArtifactPrintView request={request} />);
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'Goodboy' })).toBeDefined();
+    });
+    const mark = screen.getByRole('img', { name: 'Goodboy' }).querySelector('.print-mark');
+    expect(mark?.tagName).toBe('IMG');
+    expect(mark?.getAttribute('style') ?? '').not.toContain('mask');
   });
 
   it('lays the facts out as labelled fields, with a human date and no raw timestamp', async () => {

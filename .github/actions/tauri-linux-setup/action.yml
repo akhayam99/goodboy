@@ -1,0 +1,39 @@
+name: tauri linux setup
+description: >-
+  Installs the system packages the Tauri crate needs on ubuntu and restores the
+  cargo cache keyed on Cargo.lock. libdbus-1-dev and pkg-config are listed on
+  purpose: the keyring crate's Secret Service backend pulls dbus-secret-service,
+  which links libdbus-sys and needs both at build time. They already arrive
+  transitively through libgtk-3-dev, so this stops a real build dependency from
+  riding on another package's dependency graph (see #1317).
+
+inputs:
+  extra-packages:
+    description: Space-separated apt packages installed after the shared list.
+    required: false
+    default: ''
+  cache-key-prefix:
+    description: Prefix of the cargo cache key, one per workflow.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: install tauri system deps
+      shell: bash
+      env:
+        EXTRA_PACKAGES: ${{ inputs.extra-packages }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev libdbus-1-dev pkg-config $EXTRA_PACKAGES
+
+    - name: cache cargo
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          apps/desktop/src-tauri/target
+        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+        restore-keys: |
+          ${{ inputs.cache-key-prefix }}-${{ runner.os }}-

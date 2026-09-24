@@ -1,10 +1,11 @@
+import { isApiProvider } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
+import { PROVIDER_LABEL } from './providerLabel';
 import type {
   ProviderConnectionState,
   ProviderInfo as ProviderInfoBase,
   ProviderId,
 } from '@goodboy/types';
-import { isApiProvider } from '@goodboy/types';
 
 type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 
@@ -23,20 +24,10 @@ export type ProviderStatus = {
   readonly error: string | null;
 };
 
-export type ProviderInfo = ProviderInfoBase & {
+export type ProviderDisplayInfo = ProviderInfoBase & {
   readonly label: string;
   readonly error: string | null;
   readonly docsUrl: string;
-};
-
-export const PROVIDER_LABEL_LOWER: Record<ProviderId, string> = {
-  anthropic: 'claude',
-  cursor: 'cursor',
-  codex: 'codex',
-  gemini: 'gemini',
-  opencode: 'opencode',
-  openrouter: 'openrouter',
-  moonshot: 'moonshot',
 };
 
 const PROVIDER_DOCS: Record<ProviderId, string> = {
@@ -59,16 +50,6 @@ const PROVIDER_DEFAULT_BINARY: Record<ProviderId, string> = {
   moonshot: 'opencode',
 };
 
-const TAURI_GET_CMD: Record<ProviderId, string> = {
-  anthropic: 'get_provider_status',
-  cursor: 'get_cursor_status',
-  codex: 'get_codex_status',
-  gemini: 'get_gemini_status',
-  opencode: 'get_opencode_status',
-  openrouter: 'get_openrouter_status',
-  moonshot: 'get_moonshot_status',
-};
-
 const TAURI_REFRESH_CMD: Record<ProviderId, string> = {
   anthropic: 'refresh_provider_status',
   cursor: 'refresh_cursor_status',
@@ -85,13 +66,6 @@ const EMPTY_CAPABILITIES: ProviderInfoBase['capabilities'] = {
   supportsStream: false,
   supportsCheapModel: false,
 };
-
-export const getProviderStatus = async (id: ProviderId): Promise<ProviderStatus> => {
-  return invoke<ProviderStatus>(TAURI_GET_CMD[id]);
-};
-
-export const getCursorStatus = (): Promise<ProviderStatus> => getProviderStatus('cursor');
-export const getCodexStatus = (): Promise<ProviderStatus> => getProviderStatus('codex');
 
 type RefreshParams = {
   readonly id: ProviderId;
@@ -146,10 +120,10 @@ function providerInfoFromStatus(
   id: ProviderId,
   status: ProviderStatus | null,
   auth: AuthState | null,
-): ProviderInfo {
+): ProviderDisplayInfo {
   const base = {
     id,
-    label: PROVIDER_LABEL_LOWER[id],
+    label: PROVIDER_LABEL[id],
     binary: status?.binary ?? PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: auth?.identity ?? null,
@@ -183,11 +157,11 @@ type ApiInfoParams = {
   readonly hasCredential: boolean;
 };
 
-const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): ProviderInfo => {
+const apiProviderInfo = ({ id, status, hasCredential }: ApiInfoParams): ProviderDisplayInfo => {
   const isAvailable = status?.available === true;
   return {
     id,
-    label: PROVIDER_LABEL_LOWER[id],
+    label: PROVIDER_LABEL[id],
     binary: PROVIDER_DEFAULT_BINARY[id],
     capabilities: EMPTY_CAPABILITIES,
     identity: null,
@@ -212,7 +186,7 @@ export const buildProviderList = (
   statuses: ProviderStatuses,
   auth?: ProviderAuthResults,
   credentialProviderIds: ReadonlySet<ProviderId> = new Set(),
-): ReadonlyArray<ProviderInfo> => {
+): ReadonlyArray<ProviderDisplayInfo> => {
   const ids: ProviderId[] = [
     'anthropic',
     'cursor',

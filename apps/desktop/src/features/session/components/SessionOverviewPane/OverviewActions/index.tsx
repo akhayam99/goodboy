@@ -30,7 +30,7 @@ export const OverviewActions = ({
         />
         <ActionTile
           icon={
-            <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-accent" />
+            <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-primary" />
           }
           title="Add workflow"
           description={WORKFLOW_TILE_DESCRIPTION}

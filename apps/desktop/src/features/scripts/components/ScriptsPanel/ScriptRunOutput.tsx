@@ -16,6 +16,7 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
   const result = run.result;
   const isRunning = run.status === 'pending';
   const isCancelled = run.status === 'cancelled';
+  const liveOutput = run.output ?? '';
 
   return (
     <div className="flex min-h-0 flex-col gap-1.5">
@@ -33,17 +34,14 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
         <span>{isRunning ? 'Running' : 'Last run'}</span>
         {!isRunning ? (
           <span
-            className={cn(
-              'text-2xs font-normal capitalize',
-              SCRIPT_RUN_PRESENTATION[run.status].textClass,
-            )}
+            className={cn('text-2xs font-normal', SCRIPT_RUN_PRESENTATION[run.status].textClass)}
           >
-            {run.status}
+            {SCRIPT_RUN_PRESENTATION[run.status].statusLabel}
           </span>
         ) : null}
         {result !== null ? (
           <span className="text-2xs font-normal text-muted-foreground">
-            exit {result.exitCode}
+            Exit {result.exitCode}
             {completedAt !== undefined ? ` · ${formatClockTime({ iso: completedAt })}` : ''}
           </span>
         ) : null}
@@ -51,7 +49,7 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
       {open && result !== null ? (
         <ScrollFade
           className="max-h-56"
-          viewportClassName="whitespace-pre-wrap break-all bg-subtle/40 px-3 py-2 font-mono text-2xs leading-relaxed text-foreground/80"
+          viewportClassName="whitespace-pre-wrap break-all bg-subtle px-3 py-2 font-mono text-2xs leading-relaxed text-foreground"
         >
           {result.stdout}
           {result.stderr !== '' ? (
@@ -63,7 +61,15 @@ export const ScriptRunOutput = ({ run, completedAt }: Props) => {
           {result.stdout === '' && result.stderr === '' ? '(no output)' : null}
         </ScrollFade>
       ) : null}
-      {open && isRunning && result === null ? (
+      {open && isRunning && result === null && liveOutput !== '' ? (
+        <ScrollFade
+          className="max-h-56"
+          viewportClassName="whitespace-pre-wrap break-all bg-subtle px-3 py-2 font-mono text-2xs leading-relaxed text-foreground"
+        >
+          {liveOutput}
+        </ScrollFade>
+      ) : null}
+      {open && isRunning && result === null && liveOutput === '' ? (
         <p className="px-1 text-2xs text-muted-foreground">Waiting for output</p>
       ) : null}
       {open && isCancelled && result === null ? (

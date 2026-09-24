@@ -1,5 +1,6 @@
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type TurnEventRow = {
   id: string;
@@ -143,12 +144,15 @@ const serializeTurnEvent = ({ event }: SerializeTurnEventParams): string | null 
   } satisfies TurnEvent);
 };
 
+const isStoredTurnEvent = (value: unknown): value is TurnEvent =>
+  isJsonRecord(value) && typeof value.kind === 'string';
+
 function rowToEvent(row: TurnEventRow): TurnEvent | null {
-  try {
-    return JSON.parse(row.payload) as TurnEvent;
-  } catch {
-    return null;
-  }
+  return parseJsonColumn<TurnEvent | null>({
+    value: row.payload,
+    isValid: isStoredTurnEvent,
+    fallback: null,
+  });
 }
 
 function eventTimestamp(event: TurnEvent): number {

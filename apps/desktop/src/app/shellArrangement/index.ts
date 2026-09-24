@@ -2,8 +2,10 @@ export type ShellLeftSlot = 'none' | 'rail' | 'sessions';
 
 export type ShellLeftOverlaySlot = 'none' | 'peek';
 
+export type ShellFooterScope = 'workspace' | 'app';
+
 export type ShellArrangement = {
-  readonly hasFooter: boolean;
+  readonly footer: ShellFooterScope;
   readonly leftHidden: boolean;
   readonly leftSidebarCollapsed: boolean;
   readonly leftSlot: ShellLeftSlot;
@@ -23,7 +25,7 @@ export const shellArrangement = ({
 }: ShellArrangementParams): ShellArrangement => {
   if (!hasWorkspace || !hasActiveSession) {
     return {
-      hasFooter: hasWorkspace,
+      footer: hasWorkspace ? 'workspace' : 'app',
       leftHidden: true,
       leftSidebarCollapsed: false,
       leftSlot: 'none',
@@ -31,7 +33,7 @@ export const shellArrangement = ({
     };
   }
   return {
-    hasFooter: true,
+    footer: 'workspace',
     leftHidden: false,
     leftSidebarCollapsed: isSidebarCollapsed,
     leftSlot: isSidebarCollapsed ? 'rail' : 'sessions',

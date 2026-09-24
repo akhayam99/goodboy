@@ -1,5 +1,6 @@
 export { cn } from './cn';
-export { escapeLayerCount, registerEscapeLayer } from './escape';
+export { FOCUS_RING } from './focusRing';
+export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';
@@ -14,7 +15,6 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
-  RIGHT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
@@ -71,8 +71,8 @@ export type { ButtonEmphasis, ButtonProps, ButtonSize, ButtonVariant } from './c
 export type { CardActionProps } from './components/CardAction';
 export { Checkbox } from './components/Checkbox';
 export type { CheckboxProps } from './components/Checkbox';
-export { Chip } from './components/Chip';
-export type { ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
+export { Chip, chipClasses } from './components/Chip';
+export type { ChipClassParams, ChipEmphasis, ChipProps, ChipSize } from './components/Chip';
 export { ClampedProse } from './components/ClampedProse';
 export type { ClampLines, ClampedProseProps } from './components/ClampedProse';
 export { Collapsible } from './components/Collapsible';
@@ -98,6 +98,10 @@ export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
 export { InlineConfirm } from './components/InlineConfirm';
 export type { ConfirmAltAction, ConfirmRole } from './components/InlineConfirm';
+export { ConfirmPopover } from './components/ConfirmPopover';
+export type { ConfirmPopoverTriggerParams } from './components/ConfirmPopover';
+export { InteractiveRow } from './components/InteractiveRow';
+export type { InteractiveRowProps } from './components/InteractiveRow';
 export { Input } from './components/Input';
 export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
@@ -105,6 +109,7 @@ export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
 export { parseMarkdown } from './components/Markdown/parseMarkdown';
 export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
+export { InlineMarkdown } from './components/Markdown/InlineMarkdown';
 export { MetaRow } from './components/MetaRow';
 export type { MetaRowProps } from './components/MetaRow';
 export { ActionTile } from './components/ActionTile';
@@ -130,7 +135,7 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
-export { SECTION_SURFACE_CLASS, SectionSurface } from './components/SectionSurface';
+export { SectionSurface } from './components/SectionSurface';
 export type { SectionSurfaceProps } from './components/SectionSurface';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
@@ -139,6 +144,8 @@ export type { SelectProps, SelectSize } from './components/Select';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
+export { StatusRailItem } from './components/StatusRailItem';
+export type { StatusRailItemProps } from './components/StatusRailItem';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
 export { Switch } from './components/Switch';

@@ -8,11 +8,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { listAgentsForSession } from './agent';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import { listAgentsForSessions } from './agent';
 import { insertMessage, listMessagesForSession } from './message';
-import { archiveSession, listArchivedSessionRefs, softDeleteSession } from './session';
+import { archiveSession, listArchivedSessionRefs } from './session';
 import {
   deleteTurnEventsForSessions,
   getTurnEventStatsForSessions,
@@ -49,8 +48,7 @@ describe('archived storage queries', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     const now = Date.now();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -63,7 +61,10 @@ describe('archived storage queries', () => {
     await insertAgentRow(db, liveSessionId, liveAgentId);
     await archiveSession(db, archivedSessionId);
     await archiveSession(db, deletedSessionId);
-    await softDeleteSession(db, deletedSessionId);
+    await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [
+      Date.now(),
+      deletedSessionId,
+    ]);
 
     await insertTurnEvent(db, {
       id: 'event-archived-1',
@@ -128,7 +129,8 @@ describe('archived storage queries', () => {
     await deleteTurnEventsForSessions({ db, sessionIds: [archivedSessionId] });
 
     await expect(listMessagesForSession(db, archivedSessionId)).resolves.toHaveLength(1);
-    await expect(listAgentsForSession(db, archivedSessionId)).resolves.toHaveLength(1);
+    const agents = await listAgentsForSessions(db, [archivedSessionId]);
+    expect(agents.get(archivedSessionId)).toHaveLength(1);
     const sessionRows = await db.select<{ id: string }>('SELECT id FROM sessions');
     expect(sessionRows).toHaveLength(3);
   });

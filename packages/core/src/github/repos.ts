@@ -60,7 +60,7 @@ export const listOwnedRepos = async (
   const args = ['repo', 'list', '--limit', '100', '--json', REPO_FIELDS.join(',')];
   let raw: ReadonlyArray<GithubRepoRef>;
   try {
-    raw = await runJson<ReadonlyArray<GithubRepoRef>>(runner, args, opts);
+    raw = await runJson<ReadonlyArray<GithubRepoRef>>({ runner, args, opts, shape: 'array' });
   } catch (err) {
     if (err instanceof GhCliError) {
       if (UNAUTHENTICATED_PATTERN.test(err.stderr)) {
@@ -187,11 +187,12 @@ export const createGithubRepo = async ({
 
   let repo: GithubRepoRef;
   try {
-    repo = await runJson<GithubRepoRef>(
+    repo = await runJson<GithubRepoRef>({
       runner,
-      ['repo', 'view', pinnedSlug, '--json', REPO_FIELDS.join(',')],
-      options,
-    );
+      args: ['repo', 'view', pinnedSlug, '--json', REPO_FIELDS.join(',')],
+      opts: options,
+      shape: 'object',
+    });
   } catch (err) {
     const failure = failureFrom({ err });
     return {

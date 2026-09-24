@@ -1,20 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
 const workspaceId = 'ws-1';
 const sessionId = 's-1';
 const workflowId = 'wf-1';
+const THROUGH_M102 = migrations.filter((migration) => migration.version <= 102);
 const BUDGET_MESSAGE = 'the budget cap is reached, raise it in Budget to keep this run going';
 
 const seedThrough101 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 101),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 101 });
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -77,7 +74,7 @@ describe('m102 workflow orchestration stop kind', () => {
     const db = await seedThrough101();
     await insertRun({ db, runId: 'run-budget', ordinal: 0, error: BUDGET_MESSAGE });
 
-    await migrate(db, migrations);
+    await migrate(db, THROUGH_M102);
 
     const rows = await stopRows({ db });
     expect(rows).toEqual([
@@ -95,7 +92,7 @@ describe('m102 workflow orchestration stop kind', () => {
     await insertRun({ db, runId: 'run-failed', ordinal: 0, error: 'usage limit reached' });
     await insertRun({ db, runId: 'run-clean', ordinal: 1, error: null });
 
-    await migrate(db, migrations);
+    await migrate(db, THROUGH_M102);
 
     expect(await stopRows({ db })).toEqual([
       {
@@ -116,7 +113,7 @@ describe('m102 workflow orchestration stop kind', () => {
   it('defaults a run inserted without the column to a failure stop', async () => {
     const db = await seedThrough101();
 
-    await migrate(db, migrations);
+    await migrate(db, THROUGH_M102);
     await insertRun({ db, runId: 'run-new', ordinal: 0, error: 'boom' });
 
     const rows = await stopRows({ db });

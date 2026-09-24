@@ -1,6 +1,6 @@
+import { capText } from '../../../shared/utils/capText';
+import { GOAL_BODY_CHAR_CAP } from '../shared/goalBodyCap';
 import type { JiraIssue } from './client';
-
-const DESCRIPTION_CHAR_CAP = 1200;
 
 type Params = {
   readonly issue: JiraIssue;
@@ -12,9 +12,5 @@ export const goalFromIssue = ({ issue }: Params): string => {
   if (description === '') {
     return heading;
   }
-  const trimmed =
-    description.length > DESCRIPTION_CHAR_CAP
-      ? `${description.slice(0, DESCRIPTION_CHAR_CAP).trimEnd()}…`
-      : description;
-  return `${heading}\n\n${trimmed}`;
+  return `${heading}\n\n${capText({ text: description, capChars: GOAL_BODY_CHAR_CAP })}`;
 };

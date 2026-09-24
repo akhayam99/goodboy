@@ -1,28 +1,16 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
 use crate::secrets;
 
 const PROVIDER: &str = "jira";
 
-pub struct JiraTokenCache(integration_credentials::SecretCache);
-
-impl JiraTokenCache {
-    pub fn new() -> Self {
-        Self(Mutex::new(HashMap::new()))
-    }
-}
-
-fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::Client::new)
-}
+integration_credentials::token_cache!(JiraTokenCache);
 
 #[derive(Debug, Error)]
 pub enum JiraError {

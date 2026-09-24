@@ -12,8 +12,6 @@ import type {
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 import {
   allocateReportContext,
-  ARTIFACT_SECTION_CUT_NOTE,
-  ARTIFACT_SECTION_REMOVED_NOTE,
   clipToBoundary,
   fitWithinBudget,
   reconcileSectionRow,
@@ -58,10 +56,6 @@ export const REPORT_CONTEXT_LIMITS = {
 export const REPORT_SESSION_TITLE_CLIP_NOTE = `session title cut at ${formatBriefCount({
   value: REPORT_CONTEXT_LIMITS.sessionTitle,
 })} characters`;
-
-export const REPORT_SECTION_CUT_NOTE = ARTIFACT_SECTION_CUT_NOTE;
-
-export const REPORT_SECTION_REMOVED_NOTE = ARTIFACT_SECTION_REMOVED_NOTE;
 
 export type ReportDiffUnavailableReason = 'no-mount' | 'unreadable';
 

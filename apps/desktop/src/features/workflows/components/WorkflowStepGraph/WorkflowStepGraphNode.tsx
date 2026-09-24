@@ -1,9 +1,11 @@
-import { cn } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { WorkflowStepStatus } from '../WorkflowStepStatus';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
 import { CapabilityObligationAction } from '../../../../shared/components/CapabilityObligationAction';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
@@ -68,8 +70,10 @@ export const WorkflowStepGraphNode = ({
         onClick={onSelect}
         aria-pressed={isSelected}
         className={cn(
-          'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-muted/30 px-2 py-1 text-left transition-colors hover:bg-muted/60',
-          isSelected ? 'border-primary/50 bg-primary/[0.06]' : 'border-border-soft',
+          'flex min-h-8 min-w-0 flex-1 items-center gap-1.5 rounded-lg border bg-subtle px-2 py-1 text-left transition-colors hover:bg-hover',
+          isSelected
+            ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+            : 'border-border-soft',
         )}
       >
         <span className="sr-only">{marker}</span>
@@ -94,19 +98,32 @@ export const WorkflowStepGraphNode = ({
             after {clusterNode.dependsOnTitles.join(', ')}
           </span>
         ) : null}
-        <RoutingBadge
-          provider={provider}
-          model={model}
-          planned={{ provider: plannedProvider, model: plannedModel }}
-          glyphPlacement="trailing"
-          className="max-w-40 shrink-0"
-        />
+        {modelLabel(plannedModel) === modelLabel(model) && plannedProvider === provider ? (
+          <RoutingBadge
+            provider={provider}
+            model={model}
+            glyphPlacement="trailing"
+            className="max-w-40 shrink-0"
+          />
+        ) : (
+          <Tooltip
+            content={`Planned ${modelLabel(plannedModel)} on ${PROVIDER_LABEL[plannedProvider]}`}
+            anchorClassName="max-w-40 shrink-0"
+          >
+            <span
+              aria-label={`planned model ${modelLabel(plannedModel)}`}
+              className="inline-flex min-w-0"
+            >
+              <RoutingBadge provider={provider} model={model} glyphPlacement="trailing" />
+            </span>
+          </Tooltip>
+        )}
         <WorkflowStepStatus status={run.status} label={run.name} />
       </button>
       {childCount > 0 ? (
         <span
           title={`${doneChildCount} of ${childCount} agents under ${run.name} are done`}
-          className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-muted-foreground/70"
+          className="shrink-0 px-1 py-1 font-mono text-2xs tabular-nums text-faint-foreground"
         >
           {doneChildCount}/{childCount}
         </span>

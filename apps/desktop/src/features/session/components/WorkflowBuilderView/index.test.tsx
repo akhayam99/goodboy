@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { ModelEffort, Session, Workflow } from '@goodboy/types';
+import type { EffortLevel, Session, Workflow } from '@goodboy/types';
 import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 
 const {
@@ -126,11 +126,11 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
     verbosity?: string;
     onVerbosity?: (value: string) => void;
     effort:
-      | { readonly editable: false; readonly value?: ModelEffort }
+      | { readonly editable: false; readonly value?: EffortLevel }
       | {
           readonly editable: true;
-          readonly value: ModelEffort;
-          readonly onChange: (value: ModelEffort) => void;
+          readonly value: EffortLevel;
+          readonly onChange: (value: EffortLevel) => void;
         };
   }) => (
     <div role="group" aria-label={ariaLabel} data-offered-providers={connectedProviders.join(',')}>
@@ -299,10 +299,10 @@ describe('uniqueWorkflowName', () => {
 });
 
 describe('WorkflowBuilderView (studio chrome)', () => {
-  it('renders the studio header with the title and workspace name', () => {
+  it('renders the studio header with the title and no workspace echo', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: /start a workflow/i })).toBeDefined();
-    expect(screen.getByText('Test workspace')).toBeDefined();
+    expect(screen.getByRole('banner', { name: /start a workflow/i })).toBeDefined();
+    expect(screen.queryByText('Test workspace')).toBeNull();
   });
 });
 
@@ -383,7 +383,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
       }),
     );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
-    expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Test Workflow');
+    expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Test Workflow.' });
     expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
@@ -964,7 +964,7 @@ describe('WorkflowBuilderView (preset mode)', () => {
     );
     expect(mockSavePhaseTemplate).not.toHaveBeenCalled();
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
-    expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Ship It');
+    expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Ship It.' });
   });
 
   it('leaves the landing to attachWorkflowToSession after starting a preset as-is', async () => {
@@ -987,8 +987,25 @@ describe('WorkflowBuilderView (preset mode)', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: /delete preset/i }));
     expect(mockDeleteWorkflow).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: /confirm delete ship it/i }));
+    const confirm = await screen.findByRole('dialog', { name: 'Delete Ship It?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete preset' }));
     await waitFor(() => expect(mockDeleteWorkflow).toHaveBeenCalledWith('wf-preset-1', 'ws-1'));
+  });
+
+  it('keeps the preset when its delete confirm is cancelled', async () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    fireEvent.click(screen.getByRole('button', { name: /preset actions: ship it/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /delete preset/i }));
+    const confirm = await screen.findByRole('dialog', { name: 'Delete Ship It?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Delete Ship It?' })).toBeNull(),
+    );
+    expect(mockDeleteWorkflow).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /preset actions: ship it/i })).toBeDefined();
   });
 
   it('discarding the draft never deletes the selected preset', () => {
@@ -1118,10 +1135,10 @@ describe('WorkflowBuilderView (goal affordances)', () => {
     fireEvent.change(goalField(), { target: { value: 'rough goal' } });
     fireEvent.click(screen.getByRole('button', { name: /polish goal/i }));
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        'error',
-        'could not polish the goal, kept your wording',
-      ),
+      expect(toastMock).toHaveBeenCalledWith({
+        kind: 'warning',
+        message: 'Kept your wording. The goal could not be polished.',
+      }),
     );
     expect(goalField().value).toBe('rough goal');
     expect(screen.queryByRole('button', { name: /undo goal change/i })).toBeNull();
@@ -1342,10 +1359,10 @@ describe('WorkflowBuilderView (per-step polish)', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /polish step instruction/i })[0]!);
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        'error',
-        'could not polish the step, kept your wording',
-      ),
+      expect(toastMock).toHaveBeenCalledWith({
+        kind: 'warning',
+        message: 'Kept your wording. The step could not be polished.',
+      }),
     );
 
     fireEvent.click(startBtn());
@@ -1501,7 +1518,10 @@ describe('WorkflowBuilderView (workflow name)', () => {
 
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
     expect(mockSavePhaseTemplate.mock.calls[0]![0].name).toBe('Rounding drift repair');
-    expect(toastMock).toHaveBeenCalledWith('success', 'workflow started: Rounding drift repair');
+    expect(toastMock).toHaveBeenCalledWith({
+      kind: 'success',
+      message: 'Started Rounding drift repair.',
+    });
   });
 
   it('names a hand-authored workflow without ever calling the planner', async () => {

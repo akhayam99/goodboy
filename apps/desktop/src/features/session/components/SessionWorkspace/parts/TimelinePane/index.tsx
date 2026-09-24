@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { SectionHeader, useCopyLink } from '@goodboy/ui';
+import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -17,7 +17,6 @@ import {
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
-import { useToast } from '../../../../../../app/components/Toast';
 import { filterTimelineEntries, isActivityChildShown } from '../../../../timeline/activityFilter';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
@@ -87,8 +86,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
   });
   const diffStats = useMountDiffStats(sessionId);
-  const { showToast } = useToast();
-  const { copied, failed, copy } = useCopyLink();
+  const { copiedKey, failedKey, copy } = useCopyLink();
 
   useEffect(() => {
     void loadSessionEvents({ sessionId });
@@ -102,18 +100,6 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     void loadSessionAnsweredQuestions(sessionId);
     void loadSessionDismissedQuestions(sessionId);
   }, [loadSessionAnsweredQuestions, loadSessionDismissedQuestions, sessionId]);
-
-  useEffect(() => {
-    if (copied) {
-      showToast('success', 'path copied');
-    }
-  }, [copied, showToast]);
-
-  useEffect(() => {
-    if (failed) {
-      showToast('error', 'copy failed');
-    }
-  }, [failed, showToast]);
 
   const questions = useMemo(
     () => [...openQuestions, ...answeredQuestions, ...dismissedQuestions],
@@ -270,8 +256,13 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         };
       }
       return {
-        label: copied ? 'Copied' : 'Copy path',
-        onAct: () => void copy(mountPath),
+        label:
+          copiedKey === mountPath
+            ? 'Copied'
+            : failedKey === mountPath
+              ? 'Copy failed'
+              : 'Copy path',
+        onAct: () => void copy({ text: mountPath }),
       };
     }
     if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
@@ -346,6 +337,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         className="px-0.5"
         action={
           <div className="flex items-center gap-1">
+            {hasUnreadAgents ? (
+              <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
+                <CheckCheck size={ICON_SIZE.row} aria-hidden />
+                Mark all seen
+              </Button>
+            ) : null}
             <ActivityFilterButton
               filter={activity.filter}
               hiddenCount={activity.hiddenCount}
@@ -379,24 +376,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
             }
             if (item.kind === 'now') {
               return (
-                <TimelineNowRule
-                  key={item.id}
-                  item={item}
-                  rail={railRow}
-                  railWidth={rail.width}
-                  action={
-                    hasUnreadAgents ? (
-                      <button
-                        type="button"
-                        onClick={() => void markAllAgentsSeen(sessionId)}
-                        className="inline-flex h-6 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-2xs font-medium text-primary motion-safe:transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
-                      >
-                        <CheckCheck size={ICON_SIZE.row} aria-hidden />
-                        Mark all seen
-                      </button>
-                    ) : undefined
-                  }
-                />
+                <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
               );
             }
             if (item.kind === 'day') {

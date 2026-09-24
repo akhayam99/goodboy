@@ -1,14 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const EXIT_MS = 200;
+
+type Params = {
+  readonly onClose: () => void;
+};
 
 type StudioOverlay = {
   readonly closing: boolean;
   readonly requestClose: () => void;
 };
 
-export const useStudioOverlay = (onClose: () => void): StudioOverlay => {
+export const useStudioOverlay = ({ onClose }: Params): StudioOverlay => {
   const [closing, setClosing] = useState(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   const requestClose = useCallback(() => setClosing(true), []);
 
@@ -26,9 +32,9 @@ export const useStudioOverlay = (onClose: () => void): StudioOverlay => {
     if (!closing) {
       return;
     }
-    const t = setTimeout(onClose, EXIT_MS);
+    const t = setTimeout(() => onCloseRef.current(), EXIT_MS);
     return () => clearTimeout(t);
-  }, [closing, onClose]);
+  }, [closing]);
 
   return { closing, requestClose };
 };

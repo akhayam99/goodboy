@@ -8,7 +8,7 @@ type Props = {
 
 export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle/30 p-4">
+    <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4">
       <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">{reason}</p>
       <a
         href={docsUrl}

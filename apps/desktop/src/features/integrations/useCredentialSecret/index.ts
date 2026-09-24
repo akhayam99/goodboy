@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { IntegrationCredentialId } from '@goodboy/types';
-import { invoke } from '@tauri-apps/api/core';
+import { integrationCredentialHasSecret } from '../credentials';
 
 export type CredentialSecretState = 'unknown' | 'present' | 'missing';
 
@@ -18,7 +18,7 @@ export const useCredentialSecret = ({ credentialId }: Params): CredentialSecretS
     }
     let isCancelled = false;
     setState('unknown');
-    invoke<boolean>('integration_credential_has_secret', { credentialId })
+    integrationCredentialHasSecret({ credentialId })
       .then((hasSecret) => {
         if (isCancelled) {
           return;

@@ -11,7 +11,7 @@ const nodeText = (node: InlineNode): string => {
     case 'code':
       return node.value;
     case 'chip':
-      return ctxTagLabel({ tag: node.tag });
+      return node.label ?? ctxTagLabel({ tag: node.tag });
     case 'image':
       return node.alt;
     case 'strong':

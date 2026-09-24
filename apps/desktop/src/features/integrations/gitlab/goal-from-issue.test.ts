@@ -21,25 +21,29 @@ function makeIssue(overrides: Partial<GitlabIssue> = {}): GitlabIssue {
 
 describe('goalFromIssue', () => {
   it('builds heading + description', () => {
-    expect(goalFromIssue(makeIssue())).toBe(
+    expect(goalFromIssue({ issue: makeIssue() })).toBe(
       '[acme/web#123] Add user signup\n\nUsers should be able to sign up with email and password.',
     );
   });
 
   it('returns heading only when description is null or empty', () => {
-    expect(goalFromIssue(makeIssue({ description: null }))).toBe('[acme/web#123] Add user signup');
-    expect(goalFromIssue(makeIssue({ description: '   ' }))).toBe('[acme/web#123] Add user signup');
+    expect(goalFromIssue({ issue: makeIssue({ description: null }) })).toBe(
+      '[acme/web#123] Add user signup',
+    );
+    expect(goalFromIssue({ issue: makeIssue({ description: '   ' }) })).toBe(
+      '[acme/web#123] Add user signup',
+    );
   });
 
   it('trims trailing whitespace and overlong descriptions', () => {
     const long = 'x'.repeat(2000);
-    const goal = goalFromIssue(makeIssue({ description: long }));
+    const goal = goalFromIssue({ issue: makeIssue({ description: long }) });
     expect(goal.endsWith('…')).toBe(true);
     expect(goal.length).toBeLessThanOrEqual(1300);
   });
 
   it('strips title whitespace', () => {
-    expect(goalFromIssue(makeIssue({ title: '  Spaced  ', description: null }))).toBe(
+    expect(goalFromIssue({ issue: makeIssue({ title: '  Spaced  ', description: null }) })).toBe(
       '[acme/web#123] Spaced',
     );
   });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Step, Agent, Workflow } from '@goodboy/types';
-import { buildStepPrompt, nextStep, isWorkflowComplete } from '../sequencer';
+import { buildStepPrompt, classifyWorkflowChain, isWorkflowComplete } from '../sequencer';
 import { buildChainCarryForward } from '../propagator';
 
 const AT = '2024-01-01T00:00:00.000Z' as IsoDateTime;
@@ -54,16 +54,21 @@ const completedRun = ({ definition, summary }: Params): Agent => {
   };
 };
 
+const chainStep = (runs: ReadonlyArray<Agent>) => {
+  const chain = classifyWorkflowChain(TEMPLATE, runs);
+  return chain.kind === 'step' ? chain.step : null;
+};
+
 describe('phase orchestration end-to-end', () => {
   it('drives planner to coder to reviewer with carry-forward context', () => {
     const runs: Agent[] = [];
 
-    const first = nextStep(TEMPLATE, runs);
+    const first = chainStep(runs);
     expect(first).toBe(PLANNER);
     expect(first?.ordinal).toBe(1);
     runs.push(completedRun({ definition: PLANNER, summary: 'plan output v1' }));
 
-    const second = nextStep(TEMPLATE, runs);
+    const second = chainStep(runs);
     expect(second).toBe(CODER);
     expect(second?.ordinal).toBe(2);
 
@@ -87,7 +92,7 @@ describe('phase orchestration end-to-end', () => {
 
     runs.push(completedRun({ definition: CODER, summary: 'code diff v1' }));
 
-    const third = nextStep(TEMPLATE, runs);
+    const third = chainStep(runs);
     expect(third).toBe(REVIEWER);
     expect(third?.ordinal).toBe(3);
 
@@ -104,7 +109,7 @@ describe('phase orchestration end-to-end', () => {
 
     runs.push(completedRun({ definition: REVIEWER, summary: 'review notes' }));
 
-    expect(nextStep(TEMPLATE, runs)).toBeNull();
+    expect(chainStep(runs)).toBeNull();
     expect(isWorkflowComplete(TEMPLATE, runs)).toBe(true);
   });
 });

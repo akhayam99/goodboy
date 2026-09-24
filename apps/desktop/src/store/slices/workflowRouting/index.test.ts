@@ -56,8 +56,8 @@ const proposalDecision: WorkflowRoutingDecision = {
     profile: { taskType: 'implementation', difficulty: 'standard', basis: 'agent' },
   },
   selected: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
-  source: 'run_role_lock',
-  reason: 'The run role lock selected anthropic/opus-5.',
+  source: 'role_default',
+  reason: 'The role default selected anthropic/opus-5.',
   adjustment: 'none',
   executed: null,
 };
@@ -132,11 +132,7 @@ const buildAgent = ({
   taskProfile: null,
 });
 
-type SessionParams = {
-  readonly hasRunRoleLock?: boolean;
-};
-
-const buildSession = ({ hasRunRoleLock = true }: SessionParams = {}): Session => ({
+const buildSession = (): Session => ({
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
   goal: 'ship the change',
@@ -153,11 +149,6 @@ const buildSession = ({ hasRunRoleLock = true }: SessionParams = {}): Session =>
       autoRun: false,
       triggerMode: 'immediate',
       executionMode: 'dynamic',
-      ...(hasRunRoleLock && {
-        roleModelOverrides: {
-          implementer: { providerId: 'anthropic', model: 'opus-5', effort: 'high' },
-        },
-      }),
     },
   ],
   autoRun: false,
@@ -169,16 +160,11 @@ const buildSession = ({ hasRunRoleLock = true }: SessionParams = {}): Session =>
 type HarnessParams = {
   readonly agent?: Agent;
   readonly step?: Step;
-  readonly hasRunRoleLock?: boolean;
 };
 
-const buildHarness = ({
-  agent = buildAgent(),
-  step = buildStep(),
-  hasRunRoleLock = true,
-}: HarnessParams = {}) => {
+const buildHarness = ({ agent = buildAgent(), step = buildStep() }: HarnessParams = {}) => {
   const state: Record<string, unknown> = {
-    sessions: [buildSession({ hasRunRoleLock })],
+    sessions: [buildSession()],
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     sessionWorkflows: { [SESSION_ID]: [buildWorkflow(step)] },
     phaseTemplates: { [WORKSPACE_ID]: [buildWorkflow(step)] },
@@ -222,30 +208,9 @@ describe('workflowRouting slice', () => {
     vi.clearAllMocks();
   });
 
-  it('a user lock reloads through the routing codec and still beats the run role lock', async () => {
+  it('a user lock reloads through the routing codec and still wins on relock', async () => {
     const { state, set, get } = buildHarness({
       agent: buildAgent({ routingDecision: proposalDecision }),
-    });
-
-    const unlocked = resolveWorkflowChildRouting({
-      state: get(),
-      sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
-      role: 'implementer',
-      childLock: null,
-      proposal: null,
-      promptText: 'implement the change',
-      missingProposal: 'configured_default',
-    }).resolution;
-    expect(unlocked.kind).toBe('ready');
-    if (unlocked.kind !== 'ready') {
-      return;
-    }
-    expect(unlocked.decision.source).toBe('run_role_lock');
-    expect(unlocked.decision.selected).toEqual({
-      provider: 'anthropic',
-      model: 'opus-5',
-      effort: 'high',
     });
 
     await setWorkflowNodeRoutingLock(
@@ -307,7 +272,6 @@ describe('workflowRouting slice', () => {
     const relocked = resolveWorkflowChildRouting({
       state: get(),
       sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
       role: 'implementer',
       childLock: loadedLock,
       proposal: null,
@@ -374,7 +338,6 @@ describe('workflowRouting slice', () => {
     const { state, set, get } = buildHarness({
       agent: lockedAgent,
       step: templateStep,
-      hasRunRoleLock: false,
     });
 
     await resetWorkflowNodeRoutingLock(
@@ -399,32 +362,6 @@ describe('workflowRouting slice', () => {
     );
     const workflows = state.sessionWorkflows as Record<string, ReadonlyArray<Workflow>>;
     expect(workflows[SESSION_ID]?.[0]?.steps[0]).toEqual(templateStep);
-  });
-
-  it('reset reveals the run role lock instead of implying free routing', async () => {
-    const lockedAgent = buildAgent({
-      routingDecision: proposalDecision,
-      routingLock: {
-        version: 1,
-        pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        origin: 'user',
-      },
-    });
-    const { set, get } = buildHarness({ agent: lockedAgent });
-
-    await resetWorkflowNodeRoutingLock(
-      set,
-      get,
-    )({
-      sessionId: SESSION_ID,
-      nodeKind: 'agent',
-      id: AGENT_ID,
-    });
-
-    const persisted = persistedArgs();
-    expect(persisted.routingLock).toBeNull();
-    expect(persisted.routingDecision.source).toBe('run_role_lock');
-    expect(persisted.routingDecision.selected.model).toBe('opus-5');
   });
 
   it('running node refuses routing edits', async () => {
@@ -513,39 +450,8 @@ describe('fan-out child routing precedence', () => {
     childLock: null,
   };
 
-  it('run role lock survives fan-out with absent parent resolved fields', () => {
-    const parent = buildAgent();
-    const { get } = buildHarness({
-      agent: {
-        ...parent,
-        providerOverride: undefined,
-        modelOverride: undefined,
-        effort: undefined,
-      },
-    });
-
-    const { resolution } = resolveWorkflowChildRouting({
-      state: get(),
-      sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
-      role: 'implementer',
-      childLock: null,
-      proposal: null,
-      promptText: 'apply the change',
-      missingProposal: 'deterministic_pick',
-    });
-
-    expect(resolution.kind).toBe('ready');
-    if (resolution.kind !== 'ready') {
-      return;
-    }
-    expect(resolution.decision.source).toBe('run_role_lock');
-    expect(resolution.decision.selected.model).toBe('opus-5');
-  });
-
   it('parent node lock does not lock descendants', () => {
     const { get } = buildHarness({
-      hasRunRoleLock: false,
       agent: buildAgent({
         routingLock: {
           version: 1,
@@ -558,7 +464,6 @@ describe('fan-out child routing precedence', () => {
     const { resolution } = resolveWorkflowChildRouting({
       state: get(),
       sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
       role: 'implementer',
       childLock: null,
       proposal: null,
@@ -574,13 +479,12 @@ describe('fan-out child routing precedence', () => {
     expect(resolution.decision.source).toBe('heuristic');
   });
 
-  it('explicit child lock beats its run role lock', () => {
+  it('explicit child lock beats the heuristic pick', () => {
     const { get } = buildHarness();
 
     const { resolution } = resolveWorkflowChildRouting({
       state: get(),
       sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
       role: 'implementer',
       childLock: {
         version: 1,
@@ -617,7 +521,6 @@ describe('fan-out child routing precedence', () => {
     const batch = childRoutingBatch({
       state: get(),
       sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
       role: 'implementer',
       requests: [childRequest, { ...childRequest, promptText: 'list the settings strings' }],
     });
@@ -625,12 +528,11 @@ describe('fan-out child routing precedence', () => {
     expect(batch.kind).toBe('blocked');
   });
   it('gives a legacy child with no proposal a pick read off its own text', () => {
-    const { get } = buildHarness({ hasRunRoleLock: false });
+    const { get } = buildHarness();
 
     const { resolution, taskProfile } = resolveWorkflowChildRouting({
       state: get(),
       sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
       role: 'implementer',
       childLock: null,
       proposal: null,
@@ -649,7 +551,7 @@ describe('fan-out child routing precedence', () => {
   });
 
   it('keeps a root manual node with no proposal on its configured default', async () => {
-    const { get, set } = buildHarness({ hasRunRoleLock: false });
+    const { get, set } = buildHarness();
 
     await resetWorkflowNodeRoutingLock(
       set,

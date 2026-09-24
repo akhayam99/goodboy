@@ -15,7 +15,7 @@ export const verifyMountViews = async ({
   views,
 }: Params): Promise<ReadonlyArray<SessionMountView>> => {
   const projects = get().projects;
-  const available = await verifyAvailableWorktrees({
+  const { available, missing } = await verifyAvailableWorktrees({
     sessionId,
     candidates: views.flatMap((view) =>
       view.worktreePath === null || !view.isAttached ? [] : [view],
@@ -23,6 +23,7 @@ export const verifyMountViews = async ({
     projects,
   });
   const availableIds = new Set(available.map((view) => view.id));
+  const missingIds = new Set(missing);
   return (await loadMountViews({ get, sessionId })).map((view) => {
     const project = projects.find((candidate) => candidate.id === view.projectId);
     if (
@@ -33,6 +34,10 @@ export const verifyMountViews = async ({
     ) {
       return view;
     }
-    return { ...view, isAttached: false, diskState: 'unchecked' };
+    return {
+      ...view,
+      isAttached: false,
+      diskState: missingIds.has(view.id) ? 'missing' : 'unchecked',
+    };
   });
 };

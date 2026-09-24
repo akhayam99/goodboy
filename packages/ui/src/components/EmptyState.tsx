@@ -96,7 +96,7 @@ export const EmptyState = ({
     <div
       className={cn(
         classes.root,
-        bordered && 'rounded-lg border border-dashed border-border-soft bg-elevated/40',
+        bordered && 'rounded-lg border border-dashed border-border-soft bg-elevated',
         className,
       )}
     >
@@ -143,5 +143,5 @@ type FilledEmptyStateProps = IllustrationProps &
   };
 
 export const FilledEmptyState = (props: FilledEmptyStateProps) => (
-  <EmptyState {...props} className={cn('bg-elevated/40', props.className)} size="inline" />
+  <EmptyState {...props} className={cn('bg-elevated', props.className)} size="inline" />
 );

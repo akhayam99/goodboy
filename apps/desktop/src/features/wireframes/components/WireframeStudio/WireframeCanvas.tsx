@@ -7,7 +7,6 @@ import { WireframeNodeView } from '../WireframeNodeView';
 type Props = {
   readonly screen: WireframeScreen;
   readonly palette: WireframePalette;
-  readonly isLowFidelity: boolean;
   readonly zoom: number;
   readonly maxHeight: number | null;
   readonly selectedNodeId: string | null;
@@ -25,7 +24,6 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
     {
       screen,
       palette,
-      isLowFidelity,
       zoom,
       maxHeight,
       selectedNodeId,
@@ -62,7 +60,7 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
       const observer = new ResizeObserver(measure);
       observer.observe(node);
       return () => observer.disconnect();
-    }, [screen, palette, isLowFidelity, onContentResize]);
+    }, [screen, palette, onContentResize]);
 
     const contentWidth = content === null ? width : Math.max(content.width, width);
     const contentHeight = content === null ? minHeight : Math.max(content.height, minHeight);
@@ -96,7 +94,6 @@ export const WireframeCanvas = forwardRef<HTMLDivElement, Props>(
             <WireframeNodeView
               node={screen.root}
               palette={palette}
-              isLowFidelity={isLowFidelity}
               selectedNodeId={selectedNodeId}
               hotspots={hotspots}
               onSelect={onSelect}

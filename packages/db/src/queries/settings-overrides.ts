@@ -2,7 +2,6 @@ import type {
   OverrideSettings,
   ProviderBindings,
   ProviderId,
-  ProjectId,
   RoleModelPreferences,
   TaskModelPreferences,
   WorkspaceId,
@@ -37,19 +36,6 @@ export const getWorkspaceOverrides = async (
     `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, invocation_global_limit, invocation_provider_limit, invocation_heavyweight_limit
      FROM workspaces WHERE id = ?`,
     [workspaceId],
-  );
-  const row = rows[0];
-  return row === undefined ? null : overridesFromRow({ row });
-};
-
-export const getProjectOverrides = async (
-  db: Database,
-  projectId: ProjectId,
-): Promise<OverrideSettings | null> => {
-  const rows = await db.select<OverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer
-     FROM projects WHERE id = ?`,
-    [projectId],
   );
   const row = rows[0];
   return row === undefined ? null : overridesFromRow({ row });
@@ -95,44 +81,6 @@ export const setWorkspaceOverrides = async (
       overrides.invocationHeavyweightLimit ?? null,
       Date.now(),
       workspaceId,
-    ],
-  );
-};
-
-export const setProjectOverrides = async (
-  db: Database,
-  projectId: ProjectId,
-  overrides: OverrideSettings,
-): Promise<void> => {
-  await db.execute(
-    `UPDATE projects
-     SET default_provider_id = ?,
-         default_workflow_id = ?,
-         default_branch_prefix = ?,
-         parallel_enabled = ?,
-         default_verbosity = ?,
-         provider_bindings = ?,
-         task_models = ?,
-         role_models = ?,
-         parallel_agents = ?,
-         provider_pool = ?,
-         attribution_footer = ?,
-         updated_at = ?
-     WHERE id = ?`,
-    [
-      overrides.defaultProviderId,
-      overrides.defaultWorkflowId,
-      overrides.defaultBranchPrefix,
-      overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
-      overrides.defaultVerbosity,
-      serializeBindings(overrides.providerBindings),
-      serializeTaskModels(overrides.taskModels),
-      serializeRoleModels(overrides.roleModels),
-      overrides.parallelAgents === null ? null : overrides.parallelAgents ? 1 : 0,
-      serializeProviderPool({ providerPool: overrides.providerPool }),
-      overrides.attributionFooter === null ? null : overrides.attributionFooter ? 1 : 0,
-      Date.now(),
-      projectId,
     ],
   );
 };

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link2 } from 'lucide-react';
-import { cn, formatError, Skeleton } from '@goodboy/ui';
+import { cn, Skeleton, Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
-import { useAppStore, useSessionSlots } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -11,6 +11,7 @@ import {
   TrackerStudioLinks,
 } from '../../../integrations/components/TrackerStudioLinks';
 import { OverviewActions } from '../SessionOverviewPane/OverviewActions';
+import { MountProjectAction } from '../SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { hasNothingToAdopt, proposeIssueAdoption, type IssueAdoption } from './issueAdoption';
 import { useKickoffIssues } from './useKickoffIssues';
 
@@ -27,9 +28,13 @@ type PickIssueParams = {
 export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdoption }: Props) => {
   const issues = useKickoffIssues({ workspaceId: session.workspaceId });
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
+  const reportError = useAppStore((state) => state.reportError);
   const slots = useSessionSlots(session.id);
   const { showToast } = useToast();
   const [linkingKey, setLinkingKey] = useState<string | null>(null);
+  const hasMounts = useAppStore(
+    (state) => (state.sessionProjectMounts[session.id] ?? EMPTY_ARRAY).length > 0,
+  );
 
   const pickIssue = async ({ candidate }: PickIssueParams) => {
     const key = `${candidate.provider}:${candidate.externalId}`;
@@ -51,9 +56,13 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
       if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
         onProposeAdoption(proposed);
       }
-      showToast('success', `${candidate.identifier} linked to this session`);
+      showToast({ kind: 'success', message: `Linked ${candidate.identifier} to this session.` });
     } catch (cause) {
-      showToast('error', formatError(cause));
+      void reportError({
+        title: `Couldn't link ${candidate.identifier}`,
+        error: cause,
+        sessionId: session.id,
+      });
     } finally {
       setLinkingKey(null);
     }
@@ -73,15 +82,25 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
           Pick a starting point. These suggestions step aside once the first activity lands.
         </p>
       </header>
+      {hasMounts ? null : (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border px-3 py-2">
+          <p className="min-w-0 text-xs text-muted-foreground">
+            Mount a project first so agents have code to work in.
+          </p>
+          <MountProjectAction
+            sessionId={session.id}
+            workspaceId={session.workspaceId}
+            presentation="button"
+          />
+        </div>
+      )}
       <OverviewActions
         sessionId={session.id}
         variant="tile"
         onOpenWorkflowBuilder={onOpenWorkflowBuilder}
       />
       <div className="flex flex-col gap-1">
-        <p className="px-0.5 text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-          Or pick up an issue
-        </p>
+        <Eyebrow label="Or pick up an issue" className="px-0.5" />
         {issues.hasSources && issues.isLoaded && issues.rows.length > 0
           ? issues.rows.map((row) => {
               const key = `${row.provider}:${row.externalId}`;
@@ -91,7 +110,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
                   type="button"
                   disabled={linkingKey != null}
                   onClick={() => void pickIssue({ candidate: row })}
-                  className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors hover:bg-muted/60 disabled:opacity-60"
+                  className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors hover:bg-hover disabled:opacity-60"
                 >
                   <IntegrationGlyph provider={row.provider} size="xs" />
                   <span className="shrink-0 font-mono text-2xs text-muted-foreground">
@@ -117,9 +136,9 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
           <div role="status" aria-label="Loading issues" className="flex flex-col gap-1 py-0.5">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="flex items-center gap-2 px-2 py-1.5">
-                <Skeleton className="size-4 shrink-0 rounded" />
-                <Skeleton className="h-3 w-14 shrink-0 rounded" />
-                <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+                <Skeleton className="size-4 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 w-14 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 min-w-0 flex-1 rounded-sm" />
               </div>
             ))}
           </div>

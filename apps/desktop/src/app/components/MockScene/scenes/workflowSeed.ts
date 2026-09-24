@@ -29,7 +29,7 @@ import { useAppStore } from '../../../../store';
 export const WORKSPACE_ID = 'mock-workflow-workspace-northwind' as WorkspaceId;
 const SESSION_ID = 'mock-workflow-session-orders' as SessionId;
 const API_ID = 'mock-workflow-project-api' as ProjectId;
-const APP_WEB_ID = 'mock-workflow-project-app-web' as ProjectId;
+const STOREFRONT_WEB_ID = 'mock-workflow-project-storefront-web' as ProjectId;
 const WORKFLOW_ID = 'mock-workflow-orders' as WorkflowId;
 const WORKFLOW_RUN_ID = 'mock-workflow-run-orders' as WorkflowRunId;
 const SCOUT_STEP_ID = 'mock-workflow-step-scout' as StepId;
@@ -38,17 +38,17 @@ const API_STEP_ID = 'mock-workflow-step-api' as StepId;
 const LEGACY_CALLER_STEP_ID = 'mock-workflow-step-legacy-caller' as StepId;
 const API_TEST_STEP_ID = 'mock-workflow-step-api-test' as StepId;
 const CLIENT_STEP_ID = 'mock-workflow-step-client' as StepId;
-const APP_WEB_STEP_ID = 'mock-workflow-step-app-web' as StepId;
+const STOREFRONT_WEB_STEP_ID = 'mock-workflow-step-storefront-web' as StepId;
 const SCOUT_AGENT_ID = 'mock-workflow-agent-scout' as AgentId;
 const CONTRACT_PLAN_AGENT_ID = 'mock-workflow-agent-contract-plan' as AgentId;
 const API_AGENT_ID = 'mock-workflow-agent-api' as AgentId;
 const API_TEST_AGENT_ID = 'mock-workflow-agent-api-test' as AgentId;
 const CLIENT_AGENT_ID = 'mock-workflow-agent-client' as AgentId;
-const APP_WEB_AGENT_ID = 'mock-workflow-agent-app-web' as AgentId;
+const STOREFRONT_WEB_AGENT_ID = 'mock-workflow-agent-storefront-web' as AgentId;
 const CONTRACT_AGENT_ID = 'mock-workflow-agent-contract-check' as AgentId;
 const REBASE_AGENT_ID = 'mock-workflow-agent-rebase' as AgentId;
 const CONFLICT_AGENT_ID = 'mock-workflow-agent-conflict-explain' as AgentId;
-const APP_WEB_PROVIDER_RUN_ID = 'mock-provider-run-app-web' as ProviderRunId;
+const STOREFRONT_WEB_PROVIDER_RUN_ID = 'mock-provider-run-storefront-web' as ProviderRunId;
 const SUMMARIZER_PROVIDER_RUN_ID = 'mock-provider-run-summarizer' as ProviderRunId;
 export const NOW = '2026-08-25T18:00:00.000Z' as IsoDateTime;
 const EARLIER = '2026-08-25T17:04:00.000Z' as IsoDateTime;
@@ -71,7 +71,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Northwind',
   slug: 'northwind',
-  sessionsRoot: '/mock/northwind/workflow/sessions',
   overrides: OVERRIDES,
   createdAt: '2026-08-25T15:10:00.000Z' as IsoDateTime,
   updatedAt: NOW,
@@ -89,10 +88,10 @@ const PROJECTS: ReadonlyArray<Project> = [
     updatedAt: NOW,
   },
   {
-    id: APP_WEB_ID,
+    id: STOREFRONT_WEB_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'app-web',
-    rootPath: '/mock/northwind/workflow/app-web-source',
+    name: 'storefront-web',
+    rootPath: '/mock/northwind/workflow/storefront-web-source',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: '2026-08-25T15:13:00.000Z' as IsoDateTime,
@@ -116,11 +115,11 @@ const API_MOUNT: SessionProjectMount = {
   revision: 0,
 };
 
-const APP_WEB_MOUNT: SessionProjectMount = {
-  projectId: APP_WEB_ID,
-  mountName: 'app-web',
-  worktreePath: '/mock/northwind/workflow/app-web',
-  repoRoot: '/mock/northwind/workflow/app-web-source',
+const STOREFRONT_WEB_MOUNT: SessionProjectMount = {
+  projectId: STOREFRONT_WEB_ID,
+  mountName: 'storefront-web',
+  worktreePath: '/mock/northwind/workflow/storefront-web',
+  repoRoot: '/mock/northwind/workflow/storefront-web-source',
   branch: 'feat/checkout-orders-api',
   mountId: 'mount-fixture-1' as MountId,
   sessionId: SESSION_ID,
@@ -132,7 +131,7 @@ const APP_WEB_MOUNT: SessionProjectMount = {
   revision: 0,
 };
 
-const MOUNTS = [API_MOUNT, APP_WEB_MOUNT];
+const MOUNTS = [API_MOUNT, STOREFRONT_WEB_MOUNT];
 
 const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
   { key: 'goal', value: 'Add POST /orders and wire it into the checkout flow', enabled: true },
@@ -144,7 +143,7 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
   },
   {
     key: 'checkout_caller',
-    value: 'app-web/src/features/checkout/CheckoutForm.tsx submits the finalized cart.',
+    value: 'storefront-web/src/features/checkout/CheckoutForm.tsx submits the finalized cart.',
     enabled: true,
   },
   {
@@ -156,8 +155,8 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
 
 const LINEAR_TASK: SessionExternalTask = {
   sessionId: SESSION_ID,
-  projectId: APP_WEB_ID,
-  branch: APP_WEB_MOUNT.branch,
+  projectId: STOREFRONT_WEB_ID,
+  branch: STOREFRONT_WEB_MOUNT.branch,
   provider: 'linear',
   externalId: 'linear-nw-214',
   identifier: 'NW-214',
@@ -220,14 +219,15 @@ const WORKFLOW: Workflow = {
       role: 'implementer',
       ordinal: 5,
       name: 'Update the typed orders client',
-      promptPrefix: 'Expose the new order creation contract through the app-web typed client.',
+      promptPrefix:
+        'Expose the new order creation contract through the storefront-web typed client.',
     },
     {
-      id: APP_WEB_STEP_ID,
+      id: STOREFRONT_WEB_STEP_ID,
       workflowId: WORKFLOW_ID,
       role: 'implementer',
       ordinal: 6,
-      name: 'Wire checkout errors in app-web',
+      name: 'Wire checkout errors in storefront-web',
       promptPrefix:
         'Connect checkout to the new endpoint and preserve rejected-order error states.',
     },
@@ -242,7 +242,7 @@ export const SESSION: Session = {
   goal: 'Add POST /orders and wire it into the checkout flow',
   state: {
     kind: 'running',
-    runId: APP_WEB_PROVIDER_RUN_ID,
+    runId: STOREFRONT_WEB_PROVIDER_RUN_ID,
     startedAt: '2026-08-25T17:57:00.000Z' as IsoDateTime,
   },
   contextSlots: CONTEXT_SLOTS,
@@ -263,7 +263,7 @@ export const SESSION: Session = {
   ],
   autoRun: true,
   titleUserEdited: true,
-  activeProjectId: APP_WEB_ID,
+  activeProjectId: STOREFRONT_WEB_ID,
   createdAt: EARLIER,
   updatedAt: NOW,
 };
@@ -366,15 +366,15 @@ const AGENTS: ReadonlyArray<Agent> = [
     doneAt: '2026-08-25T17:56:00.000Z' as IsoDateTime,
   },
   {
-    id: APP_WEB_AGENT_ID,
+    id: STOREFRONT_WEB_AGENT_ID,
     sessionId: SESSION_ID,
-    stepId: APP_WEB_STEP_ID,
+    stepId: STOREFRONT_WEB_STEP_ID,
     workflowRunId: WORKFLOW_RUN_ID,
     ordinal: 6,
-    name: 'Wire checkout errors in app-web',
+    name: 'Wire checkout errors in storefront-web',
     kind: 'implementer',
     status: 'running',
-    runId: APP_WEB_PROVIDER_RUN_ID,
+    runId: STOREFRONT_WEB_PROVIDER_RUN_ID,
     outputSummary: 'Wiring checkout submission while preserving the rejected-order toast.',
     startedAt: '2026-08-25T17:57:00.000Z' as IsoDateTime,
   },
@@ -495,7 +495,7 @@ export const seedWorkflowScene = () => {
     sessions: [SESSION],
     currentSessionId: SESSION_ID,
     sessionProjectMounts: { [SESSION_ID]: MOUNTS },
-    sessionActiveProject: { [SESSION_ID]: APP_WEB_ID },
+    sessionActiveProject: { [SESSION_ID]: STOREFRONT_WEB_ID },
     sessionWorktrees: { [SESSION_ID]: MOUNTS.map((mount) => mount.worktreePath) },
     sessionWorktreeRecords: {
       [SESSION_ID]: MOUNTS.map((mount, index) => ({
@@ -587,7 +587,7 @@ export const seedWorkflowScene = () => {
           {
             number: 482,
             title: 'Checkout fails silently when the order payload is rejected',
-            url: 'https://github.com/northwind/app-web/issues/482',
+            url: 'https://github.com/northwind/storefront-web/issues/482',
             closes: true,
           },
           {
@@ -600,7 +600,7 @@ export const seedWorkflowScene = () => {
         pr: PR({
           number: 319,
           title: 'Connect checkout to the orders endpoint',
-          headBranch: APP_WEB_MOUNT.branch,
+          headBranch: STOREFRONT_WEB_MOUNT.branch,
         }),
       },
     },
@@ -613,11 +613,11 @@ export const seedWorkflowScene = () => {
             headBranch: API_MOUNT.branch,
           }),
         ],
-        [APP_WEB_ID]: [
+        [STOREFRONT_WEB_ID]: [
           PR({
             number: 319,
             title: 'Connect checkout to the orders endpoint',
-            headBranch: APP_WEB_MOUNT.branch,
+            headBranch: STOREFRONT_WEB_MOUNT.branch,
           }),
         ],
       },
@@ -628,14 +628,14 @@ export const seedWorkflowScene = () => {
       [API_AGENT_ID]: 'implementer',
       [API_TEST_AGENT_ID]: 'tester',
       [CLIENT_AGENT_ID]: 'implementer',
-      [APP_WEB_AGENT_ID]: 'implementer',
+      [STOREFRONT_WEB_AGENT_ID]: 'implementer',
       [CONTRACT_AGENT_ID]: 'scout',
       [REBASE_AGENT_ID]: 'implementer',
       [CONFLICT_AGENT_ID]: 'scout',
     },
     setFocusedGithubIssueNumber: () => undefined,
     openExternalTaskLens: () => undefined,
-    selectedAgentId: { [SESSION_ID]: APP_WEB_AGENT_ID },
+    selectedAgentId: { [SESSION_ID]: STOREFRONT_WEB_AGENT_ID },
     activeLens: { [SESSION_ID]: null },
     workspaceIntegrations: { [WORKSPACE_ID]: [] },
     sessionAttachments: { [SESSION_ID]: [] },

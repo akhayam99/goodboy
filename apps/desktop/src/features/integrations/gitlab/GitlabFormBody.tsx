@@ -4,31 +4,15 @@ import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { normalizeHostUrl } from '../shared/normalizeHostUrl';
 
 type Props = {
-  workspaceId: WorkspaceId;
-  onConnected?: () => void;
-  shouldAutoFocus?: boolean;
+  readonly workspaceId: WorkspaceId;
+  readonly onConnected?: () => void;
+  readonly shouldAutoFocus?: boolean;
 };
 
 const DEFAULT_HOST = 'https://gitlab.com';
-
-function normalizeHost(input: string): string {
-  const trimmed = input.trim().replace(/\/+$/, '');
-  if (trimmed === '') {
-    return DEFAULT_HOST;
-  }
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  try {
-    const url = new URL(withScheme);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return DEFAULT_HOST;
-    }
-    return `${url.protocol}//${url.host}`;
-  } catch {
-    return DEFAULT_HOST;
-  }
-}
 
 export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
@@ -60,7 +44,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
       tokenPlaceholder="glpat-…"
       tokenLink={{
         label: 'Get a personal access token from GitLab',
-        href: `${normalizeHost(host)}/-/profile/personal_access_tokens`,
+        href: `${normalizeHostUrl({ input: host, fallback: DEFAULT_HOST })}/-/profile/personal_access_tokens`,
       }}
       credentialProvider="gitlab"
       config={{
@@ -87,7 +71,12 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         }
       }}
       onSubmit={async ({ token, credentialId }) => {
-        await connectGitlab({ workspaceId, host: normalizeHost(host), token, credentialId });
+        await connectGitlab({
+          workspaceId,
+          host: normalizeHostUrl({ input: host, fallback: DEFAULT_HOST }),
+          token,
+          credentialId,
+        });
         onConnected?.();
       }}
     />

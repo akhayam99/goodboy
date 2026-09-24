@@ -82,6 +82,7 @@ export type {
   JiraIntegrationBinding,
   LinearIntegrationConfig,
   LinearIntegrationBinding,
+  OrchestratorHint,
   OrchestratorRouting,
   Session,
   Project,
@@ -124,16 +125,7 @@ export type {
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
-export type {
-  DetectResult,
-  PermissionMode,
-  ProviderAdapter,
-  ProviderCapabilities,
-  ProviderUsage,
-  TurnEvent,
-  TurnPermissionFlags,
-  TurnRequest,
-} from './adapter';
+export type { ProviderUsage, TurnEvent } from './adapter';
 export type {
   InvocationPurpose,
   InvocationContext,
@@ -144,10 +136,11 @@ export type {
   UsageAttributionStatus,
 } from './telemetry';
 export type {
+  EffortLevel,
   ModelCostTier,
   ModelDescriptor,
-  ModelEffort,
   ModelFamily,
+  ModelPrice,
   ModelTier,
   ProviderConnectionState,
   ProviderInfo,
@@ -164,7 +157,6 @@ export type {
   CursorModel,
   EffortAxis,
   EffortAxisLevel,
-  EffortLevel,
   GeminiModel,
   ModelAxes,
   ModelCatalogs,
@@ -192,27 +184,17 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
-export { PROVIDER_API_KEY_ENV, PROVIDER_IDS } from './provider-registry';
+export { PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
-export {
-  OPENCODE_ROUTING,
-  PROVIDER_KIND,
-  isApiProvider,
-  opencodeModelArg,
-} from './provider-catalog';
 export type { ProviderCredential } from './provider-credential';
-export { CLI_CREDENTIAL } from './provider-credential';
 export type {
   ProviderLifecycleAction,
   ProviderLifecycleCommands,
   ProviderPlatform,
   ProviderPlatformCommands,
 } from './provider-commands';
-export { PROVIDER_LIFECYCLE_COMMANDS } from './provider-commands';
 export type { ProviderConnectCapability, ProviderConnectTier } from './provider-connect';
-export { PROVIDER_CONNECT_CAPABILITIES } from './provider-connect';
 export type { SessionProviderPreference, TurnProviderOverride } from './provider-preference';
-export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './provider-preference';
 export type { Skill, SkillFrontmatter, SkillInvocation, SlashCommand } from './skill';
 export type {
   BudgetRule,
@@ -253,6 +235,7 @@ export {
   CAPABILITY_CONTINUATIONS,
   CAPABILITY_PURPOSES,
   WORKFLOW_ORIGINS,
+  isWorkflowOrigin,
 } from './workflow';
 export type {
   ContextReadOutcome,
@@ -286,7 +269,6 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
-export { TASKS } from './settings';
 export type {
   BranchCommit,
   BranchIntegration,
@@ -415,12 +397,12 @@ export type {
   PullRequestState,
   PullRequestStateKind,
 } from './github';
-export type { ReviewablePr, ReviewablePrProvider } from './review-pr';
 export type {
   PrReviewDraft,
   ReviewDraftOrigin,
   ReviewDraftSide,
   ReviewDraftStatus,
+  ReviewablePrProvider,
 } from './review-draft';
 
 export type {

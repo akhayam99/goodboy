@@ -13,7 +13,7 @@ import {
 } from '../../../features/workflows/workflowRoutingCopy';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
 
-export type WorkflowNodeRoutingView = Readonly<{
+type WorkflowNodeRoutingView = Readonly<{
   selected: WorkflowModelPick | null;
   executed: WorkflowModelPick | null;
   proposal: WorkflowRoutingProposal | null;

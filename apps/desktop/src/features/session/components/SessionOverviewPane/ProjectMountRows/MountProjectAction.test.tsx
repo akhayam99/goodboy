@@ -65,7 +65,7 @@ describe('MountProjectAction', () => {
       }
       settingsDetail = event.detail;
     });
-    window.addEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
+    window.addEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
     store.projects = [];
     render(
       <MountProjectAction
@@ -79,11 +79,11 @@ describe('MountProjectAction', () => {
     expect(screen.getByText('Add a project in workspace settings to mount it here.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
     expect(onOpenWorkspaceSettings).toHaveBeenCalledOnce();
-    expect(settingsDetail).toEqual({ section: 'projects' });
-    window.removeEventListener('goodboy:open-workspace-settings', onOpenWorkspaceSettings);
+    expect(settingsDetail).toEqual({ scope: 'workspace', section: 'projects' });
+    window.removeEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
   });
 
-  it('distinguishes an all-mounted workspace from an empty one', () => {
+  it('offers adding a project once every workspace project is mounted', () => {
     store.projects = [project({ id: 'api', name: 'API' })];
     store.sessionProjectMounts = {
       'session-1': [{ mountId: 'mount-1', projectId: 'api' }],
@@ -97,9 +97,9 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByText('Every workspace project is already mounted.')).toBeDefined();
+    expect(screen.getByText('Every workspace project is mounted here.')).toBeDefined();
     expect(screen.queryByText('Add a project in workspace settings to mount it here.')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add workspace project' })).toBeDefined();
   });
 
   it('lists an unmounted project for mounting', () => {

@@ -51,28 +51,15 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
   if (!workspace) {
     return null;
   }
-  const workspaceName = workspace.name;
 
   const renderStudioContent = (): ReactNode => {
     switch (studio.kind) {
       case 'workflow':
         return <WorkflowBuilderView session={session} onClose={requestClose} />;
       case 'bitbucket':
-        return (
-          <BitbucketStudio
-            sessionId={session.id}
-            workspaceName={workspaceName}
-            onClose={requestClose}
-          />
-        );
+        return <BitbucketStudio sessionId={session.id} onClose={requestClose} />;
       case 'mr':
-        return (
-          <MrSessionPane
-            sessionId={session.id}
-            workspaceName={workspaceName}
-            onClose={requestClose}
-          />
-        );
+        return <MrSessionPane sessionId={session.id} onClose={requestClose} />;
       default: {
         const exhaustive: never = studio;
         throw new Error(`unknown session studio kind: ${String(exhaustive)}`);

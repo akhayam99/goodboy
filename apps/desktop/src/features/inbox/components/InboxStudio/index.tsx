@@ -1,11 +1,10 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useEffect, useMemo, useState } from 'react';
-import { IconButton, StudioRailLayout } from '@goodboy/ui';
+import { IconButton, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { useSessionById } from '../../../../store';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
@@ -23,7 +22,6 @@ import { InboxRail } from './InboxRail';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
-  readonly workspaceName: string;
   readonly initialProvider?: InboxProvider | null;
   readonly initialKind?: InboxKind | null;
   readonly initialRecordKey?: string | null;
@@ -56,14 +54,16 @@ const kindToFilter = ({ kind }: KindToFilterParams): InboxKindFilter => {
 export const InboxStudio = ({
   workspaceId,
   rootPath,
-  workspaceName,
   initialProvider = null,
   initialKind = null,
   initialRecordKey = null,
   initialSessionId = null,
   onClose,
 }: Props) => {
-  const { records, isLoading, errors, refetch } = useInboxRecords({ workspaceId, rootPath });
+  const { records, isLoading, errors, connected, refetch } = useInboxRecords({
+    workspaceId,
+    rootPath,
+  });
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<InboxKindFilter>(() => {
     if (initialKind != null) {
@@ -102,7 +102,7 @@ export const InboxStudio = ({
       return null;
     }
     const goal =
-      filteredSession == null ? '' : stripInlineMarkdown({ text: filteredSession.goal }).trim();
+      filteredSession == null ? '' : inlineMarkdownText({ text: filteredSession.goal }).trim();
     return goal === '' ? 'Linked session' : goal;
   })();
 
@@ -173,7 +173,6 @@ export const InboxStudio = ({
       icon={CONCEPT_ICONS.inbox}
       tone={CONCEPT_TONE.inbox}
       title="Inbox"
-      workspaceName={workspaceName}
       closeLabel="close inbox studio"
       headerAccessory={
         <IconButton
@@ -192,6 +191,7 @@ export const InboxStudio = ({
           railWidth="xwide"
           rail={
             <InboxRail
+              connected={connected}
               records={filteredRecords}
               allRecords={scopedRecords}
               selectedProviders={selectedProviders}
@@ -224,6 +224,7 @@ export const InboxStudio = ({
               rootPath={rootPath}
               isLoading={isLoading}
               errors={errors}
+              connected={connected}
               onRefresh={refetch}
               onClose={requestClose}
               onDeselect={onDeselect}

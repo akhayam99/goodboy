@@ -29,7 +29,7 @@ export const Install = () => {
   return (
     <>
       <section className="block" id="install" aria-labelledby="h2-install">
-        <div className="wrap">
+        <div className="wrap split">
           <div className="blockHead">
             <h2 className="rv" id="h2-install">
               Setup is a folder and a provider
@@ -39,34 +39,36 @@ export const Install = () => {
               already work in.
             </p>
           </div>
-          <div className="instRow rv" style={delay(160)}>
-            <div className="cmd">
-              <span className="p">$</span>
-              <span>{SITE.brew}</span>
-              <button id="copyBtn" type="button" onClick={handleCopy}>
-                {copied ? 'copied' : 'copy'}
-              </button>
+          <div className="splitBody">
+            <div className="instRow rv" style={delay(160)}>
+              <div className="cmd">
+                <span className="p">$</span>
+                <span>{SITE.brew}</span>
+                <button id="copyBtn" type="button" onClick={handleCopy}>
+                  {copied ? 'copied' : 'copy'}
+                </button>
+              </div>
+              <a className="btn" href={SITE.latest}>
+                Download for macOS
+              </a>
+              <a className="btn ghost" href={SITE.linux}>
+                Linux builds on the release page
+              </a>
             </div>
-            <a className="btn" href={SITE.latest}>
-              Download for macOS
-            </a>
-            <a className="btn ghost" href={SITE.linux}>
-              Linux builds on the release page
-            </a>
+            <p className="reassure rv" style={delay(200)}>
+              <b>No account, no waitlist. You are working in about five minutes.</b>
+            </p>
+            <p className="reassure rv" style={delay(240)}>
+              Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b>{' '}
+              <a href={SITE.issues}>Open an issue →</a>
+            </p>
           </div>
-          <p className="reassure rv" style={delay(200)}>
-            <b>No account, no waitlist. You are working in about five minutes.</b>
-          </p>
-          <p className="reassure rv" style={delay(240)}>
-            Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b>{' '}
-            <a href={SITE.issues}>Open an issue →</a>
-          </p>
         </div>
       </section>
       <section className="block alt in-closer" aria-labelledby="h2-close">
         <div className="wrap">
           <h2 className="rv" id="h2-close">
-            Ready to stop re-explaining yourself?
+            Ready to stop <span className="nobr">re-explaining</span> yourself?
           </h2>
           <div className="ctaRow rv" style={delay(80)}>
             <a className="btn" href={SITE.latest}>

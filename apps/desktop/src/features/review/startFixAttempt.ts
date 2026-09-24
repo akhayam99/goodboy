@@ -1,11 +1,10 @@
-import type { AgentId, PullRequestState, SessionId } from '@goodboy/types';
+import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import {
   buildResolverAgentArgs,
   buildResolverKickoff,
   type PriorContext,
   type ResolveModelChoice,
 } from '../chat/spawn-from-comment';
-import type { EffortLevel } from '../chat/utils/chat-constants';
 import type { CommentThread } from '../github/comment-threads';
 import { chunkConversations } from './chunkConversations';
 

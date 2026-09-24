@@ -223,6 +223,7 @@ function setupStore(overrides: {
     phaseTemplates: { [WS_ID]: workflows },
     sessionOpenQuestions: { [SESSION_ID]: openQuestions },
     sessionAnsweredQuestions: { [SESSION_ID]: answeredQuestions },
+    sessionQuestionsLoadError: {},
     answerOpenQuestions: mockAnswerOpenQuestions,
     dismissOpenQuestion: mockDismissOpenQuestion,
     restoreDismissedOpenQuestion: mockRestoreDismissedOpenQuestion,
@@ -253,6 +254,21 @@ describe('QuestionsPane', () => {
       render(<QuestionsPane session={BASE_SESSION} />);
       expect(screen.getByRole('status', { name: 'Loading questions' })).toBeDefined();
       expect(screen.queryByText('No open questions')).toBeNull();
+    });
+
+    it('replaces the skeleton with a retry when a load failed', () => {
+      setupStore({ openQuestions: [] });
+      _storeState['sessionOpenQuestions'] = {};
+      _storeState['sessionQuestionsLoadError'] = { [SESSION_ID]: 'database is locked' };
+      render(<QuestionsPane session={BASE_SESSION} />);
+
+      expect(screen.queryByRole('status', { name: 'Loading questions' })).toBeNull();
+      expect(screen.getByText('Questions did not load')).toBeDefined();
+      mockLoadSessionOpenQuestions.mockClear();
+      mockLoadSessionAnsweredQuestions.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+      expect(mockLoadSessionOpenQuestions).toHaveBeenCalledWith(SESSION_ID);
+      expect(mockLoadSessionAnsweredQuestions).toHaveBeenCalledWith(SESSION_ID);
     });
   });
 

@@ -20,6 +20,8 @@ import { drainAuditRetryQueue } from './auditRetryQueue';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from '../../types';
 
+const INTEGRATION_KEY_ADOPTION_COALESCE_KEY = 'boot:integration-key-adoption';
+
 type RecordBootBreadcrumbParams = {
   phase: BootPhase;
   detail?: string;
@@ -45,7 +47,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
       try {
         recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
         const migratingAt = Date.now();
-        set({ bootPhase: 'migrating', error: null });
+        set({ bootPhase: 'migrating', bootFailedPhase: null, error: null });
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
@@ -108,29 +110,37 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           )
         ).flat();
         set({ workspaces, projects });
-        await adoptLegacyIntegrationSecrets();
+        const adoption = await adoptLegacyIntegrationSecrets();
+        if (adoption.ok === false) {
+          void get().reportError({
+            severity: 'warning',
+            title: "Couldn't move saved integration keys to the keychain",
+            error: adoption.error,
+            coalesceKey: INTEGRATION_KEY_ADOPTION_COALESCE_KEY,
+          });
+        }
         await get()
           .loadIntegrationCredentials()
           .catch(() => {});
         try {
           await recoverStagedFileVersions({
             onFailure: async ({ sessionId, runId, message }) => {
-              await get().emitNotification(
-                'error',
-                'warning',
-                'Some staged file versions could not be recovered',
-                `session: ${sessionId}. run: ${runId}. details: ${message}`,
-                { sessionId },
-              );
+              await get().emitNotification({
+                kind: 'error',
+                severity: 'warning',
+                title: 'Some staged file versions could not be recovered',
+                body: `session: ${sessionId}. run: ${runId}. details: ${message}`,
+                sessionId,
+              });
             },
           });
         } catch (error) {
-          await get().emitNotification(
-            'error',
-            'warning',
-            'File version recovery could not run at startup',
-            formatError(error),
-          );
+          await get().emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'File version recovery could not run at startup',
+            body: formatError(error),
+          });
         }
 
         await applyQaDecidingPreview({ set }).catch(() => {});
@@ -217,6 +227,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         recordBootBreadcrumb({ phase: 'error', detail: 'error' });
         set({
           bootPhase: 'error',
+          bootFailedPhase: get().bootPhase,
           error: formatError(err),
           hydrated: true,
         });

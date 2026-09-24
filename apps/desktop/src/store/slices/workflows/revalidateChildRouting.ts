@@ -4,7 +4,7 @@ import { applyWorkflowNodeRouting } from '../workflowRouting/applyWorkflowNodeRo
 import { resolveOneChildRouting } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
 
-export type ChildRoutingRevalidation =
+type ChildRoutingRevalidation =
   Readonly<{ kind: 'ok' }> | Readonly<{ kind: 'blocked'; reason: string }>;
 
 type Params = {
@@ -32,7 +32,6 @@ export const revalidateChildRouting = async ({
   const outcome = resolveOneChildRouting({
     state: get(),
     sessionId,
-    workflowRunId: child.workflowRunId ?? null,
     role,
     request: {
       proposal: decision?.proposal ?? null,

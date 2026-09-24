@@ -42,12 +42,12 @@ export const WorkspaceIdentityRow = () => {
             data-tauri-drag-region="false"
             aria-label={`Switch workspace: ${currentWorkspace.name}`}
             aria-expanded={dropdown.open}
-            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-muted/50"
+            className="group flex w-full min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-hover"
             title={`${currentWorkspace.name}, ${subtitle} (${shortcutGlyphs('workspace.switcher')})`}
           >
             <span
               aria-hidden
-              className="flex size-5 shrink-0 items-center justify-center rounded-md text-3xs font-bold text-primary-foreground ring-1 ring-inset ring-border-soft"
+              className="flex size-5 shrink-0 items-center justify-center rounded-md text-3xs font-bold text-on-tone ring-1 ring-inset ring-border-soft"
               style={{ backgroundColor: accent }}
             >
               {initialOf(currentWorkspace.name)}
@@ -61,14 +61,14 @@ export const WorkspaceIdentityRow = () => {
             <ChevronsUpDown
               size={ICON_SIZE.row}
               aria-hidden
-              className="shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground"
+              className="shrink-0 text-faint-foreground transition-colors group-hover:text-muted-foreground"
             />
           </button>
         }
       >
         <WorkspaceSwitcher onClose={dropdown.close} />
       </AnchoredPopover>
-      <Tooltip content="Preferences" side="bottom">
+      <Tooltip content="Workspace settings" side="bottom">
         <button
           type="button"
           onClick={() =>
@@ -76,8 +76,8 @@ export const WorkspaceIdentityRow = () => {
               new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
             )
           }
-          aria-label="Preferences"
-          className="flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
+          aria-label="Workspace settings"
+          className="flex shrink-0 items-center justify-center rounded-md p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
         >
           <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
         </button>

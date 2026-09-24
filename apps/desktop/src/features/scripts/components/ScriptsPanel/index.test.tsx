@@ -839,7 +839,7 @@ describe('ScriptsPanel', () => {
     expect(screen.getByText('+1 line')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
 
-    expect(screen.getByTestId('script-card-s1').className).toContain('bg-muted/20');
+    expect(screen.getByTestId('script-card-s1').className).toContain('bg-subtle');
     expect(
       screen.getByText(
         (_, element) =>
@@ -960,7 +960,7 @@ describe('ScriptsPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand setup' }));
     expect(screen.getByText('Last run')).toBeDefined();
-    expect(screen.getByText('cancelled')).toBeDefined();
+    expect(screen.getByText('Stopped')).toBeDefined();
     expect(screen.queryByText('Running')).toBeNull();
   });
 
@@ -985,18 +985,18 @@ describe('ScriptsPanel', () => {
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain('border-transparent');
-    expect(row.className).toContain('bg-card/40');
+    expect(row.className).not.toContain('bg-subtle');
     expect(row.className).not.toContain('bg-muted/20');
     expect(row.className).not.toContain('border-info/50');
     expect(row.querySelector('[aria-label="Running"]')).toBeNull();
   });
 
   it.each([
-    ['pending', 'border-info/50', 'motion-safe:animate-pulse'],
+    ['pending', 'border-info/40', 'spin-border'],
     ['ok', 'border-success/40', null],
     ['error', 'border-danger/40', null],
     ['cancelled', 'border-border', null],
-  ] as const)('uses the %s run state for the row border', (status, borderClass, pulseClass) => {
+  ] as const)('uses the %s run state for the row border', (status, borderClass, motionClass) => {
     state.scripts = [{ id: 's1', projectId: 'project-1', name: 'setup', body: 'echo hi' }];
     state.scriptRuns = {
       'session-1': {
@@ -1011,8 +1011,8 @@ describe('ScriptsPanel', () => {
 
     const row = screen.getByTestId('script-card-s1');
     expect(row.className).toContain(borderClass);
-    if (pulseClass !== null) {
-      expect(row.className).toContain(pulseClass);
+    if (motionClass !== null) {
+      expect(row.className).toContain(motionClass);
     }
     if (status === 'pending') {
       expect(row.querySelector('[aria-label="Running"]')).not.toBeNull();

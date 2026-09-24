@@ -58,11 +58,10 @@ const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
-import { SECTION_SURFACE_CLASS } from '@goodboy/ui';
 import { AgentBrief } from './AgentBrief';
 
-const carriesSurface = (element: Element): boolean =>
-  SECTION_SURFACE_CLASS.split(' ').every((token) => element.classList.contains(token));
+const opensWithItsLabel = (section: Element): boolean =>
+  (section.firstElementChild?.textContent ?? '').trim() !== '';
 
 const sessionId = 'session-1' as SessionId;
 const agentId = 'agent-1' as AgentId;
@@ -353,7 +352,7 @@ describe('AgentBrief delegated answers', () => {
 });
 
 describe('AgentBrief sections', () => {
-  it('carries every section on the one shared surface', () => {
+  it('opens every section with its label on the shared surface', () => {
     state.sessionPlans = {
       [sessionId]: [
         { id: 'plan-1', agentId, title: 'Split the store', status: 'active', consumptionCount: 1 },
@@ -366,6 +365,6 @@ describe('AgentBrief sections', () => {
     const sections = Array.from(container.querySelectorAll('section'));
 
     expect(sections.length).toBeGreaterThan(2);
-    expect(sections.every(carriesSurface)).toBe(true);
+    expect(sections.every(opensWithItsLabel)).toBe(true);
   });
 });

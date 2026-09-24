@@ -24,9 +24,9 @@ import {
   listPlansForSession as invokeListPlansForSession,
 } from '../../../features/plans/plans';
 import {
-  inferAgentKindFromName,
   kindRouting,
   kindConsumesPlan,
+  resolveAgentKind,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
@@ -39,7 +39,11 @@ import {
 import { reserveGeneration } from './reserveGeneration';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import type { SpawnFocus } from '../session-view/spawnFocus';
+import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+
+const spawnQueue = createKeyedQueue();
 
 type SpawnArgs = {
   stepId?: StepId;
@@ -102,122 +106,139 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       stepPromptPrefix = step.promptPrefix;
     }
   }
-  const currentRuns = state.sessionPhaseRuns[sessionId] ?? [];
-  const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
-  if (!resolvedName) {
-    resolvedName = `agent ${nextOrdinal + 1}`;
-  }
-  const workspaceVerbositySeed =
-    state.workspaceOverrides[session.workspaceId]?.defaultVerbosity ?? undefined;
-  const resolvedKind = args.kindOverride ?? inferAgentKindFromName(resolvedName);
-  const roleModels = state.workspaceOverrides[session.workspaceId]?.roleModels;
-  const routing = kindRouting({ kind: resolvedKind, roleModels });
-  const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
-  const generationPath: GenerationCreationPath | null =
-    args.sourceKind === 'open_question'
-      ? 'question-delegate'
-      : args.parentAgentId !== undefined
-        ? 'capability'
-        : args.stepId !== undefined
-          ? 'workflow-step'
-          : null;
-  const reservation =
-    generationPath === null
-      ? null
-      : await reserveGeneration({
-          get,
-          sessionId,
-          workflowRunId: args.workflowRunId ?? null,
-          parentAgentId: args.parentAgentId ?? null,
-          creationPath: generationPath,
-          reservationKey: `${args.parentAgentId ?? 'root'}:${nextOrdinal}:${resolvedName}`,
-          count: 1,
-          label: resolvedName,
+  const { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort } =
+    await spawnQueue.run({
+      key: sessionId,
+      task: async () => {
+        const currentRuns = get().sessionPhaseRuns[sessionId] ?? [];
+        const nextOrdinal = currentRuns.reduce((max, r) => Math.max(max, r.ordinal), -1) + 1;
+        const agentName =
+          resolvedName !== undefined && resolvedName !== ''
+            ? resolvedName
+            : `agent ${nextOrdinal + 1}`;
+        const settings = selectResolvedSettings({ state, sessionId });
+        const workspaceVerbositySeed = settings?.defaultVerbosityOverride ?? undefined;
+        const resolvedKind = resolveAgentKind({
+          name: agentName,
+          firstUserText: null,
+          override: args.kindOverride ?? null,
         });
-  if (reservation !== null && reservation.kind === 'refused') {
-    throw new Error(reservation.reason);
-  }
-  const inserted = await invokeAgentInsert({
-    sessionId,
-    ...(args.stepId !== undefined && { stepId: args.stepId }),
-    ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
-    ordinal: nextOrdinal,
-    name: resolvedName,
-    status: 'pending',
-    executionPurpose:
-      args.sourceKind === 'open_question'
-        ? 'question-delegate'
-        : (args.executionPurpose ??
-          (args.parentAgentId !== undefined ? 'capability' : 'standalone')),
-    kind: resolvedKind,
-    ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
-    ...(sourceThreadId !== undefined && { sourceThreadId }),
-    ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
-    ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
-    ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
-    ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
-    ...(reservation !== null && {
-      generationReservationId: reservation.reservations[0]!.reservationId,
-    }),
-  });
-  const resolvedProvider = args.provider ?? routing.provider;
-  const resolvedModel = args.model ?? routing.model;
-  const resolvedEffort = EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;
-  await updateAgentConfig(tauriDatabase, inserted.id, {
-    providerOverride: resolvedProvider,
-    modelOverride: resolvedModel,
-    effort: resolvedEffort,
-  });
-  const listed = await invokeAgentList(sessionId);
-  const refreshed = listed.map((agent) =>
-    agent.id === inserted.id
-      ? {
-          ...agent,
+        const roleModels = settings?.roleModels ?? null;
+        const routing = kindRouting({ kind: resolvedKind, roleModels });
+        const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
+        const generationPath: GenerationCreationPath | null =
+          args.sourceKind === 'open_question'
+            ? 'question-delegate'
+            : args.parentAgentId !== undefined
+              ? 'capability'
+              : args.stepId !== undefined
+                ? 'workflow-step'
+                : null;
+        const reservation =
+          generationPath === null
+            ? null
+            : await reserveGeneration({
+                get,
+                sessionId,
+                workflowRunId: args.workflowRunId ?? null,
+                parentAgentId: args.parentAgentId ?? null,
+                creationPath: generationPath,
+                reservationKey: `${args.parentAgentId ?? 'root'}:${nextOrdinal}:${agentName}`,
+                count: 1,
+                label: agentName,
+              });
+        if (reservation !== null && reservation.kind === 'refused') {
+          throw new Error(reservation.reason);
+        }
+        const inserted = await invokeAgentInsert({
+          sessionId,
+          ...(args.stepId !== undefined && { stepId: args.stepId }),
+          ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
+          ordinal: nextOrdinal,
+          name: agentName,
+          status: 'pending',
+          executionPurpose:
+            args.sourceKind === 'open_question'
+              ? 'question-delegate'
+              : (args.executionPurpose ??
+                (args.parentAgentId !== undefined ? 'capability' : 'standalone')),
+          kind: resolvedKind,
+          ...(workspaceVerbositySeed && { verbosity: workspaceVerbositySeed }),
+          ...(sourceThreadId !== undefined && { sourceThreadId }),
+          ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
+          ...(args.sourceCommentUrl !== undefined && { sourceCommentUrl: args.sourceCommentUrl }),
+          ...(args.sourceKind !== undefined && { sourceKind: args.sourceKind }),
+          ...(args.parentAgentId !== undefined && { parentAgentId: args.parentAgentId }),
+          ...(reservation !== null && {
+            generationReservationId: reservation.reservations[0]!.reservationId,
+          }),
+        });
+        const resolvedProvider = args.provider ?? routing.provider;
+        const resolvedModel = args.model ?? routing.model;
+        const resolvedEffort =
+          EFFORT_LEVELS.find((level) => level === args.effort) ?? routing.effort;
+        await updateAgentConfig(tauriDatabase, inserted.id, {
           providerOverride: resolvedProvider,
           modelOverride: resolvedModel,
           effort: resolvedEffort,
-        }
-      : agent,
-  );
-  const takesFocus = args.focus === 'agent';
-  set((s) => ({
-    sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
-    ...(takesFocus &&
-      workSurfaceFocus({
-        sessionId,
-        focus: { kind: 'agent', agentId: inserted.id },
-        activeLens: s.activeLens,
-        sessionStudio: s.sessionStudio,
-        selectedAgentId: s.selectedAgentId,
-      })),
-    transcripts: { ...s.transcripts, [inserted.id]: [] },
-    messages: { ...s.messages, [sessionId]: [] },
-    agentTurnState: {
-      ...s.agentTurnState,
-      [inserted.id]: { kind: 'idle', lastActivityAt: new Date().toISOString() as IsoDateTime },
-    },
-    agentModelOverride: {
-      ...s.agentModelOverride,
-      [inserted.id]: resolvedModel,
-    },
-    agentProviderOverride: {
-      ...s.agentProviderOverride,
-      [inserted.id]: resolvedProvider,
-    },
-    agentEffortOverride: {
-      ...s.agentEffortOverride,
-      [inserted.id]: resolvedEffort,
-    },
-    ...(args.kindOverride !== undefined && {
-      agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
-    }),
-  }));
+        });
+        const listed = await invokeAgentList(sessionId);
+        const refreshed = listed.map((agent) =>
+          agent.id === inserted.id
+            ? {
+                ...agent,
+                providerOverride: resolvedProvider,
+                modelOverride: resolvedModel,
+                effort: resolvedEffort,
+              }
+            : agent,
+        );
+        const takesFocus = args.focus === 'agent';
+        set((s) => ({
+          sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
+          ...(takesFocus &&
+            workSurfaceFocus({
+              sessionId,
+              focus: { kind: 'agent', agentId: inserted.id },
+              activeLens: s.activeLens,
+              sessionStudio: s.sessionStudio,
+              selectedAgentId: s.selectedAgentId,
+            })),
+          transcripts: { ...s.transcripts, [inserted.id]: [] },
+          messages: { ...s.messages, [sessionId]: [] },
+          agentTurnState: {
+            ...s.agentTurnState,
+            [inserted.id]: {
+              kind: 'idle',
+              lastActivityAt: new Date().toISOString() as IsoDateTime,
+            },
+          },
+          agentModelOverride: {
+            ...s.agentModelOverride,
+            [inserted.id]: resolvedModel,
+          },
+          agentProviderOverride: {
+            ...s.agentProviderOverride,
+            [inserted.id]: resolvedProvider,
+          },
+          agentEffortOverride: {
+            ...s.agentEffortOverride,
+            [inserted.id]: resolvedEffort,
+          },
+          ...(args.kindOverride !== undefined && {
+            agentKindOverride: { ...s.agentKindOverride, [inserted.id]: args.kindOverride },
+          }),
+        }));
+        return { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort };
+      },
+    });
   const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const effectiveKind: AgentKind =
     args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
   const isImplementer = effectiveKind === 'implementer';
   const hasExplicitPlanContext = args.triggeredPlanId !== undefined || args.stepId !== undefined;
-  const engagePlan = isImplementer || (kindConsumesPlan(effectiveKind) && hasExplicitPlanContext);
+  const engagePlan =
+    isImplementer || (kindConsumesPlan({ kind: effectiveKind }) && hasExplicitPlanContext);
   let planSection = '';
   let planToConsume: PlanWithCount | null = null;
   let planForKickoff: PlanWithCount | null = null;

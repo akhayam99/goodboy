@@ -272,4 +272,89 @@ describe('resolveSettings', () => {
     });
     expect(result.defaultVerbosity).toBe('brief');
   });
+
+  it('role and task models: session beats project beats workspace', () => {
+    const wsRoles = {
+      planner: {
+        providerId: 'anthropic' as ProviderId,
+        model: 'ws-model',
+        effort: 'high' as const,
+      },
+    };
+    const projectRoles = {
+      planner: {
+        providerId: 'codex' as ProviderId,
+        model: 'project-model',
+        effort: 'low' as const,
+      },
+    };
+    const sessionTasks = {
+      summarizer: { providerId: 'cursor' as ProviderId, model: 'sess-model' },
+    };
+    const wsTasks = { summarizer: { providerId: 'anthropic' as ProviderId, model: 'ws-task' } };
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, roleModels: wsRoles, taskModels: wsTasks },
+      projectOverride: { ...NULL_OVERRIDE, roleModels: projectRoles },
+      sessionOverride: { ...NULL_OVERRIDE, taskModels: sessionTasks },
+    });
+    expect(result.roleModels).toBe(projectRoles);
+    expect(result.taskModels).toBe(sessionTasks);
+  });
+
+  it('role and task models and pool resolve to null when no scope sets them', () => {
+    const result = resolveSettings({ global: GLOBAL, workspaceOverride: NULL_OVERRIDE });
+    expect(result.roleModels).toBeNull();
+    expect(result.taskModels).toBeNull();
+    expect(result.providerPool).toBeNull();
+  });
+
+  it('provider pool: the first scope that sets one wins', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, providerPool: ['anthropic' as ProviderId] },
+      projectOverride: {
+        ...NULL_OVERRIDE,
+        providerPool: ['codex' as ProviderId, 'cursor' as ProviderId],
+      },
+    });
+    expect(result.providerPool).toEqual(['codex', 'cursor']);
+  });
+
+  it('parallel agents: an explicit false below wins over true above', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, parallelAgents: true },
+      sessionOverride: { ...NULL_OVERRIDE, parallelAgents: false },
+    });
+    expect(result.parallelAgents).toBe(false);
+  });
+
+  it('parallel agents: explicit false and an unset workspace resolve identically', () => {
+    const explicit = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: { ...NULL_OVERRIDE, parallelAgents: false },
+    });
+    const unset = resolveSettings({ global: GLOBAL, workspaceOverride: NULL_OVERRIDE });
+    expect(explicit.parallelAgents).toBe(false);
+    expect(unset.parallelAgents).toBe(explicit.parallelAgents);
+  });
+
+  it('provider bindings: shallow merge, session over project over workspace', () => {
+    const result = resolveSettings({
+      global: GLOBAL,
+      workspaceOverride: {
+        ...NULL_OVERRIDE,
+        providerBindings: { anthropic: 'ws-cred', codex: 'ws-codex' },
+      },
+      projectOverride: { ...NULL_OVERRIDE, providerBindings: { codex: 'project-codex' } },
+      sessionOverride: { ...NULL_OVERRIDE, providerBindings: { anthropic: 'sess-cred' } },
+    });
+    expect(result.providerBindings).toEqual({ anthropic: 'sess-cred', codex: 'project-codex' });
+  });
+
+  it('provider bindings: empty when no scope binds anything', () => {
+    const result = resolveSettings({ global: GLOBAL });
+    expect(result.providerBindings).toEqual({});
+  });
 });

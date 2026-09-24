@@ -30,7 +30,10 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
     const home =
       root === null
         ? 'agents'
-        : agentHomeLens(root, classifyAgent(root, agentKindOverride[root.id] ?? null));
+        : agentHomeLens({
+            agent: root,
+            kind: classifyAgent({ agent: root, override: agentKindOverride[root.id] ?? null }),
+          });
     return resolveAttentionTarget({ stage, agent: { agentId, home } });
   }, [agentKindOverride, agents, stage]);
 

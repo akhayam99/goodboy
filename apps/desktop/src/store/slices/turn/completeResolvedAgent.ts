@@ -10,11 +10,7 @@ import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
-import {
-  inferAgentKindFromName,
-  KIND_TO_ROLE,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { classifyAgent, KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import type { GetFn, SetFn } from './types';
 
@@ -52,13 +48,13 @@ const holdAmbiguousChild = async ({
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
   }));
   void get().refreshUnreadWorkspaces();
-  void get().emitNotification(
-    'error',
-    'warning',
-    `lineage unknown: ${agent.name}`,
-    'this child was created before execution purposes were persisted, so nothing advances on its completion. open it and continue the run manually.',
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Lineage unknown for ${agent.name}`,
+    body: 'this child was created before execution purposes were persisted, so nothing advances on its completion. open it and continue the run manually.',
+    sessionId,
+  });
 };
 
 type Params = {
@@ -89,12 +85,14 @@ export const completeResolvedAgent = async ({
     await get().resolveQuestionDelegate({ sessionId, agentId: resolvedAgentId, assistantText });
     return null;
   }
-  const ranKind = ranAgent
-    ? ((ranAgent.kind as AgentKind | undefined) ??
-      get().agentKindOverride[resolvedAgentId] ??
-      inferAgentKindFromName(ranAgent.name))
-    : null;
-  const role = ranKind ? KIND_TO_ROLE[ranKind] : 'custom';
+  const ranKind =
+    ranAgent !== undefined
+      ? classifyAgent({
+          agent: ranAgent,
+          override: get().agentKindOverride[resolvedAgentId] ?? null,
+        })
+      : null;
+  const role = ranKind !== null ? KIND_TO_ROLE[ranKind] : 'custom';
   const capability = fanOutCapabilityForRole(role);
   const emittingProvider = agentEmittingProvider({
     state: get(),

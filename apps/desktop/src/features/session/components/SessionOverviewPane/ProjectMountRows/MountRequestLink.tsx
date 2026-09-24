@@ -42,7 +42,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
             }
           });
         }}
-        className="flex min-w-0 shrink-0 items-center rounded-md px-1 py-1 hover:bg-muted/40"
+        className="flex min-w-0 shrink-0 items-center rounded-md px-1 py-1 hover:bg-hover"
       >
         <PullRequestChip
           state={request.isDraft ? 'draft' : request.state}

@@ -48,6 +48,9 @@ vi.mock('../features/worktree/worktree', () => ({
 }));
 vi.mock('@goodboy/db', () => ({
   listSessionMounts: vi.fn(async () => [...h.mounts.values()]),
+  deleteSessionMount: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+    h.mounts.delete(mountId),
+  ),
   listMountOperations: vi.fn(async () => [...h.operations.values()]),
   getMountOperation: vi.fn(
     async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
@@ -112,6 +115,7 @@ import { createProjectMountsSlice } from '../store/slices/project-mounts';
 import { recordMountBranchObservation } from '../store/slices/project-mounts/mountBranchObservations';
 import { loadSessionMounts } from '../store/slices/project-mounts/loadSessionMounts';
 import { verifyAvailableWorktrees } from '../store/slices/project-mounts/verifyAvailableWorktrees';
+import { withRepositoryAndMountLock } from '../store/slices/project-mounts/mountLocks';
 
 const SESSION_ID = 'session-recovery' as SessionId;
 const PROJECT_ID = 'project-recovery' as ProjectId;
@@ -170,6 +174,25 @@ const operationFixture = ({
   updatedAt: NOW,
 });
 
+const removalFixture = ({
+  finish,
+  keepDirectory = false,
+  status = 'running',
+}: {
+  readonly finish: 'clear-path' | 'drop-row';
+  readonly keepDirectory?: boolean;
+  readonly status?: MountOperation['status'];
+}): MountOperation => ({
+  ...operationFixture({ kind: 'remove', status, result: null }),
+  input: {
+    mountId: 'mount-one',
+    repoRoot: '/repo',
+    worktreePath: '/repo/.goodboy/worktrees/mount-one',
+    keepDirectory,
+    finish,
+  },
+});
+
 type State = Record<string, unknown>;
 
 const makeState = (): State => ({
@@ -201,6 +224,7 @@ const makeState = (): State => ({
   sessionBranches: {},
   sessionWorktrees: {},
   mountBranchObservations: {},
+  mountCleanupProposals: {},
   mountGithub: {},
   mountSelectedPr: {},
   mountGitlabMr: {},
@@ -281,12 +305,145 @@ describe('interrupted mount recovery', () => {
     expect(h.operations.get('request-remove')?.status).toBe('pending');
   });
 
+  it('finishes a clear-path removal that crashed between the disk and the row', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.get('mount-one')).toMatchObject({
+      worktreePath: null,
+      isAttached: false,
+      diskState: 'removed',
+    });
+    expect(h.operations.get('request-remove')?.status).toBe('succeeded');
+  });
+
+  it('closes a removal as failed and keeps the directory when the worktree is still registered', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.get('mount-one')).toMatchObject({
+      worktreePath: '/repo/.goodboy/worktrees/mount-one',
+      isAttached: true,
+      revision: 0,
+    });
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'failed',
+      errorCode: 'cleanup-failed',
+    });
+  });
+
+  it('finishes a detach that crashed between the disk and the row delete', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row' }));
+    h.operations.set('cleanup:merge_cleanup:mount-one:feature/one', {
+      ...operationFixture({ kind: 'remove', status: 'pending', result: null }),
+      id: 'operation-proposal',
+      requestId: 'cleanup:merge_cleanup:mount-one:feature/one',
+      input: {
+        worktreePath: '/repo/.goodboy/worktrees/mount-one',
+        repoRoot: '/repo',
+        branch: 'feature/one',
+      },
+    });
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.has('mount-one')).toBe(false);
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'succeeded',
+      mountId: null,
+    });
+    expect(h.operations.get('cleanup:merge_cleanup:mount-one:feature/one')).toMatchObject({
+      status: 'succeeded',
+      result: expect.objectContaining({ outcome: 'removed' }),
+    });
+  });
+
+  it('drops the row of a detach that meant to keep its registered directory', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row', keepDirectory: true }));
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(1);
+    expect(h.mounts.has('mount-one')).toBe(false);
+    expect(h.operations.get('request-remove')?.status).toBe('succeeded');
+  });
+
+  it('never removes a registered directory a detach was asked to delete', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'drop-row' }));
+
+    await recovery()({ sessionId: SESSION_ID });
+
+    expect(h.mounts.get('mount-one')).toMatchObject({ isAttached: true, revision: 0 });
+    expect(h.operations.get('request-remove')?.status).toBe('failed');
+  });
+
+  it('waits for an operation holding the repository lock and skips it once settled', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    const inFlight = operationFixture({ kind: 'unmount', status: 'running', result: null });
+    h.operations.set('request-unmount', inFlight);
+    h.inspection = { kind: 'missing', path: '/repo/.goodboy/worktrees/mount-one' };
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const holder = withRepositoryAndMountLock({
+      repoRoot: '/repo',
+      mountKey: `${SESSION_ID}:mount-one`,
+      run: async () => {
+        await held;
+        h.operations.set('request-unmount', { ...inFlight, status: 'succeeded' });
+      },
+    });
+
+    const recovering = recovery()({ sessionId: SESSION_ID });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(h.operations.get('request-unmount')?.status).toBe('running');
+    release();
+    await holder;
+    const settled = await recovering;
+
+    expect(settled).toBe(0);
+    expect(h.operations.get('request-unmount')?.status).toBe('succeeded');
+    expect(h.mounts.get('mount-one')?.diskState).not.toBe('removed');
+  });
+
+  it('keeps a removal uncertain while its repository cannot be read', async () => {
+    h.mounts.set('mount-one', mountFixture());
+    h.operations.set('request-remove', removalFixture({ finish: 'clear-path' }));
+    h.inspection = {
+      kind: 'repository-unavailable',
+      path: '/repo/.goodboy/worktrees/mount-one',
+    };
+
+    const settled = await recovery()({ sessionId: SESSION_ID });
+
+    expect(settled).toBe(0);
+    expect(h.operations.get('request-remove')).toMatchObject({
+      status: 'uncertain',
+      errorCode: 'repository-unavailable',
+    });
+    expect(h.mounts.get('mount-one')?.revision).toBe(0);
+  });
+
   it('marks a nonexistent seeded path unavailable before hydration or restoration projects it', async () => {
     const mount = mountFixture();
     h.mounts.set('mount-one', mount);
     h.inspection = { kind: 'missing', path: mount.worktreePath };
 
-    const available = await verifyAvailableWorktrees({
+    const { available, missing } = await verifyAvailableWorktrees({
       sessionId: SESSION_ID,
       candidates: [
         {
@@ -300,6 +457,7 @@ describe('interrupted mount recovery', () => {
     });
 
     expect(available).toEqual([]);
+    expect(missing).toEqual(['mount-one']);
     expect(h.mounts.get('mount-one')).toMatchObject({
       worktreePath: null,
       isAttached: false,

@@ -96,6 +96,7 @@ const renderRail = ({
 }: RenderParams = {}) =>
   render(
     <InboxRail
+      connected={['github', 'gitlab', 'slack', 'sentry']}
       records={records}
       allRecords={records}
       selectedProviders={selectedProviders}

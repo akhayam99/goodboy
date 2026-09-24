@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { BootPhase } from '../../../store/types';
-import { openUrl } from '../../../shared/lib/editor';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
-import { DogMascot } from '../../../shared/components/DogMascot';
+import { BootBrand } from './BootBrand';
+import { BootErrorRecovery } from './BootErrorRecovery';
 import { BootSlowNotice } from './BootSlowNotice';
 import { useElapsedSincePhase } from './useElapsedSincePhase';
 
-const GITHUB_NEW_ISSUE_URL =
-  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
 const BOOT_SLOW_AFTER_MS = 10_000;
 
 const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
@@ -23,12 +21,19 @@ const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
 
 type BootSplashProps = {
   phase: BootPhase;
+  failedPhase?: BootPhase | null;
   error: string | null;
   onRetry?: () => void;
   onFinished?: () => void;
 };
 
-export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProps) => {
+export const BootSplash = ({
+  phase,
+  failedPhase = null,
+  error,
+  onRetry,
+  onFinished,
+}: BootSplashProps) => {
   const hasError = error != null;
   const finishedRef = useRef(false);
   const elapsedMs = useElapsedSincePhase({ phase });
@@ -55,7 +60,7 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
         <BootBrand />
         <BootErrorRecovery
           error={error}
-          category={bootErrorCategory({ phase, isDatabaseFailure })}
+          category={bootErrorCategory({ phase: failedPhase ?? phase, isDatabaseFailure })}
           onRetry={isDatabaseFailure ? undefined : onRetry}
         />
       </div>
@@ -70,7 +75,7 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
     >
       <BootBrand />
       <div className="flex flex-col items-center gap-3">
-        <span className="text-2xs tracking-tight text-muted-foreground/50 motion-safe:animate-pulse">
+        <span className="text-xs text-muted-foreground motion-safe:animate-soft-pulse">
           {BOOT_PHASE_LABEL[phase]}
         </span>
         {isSlow ? <BootSlowNotice elapsedMs={elapsedMs} onRetry={onRetry} /> : null}
@@ -78,20 +83,6 @@ export const BootSplash = ({ phase, error, onRetry, onFinished }: BootSplashProp
     </div>
   );
 };
-
-function BootBrand() {
-  return (
-    <div className="flex flex-col items-center gap-5">
-      <DogMascot size={64} className="text-primary" />
-      <div className="flex flex-col items-center gap-0.5">
-        <span className="text-lg font-bold tracking-tight">Goodboy</span>
-        <span className="text-xs tracking-tight text-muted-foreground/60">
-          workspace orchestrator for coding agents
-        </span>
-      </div>
-    </div>
-  );
-}
 
 type BootErrorCategoryParams = {
   readonly phase: BootPhase;
@@ -111,57 +102,10 @@ export const bootErrorCategory = ({
     : phase === 'loading-settings'
       ? 'settings'
       : phase === 'detecting-cli'
-        ? 'cli detection'
+        ? 'CLI detection'
         : phase === 'loading-workspaces'
           ? 'workspace load'
           : phase === 'restoring-session'
             ? 'session restore'
             : 'init';
 };
-
-function BootErrorRecovery({
-  error,
-  category,
-  onRetry,
-}: {
-  error: string;
-  category: string;
-  onRetry?: () => void;
-}) {
-  const openIssue = useCallback(() => {
-    const url = `${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(`**category:** ${category}\n\n**error:**\n\`\`\`\n${error}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`)}`;
-    void openUrl(url);
-  }, [error, category]);
-
-  return (
-    <div
-      role="alert"
-      className="flex w-64 flex-col gap-3 rounded-r-md border-l-2 border-danger/40 p-4 font-mono text-2xs"
-    >
-      <div className="flex flex-col gap-1">
-        <span className="text-danger">✗ {category} failed</span>
-        <p className="leading-relaxed text-danger/70">{error}</p>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        {onRetry ? (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded border border-danger/30 bg-background px-3 py-1.5 text-danger motion-safe:transition-colors hover:bg-danger/10"
-          >
-            › retry
-          </button>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={openIssue}
-          className="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
-        >
-          report on github ↗
-        </button>
-      </div>
-    </div>
-  );
-}

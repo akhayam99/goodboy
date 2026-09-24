@@ -1,4 +1,4 @@
-import type { Agent, ModelEffort, ProviderId } from '@goodboy/types';
+import type { Agent, EffortLevel, ProviderId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 
 type Params = {
@@ -16,7 +16,7 @@ export const agentRoutingOverrides = ({
 }: Params): {
   readonly agentModel: string | null;
   readonly agentProvider: ProviderId | null;
-  readonly agentEffort: ModelEffort | null;
+  readonly agentEffort: EffortLevel | null;
 } => {
   const effort = effortOverride ?? agent?.effort ?? null;
   return {

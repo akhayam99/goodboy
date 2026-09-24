@@ -26,7 +26,7 @@ describe('TranscriptRowHeader', () => {
   });
 
   it('drops the chevron for non-collapsible rows', () => {
-    render(<TranscriptRowHeader tone="operations" eyebrow="skill" data-testid="skill-row" />);
+    render(<TranscriptRowHeader tone="neutral" eyebrow="skill" data-testid="skill-row" />);
     expect(screen.queryByTestId('transcript-chevron')).toBeNull();
     expect(screen.getByTestId('skill-row').tagName).toBe('DIV');
   });

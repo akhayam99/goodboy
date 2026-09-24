@@ -11,8 +11,8 @@ const FAQS: readonly FaqItem[] = [
     a: 'Goodboy is at its best on a code project, where you get a branch, a diff and a pull request out of every task. Point it at a plain folder and agents still work on it.',
   },
   {
-    q: 'Is it really free, and what is the catch?',
-    a: 'Free and open source, every feature included from the first launch. No account, no paid tier waiting for you further down.',
+    q: 'Is it really free?',
+    a: 'Yes. Free and source-available, with no account to create.',
   },
   {
     q: 'Will it cost me anything on top of what I already pay?',
@@ -28,17 +28,17 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'What if I do not like what the agents did?',
-    a: 'You read the diff before anything lands. Agents open the pull request, merging waits for you.',
+    a: 'Agents open pull requests as drafts, and you read the diff before you merge.',
   },
   {
     q: 'Which platforms does it run on?',
-    a: 'macOS and Linux today. One build for Mac, packages for Linux.',
+    a: 'macOS and Linux. Download the Mac app from this page, the Linux builds are on the release page.',
   },
 ];
 
 export const Faq = () => (
   <section className="block alt" id="faq" aria-labelledby="h2-faq">
-    <div className="wrap">
+    <div className="wrap split splitSticky">
       <div className="blockHead">
         <h2 className="rv" id="h2-faq">
           Questions people ask before they install
@@ -47,7 +47,7 @@ export const Faq = () => (
           The stuff that comes up first, answered straight.
         </p>
       </div>
-      <div className="faq">
+      <div className="faq splitBody">
         {FAQS.map((item, i) => (
           <details key={item.q} className="rv" style={delay(i * 40)} open={i === 0}>
             <summary>{item.q}</summary>

@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { Notification, NotificationAction } from '@goodboy/db';
-import { formatError } from '@goodboy/ui';
+import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 
@@ -42,7 +41,7 @@ export const notificationContext = (
   }
   const session = n.sessionId ? sessions.find((s) => s.id === n.sessionId) : undefined;
   if (session) {
-    parts.push(stripInlineMarkdown({ text: session.goal }).trim() || 'untitled session');
+    parts.push(inlineMarkdownText({ text: session.goal }).trim() || 'untitled session');
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };
@@ -83,7 +82,9 @@ export const mapNotificationAction = (
           store.setActiveLens(sessionId, 'agents');
           await store.selectAgent(sessionId, agentId);
           window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-        })().catch(() => undefined);
+        })().catch((error: unknown) => {
+          void store.reportError({ title: "Couldn't open this notification", error });
+        });
       },
     };
   }
@@ -114,13 +115,13 @@ export const mapNotificationAction = (
             publicationId: preview.publicationId,
           });
         })().catch((err: unknown) => {
-          void store.emitNotification(
-            'error',
-            'error',
-            'retry failed, conversations left open',
-            formatError(err),
-            { sessionId },
-          );
+          void store.emitNotification({
+            kind: 'error',
+            severity: 'error',
+            title: 'Retry failed, the conversations stay open',
+            body: formatError(err),
+            sessionId,
+          });
         });
       },
     };
@@ -140,6 +141,25 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'retry-update') {
+    return {
+      label: 'Retry',
+      onClick: () => {
+        void store.installUpdate();
+      },
+    };
+  }
+  if (action.kind === 'open-lens') {
+    const { sessionId, lens } = action;
+    return {
+      label: 'Show output',
+      onClick: () => {
+        void store.setCurrentSession(sessionId).then(() => {
+          store.setActiveLens(sessionId, lens);
+        });
+      },
+    };
+  }
   const _exhaustive: never = action;
   return undefined;
 };
@@ -148,7 +168,7 @@ export const NotificationToastBridge = () => {
   const notifications = useAppStore((s) => s.notifications);
   const sessions = useAppStore((s) => s.sessions);
   const workspaces = useAppStore((s) => s.workspaces);
-  const { showToast } = useToast();
+  const { previewNotification } = useToast();
 
   const seen = useRef<Set<string>>(new Set());
   const mountedAt = useRef<number>(Date.now());
@@ -157,14 +177,16 @@ export const NotificationToastBridge = () => {
     for (const n of pickFreshFailures(notifications, seen.current, mountedAt.current)) {
       const store = useAppStore.getState();
       const toastAction = n.action != null ? mapNotificationAction(n.action, store) : undefined;
-      showToast(n.severity === 'error' ? 'error' : 'warning', n.body ?? '', {
+      previewNotification({
+        severity: n.severity === 'error' ? 'error' : 'warning',
         title: n.title,
+        message: n.body ?? '',
         context: notificationContext(n, sessions, workspaces),
         persist: n.severity === 'error',
         action: toastAction,
       });
     }
-  }, [notifications, sessions, workspaces, showToast]);
+  }, [notifications, sessions, workspaces, previewNotification]);
 
   return null;
 };

@@ -187,8 +187,8 @@ export const ResolveItemView = ({
         onAction={onAction}
       />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="px-5 py-4" fadeFrom="background">
-        <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_19rem]">
-          <div className="flex min-w-0 max-w-[68ch] flex-col gap-5">
+        <div className="grid min-w-0 grid-cols-1 justify-start gap-6 xl:grid-cols-[minmax(0,68ch)_19rem]">
+          <div className="flex min-w-0 flex-col gap-5">
             <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
             {question != null && question !== '' && (
               <div className="flex min-w-0 flex-col gap-2">
@@ -274,7 +274,7 @@ export const ResolveItemView = ({
                       <button
                         type="button"
                         onClick={() => onSelectRelated(covered.thread.threadId)}
-                        className="block w-full truncate rounded text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                        className="block w-full truncate rounded-sm text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         {covered.reviewerNote?.body ?? RESOLVE_COMMENT_UNAVAILABLE}
                       </button>

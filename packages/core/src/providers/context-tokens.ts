@@ -7,8 +7,7 @@ type InputParams = {
   readonly cacheCreationInputTokens?: number;
 };
 
-type Params = InputParams & {
-  readonly outputTokens: number;
+type ContextParams = {
   readonly contextTokens?: number;
 };
 
@@ -25,18 +24,9 @@ export const inputTokensForUsage = ({
   return inputTokens + cachedInputTokens + cacheCreationInputTokens;
 };
 
-export const contextTokensForUsage = ({
-  provider,
-  inputTokens,
-  outputTokens,
-  contextTokens,
-}: Params): number | null => {
+export const contextTokensForUsage = ({ contextTokens }: ContextParams): number | null => {
   if (contextTokens != null && Number.isFinite(contextTokens)) {
     return contextTokens;
   }
-  if (provider === 'codex' || provider === 'gemini') {
-    return inputTokens + outputTokens;
-  }
-
   return null;
 };

@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import { ArrowDown, Plus } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -24,21 +24,25 @@ export const StepFlowConnector = ({ index, interior, dragging, active }: Props) 
         active ? (
           <div className="flex items-center gap-2">
             <span className="h-1 w-12 rounded-full bg-primary" aria-hidden />
-            <span className="rounded-full bg-primary px-2 py-0.5 text-2xs font-medium leading-none text-primary-foreground shadow-sm">
+            <span className="rounded-full bg-primary px-2 py-0.5 text-2xs font-medium leading-none text-on-tone shadow-sm">
               drop here
             </span>
             <span className="h-1 w-12 rounded-full bg-primary" aria-hidden />
           </div>
         ) : (
           <span
-            className="flex size-5 items-center justify-center rounded-full border border-dashed border-primary/40 text-primary/50"
+            className={cn(
+              'flex size-5 items-center justify-center rounded-full border border-dashed',
+              tintClasses('primary').border,
+              tintClasses('primary').text,
+            )}
             aria-hidden
           >
             <Plus size={11} />
           </span>
         )
       ) : interior ? (
-        <ArrowDown size={ICON_SIZE.control} className="text-muted-foreground/40" aria-hidden />
+        <ArrowDown size={ICON_SIZE.control} className="text-faint-foreground" aria-hidden />
       ) : null}
     </div>
   );

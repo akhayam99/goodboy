@@ -61,6 +61,7 @@ const h = vi.hoisted(() => {
     loadReviewDrafts: vi.fn(async () => undefined),
     openDiffLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   };
   const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -77,7 +78,7 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({
   selectActiveProjectPrs: () => h.state.branchPrs,
 }));
-vi.mock('../../../github/components/GitHubStudio/CreatePrPanel', () => ({
+vi.mock('../../../github/components/PullRequest/CreatePrPanel', () => ({
   CreatePrPanel: ({ onCancel }: { readonly onCancel?: () => void }) => (
     <div data-testid="create-pr">
       <button type="button" onClick={onCancel}>
@@ -276,7 +277,7 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
     expect(screen.queryByTestId('resolve-queue')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Resolve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 
@@ -365,8 +366,11 @@ describe('ReviewPane', () => {
     );
 
     await waitFor(() =>
-      expect(h.showToast).toHaveBeenCalledWith('error', 'Mark ready failed: branch is protected'),
+      expect(h.state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't mark #248 ready", sessionId: SESSION.id }),
+      ),
     );
+    expect(h.showToast).not.toHaveBeenCalled();
   });
 
   it('says what marking a draft ready sends before it sends it', () => {
@@ -576,7 +580,7 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit review (1)' }));
     await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Resolve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 

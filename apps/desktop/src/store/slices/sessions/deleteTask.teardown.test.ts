@@ -81,7 +81,7 @@ const SESSION_ID = 'sess-1' as never;
 const makeStore = (state: { kind: string; runId?: string } = { kind: 'idle' }) => ({
   sessions: [{ id: 'sess-1', workspaceId: 'ws-1', goal: 'ship it', state }],
   archivedSessions: {},
-  workspaces: [{ id: 'ws-1', sessionsRoot: '/repo' }],
+  workspaces: [{ id: 'ws-1' }],
   projects: [
     { id: 'project-1', workspaceId: 'ws-1', rootPath: '/repo', kind: 'repo', name: 'repo' },
   ],
@@ -143,11 +143,12 @@ describe('deleting a session', () => {
       }),
     ]);
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'failed to remove 1 session paths',
-      expect.stringContaining('untracked-files'),
-      expect.anything(),
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: "Couldn't remove 1 session paths",
+        body: expect.stringContaining('untracked-files'),
+      }),
     );
   });
 

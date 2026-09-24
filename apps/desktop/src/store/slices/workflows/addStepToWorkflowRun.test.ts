@@ -130,7 +130,6 @@ type SessionParams = {
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
   readonly dynamicOutcome?: WorkflowOrchestrationOutcome;
-  readonly roleModelOverrides?: RoleModelPreferences;
 };
 
 const makeSession = ({
@@ -138,7 +137,6 @@ const makeSession = ({
   discardedAt,
   siblingRuns = [],
   dynamicOutcome,
-  roleModelOverrides,
 }: SessionParams = {}): Session => ({
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
@@ -161,7 +159,6 @@ const makeSession = ({
         orchestrationReason: 'the orchestrator said so',
       }),
       ...(discardedAt != null && { discardedAt }),
-      ...(roleModelOverrides != null && { roleModelOverrides }),
     },
     ...siblingRuns,
   ],
@@ -180,7 +177,6 @@ type StateParams = {
   readonly discardedAt?: IsoDateTime;
   readonly siblingRuns?: ReadonlyArray<Session['workflowRuns'][number]>;
   readonly dynamicOutcome?: WorkflowOrchestrationOutcome;
-  readonly roleModelOverrides?: RoleModelPreferences;
   readonly workspaceRoleModels?: RoleModelPreferences;
 };
 
@@ -191,7 +187,6 @@ const baseState = ({
   discardedAt,
   siblingRuns,
   dynamicOutcome,
-  roleModelOverrides,
   workspaceRoleModels,
 }: StateParams = {}): State => {
   const workflow = makeWorkflow({ isPreset });
@@ -202,7 +197,6 @@ const baseState = ({
         ...(discardedAt != null && { discardedAt }),
         ...(siblingRuns != null && { siblingRuns }),
         ...(dynamicOutcome != null && { dynamicOutcome }),
-        ...(roleModelOverrides != null && { roleModelOverrides }),
       }),
     ],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
@@ -671,12 +665,9 @@ describe('addStepToWorkflowRun', () => {
     expect(sessions[0]!.workflowRuns[0]!.orchestrationOutcome).toBeUndefined();
   });
 
-  it('routes the new agent through the run role override, not the workspace one', async () => {
+  it('routes the new agent through the workspace role model', async () => {
     const state = baseState({
       workspaceRoleModels: {
-        reviewer: { providerId: 'anthropic', model: 'claude-sonnet-4-5', effort: 'medium' },
-      },
-      roleModelOverrides: {
         reviewer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
       },
     });

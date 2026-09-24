@@ -3,12 +3,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 
-const { emitNotification } = vi.hoisted(() => ({
-  emitNotification: vi.fn(async () => undefined),
+const { reportError } = vi.hoisted(() => ({
+  reportError: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../store', () => ({
-  useAppStore: { getState: () => ({ emitNotification }) },
+  useAppStore: { getState: () => ({ reportError }) },
 }));
 
 import { useUnhandledRejectionNotice } from './index';
@@ -18,8 +18,8 @@ const rejectionEvent = (reason: unknown): Event =>
 
 afterEach(() => {
   cleanup();
-  emitNotification.mockClear();
-  emitNotification.mockImplementation(async () => undefined);
+  reportError.mockClear();
+  reportError.mockImplementation(async () => undefined);
 });
 
 describe('useUnhandledRejectionNotice', () => {
@@ -28,26 +28,27 @@ describe('useUnhandledRejectionNotice', () => {
 
     window.dispatchEvent(rejectionEvent(new Error('agent list refused')));
 
-    await waitFor(() => expect(emitNotification).toHaveBeenCalledTimes(1));
-    expect(emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'an action failed in the background',
-      'agent list refused',
+    await waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warning',
+        title: 'An action failed in the background',
+        error: expect.objectContaining({ message: 'agent list refused' }),
+      }),
     );
   });
 
   it('does not notify again when the notification itself fails', async () => {
-    emitNotification.mockImplementation(async () => {
+    reportError.mockImplementation(async () => {
       throw new Error('database is gone');
     });
     renderHook(() => useUnhandledRejectionNotice());
 
     window.dispatchEvent(rejectionEvent(new Error('agent list refused')));
 
-    await waitFor(() => expect(emitNotification).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(reportError).toHaveBeenCalledTimes(1));
     await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledTimes(1);
   });
 
   it('stops listening once the app unmounts', () => {
@@ -56,6 +57,6 @@ describe('useUnhandledRejectionNotice', () => {
 
     window.dispatchEvent(rejectionEvent(new Error('agent list refused')));
 
-    expect(emitNotification).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,7 @@ import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristi
 import { parseGeneratedTitle } from './parseGeneratedTitle';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
+import { selectResolvedSettings } from '../../overrides/selectResolvedSettings';
 
 const TITLE_TIMEOUT_MS = 15_000;
 
@@ -149,9 +150,9 @@ export const applyHeuristicTitle = async ({
 
     const taskModel = resolveTaskModel({
       task: 'agent_naming',
-      preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-      workspaceDefaultProviderId:
-        get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+      preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+      workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+        ?.defaultProviderOverride,
       sessionDefaultProviderId: session.providerPreference.defaultProvider,
     });
 

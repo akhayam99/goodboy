@@ -57,14 +57,20 @@ jobs:
       - name: tauri commands
         run: pnpm run check:tauri-commands
 
+      - name: doc refs
+        run: pnpm run check:doc-refs
+
       - name: knip
-        run: pnpm knip --include files,duplicates,unlisted
+        run: pnpm knip --include files,duplicates,unlisted,dependencies,devDependencies
 
       - name: knip production
         run: pnpm run knip:production
 
       - name: test
         run: pnpm turbo run test --affected --continue
+
+      - name: a11y
+        run: pnpm --filter @goodboy/desktop test:a11y
 
       - name: build
         run: pnpm turbo run build --affected

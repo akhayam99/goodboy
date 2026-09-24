@@ -48,61 +48,62 @@ const { state, workspace } = vi.hoisted(() => {
 type ShellProps = {
   readonly topBar?: ReactNode;
   readonly footer?: ReactNode;
+  readonly studio?: ReactNode;
 };
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
   return {
     ...actual,
-    AppShell: ({ topBar, footer }: ShellProps) => (
+    AppShell: ({ topBar, footer, studio }: ShellProps) => (
       <div>
         {topBar}
+        {studio}
         {footer}
       </div>
     ),
   };
 });
 
+type FooterProvider = 'linear' | 'slack' | 'bitbucket' | 'github';
+
 type FooterProps = {
-  readonly onOpenLinear: () => void;
-  readonly linearEnabled: boolean;
-  readonly onOpenSlack: () => void;
-  readonly slackEnabled: boolean;
-  readonly onOpenBitbucket: () => void;
-  readonly bitbucketEnabled: boolean;
-  readonly onOpenGithub: () => void;
-  readonly githubEnabled: boolean;
+  readonly scope: 'workspace' | 'app';
+  readonly target: string | null;
+  readonly connected: Readonly<Record<FooterProvider, boolean>>;
+  readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
+  readonly onOpenProviders: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenImpact: () => void;
   readonly onOpenChangelog: () => void;
 };
 
+const FOOTER_LABELS: ReadonlyArray<readonly [FooterProvider, string, string]> = [
+  ['linear', 'Open Linear', 'Connect Linear'],
+  ['slack', 'Launch a session from a Slack thread', 'Connect Slack'],
+  ['bitbucket', 'Review pull requests across this workspace', 'Connect Bitbucket'],
+  ['github', 'Review pull requests and issues', 'Connect GitHub'],
+];
+
 vi.mock('../app/components/AppFooter', () => ({
   AppFooter: ({
-    onOpenLinear,
-    linearEnabled,
-    onOpenSlack,
-    slackEnabled,
-    onOpenBitbucket,
-    bitbucketEnabled,
-    onOpenGithub,
-    githubEnabled,
+    scope,
+    target,
+    connected,
+    onOpenIntegration,
+    onOpenProviders,
     onOpenSettings,
     onOpenImpact,
     onOpenChangelog,
   }: FooterProps) => (
-    <>
-      <button type="button" onClick={onOpenLinear}>
-        {linearEnabled ? 'Open Linear' : 'Connect Linear'}
-      </button>
-      <button type="button" onClick={onOpenSlack}>
-        {slackEnabled ? 'Launch a session from a Slack thread' : 'Connect Slack'}
-      </button>
-      <button type="button" onClick={onOpenBitbucket}>
-        {bitbucketEnabled ? 'Review pull requests across this workspace' : 'Connect Bitbucket'}
-      </button>
-      <button type="button" onClick={onOpenGithub}>
-        {githubEnabled ? 'Review pull requests and issues' : 'Connect GitHub'}
+    <div data-testid="footer" data-scope={scope} data-target={target ?? ''}>
+      {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
+        <button key={provider} type="button" onClick={() => onOpenIntegration({ provider })}>
+          {connected[provider] ? openLabel : connectLabel}
+        </button>
+      ))}
+      <button type="button" onClick={onOpenProviders}>
+        Open providers
       </button>
       <button type="button" onClick={onOpenSettings}>
         Open settings
@@ -113,7 +114,7 @@ vi.mock('../app/components/AppFooter', () => ({
       <button type="button" onClick={onOpenChangelog}>
         Open changelog
       </button>
-    </>
+    </div>
   ),
 }));
 
@@ -126,26 +127,13 @@ vi.mock('../features/integrations/github/useGithubConnection', () => ({
 }));
 
 vi.mock('../features/inbox/components/InboxStudio', () => ({
-  InboxStudio: ({
-    workspaceName,
-    initialProvider,
-  }: {
-    workspaceName: string;
-    initialProvider: string | null;
-  }) => <div data-testid="inbox-studio">{`${workspaceName}:${initialProvider ?? 'all'}`}</div>,
+  InboxStudio: ({ initialProvider }: { initialProvider: string | null }) => (
+    <div data-testid="inbox-studio">{initialProvider ?? 'all'}</div>
+  ),
 }));
 
-type PaletteProps = {
-  readonly onOpenProviders?: () => void;
-};
-
 vi.mock('../features/session/components/CommandPalette', () => ({
-  CommandPalette: ({ onOpenProviders }: PaletteProps) =>
-    onOpenProviders ? (
-      <button type="button" onClick={onOpenProviders}>
-        Connect a provider
-      </button>
-    ) : null,
+  CommandPalette: () => null,
 }));
 vi.mock('../app/components/BootSplash', () => ({
   BootSplash: ({ onFinished }: { onFinished: () => void }) => {
@@ -169,12 +157,8 @@ vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({
-  SettingsStudio: ({ initialFocus }: { initialFocus: { scope: string; tool?: string } }) => (
-    <div
-      data-testid="settings-studio"
-      data-scope={initialFocus.scope}
-      data-tool={initialFocus.tool}
-    />
+  SettingsStudio: ({ focus }: { focus: { scope: string; tool?: string } }) => (
+    <div data-testid="settings-studio" data-scope={focus.scope} data-tool={focus.tool} />
   ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
@@ -210,26 +194,18 @@ vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
 vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/impact/components/ImpactStudio', () => ({
-  ImpactStudio: ({
-    workspaceName,
-    initialScope,
-  }: {
-    workspaceName: string;
-    initialScope?: { kind: string; sessionId?: string };
-  }) => (
+  ImpactStudio: ({ initialScope }: { initialScope?: { kind: string; sessionId?: string } }) => (
     <div
       data-testid="impact-studio"
       data-scope={initialScope?.kind ?? 'none'}
       data-session={initialScope?.sessionId ?? ''}
     >
-      {workspaceName}
+      Impact
     </div>
   ),
 }));
 vi.mock('../features/changelog/components/ChangelogStudio', () => ({
-  ChangelogStudio: ({ workspaceName }: { workspaceName: string }) => (
-    <div data-testid="changelog-studio">{workspaceName}</div>
-  ),
+  ChangelogStudio: () => <div data-testid="changelog-studio">Changelog</div>,
 }));
 vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
   DiffViewerDialog: () => null,
@@ -238,7 +214,9 @@ vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../features/companion/CompanionStudio', () => ({ CompanionStudio: () => null }));
+vi.mock('../features/companion/components/CompanionStudio', () => ({
+  CompanionStudio: () => null,
+}));
 vi.mock('../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
@@ -258,12 +236,12 @@ vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
 vi.mock('../store', () => {
   const useAppStore = Object.assign(
     vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
-    { getState: () => state },
+    { getState: () => state, subscribe: () => () => undefined },
   );
   return {
     useAppStore,
     useCurrentSession: () => null,
-    useCurrentWorkspace: () => workspace,
+    useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
     useWorkspaces: () => state.workspaces,
@@ -277,6 +255,8 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudi
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
+  state.workspaces = [workspace];
+  state.currentWorkspaceId = 'workspace-1';
   githubAuth.isAuthenticated = false;
 });
 
@@ -292,7 +272,7 @@ describe('Slack studio reachability', () => {
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Launch a session from a Slack thread' }));
 
-    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('Workspace:slack');
+    expect((await screen.findByTestId('inbox-studio')).textContent).toBe('slack');
   });
 
   it('opens Tools settings when slack is not connected', async () => {
@@ -334,32 +314,6 @@ describe('GitHub footer state', () => {
   });
 });
 
-describe('Provider studio reachability from the command palette', () => {
-  const openPalette = (): void => {
-    fireEvent.keyDown(window, { key: 'k', code: 'KeyK', metaKey: true });
-  };
-
-  it('hands the palette a way to open the provider studio', () => {
-    render(<App />);
-
-    openPalette();
-
-    expect(screen.getByRole('button', { name: 'Connect a provider' })).toBeDefined();
-  });
-
-  it('opens the provider studio when the palette entry is chosen', async () => {
-    render(<App />);
-    openPalette();
-
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a provider' }));
-
-    expect((await screen.findByTestId('settings-studio')).getAttribute('data-scope')).toBe(
-      'providers',
-    );
-  });
-});
-
 describe('Report issue studio reachability', () => {
   it('mounts the studio when the shared open event fires', async () => {
     render(<App />);
@@ -396,7 +350,7 @@ describe('Bitbucket studio reachability', () => {
       screen.getByRole('button', { name: 'Review pull requests across this workspace' }),
     );
 
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:bitbucket');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('bitbucket');
   });
 
   it('still opens the studio when bitbucket is not connected, so the connect form is reachable', () => {
@@ -407,6 +361,27 @@ describe('Bitbucket studio reachability', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
     expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('bitbucket');
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
+  });
+});
+
+describe('No workspace yet', () => {
+  it('keeps the app footer, so settings and providers stay one click away', () => {
+    state.workspaces = [];
+    state.currentWorkspaceId = null;
+    render(<App />);
+
+    expect(screen.getByTestId('footer').getAttribute('data-scope')).toBe('app');
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
+  });
+
+  it('opens providers from the app footer', () => {
+    state.workspaces = [];
+    state.currentWorkspaceId = null;
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
   });
 });
 
@@ -427,7 +402,7 @@ describe('Footer to settings and more-popover reachability', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
 
     const studio = await screen.findByTestId('impact-studio');
-    expect(studio.textContent).toBe('Workspace');
+    expect(studio.textContent).toBe('Impact');
     expect(studio.getAttribute('data-scope')).toBe('none');
   });
 
@@ -448,20 +423,7 @@ describe('Footer to settings and more-popover reachability', () => {
     expect(screen.queryByTestId('changelog-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open changelog' }));
 
-    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Workspace');
-  });
-});
-
-describe('Legacy settings event forwarding', () => {
-  it.each([
-    ['goodboy:open-workspace-settings', 'workspace'],
-    ['goodboy:open-provider-studio', 'providers'],
-  ])('forwards %s to the %s settings scope', (eventName, scope) => {
-    render(<App />);
-
-    act(() => window.dispatchEvent(new CustomEvent(eventName)));
-
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe(scope);
+    expect((await screen.findByTestId('changelog-studio')).textContent).toBe('Changelog');
   });
 });
 
@@ -498,6 +460,36 @@ describe('Spend reachability through the impact studio', () => {
   });
 });
 
+describe('Footer highlight follows the open studio', () => {
+  const litTarget = (): string | null => screen.getByTestId('footer').getAttribute('data-target');
+
+  it('lights the github glyph while its inbox is open', () => {
+    githubAuth.isAuthenticated = true;
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review pull requests and issues' }));
+
+    expect(litTarget()).toBe('github');
+  });
+
+  it('lights providers while the providers scope is open', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
+    expect(litTarget()).toBe('providers');
+  });
+
+  it('lights the link action while a disconnected glyph opens its tools form', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect Linear' }));
+
+    expect(litTarget()).toBe('link');
+  });
+});
+
 describe('Linear connection routing', () => {
   it('opens Tools settings focused on an unconnected Linear', () => {
     render(<App />);
@@ -511,7 +503,7 @@ describe('Linear connection routing', () => {
     state.workspaceIntegrations = { 'workspace-1': [{ provider: 'linear' }] };
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Open Linear' }));
-    expect(screen.getByTestId('inbox-studio').textContent).toBe('Workspace:linear');
+    expect(screen.getByTestId('inbox-studio').textContent).toBe('linear');
     expect(screen.queryByTestId('settings-studio')).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase, makeTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -12,8 +12,7 @@ const EVIDENCE = JSON.stringify([
 const OMISSIONS = JSON.stringify(['agent agent: final message truncated']);
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Northwind', 'northwind', 1, 1)",
   );

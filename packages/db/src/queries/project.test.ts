@@ -6,18 +6,14 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
-  deleteProject,
   disconnectProject,
   findProjectByRootPath,
   getProjectById,
   insertProject,
-  listDisconnectedProjects,
   listProjectsForWorkspace,
   reconnectProject,
-  renameProject,
   updateProjectKind,
   updateProjectBaseBranch,
 } from './project';
@@ -62,8 +58,7 @@ const makeProject = ({ id = 'project-1', overrides = {} }: MakeProjectParams): P
 });
 
 const makeDb = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
@@ -104,7 +99,7 @@ describe('project queries', () => {
     expect(await findProjectByRootPath({ db, rootPath: '/tmp/ghost/' })).toBeNull();
   });
 
-  it('lists active and disconnected projects for one container', async () => {
+  it('lists only the active projects of a container', async () => {
     const db = await makeDb();
     const active = makeProject({ id: 'active' });
     const disconnected = makeProject({
@@ -116,9 +111,6 @@ describe('project queries', () => {
     expect(
       (await listProjectsForWorkspace({ db, workspaceId })).map((project) => project.id),
     ).toEqual([active.id]);
-    expect(
-      (await listDisconnectedProjects({ db, workspaceId })).map((project) => project.id),
-    ).toEqual([disconnected.id]);
   });
 
   it('converts a folder project and updates its canonical path', async () => {
@@ -126,11 +118,9 @@ describe('project queries', () => {
     const project = makeProject({ overrides: { kind: 'folder' } });
     await insertProject({ db, project });
     await updateProjectKind({ db, id: project.id, kind: 'repo', rootPath: '/tmp/repository' });
-    await renameProject({ db, id: project.id, name: 'Repository' });
     const stored = await getProjectById({ db, id: project.id });
     expect(stored?.kind).toBe('repo');
     expect(stored?.rootPath).toBe('/tmp/repository');
-    expect(stored?.name).toBe('Repository');
   });
 
   it('updates and clears the project base branch', async () => {
@@ -143,7 +133,7 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
   });
 
-  it('disconnects, reconnects, and deletes a project', async () => {
+  it('disconnects and reconnects a project', async () => {
     const db = await makeDb();
     const project = makeProject({});
     await insertProject({ db, project });
@@ -151,7 +141,5 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.disconnectedAt).toBeDefined();
     await reconnectProject({ db, id: project.id, at: at({ value: '2026-08-22T12:00:00Z' }) });
     expect((await getProjectById({ db, id: project.id }))?.disconnectedAt).toBeUndefined();
-    await deleteProject({ db, id: project.id });
-    expect(await getProjectById({ db, id: project.id })).toBeNull();
   });
 });

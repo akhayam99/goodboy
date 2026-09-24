@@ -95,7 +95,9 @@ vi.mock('../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
 vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../../features/companion/CompanionStudio', () => ({ CompanionStudio: () => null }));
+vi.mock('../../features/companion/components/CompanionStudio', () => ({
+  CompanionStudio: () => null,
+}));
 vi.mock('../../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
@@ -115,9 +117,10 @@ vi.mock('../../shared/hooks/useCommitLinkInterceptor', () => ({
 vi.mock('../../store', () => {
   const useAppStore = Object.assign(
     vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
-    { getState: () => state },
+    { getState: () => state, subscribe: () => () => undefined },
   );
   return {
+    EMPTY_ARRAY: [],
     useAppStore,
     useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
     useCurrentWorkspace: () => null,
@@ -144,8 +147,10 @@ type KeyInit = {
 };
 
 const press = (init: KeyInit): void => {
+  const event = new KeyboardEvent('keydown', { bubbles: true, ...init });
+  Object.defineProperty(event, 'getModifierState', { value: () => false });
   act(() => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+    window.dispatchEvent(event);
   });
 };
 

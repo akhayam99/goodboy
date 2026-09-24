@@ -1,20 +1,20 @@
-import { listMountPullRequestLinks, upsertMountPullRequestLink } from '@goodboy/db';
-import { formatError } from '@goodboy/ui';
-import type { IsoDateTime, MountId, MountPullRequestLink, SessionId } from '@goodboy/types';
+import { listMountPullRequestLinks } from '@goodboy/db';
+import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import {
   gitlabMrForBranch,
   type GitlabMergeRequest,
 } from '../../../features/integrations/gitlab/client';
 import { tauriDatabase } from '../../../shared/lib/db';
+import type { MountGitlabMrState } from '../../types';
+import type { MountFetch } from '../project-mounts/mountRequests';
 import {
-  mountRevision,
-  observeMountRequestTransition,
-  requestIdentityEquals,
-  type MountFetch,
-} from '../project-mounts/mountRequests';
+  mergeLinkedRequests,
+  refreshMountRequest,
+  syncRequestLinks,
+} from '../project-mounts/refreshMountRequest';
 import { applyMountGitlabMr } from './mountGitlabMr';
 import { gitlabRequestIdentity, mergeRequestFromLink, toMountMrLink } from './mrLink';
-import { resolveMrContext } from './resolveMrContext';
+import { resolveMrContext, type MrContext } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
 
 export type RefreshMrOptions = {
@@ -31,25 +31,6 @@ type Params = {
   readonly opts?: RefreshMrOptions;
 };
 
-type MergeParams = {
-  readonly fetched: GitlabMergeRequest | null;
-  readonly links: ReadonlyArray<MountPullRequestLink>;
-};
-
-const mergeRequests = ({ fetched, links }: MergeParams): ReadonlyArray<GitlabMergeRequest> => {
-  const merged: Array<GitlabMergeRequest> = fetched === null ? [] : [fetched];
-  for (const link of links) {
-    const mr = mergeRequestFromLink({ link });
-    if (mr === null) {
-      continue;
-    }
-    if (!merged.some((candidate) => candidate.webUrl === mr.webUrl)) {
-      merged.push(mr);
-    }
-  }
-  return merged;
-};
-
 export const refreshMountMr = async ({
   set,
   get,
@@ -59,28 +40,23 @@ export const refreshMountMr = async ({
 }: Params): Promise<void> => {
   const mount = target.mount;
   const mountId = mount.id;
-  const revision = mount.revision;
-  const existing = get().mountGitlabMr?.[mountId];
-  if (opts?.force !== true && existing?.loading === true) {
-    return;
-  }
-  const context = await resolveMrContext({ get, sessionId, target });
-  if (context === null) {
-    return;
-  }
-  const isCurrent = (): boolean => mountRevision({ state: get(), sessionId, mountId }) === revision;
-  if (!isCurrent()) {
-    return;
-  }
-  set((state) =>
-    applyMountGitlabMr({
-      state,
-      sessionId,
-      mountId,
-      gitlab: {
+  await refreshMountRequest<MountGitlabMrState, MrContext>({
+    set,
+    get,
+    sessionId,
+    mount,
+    opts,
+    adapter: {
+      read: (state) => state.mountGitlabMr?.[mountId],
+      apply: ({ state, entry }) => applyMountGitlabMr({ state, sessionId, mountId, gitlab: entry }),
+      resolveContext: async ({ isCurrent }) => {
+        const context = await resolveMrContext({ get, sessionId, target });
+        return context === null || !isCurrent() ? null : context;
+      },
+      pendingEntry: ({ existing, context }) => ({
         mountId,
         projectId: mount.projectId,
-        revision,
+        revision: mount.revision,
         host: existing?.host ?? context.host,
         projectPath: context.projectPath,
         branch: mount.branch,
@@ -90,98 +66,67 @@ export const refreshMountMr = async ({
         fetchedAt: existing?.fetchedAt ?? null,
         loading: true,
         error: null,
+      }),
+      load: async ({ context }) => {
+        const storedLinks = await listMountPullRequestLinks({
+          db: tauriDatabase,
+          sessionId,
+          mountId,
+        });
+        const mr = await gitlabMrForBranch(
+          context.workspaceId,
+          context.host,
+          context.projectPath,
+          mount.branch,
+        );
+        const observedAt = new Date().toISOString() as IsoDateTime;
+        const links = await syncRequestLinks<GitlabMergeRequest>({
+          get,
+          sessionId,
+          projectId: mount.projectId,
+          storedLinks,
+          items: mr === null ? [] : [mr],
+          identity: ({ item }) =>
+            gitlabRequestIdentity({
+              host: context.host,
+              projectPath: context.projectPath,
+              mr: item,
+            }),
+          toLink: ({ item, previous }) =>
+            toMountMrLink({
+              mountId,
+              host: context.host,
+              projectPath: context.projectPath,
+              mr: item,
+              existing: previous,
+              observedAt,
+            }),
+          describe: ({ item }) => ({ title: item.title, url: item.webUrl }),
+        });
+        return {
+          kind: 'settle',
+          next: (current) =>
+            current === undefined
+              ? null
+              : {
+                  ...current,
+                  host: context.host,
+                  projectPath: context.projectPath,
+                  mrs: mergeLinkedRequests({
+                    fetched: mr === null ? [] : [mr],
+                    links,
+                    fromLink: mergeRequestFromLink,
+                    key: ({ item }) => item.webUrl,
+                  }),
+                  links,
+                  mr,
+                  fetchedAt: observedAt,
+                  loading: false,
+                  error: null,
+                },
+        };
       },
-    }),
-  );
-  try {
-    const storedLinks = await listMountPullRequestLinks({ db: tauriDatabase, sessionId, mountId });
-    const mr = await gitlabMrForBranch(
-      context.workspaceId,
-      context.host,
-      context.projectPath,
-      mount.branch,
-    );
-    const observedAt = new Date().toISOString() as IsoDateTime;
-    const nextLinks = [...storedLinks];
-    if (mr !== null) {
-      const identity = gitlabRequestIdentity({
-        host: context.host,
-        projectPath: context.projectPath,
-        mr,
-      });
-      const previous =
-        storedLinks.find((link) => requestIdentityEquals({ identity, candidate: link })) ?? null;
-      const link = toMountMrLink({
-        mountId,
-        host: context.host,
-        projectPath: context.projectPath,
-        mr,
-        existing: previous,
-        observedAt,
-      });
-      await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
-      const index = nextLinks.findIndex((candidate) =>
-        requestIdentityEquals({ identity: link, candidate }),
-      );
-      if (index >= 0) {
-        nextLinks.splice(index, 1, link);
-      } else {
-        nextLinks.push(link);
-      }
-      await observeMountRequestTransition({
-        get,
-        sessionId,
-        projectId: mount.projectId,
-        previous,
-        next: link,
-        title: mr.title,
-        url: mr.webUrl,
-      });
-    }
-    if (!isCurrent()) {
-      return;
-    }
-    set((state) => {
-      const current = state.mountGitlabMr?.[mountId];
-      if (current === undefined) {
-        return state;
-      }
-      return applyMountGitlabMr({
-        state,
-        sessionId,
-        mountId,
-        gitlab: {
-          ...current,
-          host: context.host,
-          projectPath: context.projectPath,
-          mrs: mergeRequests({ fetched: mr, links: nextLinks }),
-          links: nextLinks,
-          mr,
-          fetchedAt: observedAt,
-          loading: false,
-          error: null,
-        },
-      });
-    });
-  } catch (error) {
-    if (!isCurrent()) {
-      return;
-    }
-    set((state) => {
-      const current = state.mountGitlabMr?.[mountId];
-      if (current === undefined) {
-        return state;
-      }
-      return applyMountGitlabMr({
-        state,
-        sessionId,
-        mountId,
-        gitlab: {
-          ...current,
-          loading: false,
-          error: opts?.silent === true ? null : formatError(error),
-        },
-      });
-    });
-  }
+      failedEntry: ({ current, error }) => ({ ...current, loading: false, error }),
+    },
+  });
 };

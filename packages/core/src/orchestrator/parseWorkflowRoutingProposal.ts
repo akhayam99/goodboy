@@ -1,5 +1,5 @@
 import type {
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   WorkflowRoutingProposal,
   WorkflowTaskDifficulty,
@@ -45,7 +45,7 @@ export const MODEL_EFFORTS = [
   'high',
   'xhigh',
   'max',
-] satisfies ReadonlyArray<ModelEffort>;
+] satisfies ReadonlyArray<EffortLevel>;
 
 const TASK_TYPES = [
   'exploration',

@@ -21,7 +21,7 @@ export const BootSlowNotice = ({ elapsedMs, onRetry }: Props) => {
         <button
           type="button"
           onClick={requestRestart}
-          className="rounded border border-border-soft bg-background px-3 py-1.5 text-foreground motion-safe:transition-colors hover:bg-subtle"
+          className="rounded-sm border border-border-soft bg-background px-3 py-1.5 text-foreground motion-safe:transition-colors hover:bg-subtle"
         >
           restart
         </button>

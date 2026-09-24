@@ -92,6 +92,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       capabilityObligations: {},
       selectedAgentId: {},
       agentRunHistory: {},
+      runRouting: {},
       agentTurnState: {},
       sessionBudgets: {},
       summarizerStatus: {},
@@ -163,7 +164,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         capabilityObligations[entry.sessionId] = entry.obligations;
       }
       for (const s of sessions) {
-        const rows = await verifyAvailableWorktrees({
+        const { available: rows } = await verifyAvailableWorktrees({
           sessionId: s.id,
           candidates: worktreesBySession.get(s.id) ?? [],
           projects,

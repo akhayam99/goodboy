@@ -10,7 +10,7 @@ import type {
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
-import { PROVIDER_LABEL } from '../../utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';

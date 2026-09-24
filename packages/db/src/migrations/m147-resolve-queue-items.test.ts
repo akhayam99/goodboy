@@ -1,15 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from './index';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 
 describe('m147 resolve queue items', () => {
   it('backfills one live item for each nonclosed thread', async () => {
-    const db = makeTestDatabase();
-    await migrate(
-      db,
-      migrations.filter((migration) => migration.version < 147),
-    );
+    const db = await makeMigratedTestDatabase({ throughVersion: 146 });
     await db.execute(
       "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
     );

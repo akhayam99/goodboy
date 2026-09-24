@@ -1,6 +1,6 @@
 import type { ProviderConnectPhase, ProviderConnectStep } from '../../../../store/slices/providers';
 
-export type ProviderConnectChrome = 'studio' | 'modal' | 'inline';
+export type ProviderConnectChrome = 'studio' | 'inline';
 
 type ConnectPrimary = 'connect' | 'cancel' | 'retry' | 'done';
 

@@ -134,11 +134,14 @@ describe('blocking question dismissal', () => {
     await dismiss(sessionId, blocking);
 
     expect(store.getState().emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'This question cannot be discarded',
-      BLOCKING_DISMISSAL_REFUSAL,
-      { sessionId, coalesceKey: `blocking-question:${blocking.id}` },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'This question cannot be discarded',
+        body: BLOCKING_DISMISSAL_REFUSAL,
+        sessionId,
+        coalesceKey: `blocking-question:${blocking.id}`,
+      }),
     );
   });
 

@@ -272,11 +272,13 @@ describe('WorkflowAdvance', () => {
 
     await waitFor(() => expect(store.emitNotification).toHaveBeenCalledTimes(1));
     expect(store.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'workflow step held back',
-      'Open questions are waiting for an answer.',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Workflow step held back',
+        body: 'Open questions are waiting for an answer.',
+        sessionId: SESSION_ID,
+      }),
     );
     await waitFor(() =>
       expect(screen.getByTestId('workflow-next-step-cta').hasAttribute('disabled')).toBe(false),

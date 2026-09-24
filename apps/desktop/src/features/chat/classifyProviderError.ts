@@ -14,6 +14,11 @@ export type ProviderErrorClassification =
       readonly model: string;
       readonly action: ModelUnavailableAction;
     }
+  | {
+      readonly kind: 'cli_too_old';
+      readonly installedVersion: string;
+      readonly requiredVersion: string;
+    }
   | { readonly kind: 'rate_limit' }
   | { readonly kind: 'usage_limit'; readonly resetAtMs?: number }
   | { readonly kind: 'unreachable' }
@@ -47,6 +52,9 @@ const MODEL_NOT_AVAILABLE_PATTERNS = [
     action: 'choose_supported_model',
   },
 ] satisfies ReadonlyArray<ModelUnavailablePattern>;
+
+const CLI_TOO_OLD_PATTERN =
+  /(\d+(?:\.\d+)+) does not support this model; version (\d+(?:\.\d+)+) or newer is required/i;
 
 const USAGE_LIMIT_PATTERNS = [/usage limit/i];
 
@@ -91,6 +99,13 @@ export const classifyProviderError = ({ message }: Params): ProviderErrorClassif
         action: entry.action,
       };
     }
+  }
+
+  const cliTooOld = CLI_TOO_OLD_PATTERN.exec(message);
+  const installedVersion = cliTooOld?.[1];
+  const requiredVersion = cliTooOld?.[2];
+  if (installedVersion != null && requiredVersion != null) {
+    return { kind: 'cli_too_old', installedVersion, requiredVersion };
   }
 
   if (USAGE_LIMIT_PATTERNS.some((pattern) => pattern.test(message))) {

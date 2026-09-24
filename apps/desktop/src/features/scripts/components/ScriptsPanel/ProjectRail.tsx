@@ -68,10 +68,10 @@ export const ProjectRail = ({
                 ) : null}
               </span>
               {counts !== '' ? (
-                <span className="text-2xs text-muted-foreground/70">{counts}</span>
+                <span className="text-2xs text-faint-foreground">{counts}</span>
               ) : null}
               {hasSearch && !selected && entry.matchCount > 0 ? (
-                <span className="text-2xs tabular-nums text-muted-foreground/50">
+                <span className="text-2xs tabular-nums text-faint-foreground">
                   {entry.matchCount === 1 ? '1 match' : `${entry.matchCount} matches`}
                 </span>
               ) : null}

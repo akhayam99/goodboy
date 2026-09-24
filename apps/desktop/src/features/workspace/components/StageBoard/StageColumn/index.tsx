@@ -88,7 +88,7 @@ export const StageColumn = ({
         className={cn(!empty && tintClasses(view.presentation.tone).text)}
       />
       {!empty && (
-        <span className="text-2xs tabular-nums text-muted-foreground/60">{sessions.length}</span>
+        <span className="text-2xs tabular-nums text-faint-foreground">{sessions.length}</span>
       )}
     </span>
   );
@@ -112,7 +112,7 @@ export const StageColumn = ({
             size={ICON_SIZE.row}
             aria-hidden
             className={cn(
-              'shrink-0 text-muted-foreground/50 transition-transform',
+              'shrink-0 text-faint-foreground transition-transform',
               collapsed && '-rotate-90',
             )}
           />

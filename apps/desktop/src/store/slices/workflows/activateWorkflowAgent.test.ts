@@ -174,6 +174,7 @@ function buildHarness(opts: {
     ensureSessionSlots: async (sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>> =>
       sessionSlots[sessionId] ?? [],
     sessionPhaseRuns: { [SESSION_ID]: [opts.agent, ...(opts.extraAgents ?? [])] },
+    agentKindOverride: {},
     sessions: [session],
     projects: opts.projects ?? [],
     sessionProjectMounts: {},
@@ -312,7 +313,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
   });
 
   it('does not mount projects merely mentioned by a writing workflow step', async () => {
-    const projects = ['api', 'data', 'app-web'].map(
+    const projects = ['api', 'data', 'storefront-web'].map(
       (name, index) =>
         ({
           id: `project-${index}` as ProjectId,
@@ -325,7 +326,7 @@ describe('activateWorkflowAgent, plan consumption by kind', () => {
     const { activate, ensureProjectMounted } = buildHarness({
       agent: makeAgent('implementer', 'Implement'),
       workflow: makeWorkflow('Implement'),
-      plans: [makePlan({ bodyMd: 'Read api and data, then edit app-web.' })],
+      plans: [makePlan({ bodyMd: 'Read api and data, then edit storefront-web.' })],
       projects,
     });
 
@@ -1050,16 +1051,21 @@ describe('activateWorkflowAgent, artifact evidence', () => {
     expect(sendTurn.mock.calls[0]?.[0].content).toContain('# evidence pack');
   });
 
-  it('leaves the plan-consuming kickoff unchanged', async () => {
+  it('leaves the plan-consuming kickoff without an evidence pack', async () => {
     const { sendTurn, activate } = buildHarness({
       agent: makeAgent('generic', 'Execute'),
       workflow: makeWorkflow('Execute'),
       plans: [makePlan()],
     });
     await activate({ sessionId: SESSION_ID, agentId: AGENT_ID });
-    expect(sendTurn.mock.calls[0]?.[0].content).toBe(
-      '**Plan**\ndo the thing\n\nrun the step\n\n**Scope** this step only, never a later one. Emit `<<step-done id="agent-step">>` on its own line once it is truly done.',
-    );
+    const content: string = sendTurn.mock.calls[0]?.[0].content ?? '';
+    const planAt = content.indexOf('**Plan**\ndo the thing');
+    const promptAt = content.indexOf('run the step');
+    const boundaryAt = content.indexOf('<<step-done id="agent-step">>');
+    expect(planAt).toBe(0);
+    expect(promptAt).toBeGreaterThan(planAt);
+    expect(boundaryAt).toBeGreaterThan(promptAt);
+    expect(content).not.toContain('# evidence pack');
     expect(addPlanConsumptionSpy).toHaveBeenCalledWith(PLAN_ID, AGENT_ID);
     expect(putArtifactProvenanceSpy).not.toHaveBeenCalled();
   });

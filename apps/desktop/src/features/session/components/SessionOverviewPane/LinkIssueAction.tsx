@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, Link2, Plus } from 'lucide-react';
-import { AnchoredPopover, IconButton, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, IconButton, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
@@ -12,7 +12,6 @@ import {
   type IssueSourceKind,
 } from '../../../integrations/issueSources';
 import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
-import { VITAL_CHIP } from './vitalChip';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const TRACKER_KINDS: ReadonlyArray<IssueSourceKind> = ['issue'];
@@ -20,8 +19,6 @@ const TRACKER_KINDS: ReadonlyArray<IssueSourceKind> = ['issue'];
 const TRACKER_NAMES = new Intl.ListFormat('en', { type: 'disjunction' }).format(
   issueSourcesOfKind({ kinds: TRACKER_KINDS }).map((source) => source.label),
 );
-
-const CHIP_TRIGGER = cn(VITAL_CHIP, 'border-dashed border-border bg-transparent');
 
 type Props = {
   readonly session: Session;
@@ -67,15 +64,21 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
       trigger={
         presentation === 'chip' ? (
           <Tooltip content="Link an issue">
-            <button
-              type="button"
-              aria-label="Link an issue"
+            <Chip
+              as="button"
+              tone="neutral"
+              shape="badge"
+              size="control"
+              bordered={false}
+              ariaLabel="Link an issue"
               onClick={onToggle}
-              className={cn(CHIP_TRIGGER, isCollapsed && 'w-6 justify-center px-0')}
-            >
-              <Plus size={11} aria-hidden />
-              {isCollapsed ? null : 'Link an issue'}
-            </button>
+              icon={<Plus size={11} aria-hidden />}
+              label={isCollapsed ? null : 'Link an issue'}
+              className={cn(
+                'border border-dashed border-border bg-transparent',
+                isCollapsed && 'w-6 justify-center px-0',
+              )}
+            />
           </Tooltip>
         ) : (
           <IconButton
@@ -124,7 +127,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               key={candidate.provider}
               type="button"
               onClick={() => setPickedTracker(candidate)}
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-muted/60"
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-hover"
             >
               <IntegrationGlyph provider={candidate.provider} size="xs" />
               {candidate.label}

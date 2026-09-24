@@ -74,25 +74,6 @@ export const upsertSessionExternalTask = async ({ db, task }: UpsertParams): Pro
   );
 };
 
-type ListForSessionParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-};
-
-export const listSessionExternalTasks = async ({
-  db,
-  sessionId,
-}: ListForSessionParams): Promise<ReadonlyArray<SessionExternalTask>> => {
-  const rows = await db.select<SessionExternalTaskRow>(
-    `SELECT session_id, project_id, branch, provider, external_id, identifier, url, title, created_at
-       FROM session_external_tasks
-      WHERE session_id = ?
-      ORDER BY created_at ASC, provider ASC, external_id ASC, project_id ASC`,
-    [sessionId],
-  );
-  return rows.map((row) => toDomain({ row }));
-};
-
 type ListForWorkspaceParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;

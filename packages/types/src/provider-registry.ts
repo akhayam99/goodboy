@@ -26,7 +26,14 @@ export type ModelFamily =
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
-export type ModelEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export type ModelPrice = {
+  readonly inputPerMtok: number;
+  readonly outputPerMtok: number;
+  readonly cachedInputPerMtok?: number;
+  readonly assumed?: true;
+};
+
+export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export type ModelTier = 'turn' | 'cheap';
 
@@ -40,7 +47,7 @@ export type ModelDescriptor = {
   readonly variantLabel: string;
   readonly costTier: ModelCostTier;
   readonly weight: number;
-  readonly effort: ReadonlyArray<ModelEffort> | null;
+  readonly effort: ReadonlyArray<EffortLevel> | null;
   readonly thinkerOnly: boolean;
   readonly routingProfile: ModelRoutingProfile | null;
 };
@@ -59,13 +66,4 @@ export type ProviderInfo = {
   readonly connection: ProviderConnectionState;
   readonly version: string | null;
   readonly identity: string | null;
-};
-
-export const PROVIDER_API_KEY_ENV: Readonly<Partial<Record<ProviderId, string>>> = {
-  anthropic: 'ANTHROPIC_API_KEY',
-  cursor: 'CURSOR_API_KEY',
-  codex: 'OPENAI_API_KEY',
-  gemini: 'GEMINI_API_KEY',
-  openrouter: 'OPENROUTER_API_KEY',
-  moonshot: 'MOONSHOT_API_KEY',
 };

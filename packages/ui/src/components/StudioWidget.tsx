@@ -29,7 +29,7 @@ export const StudioWidget = ({
         'flex flex-col gap-3',
         presentation === 'widget' &&
           variant === 'framed' &&
-          'rounded-lg border border-border-soft bg-muted/10 p-4',
+          'rounded-lg border border-border-soft bg-subtle p-4',
         className,
       )}
     >
@@ -37,7 +37,7 @@ export const StudioWidget = ({
       {presentation === 'section' ? (
         <div
           className={cn(
-            variant === 'framed' && 'rounded-lg border border-border-soft bg-muted/10 p-4',
+            variant === 'framed' && 'rounded-lg border border-border-soft bg-subtle p-4',
           )}
         >
           {children}

@@ -8,21 +8,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { state, ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() => ({
-  state: {
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    disconnectGitlab: vi.fn(async () => undefined),
-    integrationCredentials: [] as ReadonlyArray<unknown>,
-    integrationCredentialUsage: {} as Record<string, number>,
-    forgetIntegrationCredential: vi.fn(async () => undefined),
-  },
+const { ghStatusMock, ghSetTokenMock, ghClearTokenMock } = vi.hoisted(() => ({
   ghStatusMock: vi.fn(async () => ({ scoped: false, user: null }) as unknown),
   ghSetTokenMock: vi.fn(async () => ({ scoped: true }) as unknown),
   ghClearTokenMock: vi.fn(async () => undefined),
-}));
-
-vi.mock('../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
 vi.mock('../../github/github', () => ({
@@ -45,16 +34,20 @@ const gitlabIntegration: GitlabIntegrationBinding = {
 };
 
 beforeEach(() => {
-  state.workspaceIntegrations = {};
-  state.disconnectGitlab = vi.fn(async () => undefined);
-  state.integrationCredentials = [];
-  state.integrationCredentialUsage = {};
+  useAppStore.setState({
+    workspaceIntegrations: {},
+    disconnectIntegration: vi.fn(async () => undefined),
+    integrationCredentials: [],
+    integrationCredentialUsage: {},
+    githubWorkspaceStatus: {},
+  });
   ghStatusMock.mockResolvedValue({ scoped: false, user: null });
   ghSetTokenMock.mockResolvedValue({ scoped: true });
   ghClearTokenMock.mockResolvedValue(undefined);
 });
 afterEach(cleanup);
 
+import { useAppStore } from '../../../store';
 import { GithubFormBody } from './GithubFormBody';
 
 describe('GithubFormBody', () => {
@@ -83,16 +76,17 @@ describe('GithubFormBody', () => {
       await waitFor(() => expect(ghStatusMock).toHaveBeenCalledWith(WS_ID));
     });
 
-    it('mentions the system gh fallback only when one is signed in', async () => {
+    it('mentions the all-workspaces connection only when one is signed in', async () => {
       ghStatusMock.mockResolvedValue({ scoped: false, user: 'octocat' });
       render(<GithubFormBody workspaceId={WS_ID} />);
-      expect(await screen.findByText(/system gh CLI, connected as octocat/i)).toBeDefined();
+      expect(await screen.findByText(/all-workspaces connection as octocat/i)).toBeDefined();
 
       cleanup();
+      useAppStore.setState({ githubWorkspaceStatus: {} });
       ghStatusMock.mockResolvedValue({ scoped: false, user: null });
       render(<GithubFormBody workspaceId={WS_ID} />);
       await screen.findByLabelText(/personal API key/i);
-      expect(screen.queryByText(/system gh CLI/i)).toBeNull();
+      expect(screen.queryByText(/all-workspaces connection/i)).toBeNull();
     });
 
     it('disables Connect until a non-empty token is entered', async () => {
@@ -208,7 +202,7 @@ describe('GithubFormBody', () => {
 
   describe('when GitLab is connected', () => {
     beforeEach(() => {
-      state.workspaceIntegrations = { [WS_ID]: [gitlabIntegration] };
+      useAppStore.setState({ workspaceIntegrations: { [WS_ID]: [gitlabIntegration] } });
     });
 
     it('still offers the token form so both hosts can coexist', async () => {
@@ -225,7 +219,7 @@ describe('GithubFormBody', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
       await waitFor(() => expect(ghSetTokenMock).toHaveBeenCalledWith('ghp_abc', WS_ID));
-      expect(state.disconnectGitlab).not.toHaveBeenCalled();
+      expect(useAppStore.getState().disconnectIntegration).not.toHaveBeenCalled();
     });
   });
 

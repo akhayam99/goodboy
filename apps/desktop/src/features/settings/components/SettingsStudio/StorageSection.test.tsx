@@ -67,7 +67,7 @@ describe('StorageSection', () => {
   it('shows the archived footprint and the worktree paths', () => {
     render(<StorageSection />);
 
-    expect(screen.getByText('222.2 MB')).toBeDefined();
+    expect(screen.getByText('222 MB')).toBeDefined();
     expect(screen.getByText('12,481 rows')).toBeDefined();
     expect(screen.getByText('/repo/.goodboy/worktrees/archived')).toBeDefined();
   });

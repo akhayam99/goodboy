@@ -9,6 +9,7 @@ import {
   useWorkspaces,
   type LensKind,
 } from '../../../store';
+import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
 
 type AppShortcutsParams = {
@@ -122,7 +123,7 @@ export const useAppShortcuts = ({
     if (currentWorkspace == null) {
       return;
     }
-    window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+    requestNewSession();
   }, [currentWorkspace]);
 
   const openModelPicker = useCallback(() => {

@@ -1,9 +1,3 @@
-.br-frame {
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .br-grid {
   position: relative;
   display: grid;

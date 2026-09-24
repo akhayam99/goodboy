@@ -25,9 +25,9 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
             type="button"
             onClick={() => void selectAgent(sessionId, asker.id)}
             className={cn(
-              'self-start rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+              'self-start rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
               'transition-colors duration-150 hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             asked by {asker.name}

@@ -96,6 +96,19 @@ describe('classifyProviderError', () => {
     expect(classifyProviderError({ message })).toEqual({ kind: 'unreachable' });
   });
 
+  it('classifies a model that outranks the installed CLI', () => {
+    expect(
+      classifyProviderError({
+        message:
+          'API Error: 400 Claude Code 2.1.259 does not support this model; version 2.1.280 or newer is required.',
+      }),
+    ).toEqual({
+      kind: 'cli_too_old',
+      installedVersion: '2.1.259',
+      requiredVersion: '2.1.280',
+    });
+  });
+
   it('keeps a Max Mode failure out of the transport buckets', () => {
     expect(
       classifyProviderError({

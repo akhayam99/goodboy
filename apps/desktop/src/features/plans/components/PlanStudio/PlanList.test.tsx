@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PlanWithCount } from '@goodboy/types';
 import { PlanList } from './PlanList';
 
@@ -32,38 +32,16 @@ const plans: ReadonlyArray<PlanWithCount> = [
 ];
 
 describe('PlanList', () => {
-  it('shows the finished plans by default', () => {
+  it('lists the active plans and folds the finished ones behind one toggle row', () => {
     render(<PlanList plans={plans} openQuestionCount={0} onSelect={() => {}} />);
+
+    expect(screen.getByText('rounding pass on the ledger')).toBeDefined();
+    expect(screen.queryByText('batch export drawer')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Finished' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show finished (2)' }));
 
     expect(screen.getByText('batch export drawer')).toBeDefined();
     expect(screen.getByText('exception queue triage')).toBeDefined();
-  });
-
-  it('leaves no empty list band in the compact register', () => {
-    const { container } = render(
-      <PlanList plans={plans} openQuestionCount={0} visibleFinishedCount={0} onSelect={() => {}} />,
-    );
-    const section = container.querySelector('section[aria-label="Finished history"]');
-
-    expect(section).not.toBeNull();
-    expect(section?.querySelectorAll('ul:empty')).toHaveLength(0);
-    expect(screen.queryByText('batch export drawer')).toBeNull();
-  });
-
-  it('names the compact register toggle after the section, not earlier', () => {
-    render(
-      <PlanList plans={plans} openQuestionCount={0} visibleFinishedCount={0} onSelect={() => {}} />,
-    );
-    const toggle = screen.getByRole('button', { name: /finished \(2\)/i });
-
-    expect(toggle.textContent).not.toContain('earlier');
-  });
-
-  it('still shows the active plans in the compact register', () => {
-    render(
-      <PlanList plans={plans} openQuestionCount={0} visibleFinishedCount={0} onSelect={() => {}} />,
-    );
-
-    expect(screen.getByText('rounding pass on the ledger')).toBeDefined();
   });
 });

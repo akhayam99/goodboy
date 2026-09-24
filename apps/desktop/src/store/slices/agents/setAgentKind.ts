@@ -1,7 +1,7 @@
 import type { AgentId } from '@goodboy/types';
 import { kindRouting, type AgentKind } from '../../../features/session/agent-kind';
 import { invokeAgentSetKind } from '../../../features/workflows/workflows';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SetFn } from './types';
 
 export const setAgentKind = (set: SetFn, get: GetFn) => {
@@ -10,7 +10,8 @@ export const setAgentKind = (set: SetFn, get: GetFn) => {
     const owner = Object.values(state.sessionPhaseRuns ?? {})
       .flat()
       .find((agent) => agent.id === agentId);
-    const roleModels = roleModelsForSession({ state, sessionId: owner?.sessionId ?? null });
+    const roleModels =
+      selectResolvedSettings({ state, sessionId: owner?.sessionId ?? null })?.roleModels ?? null;
     set((s) => {
       const nextModelOverride = { ...s.agentModelOverride };
       const nextProviderOverride = { ...s.agentProviderOverride };

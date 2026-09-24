@@ -10,13 +10,14 @@ export const BLOCKING_DISMISSAL_REFUSAL =
 export const dismissOpenQuestion = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, question: OpenQuestion) => {
     if (question.isBlocking) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'This question cannot be discarded',
-        BLOCKING_DISMISSAL_REFUSAL,
-        { sessionId, coalesceKey: `blocking-question:${question.id}` },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'This question cannot be discarded',
+        body: BLOCKING_DISMISSAL_REFUSAL,
+        sessionId,
+        coalesceKey: `blocking-question:${question.id}`,
+      });
       return;
     }
     await markOpenQuestionDismissed(tauriDatabase, question.id);

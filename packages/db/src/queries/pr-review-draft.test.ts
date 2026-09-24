@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, PrReviewDraft, SessionId, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deletePrReviewDraft,
   insertPrReviewDraft,
@@ -15,8 +13,7 @@ const workspaceId = 'w1' as WorkspaceId;
 const sessionId = 's1' as SessionId;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,

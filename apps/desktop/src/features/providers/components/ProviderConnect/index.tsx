@@ -1,12 +1,13 @@
+import { PROVIDER_CONNECT_CAPABILITIES } from '@goodboy/core';
 import { useEffect, useRef } from 'react';
 import { Button, Collapsible, cn } from '@goodboy/ui';
 import { CheckCircle2 } from 'lucide-react';
-import { PROVIDER_CONNECT_CAPABILITIES, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
-import { PROVIDER_LABEL_LOWER } from '../../providers';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { PROVIDER_BRAND } from '../provider-brand';
-import { guideFor } from '../ProviderConnectModal/guides';
+import { guideFor } from './guides';
 import { ConnectDetails } from './ConnectDetails';
 import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';
@@ -30,7 +31,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
   const startedRef = useRef<ProviderId | null>(null);
 
   const capability = PROVIDER_CONNECT_CAPABILITIES[providerId];
-  const label = PROVIDER_LABEL_LOWER[providerId];
+  const label = PROVIDER_LABEL[providerId];
   const guide = guideFor(providerId, connect.step ?? 'login');
   const view = connectView({
     phase: connect.phase,
@@ -89,7 +90,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
     <section aria-label={`Connect ${label}`} className="flex flex-col gap-4">
       <div
         className={cn(
-          'flex items-start gap-3 rounded-lg border border-border-soft bg-subtle/30 p-4',
+          'flex items-start gap-3 rounded-lg border border-border-soft bg-subtle p-4',
           view.isRunning && 'spin-border spin-border-info',
         )}
       >

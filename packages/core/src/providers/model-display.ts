@@ -7,9 +7,9 @@ const PROVIDER_RANK: Readonly<Record<ProviderId, number>> = {
   codex: 1,
   gemini: 2,
   opencode: 3,
-  openrouter: 4,
-  moonshot: 5,
-  cursor: 6,
+  moonshot: 4,
+  cursor: 5,
+  openrouter: 6,
 };
 
 const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = (
