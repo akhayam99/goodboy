@@ -126,7 +126,7 @@ Never build a colored role word or an outlined kind chip by hand.
 | `projectFolder` | `Folder`            | neutral | A project whose kind is `folder`            |
 | `mount`         | `Layers2`           | info    | A project mounted into a session            |
 | `worktree`      | `FolderTree`        | neutral | The session folder on disk                  |
-| `workspace`     | `FolderPlus`        | info    | A workspace                                 |
+| `workspace`     | `LayoutGrid`        | info    | A workspace                                 |
 | `branch`        | `GitBranch`         | info    | A branch, and the branch chip               |
 | `commits`       | `GitCommit`         | info    | Commits                                     |
 | `timeline`      | `GitCommitVertical` | neutral | The activity rail                           |

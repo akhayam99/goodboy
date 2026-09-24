@@ -11,6 +11,7 @@ export { formatError } from './formatError';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
+  COLLAPSED_RAIL_WIDTH,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,

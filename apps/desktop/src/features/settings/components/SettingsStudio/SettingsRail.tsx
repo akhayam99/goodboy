@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { PANE_RHYTHM, SelectableRow, cn } from '@goodboy/ui';
-import { Boxes, Settings, Wrench } from 'lucide-react';
+import { Boxes, Settings } from 'lucide-react';
 import type { SettingsScopeChange, SettingsStudioScope } from './types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -16,7 +16,7 @@ type Props = {
 
 const ITEMS = [
   { scope: 'app', label: 'App', icon: Settings, needsWorkspace: false },
-  { scope: 'workspace', label: 'Workspace', icon: Wrench, needsWorkspace: true },
+  { scope: 'workspace', label: 'Workspace', icon: CONCEPT_ICONS.workspace, needsWorkspace: true },
   { scope: 'providers', label: 'Providers & models', icon: Boxes, needsWorkspace: false },
   { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations, needsWorkspace: true },
 ] satisfies ReadonlyArray<{

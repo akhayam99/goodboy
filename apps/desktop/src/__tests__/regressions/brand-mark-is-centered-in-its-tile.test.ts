@@ -346,12 +346,12 @@ const fullScanlines = ({ width, height }: { width: number; height: number }): Bu
 const BADGE_SOURCE = readFileSync(BRAND_BADGE, 'utf8');
 const LOGO_SOURCE = readFileSync(SITE_LOGO, 'utf8');
 const FAVICON_SOURCE = readFileSync(FAVICON, 'utf8');
-const MARK_SCALE = ratioOf({ source: BADGE_SOURCE, name: 'MARK_SCALE' });
-const TILE_RADIUS = ratioOf({ source: BADGE_SOURCE, name: 'TILE_RADIUS' });
 const DESKTOP_TILE = cssValueOf({ path: DESKTOP_STYLES, variableName: '--color-brand' });
 const SITE_TILE = cssValueOf({ path: SITE_STYLES, variableName: '--brand-tile' });
 const ICON_FILES = readdirSync(DESKTOP_ICONS).filter((name) => name.endsWith('.png'));
 const GENERATOR_SOURCE = readFileSync(BRAND_GENERATOR, 'utf8');
+const MARK_SCALE = ratioOf({ source: GENERATOR_SOURCE, name: 'MARK_SCALE' });
+const TILE_RADIUS = ratioOf({ source: GENERATOR_SOURCE, name: 'TILE_RADIUS_RATIO' });
 const APP_ICON_SCALE = ratioOf({
   source: GENERATOR_SOURCE,
   name: 'APP_ICON_MARK_SCALE_EXCEPTION',
@@ -485,13 +485,16 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('centers the top bar mark with the box model, never a hand-tuned offset', () => {
+  it('shows the top bar mark as a bare glyph in the theme foreground, with no tile', () => {
     expect(BADGE_SOURCE).toContain('items-center justify-center');
     expect(BADGE_SOURCE).not.toContain('absolute');
     expect(BADGE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
+    expect(BADGE_SOURCE).not.toContain('bg-brand');
+    expect(BADGE_SOURCE).not.toContain('text-white');
+    expect(BADGE_SOURCE).toMatch(/<DogMascot [^>]*className="text-foreground"/);
   });
 
-  it('centers the site mark the same way the top bar does', () => {
+  it('centers the site mark with the box model and the shared tile ratios', () => {
     expect(LOGO_SOURCE).not.toContain('absolute');
     expect(LOGO_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
     expect(ratioOf({ source: LOGO_SOURCE, name: 'MARK_SCALE' })).toBe(MARK_SCALE);
@@ -527,10 +530,9 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('paints one black tile on the app, the site and the favicon', () => {
+  it('paints one black tile on the dock icon, the site and the favicon', () => {
     expect(DESKTOP_TILE).toMatch(/^#[0-9a-f]{6}$/);
     expect(SITE_TILE).toBe(DESKTOP_TILE);
-    expect(BADGE_SOURCE).toContain('bg-brand');
     expect(FAVICON_SOURCE).toContain(`fill="${DESKTOP_TILE}"`);
   });
 

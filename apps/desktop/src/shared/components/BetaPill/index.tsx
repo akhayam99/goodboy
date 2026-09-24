@@ -29,6 +29,7 @@ export const BetaPill = ({ className }: Props) => {
       role="dialog"
       ariaLabel="Support Goodboy"
       className="flex flex-col gap-2.5 p-3.5"
+      anchorClassName="flex"
       trigger={
         <Chip
           as="button"
@@ -38,7 +39,7 @@ export const BetaPill = ({ className }: Props) => {
           label={
             <span className="flex items-center gap-1.5">
               <span className="font-semibold">Beta</span>
-              <span aria-hidden className="h-2.5 w-px bg-current opacity-40" />
+              <span aria-hidden className="h-3 w-px self-center bg-current opacity-40" />
               <span className="font-medium">Sponsor</span>
             </span>
           }

@@ -465,6 +465,20 @@ column has the only width cap and truncates first. Everything to its right is
 way. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
+**The chrome shares one left axis.** The collapsed rail is
+`COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
+22px. The top bar starts at `pl-1.5`, so the workspace avatar centers on the
+same 22px. Change one side and the other moves with it:
+`workspace-avatar-centers-on-collapsed-rail.test.ts` compares the two centers.
+Widening the rail to fix a padding is the wrong trade, because chrome pays rent.
+
+**An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
+The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)
+sits on a line box as tall as the inherited body line height and lands on its
+baseline, 1 to 2px under the center of a flex cell. The Beta and Sponsor pill in
+the footer did exactly that. A trigger that is already `flex` is block level
+and needs nothing. Never correct the drift with `translate-y`.
+
 **A repeated row is read down a column, not across a line.** So anything whose
 width follows its content breaks the column for every row under it.
 

@@ -26,7 +26,6 @@ import {
   Folder,
   FolderGit2,
   FolderOpen,
-  FolderPlus,
   FolderSearch,
   FolderTree,
   Gauge,
@@ -38,6 +37,7 @@ import {
   History,
   Inbox,
   Layers2,
+  LayoutGrid,
   LayoutTemplate,
   Lightbulb,
   LifeBuoy,
@@ -145,7 +145,7 @@ export const CONCEPT_ICONS = {
   workflowCustom: PenLine,
   workflowPreset: LayoutTemplate,
   workflows: Waypoints,
-  workspace: FolderPlus,
+  workspace: LayoutGrid,
   worktree: FolderTree,
 } satisfies Record<string, LucideIcon>;
 

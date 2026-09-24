@@ -192,6 +192,9 @@ about its effect is a worse defect than one that reads badly.
 - **Dark by default**, light fully supported, and Match system as a third
   choice that follows the OS. The choice is saved. The top bar and palette
   toggles set the opposite of what is showing.
+- **The brand mark in the chrome is a bare glyph in `foreground`**: light on
+  dark, dark on light, no tile. The black tile belongs to the dock icon, the
+  favicon and the site ([docs/brand.md](docs/brand.md)).
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
   component is a bug. Raw colors are allowed in two places only, because they
