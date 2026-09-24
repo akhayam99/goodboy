@@ -8,6 +8,7 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
+import { useClusterNode } from '../../useClusterNode';
 
 type Props = {
   readonly run: Agent;
@@ -40,6 +41,7 @@ export const WorkflowStepGraphNode = ({
   isSelected,
   onSelect,
 }: Props) => {
+  const clusterNode = useClusterNode({ sessionId: run.sessionId, agentId: run.id });
   const completionHold = useAppStore((state) => {
     const openHolds = (state.clusterCompletionHolds?.[run.sessionId] ?? []).filter(
       (hold) => hold.state === 'open',
@@ -78,6 +80,15 @@ export const WorkflowStepGraphNode = ({
             className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground"
           >
             answering for {answersForStepName}
+          </span>
+        ) : null}
+        {clusterNode !== null && clusterNode.dependsOnTitles.length > 0 ? (
+          <span
+            data-testid={`depends-on-${run.id}`}
+            className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground"
+            title={`depends on ${clusterNode.dependsOnTitles.join(', ')}`}
+          >
+            after {clusterNode.dependsOnTitles.join(', ')}
           </span>
         ) : null}
         {modelLabel(plannedModel) === modelLabel(model) && plannedProvider === provider ? (

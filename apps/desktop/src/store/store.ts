@@ -1088,6 +1088,7 @@ export const initialState: AppState = {
   sessionWorkflows: {},
   sessionPhaseRuns: {},
   clusterCompletionHolds: {},
+  clusterExecutionGraphs: {},
   orchestratingWorkflowRuns: {},
   decisionRestartMarks: {},
   pendingOrchestrations: {},

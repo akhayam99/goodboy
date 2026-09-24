@@ -4,6 +4,7 @@ import type { Agent } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 import { ClusterCompletionHoldAction } from '../../../../shared/components/ClusterCompletionHoldAction';
+import { useClusterNode } from '../../../workflows/useClusterNode';
 
 type Props = {
   readonly child: Agent;
@@ -37,6 +38,9 @@ export const ClusterChildRow = ({
         (hold) => hold.sourceAgentId === child.id && hold.state === 'open',
       ) ?? null,
   );
+  const clusterNode = useClusterNode({ sessionId: child.sessionId, agentId: child.id });
+  const isWaiting =
+    child.status === 'pending' && (clusterNode?.pendingDependencyTitles.length ?? 0) > 0;
   const domains = child.domains ?? [];
   const visibleDomains = domains.slice(0, 3);
   const hiddenDomainCount = domains.length - visibleDomains.length;
@@ -77,6 +81,22 @@ export const ClusterChildRow = ({
         </span>
         {icon}
         <span className="min-w-0 flex-1 truncate text-left">{child.name}</span>
+        {clusterNode !== null && clusterNode.role !== 'implementer' ? (
+          <span
+            className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal uppercase tracking-eyebrow text-muted-foreground"
+            title={`this cluster runs with the ${clusterNode.role} role`}
+          >
+            {clusterNode.role}
+          </span>
+        ) : null}
+        {isWaiting ? (
+          <span
+            className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"
+            title={`waits for ${clusterNode?.pendingDependencyTitles.join(', ') ?? ''}`}
+          >
+            waits
+          </span>
+        ) : null}
         {startAttempt > 1 && child.status !== 'completed' && child.status !== 'skipped' ? (
           <span
             className={cn(

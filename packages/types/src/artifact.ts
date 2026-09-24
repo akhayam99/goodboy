@@ -1,4 +1,5 @@
 import type { AgentId, IsoDateTime, MountId, SessionId, WorkflowRunId } from './ids';
+import type { AgentRole } from './workflow';
 import type { WorkflowRoutingProposal } from './workflow-routing';
 
 export type ArtifactId = string & { readonly __brand: 'ArtifactId' };
@@ -9,10 +10,65 @@ export type ArtifactStatus = 'active' | 'consumed' | 'superseded' | 'discarded';
 
 export type ArtifactSourceFormat = 'markdown' | 'json';
 
+export type PlanClusterRole = Extract<
+  AgentRole,
+  'scout' | 'implementer' | 'reviewer' | 'tester' | 'investigator' | 'docs'
+>;
+
+export const PLAN_CLUSTER_ROLES = [
+  'scout',
+  'implementer',
+  'reviewer',
+  'tester',
+  'investigator',
+  'docs',
+] as const satisfies ReadonlyArray<PlanClusterRole>;
+
 export type ImplementationCluster = Readonly<{
+  id?: string;
   title: string;
   instructions: string;
+  role?: PlanClusterRole;
+  dependsOn?: ReadonlyArray<string>;
+  expectedOutput?: string;
   routingProposal?: WorkflowRoutingProposal | null;
+}>;
+
+export const CLUSTER_EXECUTION_VERSION_LEGACY = 1;
+
+export const CLUSTER_EXECUTION_VERSION_GRAPH = 2;
+
+export type ClusterGraphNode = Readonly<{
+  id: string;
+  ordinal: number;
+  title: string;
+  instructions: string;
+  role: PlanClusterRole;
+  dependsOn: ReadonlyArray<string>;
+  expectedOutput: string | null;
+}>;
+
+export type ClusterGraph = Readonly<{
+  executionVersion: number;
+  nodes: ReadonlyArray<ClusterGraphNode>;
+}>;
+
+export type ClusterExecutionNode = Readonly<{
+  nodeId: string;
+  agentId: AgentId | null;
+  ordinal: number;
+  role: PlanClusterRole;
+}>;
+
+export type ClusterExecutionGraph = Readonly<{
+  containerAgentId: AgentId;
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId | null;
+  planId: string | null;
+  goalTitle: string;
+  graph: ClusterGraph;
+  nodes: ReadonlyArray<ClusterExecutionNode>;
+  createdAt: IsoDateTime;
 }>;
 
 export type PlanArtifactMetadata = Readonly<{

@@ -12,6 +12,7 @@ import type {
   Agent,
   AgentId,
   ClusterCompletionHold,
+  ClusterExecutionGraph,
   ArtifactId,
   BudgetAlert,
   BudgetRule,
@@ -316,6 +317,9 @@ export type AppState = AppSliceState & {
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly clusterCompletionHolds: Readonly<
     Record<SessionId, ReadonlyArray<ClusterCompletionHold>>
+  >;
+  readonly clusterExecutionGraphs: Readonly<
+    Record<SessionId, ReadonlyArray<ClusterExecutionGraph>>
   >;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
   readonly decisionRestartMarks: Readonly<Record<WorkflowRunId, number>>;

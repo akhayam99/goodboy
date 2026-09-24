@@ -185,6 +185,11 @@ export {
   resolveClusterCompletionHold,
 } from './queries/cluster-completion-hold';
 export {
+  getClusterExecutionGraph,
+  listClusterExecutionGraphs,
+  recordClusterExecutionGraph,
+} from './queries/cluster-execution-graph';
+export {
   insertSessionWorktree,
   insertSessionMount,
   getSessionMount,

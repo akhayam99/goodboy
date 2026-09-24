@@ -52,6 +52,19 @@ const hoisted = vi.hoisted(() => {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     })),
+    invokeClusterExecutionGraphRecord: vi.fn(async (input: Record<string, unknown>) => ({
+      containerAgentId: input.containerAgentId,
+      sessionId: input.sessionId,
+      workflowRunId: input.workflowRunId ?? null,
+      planId: input.planId ?? null,
+      goalTitle: input.goalTitle,
+      graph: {
+        executionVersion: input.executionVersion,
+        nodes: input.graphNodes,
+      },
+      nodes: input.nodes,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    })),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
@@ -63,6 +76,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: hoisted.invokeAgentList,
   invokeAgentUpdateStatus: hoisted.invokeAgentUpdateStatus,
   invokeClusterCompletionHoldRecord: hoisted.invokeClusterCompletionHoldRecord,
+  invokeClusterExecutionGraphRecord: hoisted.invokeClusterExecutionGraphRecord,
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
 }));
 
@@ -453,6 +467,7 @@ function makeStore(initial: Record<string, unknown>) {
   const state: Record<string, unknown> = {
     sessionPhaseRuns: {},
     clusterCompletionHolds: {},
+    clusterExecutionGraphs: {},
     sessionPlans: {},
     planConsumptions: {},
     sessions: [sessionRow(true)],
@@ -2098,5 +2113,482 @@ describe('cluster child start retry', () => {
     await vi.advanceTimersByTimeAsync(2_000);
 
     expect((get().clusterStartAttempts as unknown as Record<string, number>)['retry-d-1']).toBe(2);
+  });
+});
+
+describe('cluster roles and dependencies', () => {
+  const done = (id: string) =>
+    `<<cluster-outcome>>{"v":1,"id":"${id}","status":"clear"}<</cluster-outcome>>\n<<cluster-done id="${id}">>`;
+
+  const graphClusters: ReadonlyArray<ImplementationCluster> = [
+    { id: 'discovery', title: 'survey the routing', instructions: 'map it', role: 'scout' },
+    {
+      id: 'impl',
+      title: 'rewrite the resolver',
+      instructions: 'do it',
+      dependsOn: ['discovery'],
+    },
+    {
+      id: 'review',
+      title: 'review the change',
+      instructions: 'audit it',
+      role: 'reviewer',
+      dependsOn: ['impl'],
+      expectedOutput: 'a findings list with file and line',
+    },
+    {
+      id: 'prove',
+      title: 'prove the network path',
+      instructions: 'run the tests',
+      role: 'tester',
+      dependsOn: ['impl'],
+    },
+  ];
+
+  type GraphNodeInput = Readonly<{
+    id: string;
+    ordinal: number;
+    title: string;
+    instructions: string;
+    role: 'scout' | 'implementer' | 'reviewer' | 'tester' | 'investigator' | 'docs';
+    dependsOn: ReadonlyArray<string>;
+  }>;
+
+  const executionGraph = ({
+    nodes,
+    bindings,
+  }: {
+    readonly nodes: ReadonlyArray<GraphNodeInput>;
+    readonly bindings: ReadonlyArray<Readonly<{ nodeId: string; agentId: string }>>;
+  }) => ({
+    containerAgentId: PARENT,
+    sessionId: SID,
+    workflowRunId: null,
+    planId: 'p1',
+    goalTitle: 'goal',
+    graph: {
+      executionVersion: 2,
+      nodes: nodes.map((node) => ({ ...node, expectedOutput: null })),
+    },
+    nodes: bindings.map((binding, index) => ({
+      nodeId: binding.nodeId,
+      agentId: binding.agentId as AgentId,
+      ordinal: index,
+      role: nodes.find((node) => node.id === binding.nodeId)?.role ?? 'implementer',
+    })),
+    createdAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  it('inserts each cluster with its declared role, kind and role routing default', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    hoisted.invokeAgentInsertBatch.mockImplementation(
+      async ({ children }: { children: ReadonlyArray<Record<string, unknown>> }) => ({
+        inserted: true,
+        agents: children.map((args, index) => {
+          hoisted.insertArgs.push(args);
+          return { id: `role-${index + 1}` as AgentId, ...args } as unknown as Agent;
+        }),
+      }),
+    );
+    const c = container();
+    const { get, set, state, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      providers: CONNECTED_PROVIDERS,
+    });
+
+    await fanOutClusters(set, get, SID, c, graphClusters, 'goal');
+
+    expect(hoisted.insertArgs.map((args) => args.kind)).toEqual([
+      'scout',
+      'implementer',
+      'reviewer',
+      'tester',
+    ]);
+    expect(hoisted.insertArgs[0]?.modelOverride).toBe(ROLE_REGISTRY.scout.model);
+    expect(hoisted.insertArgs[1]?.modelOverride).toBe(ROLE_REGISTRY.implementer.model);
+    expect(state.agentKindOverride).toMatchObject({
+      'role-1': 'scout',
+      'role-2': 'implementer',
+      'role-3': 'reviewer',
+      'role-4': 'tester',
+    });
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { agentId: AgentId; content: string };
+    expect(call.agentId).toBe('role-1');
+    expect(call.content).toContain('**Role** scout');
+  });
+
+  it('rejects the whole plan and starts nothing when the cluster graph is invalid', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    const c = container();
+    const { get, set, sendTurn, emitNotification } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+    });
+
+    await fanOutClusters(
+      set,
+      get,
+      SID,
+      c,
+      [
+        { id: 'a', title: 'one', instructions: 'x' },
+        { id: 'b', title: 'two', instructions: 'y', dependsOn: ['ghost'] },
+      ],
+      'goal',
+    );
+
+    expect(hoisted.invokeAgentInsertBatch).not.toHaveBeenCalled();
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Cluster container is blocked',
+        body: expect.stringContaining('"ghost"'),
+        sessionId: SID,
+      }),
+    );
+  });
+
+  it('holds a reviewer node until the implementation it depends on completes', async () => {
+    const reviewFirst = executionGraph({
+      nodes: [
+        {
+          id: 'review',
+          ordinal: 0,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+        {
+          id: 'impl',
+          ordinal: 1,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+      ],
+      bindings: [
+        { nodeId: 'review', agentId: 'g-review' },
+        { nodeId: 'impl', agentId: 'g-impl' },
+      ],
+    });
+    const seed = childAgent({ id: 'g-seed', ordinal: 0, status: 'running' });
+    const review = childAgent({ id: 'g-review', ordinal: 1, name: 'review the change' });
+    const impl = childAgent({ id: 'g-impl', ordinal: 2, name: 'rewrite the resolver' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), seed, review, impl] },
+      clusterExecutionGraphs: { [SID]: [reviewFirst] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'g-seed', ordinal: 0, status: 'completed' }),
+      review,
+      impl,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, seed.id, done('g-seed'));
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('g-impl');
+    expect(call.content).toContain('do it');
+  });
+
+  it('does not claim a still-blocked earlier node is done when a later node starts', async () => {
+    const reviewFirst = executionGraph({
+      nodes: [
+        {
+          id: 'review',
+          ordinal: 0,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+        {
+          id: 'impl',
+          ordinal: 1,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+      ],
+      bindings: [
+        { nodeId: 'review', agentId: 'b-review' },
+        { nodeId: 'impl', agentId: 'b-impl' },
+      ],
+    });
+    const seed = childAgent({ id: 'b-seed', ordinal: 0, status: 'running' });
+    const review = childAgent({ id: 'b-review', ordinal: 1, name: 'review the change' });
+    const impl = childAgent({ id: 'b-impl', ordinal: 2, name: 'rewrite the resolver' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), seed, review, impl] },
+      clusterExecutionGraphs: { [SID]: [reviewFirst] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'b-seed', ordinal: 0, status: 'completed' }),
+      review,
+      impl,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, seed.id, done('b-seed'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('b-impl');
+    expect(call.content).not.toContain('**Done before you**');
+    expect(call.content).not.toContain('review the change');
+  });
+
+  it('releases the reviewer node once its dependency completes', async () => {
+    const graph = executionGraph({
+      nodes: [
+        {
+          id: 'review',
+          ordinal: 0,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+        {
+          id: 'impl',
+          ordinal: 1,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+      ],
+      bindings: [
+        { nodeId: 'review', agentId: 'r-review' },
+        { nodeId: 'impl', agentId: 'r-impl' },
+      ],
+    });
+    const review = childAgent({ id: 'r-review', ordinal: 1, name: 'review the change' });
+    const impl = childAgent({ id: 'r-impl', ordinal: 2, name: 'rewrite the resolver' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), review, impl] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      review,
+      childAgent({ id: 'r-impl', ordinal: 2, name: 'rewrite the resolver', status: 'completed' }),
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, impl.id, done('r-impl'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('r-review');
+    expect(call.content).toContain('**Role** reviewer');
+    expect(call.content).toContain('**Depends on** rewrite the resolver');
+  });
+
+  it('an edited plan artifact cannot redirect a consumed execution', async () => {
+    const graph = executionGraph({
+      nodes: [
+        {
+          id: 'one',
+          ordinal: 0,
+          title: 'first',
+          instructions: 'consumed instructions',
+          role: 'implementer',
+          dependsOn: [],
+        },
+        {
+          id: 'two',
+          ordinal: 1,
+          title: 'second',
+          instructions: 'consumed second instructions',
+          role: 'reviewer',
+          dependsOn: ['one'],
+        },
+      ],
+      bindings: [
+        { nodeId: 'one', agentId: 'e0' },
+        { nodeId: 'two', agentId: 'e1' },
+      ],
+    });
+    const c0 = childAgent({ id: 'e0', ordinal: 0, name: 'first' });
+    const c1 = childAgent({ id: 'e1', ordinal: 1, name: 'second' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), c0, c1] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+      sessionPlans: {
+        [SID]: [
+          plan({
+            clusters: [
+              { title: 'edited first', instructions: 'edited instructions' },
+              { title: 'edited second', instructions: 'edited second instructions' },
+            ],
+          }),
+        ],
+      },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([
+      container({ status: 'running' }),
+      childAgent({ id: 'e0', ordinal: 0, name: 'first', status: 'completed' }),
+      c1,
+    ]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, c0.id, done('e0'));
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('e1');
+    expect(call.content).toContain('consumed second instructions');
+    expect(call.content).not.toContain('edited second instructions');
+    expect(hoisted.invokeListConsumptionsForPlan).not.toHaveBeenCalled();
+  });
+
+  it('a resumed node keeps the role the plan declared for it', async () => {
+    const graph = executionGraph({
+      nodes: [
+        {
+          id: 'discovery',
+          ordinal: 0,
+          title: 'survey the routing',
+          instructions: 'map it',
+          role: 'scout',
+          dependsOn: [],
+        },
+      ],
+      bindings: [{ nodeId: 'discovery', agentId: 'retry-scout' }],
+    });
+    const c = container({ status: 'running' });
+    const child = childAgent({
+      id: 'retry-scout',
+      ordinal: 1,
+      status: 'pending',
+      name: 'survey the routing',
+      kind: 'scout',
+    });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, child] },
+      clusterExecutionGraphs: { [SID]: [graph] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, child]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('retry-scout');
+    expect(call.content).toContain('**Role** scout');
+    expect(call.content).toContain('map it');
+  });
+
+  const tombstonedGraph = () =>
+    executionGraph({
+      nodes: [
+        {
+          id: 'impl',
+          ordinal: 0,
+          title: 'rewrite the resolver',
+          instructions: 'do it',
+          role: 'implementer',
+          dependsOn: [],
+        },
+        {
+          id: 'review',
+          ordinal: 1,
+          title: 'review the change',
+          instructions: 'audit it',
+          role: 'reviewer',
+          dependsOn: ['impl'],
+        },
+      ],
+      bindings: [
+        { nodeId: 'impl', agentId: 'gone-impl' },
+        { nodeId: 'review', agentId: 'kept-review' },
+      ],
+    });
+
+  const tombstonedHold = (state: 'open' | 'resolved') => ({
+    id: 'hold-gone-impl',
+    sessionId: SID,
+    workflowRunId: null,
+    containerAgentId: PARENT,
+    sourceAgentId: 'gone-impl' as AgentId,
+    sourceTurnId: 'turn-gone',
+    reason: 'missing-outcome' as const,
+    findings: [],
+    state,
+    resolutionEvidence: state === 'resolved' ? 'checked by hand' : null,
+    resolvedAt: state === 'resolved' ? '2026-01-01T00:00:00.000Z' : null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  });
+
+  it('releases a dependent node when the hold on its tombstoned dependency is resolved', async () => {
+    const review = childAgent({ id: 'kept-review', ordinal: 1, name: 'review the change' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), review] },
+      clusterExecutionGraphs: { [SID]: [tombstonedGraph()] },
+      clusterCompletionHolds: { [SID]: [tombstonedHold('open')] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([container({ status: 'running' }), review]);
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'gone-impl' as AgentId, '', {
+      force: true,
+      resolvedHoldId: 'hold-gone-impl',
+    });
+
+    expect(store.sendTurn).toHaveBeenCalledTimes(1);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('kept-review');
+    expect(call.content).toContain('**Role** reviewer');
+    expect(call.content).toContain('audit it');
+  });
+
+  it('resumes past a tombstoned node whose hold was already resolved', async () => {
+    const c = container({ status: 'running' });
+    const review = childAgent({ id: 'kept-review', ordinal: 1, name: 'review the change' });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [c, review] },
+      clusterExecutionGraphs: { [SID]: [tombstonedGraph()] },
+      clusterCompletionHolds: { [SID]: [tombstonedHold('resolved')] },
+    });
+    hoisted.invokeAgentList.mockResolvedValue([c, review]);
+
+    const resumed = await resumeClusterChildren({
+      set: store.set,
+      get: store.get,
+      sessionId: SID,
+      container: c,
+    });
+
+    expect(resumed).toBe(true);
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as {
+      agentId: AgentId;
+      content: string;
+    };
+    expect(call.agentId).toBe('kept-review');
   });
 });
