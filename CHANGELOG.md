@@ -7,6 +7,18 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.4.3
+
+The board and your sessions answer every click again, and the board keeps its shape on wide screens.
+
+### [#1874] Clicks reach the board and sessions again
+
+In 0.4.2 the board and an open session could ignore clicks and hover while the top bar and footer still worked. Both respond normally again.
+
+### [#1874] A board that holds its shape on any screen
+
+Columns grow up to a comfortable width and the board stays centred, so a wide or zoomed-out window no longer stretches it. Cards keep one height, and their menu appears when you hover them.
+
 ## Goodboy v0.4.2
 
 A faster, steadier Goodboy that looks the same in light and dark mode.
