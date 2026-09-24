@@ -12,13 +12,13 @@ export const setAgentDone = (set: SetFn, get: GetFn) => {
       await invokeAgentSetDone(agentId, true, doneAt);
     } catch (error) {
       applyAgentDone({ set, sessionId, agentId, doneAt: null });
-      void get().emitNotification(
-        'error',
-        'error',
-        'could not mark this agent done',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't mark this agent done",
+        body: formatError(error),
+        sessionId,
+      });
       return;
     }
     applyAgentDone({ set, sessionId, agentId, doneAt });

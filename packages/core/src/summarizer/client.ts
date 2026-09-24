@@ -1,4 +1,4 @@
-import type { ContextSlot, InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
+import type { ContextSlot, EffortLevel, InvocationContext, ProviderId } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { computeProviderCostUsd } from '../providers/provider-cost';
@@ -42,7 +42,7 @@ export type SummarizerDeps = {
   readonly providerId: ProviderId;
   readonly binary?: string;
   readonly model?: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
   readonly invocation?: InvocationContext;
@@ -83,7 +83,7 @@ export class Summarizer {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
-  private readonly effort: ModelEffort | undefined;
+  private readonly effort: EffortLevel | undefined;
   private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
   private readonly invocation: InvocationContext | undefined;

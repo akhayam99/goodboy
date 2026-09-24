@@ -1,4 +1,15 @@
-export type { Database } from './client';
+export type {
+  AbortedTransaction,
+  CommittedTransaction,
+  Database,
+  GuardedStatement,
+  PlainStatement,
+  Statement,
+  StatementGuard,
+  StatementResult,
+  TransactionOutcome,
+  TransactionParams,
+} from './client';
 
 export { migrate, type MigrateResult } from './migrations/runner';
 export {
@@ -36,7 +47,6 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
-  listDisconnectedWorkspaces,
   disconnectWorkspace,
   reconnectWorkspace,
   renameWorkspace,
@@ -49,16 +59,12 @@ export {
   insertProject,
   getProjectById,
   listProjectsForWorkspace,
-  listDisconnectedProjects,
   findProjectByRootPath,
   disconnectProject,
   reconnectProject,
-  renameProject,
-  touchProjectLastAccessed,
   updateProjectKind,
   updateProjectBaseBranch,
   updateProjectSetup,
-  deleteProject,
   type ProjectSetupInput,
 } from './queries/project';
 export {
@@ -82,7 +88,6 @@ export {
 } from './queries/integration-credential';
 export {
   upsertSessionExternalTask,
-  listSessionExternalTasks,
   listExternalTasksForWorkspace,
   deleteSessionExternalTask,
 } from './queries/session-external-task';
@@ -101,8 +106,6 @@ export {
   renameSession,
   deleteSession,
   purgeSessionForDelete,
-  softDeleteSession,
-  restoreSession,
   archiveSession,
   unarchiveSession,
   updateSessionConfig,
@@ -110,7 +113,6 @@ export {
   type ArchivedSessionRef,
 } from './queries/session';
 export {
-  listWorkflowsForSession,
   attachWorkflowToSession,
   detachWorkflowFromSession,
   discardWorkflowInSession,
@@ -126,7 +128,6 @@ export {
   updateWorkflowRunOrchestratorHints,
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
-  updateWorkflowRunRoleModelOverrides,
   updateWorkflowRunSpendLimit,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
@@ -159,53 +160,32 @@ export {
 export {
   insertFileVersion,
   listFileVersionsForSession,
-  listFileVersionsForPath,
   pruneFileVersionsForPath,
   deleteFileVersion,
   deleteFileVersionsForSession,
 } from './queries/file-version';
-export {
-  insertProviderRun,
-  updateProviderRunStatus,
-  getProviderRunById,
-} from './queries/provider-run';
+export { insertProviderRun, updateProviderRunStatus } from './queries/provider-run';
 export {
   insertTelemetry,
   listTelemetryForSession,
   summarizeSessionTelemetry,
   summarizeWorkspaceTelemetry,
-  summarizeProviderTelemetry,
   summarizeWorkspaceProviderTelemetry,
   summarizeWorkflowRunTelemetry,
   summarizeUnattributedTelemetry,
-  type TelemetrySummary,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,
-  upsertSessionBudget,
   getSessionBudget,
   insertBudgetAlert,
   listBudgetAlerts,
   dismissBudgetAlert,
   type ListBudgetAlertsOptions,
 } from './queries/budget';
-export {
-  listSkillsForWorkspace,
-  getSkillById,
-  upsertSkill,
-  deleteSkill,
-  deleteSkillsForWorkspace,
-} from './queries/skill';
-export {
-  listWorkflows,
-  getWorkflow,
-  upsertWorkflow,
-  deleteWorkflow,
-  updateStepRouting,
-  type StepRoutingUpdate,
-} from './queries/workflow';
+export { listSkillsForWorkspace, upsertSkill, deleteSkill } from './queries/skill';
+export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
   isWorkflowRoutingProposal,
@@ -217,14 +197,10 @@ export {
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
 export {
-  listAgentsForSession,
   listAgentsForSessions,
   updateAgentStatus,
-  softDeleteAgent,
-  restoreAgent,
   purgeAgentForDelete,
   updateAgentConfig,
-  updateAgentRouting,
   type AgentRoutingUpdate,
   updateAgentDomains,
   getAgentById,
@@ -287,7 +263,6 @@ export {
   updateSessionWorktreeBranch,
   updateSessionMountBranch,
   updateSessionMountLifecycle,
-  updateSessionWorktreePath,
   updateSessionWorktreeRepoSlug,
   listAllSessionWorktrees,
   detachSessionMounts,
@@ -303,11 +278,7 @@ export {
   listUnsettledMountOperations,
   upsertMountOperation,
 } from './queries/mount-operation';
-export {
-  hydrateGithubMountPullRequestLink,
-  listMountPullRequestLinks,
-  upsertMountPullRequestLink,
-} from './queries/mount-pr-link';
+export { listMountPullRequestLinks, upsertMountPullRequestLink } from './queries/mount-pr-link';
 export {
   findPrSeriesMembership,
   getPrSeries,
@@ -318,23 +289,13 @@ export {
 } from './queries/pr-series';
 export {
   deleteRetainedWorktreePath,
-  insertRetainedWorktreePath,
   listAllRetainedWorktreePaths,
   listRetainedWorktreePaths,
   markRetainedWorktreePathChecked,
   transferMountPathToRetained,
 } from './queries/retained-worktree-path';
-export {
-  insertSessionEvent,
-  listSessionEvents,
-  deleteSessionEvents,
-} from './queries/session-event';
-export {
-  getWorkspaceOverrides,
-  setWorkspaceOverrides,
-  getProjectOverrides,
-  setProjectOverrides,
-} from './queries/settings-overrides';
+export { insertSessionEvent, listSessionEvents } from './queries/session-event';
+export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
 export {
   listProviderCredentials,
   insertProviderCredential,
@@ -379,7 +340,6 @@ export {
 export {
   insertNudgeEvent,
   updateNudgeEventOutcome,
-  listNudgeEvents,
   type ListNudgeEventsOptions,
   type NudgeEvent,
   type NudgeKind,
@@ -417,18 +377,13 @@ export {
   getArtifact,
   getArtifactBySourceTurn,
   listArtifactsForSession,
-  listArtifactsForRun,
   updateArtifactSource,
   setArtifactStatus,
   deleteArtifact,
   restoreArtifact,
   removeArtifact,
-  putArtifactRendition,
-  getArtifactRendition,
   type InsertArtifactInput,
   type UpdateArtifactSourceInput,
-  type PutArtifactRenditionInput,
-  type GetArtifactRenditionInput,
 } from './queries/artifact';
 export {
   putArtifactProvenance,
@@ -463,7 +418,6 @@ export {
   markOpenQuestionDismissed,
   markOpenQuestionsResolvedByText,
   restoreOpenQuestion,
-  transferOpenQuestionOwnership,
   type InsertOpenQuestionInput,
   type InsertOpenQuestionResult,
   type OpenQuestionAnswerProvenance,

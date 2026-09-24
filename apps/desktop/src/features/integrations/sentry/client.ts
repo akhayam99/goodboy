@@ -99,24 +99,6 @@ export const sentryFetchIssues = async (
   });
 };
 
-type FetchIssueParams = {
-  readonly workspaceId: WorkspaceId;
-  readonly issueId: string;
-  readonly projectId?: ProjectId;
-};
-
-export const sentryFetchIssue = async ({
-  workspaceId,
-  issueId,
-  projectId,
-}: FetchIssueParams): Promise<SentryIssue> => {
-  return invoke<SentryIssue>('sentry_fetch_issue', {
-    workspaceId,
-    issueId,
-    ...(projectId != null ? { projectId } : {}),
-  });
-};
-
 export const sentryFetchIssueDetail = async (
   workspaceId: WorkspaceId,
   issueId: string,

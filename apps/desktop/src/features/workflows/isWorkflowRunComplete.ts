@@ -4,7 +4,7 @@ import { isCompletedAttempt } from '../../store/slices/workflows/clusterSourcePr
 
 type Params = {
   readonly run: WorkflowRun;
-  readonly workflow: Workflow;
+  readonly workflow: Workflow | null;
   readonly agents: ReadonlyArray<Agent>;
   readonly holds: ReadonlyArray<ClusterCompletionHold>;
 };
@@ -24,6 +24,9 @@ export const isWorkflowRunComplete = ({ run, workflow, agents, holds }: Params):
   }
   if (run.executionMode === 'dynamic') {
     return run.orchestrationOutcome === 'done';
+  }
+  if (workflow === null) {
+    return false;
   }
   const stepAgents = agents.filter((agent) => agent.parentAgentId == null);
   return workflow.steps.length > 0 && isWorkflowComplete(workflow, stepAgents);

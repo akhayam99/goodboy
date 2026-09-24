@@ -104,7 +104,7 @@ export const ReportStudio = ({ sessionId, artifact, mode }: Props) => {
                 type="button"
                 aria-expanded={isOutlineOpen}
                 data-testid="report-outline-toggle"
-                className="flex items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground motion-safe:transition-colors hover:text-foreground"
+                className="flex items-center gap-1.5 text-2xs uppercase tracking-eyebrow text-muted-foreground motion-safe:transition-colors hover:text-foreground"
                 onClick={() => setIsOutlineOpen((previous) => !previous)}
               >
                 <ChevronRight

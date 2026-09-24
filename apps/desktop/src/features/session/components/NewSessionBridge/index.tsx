@@ -1,12 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 
 export const NewSessionBridge = () => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const createUntitledSession = useAppStore((s) => s.createUntitledSession);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -16,16 +14,20 @@ export const NewSessionBridge = () => {
       }
       busyRef.current = true;
       void createUntitledSession({ workspaceId: currentWorkspaceId })
-        .catch((error: unknown) => {
-          showToast('error', formatError(error));
-        })
+        .catch((error: unknown) =>
+          reportError({
+            title: "Couldn't start a new session",
+            error,
+            workspaceId: currentWorkspaceId,
+          }),
+        )
         .finally(() => {
           busyRef.current = false;
         });
     };
     window.addEventListener('goodboy:new-session', onNewSessionRequest);
     return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
-  }, [createUntitledSession, currentWorkspaceId, showToast]);
+  }, [createUntitledSession, currentWorkspaceId, reportError]);
 
   return null;
 };

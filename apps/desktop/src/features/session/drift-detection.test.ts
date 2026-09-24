@@ -90,6 +90,24 @@ describe('detectDrift', () => {
       expect(result.some((v) => v.signal === 'file-edit-from-readonly-kind')).toBe(false);
     });
 
+    it('allows code edits and diff output from a resolver', () => {
+      const result = detectDrift({
+        agentKind: 'resolver',
+        assistantText: 'fixed it\n+ const next = 1;\n- const prev = 0;\n',
+        filesEdited: ['src/foo.ts'],
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('still flags diff output from docs', () => {
+      const result = detectDrift({
+        agentKind: 'docs',
+        assistantText: '\n+ const next = 1;\n',
+        filesEdited: ['README.md'],
+      });
+      expect(result.map((v) => v.signal)).toEqual(['impl-output-from-readonly-kind']);
+    });
+
     it('allows file edits from debugger', () => {
       const result = detectDrift({
         agentKind: 'debugger',

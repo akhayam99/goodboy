@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const LegendBlock = ({ title, children }: Props) => (
-  <div className="flex flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle/40 p-4">
+  <div className="flex flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle p-4">
     <Eyebrow label={title} />
     {children}
   </div>

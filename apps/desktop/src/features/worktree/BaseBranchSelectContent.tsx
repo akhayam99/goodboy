@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { cn, ScrollFade } from '@goodboy/ui';
+import { cn, Input, ScrollFade, tintClasses } from '@goodboy/ui';
 import { listBranchNames } from './worktree';
 
 type Props = {
@@ -65,7 +65,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
 
   return (
     <div className="flex w-64 flex-col gap-1.5 p-2">
-      <input
+      <Input
         ref={inputRef}
         type="text"
         role="combobox"
@@ -96,7 +96,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
           event.preventDefault();
           commit({ candidate: query });
         }}
-        className="h-8 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary focus:ring-1 focus:ring-primary"
+        className="px-2 font-mono text-xs"
       />
       {isLoading ? (
         <span className="px-1 text-2xs text-muted-foreground">Loading branches</span>
@@ -117,10 +117,10 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
                   onMouseEnter={() => setHighlightIndex(index)}
                   onClick={() => commit({ candidate: branch })}
                   className={cn(
-                    'flex w-full rounded px-2 py-1.5 text-left font-mono text-xs',
+                    'flex w-full rounded-sm px-2 py-1.5 text-left font-mono text-xs',
                     index === highlightIndex
-                      ? 'bg-primary/10 text-foreground'
-                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                      ? cn(tintClasses('primary').bg, 'text-foreground')
+                      : 'text-muted-foreground hover:bg-hover hover:text-foreground',
                   )}
                 >
                   <span className="truncate">{branch}</span>
@@ -134,7 +134,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
         <button
           type="button"
           onClick={() => commit({ candidate: '' })}
-          className="rounded px-2 py-1.5 text-left text-2xs text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          className="rounded-sm px-2 py-1.5 text-left text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
         >
           Use default
         </button>

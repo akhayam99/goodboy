@@ -129,14 +129,14 @@ export const SegmentedTabs = <T extends string>({
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}
             className={cn(
-              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
               isActive
                 ? cn(
                     'bg-elevated font-semibold text-foreground ring-1 ring-inset',
                     option.accent != null || tone == null ? 'ring-border' : tone.ring,
                   )
-                : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
               option.disabled === true &&
                 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted-foreground',
             )}
@@ -161,7 +161,7 @@ export const SegmentedTabs = <T extends string>({
             )}
             {option.badge != null ? (
               typeof option.badge === 'string' ? (
-                <span className="rounded-md bg-foreground/10 px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-md bg-muted px-1.5 py-0.5 text-2xs font-bold uppercase tracking-eyebrow text-muted-foreground">
                   {option.badge}
                 </span>
               ) : (

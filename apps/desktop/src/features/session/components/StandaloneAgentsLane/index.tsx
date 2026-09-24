@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { AdHocRow } from '../../../workspace/components/WorkspacesSidebar/parts/AdHocRow';
+import { AdHocRow } from '../AgentTree/AdHocRow';
 import { AgentLane } from '../AgentLane';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';

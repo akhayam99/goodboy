@@ -85,7 +85,7 @@ export const AgentFollowUps = ({
             onClick={() => onSpawn(move.kind)}
             className={cn(
               'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-xs transition-colors hover:border-border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             <AgentKindChip kind={move.kind} title={move.label} />
@@ -93,7 +93,7 @@ export const AgentFollowUps = ({
             <ArrowRight
               size={ICON_SIZE.row}
               aria-hidden
-              className="shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5"
+              className="shrink-0 text-faint-foreground transition-transform group-hover:translate-x-0.5"
             />
           </button>
         ))}

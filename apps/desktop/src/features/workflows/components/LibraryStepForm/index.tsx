@@ -9,9 +9,9 @@ import type {
   StepDef,
   VerbosityLevel,
   WorkspaceId,
+  EffortLevel,
 } from '@goodboy/types';
 import type { StepDefUpsertArgs } from '../../workflows';
-import { type EffortLevel } from '../../../chat/utils/chat-constants';
 import { stepDraftWithModel } from '../../engine';
 import { RoleSelect } from '../../../session/components/RoleSelect';
 import { InlineField } from '../../../session/components/InlineField';
@@ -130,7 +130,7 @@ export const LibraryStepForm = ({
             type="button"
             onClick={onClose}
             aria-label="Close step editor"
-            className="shrink-0 rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-muted/50 hover:text-foreground"
+            className="shrink-0 rounded-md p-1 text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
           >
             <X size={ICON_SIZE.row} aria-hidden />
           </button>
@@ -138,7 +138,7 @@ export const LibraryStepForm = ({
       </div>
 
       {isGlobal ? (
-        <p className="text-2xs leading-relaxed text-muted-foreground/70">
+        <p className="text-2xs leading-relaxed text-faint-foreground">
           Editing a global step saves a copy in this workspace. The shared original stays unchanged.
         </p>
       ) : null}

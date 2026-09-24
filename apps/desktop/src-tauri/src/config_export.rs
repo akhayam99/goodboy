@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use crate::db::{Db, DbError};
 
@@ -828,25 +828,29 @@ fn normalized_kind(kind: &str) -> String {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn export_config_to_file(
-    state: State<'_, Db>,
-    path: String,
-) -> Result<(), ConfigExportError> {
-    let bundle = export_config(state)?;
-    let json = serde_json::to_string_pretty(&bundle)?;
-    std::fs::write(&path, json).map_err(|e| ConfigExportError::Validation(e.to_string()))?;
-    Ok(())
+pub async fn export_config_to_file(app: AppHandle, path: String) -> Result<(), ConfigExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let bundle = export_config(app.state::<Db>())?;
+        let json = serde_json::to_string_pretty(&bundle)?;
+        std::fs::write(&path, json).map_err(|e| ConfigExportError::Validation(e.to_string()))
+    })
+    .await
+    .map_err(|e| ConfigExportError::Validation(e.to_string()))?
 }
 
 #[tauri::command]
 pub async fn import_config_from_file(
-    state: State<'_, Db>,
+    app: AppHandle,
     path: String,
 ) -> Result<ImportResult, ConfigExportError> {
-    let raw =
-        std::fs::read_to_string(&path).map_err(|e| ConfigExportError::Validation(e.to_string()))?;
-    let bundle: ConfigBundle = serde_json::from_str(&raw)?;
-    import_config(state, bundle)
+    tauri::async_runtime::spawn_blocking(move || {
+        let raw = std::fs::read_to_string(&path)
+            .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
+        let bundle: ConfigBundle = serde_json::from_str(&raw)?;
+        import_config(app.state::<Db>(), bundle)
+    })
+    .await
+    .map_err(|e| ConfigExportError::Validation(e.to_string()))?
 }
 
 // ---------------------------------------------------------------------------

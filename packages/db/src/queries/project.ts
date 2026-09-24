@@ -157,25 +157,6 @@ export const listProjectsForWorkspace = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
-type ListDisconnectedProjectsParams = ListProjectsParams & {
-  readonly limit?: number;
-};
-
-export const listDisconnectedProjects = async ({
-  db,
-  workspaceId,
-  limit = 10,
-}: ListDisconnectedProjectsParams): Promise<ReadonlyArray<Project>> => {
-  const rows = await db.select<ProjectRow>(
-    `SELECT * FROM projects
-     WHERE workspace_id = ? AND disconnected_at IS NOT NULL
-     ORDER BY disconnected_at DESC
-     LIMIT ?`,
-    [workspaceId, limit],
-  );
-  return rows.map((row) => toDomain({ row }));
-};
-
 type NormalizeRootPathParams = {
   readonly path: string;
 };
@@ -250,20 +231,6 @@ export const updateProjectKind = async ({
   await db.execute('UPDATE projects SET kind = ?, root_path = ?, updated_at = ? WHERE id = ?', [
     kind,
     rootPath,
-    Date.now(),
-    id,
-  ]);
-};
-
-type RenameProjectParams = {
-  readonly db: Database;
-  readonly id: ProjectId;
-  readonly name: string;
-};
-
-export const renameProject = async ({ db, id, name }: RenameProjectParams): Promise<void> => {
-  await db.execute('UPDATE projects SET name = ?, updated_at = ? WHERE id = ?', [
-    name,
     Date.now(),
     id,
   ]);
@@ -354,8 +321,4 @@ type ProjectIdParams = {
 
 export const touchProjectLastAccessed = async ({ db, id }: ProjectIdParams): Promise<void> => {
   await db.execute('UPDATE projects SET last_accessed_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export const deleteProject = async ({ db, id }: ProjectIdParams): Promise<void> => {
-  await db.execute('DELETE FROM projects WHERE id = ?', [id]);
 };

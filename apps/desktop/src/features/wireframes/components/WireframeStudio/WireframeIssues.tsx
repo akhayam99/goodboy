@@ -36,7 +36,7 @@ export const WireframeIssues = ({ issues, sourceText, isRepairing, onRepair }: P
     <ul className="flex flex-col gap-1">
       {issues.slice(0, 20).map((issue) => (
         <li key={`${issue.path}-${issue.message}`} className="text-2xs text-muted-foreground">
-          <span className="font-mono text-foreground/80">
+          <span className="font-mono text-foreground">
             {issue.path.length === 0 ? 'root' : issue.path}
           </span>
           {': '}
@@ -46,7 +46,7 @@ export const WireframeIssues = ({ issues, sourceText, isRepairing, onRepair }: P
     </ul>
     <pre
       data-testid="artifact-json-source"
-      className="overflow-x-auto rounded-md border border-border-soft bg-elevated p-3 font-mono text-2xs text-foreground/80"
+      className="overflow-x-auto rounded-md border border-border-soft bg-elevated p-3 font-mono text-2xs text-foreground"
     >
       {prettyJson(sourceText)}
     </pre>

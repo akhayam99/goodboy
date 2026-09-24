@@ -1,7 +1,7 @@
 import { Check, ChevronRight, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Notification } from '@goodboy/db';
-import { StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -49,7 +49,7 @@ export const NotificationGroupRow = ({
                 onClick={() => setIsExpanded((value) => !value)}
                 aria-label={isExpanded ? 'Collapse notifications' : 'Expand notifications'}
                 aria-expanded={isExpanded}
-                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 <ChevronRight
                   size={ICON_SIZE.row}
@@ -104,7 +104,7 @@ export const NotificationGroupRow = ({
               <button
                 type="button"
                 onClick={onAction}
-                className="rounded px-1.5 py-1 text-2xs hover:bg-muted"
+                className="rounded-sm px-1.5 py-1 text-2xs hover:bg-hover"
               >
                 {actionLabel}
               </button>
@@ -115,7 +115,7 @@ export const NotificationGroupRow = ({
                   type="button"
                   onClick={onMarkRead}
                   aria-label={`Mark "${latest.title}" group as read`}
-                  className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded-sm p-1 text-muted-foreground hover:bg-hover hover:text-foreground"
                 >
                   <Check size={ICON_SIZE.row} aria-hidden />
                 </button>
@@ -126,7 +126,11 @@ export const NotificationGroupRow = ({
                 type="button"
                 onClick={onDismiss}
                 aria-label={`Dismiss "${latest.title}" group`}
-                className="rounded p-1 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                className={cn(
+                  'rounded-sm p-1 text-muted-foreground',
+                  tintClasses('danger').hoverBg,
+                  'hover:text-danger',
+                )}
               >
                 <Trash2 size={ICON_SIZE.row} aria-hidden />
               </button>

@@ -1,10 +1,11 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
+import type { WizardStepId } from './wizardSteps';
 
 type DotState = 'done' | 'current' | 'pending';
 
 const DOT_CLASS: Readonly<Record<DotState, string>> = {
   done: 'w-6 bg-primary',
-  current: 'w-3 bg-primary/50 ring-1 ring-primary',
+  current: cn('w-3', tintClasses('primary').bg, 'ring-1 ring-primary'),
   pending: 'w-1.5 bg-border',
 };
 
@@ -25,8 +26,8 @@ const dotState = ({
 };
 
 type Props = {
-  readonly current: number;
-  readonly steps: ReadonlyArray<number>;
+  readonly current: WizardStepId;
+  readonly steps: ReadonlyArray<WizardStepId>;
 };
 
 export const Stepper = ({ current, steps }: Props) => {

@@ -4,6 +4,24 @@
   margin-right: auto;
 }
 
+@media (min-width: 960px) and (max-width: 1079px) {
+  #extras .split {
+    display: block;
+  }
+
+  #extras .split > .blockHead h2 {
+    font-size: clamp(30px, 3.8vw, 54px);
+  }
+
+  #extras .split > .blockHead .sub {
+    font-size: clamp(17px, 1.6vw, 20px);
+  }
+
+  #extras .split > .splitBody > .ex-frame {
+    margin-top: 48px;
+  }
+}
+
 .ex-sec {
   padding: 16px 18px;
 }

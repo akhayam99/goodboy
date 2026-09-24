@@ -16,7 +16,7 @@ const OUTCOME_TONE = {
 } as const satisfies Record<'done' | 'blocked', Tone>;
 
 const ROW_BUTTON =
-  'flex min-w-0 items-baseline gap-2 rounded-md text-left text-2xs transition-colors hover:bg-muted/40';
+  'flex min-w-0 items-baseline gap-2 rounded-md text-left text-2xs transition-colors hover:bg-hover';
 
 type Props = {
   readonly steps: ReadonlyArray<Step>;
@@ -97,7 +97,7 @@ export const WorkflowOrchestratorTldr = ({ steps, run }: Props) => {
                       onClick={() => toggleRow(entry.id)}
                       className={ROW_BUTTON}
                     >
-                      <span className="shrink-0 tabular-nums text-muted-foreground/60">
+                      <span className="shrink-0 tabular-nums text-faint-foreground">
                         {entries.length - visible.length + index + 1}
                       </span>
                       <span className="min-w-0 max-w-[50%] truncate font-medium text-foreground">

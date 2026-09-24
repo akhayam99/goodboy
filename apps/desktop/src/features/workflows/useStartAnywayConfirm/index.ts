@@ -32,12 +32,12 @@ export const useStartAnywayConfirm = ({
     try {
       await onStart({ isConfirmed });
     } catch (error) {
-      void emitNotification(
-        'error',
-        'warning',
-        'the next step did not start',
-        formatError(error),
-      ).catch(() => undefined);
+      void emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "The next step didn't start",
+        body: formatError(error),
+      }).catch(() => undefined);
     } finally {
       setIsBusy(false);
     }

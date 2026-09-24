@@ -54,7 +54,7 @@ export const CapabilityObligationAction = ({ obligation }: Props) => {
         Needs: {label}
       </span>
       <span
-        className="shrink-0 text-muted-foreground/70"
+        className="shrink-0 text-faint-foreground"
         {...(detail === null ? {} : { title: detail })}
       >
         {stateLabel({ obligation })}

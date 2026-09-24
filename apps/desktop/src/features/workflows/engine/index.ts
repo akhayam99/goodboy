@@ -1,7 +1,13 @@
-import { normalizeAgentRole } from '@goodboy/core';
+import { normalizeAgentRole, clampEffortForModel } from '@goodboy/core';
 import type { PlannerOutput } from '@goodboy/core';
-import type { ProviderId, StepDef, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { clampEffort, type EffortLevel } from '../../chat/utils/chat-constants';
+import type {
+  ProviderId,
+  StepDef,
+  Workflow,
+  WorkflowId,
+  WorkspaceId,
+  EffortLevel,
+} from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
 import type { StepDraft, WorkflowDraft, WorkflowDraftErrors } from './types';
 
@@ -120,7 +126,9 @@ export const stepDraftWithModel = ({
   ...step,
   provider,
   model,
-  effort: clampEffort(model !== '' ? model : recommendedModel, step.effort),
+  effort:
+    clampEffortForModel({ model: model !== '' ? model : recommendedModel, effort: step.effort }) ??
+    step.effort,
 });
 
 type ValidateDraftParams = { readonly draft: WorkflowDraft };

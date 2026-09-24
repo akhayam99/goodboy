@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Input, Tooltip } from '@goodboy/ui';
+import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -12,17 +12,19 @@ import { ContextChip } from './ContextChip';
 import { ContextDigest } from './ContextDigest';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { AttentionChips } from './AttentionChips';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
+import { ArchivedRestore } from './ArchivedRestore';
 
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
   readonly goal: ReactNode;
+  readonly titleAction?: ReactNode;
 };
 
-export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
+export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: Props) => {
+  const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
@@ -92,18 +94,21 @@ export const HeaderBand = ({ session, onSelectLens, goal }: Props) => {
                   event.preventDefault();
                   rename.start();
                 }}
-                className="min-w-0 flex-1 cursor-text truncate rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                title={inlineMarkdownText({ text: titleText })}
+                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <InlineMarkdown text={titleText} />
               </h1>
             </Tooltip>
           )}
           <div className="flex shrink-0 items-center gap-1">
+            {titleAction}
             <SessionDestructiveActions session={session} />
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            {isArchived ? <ArchivedRestore session={session} /> : null}
             <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
             <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>

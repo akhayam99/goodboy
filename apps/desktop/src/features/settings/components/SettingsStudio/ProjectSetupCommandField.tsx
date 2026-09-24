@@ -89,9 +89,7 @@ export const ProjectSetupCommandField = ({ project }: Props) => {
           onChange={choose}
         />
         {project.setup !== undefined ? (
-          <span className="text-2xs text-muted-foreground/70">
-            revision {project.setup.revision}
-          </span>
+          <span className="text-2xs text-faint-foreground">revision {project.setup.revision}</span>
         ) : null}
       </div>
       {mode === 'command' ? (
@@ -123,7 +121,7 @@ export const ProjectSetupCommandField = ({ project }: Props) => {
           </Button>
         </form>
       ) : null}
-      <span className="text-2xs text-muted-foreground/80">
+      <span className="text-2xs text-muted-foreground">
         Runs in every new private checkout before a scoped cluster starts there. While it is not
         set, clusters run one at a time.
       </span>

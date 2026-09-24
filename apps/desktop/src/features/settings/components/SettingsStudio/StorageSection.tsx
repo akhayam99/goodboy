@@ -3,16 +3,16 @@ import { Trash2 } from 'lucide-react';
 import {
   Button,
   FieldRow,
-  formatError,
   InlineConfirm,
   ScrollFade,
-  SectionHeader,
   Skeleton,
+  cn,
+  tintClasses,
 } from '@goodboy/ui';
 import { useToast } from '../../../../app/components/Toast';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { useAppStore } from '../../../../store';
-import { formatBytes } from './formatBytes';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ConfirmTarget = 'transcripts' | 'worktrees';
@@ -31,6 +31,7 @@ export const StorageSection = () => {
   const reconcileOrphanWorktrees = useAppStore((s) => s.reconcileOrphanWorktrees);
   const pruneArchivedTranscripts = useAppStore((s) => s.pruneArchivedTranscripts);
   const removeArchivedWorktrees = useAppStore((s) => s.removeArchivedWorktrees);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
@@ -42,7 +43,7 @@ export const StorageSection = () => {
     void reconcileOrphanWorktrees()
       .catch(() => undefined)
       .then(() => loadStorageStats())
-      .catch((err: unknown) => showToast('error', formatError(err)));
+      .catch((err: unknown) => reportError({ title: "Couldn't read storage usage", error: err }));
   }, []);
 
   const onPrune = async () => {
@@ -50,12 +51,12 @@ export const StorageSection = () => {
     try {
       const deleted = await pruneArchivedTranscripts();
       setConfirmTarget(null);
-      showToast(
-        'success',
-        `pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
-      );
+      showToast({
+        kind: 'success',
+        message: `Pruned ${formatInteger(deleted)} transcript event${deleted === 1 ? '' : 's'}`,
+      });
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't prune archived transcripts", error: err });
     } finally {
       setBusyTarget(null);
     }
@@ -67,18 +68,19 @@ export const StorageSection = () => {
       const result = await removeArchivedWorktrees();
       setConfirmTarget(null);
       if (result.failed > 0) {
-        showToast(
-          'error',
-          `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}, ${formatInteger(result.failed)} failed`,
-        );
+        void reportError({
+          severity: 'warning',
+          title: `Couldn't remove ${formatInteger(result.failed)} archived worktree${result.failed === 1 ? '' : 's'}`,
+          error: `Removed ${formatInteger(result.removed)}. The others stay on disk.`,
+        });
         return;
       }
-      showToast(
-        'success',
-        `removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
-      );
+      showToast({
+        kind: 'success',
+        message: `Removed ${formatInteger(result.removed)} worktree${result.removed === 1 ? '' : 's'}`,
+      });
     } catch (err) {
-      showToast('error', formatError(err));
+      void reportError({ title: "Couldn't remove archived worktrees", error: err });
     } finally {
       setBusyTarget(null);
     }
@@ -92,10 +94,6 @@ export const StorageSection = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader
-        label="Storage"
-        hint="What the local database and archived sessions hold on this computer."
-      />
       <div className="flex flex-col">
         <FieldRow label="Database" help="Every workspace, session, message, and streamed event.">
           {showSkeleton ? (
@@ -139,7 +137,7 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('transcripts')}
                 disabled={archivedTranscriptRows === 0}
-                className="text-danger hover:bg-danger/10 hover:text-danger"
+                className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
               >
                 {PRUNE_LABEL}
               </Button>
@@ -178,7 +176,7 @@ export const StorageSection = () => {
                 size="sm"
                 onClick={() => setConfirmTarget('worktrees')}
                 disabled={worktrees.length === 0}
-                className="text-danger hover:bg-danger/10 hover:text-danger"
+                className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
               >
                 {REMOVE_LABEL}
               </Button>

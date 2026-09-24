@@ -4,11 +4,7 @@ import {
   invokeCapabilityNeedRecord,
   invokeClusterCompletionHolds,
 } from '../../../features/workflows/workflows';
-import {
-  inferAgentKindFromName,
-  KIND_TO_ROLE,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { classifyAgent, KIND_TO_ROLE, type AgentKind } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { issuedAgentInventory } from './agentEvidenceInventory';
 import type { GetFn, SetFn } from './types';
@@ -48,10 +44,7 @@ export const captureCapabilityNeed = async ({
   if (agent === undefined) {
     return { kind: 'none' };
   }
-  const kind =
-    (agent.kind as AgentKind | undefined) ??
-    get().agentKindOverride[agentId] ??
-    inferAgentKindFromName(agent.name);
+  const kind = classifyAgent({ agent, override: get().agentKindOverride[agentId] ?? null });
   const requesterRole = KIND_TO_ROLE[kind];
   const { inventory } = issuedAgentInventory({ get, sessionId, agentId });
   const validation = validateCapabilityNeed({
@@ -66,13 +59,13 @@ export const captureCapabilityNeed = async ({
     return { kind: 'none' };
   }
   if (validation.kind === 'rejected') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `need refused: ${agent.name}`,
-      validation.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Need refused for ${agent.name}`,
+      body: validation.reason,
+      sessionId,
+    });
     return { kind: 'rejected', reason: validation.reason };
   }
   const need = validation.need;
@@ -118,13 +111,13 @@ export const captureCapabilityNeed = async ({
       ],
     },
   }));
-  void get().emitNotification(
-    'error',
-    'warning',
-    `need recorded: ${agent.name}`,
-    `${need.targetRole} for ${need.purpose}: ${need.question}`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Need recorded for ${agent.name}`,
+    body: `${need.targetRole} for ${need.purpose}: ${need.question}`,
+    sessionId,
+  });
   void get().decideCapabilityNeed({ sessionId, obligationId: obligation.id });
   return { kind: 'captured', obligationId: obligation.id };
 };

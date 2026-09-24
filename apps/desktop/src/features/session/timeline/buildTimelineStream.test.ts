@@ -2082,7 +2082,7 @@ describe('buildTimelineStream, project mount runs', () => {
   it('collapses a run of detachments into one row that keeps every name', () => {
     const { items } = stream({
       agents: [],
-      events: ['api', 'app-web', 'infra'].map((projectName, index) =>
+      events: ['api', 'storefront-web', 'infra'].map((projectName, index) =>
         sessionEvent({
           id: `ev-${projectName}`,
           kind: 'project_detached',
@@ -2096,7 +2096,7 @@ describe('buildTimelineStream, project mount runs', () => {
     expect(rows).toHaveLength(1);
     expect(projectRunOf(rows[0])).toEqual({
       mounted: [],
-      detached: ['infra', 'app-web', 'api'],
+      detached: ['infra', 'storefront-web', 'api'],
     });
   });
 
@@ -2111,10 +2111,10 @@ describe('buildTimelineStream, project mount runs', () => {
           payload: { projectName: 'api' },
         }),
         sessionEvent({
-          id: 'ev-app-web',
+          id: 'ev-storefront-web',
           kind: 'project_detached',
           at: localIso({ day: 18, hour: 10, minute: 2 }),
-          payload: { projectName: 'app-web' },
+          payload: { projectName: 'storefront-web' },
         }),
         sessionEvent({
           id: 'ev-infra',
@@ -2129,7 +2129,7 @@ describe('buildTimelineStream, project mount runs', () => {
     expect(rows).toHaveLength(1);
     expect(projectRunOf(rows[0])).toEqual({
       mounted: ['api'],
-      detached: ['infra', 'app-web'],
+      detached: ['infra', 'storefront-web'],
     });
   });
 
@@ -2144,10 +2144,10 @@ describe('buildTimelineStream, project mount runs', () => {
           payload: { projectName: 'api' },
         }),
         sessionEvent({
-          id: 'ev-app-web',
+          id: 'ev-storefront-web',
           kind: 'project_detached',
           at: localIso({ day: 18, hour: 10, minute: 2 }),
-          payload: { projectName: 'app-web' },
+          payload: { projectName: 'storefront-web' },
         }),
       ],
     });
@@ -2159,7 +2159,7 @@ describe('buildTimelineStream, project mount runs', () => {
   it('leaves a run of detachments a detachment, which navigates nowhere', () => {
     const { items } = stream({
       agents: [],
-      events: ['api', 'app-web'].map((projectName, index) =>
+      events: ['api', 'storefront-web'].map((projectName, index) =>
         sessionEvent({
           id: `ev-${projectName}`,
           kind: 'project_detached',
@@ -2185,17 +2185,17 @@ describe('buildTimelineStream, project mount runs', () => {
           payload: { projectName: 'api' },
         }),
         sessionEvent({
-          id: 'ev-app-web',
+          id: 'ev-storefront-web',
           kind: 'project_detached',
           at: newestAt,
-          payload: { projectName: 'app-web' },
+          payload: { projectName: 'storefront-web' },
         }),
       ],
     });
     const row = rowsOf(items)[0];
 
     expect(row?.at).toBe(newestAt);
-    expect(row?.id).toBe('event:ev-app-web');
+    expect(row?.id).toBe('event:ev-storefront-web');
   });
 
   it('keeps two mounts apart when another kind of event sits between them', () => {
@@ -2215,16 +2215,20 @@ describe('buildTimelineStream, project mount runs', () => {
           payload: { number: 42 },
         }),
         sessionEvent({
-          id: 'ev-app-web',
+          id: 'ev-storefront-web',
           kind: 'project_materialized',
           at: localIso({ day: 18, hour: 12 }),
-          payload: { projectName: 'app-web' },
+          payload: { projectName: 'storefront-web' },
         }),
       ],
     });
     const rows = rowsOf(items);
 
-    expect(rows.map((row) => row.id)).toEqual(['event:ev-app-web', 'event:ev-pr', 'event:ev-api']);
+    expect(rows.map((row) => row.id)).toEqual([
+      'event:ev-storefront-web',
+      'event:ev-pr',
+      'event:ev-api',
+    ]);
     expect(rows.every((row) => projectRunOf(row) == null)).toBe(true);
   });
 
@@ -2239,10 +2243,10 @@ describe('buildTimelineStream, project mount runs', () => {
           payload: { projectName: 'api' },
         }),
         sessionEvent({
-          id: 'ev-app-web',
+          id: 'ev-storefront-web',
           kind: 'project_detached',
           at: localIso({ day: 18, hour: 1 }),
-          payload: { projectName: 'app-web' },
+          payload: { projectName: 'storefront-web' },
         }),
       ],
     });

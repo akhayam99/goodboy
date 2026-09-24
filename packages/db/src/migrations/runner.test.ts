@@ -1,3 +1,4 @@
+import type { SessionProviderPreference } from '@goodboy/types';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -17,7 +18,6 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
@@ -26,12 +26,17 @@ import { migrations, type Migration } from './index';
 import { getWorkspaceById, insertWorkspace } from '../queries/workspace';
 import { getSessionById, insertSession } from '../queries/session';
 import { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from '../queries/workflow';
-import { listAgentsForSession, updateAgentStatus } from '../queries/agent';
+import { listAgentsForSessions, updateAgentStatus } from '../queries/agent';
 import {
   insertSessionWorktree,
   listWorktreesForSession,
   deleteWorktreesForSession,
 } from '../queries/session-worktree';
+
+const PROVIDER_PREFERENCE = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+} satisfies SessionProviderPreference;
 
 const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
@@ -64,14 +69,7 @@ const insertCurrentWorkspace = async ({
   await db.execute(
     `INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
      VALUES (?, ?, ?, ?, 'repo', ?, ?)`,
-    [
-      workspace.id,
-      workspace.id,
-      workspace.name,
-      workspace.sessionsRoot ?? `/tmp/${workspace.slug}`,
-      Date.now(),
-      Date.now(),
-    ],
+    [workspace.id, workspace.id, workspace.name, `/tmp/${workspace.slug}`, Date.now(), Date.now()],
   );
 };
 
@@ -108,6 +106,7 @@ const makeForwardingDatabase = ({
     },
     select: async <T>(sql: string, params?: ReadonlyArray<unknown>) =>
       database.select<T>(sql, params),
+    transaction: (transactionParams) => database.transaction(transactionParams),
   };
 };
 
@@ -136,6 +135,7 @@ const makeSnapshotDatabase = ({
   },
   select: async <T>(sql: string, params?: ReadonlyArray<unknown>) =>
     database.select<T>(sql, params),
+  transaction: (transactionParams) => database.transaction(transactionParams),
 });
 
 describe('runRuntimeMigrations', () => {
@@ -651,7 +651,6 @@ describe('migrate', () => {
       id: 'ws_1' as WorkspaceId,
       name: 'demo',
       slug: 'demo',
-      sessionsRoot: '/tmp/demo',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -661,7 +660,7 @@ describe('migrate', () => {
 
     expect(fetched).not.toBeNull();
     expect(fetched?.name).toBe('demo');
-    expect(fetched?.sessionsRoot).toBe('/tmp/demo');
+    expect(fetched?.slug).toBe('demo');
   });
 
   it('round-trips a session with discriminated turn state', async () => {
@@ -672,7 +671,6 @@ describe('migrate', () => {
       id: 'ws_2' as WorkspaceId,
       name: 'demo',
       slug: 'demo-2',
-      sessionsRoot: '/tmp/demo2',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -685,7 +683,7 @@ describe('migrate', () => {
       goal: 'refactor auth',
       state: { kind: 'idle', lastActivityAt: now() },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
@@ -709,7 +707,6 @@ describe('migrate', () => {
       id: 'ws_3' as WorkspaceId,
       name: 'prov-test',
       slug: 'prov-test',
-      sessionsRoot: '/tmp/demo3',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -745,7 +742,6 @@ describe('migrate', () => {
       id: 'ws_4' as WorkspaceId,
       name: 'workflow-test',
       slug: 'workflow-test',
-      sessionsRoot: '/tmp/demo4',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -758,7 +754,7 @@ describe('migrate', () => {
       goal: 'test workflow',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,
@@ -835,7 +831,7 @@ describe('migrate', () => {
         JSON.stringify(agent.domains),
       ],
     );
-    const agents = await listAgentsForSession(db, session.id);
+    const agents = (await listAgentsForSessions(db, [session.id])).get(session.id) ?? [];
 
     expect(agents).toHaveLength(1);
     if (!agents[0]) {
@@ -848,7 +844,7 @@ describe('migrate', () => {
       status: 'completed',
       outputSummary: 'Found issues',
     });
-    const updated = await listAgentsForSession(db, session.id);
+    const updated = (await listAgentsForSessions(db, [session.id])).get(session.id) ?? [];
 
     if (!updated[0]) {
       throw new Error('updated[0] should exist');
@@ -872,7 +868,6 @@ describe('migrate', () => {
       id: 'ws_wt' as WorkspaceId,
       name: 'wt-test',
       slug: 'wt-test',
-      sessionsRoot: '/tmp/wt-test',
       overrides: EMPTY_OVERRIDES,
       createdAt: now(),
       updatedAt: now(),
@@ -885,7 +880,7 @@ describe('migrate', () => {
       goal: 'worktree test',
       state: { kind: 'draft' },
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'bypassPermissions',
       autoRun: false,
       titleUserEdited: false,

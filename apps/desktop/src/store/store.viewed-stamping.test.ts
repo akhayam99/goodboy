@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -93,9 +94,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -181,10 +179,11 @@ function buildAgent(overrides: Partial<Agent> = {}): Agent {
   };
 }
 
-async function importStore() {
-  const mod = await import('./store');
-  return mod.useAppStore;
-}
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('markAgentViewed', () => {
   afterEach(() => {
@@ -192,7 +191,6 @@ describe('markAgentViewed', () => {
   });
 
   it('stamps lastViewedAt when agent has lastFinishedAt and no lastViewedAt', async () => {
-    const useAppStore = await importStore();
     const agent = buildAgent({ lastFinishedAt: T2 });
     useAppStore.setState({
       sessions: [buildSession()],
@@ -209,7 +207,6 @@ describe('markAgentViewed', () => {
   });
 
   it('stamps lastViewedAt when lastFinishedAt > lastViewedAt (stale viewed)', async () => {
-    const useAppStore = await importStore();
     const agent = buildAgent({ lastFinishedAt: T3, lastViewedAt: T2 });
     useAppStore.setState({
       sessions: [buildSession()],
@@ -225,7 +222,6 @@ describe('markAgentViewed', () => {
   });
 
   it('is a no-op when lastViewedAt >= lastFinishedAt', async () => {
-    const useAppStore = await importStore();
     const agent = buildAgent({ lastFinishedAt: T2, lastViewedAt: T3 });
     useAppStore.setState({
       sessions: [buildSession()],
@@ -241,7 +237,6 @@ describe('markAgentViewed', () => {
   });
 
   it('is a no-op when agent has no lastFinishedAt (not yet terminal)', async () => {
-    const useAppStore = await importStore();
     const agent = buildAgent({ status: 'running' });
     useAppStore.setState({
       sessions: [buildSession()],
@@ -279,7 +274,6 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
     const PARENT = 'agent-parent' as AgentId;
     const CHILD = 'agent-child' as AgentId;
     const GRANDCHILD = 'agent-grandchild' as AgentId;
-    const useAppStore = await importStore();
 
     const parent = buildAgent({ id: PARENT, lastFinishedAt: T2 });
     const child = buildAgent({ id: CHILD, parentAgentId: PARENT, lastFinishedAt: T2 });
@@ -306,7 +300,6 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
   it('awaits every mark-viewed write before refreshing unread workspaces', async () => {
     const PARENT = 'agent-parent' as AgentId;
     const CHILD = 'agent-child' as AgentId;
-    const useAppStore = await importStore();
 
     useAppStore.setState({
       sessions: [buildSession()],
@@ -333,7 +326,6 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
   it('does not loop forever on a parentAgentId cycle', async () => {
     const A = 'agent-a' as AgentId;
     const B = 'agent-b' as AgentId;
-    const useAppStore = await importStore();
 
     useAppStore.setState({
       sessions: [buildSession()],
@@ -359,7 +351,6 @@ describe('selectAgent cascades lastViewedAt to descendants', () => {
     const CHILD = 'agent-child' as AgentId;
     const SIBLING = 'agent-sibling' as AgentId;
     const SIBLING_CHILD = 'agent-sibling-child' as AgentId;
-    const useAppStore = await importStore();
 
     useAppStore.setState({
       sessions: [buildSession()],
@@ -395,7 +386,6 @@ describe('markAgentSeen', () => {
     const parentId = 'seen-parent' as AgentId;
     const childId = 'seen-child' as AgentId;
     const grandchildId = 'seen-grandchild' as AgentId;
-    const useAppStore = await importStore();
 
     useAppStore.setState({
       sessions: [buildSession()],
@@ -440,7 +430,6 @@ describe('markAllAgentsSeen', () => {
   it('clears every unread agent without changing open questions', async () => {
     const secondAgentId = 'seen-second' as AgentId;
     const questions = [openQuestion];
-    const useAppStore = await importStore();
 
     useAppStore.setState({
       sessions: [buildSession()],
@@ -466,7 +455,6 @@ describe('markAllAgentsSeen', () => {
   });
 
   it('keeps the session attention stage when open questions remain after the bulk clear', async () => {
-    const useAppStore = await importStore();
     useAppStore.setState({
       sessions: [buildSession()],
       sessionPhaseRuns: {
@@ -503,7 +491,6 @@ describe('agentHasUnread, after markAgentViewed', () => {
   });
 
   it('returns false after markAgentViewed stamps lastViewedAt', async () => {
-    const useAppStore = await importStore();
     const agent = buildAgent({ lastFinishedAt: T2 });
     useAppStore.setState({
       sessions: [buildSession()],
@@ -520,7 +507,6 @@ describe('agentHasUnread, after markAgentViewed', () => {
   it('returns true for a different session agent not yet marked viewed', async () => {
     const OTHER_SESSION = 'session-other' as SessionId;
     const OTHER_AGENT = 'agent-other' as AgentId;
-    const useAppStore = await importStore();
 
     const currentAgent = buildAgent({ lastFinishedAt: T2 });
     const otherAgent = buildAgent({

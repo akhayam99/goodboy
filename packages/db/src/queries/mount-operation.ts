@@ -1,5 +1,6 @@
 import type { IsoDateTime, MountOperation, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonValue, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type Row = Omit<MountOperation, 'input' | 'result' | 'createdAt' | 'updatedAt'> & {
   readonly input: string;
@@ -24,18 +25,10 @@ type ListMountOperationsParams = {
   readonly sessionId: SessionId;
 };
 
-const parseJson = ({ value }: { readonly value: string }): unknown => {
-  try {
-    return JSON.parse(value) as unknown;
-  } catch {
-    return null;
-  }
-};
-
 const toDomain = (row: Row): MountOperation => ({
   ...row,
-  input: parseJson({ value: row.input }),
-  result: row.result === null ? null : parseJson({ value: row.result }),
+  input: parseJsonColumn({ value: row.input, isValid: isJsonValue, fallback: null }),
+  result: parseJsonColumn({ value: row.result, isValid: isJsonValue, fallback: null }),
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,
 });

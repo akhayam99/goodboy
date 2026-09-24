@@ -18,6 +18,9 @@ import {
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
+  CLI_CREDENTIAL,
+  PROVIDER_API_KEY_ENV,
+  isApiProvider,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import {
@@ -33,11 +36,11 @@ import {
 import type {
   AgentId,
   AttachmentInput,
+  EffortLevel,
   IsoDateTime,
   Message,
   MessageAttachment,
   MessageId,
-  ModelEffort,
   MountId,
   MountTargetSnapshot,
   PermissionRule,
@@ -52,8 +55,6 @@ import type {
   Workflow,
   WorkflowRunId,
 } from '@goodboy/types';
-import { CLI_CREDENTIAL, PROVIDER_API_KEY_ENV } from '@goodboy/types';
-import { isApiProvider } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokePermissionRuleList } from '../../../features/permissions/permissions';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -77,14 +78,14 @@ import {
 import { encodeAuthRequiredMessage, runTurn } from '../../../features/chat/turn';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import { createTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import { EFFORT_LEVELS, PROVIDER_LABEL } from '../../../features/chat/utils/chat-constants';
+import { EFFORT_LEVELS } from '../../../features/chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { verbosityDirective } from '../../../features/settings/verbosity';
 import { detectDrift } from '../../../features/session/drift-detection';
 import {
   AGENT_KIND_DEFAULTS,
   KIND_TO_ROLE,
   classifyAgent,
-  inferAgentKindFromName,
   kindWritesFiles,
 } from '../../../features/session/agent-kind';
 import { slotsForKind } from '../../../features/providers/slot-routing';
@@ -98,15 +99,20 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
+import {
+  claimWorkflowTurn,
+  clearWorkflowTurns,
+  MAX_UNATTENDED_TURNS_PER_AGENT,
+} from './workflowTurnBreaker';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
-import { stepSummaryDegraded } from '../../summarizeAgentOutput';
 import { clearMaterializationBatch } from '../../materializationGate';
 import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
+import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import {
   beginTurnFileVersionCapture,
   finalizeTurnFileVersionCapture,
@@ -165,8 +171,11 @@ import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolC
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
+import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SendTurnResult, SetFn } from './types';
+import { formatClockTime } from '../../../shared/utils/formatClockTime';
 
 type Input = {
   sessionId: SessionId;
@@ -192,7 +201,7 @@ const MIN_USAGE_LIMIT_RETRY_MS = 1_000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
 const formatResetTime = ({ resetAtMs }: { readonly resetAtMs: number }): string =>
-  new Date(resetAtMs).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  formatClockTime({ iso: resetAtMs });
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
 // session's changed files (vs the same merge-base as the desktop file-changes
@@ -287,6 +296,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const activeAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
     if (!activeAgentId) {
       throw new Error('no agent selected. spawn one before sending a turn');
+    }
+    if (origin === 'operator') {
+      clearWorkflowTurns({ agentId: activeAgentId });
     }
     const activeAgent = (before.sessionPhaseRuns[sessionId] ?? []).find(
       (candidate) => candidate.id === activeAgentId,
@@ -400,7 +412,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               })),
             });
             const predecessorSummary = immediatePredecessor.outputSummary ?? '';
-            const recordedDegraded = stepSummaryDegraded.get(immediatePredecessor.id);
+            const recordedDegraded = get().stepSummaryDegraded[immediatePredecessor.id];
             const isDegraded =
               recordedDegraded ??
               (predecessorSummary.trim().length === 0 ||
@@ -455,7 +467,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const nodeProvider: ProviderId | null =
       nodeRouting?.provider ?? phaseDefinition?.providerOverride ?? null;
     const nodeModel: string | null = nodeRouting?.model ?? phaseDefinition?.modelOverride ?? null;
-    const nodeEffort: ModelEffort | null =
+    const nodeEffort: EffortLevel | null =
       nodeRouting === null ? (phaseDefinition?.effort ?? null) : nodeRouting.effort;
     const nodeOverride: TurnProviderOverride | undefined =
       nodeProvider !== null
@@ -530,20 +542,20 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const agentKindOverrideForTurn = get().agentKindOverride[activeAgentId] ?? null;
     const turnAgentKind =
       activeAgent != null
-        ? classifyAgent(activeAgent, agentKindOverrideForTurn)
-        : (agentKindOverrideForTurn ?? inferAgentKindFromName(''));
+        ? classifyAgent({ agent: activeAgent, override: agentKindOverrideForTurn })
+        : (agentKindOverrideForTurn ?? 'generic');
     const autoStepModel =
       phaseDefinition != null && nodeModel === null
         ? autoModelForRole({
             role: phaseDefinition.role ?? 'custom',
             providers: [provider],
-            prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+            prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
           })
         : phaseDefinition == null && routingDecision.fallbackUsed
           ? autoModelForRole({
               role: KIND_TO_ROLE[turnAgentKind],
               providers: [provider],
-              prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+              prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
             })
           : null;
     const rawEffort = nodeEffort ?? get().agentEffortOverride[activeAgentId] ?? null;
@@ -569,13 +581,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       pickedOverride != null &&
       (provider !== pickedOverride.providerId || picked.kind === 'unresolved' || !ranAsPicked)
     ) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the turn did not run on the model you picked',
-        `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "The turn didn't run on the model you picked",
+        body: `you picked ${pickedOverride.providerId}/${picked.kind === 'unspecified' ? spawnModel : picked.id}, the turn ran on ${provider}/${spawnModel}`,
+        sessionId,
+      });
     }
     const explicitEffortFlag = PROVIDER_ARG_FLAGS[provider].effortFlag;
     const effortFlagIndex =
@@ -585,9 +597,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       ?.split('"')[1];
     const effortFlag = effortFlagIndex >= 0 ? resolvedModel.args[effortFlagIndex + 1] : codexEffort;
 
-    const wsBindings = get().workspaceOverrides[session.workspaceId]?.providerBindings ?? {};
-    const sessBindings = get().sessionOverrides[sessionId]?.providerBindings ?? {};
-    const boundCredentialId = { ...wsBindings, ...sessBindings }[provider];
+    const boundCredentialId = selectResolvedSettings({ state: get(), sessionId })?.providerBindings[
+      provider
+    ];
     const effectiveCredentialId =
       isApiProvider({ id: provider }) &&
       (boundCredentialId === undefined || boundCredentialId === CLI_CREDENTIAL)
@@ -686,6 +698,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       return {
         agentRunHistory: { ...state.agentRunHistory, [activeAgentId]: [...prev, runId] },
+        runRouting: {
+          ...state.runRouting,
+          [activeAgentId]: {
+            ...state.runRouting[activeAgentId],
+            [runId]: { provider, model: spawnModel },
+          },
+        },
       };
     });
     if (retry == null) {
@@ -894,7 +913,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const effectiveVerbosity =
       phaseDefinition?.verbosity ??
       agentRowForVerbosity?.verbosity ??
-      get().workspaceOverrides[session.workspaceId]?.defaultVerbosity ??
+      selectResolvedSettings({ state: get(), sessionId })?.defaultVerbosity ??
       'normal';
     const verbosityHint = verbosityDirective(effectiveVerbosity);
     resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
@@ -906,17 +925,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       if (ratio >= 0.85) {
         const pct = Math.round(ratio * 100);
         void get()
-          .emitNotification(
-            'error',
-            'warning',
-            'Context near the limit',
-            `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
-            {
-              sessionId,
-              workspaceId: session.workspaceId,
-              coalesceKey: `context-soft-cap:${sessionId}`,
-            },
-          )
+          .emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'Context near the limit',
+            body: `This turn is estimated at ${estimated.toLocaleString()} of ${ctxWindow.toLocaleString()} tokens (${pct}%). Consider /compact.`,
+            sessionId,
+            workspaceId: session.workspaceId,
+            coalesceKey: `context-soft-cap:${sessionId}`,
+          })
           .catch(() => undefined);
       }
     }
@@ -940,6 +957,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         : undefined;
     lease.attemptId = resolveAttemptId;
     let assistantText = '';
+    let providerThreadId: string | null = activeAgent?.providerSessionId ?? null;
     const resolveCandidateWriter = createResolveCandidateWriter({
       persist: async () => {
         if (resolveAttemptId === undefined || agentRowEarly === null) {
@@ -981,13 +999,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       stage: 'begin' | 'finalize' | 'persist';
       message: string;
     }) => {
-      await get().emitNotification(
-        'error',
-        'warning',
-        'Could not capture a recoverable file version for this turn',
-        `stage: ${stage}. details: ${message}`,
-        { sessionId, workspaceId: session.workspaceId },
-      );
+      await get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "Couldn't capture a recoverable file version for this turn",
+        body: `stage: ${stage}. details: ${message}`,
+        sessionId,
+        workspaceId: session.workspaceId,
+      });
     };
     const turnFileVersionCapture = isSessionDirScope
       ? await beginTurnFileVersionCapture({
@@ -1005,7 +1024,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       activeMountId: turnMountId,
       isBridgeServing,
       isSessionDirScope,
-      canWrite: kindWritesFiles(earlyAgentKind),
+      canWrite: kindWritesFiles({ kind: earlyAgentKind }),
     });
     const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
     const languageGuard = buildSessionLanguageGuard({
@@ -1146,6 +1165,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             ? { ...resolvedEvent, provider }
             : resolvedEvent;
         get().appendTurnEvent(activeAgentId, sessionId, event);
+        if (event.kind === 'provider_session_init') {
+          providerThreadId = event.providerSessionId;
+        }
         if (event.kind === 'error') {
           receivedProviderError = true;
         }
@@ -1184,7 +1206,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         if (event.kind === 'usage') {
           usageSequence += 1;
           await recordUsageTelemetry(set, get, {
-            event,
+            event: await codexMeasuredUsage({ event, provider, threadId: providerThreadId }),
             usageSequence,
             provider,
             model,
@@ -1450,7 +1472,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       const fallbackRole = phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind];
       const preferredFallback = resolveRoleRouting({
         role: fallbackRole,
-        prefs: get().workspaceOverrides[session.workspaceId]?.roleModels ?? null,
+        prefs: selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null,
       }).fallback;
       const fallbackPlan = cancelledBeforeFailure
         ? null
@@ -1523,19 +1545,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const resetLabel =
           usageLimitResetAtMs != null ? formatResetTime({ resetAtMs: usageLimitResetAtMs }) : null;
         void get()
-          .emitNotification(
-            'error',
-            'warning',
-            'Provider at its usage limit',
-            resetLabel != null
-              ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
-              : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
-            {
-              sessionId,
-              workspaceId: session.workspaceId,
-              coalesceKey: `provider-usage-limit:${provider}`,
-            },
-          )
+          .emitNotification({
+            kind: 'error',
+            severity: 'warning',
+            title: 'Provider at its usage limit',
+            body:
+              resetLabel != null
+                ? `${PROVIDER_LABEL[provider]} is at its usage limit. Retrying at ${resetLabel}.`
+                : `${PROVIDER_LABEL[provider]} is at its usage limit. Retry it when the limit resets.`,
+            sessionId,
+            workspaceId: session.workspaceId,
+            coalesceKey: `provider-usage-limit:${provider}`,
+          })
           .catch(() => undefined);
         if (usageLimitResetAtMs != null) {
           const delayMs = Math.min(
@@ -1695,21 +1716,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         filesEdited: Array.from(filesTouchedThisTurn),
       });
       if (driftViolations.length > 0) {
-        void get().emitNotification(
-          'boundary-drift',
-          'warning',
-          `${agentRowEarly?.name ?? 'agent'} drifted from ${earlyAgentKind} role`,
-          driftViolations[0]!.detail,
-          {
-            sessionId,
-            ...(activeAgentId != null && {
-              action: { kind: 'open-agent' as const, sessionId, agentId: activeAgentId },
-            }),
-          },
-        );
+        void get().emitNotification({
+          kind: 'boundary-drift',
+          severity: 'warning',
+          title: `${agentRowEarly?.name ?? 'Agent'} drifted from ${earlyAgentKind} role`,
+          body: driftViolations[0]!.detail,
+          sessionId,
+          ...(activeAgentId != null && {
+            action: { kind: 'open-agent' as const, sessionId, agentId: activeAgentId },
+          }),
+        });
       }
       if (
-        !get().sessionGithub[sessionId]?.pr &&
+        sessionAwaitsPullRequest({ state: get(), sessionId }) &&
         /github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(assistantText)
       ) {
         void get()
@@ -1760,9 +1779,43 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       origin: 'mount-continuation',
     });
   };
+  const haltRunawayWorkflowAgent = async ({
+    sessionId,
+    agentId,
+  }: {
+    readonly sessionId: SessionId;
+    readonly agentId: AgentId;
+  }): Promise<SendTurnResult> => {
+    const name =
+      (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId)?.name ?? 'agent';
+    await invokeAgentUpdateStatus(agentId, {
+      status: 'failed',
+      completedAt: new Date().toISOString() as IsoDateTime,
+    }).catch(() => undefined);
+    const refreshed = await invokeAgentList(sessionId).catch(() => null);
+    if (refreshed !== null) {
+      set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
+    }
+    void get().refreshUnreadWorkspaces();
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Autorun halted: ${name}`,
+      body: `the workflow sent this agent ${MAX_UNATTENDED_TURNS_PER_AGENT} turns in the last hour without you stepping in, so goodboy stopped it to protect your usage. open the agent and continue manually.`,
+      sessionId,
+      action: { kind: 'open-agent', sessionId, agentId },
+    });
+    return NOT_BLOCKED;
+  };
   const run = async (input: Input): Promise<SendTurnResult> => {
     if (input.origin !== 'mount-continuation') {
       resetMountContinuationChain({ sessionId: input.sessionId });
+    }
+    if (input.agentId !== undefined && input.origin === 'workflow') {
+      const claim = claimWorkflowTurn({ agentId: input.agentId, nowMs: Date.now() });
+      if (claim === 'tripped') {
+        return haltRunawayWorkflowAgent({ sessionId: input.sessionId, agentId: input.agentId });
+      }
     }
     const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
     try {

@@ -3,6 +3,7 @@ import type { BranchIntegration, WorktreeDetachAssessment } from '@goodboy/types
 import {
   buildDetachPlan,
   detachActionFor,
+  detachFailureMessage,
   detachOutcomeMessage,
   summarizeDetachOutcomes,
   type MountAssessment,
@@ -571,6 +572,32 @@ describe('detach outcomes', () => {
       detachOutcomeMessage({ kind: 'failed', projectName: 'api', worktreePath: '/worktrees/api' }),
     ).toBe(
       'Could not finish removing the worktree. The mount is retained; check again before retrying.',
+    );
+  });
+
+  it('names the mount that failed, why, and how many detached', () => {
+    expect(
+      detachFailureMessage({
+        outcomes: [
+          { kind: 'removed', worktreePath: '/worktrees/api-a', reason: null },
+          { kind: 'failed', worktreePath: '/worktrees/api-b', reason: 'an agent is running' },
+        ],
+      }),
+    ).toBe(
+      'Detached 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. Its mount stays; check again before retrying.',
+    );
+  });
+
+  it('counts every failed mount and leads with the first', () => {
+    expect(
+      detachFailureMessage({
+        outcomes: [
+          { kind: 'failed', worktreePath: '/worktrees/api-a', reason: null },
+          { kind: 'failed', worktreePath: '/worktrees/api-b', reason: null },
+        ],
+      }),
+    ).toBe(
+      'Could not remove 2 worktrees, starting with /worktrees/api-a. Their mounts stay; check again before retrying.',
     );
   });
 });

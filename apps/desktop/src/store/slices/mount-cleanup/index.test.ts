@@ -91,7 +91,7 @@ vi.mock('@goodboy/db', () => ({
 }));
 
 import { createMountCleanupSlice } from './index';
-import { mountCleanupBlockers } from './cleanupPolicy';
+import { cleanupMountDirectory, mountCleanupBlockers } from './cleanupPolicy';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
@@ -305,77 +305,18 @@ describe('resolving a cleanup proposal', () => {
 });
 
 describe('cleaning the mounts of a session', () => {
-  it('keeps every directory and proposes cleanup when directories are kept', async () => {
+  it('keeps every directory and proposes its cleanup', async () => {
     seedMount();
     const { slice, state } = makeSlice();
 
-    const outcomes = await slice.cleanupSessionMounts({
-      sessionId: SESSION_ID,
-      reason: 'archive',
-      keepDirectories: true,
-    });
+    const outcomes = await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'archive' });
 
     expect(h.removeWorktreeChecked).not.toHaveBeenCalled();
-    expect(outcomes[0]?.decision).toMatchObject({ kind: 'kept' });
+    expect(outcomes[0]?.decision).toMatchObject({ kind: 'kept', path: WORKTREE_PATH });
     expect(
       (state['mountCleanupProposals'] as Record<string, ReadonlyArray<unknown>>)[SESSION_ID],
     ).toHaveLength(1);
     expect(h.rows.get(MOUNT_ID)?.['worktreePath']).toBe(WORKTREE_PATH);
-  });
-
-  it('clears the path of a removed directory and preserves the logical mount', async () => {
-    seedMount();
-    const { slice } = makeSlice();
-
-    await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'archive' });
-
-    const row = h.rows.get(MOUNT_ID);
-    expect(row?.['worktreePath']).toBeNull();
-    expect(row?.['lastWorktreePath']).toBe(WORKTREE_PATH);
-    expect(row?.['branch']).toBe('ak/one');
-    expect(row?.['diskState']).toBe('removed');
-  });
-
-  it('keeps a directory the removal command refuses over a live writer lease', async () => {
-    seedMount();
-    h.removeWorktreeChecked.mockResolvedValue({
-      kind: 'kept',
-      path: WORKTREE_PATH,
-      reasons: ['writer-lease-held'],
-    });
-    const { slice } = makeSlice();
-
-    const outcomes = await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'archive' });
-
-    expect(h.worktreeWriterStatus).not.toHaveBeenCalled();
-    expect(outcomes[0]?.decision).toMatchObject({
-      kind: 'kept',
-      reason: 'writer-lease-held',
-    });
-    expect(h.rows.get(MOUNT_ID)?.['worktreePath']).toBe(WORKTREE_PATH);
-  });
-
-  it('removes a directory whose holder the registry has already let go', async () => {
-    seedMount();
-    h.worktreeWriterStatus.mockResolvedValue({
-      path: WORKTREE_PATH,
-      holder: 'run-1',
-      token: null,
-      runId: null,
-      isGranted: false,
-      hasExited: false,
-      waiting: [],
-    });
-    const { slice } = makeSlice();
-
-    const outcomes = await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'archive' });
-
-    expect(h.removeWorktreeChecked).toHaveBeenCalledWith({
-      repoPath: REPO_ROOT,
-      worktreePath: WORKTREE_PATH,
-      mode: 'safe',
-    });
-    expect(outcomes[0]?.decision).toMatchObject({ kind: 'removed' });
   });
 
   it('never deletes a local branch or the pull request ownership of a mount', async () => {
@@ -394,18 +335,75 @@ describe('cleaning the mounts of a session', () => {
     expect(h.rows.get(MOUNT_ID)).toBeDefined();
     expect(h.rows.get(MOUNT_ID)?.['branch']).toBe('ak/one');
   });
+});
+
+describe('the directory cleanup policy', () => {
+  const policyTarget = () => ({
+    sessionId: SESSION_ID,
+    mountId: MOUNT_ID,
+    projectId: PROJECT_ID,
+    repoRoot: REPO_ROOT,
+    worktreePath: WORKTREE_PATH,
+    branch: 'ak/one',
+    diskState: 'present' as const,
+    isRepoProject: true,
+  });
+
+  it('keeps a directory the removal command refuses over a live writer lease', async () => {
+    h.removeWorktreeChecked.mockResolvedValue({
+      kind: 'kept',
+      path: WORKTREE_PATH,
+      reasons: ['writer-lease-held'],
+    });
+    const { state } = makeSlice();
+
+    const result = await cleanupMountDirectory({
+      get: (() => state) as never,
+      target: policyTarget(),
+    });
+
+    expect(h.worktreeWriterStatus).not.toHaveBeenCalled();
+    expect(result.decision).toMatchObject({ kind: 'kept', reason: 'writer-lease-held' });
+  });
+
+  it('removes a directory whose holder the registry has already let go', async () => {
+    h.worktreeWriterStatus.mockResolvedValue({
+      path: WORKTREE_PATH,
+      holder: 'run-1',
+      token: null,
+      runId: null,
+      isGranted: false,
+      hasExited: false,
+      waiting: [],
+    });
+    const { state } = makeSlice();
+
+    const result = await cleanupMountDirectory({
+      get: (() => state) as never,
+      target: policyTarget(),
+    });
+
+    expect(h.removeWorktreeChecked).toHaveBeenCalledWith({
+      repoPath: REPO_ROOT,
+      worktreePath: WORKTREE_PATH,
+      mode: 'safe',
+    });
+    expect(result.decision).toMatchObject({ kind: 'removed' });
+  });
 
   it('keeps a directory while an agent still runs in the session', async () => {
-    seedMount();
-    const { slice, state } = makeSlice();
+    const { state } = makeSlice();
     state['sessions'] = [
       { id: SESSION_ID, workspaceId: 'workspace-1', state: { kind: 'running' } },
     ];
 
-    const outcomes = await slice.cleanupSessionMounts({ sessionId: SESSION_ID, reason: 'archive' });
+    const result = await cleanupMountDirectory({
+      get: (() => state) as never,
+      target: policyTarget(),
+    });
 
     expect(h.removeWorktreeChecked).not.toHaveBeenCalled();
-    expect(outcomes[0]?.decision).toMatchObject({
+    expect(result.decision).toMatchObject({
       kind: 'kept',
       reason: 'an agent is still writing to this mount',
     });

@@ -1,20 +1,21 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
-import { cn, Divider, formatUsd, Textarea, Tooltip } from '@goodboy/ui';
+import { cn, Divider, formatUsd, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast, useToastLift } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { PROVIDER_LABEL, modelLabel } from '../../utils/chat-constants';
+import { modelLabel } from '../../utils/chat-constants';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
-import { inferAgentKindFromName, type AgentKind } from '../../../session/agent-kind';
+import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { CHAT_PLACEHOLDER, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
@@ -34,6 +35,7 @@ import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { TurnErrorCallout } from '../TurnErrorCallout';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 
 type Props = {
   readonly session: Session;
@@ -46,6 +48,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const dismissSessionNudge = useAppStore((s) => s.dismissSessionNudge);
   const acceptSessionNudgeHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const reportError = useAppStore((s) => s.reportError);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
@@ -55,8 +58,18 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     const runs = s.sessionPhaseRuns[session.id] ?? [];
     return runs.find((r) => r.id === selectedAgentId)?.name ?? null;
   });
+  const selectedAgentPersistedKind = useAppStore((s) => {
+    if (!selectedAgentId) return null;
+    const runs = s.sessionPhaseRuns[session.id] ?? [];
+    return runs.find((r) => r.id === selectedAgentId)?.kind ?? null;
+  });
   const activeAgentKind: AgentKind | null =
-    agentKindOverride ?? (selectedAgentName ? inferAgentKindFromName(selectedAgentName) : null);
+    selectedAgentName !== null
+      ? classifyAgent({
+          agent: { name: selectedAgentName, kind: selectedAgentPersistedKind ?? undefined },
+          override: agentKindOverride,
+        })
+      : agentKindOverride;
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
   const sessionCost = useSessionCost(session.id);
   const loadScripts = useAppStore((s) => s.loadScripts);
@@ -108,6 +121,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     providerDisconnected,
     showToast,
   });
+  useToastLift({ ref: composerRef });
 
   const {
     onValueChange,
@@ -148,6 +162,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     isFirstTurnForAgent,
     value,
     attachments,
+    effectiveProvider: routing.effectiveProvider,
     effectiveModel: routing.effectiveModelId,
     modelCandidates: routing.modelCandidates,
     allowOverride: routing.allowOverride,
@@ -178,12 +193,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   useEffect(() => {
     void loadPhaseRunsForSession(session.id);
   }, [session.id, loadPhaseRunsForSession]);
-
-  useEffect(() => {
-    const focusComposer = () => wrapperRef.current?.querySelector('textarea')?.focus();
-    window.addEventListener('goodboy:focus-composer', focusComposer);
-    return () => window.removeEventListener('goodboy:focus-composer', focusComposer);
-  }, []);
 
   const sendWith = useCallback(
     async ({
@@ -258,7 +267,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const submitDraft = async ({ force }: { readonly force: boolean }) => {
     const content = value.trim();
     const atts = attachments;
-    if ((!content && atts.length === 0) || providerDisconnected) return;
+    if ((!content && atts.length === 0) || providerDisconnected || session.archivedAt != null)
+      return;
     dispatch.setError(null);
     dispatch.setLastFailedTurn(null);
 
@@ -300,8 +310,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         title: 'Agent started',
         message: 'The agent is picking this up. You can keep working.',
       });
-    } catch {
-      return;
+    } catch (error) {
+      void reportError({ title: "Couldn't start the agent", error, sessionId: session.id });
     }
   };
 
@@ -401,8 +411,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
   };
 
-  const canSend = !providerDisconnected && (value.trim().length > 0 || attachments.length > 0);
-  const sendDisabledTitle = providerDisconnected ? 'Sign in first' : undefined;
+  const isArchived = session.archivedAt != null;
+  const isBlocked = providerDisconnected || isArchived;
+  const canSend = !isBlocked && (value.trim().length > 0 || attachments.length > 0);
+  const sendDisabledTitle = isArchived
+    ? ARCHIVED_SESSION_REASON
+    : providerDisconnected
+      ? 'Sign in first'
+      : undefined;
   const overrideDisabledTitle = !routing.allowOverride
     ? 'this session was created without per-turn routing overrides'
     : undefined;
@@ -429,20 +445,26 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           ref={composerRef}
           data-drop-composer
           className={cn(
-            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-primary/40',
-            isDragging ? 'bg-primary/5 ring-2 ring-primary' : 'bg-subtle/80 ring-border-soft',
+            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
+            isDragging
+              ? cn(tintClasses('primary').bgSoft, 'ring-2 ring-primary')
+              : 'bg-subtle ring-border-soft',
           )}
         >
           <div
-            className={`pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md bg-primary/5 transition-opacity duration-150 ${
-              isDragging ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={cn(
+              'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md transition-opacity duration-150',
+              tintClasses('primary').bgSoft,
+              isDragging ? 'opacity-100' : 'opacity-0',
+            )}
             aria-hidden
           >
             <div
-              className={`flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 ring-primary/30 transition-transform duration-150 ${
-                isDragging ? 'scale-100' : 'scale-95'
-              }`}
+              className={cn(
+                'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
+                tintClasses('primary').ring,
+                isDragging ? 'scale-100' : 'scale-95',
+              )}
             >
               <Paperclip size={ICON_SIZE.control} aria-hidden />
               drop to attach
@@ -474,19 +496,21 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               placeholder={
-                providerDisconnected
-                  ? 'Sign in to send a message'
-                  : isRunning
-                    ? queue.length > 0
-                      ? 'Type to queue another message'
-                      : 'Turn running, type to queue the next message'
-                    : CHAT_PLACEHOLDER
+                isArchived
+                  ? ARCHIVED_SESSION_REASON
+                  : providerDisconnected
+                    ? 'Sign in to send a message'
+                    : isRunning
+                      ? queue.length > 0
+                        ? 'Type to queue another message'
+                        : 'Turn running, type to queue the next message'
+                      : CHAT_PLACEHOLDER
               }
-              disabled={providerDisconnected}
+              disabled={isBlocked}
               autoGrow
               rows={1}
               maxRows={12}
-              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <Tooltip content="Cancel turn">
@@ -494,7 +518,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   type="button"
                   onClick={() => void cancelCurrentTurn(session.id)}
                   aria-label="Cancel turn"
-                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg bg-danger/10 text-danger transition-colors hover:bg-danger/20"
+                  className={cn(
+                    'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',
+                    tintClasses('danger').bg,
+                    'text-danger transition-colors',
+                    tintClasses('danger').hoverBg,
+                  )}
                 >
                   <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
                 </button>
@@ -511,7 +540,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   onClick={() => void onSend()}
                   disabled={!canSend}
                   aria-label={isRunning ? 'Queue message' : 'Send message'}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-on-tone shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 >
                   <Send size={ICON_SIZE.control} aria-hidden className="-translate-x-px" />
                 </button>
@@ -526,9 +555,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={providerDisconnected}
+                  disabled={isBlocked}
                   aria-label="Attach files"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Paperclip size={ICON_SIZE.control} aria-hidden />
                 </button>
@@ -538,6 +567,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="file"
                 accept={ATTACHMENT_ACCEPT}
                 multiple
+                aria-label="Attach files"
+                tabIndex={-1}
                 className="hidden"
                 onChange={onFileInputChange}
               />
@@ -547,10 +578,10 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   onValueChange('$');
                   wrapperRef.current?.querySelector('textarea')?.focus();
                 }}
-                disabled={providerDisconnected}
+                disabled={isBlocked}
                 title="Run a project script"
                 aria-label="Run a project script"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $
               </button>
@@ -569,6 +600,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 align="end"
                 ariaLabel="Model routing"
                 openEvent="goodboy:open-model-picker"
+                shortcut="session.model"
                 provider={routing.effectiveProvider}
                 model={routing.effectiveModelId}
                 effort={{

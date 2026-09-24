@@ -53,10 +53,7 @@ export const auditToolCall = async (
         decidedBy: 'user',
         at: event.at,
       }
-    : engine.decide(request, effectiveRules, {
-        sessionId,
-        workspaceId,
-      });
+    : engine.decide({ request, rules: effectiveRules, context: { sessionId, workspaceId } });
   const auditPayload: PermissionAuditInsertPayload = {
     id: auditRequestId,
     runId,

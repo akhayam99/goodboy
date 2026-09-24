@@ -133,7 +133,6 @@ export const spawnWireframeAgent = (get: GetFn) => {
     const scouting = await collectWireframeScoutPlan({
       state,
       sessionId,
-      workflowRunId,
       mountIds: chosenMountIds,
       goal: goal.packText,
       brief,

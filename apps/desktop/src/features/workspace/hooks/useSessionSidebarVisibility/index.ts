@@ -5,12 +5,7 @@ type Params = {
   readonly hasActiveSession: boolean;
 };
 
-type PeekSource = 'edge' | 'anchor';
-
-const OPEN_DELAY_MS: Record<PeekSource, number> = {
-  edge: 150,
-  anchor: 100,
-};
+const OPEN_DELAY_MS = 150;
 
 const CLOSE_DELAY_MS = 300;
 
@@ -38,10 +33,6 @@ const writePreference = ({ next }: WriteParams): void => {
   } catch {
     return;
   }
-};
-
-type RequestPeekParams = {
-  readonly source: PeekSource;
 };
 
 export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
@@ -95,22 +86,19 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
     }, CLOSE_DELAY_MS);
   }, [clearCloseTimer, clearOpenTimer]);
 
-  const requestPeek = useCallback(
-    ({ source }: RequestPeekParams) => {
-      if (!hasActiveSession || !isCollapsed) {
-        return;
-      }
-      cancelClose();
-      if (isPeeking || openTimer.current !== null) {
-        return;
-      }
-      openTimer.current = window.setTimeout(() => {
-        openTimer.current = null;
-        setIsPeeking(true);
-      }, OPEN_DELAY_MS[source]);
-    },
-    [cancelClose, hasActiveSession, isCollapsed, isPeeking],
-  );
+  const requestPeek = useCallback(() => {
+    if (!hasActiveSession || !isCollapsed) {
+      return;
+    }
+    cancelClose();
+    if (isPeeking || openTimer.current !== null) {
+      return;
+    }
+    openTimer.current = window.setTimeout(() => {
+      openTimer.current = null;
+      setIsPeeking(true);
+    }, OPEN_DELAY_MS);
+  }, [cancelClose, hasActiveSession, isCollapsed, isPeeking]);
 
   const cancelPeek = useCallback(() => {
     clearOpenTimer();

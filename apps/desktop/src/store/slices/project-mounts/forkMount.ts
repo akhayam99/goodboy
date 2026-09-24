@@ -5,7 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { nextAvailableSlug } from '../sessions/deriveBranchName';
 import { mountDirName } from './mountDirName';
-import { branchInUseError, mountError } from './mountErrors';
+import { branchInUseError, mountError, worktreeErrorKind } from './mountErrors';
 import { withMountLock, withRepositoryAndMountLock } from './mountLocks';
 import {
   beginMountOperation,
@@ -139,16 +139,23 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                 : baseBranch !== undefined
                   ? { baseBranch }
                   : {};
+            const request = {
+              repoPath: project.rootPath,
+              branchPrefix,
+              slug: branchSlug,
+              parentDir: `${project.rootPath}/.goodboy/worktrees`,
+              dirName: mountDirName({ sessionSlug, mountId }),
+              ...baseInput,
+            };
             let created;
             try {
-              created = await createWorktree({
-                repoPath: project.rootPath,
-                branchPrefix,
-                slug: branchSlug,
-                parentDir: `${project.rootPath}/.goodboy/worktrees`,
-                dirName: mountDirName({ sessionSlug, mountId }),
-                ...(adopt ? { existingBranch: `${branchPrefix}/${branchSlug}` } : {}),
-                ...baseInput,
+              created = await createWorktree(
+                adopt ? { ...request, existingBranch: `${branchPrefix}/${branchSlug}` } : request,
+              ).catch(async (error: unknown) => {
+                if (!adopt || worktreeErrorKind({ error }) !== 'branch_not_found') {
+                  throw error;
+                }
+                return createWorktree(request);
               });
             } catch (error) {
               const branchInUse = branchInUseError({ error });

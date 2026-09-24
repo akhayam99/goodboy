@@ -7,12 +7,12 @@ import type {
 import { slugifyBranch } from '../../shared/utils/slugifyBranch';
 import { ghAssignedIssues, tauriGhRunner } from '../github/github';
 import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
-import { githubBranchSlug } from '../github/components/GitHubStudio/useGithubIssues';
+import { githubBranchSlug } from '../github/components/PullRequest/useGithubIssues';
 import { linearFetchAssignedIssues } from './linear/client';
 import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
 import { gitlabFetchAssignedIssues, issueIdentifier } from './gitlab/client';
 import { goalFromIssue as goalFromGitlabIssue } from './gitlab/goal-from-issue';
-import { gitlabBranchSlug } from './gitlab/GitlabStudio/useGitlabIssues';
+import { gitlabBranchSlug } from './gitlab/MergeRequest/useGitlabIssues';
 import { jiraListIssues } from './jira/client';
 import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
 import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';
@@ -56,7 +56,7 @@ export const fetchIssueCandidates = async ({
         identifier: issue.identifier,
         title: issue.title,
         url: issue.url,
-        goal: goalFromLinearIssue(issue),
+        goal: goalFromLinearIssue({ issue }),
         branchSlug: slugifyBranch({ input: issue.title, maxLength: 48 }),
       }));
     }
@@ -92,7 +92,7 @@ export const fetchIssueCandidates = async ({
         identifier: issueIdentifier(issue),
         title: issue.title,
         url: issue.webUrl,
-        goal: goalFromGitlabIssue(issue),
+        goal: goalFromGitlabIssue({ issue }),
         branchSlug: gitlabBranchSlug(issue),
       }));
     }
@@ -125,7 +125,7 @@ export const fetchIssueCandidates = async ({
         identifier: issue.shortId ?? issue.id,
         title: issue.title,
         url: issue.permalink ?? '',
-        goal: goalFromSentry(issue),
+        goal: goalFromSentry({ issue }),
         branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
       }));
     }

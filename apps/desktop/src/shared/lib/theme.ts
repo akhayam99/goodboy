@@ -1,51 +1,88 @@
 import { create } from 'zustand';
 import { STORAGE_KEYS } from './storage-keys';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
+
+export type ThemePreference = Theme | 'system';
 
 const STORAGE_KEY = STORAGE_KEYS.theme;
+const LIGHT_QUERY = '(prefers-color-scheme: light)';
 
-function readStoredTheme(): Theme {
+const readStoredPreference = (): ThemePreference => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw === 'light') {
-      return 'light';
+    if (raw === 'light' || raw === 'system') {
+      return raw;
     }
   } catch {}
   return 'dark';
-}
+};
 
-function applyTheme(theme: Theme): void {
+const lightQuery = (): MediaQueryList | null =>
+  typeof window.matchMedia === 'function' ? window.matchMedia(LIGHT_QUERY) : null;
+
+export const resolveTheme = ({
+  preference,
+  systemIsLight,
+}: {
+  readonly preference: ThemePreference;
+  readonly systemIsLight: boolean;
+}): Theme => {
+  if (preference === 'system') {
+    return systemIsLight ? 'light' : 'dark';
+  }
+  return preference;
+};
+
+const applyTheme = ({ theme }: { readonly theme: Theme }): void => {
   if (theme === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
-  } else {
-    document.documentElement.removeAttribute('data-theme');
+    return;
   }
-}
+  document.documentElement.removeAttribute('data-theme');
+};
+
+const resolveAndApply = ({ preference }: { readonly preference: ThemePreference }): Theme => {
+  const theme = resolveTheme({ preference, systemIsLight: lightQuery()?.matches === true });
+  applyTheme({ theme });
+  return theme;
+};
 
 type ThemeState = {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
+  readonly preference: ThemePreference;
+  readonly theme: Theme;
+  readonly setPreference: (preference: ThemePreference) => void;
+  readonly toggleTheme: () => void;
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
+  preference: 'dark',
   theme: 'dark',
-  setTheme: (theme) => {
+  setPreference: (preference) => {
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      localStorage.setItem(STORAGE_KEY, preference);
     } catch {}
-    applyTheme(theme);
-    set({ theme });
+    set({ preference, theme: resolveAndApply({ preference }) });
   },
   toggleTheme: () => {
-    const next: Theme = get().theme === 'dark' ? 'light' : 'dark';
-    get().setTheme(next);
+    get().setPreference(get().theme === 'dark' ? 'light' : 'dark');
   },
 }));
 
-export const bootstrapTheme = (): void => {
-  const stored = readStoredTheme();
-  applyTheme(stored);
-  useThemeStore.setState({ theme: stored });
+export const bootstrapTheme = (): (() => void) => {
+  const preference = readStoredPreference();
+  useThemeStore.setState({ preference, theme: resolveAndApply({ preference }) });
+  const query = lightQuery();
+  if (query === null) {
+    return () => undefined;
+  }
+  const onChange = () => {
+    const current = useThemeStore.getState().preference;
+    if (current !== 'system') {
+      return;
+    }
+    useThemeStore.setState({ theme: resolveAndApply({ preference: current }) });
+  };
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
 };

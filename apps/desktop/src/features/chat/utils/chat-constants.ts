@@ -1,60 +1,7 @@
-import type { ModelCostTier, ModelEffort, ModelFamily, ProviderId } from '@goodboy/types';
-import { getModelDescriptor, getModelPrice } from '@goodboy/core';
-
-export const PROVIDER_LABEL: Record<ProviderId, string> = {
-  anthropic: 'Claude',
-  cursor: 'Cursor',
-  codex: 'Codex',
-  gemini: 'Gemini',
-  opencode: 'OpenCode',
-  openrouter: 'OpenRouter',
-  moonshot: 'Moonshot',
-};
+import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
+import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
-export type EffortLevel = ModelEffort;
-
-const SONNET_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high'];
-const OPUS_EFFORT: ReadonlyArray<EffortLevel> = ['low', 'medium', 'high', 'xhigh', 'max'];
-const CODEX_EFFORT: ReadonlyArray<EffortLevel> = ['minimal', 'low', 'medium', 'high'];
-
-export const modelEffortLevels = (model: string): ReadonlyArray<EffortLevel> | null => {
-  const descriptor = getModelDescriptor(model);
-  if (descriptor != null) {
-    return descriptor.effort != null && descriptor.effort.length > 0 ? descriptor.effort : null;
-  }
-  if (/claude-opus/i.test(model)) {
-    return OPUS_EFFORT;
-  }
-  if (/claude-sonnet/i.test(model)) {
-    return SONNET_EFFORT;
-  }
-  if (/gpt|codex/i.test(model)) {
-    return CODEX_EFFORT;
-  }
-  return null;
-};
-
-export const clampEffort = (model: string, effort: EffortLevel): EffortLevel => {
-  const levels = modelEffortLevels(model);
-  if (levels == null || levels.includes(effort)) {
-    return effort;
-  }
-  const requestedIndex = EFFORT_LEVELS.indexOf(effort);
-  for (let index = requestedIndex - 1; index >= 0; index -= 1) {
-    const candidate = EFFORT_LEVELS[index];
-    if (candidate != null && levels.includes(candidate)) {
-      return candidate;
-    }
-  }
-  for (let index = requestedIndex + 1; index < EFFORT_LEVELS.length; index += 1) {
-    const candidate = EFFORT_LEVELS[index];
-    if (candidate != null && levels.includes(candidate)) {
-      return candidate;
-    }
-  }
-  return effort;
-};
 
 export const EFFORT_LABEL: Record<EffortLevel, string> = {
   minimal: 'Minimal',
@@ -65,11 +12,9 @@ export const EFFORT_LABEL: Record<EffortLevel, string> = {
   max: 'Max',
 };
 
-export type CostTier = ModelCostTier;
-
 const FALLBACK_WEIGHT = 10;
 
-export const TIER_TEXT: Record<CostTier, string> = {
+export const TIER_TEXT: Record<ModelCostTier, string> = {
   cheap: 'text-success',
   mid: 'text-warning',
   expensive: 'text-danger',
@@ -231,7 +176,7 @@ export const parseModelId = (id: string): ParsedModel => {
   return { family: 'other', subfamily: null, variantLabel: local };
 };
 
-export const modelTier = (model: string): CostTier => {
+export const modelTier = (model: string): ModelCostTier => {
   const descriptor = getModelDescriptor(model);
   if (descriptor) {
     return descriptor.costTier;
@@ -249,7 +194,7 @@ const modelWeight = (model: string): number => {
   return getModelDescriptor(model)?.weight ?? FALLBACK_WEIGHT;
 };
 
-const TIER_RANK: Record<CostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
+const TIER_RANK: Record<ModelCostTier, number> = { cheap: 0, mid: 1, expensive: 2 };
 
 export type ModelSuggestion = {
   readonly id: string;
@@ -257,10 +202,16 @@ export type ModelSuggestion = {
   readonly costMultiplier: number | null;
 };
 
-const costRatio = (numerator: string, denominator: string): number | null => {
-  const a = getModelPrice(numerator);
-  const b = getModelPrice(denominator);
-  if (!a || !b) {
+type CostRatioParams = {
+  readonly provider: ProviderId;
+  readonly numerator: string;
+  readonly denominator: string;
+};
+
+const costRatio = ({ provider, numerator, denominator }: CostRatioParams): number | null => {
+  const a = getProviderModelPrice({ provider, model: numerator });
+  const b = getProviderModelPrice({ provider, model: denominator });
+  if (a === null || b === null) {
     return null;
   }
   const avg = (a.inputPerMtok / b.inputPerMtok + a.outputPerMtok / b.outputPerMtok) / 2;
@@ -268,10 +219,17 @@ const costRatio = (numerator: string, denominator: string): number | null => {
   return rounded === 1 ? null : rounded;
 };
 
-export const suggestLighterModel = (
-  current: string,
-  candidates: ReadonlyArray<string>,
-): ModelSuggestion | null => {
+type SuggestionParams = {
+  readonly provider: ProviderId;
+  readonly current: string;
+  readonly candidates: ReadonlyArray<string>;
+};
+
+export const suggestLighterModel = ({
+  provider,
+  current,
+  candidates,
+}: SuggestionParams): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   let best: { id: string; weight: number } | null = null;
   for (const id of candidates) {
@@ -283,20 +241,25 @@ export const suggestLighterModel = (
       continue;
     }
     const weight = modelWeight(id);
-    if (!best || weight > best.weight) {
+    if (best === null || weight > best.weight) {
       best = { id, weight };
     }
   }
-  if (!best) {
+  if (best === null) {
     return null;
   }
-  return { id: best.id, kind: 'strong', costMultiplier: costRatio(current, best.id) };
+  return {
+    id: best.id,
+    kind: 'strong',
+    costMultiplier: costRatio({ provider, numerator: current, denominator: best.id }),
+  };
 };
 
-export const suggestHeavierModel = (
-  current: string,
-  candidates: ReadonlyArray<string>,
-): ModelSuggestion | null => {
+export const suggestHeavierModel = ({
+  provider,
+  current,
+  candidates,
+}: SuggestionParams): ModelSuggestion | null => {
   const currentRank = TIER_RANK[modelTier(current)];
   const currentWeight = modelWeight(current);
   let best: { id: string; rank: number; weight: number } | null = null;
@@ -309,13 +272,17 @@ export const suggestHeavierModel = (
     if (rank < currentRank || weight <= currentWeight) {
       continue;
     }
-    if (!best || rank > best.rank || (rank === best.rank && weight > best.weight)) {
+    if (best === null || rank > best.rank || (rank === best.rank && weight > best.weight)) {
       best = { id, rank, weight };
     }
   }
-  if (!best) {
+  if (best === null) {
     return null;
   }
   const kind = modelTier(current) === 'expensive' ? 'optional' : 'strong';
-  return { id: best.id, kind, costMultiplier: costRatio(best.id, current) };
+  return {
+    id: best.id,
+    kind,
+    costMultiplier: costRatio({ provider, numerator: best.id, denominator: current }),
+  };
 };

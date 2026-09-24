@@ -51,7 +51,7 @@ vi.mock('../../../features/terminal/terminal', () => ({
 }));
 
 import { addWorkspace } from './addWorkspace';
-import { deleteWorkspace } from './deleteWorkspace';
+import { disconnectWorkspace } from './disconnectWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { addProject } from '../projects/addProject';
 import { addProjects } from '../projects/addProjects';
@@ -78,7 +78,6 @@ const workspace = (): Workspace => ({
   id: WORKSPACE_ID,
   name: 'Demo Team',
   slug: 'demo-team',
-  sessionsRoot: '/repos/api',
   overrides,
   createdAt: NOW,
   updatedAt: NOW,
@@ -154,7 +153,6 @@ describe('workspace and project slices', () => {
     const insertedWorkspace = store.state.workspaces[0]!;
     const insertedProject = store.state.projects[0]!;
     expect(String(insertedWorkspace.id)).not.toBe(String(insertedProject.id));
-    expect(insertedWorkspace.sessionsRoot).toBeNull();
     expect(insertedProject.workspaceId).toBe(insertedWorkspace.id);
     expect(store.state.workspaces).toEqual([insertedWorkspace]);
     expect(store.state.projects).toEqual([insertedProject]);
@@ -253,7 +251,7 @@ describe('workspace and project slices', () => {
         rootPath: '/repos/plain',
         requireRepo: true,
       }),
-    ).rejects.toThrow(/no git repository/);
+    ).rejects.toThrow(/No git repository/);
 
     expect(h.insertProject).not.toHaveBeenCalled();
     expect(store.state.projects).toEqual([]);
@@ -300,7 +298,7 @@ describe('workspace and project slices', () => {
         workspaceId: WORKSPACE_ID,
         rootPaths: ['/repos/plain'],
       }),
-    ).rejects.toThrow(/no git repository/);
+    ).rejects.toThrow(/No git repository/);
 
     expect(h.insertProject).not.toHaveBeenCalled();
   });
@@ -362,7 +360,7 @@ describe('workspace and project slices', () => {
       workspaceOverrides: { [WORKSPACE_ID]: overrides },
     });
 
-    await deleteWorkspace(store.set, store.get)(WORKSPACE_ID);
+    await disconnectWorkspace(store.set, store.get)(WORKSPACE_ID);
 
     expect(h.disconnectWorkspace).toHaveBeenCalledOnce();
     expect(store.state.workspaces).toEqual([]);

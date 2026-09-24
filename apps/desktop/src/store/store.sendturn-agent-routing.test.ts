@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -16,7 +17,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, resolveStoredModelSelection } from '@goodboy/core';
+import { resolveStoredModelSelection } from '@goodboy/core';
 
 const resolveModelArgsSpy = vi.hoisted(() => vi.fn());
 
@@ -126,6 +127,12 @@ vi.mock('../shared/lib/db', () => ({
 }));
 
 const resolveMockState = vi.hoisted(() => ({ reset: (): void => {} }));
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 beforeEach(() => resolveMockState.reset());
 
 vi.mock('@goodboy/db', async () => {
@@ -198,9 +205,6 @@ vi.mock('../features/file-versions/fileVersions', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -320,8 +324,6 @@ vi.mock('../features/plans/plans', () => ({
   listConsumptionsForPlan: vi.fn(async () => []),
 }));
 
-import { stepSummaryDegraded } from './summarizeAgentOutput';
-
 const SESSION_ID = 'session-rt-1' as SessionId;
 const AGENT_A = 'agent-a' as AgentId;
 const AGENT_B = 'agent-b' as AgentId;
@@ -415,11 +417,6 @@ function buildWorkflowTemplate({ workflowId, stepId }: WorkflowTemplateParams): 
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
-async function importStore() {
-  const mod = await import('./store');
-  return mod.useAppStore;
-}
-
 describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
@@ -511,7 +508,6 @@ describe('sendTurn, agent routing', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -533,7 +529,6 @@ describe('sendTurn, agent routing', () => {
   }
 
   it('records the resolved mount as the write-destination snapshot for the turn', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
     useAppStore.setState({
       sessionProjectMounts: {
@@ -574,7 +569,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('records the session scratch folder as the write-destination snapshot without a mount', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
     useAppStore.setState({ sessionProjectMounts: { [SESSION_ID]: [] } });
 
@@ -589,7 +583,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('routes user_text to the explicit agentId, not selectedAgentId', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
 
     await useAppStore
@@ -607,7 +600,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('falls back to selectedAgentId when agentId is omitted', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
 
     await useAppStore
@@ -624,7 +616,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('sends the AI request to the explicit agent even if selectedAgentId changes mid-flight', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
 
     runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
@@ -650,7 +641,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('captures file versions for changed files in a simple session turn', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
     const projectId = 'project-folder' as ProjectId;
     useAppStore.setState({
@@ -772,7 +762,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('only resumes a provider session on the provider that created it', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
     const agents = [
       {
@@ -816,7 +805,6 @@ describe('sendTurn, agent routing', () => {
   });
 
   it('stores deterministic fallback output without an LLM call for a non-workflow agent', async () => {
-    const useAppStore = await importStore();
     setupTwoAgents(useAppStore, AGENT_A);
     const assistantText = `${'h'.repeat(1500)}middle${'t'.repeat(400)}`;
     runTurnSpy.mockImplementation(async function* (args: { runId: ProviderRunId }) {
@@ -873,7 +861,6 @@ describe('sendTurn, workflow carry-forward', () => {
   });
 
   it('injects the same full chain on retry without duplicating slots', async () => {
-    const useAppStore = await importStore();
     const workflowId = 'workflow-carry' as WorkflowId;
     const workflowRunId = 'workflow-run-carry' as WorkflowRunId;
     const planStepId = 'step-plan' as StepId;
@@ -1008,7 +995,6 @@ describe('sendTurn, workflow carry-forward', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1075,7 +1061,7 @@ describe('sendTurn, workflow carry-forward', () => {
       agent.id === implementAgentId ? { ...agent, outputSummary: shortDegradedSummary } : agent,
     );
 
-    stepSummaryDegraded.clear();
+    useAppStore.setState({ stepSummaryDegraded: {} });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'short summary retry' });
@@ -1087,7 +1073,7 @@ describe('sendTurn, workflow carry-forward', () => {
     );
     expect(lastStepTransition()?.degraded).toBeUndefined();
 
-    stepSummaryDegraded.set(implementAgentId, true);
+    useAppStore.setState({ stepSummaryDegraded: { [implementAgentId]: true } });
     await useAppStore
       .getState()
       .sendTurn({ sessionId: SESSION_ID, agentId: reviewAgentId, content: 'ground truth retry' });
@@ -1101,7 +1087,6 @@ describe('sendTurn, workflow carry-forward', () => {
   });
 
   it('falls back to the fallback shape when no ground truth survived a restart', async () => {
-    const useAppStore = await importStore();
     const workflowId = 'workflow-restart' as WorkflowId;
     const workflowRunId = 'workflow-run-restart' as WorkflowRunId;
     const implementStepId = 'step-restart-implement' as StepId;
@@ -1181,7 +1166,6 @@ describe('sendTurn, workflow carry-forward', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1200,7 +1184,7 @@ describe('sendTurn, workflow carry-forward', () => {
         },
       ],
     });
-    stepSummaryDegraded.clear();
+    useAppStore.setState({ stepSummaryDegraded: {} });
 
     await useAppStore
       .getState()
@@ -1277,7 +1261,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1299,7 +1282,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   }
 
   it('passes --effort (mapped) to runTurn when an effort override is set on anthropic', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({ agentEffortOverride: { [AGENT_A]: 'xhigh' } });
     const routingMod = await import('../features/providers/routing');
@@ -1319,7 +1301,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('reopens a done agent before sending its next turn', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       sessionPhaseRuns: {
@@ -1342,7 +1323,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('passes the model default effort when no override is set', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
 
     await useAppStore
@@ -1353,7 +1333,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('passes Cursor Max Mode only for a model combination that requires it', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
     const routingSpy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>;
@@ -1385,7 +1364,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('passes clamped effort to runTurn when the resolved provider is codex', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -1404,7 +1382,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('passes effort to runTurn when the resolved provider is gemini', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -1423,7 +1400,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('pins the provider override into routing even when the session forbids turn overrides', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       agentProviderOverride: { [AGENT_A]: 'codex' },
@@ -1443,7 +1419,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('a resolver that emits a resolution marker records committed and advances the queue', async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -1498,7 +1473,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1556,7 +1530,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('records every combined resolver thread outcome', async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       {
@@ -1594,7 +1567,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1649,7 +1621,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('a resolver that ends without a marker still lets the queue advance', async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -1704,7 +1675,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1761,7 +1731,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('a resolver analysis records analyzed and advances the queue', async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -1816,7 +1785,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -1876,7 +1844,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('an explicit per-turn model override beats the agent kind model pin', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       sessions: [
@@ -1906,7 +1873,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('guards a stale codex session model after switching back to anthropic', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const switchedProvider: ProviderId = 'anthropic';
     const staleSession = {
@@ -1939,7 +1905,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('keeps the agent kind model pin when no per-turn override is supplied', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       agentModelOverride: { [AGENT_A]: 'claude-haiku-4-5' },
@@ -1953,7 +1918,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('does not apply an anthropic model pin when the routed provider is cursor', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -1981,7 +1945,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('uses a workflow model override for both the transcript and spawn args', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const workflowRunId = 'workflow-run-1' as never;
     const workflowId = 'workflow-1' as never;
@@ -2067,7 +2030,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('runs the agent lock, not the step selection the template still carries', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const workflowRunId = 'workflow-run-lock' as WorkflowRunId;
     const workflowId = 'workflow-lock' as WorkflowId;
@@ -2115,7 +2077,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('runs the revalidated agent decision, not the unavailable step selection', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     const workflowRunId = 'workflow-run-revalidated' as WorkflowRunId;
     const workflowId = 'workflow-revalidated' as WorkflowId;
@@ -2167,7 +2128,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('remaps a composer selection to the role-aware model on the fallback provider', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       sessions: [
@@ -2222,7 +2182,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('uses a composer override for both the transcript and spawn args', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       sessions: [
@@ -2262,7 +2221,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('an explicit per-turn model override beats both the agent provider and model pin', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       sessions: [
@@ -2293,7 +2251,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('keeps both the agent provider and model pin when no per-turn override is supplied', async () => {
-    const useAppStore = await importStore();
     setup(useAppStore);
     useAppStore.setState({
       agentProviderOverride: { [AGENT_A]: 'anthropic' },
@@ -2308,7 +2265,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   it('the drain runs the persisted queue head first, then the next one', async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -2363,7 +2319,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2413,7 +2368,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
   });
 
   const seedResolverTurn = async () => {
-    const useAppStore = await importStore();
     const workflowsMod = await import('../features/workflows/workflows');
     (workflowsMod.invokeAgentList as ReturnType<typeof vi.fn>).mockResolvedValue([
       { ...buildAgent(AGENT_A, 0), sourceThreadIds: ['PRRT_1'], status: 'completed' },
@@ -2464,7 +2418,6 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2777,7 +2730,6 @@ describe('sendTurn, budget routing notice', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -2815,7 +2767,6 @@ describe('sendTurn, budget routing notice', () => {
   }
 
   it('tells the transcript where a threshold move went and why', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
     const messages = await sendWithDecision(useAppStore, {
@@ -2832,7 +2783,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('names the cap, not the threshold, when the cap is already spent', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
     const messages = await sendWithDecision(useAppStore, {
@@ -2848,7 +2798,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('tells the transcript when the preferred provider was unreachable', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
     const messages = await sendWithDecision(useAppStore, {
@@ -2864,7 +2813,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('stays quiet when routing kept the preferred provider', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
     const messages = await sendWithDecision(useAppStore, {
@@ -2878,7 +2826,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('blocks the turn and says so in the transcript when every provider is over cap', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -2903,7 +2850,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('forwards a forced send into the routing resolver, unlike a plain send', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
     const routingMod = await import('../features/providers/routing');
     const routingSpy = routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>;
@@ -2930,7 +2876,6 @@ describe('sendTurn, budget routing notice', () => {
   });
 
   it('stays quiet when the turn never left the preferred provider', async () => {
-    const useAppStore = await importStore();
     setupNoticeAgent(useAppStore);
 
     const messages = await sendWithDecision(useAppStore, {
@@ -3003,7 +2948,6 @@ describe('sendTurn, role fallback model', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -3044,7 +2988,6 @@ describe('sendTurn, role fallback model', () => {
   }
 
   it('retries on the fallback the user picked for the agent role', async () => {
-    const useAppStore = await importStore();
     setupFallbackAgent(useAppStore, {
       custom: {
         providerId: 'anthropic',
@@ -3065,7 +3008,6 @@ describe('sendTurn, role fallback model', () => {
   });
 
   it('leaves the heuristic alone when the role stores no fallback', async () => {
-    const useAppStore = await importStore();
     setupFallbackAgent(useAppStore, {
       custom: { providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' },
     });
@@ -3079,7 +3021,6 @@ describe('sendTurn, role fallback model', () => {
   });
 
   it('ignores a fallback stored for a role the agent does not have', async () => {
-    const useAppStore = await importStore();
     setupFallbackAgent(useAppStore, {
       planner: {
         providerId: 'anthropic',
@@ -3098,7 +3039,6 @@ describe('sendTurn, role fallback model', () => {
   });
 
   it('announces the fallback the user picked in the transcript', async () => {
-    const useAppStore = await importStore();
     setupFallbackAgent(useAppStore, {
       custom: {
         providerId: 'anthropic',

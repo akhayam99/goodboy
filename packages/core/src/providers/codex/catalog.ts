@@ -12,7 +12,8 @@ export const CODEX_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Sol',
+      version: '5.6',
+      checkpoint: 'Sol',
       order: 24,
       costTier: 'expensive',
     },
@@ -29,7 +30,8 @@ export const CODEX_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Terra',
+      version: '5.6',
+      checkpoint: 'Terra',
       order: 23,
       costTier: 'mid',
     },
@@ -46,7 +48,8 @@ export const CODEX_CATALOG = [
     presentation: {
       family: 'gpt',
       group: 'GPT',
-      version: '5.6 Luna',
+      version: '5.6',
+      checkpoint: 'Luna',
       order: 22,
       costTier: 'cheap',
     },
@@ -64,6 +67,7 @@ export const CODEX_CATALOG = [
       family: 'gpt',
       group: 'GPT',
       version: '6',
+      checkpoint: 'Astra',
       order: 25,
       costTier: 'expensive',
     },

@@ -69,9 +69,9 @@ export const AnswerSubmitButton = ({
             className={cn(
               'inline-flex items-center rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground',
               'transition-[color,background-color] duration-150',
-              'hover:bg-muted hover:text-foreground',
+              'hover:bg-hover hover:text-foreground',
               'disabled:pointer-events-none disabled:opacity-40',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             Back
@@ -84,8 +84,8 @@ export const AnswerSubmitButton = ({
             className={cn(
               'inline-flex shrink-0 items-center rounded-md border border-border px-2.5 py-1 text-2xs font-semibold text-foreground',
               'transition-[color,background-color,border-color] duration-150',
-              'hover:bg-muted active:scale-[0.98]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'hover:bg-hover active:scale-[0.98]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             Continue
@@ -97,11 +97,11 @@ export const AnswerSubmitButton = ({
             disabled={disabled}
             className={cn(
               'group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold',
-              'bg-primary text-primary-foreground shadow-inset-primary',
+              'bg-primary text-on-tone shadow-inset-primary',
               'transition-[filter,transform,box-shadow] duration-150 motion-safe:will-change-transform',
               'hover:brightness-105 active:scale-[0.98]',
               'disabled:pointer-events-none disabled:opacity-40',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             <span>Send</span>

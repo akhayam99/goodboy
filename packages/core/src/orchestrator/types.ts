@@ -2,13 +2,13 @@ import type {
   AgentRole,
   CapabilityContinuation,
   CapabilityPurpose,
+  EffortLevel,
   EvidenceEntry,
-  ModelEffort,
+  ModelPrice,
   ProviderId,
   WorkflowTaskDifficulty,
   WorkflowTaskType,
 } from '@goodboy/types';
-import type { ModelPriceSummary } from '../providers/model-price';
 
 export type OrchestratorStep = {
   readonly name: string;
@@ -17,7 +17,7 @@ export type OrchestratorStep = {
   readonly expectedOutput?: string;
   readonly provider?: string;
   readonly model?: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly taskType?: WorkflowTaskType;
   readonly difficulty?: WorkflowTaskDifficulty;
   readonly modelReason?: string;
@@ -87,18 +87,18 @@ export type OrchestratorModelOption = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly label: string;
-  readonly efforts: ReadonlyArray<ModelEffort>;
+  readonly efforts: ReadonlyArray<EffortLevel>;
   readonly taskTypes: ReadonlyArray<WorkflowTaskType>;
   readonly preferredDifficulty: ReadonlyArray<WorkflowTaskDifficulty>;
   readonly contextWindow: number;
-  readonly price: ModelPriceSummary | null;
+  readonly price: ModelPrice | null;
 };
 
 export type OrchestratorRoleDefault = {
   readonly role: AgentRole;
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 export type OrchestratorNeedRequest = {

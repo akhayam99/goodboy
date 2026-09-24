@@ -12,9 +12,9 @@ import type {
   MountId,
 } from './ids';
 import type { SessionProviderPreference } from './provider-preference';
-import type { ModelEffort, ProviderId } from './provider-registry';
+import type { EffortLevel, ProviderId } from './provider-registry';
 import type { ClaudePermissionMode } from './permission';
-import type { OverrideSettings, RoleModelPreferences } from './settings';
+import type { OverrideSettings } from './settings';
 import type { GitDistance, GitOperation, GitWorkingTree } from './worktree';
 
 export type WorkspaceGitState = 'missing' | 'absent' | 'unborn' | 'ready';
@@ -56,7 +56,6 @@ export type Workspace = Readonly<{
   id: WorkspaceId;
   name: string;
   slug: string;
-  sessionsRoot: string | null;
   profile?: WorkspaceProfile;
   overrides: OverrideSettings;
   createdAt: IsoDateTime;
@@ -109,7 +108,15 @@ export type WorkflowSpendLimitMode = 'notify' | 'pause';
 export type OrchestratorRouting = Readonly<{
   providerId: ProviderId;
   model: string;
-  effort?: ModelEffort;
+  effort?: EffortLevel;
+}>;
+
+export type OrchestratorHint = Readonly<{
+  id: string;
+  text: string;
+  createdAt: IsoDateTime;
+  consumedAt?: IsoDateTime;
+  consumedAtStep?: number;
 }>;
 
 export type WorkflowRun = Readonly<{
@@ -123,10 +130,9 @@ export type WorkflowRun = Readonly<{
   orchestrationOutcome?: WorkflowOrchestrationOutcome;
   orchestrationReason?: string;
   orchestrationStop?: WorkflowOrchestrationStop;
-  orchestratorHints?: string;
+  orchestratorHints?: ReadonlyArray<OrchestratorHint>;
   orchestratorSummary?: string;
   orchestratorRouting?: OrchestratorRouting;
-  roleModelOverrides?: RoleModelPreferences;
   spendLimitUsd?: number;
   spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;
@@ -151,7 +157,7 @@ export type Session = Readonly<{
   archivedAt?: IsoDateTime;
   deletedAt?: IsoDateTime;
   verbosity?: 'brief' | 'normal' | 'verbose';
-  effort?: ModelEffort;
+  effort?: EffortLevel;
   modelOverride?: string;
   providerOverride?: string;
   createdAt: IsoDateTime;

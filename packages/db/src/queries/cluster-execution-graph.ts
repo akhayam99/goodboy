@@ -307,43 +307,37 @@ export const adoptClusterGraphRevision = async ({
   revision,
 }: AdoptClusterGraphRevisionParams): Promise<ClusterGraphRevisionOutcome> => {
   const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    const claimed = await db.execute(
-      `UPDATE cluster_execution_graphs
-          SET graph_json = ?, execution_version = ?, revision = ?, frozen_reason = NULL,
-              frozen_obligation_id = NULL
-        WHERE container_agent_id = ? AND revision = ?`,
-      [
-        JSON.stringify(revision.graph.nodes),
-        revision.graph.executionVersion,
-        revision.toRevision,
-        revision.containerAgentId,
-        revision.fromRevision,
-      ],
-    );
-    if (claimed.rowsAffected === 0) {
-      await db.exec('ROLLBACK');
-      return {
-        kind: 'stale',
-        graph: await getClusterExecutionGraph({ db, containerAgentId: revision.containerAgentId }),
-      };
-    }
-    for (const node of revision.nodes) {
-      await db.execute(
-        `INSERT INTO cluster_execution_nodes
-           (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by, revision,
-            result_state)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT (container_agent_id, node_id) DO UPDATE SET
-           agent_id = excluded.agent_id,
-           ordinal = excluded.ordinal,
-           role = excluded.role,
-           state = excluded.state,
-           superseded_by = excluded.superseded_by,
-           revision = excluded.revision,
-           result_state = excluded.result_state`,
-        [
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: `UPDATE cluster_execution_graphs
+                 SET graph_json = ?, execution_version = ?, revision = ?, frozen_reason = NULL,
+                     frozen_obligation_id = NULL
+               WHERE container_agent_id = ? AND revision = ?`,
+        params: [
+          JSON.stringify(revision.graph.nodes),
+          revision.graph.executionVersion,
+          revision.toRevision,
+          revision.containerAgentId,
+          revision.fromRevision,
+        ],
+        abortWhen: 'noChanges',
+        abortCode: 'stale-revision',
+      },
+      ...revision.nodes.map((node) => ({
+        sql: `INSERT INTO cluster_execution_nodes
+                (container_agent_id, node_id, agent_id, ordinal, role, state, superseded_by,
+                 revision, result_state)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT (container_agent_id, node_id) DO UPDATE SET
+                agent_id = excluded.agent_id,
+                ordinal = excluded.ordinal,
+                role = excluded.role,
+                state = excluded.state,
+                superseded_by = excluded.superseded_by,
+                revision = excluded.revision,
+                result_state = excluded.result_state`,
+        params: [
           revision.containerAgentId,
           node.nodeId,
           node.agentId,
@@ -354,27 +348,29 @@ export const adoptClusterGraphRevision = async ({
           node.revision,
           node.resultState,
         ],
-      );
-    }
-    await db.execute(
-      `INSERT OR IGNORE INTO cluster_graph_revisions
-         (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
-          created_at)
-       VALUES (?, ?, ?, ?, ?, 'adopted', ?, ?)`,
-      [
-        revision.id,
-        revision.containerAgentId,
-        revision.obligationId,
-        revision.fromRevision,
-        revision.toRevision,
-        revision.reason,
-        now,
-      ],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+      })),
+      {
+        sql: `INSERT OR IGNORE INTO cluster_graph_revisions
+                (id, container_agent_id, obligation_id, from_revision, to_revision, state, reason,
+                 created_at)
+              VALUES (?, ?, ?, ?, ?, 'adopted', ?, ?)`,
+        params: [
+          revision.id,
+          revision.containerAgentId,
+          revision.obligationId,
+          revision.fromRevision,
+          revision.toRevision,
+          revision.reason,
+          now,
+        ],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    return {
+      kind: 'stale',
+      graph: await getClusterExecutionGraph({ db, containerAgentId: revision.containerAgentId }),
+    };
   }
   const stored = await getClusterExecutionGraph({
     db,

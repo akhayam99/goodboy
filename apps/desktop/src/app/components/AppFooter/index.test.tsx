@@ -6,14 +6,22 @@ import {
   type IntegrationGlyphProvider,
 } from '../../../features/integrations/components/IntegrationGlyph';
 import { FOOTER_INTEGRATIONS } from './categories';
+import {
+  footerTarget,
+  type ConnectedIntegrations,
+  type Overlay,
+} from '../../hooks/useAppOverlays/overlayState';
 
-const { flags, storeState } = vi.hoisted(() => ({
-  flags: { unseenRelease: false },
+const { storeState } = vi.hoisted(() => ({
   storeState: {
     providers: [] as ReadonlyArray<{ readonly connection: string }>,
     updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
     updateVersion: '0.2.0' as string | null,
     installUpdate: vi.fn(async () => undefined),
+    updateFailure: null,
+    updateProgress: null,
+    agentTurnState: {},
+    focusChangelogRelease: vi.fn(),
   },
 }));
 
@@ -21,12 +29,7 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof storeState) => T) => selector(storeState),
 }));
 
-vi.mock('../../../features/changelog/hooks/useUnseenRelease', () => ({
-  useUnseenRelease: () => flags.unseenRelease,
-}));
-
 beforeEach(() => {
-  flags.unseenRelease = false;
   storeState.providers = [];
   storeState.updaterStatus = 'idle';
 });
@@ -55,79 +58,54 @@ type Params = {
   readonly overrides?: Partial<FooterProps>;
 };
 
+const NONE_CONNECTED: ConnectedIntegrations = {
+  github: false,
+  gitlab: false,
+  bitbucket: false,
+  linear: false,
+  jira: false,
+  sentry: false,
+  slack: false,
+};
+
+const ALL_CONNECTED: ConnectedIntegrations = {
+  github: true,
+  gitlab: true,
+  bitbucket: true,
+  linear: true,
+  jira: true,
+  sentry: true,
+  slack: true,
+};
+
+const connectedWith = (
+  providers: ReadonlyArray<IntegrationGlyphProvider>,
+): ConnectedIntegrations => ({
+  ...NONE_CONNECTED,
+  ...Object.fromEntries(providers.map((provider) => [provider, true])),
+});
+
+type TargetParams = {
+  readonly overlay: Overlay;
+  readonly connected?: ConnectedIntegrations;
+};
+
+const targetFor = ({ overlay, connected = NONE_CONNECTED }: TargetParams) =>
+  footerTarget({ overlay, connected });
+
 const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
-  activeStudio: null,
+  scope: 'workspace',
+  target: null,
+  connected: NONE_CONNECTED,
+  onOpenIntegration: vi.fn(),
+  onOpenInbox: vi.fn(),
   onOpenWorkflows: vi.fn(),
   onOpenProviders: vi.fn(),
   onOpenSettings: vi.fn(),
   onOpenImpact: vi.fn(),
   onOpenChangelog: vi.fn(),
-  onOpenInbox: vi.fn(),
-  onOpenGithub: vi.fn(),
-  onOpenLinear: vi.fn(),
-  onOpenJira: vi.fn(),
-  onOpenSentry: vi.fn(),
-  onOpenGitlab: vi.fn(),
-  onOpenBitbucket: vi.fn(),
-  onOpenSlack: vi.fn(),
-  githubEnabled: false,
-  linearEnabled: false,
-  jiraEnabled: false,
-  sentryEnabled: false,
-  gitlabEnabled: false,
-  bitbucketEnabled: false,
-  slackEnabled: false,
   ...overrides,
 });
-
-const openerSpies = () => ({
-  github: vi.fn(),
-  gitlab: vi.fn(),
-  bitbucket: vi.fn(),
-  linear: vi.fn(),
-  jira: vi.fn(),
-  sentry: vi.fn(),
-  slack: vi.fn(),
-});
-
-type RoutingParams = {
-  readonly spies: ReturnType<typeof openerSpies>;
-  readonly connected: boolean;
-};
-
-const routingProps = ({ spies, connected }: RoutingParams): FooterProps =>
-  footerProps({
-    overrides: {
-      onOpenGithub: spies.github,
-      onOpenGitlab: spies.gitlab,
-      onOpenBitbucket: spies.bitbucket,
-      onOpenLinear: spies.linear,
-      onOpenJira: spies.jira,
-      onOpenSentry: spies.sentry,
-      onOpenSlack: spies.slack,
-      githubEnabled: connected,
-      gitlabEnabled: connected,
-      bitbucketEnabled: connected,
-      linearEnabled: connected,
-      jiraEnabled: connected,
-      sentryEnabled: connected,
-      slackEnabled: connected,
-    },
-  });
-
-type ExpectRoutedParams = {
-  readonly spies: ReturnType<typeof openerSpies>;
-  readonly provider: IntegrationGlyphProvider;
-};
-
-const expectRoutedOnlyTo = ({ spies, provider }: ExpectRoutedParams) => {
-  FOOTER_INTEGRATIONS.forEach(({ provider: candidate }) => {
-    expect(
-      spies[candidate].mock.calls.length,
-      `${candidate} opener while ${provider} was picked`,
-    ).toBe(candidate === provider ? 1 : 0);
-  });
-};
 
 describe('AppFooter', () => {
   it('keeps inbox, workflows, providers and settings one click away on the right', () => {
@@ -190,7 +168,13 @@ describe('AppFooter', () => {
     );
     expect(onOpenChangelog).toHaveBeenCalledOnce();
 
-    rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'impact' } })} />);
+    rerender(
+      <AppFooter
+        {...footerProps({
+          overrides: { target: targetFor({ overlay: { kind: 'impact', scope: null } }) },
+        })}
+      />,
+    );
     expect(screen.getByRole('button', { name: /^More studios/ }).className).toContain(
       'bg-muted text-foreground',
     );
@@ -206,12 +190,7 @@ describe('AppFooter', () => {
   });
 
   it('never dots the more control, release notes announce themselves elsewhere', () => {
-    const { rerender } = render(<AppFooter {...footerProps()} />);
-
-    expect(screen.queryByTestId('more-studios-dot')).toBeNull();
-
-    flags.unseenRelease = true;
-    rerender(<AppFooter {...footerProps()} />);
+    render(<AppFooter {...footerProps()} />);
 
     expect(screen.queryByTestId('more-studios-dot')).toBeNull();
     expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();
@@ -248,6 +227,25 @@ describe('AppFooter', () => {
     ]);
   });
 
+  it('keeps only providers, settings and the update control without a workspace', () => {
+    storeState.updaterStatus = 'available';
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { scope: 'app', connected: connectedWith(['github']) } })}
+      />,
+    );
+
+    const row = footerRow();
+    const names = Array.from(row?.children[2]?.querySelectorAll('button') ?? []).map(
+      (button) => button.getAttribute('aria-label') ?? button.textContent,
+    );
+
+    expect(names).toEqual(['Connect and manage your provider accounts', SETTINGS_LABEL]);
+    expect(screen.queryByRole('group', { name: 'Connected integrations' })).toBeNull();
+    expect(row?.children[1]?.contains(screen.getByTestId('update-indicator'))).toBe(true);
+    expect(row?.children[1]?.contains(screen.getByTestId('beta-badge-trigger'))).toBe(true);
+  });
+
   it('parks the update call to action next to the beta pill', () => {
     storeState.updaterStatus = 'available';
     render(<AppFooter {...footerProps()} />);
@@ -258,19 +256,29 @@ describe('AppFooter', () => {
     expect(center?.contains(screen.getByTestId('update-indicator'))).toBe(true);
   });
 
-  it('pulses the providers launcher until a provider connects, and never while its studio is open', () => {
+  it('pulses the providers launcher icon until a provider connects, and never while its studio is open', () => {
     const { rerender } = render(<AppFooter {...footerProps()} />);
     const providers = () =>
       screen.getByRole('button', { name: 'Connect and manage your provider accounts' });
+    const pulsing = () => providers().querySelector('.motion-safe\\:animate-soft-pulse');
 
-    expect(providers().className).toContain('motion-safe:animate-soft-pulse');
-
-    rerender(<AppFooter {...footerProps({ overrides: { activeStudio: 'provider' } })} />);
+    expect(pulsing()).not.toBeNull();
     expect(providers().className).not.toContain('animate-soft-pulse');
+
+    rerender(
+      <AppFooter
+        {...footerProps({
+          overrides: {
+            target: targetFor({ overlay: { kind: 'settings', focus: { scope: 'providers' } } }),
+          },
+        })}
+      />,
+    );
+    expect(pulsing()).toBeNull();
 
     storeState.providers = [{ connection: 'connected' }];
     rerender(<AppFooter {...footerProps()} />);
-    expect(providers().className).not.toContain('animate-soft-pulse');
+    expect(pulsing()).toBeNull();
   });
 
   it('lays the row out as three grid regions so the beta badge cannot overlap a cluster', () => {
@@ -286,7 +294,11 @@ describe('AppFooter', () => {
   });
 
   it('keeps studio buttons muted at rest and gives the active one a subtle surface', () => {
-    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'workflow' } })} />);
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { target: targetFor({ overlay: { kind: 'workflow' } }) } })}
+      />,
+    );
 
     const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
     const workflows = screen.getByRole('button', {
@@ -298,7 +310,15 @@ describe('AppFooter', () => {
   });
 
   it('gives settings the muted active fill instead of the inversion it had in the top bar', () => {
-    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'settings' } })} />);
+    render(
+      <AppFooter
+        {...footerProps({
+          overrides: {
+            target: targetFor({ overlay: { kind: 'settings', focus: { scope: 'app' } } }),
+          },
+        })}
+      />,
+    );
 
     const settings = screen.getByRole('button', { name: SETTINGS_LABEL });
 
@@ -314,10 +334,12 @@ describe('AppFooter', () => {
   });
 
   it('renders a few connected integrations as named glyphs that open their studios', () => {
-    const onOpenGithub = vi.fn();
+    const onOpenIntegration = vi.fn();
     render(
       <AppFooter
-        {...footerProps({ overrides: { githubEnabled: true, linearEnabled: true, onOpenGithub } })}
+        {...footerProps({
+          overrides: { connected: connectedWith(['github', 'linear']), onOpenIntegration },
+        })}
       />,
     );
 
@@ -329,13 +351,16 @@ describe('AppFooter', () => {
     expect(within(connected).getAllByRole('button').length).toBe(2);
 
     fireEvent.click(github);
-    expect(onOpenGithub).toHaveBeenCalledOnce();
+    expect(onOpenIntegration).toHaveBeenCalledExactlyOnceWith({ provider: 'github' });
   });
 
   it('reaches every integration through the single link popover', () => {
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
-    const onOpenGitlab = vi.fn();
-    render(<AppFooter {...footerProps({ overrides: { githubEnabled: true, onOpenGitlab } })} />);
+    const onOpenIntegration = vi.fn();
+    render(
+      <AppFooter
+        {...footerProps({ overrides: { connected: connectedWith(['github']), onOpenIntegration } })}
+      />,
+    );
 
     expect(screen.queryByRole('button', { name: 'Connect GitLab' })).toBeNull();
 
@@ -347,18 +372,12 @@ describe('AppFooter', () => {
 
     fireEvent.click(within(panel).getByRole('button', { name: 'Connect GitLab' }));
 
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'goodboy:open-settings',
-        detail: { scope: 'tools', tool: 'gitlab' },
-      }),
-    );
-    dispatch.mockRestore();
+    expect(onOpenIntegration).toHaveBeenCalledExactlyOnceWith({ provider: 'gitlab' });
     expect(screen.queryByRole('dialog', { name: 'Integrations' })).toBeNull();
   });
 
   it('names the connection state of every member in the popover', () => {
-    render(<AppFooter {...footerProps({ overrides: { linearEnabled: true } })} />);
+    render(<AppFooter {...footerProps({ overrides: { connected: connectedWith(['linear']) } })} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
 
@@ -379,56 +398,57 @@ describe('AppFooter', () => {
     expect(screen.queryByRole('dialog', { name: 'Integrations' })).toBeNull();
   });
 
-  it('sends every connected glyph to its own studio and to no other', () => {
+  it('sends every connected glyph to its own provider', () => {
     FOOTER_INTEGRATIONS.forEach((member) => {
-      const spies = openerSpies();
-      render(<AppFooter {...routingProps({ spies, connected: true })} />);
+      const onOpenIntegration = vi.fn();
+      render(
+        <AppFooter
+          {...footerProps({ overrides: { connected: ALL_CONNECTED, onOpenIntegration } })}
+        />,
+      );
 
       fireEvent.click(
         screen.getByRole('button', { name: integrationLabel({ provider: member.provider }) }),
       );
 
-      expectRoutedOnlyTo({ spies, provider: member.provider });
+      expect(onOpenIntegration).toHaveBeenCalledExactlyOnceWith({ provider: member.provider });
       cleanup();
     });
   });
 
-  it('sends every unconnected popover row to its own Tools settings form', () => {
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
+  it('sends every unconnected popover row to its own provider', () => {
     FOOTER_INTEGRATIONS.forEach((member) => {
-      dispatch.mockClear();
-      const spies = openerSpies();
-      render(<AppFooter {...routingProps({ spies, connected: false })} />);
+      const onOpenIntegration = vi.fn();
+      render(<AppFooter {...footerProps({ overrides: { onOpenIntegration } })} />);
       fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
       fireEvent.click(
         within(screen.getByRole('dialog', { name: 'Integrations' })).getByRole('button', {
           name: member.connectLabel,
         }),
       );
-      expect(dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'goodboy:open-settings',
-          detail: { scope: 'tools', tool: member.provider },
-        }),
-      );
-      expect(Object.values(spies).every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(onOpenIntegration).toHaveBeenCalledExactlyOnceWith({ provider: member.provider });
       cleanup();
     });
-    dispatch.mockRestore();
   });
 
-  it('holds the active state on the link action for a disconnected open studio', () => {
-    render(<AppFooter {...footerProps({ overrides: { activeStudio: 'sentry' } })} />);
+  it('holds the active state on the link action while a disconnected tool form is open', () => {
+    const overlay: Overlay = { kind: 'settings', focus: { scope: 'tools', tool: 'sentry' } };
+    render(<AppFooter {...footerProps({ overrides: { target: targetFor({ overlay }) } })} />);
 
     expect(screen.getByRole('button', { name: 'Link your first integration' }).className).toContain(
       'bg-muted text-foreground',
     );
   });
 
-  it('moves that active state onto the glyph once the integration is connected', () => {
+  it('moves that active state onto the glyph once its inbox is open', () => {
+    const connected = connectedWith(['sentry']);
+    const overlay: Overlay = {
+      kind: 'inbox',
+      focus: { provider: 'sentry', kind: null, recordKey: null, sessionId: null },
+    };
     render(
       <AppFooter
-        {...footerProps({ overrides: { activeStudio: 'sentry', sentryEnabled: true } })}
+        {...footerProps({ overrides: { connected, target: targetFor({ overlay, connected }) } })}
       />,
     );
 
@@ -441,7 +461,7 @@ describe('AppFooter', () => {
   });
 
   it('keeps the link action reachable with many connected integrations', () => {
-    render(<AppFooter {...routingProps({ spies: openerSpies(), connected: true })} />);
+    render(<AppFooter {...footerProps({ overrides: { connected: ALL_CONNECTED } })} />);
 
     expect(
       within(screen.getByRole('group', { name: 'Connected integrations' })).getAllByRole('button')
@@ -449,31 +469,5 @@ describe('AppFooter', () => {
     ).toBe(7);
     fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
-  });
-
-  it('keeps Slack reachable whether or not it is connected', () => {
-    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
-    const onOpenSlack = vi.fn();
-    const { rerender } = render(<AppFooter {...footerProps({ overrides: { onOpenSlack } })} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Link your first integration' }));
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Integrations' })).getByRole('button', {
-        name: 'Connect Slack',
-      }),
-    );
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'goodboy:open-settings',
-        detail: { scope: 'tools', tool: 'slack' },
-      }),
-    );
-    dispatchSpy.mockRestore();
-
-    rerender(<AppFooter {...footerProps({ overrides: { slackEnabled: true, onOpenSlack } })} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Slack' }));
-
-    expect(onOpenSlack).toHaveBeenCalledOnce();
   });
 });

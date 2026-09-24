@@ -20,7 +20,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
         'flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition-colors',
         isActive
           ? 'bg-background text-foreground shadow-sm'
-          : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-background hover:text-foreground',
       )}
     >
       <AgentAvatar kind={kind} size="md" />

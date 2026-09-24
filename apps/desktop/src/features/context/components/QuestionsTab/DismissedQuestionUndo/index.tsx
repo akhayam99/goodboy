@@ -15,7 +15,7 @@ export const DismissedQuestionUndo = ({ onUndo }: Props) => {
       <button
         type="button"
         onClick={onUndo}
-        className="rounded-md px-2 py-1 font-medium text-foreground transition-colors hover:bg-muted"
+        className="rounded-md px-2 py-1 font-medium text-foreground transition-colors hover:bg-hover"
       >
         Undo
       </button>

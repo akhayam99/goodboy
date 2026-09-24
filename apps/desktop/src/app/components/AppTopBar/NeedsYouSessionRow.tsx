@@ -1,10 +1,8 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useSessionStageInfo } from '../../../store';
 import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 
 type Props = {
   readonly session: Session;
@@ -25,8 +23,8 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
       <button
         type="button"
         onClick={() => onSelect({ sessionId: session.id as SessionId })}
-        title={`${stripInlineMarkdown({ text: session.goal })} · ${reason}`}
-        className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+        title={`${inlineMarkdownText({ text: session.goal })} · ${reason}`}
+        className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-hover"
       >
         <Icon
           size={ICON_SIZE.control}

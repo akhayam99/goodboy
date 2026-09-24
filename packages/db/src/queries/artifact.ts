@@ -2,7 +2,6 @@ import type {
   AgentId,
   ArtifactId,
   ArtifactKind,
-  ArtifactRendition,
   ArtifactSourceFormat,
   ArtifactStatus,
   ImplementationCluster,
@@ -35,15 +34,6 @@ type ArtifactRow = {
   readonly updated_at: number;
 };
 
-type RenditionRow = {
-  readonly artifact_id: string;
-  readonly revision: number;
-  readonly format: string;
-  readonly renderer_version: string;
-  readonly bytes: unknown;
-  readonly created_at: number;
-};
-
 export type InsertArtifactInput = {
   readonly id: ArtifactId;
   readonly sessionId: SessionId;
@@ -65,21 +55,6 @@ export type UpdateArtifactSourceInput = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
-};
-
-export type PutArtifactRenditionInput = {
-  readonly artifactId: ArtifactId;
-  readonly revision: number;
-  readonly format: string;
-  readonly rendererVersion: string;
-  readonly bytes: Uint8Array;
-};
-
-export type GetArtifactRenditionInput = {
-  readonly artifactId: ArtifactId;
-  readonly revision: number;
-  readonly format: string;
-  readonly rendererVersion: string;
 };
 
 type DatabaseParams = {
@@ -105,10 +80,6 @@ const kindScope = (
 
 type SessionParams = DatabaseParams & {
   readonly sessionId: SessionId;
-};
-
-type RunParams = DatabaseParams & {
-  readonly workflowRunId: WorkflowRunId;
 };
 
 const ARTIFACT_SELECT = `SELECT id, session_id, agent_id, workflow_run_id, kind,
@@ -367,16 +338,7 @@ export const listArtifactsForSession = async ({
   return rows.map(toDomain);
 };
 
-export const listArtifactsForRun = async ({
-  db,
-  workflowRunId,
-}: RunParams): Promise<ReadonlyArray<SessionArtifact>> => {
-  const rows = await db.select<ArtifactRow>(
-    `${ARTIFACT_SELECT} WHERE workflow_run_id = ? ORDER BY created_at ASC`,
-    [workflowRunId],
-  );
-  return rows.map(toDomain);
-};
+const ARTIFACT_GONE = 'ARTIFACT_GONE';
 
 export const updateArtifactSource = async ({
   db,
@@ -388,20 +350,29 @@ export const updateArtifactSource = async ({
   }
   const metadata = metadataForWrite({ kind: existing.kind, value: input.metadata });
   const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    await db.execute(
-      `UPDATE session_artifacts
-       SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
-           revision = revision + 1, updated_at = ?
-       WHERE id = ?`,
-      [input.title, input.sourceFormat, input.sourceText, JSON.stringify(metadata), now, input.id],
-    );
-    await db.execute('DELETE FROM artifact_renditions WHERE artifact_id = ?', [input.id]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: `UPDATE session_artifacts
+         SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
+             revision = revision + 1, updated_at = ?
+         WHERE id = ?`,
+        params: [
+          input.title,
+          input.sourceFormat,
+          input.sourceText,
+          JSON.stringify(metadata),
+          now,
+          input.id,
+        ],
+        abortWhen: 'noChanges',
+        abortCode: ARTIFACT_GONE,
+      },
+      { sql: 'DELETE FROM artifact_renditions WHERE artifact_id = ?', params: [input.id] },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(`Artifact update failed: ${input.id}`);
   }
   const artifact = await selectArtifact({ db, artifactId: input.id });
   if (artifact === null) {
@@ -451,80 +422,4 @@ export const removeArtifact = async ({ db, artifactId, kind }: KindScopedParams)
     artifactId,
     ...scope.params,
   ]);
-};
-
-const renditionBytes = (value: unknown): Uint8Array => {
-  if (value instanceof Uint8Array) {
-    return value;
-  }
-  if (Array.isArray(value) && value.every((entry) => typeof entry === 'number')) {
-    return Uint8Array.from(value);
-  }
-  throw new Error('Invalid artifact rendition bytes');
-};
-
-const toRendition = (row: RenditionRow): ArtifactRendition => ({
-  artifactId: row.artifact_id as ArtifactId,
-  revision: row.revision,
-  format: row.format,
-  rendererVersion: row.renderer_version,
-  bytes: renditionBytes(row.bytes),
-  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-});
-
-export const putArtifactRendition = async ({
-  db,
-  input,
-}: DatabaseParams & { readonly input: PutArtifactRenditionInput }): Promise<ArtifactRendition> => {
-  if (input.bytes.byteLength > 20 * 1024 * 1024) {
-    throw new Error('Artifact rendition exceeds 20 MiB');
-  }
-  const artifact = await selectArtifact({ db, artifactId: input.artifactId });
-  if (artifact === null || artifact.revision !== input.revision) {
-    throw new Error('Artifact rendition revision is stale');
-  }
-  const now = Date.now();
-  await db.exec('BEGIN');
-  try {
-    await db.execute('DELETE FROM artifact_renditions WHERE artifact_id = ? AND revision <> ?', [
-      input.artifactId,
-      input.revision,
-    ]);
-    await db.execute(
-      `INSERT INTO artifact_renditions (
-         artifact_id, revision, format, renderer_version, bytes, created_at
-       ) VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT(artifact_id, revision, format, renderer_version)
-       DO UPDATE SET bytes = excluded.bytes, created_at = excluded.created_at`,
-      [input.artifactId, input.revision, input.format, input.rendererVersion, input.bytes, now],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
-  return {
-    artifactId: input.artifactId,
-    revision: input.revision,
-    format: input.format,
-    rendererVersion: input.rendererVersion,
-    bytes: input.bytes,
-    createdAt: new Date(now).toISOString() as IsoDateTime,
-  };
-};
-
-export const getArtifactRendition = async ({
-  db,
-  input,
-}: DatabaseParams & {
-  readonly input: GetArtifactRenditionInput;
-}): Promise<ArtifactRendition | null> => {
-  const rows = await db.select<RenditionRow>(
-    `SELECT artifact_id, revision, format, renderer_version, bytes, created_at
-     FROM artifact_renditions
-     WHERE artifact_id = ? AND revision = ? AND format = ? AND renderer_version = ?`,
-    [input.artifactId, input.revision, input.format, input.rendererVersion],
-  );
-  const row = rows[0];
-  return row === undefined ? null : toRendition(row);
 };

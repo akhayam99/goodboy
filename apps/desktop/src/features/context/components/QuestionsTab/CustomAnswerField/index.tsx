@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { Textarea, cn } from '@goodboy/ui';
+import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -30,12 +30,12 @@ export const CustomAnswerField = ({
           ROW_FRAME,
           'items-center gap-2 border-border-soft text-left text-sm font-medium text-muted-foreground',
           'transition-[color,background-color,border-color] duration-150',
-          'hover:border-border hover:bg-muted/40 hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+          'hover:border-border hover:bg-hover hover:text-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >
         <Pencil size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span>other</span>
+        <span>Other</span>
       </button>
     );
   }
@@ -45,7 +45,9 @@ export const CustomAnswerField = ({
       className={cn(
         ROW_FRAME,
         'flex-col gap-2 motion-safe:animate-fade-in',
-        filled ? 'border-primary/40 bg-primary/10' : 'border-border-soft',
+        filled
+          ? cn(tintClasses('primary').border, tintClasses('primary').bg)
+          : 'border-border-soft',
       )}
     >
       <span

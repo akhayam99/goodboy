@@ -1,11 +1,5 @@
-import type { CodexModelPriceOverride, GeminiModelPriceOverride } from '@goodboy/core';
+import type { ModelPrice } from '@goodboy/types';
 import shippedPricing from './pricing.json';
-
-type ModelPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok?: number;
-};
 
 export type PricingTable = {
   readonly version: string;
@@ -25,10 +19,6 @@ type PriceParams = {
 
 const activeTable: PricingTable = shippedPricing;
 
-export const getActivePricingTable = (): PricingTable => {
-  return activeTable;
-};
-
 const IS_DEV = import.meta.env.DEV === true;
 
 const priceForModel = ({ provider, model }: PriceParams): ModelPrice | null => {
@@ -41,10 +31,7 @@ const priceForModel = ({ provider, model }: PriceParams): ModelPrice | null => {
   return table[provider][model] ?? null;
 };
 
-export const getCodexPriceOverride = (
-  _config: unknown,
-  model: string,
-): CodexModelPriceOverride | null => {
+export const getCodexPriceOverride = (_config: unknown, model: string): ModelPrice | null => {
   const price = priceForModel({ provider: 'codex', model });
   if (price === null) {
     return null;
@@ -58,10 +45,7 @@ export const getCodexPriceOverride = (
   };
 };
 
-export const getGeminiPriceOverride = (
-  _config: unknown,
-  model: string,
-): GeminiModelPriceOverride | null => {
+export const getGeminiPriceOverride = (_config: unknown, model: string): ModelPrice | null => {
   const price = priceForModel({ provider: 'gemini', model });
   if (price === null) {
     return null;

@@ -32,7 +32,11 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
     );
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit --add-reviewer exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', 'Request review failed', errMsg, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't request a review",
+        body: errMsg,
         sessionId,
         workspaceId: workspace.id,
       });

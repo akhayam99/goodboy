@@ -1,7 +1,7 @@
+import { PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
-  PROVIDER_LIFECYCLE_COMMANDS,
   type ProviderId,
   type ProviderLifecycleAction,
   type ProviderPlatform,

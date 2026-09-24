@@ -28,11 +28,11 @@ export const WireframeScreenTabs = ({ screens, currentScreenId, onSelect }: Prop
               'flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-2xs motion-safe:transition-colors',
               isCurrent
                 ? 'border-border bg-muted text-foreground'
-                : 'border-transparent text-muted-foreground hover:bg-muted/50',
+                : 'border-transparent text-muted-foreground hover:bg-hover',
             )}
           >
             <span className="max-w-40 truncate">{screen.title}</span>
-            <span className="shrink-0 text-muted-foreground/70">{screen.viewport}</span>
+            <span className="shrink-0 text-faint-foreground">{screen.viewport}</span>
           </button>
         );
       })}

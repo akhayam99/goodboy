@@ -16,13 +16,9 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
 } from '@goodboy/core';
-import {
-  KIND_TO_ROLE,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { KIND_TO_ROLE, classifyAgent, type AgentKind } from '../../../features/session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 import type { WorkflowRoutingNodeRef } from './types';
 import { isWorkflowNodeRoutingMutable } from './workflowNodeRoutingMutability';
@@ -52,7 +48,7 @@ const configuredRolePick = ({
   return { provider: routing.provider, model: routing.model, effort: routing.effort };
 };
 
-export type WorkflowNodeRoutingContext = Readonly<{
+type WorkflowNodeRoutingContext = Readonly<{
   agent: Agent | null;
   step: Step | null;
   role: AgentRole | null;
@@ -61,7 +57,6 @@ export type WorkflowNodeRoutingContext = Readonly<{
   decision: WorkflowRoutingDecision | null;
   taskProfile: WorkflowTaskProfile | null;
   proposal: WorkflowRoutingProposalParseOutcome;
-  runRoleLock: WorkflowModelPick | null;
   roleDefault: WorkflowModelPick | null;
   sessionDefault: WorkflowModelPick | null;
   kindDefault: WorkflowModelPick | null;
@@ -130,15 +125,9 @@ export const workflowNodeRoutingContext = ({
   const kind: AgentKind =
     agent === null
       ? 'generic'
-      : ((state.agentKindOverride[agent.id] ??
-          agent.kind ??
-          inferAgentKindFromName(agent.name)) as AgentKind);
+      : classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? (agent === null ? null : KIND_TO_ROLE[kind]);
-  const run =
-    agent?.workflowRunId == null
-      ? null
-      : (session.workflowRuns.find((candidate) => candidate.id === agent.workflowRunId) ?? null);
-  const workspaceRoleModels = roleModelsForSession({ state, sessionId });
+  const workspaceRoleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const compiled = role === null ? null : defaultsForRole(role);
   const defaultProvider = (session.providerOverride ??
     session.providerPreference.defaultProvider) as ProviderId;
@@ -154,7 +143,6 @@ export const workflowNodeRoutingContext = ({
     decision,
     taskProfile,
     proposal: proposalOutcome({ decision, taskProfile }),
-    runRoleLock: configuredRolePick({ role, roleModels: run?.roleModelOverrides ?? null }),
     roleDefault: configuredRolePick({ role, roleModels: workspaceRoleModels }),
     sessionDefault:
       session.modelOverride == null

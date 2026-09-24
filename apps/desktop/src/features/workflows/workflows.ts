@@ -1,5 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
-import { normalizeAgentRole, parseClusterWriteScope } from '@goodboy/core';
+import {
+  normalizeAgentRole,
+  parseClusterWriteScope,
+  PlannerClient,
+  polishStepInstruction,
+  polishWorkflowGoal,
+  type GoalPolishDeps,
+  type PlannerClientDeps,
+  type StepPolishDeps,
+  type StepPolishInput,
+} from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -66,7 +76,7 @@ import {
   CLUSTER_NODE_RESULT_STATES,
   CLUSTER_NODE_STATES,
   PLAN_CLUSTER_ROLES,
-  WORKFLOW_ORIGINS,
+  isWorkflowOrigin,
 } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
@@ -283,9 +293,6 @@ function rowToStepDef(row: RawStepDefRow): StepDef {
     }),
   };
 }
-
-const isWorkflowOrigin = (value: string | null): value is WorkflowOrigin =>
-  value != null && (WORKFLOW_ORIGINS as ReadonlyArray<string>).includes(value);
 
 function rowToWorkflow(row: RawWorkflowRow): Workflow {
   return {
@@ -1482,3 +1489,26 @@ export const invokeClusterGraphRevisionRefuse = async ({
   });
   return executionGraphFromRow({ row });
 };
+
+type PolishStepParams = {
+  readonly deps: Omit<StepPolishDeps, 'invokeFn'>;
+  readonly input: StepPolishInput;
+};
+
+export const polishWorkflowStep = ({ deps, input }: PolishStepParams): Promise<string | null> =>
+  polishStepInstruction({ ...deps, invokeFn: invoke }, input);
+
+type PolishGoalParams = {
+  readonly deps: Omit<GoalPolishDeps, 'invokeFn'>;
+  readonly goal: string;
+};
+
+export const polishWorkflowGoalText = ({ deps, goal }: PolishGoalParams): Promise<string | null> =>
+  polishWorkflowGoal({ ...deps, invokeFn: invoke }, goal);
+
+type PlannerParams = {
+  readonly deps: Omit<PlannerClientDeps, 'invokeFn'>;
+};
+
+export const createWorkflowPlanner = ({ deps }: PlannerParams): PlannerClient =>
+  new PlannerClient({ ...deps, invokeFn: invoke });

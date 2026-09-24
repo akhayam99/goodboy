@@ -56,7 +56,7 @@ export const MountPicker = ({ scriptName, mounts, anchor, onPick, onClose }: Mou
               onPick(mountId);
             }
           }}
-          className="flex min-w-0 flex-col gap-0.5 rounded px-2 py-1.5 text-left transition-colors hover:bg-muted/60"
+          className="flex min-w-0 flex-col gap-0.5 rounded-sm px-2 py-1.5 text-left transition-colors hover:bg-hover"
         >
           <span className="min-w-0 truncate text-xs text-foreground">{mount.mountName}</span>
           <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">

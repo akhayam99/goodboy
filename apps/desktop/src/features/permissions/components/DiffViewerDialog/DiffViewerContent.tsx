@@ -11,7 +11,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@goodboy/ui';
-import { getDefaultTurnModel, parseUnifiedDiff } from '@goodboy/core';
+import { getDefaultTurnModel, parseUnifiedDiff, clampEffortForModel } from '@goodboy/core';
 import type {
   BranchCommit,
   DiffComment,
@@ -41,7 +41,6 @@ import { kindRouting, type AgentKindRouting } from '../../../../features/session
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { useRebaseAgent } from '../../../../features/session/hooks/useRebaseAgent';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
-import { clampEffort } from '../../../../features/chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../../../../shared/lib/storage-keys';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -280,6 +279,7 @@ export const DiffViewerContent = ({
   const [view, setView] = useState<DiffView>(DEFAULT_VIEW);
   const [commits, setCommits] = useState<ReadonlyArray<BranchCommit>>([]);
   const [status, setStatus] = useState<WorktreeStatus | null>(null);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
   const isGitAware = Boolean(worktreePath);
@@ -432,8 +432,14 @@ export const DiffViewerContent = ({
         }
         setCommits(c);
         setStatus(s);
+        setMetaError(null);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        setMetaError(formatError(err));
+      });
     return () => {
       cancelled = true;
     };
@@ -700,7 +706,11 @@ export const DiffViewerContent = ({
       try {
         await openFileInWorkspace(root, `${root}/${filePath}`, editorBinary);
       } catch (err) {
-        void emitNotification('error', 'error', 'Could not open file in editor', formatError(err), {
+        void emitNotification({
+          kind: 'error',
+          severity: 'error',
+          title: "Couldn't open the file in your editor",
+          body: formatError(err),
           sessionId,
         });
       }
@@ -763,6 +773,12 @@ export const DiffViewerContent = ({
     commitsAheadOfMain != null
       ? `${commitsAheadOfMain} ${commitsAheadOfMain === 1 ? 'commit' : 'commits'}`
       : 'commit count unknown';
+  const metaErrorLine =
+    metaError !== null ? (
+      <p role="status" className="text-2xs text-muted-foreground" title={metaError}>
+        Couldn't read this branch's commits.
+      </p>
+    ) : null;
 
   return (
     <div
@@ -791,7 +807,7 @@ export const DiffViewerContent = ({
                   {isGitAware ? <span>{commitCountLabel}</span> : null}
                   {commitsBehindMain != null && commitsBehindMain > 0 ? (
                     <span
-                      className="text-muted-foreground/70"
+                      className="text-faint-foreground"
                       title="Commits on main not in this branch"
                     >
                       behind main by {commitsBehindMain}
@@ -805,7 +821,7 @@ export const DiffViewerContent = ({
                       title={
                         rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'
                       }
-                      className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-6 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <GitBranch size={11} aria-hidden />
                       Rebase
@@ -825,6 +841,7 @@ export const DiffViewerContent = ({
               ) : null}
             </div>
             <p className="text-sm text-muted-foreground">{DIFF_VIEWER_PANE_COPY.description}</p>
+            {metaErrorLine}
           </div>
           {!isEmpty ? (
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 pt-0.5">
@@ -961,6 +978,9 @@ export const DiffViewerContent = ({
               }
             />
           )}
+          {metaErrorLine !== null ? (
+            <div className="shrink-0 px-2.5 py-1">{metaErrorLine}</div>
+          ) : null}
         </>
       )}
 
@@ -973,16 +993,16 @@ export const DiffViewerContent = ({
                 className="flex flex-col overflow-hidden rounded-md border border-border-soft"
               >
                 <div className="flex items-center gap-2 px-3 py-1.5">
-                  <Skeleton className="h-3 w-40 rounded" />
+                  <Skeleton className="h-3 w-40 rounded-sm" />
                   <div className="flex-1" />
-                  <Skeleton className="h-3 w-10 rounded" />
+                  <Skeleton className="h-3 w-10 rounded-sm" />
                 </div>
                 <Divider />
                 <div className="flex flex-col gap-1.5 p-3">
                   {lines.map((w, li) => (
                     <div key={li} className="flex items-center gap-3">
-                      <Skeleton className="h-3 w-8 shrink-0 rounded" />
-                      <Skeleton className="h-3 rounded" style={{ width: w }} />
+                      <Skeleton className="h-3 w-8 shrink-0 rounded-sm" />
+                      <Skeleton className="h-3 rounded-sm" style={{ width: w }} />
                     </div>
                   ))}
                 </div>
@@ -1046,10 +1066,10 @@ export const DiffViewerContent = ({
                 ))}
                 {mountedCount < files.length && (
                   <div className="flex flex-col gap-2 py-3">
-                    <div className="flex items-center gap-2 rounded-lg border border-border-soft/60 px-3 py-2.5">
-                      <Skeleton className="h-4 w-4 shrink-0 rounded" />
-                      <Skeleton className="h-3 w-1/3 rounded" />
-                      <Skeleton className="ml-auto h-3 w-10 rounded" />
+                    <div className="flex items-center gap-2 rounded-lg border border-border-soft px-3 py-2.5">
+                      <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+                      <Skeleton className="h-3 w-1/3 rounded-sm" />
+                      <Skeleton className="ml-auto h-3 w-10 rounded-sm" />
                     </div>
                     <span className="text-center text-xs text-muted-foreground">
                       {mountedCount} / {files.length} files
@@ -1087,14 +1107,18 @@ export const DiffViewerContent = ({
                 setResolverRouting({
                   provider: next,
                   model,
-                  effort: clampEffort(model, resolverRouting.effort),
+                  effort:
+                    clampEffortForModel({ model, effort: resolverRouting.effort }) ??
+                    resolverRouting.effort,
                 });
               }}
               onModel={(model) =>
                 setResolverRouting({
                   ...resolverRouting,
                   model,
-                  effort: clampEffort(model, resolverRouting.effort),
+                  effort:
+                    clampEffortForModel({ model, effort: resolverRouting.effort }) ??
+                    resolverRouting.effort,
                 })
               }
             />

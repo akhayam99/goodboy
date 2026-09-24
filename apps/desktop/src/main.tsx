@@ -8,6 +8,8 @@ import {
   type ErrorReportRequest,
 } from '@goodboy/ui';
 import { App } from './App';
+import { MockScene } from './app/components/MockScene';
+import { MOCK_ENABLED } from './store/mock-data';
 import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
 import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
 import { removeBootShell } from './features/reports/components/ArtifactPrintView/removeBootShell';
@@ -50,7 +52,13 @@ createRoot(container).render(
   <StrictMode>
     <ErrorBoundary onReport={reportCrash} reportSummary={REPORT_SUMMARY}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
-        {printRequest === null ? <App /> : <ArtifactPrintView request={printRequest} />}
+        {printRequest !== null ? (
+          <ArtifactPrintView request={printRequest} />
+        ) : MOCK_ENABLED ? (
+          <MockScene />
+        ) : (
+          <App />
+        )}
       </RemoteImageLoaderProvider>
     </ErrorBoundary>
   </StrictMode>,

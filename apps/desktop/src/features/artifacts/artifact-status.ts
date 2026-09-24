@@ -4,25 +4,25 @@ import type { StatePresentation } from '../../shared/utils/statePresentation';
 
 export const ARTIFACT_STATUS_PRESENTATION = {
   active: {
-    label: 'active',
+    label: 'Active',
     reason: 'the current revision of this artifact',
     tone: 'info',
     icon: CONCEPT_ICONS.plans,
   },
   consumed: {
-    label: 'consumed',
+    label: 'Used',
     reason: 'an agent already executed it',
     tone: 'merged',
     icon: CONCEPT_ICONS.runDone,
   },
   superseded: {
-    label: 'superseded',
+    label: 'Superseded',
     reason: 'a newer revision replaced it',
     tone: 'neutral',
     icon: CONCEPT_ICONS.changelog,
   },
   discarded: {
-    label: 'discarded',
+    label: 'Discarded',
     reason: 'dropped, kept for reference only',
     tone: 'neutral',
     icon: CONCEPT_ICONS.runCancelled,

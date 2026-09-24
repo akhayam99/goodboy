@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Session, SessionExternalTask, SessionId } from '@goodboy/types';
 import type { JiraIssue } from '../client';
 import { buildIssueGroups, jiraBranchSlug, resolveIssueSessions } from './useJiraIssues';
+import { collectLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const issue = (overrides: Partial<JiraIssue>): JiraIssue =>
   ({
@@ -47,13 +48,17 @@ describe('resolveIssueSessions', () => {
       issues: [issue({})],
       sessions: [session('sess-1')],
       sessionBranches: {},
-      sessionExternalTasks: { 'sess-1': [linked] },
+      linkedSessions: collectLinkedExternalIds({
+        sessionExternalTasks: { 'sess-1': [linked] },
+        providers: ['jira'],
+        sessions: [session('sess-1')],
+      }),
     });
     const byBranch = resolveIssueSessions({
       issues: [issue({})],
       sessions: [session('sess-2')],
       sessionBranches: { 'sess-2': 'ak/eng-142-session-rail-drops-focus' },
-      sessionExternalTasks: {},
+      linkedSessions: new Map(),
     });
     expect(byLink.get('10042')).toBe('sess-1');
     expect(byBranch.get('10042')).toBe('sess-2');

@@ -104,11 +104,12 @@ export const fetchMergeQueuePlacements = async ({
     return EMPTY_PLACEMENTS;
   }
   try {
-    const raw = await runJson<RawMergeQueueResponse>(
+    const raw = await runJson<RawMergeQueueResponse>({
       runner,
-      buildArgs({ owner, name, branch }),
+      args: buildArgs({ owner, name, branch }),
       opts,
-    );
+      shape: 'object',
+    });
     return toPlacements({ nodes: raw.data?.repository?.pullRequests?.nodes ?? [] });
   } catch (err) {
     if (err instanceof GhCliError || err instanceof GhJsonParseError) {

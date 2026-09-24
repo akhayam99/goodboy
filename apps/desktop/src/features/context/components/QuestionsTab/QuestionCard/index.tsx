@@ -10,7 +10,7 @@ import type {
 import { CONCEPT_TONE, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
 import type { DelegateRowState } from '../../../questionDelegate';
-import { SuggestionRow } from '../SuggestionRow';
+import { AnswerOptionRow } from '../AnswerOptionRow';
 import { CustomAnswerField } from '../CustomAnswerField';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
 import { DelegateAnswerPanel } from '../DelegateAnswerPanel';
@@ -160,10 +160,10 @@ export const QuestionCard = ({
                 type="button"
                 onClick={() => onDismiss(question.id)}
                 className={cn(
-                  'shrink-0 rounded-md p-1 text-muted-foreground/60',
+                  'shrink-0 rounded-md p-1 text-faint-foreground',
                   'transition-[color,background-color] duration-150',
-                  'hover:bg-muted hover:text-foreground',
-                  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+                  'hover:bg-hover hover:text-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                 )}
                 aria-label="Dismiss question"
               >
@@ -203,7 +203,7 @@ export const QuestionCard = ({
                 className="flex flex-col gap-2"
               >
                 {suggestions.map((suggestion) => (
-                  <SuggestionRow
+                  <AnswerOptionRow
                     key={suggestion}
                     label={suggestion}
                     mode={mode}

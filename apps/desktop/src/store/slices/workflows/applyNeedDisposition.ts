@@ -32,9 +32,9 @@ import {
 } from './releaseCapabilityHolds';
 import { resolveObligationRequester } from './resolveObligationRequester';
 import {
-  inferAgentKindFromName,
+  classifyAgent,
   KIND_TO_ROLE,
-  ROLE_TO_KIND,
+  kindForRole,
   type AgentKind,
 } from '../../../features/session/agent-kind';
 import {
@@ -84,10 +84,7 @@ const knownProvider = ({ id }: { readonly id: string | undefined }): ProviderId 
 };
 
 const roleOf = ({ agent, get }: { readonly agent: Agent; readonly get: GetFn }): string => {
-  const kind =
-    (agent.kind as AgentKind | undefined) ??
-    get().agentKindOverride[agent.id] ??
-    inferAgentKindFromName(agent.name);
+  const kind = classifyAgent({ agent, override: get().agentKindOverride[agent.id] ?? null });
   return KIND_TO_ROLE[kind];
 };
 
@@ -239,15 +236,16 @@ export const applyNeedDisposition = async ({
       holdIds: recorded.holdIds,
       resolutionEvidence: `${disposition.kind === 'refuse' ? 'need refused' : 'need sent back for narrowing'}, so the requester continues without it: ${reason}`,
     });
-    void get().emitNotification(
-      'error',
-      'warning',
-      disposition.kind === 'refuse'
-        ? `need refused: ${requester.name}`
-        : `need needs narrowing: ${requester.name}`,
-      reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title:
+        disposition.kind === 'refuse'
+          ? `Need refused for ${requester.name}`
+          : `Need from ${requester.name} needs narrowing`,
+      body: reason,
+      sessionId,
+    });
     void get().sendTurn({
       sessionId,
       agentId: requester.id,
@@ -305,13 +303,13 @@ export const applyNeedDisposition = async ({
       heading: `## evidence you already hold (retrieved by the host, no agent was created)\n\n${reason}`,
     });
     if (delivery.kind === 'refused' || delivery.kind === 'held') {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `need not answered from evidence: ${requester.name}`,
-        `${delivery.reason}. the obligation stays open.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} not answered from evidence`,
+        body: `${delivery.reason}. the obligation stays open.`,
+        sessionId,
+      });
       return { kind: 'unavailable', reason: delivery.reason };
     }
     const deliveredRefs = delivery.receipts
@@ -319,26 +317,26 @@ export const applyNeedDisposition = async ({
       .map((receipt) => receipt.sourceId);
     const unmet = undeliveredReason({ receipts: delivery.receipts });
     if (deliveredRefs.length === 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `need not answered from evidence: ${requester.name}`,
-        `none of the named sources reached ${requester.name} (${unmet}), so the obligation stays open.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} not answered from evidence`,
+        body: `none of the named sources reached ${requester.name} (${unmet}), so the obligation stays open.`,
+        sessionId,
+      });
       return {
         kind: 'unavailable',
         reason: `none of the named sources could be delivered (${unmet})`,
       };
     }
     if (unmet.length > 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `need only partly answered from evidence: ${requester.name}`,
-        `${deliveredRefs.join(', ')} reached ${requester.name}, but not every named source did (${unmet}), so the obligation stays open.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} only partly answered from evidence`,
+        body: `${deliveredRefs.join(', ')} reached ${requester.name}, but not every named source did (${unmet}), so the obligation stays open.`,
+        sessionId,
+      });
       return {
         kind: 'unavailable',
         reason: `not every named source could be delivered (${unmet})`,
@@ -357,13 +355,13 @@ export const applyNeedDisposition = async ({
       obligation: settled,
       isRequesterContinuing: true,
     });
-    void get().emitNotification(
-      'error',
-      'info',
-      `need answered from evidence: ${requester.name}`,
-      `${reason} sources delivered: ${deliveredRefs.join(', ')}`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'info',
+      title: `Need from ${requester.name} answered from evidence`,
+      body: `${reason} sources delivered: ${deliveredRefs.join(', ')}`,
+      sessionId,
+    });
     return { kind: 'reused', evidenceRefs: deliveredRefs };
   }
 
@@ -401,13 +399,13 @@ export const applyNeedDisposition = async ({
         reason: exhausted,
       });
       refreshObligation({ set, sessionId, obligation: refused });
-      void get().emitNotification(
-        'error',
-        'warning',
-        `replan refused: ${requester.name}`,
-        `${exhausted}. the finding stays visible and the plan in flight stays frozen.`,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Replan refused for ${requester.name}`,
+        body: `${exhausted}. the finding stays visible and the plan in flight stays frozen.`,
+        sessionId,
+      });
       return { kind: 'refused', reason: exhausted };
     }
     if (requester.parentAgentId != null) {
@@ -428,13 +426,13 @@ export const applyNeedDisposition = async ({
           reason: unfrozen,
         });
         refreshObligation({ set, sessionId, obligation: refused });
-        void get().emitNotification(
-          'error',
-          'warning',
-          `replan refused: ${requester.name}`,
-          `${unfrozen}. no planner was started.`,
-          { sessionId },
-        );
+        void get().emitNotification({
+          kind: 'error',
+          severity: 'warning',
+          title: `Replan refused for ${requester.name}`,
+          body: `${unfrozen}. no planner was started.`,
+          sessionId,
+        });
         return { kind: 'refused', reason: unfrozen };
       }
     }
@@ -488,7 +486,7 @@ export const applyNeedDisposition = async ({
   const spawned = await get()
     .spawnAgent(sessionId, {
       name: disposition.step.name,
-      kindOverride: ROLE_TO_KIND[grantedRole],
+      kindOverride: kindForRole({ role: grantedRole }),
       parentAgentId: requester.id,
       executionPurpose: 'capability',
       obligationId: obligation.id,
@@ -524,13 +522,13 @@ export const applyNeedDisposition = async ({
       verificationAgentId: null,
     });
     rememberGrant({ set, sessionId, grant: failed });
-    void get().emitNotification(
-      'error',
-      'warning',
-      `need not granted: ${requester.name}`,
-      `${spawned.reason}. the obligation stays open and unowned: finish it by hand or resolve its hold.`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Need from ${requester.name} not granted`,
+      body: `${spawned.reason}. the obligation stays open and unowned: finish it by hand or resolve its hold.`,
+      sessionId,
+    });
     return { kind: 'refused', reason: spawned.reason };
   }
   const childAgentId = spawned.agentId;
@@ -569,13 +567,13 @@ export const applyNeedDisposition = async ({
     set((state) => ({
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed },
     }));
-    void get().emitNotification(
-      'error',
-      'warning',
-      `work transferred: ${requester.name}`,
-      `${plan.reason}. the attempt ended partial and its remaining work moved on without its context.`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Work transferred from ${requester.name}`,
+      body: `${plan.reason}. the attempt ended partial and its remaining work moved on without its context.`,
+      sessionId,
+    });
   }
 
   return { kind: 'granted', childAgentId, plan };

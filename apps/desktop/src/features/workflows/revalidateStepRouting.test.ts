@@ -91,33 +91,6 @@ describe('revalidateStepRouting', () => {
     expect(result.reason).toContain('codex/gpt-5.6-sol');
   });
 
-  it('blocks a run role pin rather than rerouting it onto a heuristic pick', () => {
-    const pinned = {
-      ...step(),
-      routingDecision: {
-        version: 1,
-        proposal: null,
-        selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        source: 'run_role_lock',
-        reason: 'The run role lock selected codex/gpt-5.6-sol.',
-        adjustment: 'none',
-        executed: null,
-      },
-    } as Step;
-
-    const result = revalidateStepRouting({
-      step: pinned,
-      availability: availability({ coolingDownProviders: ['codex'] }),
-      runRoleLock: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-    });
-
-    expect(result.kind).toBe('blocked');
-    if (result.kind !== 'blocked') {
-      return;
-    }
-    expect(result.reason).toContain('run role lock');
-  });
-
   it('reports the node as blocked when nothing at all can run', () => {
     const result = revalidateStepRouting({
       step: step(),

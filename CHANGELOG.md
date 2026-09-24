@@ -7,6 +7,161 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.4.3
+
+The board and your sessions answer every click again, and the board keeps its shape on wide screens.
+
+### [#1874] Clicks reach the board and sessions again
+
+In 0.4.2 the board and an open session could ignore clicks and hover while the top bar and footer still worked. Both respond normally again.
+
+### [#1874] A board that holds its shape on any screen
+
+Columns grow up to a comfortable width and the board stays centred, so a wide or zoomed-out window no longer stretches it. Cards keep one height, and their menu appears when you hover them.
+
+## Goodboy v0.4.2
+
+A faster, steadier Goodboy that looks the same in light and dark mode.
+
+### [#1871] Performance and polish across the app
+
+The app does less work at startup and on the busiest screens, and code and data it no longer used are gone. Colors, toasts, settings and the board now follow one consistent style in both themes.
+
+### Fixes
+
+- A round of fixes across sessions, workflows, mounts, updates and notifications [#1871]
+- A goal made only of spaces now counts as no goal [#1871]
+- Agents know that opening a pull request or merge request needs an explicit mount [#1870]
+
+## Goodboy v0.4.1
+
+Autorun can no longer send an agent the same instructions over and over.
+
+### [#1860] Autorun caps the turns it sends an agent on its own
+
+A cluster that came after a skipped cluster was handed its instructions again after every reply, even once it had finished, and each round was a full paid turn. It now moves on to the next cluster, or closes the step when it was the last one.
+
+Autorun also sends an agent at most four turns an hour without you. Past that it stops the agent and tells you, and anything you write to that agent resets the count.
+
+## Goodboy v0.4.0
+
+Goodboy is now source-available under FSL-1.1-MIT. Still free, every feature included.
+
+### [#1858] A new license, FSL-1.1-MIT
+
+Goodboy ships under [FSL-1.1-MIT](https://github.com/akhayam99/goodboy/blob/main/LICENSE.md). Nothing changes in how the app works: every feature is still included, with no account and no new bill.
+
+## Goodboy v0.3.15
+
+The orchestrator starts on every provider, reads your hints when you say so, and the context bar shows what the model is really holding.
+
+### [#1850] The Codex orchestrator starts outside a git repository
+
+A dynamic run pinned to Codex exited with code 1 before the model ran whenever the session had no git worktree. It starts now, and when a planner call does fail, the error carries the last line the CLI printed instead of a bare exit code.
+
+### [#1853] Hints: queue them or have them read now
+
+Every hint you write lives in the orchestrator's context for the rest of the run, and each decision sees them all, marked new or with the step they were first read at. You pick one thing: Queue, read at the next decision, or Read now, which restarts the decision in flight, or stops the running step and decides again. The list keeps every hint with when it was read, and a queued one can be removed.
+
+### [#1854] The workflow card reads top down
+
+The orchestrator comes first, with autorun and Stop at the top right and one call to action for the state the run is in. Agents and their subagents follow, then what is done and what is missing side by side, then a two-line goal. Hints open under their own button. Role models are gone from the card: a preference for a provider or a model on a step is a hint now.
+
+### [#1852] Task models have an Auto
+
+Every task model row starts on Auto, which shows the model Goodboy picks and why, and Back to auto undoes an override. Auto passes a real effort to the CLI, so a low default in your own CLI config no longer leaks into Goodboy's tasks. Branch naming is gone from the list: no code ever read it.
+
+### [#1856] Context means context
+
+Codex reported the whole turn, so a short task read 2.8M of a 1M window. The bar now reads the last request from the session Codex keeps on disk. Gemini takes the last step of a multi-request turn, and Cursor shows a context only when the turn was a single request, rather than a sum.
+
+### Fixes
+
+- A budget fallback strikes the planned model as soon as the turn starts on the other one, not when it ends [#1851]
+- An invalid model pinned on a run falls back to the task model instead of failing the decision [#1850]
+- Cursor's cache writes count in usage [#1856]
+
+## Goodboy v0.3.14
+
+The model picker groups by family and splits every model into a version and a variant, and the closed picker says the whole selection.
+
+### [#1846] One family, one chip
+
+Gemini, Kimi, Grok, GLM, DeepSeek and Nemotron used to sit as flat rows next to families that already collapsed into a ladder. They are grouped now, under every provider, so Cursor goes from nineteen chips to eleven.
+
+### [#1846] Version is the number, variant is the size
+
+Gemini 3.8 Flash, GPT 5.6 Sol, Kimi K2.7 Code and DeepSeek V4 Pro used to fill the version row with one chip per size, and the number itself was never something you could pick. The version row lists the numbers and a Variant row lists the sizes. The Variant row shows whenever the chosen version has one, even with a single member, so GPT 6 still says Astra.
+
+### [#1846] The closed picker says the whole selection
+
+The trigger reads `Composer · 2.5 · Fast` or `GPT · 5.6 · Sol · High`, and the tooltip says the same thing with the provider in front. Composer Fast and plain Composer used to read identically.
+
+No saved selection changes meaning: the model keys are the same, only what the picker shows moved.
+
+### [#1845] Reports read as documents, and their PDF holds up
+
+Report agents get a layout kit: a summary lead, metrics tiles, fact rows, a timeline, callouts and inline status pills, all drawn the same in the app and in the PDF. What you ask for still wins over the default shape. The PDF, printed by WebKit, no longer clips list numbers, strands a section rule at the bottom of a page or prints the logo as a black square.
+
+### Fixes
+
+- Picking a model without an effort setting, like Composer, after one that had it no longer leaves `high` saved in the selection [#1846]
+- The line of CLI arguments at the bottom of the picker is gone [#1846]
+- An unclosed callout in a report ends at the first blank line instead of swallowing the rest of the document [#1845]
+- Task boxes `[ ]`, `[x]` and `[~]` render as boxes in reports [#1845]
+
+## Goodboy v0.3.13
+
+The model catalogs caught up with what the CLIs actually serve: Claude Opus 5.5, eleven more Cursor families, three more Kimi models, and an OpenRouter list that no longer offers models nobody can run.
+
+### [#1837] Claude Opus 5.5 is selectable
+
+Opus 5.5 sits in the Anthropic catalog one step above Opus 5. It is not the default, and Opus 5 still is, because Opus 5.5 needs Claude CLI 2.1.280 or newer and an older CLI gets turned down by the API. Pick it on an older CLI and Goodboy tells you to update instead of handing you the raw refusal, and the turn goes to Opus 5 rather than stopping.
+
+Its price is an estimate carried over from Opus 5, not a published rate, so every cost it reports reads as approximate.
+
+### [#1839] OpenRouter goes from 8 models to 37
+
+Three entries had been withdrawn upstream, so anything that picked Gemini 3.1 Pro, DeepSeek V4 or Grok 4 through OpenRouter failed the moment it ran. All three point at a model that exists again, and 29 more arrive beside them across Anthropic, OpenAI, Google, DeepSeek, Moonshot, Z.ai and xAI, each at the price OpenRouter publishes for it. The list is grouped by family, so the picker shows version ladders instead of 37 flat rows.
+
+### [#1840] Eleven more Cursor families
+
+The Cursor CLI lists families the catalog never carried: Opus 5.5 and Opus 4.8, Fable 5.1 and Fable 5, Grok 4.7, four Gemini Flash lines, Gemini 3.1 Pro and Kimi K2.7 Code. Twenty eight combinations in all, each with its own rate, and the ones Cursor keeps behind Max Mode are marked as such.
+
+Two automatic picks move with them: the planner on Cursor goes to Fable 5.1, which Cursor did not offer before, and the mid tier goes to Gemini 3.1 Pro.
+
+### [#1841] Three more Kimi models
+
+Moonshot serves Kimi K2.7 Code, its high speed twin and Kimi K2.6 alongside K3. All four are in the catalog and each reports its own cost.
+
+### Fixes
+
+- A model saved against one of the three withdrawn OpenRouter ids used to fall back to the provider default. It resolves to the replacement model now [#1839]
+- A model both a direct provider and OpenRouter ship, Kimi K3 and Grok among them, stays with the direct provider instead of going to the aggregator [#1839]
+- A turn refused because the installed CLI is too old for the model now says which version it wants, and retries on the closest model in the same family instead of failing outright [#1837]
+- Every Cursor combination the picker can offer carries a price, so none of them is billed at the most expensive rate Goodboy knows [#1840]
+
+## Goodboy v0.3.12
+
+A question an agent is answering for you stops asking, the transcript drops the tinted blocks, and splitting one pull request across two mounts works from one call.
+
+### [#1826] A question waits while its delegate answers
+
+Handing a question to an agent left the card exactly as it was: radios, a free text row and a slot in the stepper, with one dim dashed line as the only sign somebody was on it. The question still counted as yours, and the agent was reachable only once it had finished.
+
+A question with a live delegate now shows a single row saying an agent is answering it, and nothing to fill in. It leaves the queue, so the stepper walks only what is still yours and a cluster whose questions are all delegated stops asking for a send. The row opens the agent, from the transcript, the Questions lens and the brief alike, and next to it answer it yourself takes the question back.
+
+The trail no longer repeats the question text twice at the end of the breadcrumb.
+
+### [#1827] The kind of a card reads from its rail, not its fill
+
+A column of transcript cards read as a stack of tinted blocks, and an expanded answer sat on a yellow field. Colour now lives in the left rail and the icon, where a question card already kept it, and the surface behind stays the app background. The answer you picked keeps its fill, because it is the one thing on a question card that should carry colour, and your own message keeps its bubble.
+
+### Fixes
+
+- Putting the second half of a split on its own branch and its own worktree was refused outright when that branch did not exist yet. It is cut from the base instead [#1830]
+- A branch held by another worktree said so without saying which one, including when the holder was one of your own mounts. The refusal names the path now [#1830]
+
 ## Goodboy v0.3.11
 
 A question the agent cannot settle on its own now holds the work until you answer it, every answer in a batch travels on one send, and a question you cannot answer can go to an agent that answers in your place.
@@ -82,7 +237,7 @@ A workflow ran exactly the steps it had when you attached it, and editing the te
 
 A run started from a preset takes its own copy of the template before the new step lands, so the other runs on that preset and every future attach stay as they were, and the copy keeps the preset's name instead of renaming the workflow under you mid-run.
 
-The request is turned down in three cases: the run was discarded, its template is gone, or the workflow is choosing its own next step at that moment. Follow-up: an add that arrives in the same instant as that choice can still slip past the check.
+The request is turned down in three cases: the run was discarded, its template is gone, or the workflow is choosing its own next step at that moment.
 
 ### [#1805] Name a custom workflow before it starts
 
@@ -384,9 +539,6 @@ used to be 15. Plates are sized so two mobile rows fit A4 at 20mm margins: a
 different paper size or margin can push that to one row per page, and a desktop
 screen prints small enough that its body text is a suggestion rather than
 reading matter.
-
-Follow-up: pagination stands on a real PDF, two pages with rows breaking
-cleanly, though not yet through the app's own print dialog.
 
 ### [#1784] An exported PDF that reads like a document
 
@@ -836,9 +988,6 @@ destination says what it actually sets: the folder where commands and git run.
 A project mounted as a plain folder rather than a repository stays outside that
 reach.
 
-Follow-up: which repository a turn touched is still read from that one folder,
-so changes in the others are not yet counted as part of the session.
-
 ## Goodboy v0.2.29
 
 A workflow that works across more than one repository keeps running instead of
@@ -855,9 +1004,6 @@ The workflow now says which mount its steps are writing in, and the same control
 lets you pin a different one for every turn after it. A retry that waits out a
 provider limit comes back to the mount it started on rather than wherever the
 session points by then.
-
-Follow-up: a step that fails before it starts still shows as waiting rather than
-as blocked. Making those steps retryable from the workflow is the next release.
 
 ## Goodboy v0.2.28
 
@@ -1091,8 +1237,7 @@ all of them wrote next, with no visible sign it had happened.
 
 The destination is a control now. Opening it lists every project and
 worktree with its branch and path, and nothing changes until you pick one and
-confirm it for the whole session's next turns, though it does not yet stop
-you from sending into a destination another agent already holds. While a
+confirm it for the whole session's next turns. While a
 turn is running, the header keeps showing the destination that turn started
 with, and names a newly picked one beside it only when the two differ. With
 nothing mounted, it names the session's scratch folder instead of guessing at
@@ -2460,11 +2605,6 @@ a second path adds the permissions to the one you have rather than starting
 another. A connection you made with a bot token keeps working exactly as it
 did until you choose to replace it.
 
-Follow-up: the app description and the permission names come from Slack's
-published reference, and no connection has been made from Goodboy to a live
-workspace with a user token yet. If Slack rejects one, its own message comes
-back on the connect form with what you pasted still in it.
-
 ### [#1518, #1526] Popovers open at their full height
 
 A popover anchored to a small control was capped at the height of the control
@@ -2560,10 +2700,6 @@ receives can be replayed against a provider API. Each running instance serves
 its own bridge, so an installed app and a dev build never answer for each
 other.
 
-Follow-up: no query has gone out to a live provider from an agent turn yet.
-If a provider rejects one, its own error reaches the agent and the exit code
-says so.
-
 ### [#1504] The follow-up section tracks the agents it spawned
 
 Spawning a follow-up was a dead end: the suggestion stayed, the toast faded,
@@ -2643,8 +2779,6 @@ A credential is now its own object rather than a value copied into each project.
 Connect GitHub, Linear, Sentry or Jira once with a personal API key and every
 workspace is offered it, with the option to override it for a single project.
 
-Follow-up: the key is stored in the app database, not the system keychain.
-
 ### [#1437] The footer shows what is connected, and one way to add
 
 The integration groups in the footer are gone. The left side is the glyphs of
@@ -2673,10 +2807,6 @@ since a step blocked on a human is state, not conversation.
 The form leads with its title, guesses the kind from what you wrote, and
 confirms in the app instead of throwing you into a browser. Attached files take
 the full width of the drop zone.
-
-Follow-up: an attached image still travels as a filename in the issue body,
-since the GitHub issue API takes no upload. The files are written to a temp
-directory and Finder opens on them.
 
 ### [#1460] Finished work is visible without asking for it
 
@@ -2790,10 +2920,6 @@ visible and disabled with the reason on it: uncommitted changes, no upstream, an
 operation in progress, a status Goodboy could not read, or a branch already up
 to date. A checkout Goodboy cannot read disables it exactly like a dirty one.
 
-Follow-up: the fast-forward is pinned by tests that run it against real clones,
-though no pull has been run from a packaged build yet. If git refuses, its own
-message comes back in the checkout panel.
-
 ### [#1416] The first-run checklist matches the app it opens beside
 
 The setup checklist used to open at "0 of 7 steps done" with "Connect a
@@ -2863,8 +2989,7 @@ its own time. A log written by v0.1.80 or earlier reads shifted by one line.
 The crash screen leads with Try again, wraps the error instead of clipping it,
 and offers Report, which opens a prefilled GitHub issue in your browser carrying
 the error, the app version, and where in the app it broke, with home folders
-shortened to `~` on the crash screen, though the boot error screen's own report
-link does not shorten them yet. That text reaches GitHub as the page loads, and
+shortened to `~` on the crash screen. That text reaches GitHub as the page loads, and
 it becomes an issue only once you submit the form there. `README.md` and
 `SECURITY.md` now count the crash report alongside the boot log and the update
 check.
@@ -2873,10 +2998,6 @@ A database Goodboy cannot open used to end the process before any window
 appeared. The window now opens on a recovery screen that names
 `~/.goodboy/data.db` and tells you to move that file aside, so the next launch
 creates a fresh one.
-
-Follow-up: creating a GitHub repository runs through GitHub's own CLI, and no
-call has gone out to a live account yet. If a response differs, the error comes
-back on the screen with your input still in it.
 
 ### Fixes
 
@@ -2924,11 +3045,6 @@ link a code host whenever you want one. Create a new GitHub repository from insi
 the app, pick public or private yourself with nothing preselected, and the app
 tells you exactly what it is about to make before it makes it. Declining costs
 nothing and the offer stays.
-
-Follow-up: repository creation goes through the `gh` CLI and its flags come from
-gh's published surface, though no create has gone out to a live GitHub account
-yet. If a call is refused, gh's own message comes back in the dialog and the
-folder stays usable.
 
 ### [#1402] A lens shows a skeleton until it has loaded
 
@@ -3103,10 +3219,6 @@ had a caller. The webview's standing
 permission to reach Linear's API has been removed too: those calls are all made
 outside the interface.
 
-Follow-up: every fix above is pinned by its own test, and none of them has been walked
-in the built app yet. If one behaves differently from what is written here, that
-difference is new, and worth reporting.
-
 ## Goodboy v0.1.76
 
 v0.1.75 gave a hands-free run a stop. This one puts it in the pane you are already watching, not only in the sidebar.
@@ -3118,8 +3230,6 @@ The stop existed, on the workflow row in the sidebar and on the workflow detail.
 It now carries the autorun state and the stop, in the slot the manual advance button used to sit in. The same control the workflow detail already carried, same label, same confirm.
 
 After a stop the control stays put and becomes the way back: a static run resumes from the same click, and a run the orchestrator is driving gets a Resume beside it. You are not sent back to a sidebar you had already navigated away from.
-
-Follow-up: the stop and the resume write the same operator record and read the same phase derivation the sidebar control and the orchestrator panel have used since v0.1.75, though no live orchestrated run has driven them from the chat header yet. If the decision already in flight lands after your stop, the stop holds and nothing advances.
 
 ### [#1346] A run stopped mid-decision reads as stopping
 
@@ -3157,8 +3267,6 @@ A run you stopped reads as stopped rather than "Orchestrator failed", both in th
 
 A stop you send while the orchestrator is choosing the next step is no longer erased when that choice lands.
 
-Follow-up: a stop sent while a decision is in flight is honored, though the panel keeps reading "Choosing the next step" until the model returns, which can take a couple of minutes. Nothing advances in the meantime.
-
 ### [#1337] Steps that could not be summarized are flagged everywhere
 
 When a step's output cannot be summarized, Goodboy shows the raw truncated output in its place. Sequential steps already labeled that substitution and put a notification in the inbox with a retry action. Steps inside a cluster, a scout's branches, and parallel steps made the same substitution silently. All four now behave the same way, one notification per agent, so raw output is labeled as raw output rather than passing for a summary.
@@ -3192,13 +3300,9 @@ Standing hints are unchanged. They persist by design, are read before every step
 
 GitHub marks a review thread whose code a later commit superseded. Goodboy fetched that fact and dropped it. Now the thread head carries an "Outdated" mark in the pull request conversation and on the resolve board, so you can tell a live comment from a stale one before you spend a resolver agent on it. Outdated threads are not hidden or collapsed and stay selected when you resolve all, so the mark tells you what to skip rather than skipping it for you.
 
-Follow-up: the mark reads the outdated flag GitHub already returns on a review thread, though no live pull request carrying one has been opened in the app yet. If the flag is absent, the mark is too and the thread reads as it did before.
-
 ### [#1331] A failed comment push carries its stage and a retry
 
 Pushing a batch of resolve verdicts could fail while reading or refreshing the queue, and the only trace was a generic "an action failed in the background" row with no session link and no way back. Those failures now name the stage, say what is still queued, and link to the session. The Retry re-runs the push, which skips any reply already posted.
-
-Follow-up: the guards sit on the queue read, though no real database failure has hit them yet. If one takes a different shape, it still reaches the notification inbox through the global failure notice.
 
 ### Fixes
 
@@ -3231,8 +3335,6 @@ A workflow step passes its output to the next one through a short summary. When 
 
 The summary is now trimmed to the last whole line that fits, so nothing is cut mid-line, and it says so: it ends by naming the trim and pointing at the full step output. An empty summary is still treated as a failure, because there is nothing there to keep. The "degraded handoff" marker in the transcript used to guess by matching the shape of the discarded text and could not recognise a short output at all, so within the session it now appears when the handoff actually degraded and stays away when it did not. After a restart it goes back to reading the summary's shape.
 
-Follow-up: this stands on the mechanism, not on a count of how often the old path fired. If a summary still cannot be produced, the handoff degrades as before and the notification keeps its retry.
-
 ### [#1326] The merge request form keeps its submit button in view
 
 Opening a GitLab merge request from Goodboy put the Create button inside the scrolling form, so expanding the agent options pushed it off screen. It is now pinned below the form the way the pull request equivalent already was.
@@ -3258,13 +3360,9 @@ The `.deb` and the `.rpm` declare what they link against, read out of the binary
 
 macOS is untouched: the same universal build, the same Apple signing and notarization, the same four assets, the same Homebrew cask. The Linux leg runs after the macOS one, passes no release body and no updater key, and goes red on its own.
 
-Follow-up: the packages come off a GitHub `ubuntu-latest` runner, built from this tag, though the app has not been launched from one of them on a Linux desktop yet. If your distribution cannot satisfy something the `.deb` or the `.rpm` declares, apt or rpm says which one before anything is written.
-
 ### [#1317] Credentials on Linux go to your keyring
 
 Integration tokens and provider credentials live in the operating system's credential store. On Linux that is the freedesktop Secret Service, GNOME Keyring or KWallet, so a keyring daemon has to be running before a token can be saved, and the session negotiates a Diffie-Hellman key so a secret does not cross the session bus in the clear. macOS keeps the Keychain exactly as before.
-
-Follow-up: the backend is the one the `keyring` crate selects on Linux, checked by compiling the dependency graph for each platform, though no token has been stored and read back on a Linux desktop yet. With no daemon running, saving fails with the keyring's own error and the token is not saved.
 
 ### [#1318] Shortcuts use Ctrl on Linux
 
@@ -3282,15 +3380,11 @@ Launching Goodboy used to mean an empty desktop while it worked out which provid
 
 That work now happens in the background, once the window exists, and the five checks run together rather than one after another, which takes them from about 2.0 seconds to about 1.35 seconds. What you see is unchanged: the splash still names the phase it is in, and the provider list still arrives filled in.
 
-Follow-up: the window's place in the order comes from Tauri's own startup, which builds the window before the app's setup hook runs, and the work that moved was measured where it used to sit, though the app has not been launched from a packaged build with the change in it. If a CLI stalls, the window is already up and only the provider list waits.
-
 ### [#1312] Start a session from a Jira issue on your phone
 
 The mobile companion could browse issues and start a session from Linear, Sentry and GitLab, but not Jira, so a team running on Jira had nothing to open. Jira now sits with the other three: its issues reach the phone, and a session starts from one with the goal already written. Every check that guards a Linear issue guards a Jira one identically.
 
 Asking the companion for a provider it does not support used to be answered with every issue from every connected provider instead, with no sign the request had been changed. It now refuses by name. GitHub, Slack and Bitbucket stay out on purpose: a GitHub session starts from a pull request, Slack threads are not issues, and Bitbucket has no issue tracking because Atlassian points that at Jira.
-
-Follow-up: the Jira calls reuse the client the desktop issue picker already runs, though no call has gone out to a live Jira workspace from a phone yet. If a shape differs, the phone's issue list leaves Jira out rather than showing an error, and a failed session start comes back as a plain refusal with the real error kept on your machine.
 
 ### [#1313] The Beta badge carries a support message
 
@@ -3308,15 +3402,11 @@ The popover's primary action opens the full form on the same draft, which is whe
 
 The issue type is a new field rather than a rename of the area, and it reaches GitHub as the first line of the issue body. Screenshots are not part of this: the app has no screen capture of its own, and there is nowhere to put an image that survives GitHub's issue renderer.
 
-Follow-up: the filing path is the one v0.1.69 shipped, with the type line added at the top of the issue body, though no issue has gone out to a live GitHub account since. A failed send keeps the draft.
-
 ### [#1308] Read a linked Sentry issue whole in the session
 
 A Sentry issue linked to a session showed less than the same issue shows in the Sentry studio. The session pane never fetched the issue at all, only its latest event, so the culprit, the level and the status were blank by construction.
 
 The session pane now reads the issue itself and lists level, culprit, status, events, users, first seen and last seen. Those last four had no path to the screen anywhere in the app before this. Loading is a skeleton and a failure is a retryable error strip.
-
-Follow-up: the issue endpoint and its response come from the same Sentry shape the issue list already reads, though no call has gone out to a live Sentry workspace yet. If a field differs, the pane shows a retryable error rather than a blank one that could pass for data.
 
 ### [#1306] Link a GitHub issue to a session by hand
 
@@ -3342,8 +3432,6 @@ Your text and its attachments now come back when a send is blocked. A line above
 
 The same line now shows for the ordinary case too, naming where the next turn is about to go and why when a budget or a disconnected provider moves it. It appears only when routing actually moves or is blocked, and it clears itself the moment that changes.
 
-Follow-up: the forced turn is covered by tests against mocked budget results, and no over-cap turn has yet reached a spawned CLI process.
-
 ### [#1294] Pick the fallback model for each agent role
 
 A turn already retried somewhere else when a provider failed, but the choice was a heuristic you could not see or influence. For an authentication failure it was literally the first other connected provider you had.
@@ -3351,8 +3439,6 @@ A turn already retried somewhere else when a provider failed, but the choice was
 Agent roles in the providers studio now take a second, optional model under each pinned role: where that role goes first when its primary choice fails. Left alone it reads Automatic and the existing heuristic runs exactly as before, so nothing changes until you set one.
 
 The fallback carries no effort of its own and inherits the one you chose for the role. It applies to agent roles; the task models beside them keep picking automatically. It is set per workspace, not per session. A fallback pointing at a provider you have since disconnected, or at a model the catalogue does not know, is dropped and the heuristic runs instead: it never fails the turn, and it never drags the pinned model down with it.
-
-Follow-up: the routing was exercised against mocked provider failures, so a fallback has not yet moved a turn between two live CLIs.
 
 ### [#1293] Report an issue without leaving the app
 
@@ -3363,8 +3449,6 @@ With the GitHub CLI or a token that reaches the repo, it files the issue and han
 Only four things go in: the version, the area, the title and your notes. Nothing else is read from the app, no logs, no session data, no paths. The issue posts publicly under your own GitHub account, and the form says so above the button.
 
 The list of areas is our own choice rather than a settled taxonomy, and it will change as the app does. Screenshots are not supported: a GitHub issue body is markdown text and there is no attachment path that survives it, so the form points you at dragging one onto the issue once it opens.
-
-Follow-up: no issue has been filed from this path against a live GitHub account, so the shape of what the CLI prints back is read defensively rather than assumed.
 
 ### [#1291] See a blocked workflow step from the board
 
@@ -3390,8 +3474,6 @@ The move is no longer silent. A turn that lands somewhere else for a budget reas
 
 The threshold sits next to the cap in the budget studio, and it is one number doing two jobs: it raises the alert, and it moves the next turn. Spend past it still runs on the same provider when no other one has room, so nothing that used to run now blocks. Session soft caps have no threshold of their own and are unchanged.
 
-Follow-up: the routing path ran against in-memory SQLite and mocked budget results, so no turn has yet moved between two live CLIs on a real monthly total.
-
 ### [#1288, #1289] See which spend was measured and which was estimated
 
 Goodboy priced every turn with equal confidence, including the ones it had no price for. An OpenCode, OpenRouter or Moonshot turn is billed at whatever the CLI reports, or at nothing when it reports nothing, and that zero went into your spend total as fact.
@@ -3409,8 +3491,6 @@ Spend attributed to a pull request is the spend of the sessions on its branch, n
 ### [#1286] Resolve a merge request thread from the review card
 
 A GitLab review thread could be read and replied to inside Goodboy, and then you opened the browser to tick resolve. The thread card now carries the action itself, in both directions, and the card reconciles against GitLab after every write so a refusal cannot leave it showing a state the server never accepted.
-
-Follow-up: the endpoint and its parameters come from GitLab's published REST documentation, though no call has gone out to a live GitLab instance yet. If a shape differs, GitLab's own error comes back on the card with the thread untouched.
 
 ## Goodboy v0.1.67
 
@@ -3436,8 +3516,6 @@ Connecting GitHub used to block GitLab, and connecting GitLab used to block GitH
 
 A workspace can now hold any mix of the three code hosts. Six connect forms also stopped claiming your token "never leaves this machine", which was never true for a token the vendor has to receive: they now say it is stored in your keychain, sent to the vendor over HTTPS, and never touches Goodboy's own servers.
 
-Follow-up: a mixed-host workspace was exercised through the test suite, not against live GitLab or Bitbucket accounts.
-
 ### [#1279] Disconnect an integration from its studio
 
 The disconnect button lived inside the connect form, and the connect form unmounts the moment you connect, so from the studio there was no way back out. For Slack there was no way out anywhere in the app.
@@ -3447,8 +3525,6 @@ Every integration studio now carries a disconnect in its header, behind a confir
 ### [#1281] Read what went wrong when a token is refused
 
 Pasting a bad GitHub token used to print the `gh` command's own error output into the onboarding step. It now says which of six things happened, and what to do next: the token was rejected, it expired, it is missing the repo scope or an SSO authorization, GitHub is rate limiting it, the certificate could not be verified, or github.com could not be reached. Anything unrecognised still quotes what `gh` said, rather than guessing.
-
-Follow-up: the classification reads `gh`'s wording, so a message GitHub changes could fall through to that quoted fallback instead of a written cause.
 
 ### Fixes
 
@@ -3476,15 +3552,11 @@ A pull request whose checks were queued or still running reported as passed, so 
 
 Sending a pull request to the merge queue also read as plain open, with Merge still on the button, so a second click looked like the first had not worked. Goodboy now shows the real placement, "In merge queue #3", and auto-merge keeps its own wording.
 
-Follow-up: the queue fields come from GitHub's live schema and the parsing is covered by tests, though no pull request has gone through a populated queue here yet. On a repository with more than 100 open pull requests, one queued outside that window keeps the old behavior.
-
 ### [#1273] Comment on a Linear issue from the app
 
 Linear could show you an issue and start a session from it, and write back nothing but the description. Commenting meant opening linear.app, which is the tab this is supposed to remove.
 
 You can now comment on an issue from the studio and the session pane, through the same composer the other hosts use, and the comment Linear returns lands in the thread you are reading. Assign and transition are still missing: both need the team and workflow state ids, which Goodboy does not read from Linear yet.
-
-Follow-up: the mutation and its input come from Linear's published schema, though no call has gone out to a live Linear workspace yet. If a shape differs, Linear's own error comes back in the composer with your draft still in it.
 
 ### [#1274] Popovers open above full-page surfaces
 

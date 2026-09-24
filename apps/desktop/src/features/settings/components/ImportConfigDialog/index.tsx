@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Button, Dialog } from '@goodboy/ui';
+import { Button, Dialog, cn, tintClasses } from '@goodboy/ui';
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { SESSION_FEATURES, WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -40,7 +40,13 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
       footer={<Button onClick={onClose}>Close</Button>}
     >
       {error ? (
-        <div className="flex items-start gap-2 rounded-r-md border-l-2 border-danger/40 p-3">
+        <div
+          className={cn(
+            'flex items-start gap-2 rounded-r-md border-l-2',
+            tintClasses('danger').border,
+            'p-3',
+          )}
+        >
           <AlertCircle
             size={ICON_SIZE.control}
             aria-hidden
@@ -49,7 +55,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           <p className="text-xs text-danger">{error}</p>
         </div>
       ) : result?.ok ? (
-        <dl className="divide-y divide-border-soft/50 overflow-hidden rounded-md border border-border-soft">
+        <dl className="divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft">
           {statRows.map((row) => (
             <div key={row.label} className="flex items-center justify-between px-3 py-2 text-xs">
               <dt className="flex items-center gap-2 text-muted-foreground">
@@ -61,7 +67,12 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           ))}
         </dl>
       ) : result ? (
-        <ul className="divide-y divide-border-soft/50 overflow-hidden rounded-md border border-danger/20">
+        <ul
+          className={cn(
+            'divide-y divide-border-soft overflow-hidden rounded-md border',
+            tintClasses('danger').borderSoft,
+          )}
+        >
           {result.errors.map((e) => (
             <li key={e.field} className="flex items-start gap-2 px-3 py-2 text-xs">
               <AlertCircle

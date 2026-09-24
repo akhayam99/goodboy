@@ -22,7 +22,7 @@ export const MetaRow = ({ items, className }: MetaRowProps) => {
       {kept.map((item, index) => (
         <Fragment key={index}>
           {index > 0 ? (
-            <span aria-hidden className="text-muted-foreground/40">
+            <span aria-hidden className="text-faint-foreground">
               ·
             </span>
           ) : null}

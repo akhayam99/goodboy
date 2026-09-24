@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type UIEvent,
 } from 'react';
-import { Button, ErrorStrip, SectionHeader, Skeleton, Tooltip, formatError } from '@goodboy/ui';
+import { Button, ErrorStrip, SectionHeader, Skeleton, Tooltip } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrComment,
@@ -19,7 +19,6 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useToast } from '../../../../app/components/Toast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
@@ -115,7 +114,7 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   const sessionId = session.id as SessionId;
   const listRef = useRef<HTMLDivElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const comments = useAppStore(
     (s) =>
@@ -319,20 +318,29 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
         });
         return true;
       } catch (error) {
-        showToast('error', formatError(error));
+        void reportError({ title: "Couldn't retry the fix", error, sessionId });
         return false;
       }
     },
-    [github, roleModels, rows, sessionId, setAgentConfig, showToast, spawnAgent, threadsByThreadId],
+    [
+      github,
+      reportError,
+      roleModels,
+      rows,
+      sessionId,
+      setAgentConfig,
+      spawnAgent,
+      threadsByThreadId,
+    ],
   );
 
   const onResume = useCallback(
     ({ itemId }: { readonly itemId: string }): void => {
       void takeUpResolveQueueItem({ sessionId, itemId }).catch((error: unknown) =>
-        showToast('error', formatError(error)),
+        reportError({ title: "Couldn't resume the queued fix", error, sessionId }),
       );
     },
-    [sessionId, showToast, takeUpResolveQueueItem],
+    [reportError, sessionId, takeUpResolveQueueItem],
   );
 
   const onStartResolveRun = async (): Promise<void> => {

@@ -6,7 +6,6 @@ import type {
   WorkflowModelPick,
   WorkflowRoutingLock,
   WorkflowRoutingProposal,
-  WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
@@ -19,7 +18,7 @@ import {
   type WorkflowRoutingResolution,
 } from '@goodboy/core';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { roleModelsForSession } from '../overrides/roleModelsForSession';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { AppStore } from '../../store';
 
 const UNKNOWN_PROFILE: WorkflowTaskProfile = {
@@ -62,7 +61,7 @@ const childProposalOutcome = ({
   return hintedRoutingOutcome({ outcome: { kind: 'valid', proposal }, promptText });
 };
 
-export type WorkflowChildRouting = Readonly<{
+type WorkflowChildRouting = Readonly<{
   resolution: WorkflowRoutingResolution;
   taskProfile: WorkflowTaskProfile | null;
 }>;
@@ -70,7 +69,6 @@ export type WorkflowChildRouting = Readonly<{
 type Params = {
   readonly state: AppStore;
   readonly sessionId: SessionId;
-  readonly workflowRunId: WorkflowRunId | null;
   readonly role: AgentRole;
   readonly childLock: WorkflowRoutingLock | null;
   readonly proposal: WorkflowRoutingProposal | null;
@@ -81,7 +79,6 @@ type Params = {
 export const resolveWorkflowChildRouting = ({
   state,
   sessionId,
-  workflowRunId,
   role,
   childLock,
   proposal,
@@ -89,10 +86,6 @@ export const resolveWorkflowChildRouting = ({
   missingProposal,
 }: Params): WorkflowChildRouting => {
   const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
-  const run =
-    workflowRunId === null || session === undefined
-      ? null
-      : ((session.workflowRuns ?? []).find((candidate) => candidate.id === workflowRunId) ?? null);
   const outcome = childProposalOutcome({ proposal, promptText });
   const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
   const compiled = defaultsForRole(role);
@@ -105,11 +98,10 @@ export const resolveWorkflowChildRouting = ({
   const resolution = resolveWorkflowRouting({
     agentLock: childLock,
     stepLock: null,
-    runRoleLock: configuredRolePick({ role, roleModels: run?.roleModelOverrides ?? null }),
     proposal: outcome,
     roleDefault: configuredRolePick({
       role,
-      roleModels: roleModelsForSession({ state, sessionId }),
+      roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
     }),
     sessionDefault:
       session === undefined || session.modelOverride == null || defaultProvider === null

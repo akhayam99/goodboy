@@ -4,6 +4,7 @@ mod attempt_checkout;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod codex_rollout;
 mod bridge;
 mod budget;
 mod config_export;
@@ -19,10 +20,12 @@ mod integration_credentials;
 mod invocation_admission;
 mod jira;
 mod linear;
+mod live_child;
 mod local_image;
 mod path_env;
 mod permissions;
 mod planner;
+mod process_group;
 mod profile_file;
 mod project_scripts;
 mod provider_credentials;
@@ -50,10 +53,6 @@ mod worktree;
 mod worktree_writer;
 mod writer_lease;
 
-pub use secrets::read as read_secret;
-
-use std::sync::Mutex;
-
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
     use objc2::runtime::AnyObject;
@@ -73,6 +72,9 @@ fn suppress_webkit_media_remote() {
 /// drained, so a second call after the window teardown finds nothing left.
 fn drain_child_processes(app: &tauri::AppHandle) {
     use tauri::Manager;
+    turn::shutdown(&app.state::<turn::TurnRegistry>());
+    summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
+    planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
@@ -97,22 +99,9 @@ pub fn run() {
         }
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
-    let (detection_gate, detection_opener) = providers::detection_gate();
-    let provider_state =
-        providers::ProviderState(Mutex::new(providers::initial_status("anthropic", "claude")));
-    let cursor_state = providers::CursorState(Mutex::new(providers::initial_status(
-        "cursor",
-        "cursor-agent",
-    )));
-    let codex_state =
-        providers::CodexState(Mutex::new(providers::initial_status("codex", "codex")));
-    let gemini_state =
-        providers::GeminiState(Mutex::new(providers::initial_status("gemini", "agy")));
-    let opencode_state = providers::OpencodeState(Mutex::new(providers::initial_status(
-        "opencode", "opencode",
-    )));
     let turn_registry = turn::TurnRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
+    let planner_registry = planner::PlannerRegistry::new();
     let script_registry = scripts::ScriptRegistry::new();
     let terminal_registry = terminal::TerminalRegistry::new();
     let writer_leases = worktree_writer::WriterLeases::new();
@@ -152,17 +141,12 @@ pub fn run() {
 
     builder
         .manage(bridge_state)
-        .manage(provider_state)
-        .manage(cursor_state)
-        .manage(codex_state)
-        .manage(gemini_state)
-        .manage(opencode_state)
-        .manage(detection_gate)
         .manage(turn_registry)
         .manage(writer_leases)
         .manage(invocation_admission)
         .manage(writer_lease_queue)
         .manage(summarize_registry)
+        .manage(planner_registry)
         .manage(script_registry)
         .manage(terminal_registry)
         .manage(provider_lifecycle_registry)
@@ -174,7 +158,6 @@ pub fn run() {
         .manage(slack_token_cache)
         .setup(move |app| {
             use tauri::Manager;
-            providers::spawn_startup_detection(app.handle().clone(), detection_opener);
             query_bridge::start(app.handle().clone());
             #[cfg(desktop)]
             app.handle()
@@ -216,11 +199,13 @@ pub fn run() {
             db::db_path,
             db::db_remove_migration_snapshot,
             db::db_select,
+            db::db_transaction,
             db::db_wipe,
             bridge::bridge_start,
             bridge::bridge_status,
             bridge::bridge_command_result,
             bridge::bridge_revoke,
+            bridge::bridge_stop,
             profile_file::workspace_profile_project,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
@@ -263,17 +248,10 @@ pub fn run() {
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
             worktree::worktree_quarantine_candidate,
-            providers::get_provider_status,
             providers::refresh_provider_status,
-            providers::get_cursor_status,
             providers::refresh_cursor_status,
-            providers::get_codex_status,
             providers::refresh_codex_status,
-            providers::get_gemini_status,
             providers::refresh_gemini_status,
-            providers::get_opencode_status,
-            providers::get_openrouter_status,
-            providers::get_moonshot_status,
             providers::refresh_opencode_status,
             providers::refresh_openrouter_status,
             providers::refresh_moonshot_status,
@@ -319,6 +297,7 @@ pub fn run() {
             summarize::summarize_session,
             summarize::summarize_cancel,
             planner::planner_run,
+            codex_rollout::codex_rollout_context,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,
@@ -396,7 +375,6 @@ pub fn run() {
             settings_overrides::get_workspace_overrides,
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
-            settings_overrides::set_session_overrides,
             config_export::export_config_to_file,
             config_export::import_config_from_file,
             github::gh_status,
@@ -418,7 +396,6 @@ pub fn run() {
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
             sentry::sentry_fetch_issues,
-            sentry::sentry_fetch_issue,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
             gitlab::gitlab_connect,
@@ -428,7 +405,6 @@ pub fn run() {
             gitlab::gitlab_list_issue_notes,
             gitlab::gitlab_create_issue_note,
             gitlab::gitlab_fetch_assigned_mrs,
-            gitlab::gitlab_fetch_project_mrs,
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,
             gitlab::gitlab_merge_mr,

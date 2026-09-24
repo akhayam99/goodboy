@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -12,7 +13,7 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { ROLE_TO_KIND, kindRouting } from '../features/session/agent-kind';
+import { kindForRole, kindRouting } from '../features/session/agent-kind';
 
 const runTurnSpy = vi.fn();
 
@@ -44,7 +45,6 @@ vi.mock('@goodboy/db', () => ({
     id,
     name: 'ws',
     slug: 'ws',
-    sessionsRoot: '/tmp',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,
@@ -139,9 +139,6 @@ vi.mock('@goodboy/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -335,6 +332,12 @@ function wirePhaseSpies() {
   );
 }
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('createSession, workflow stepper seeding (#424)', () => {
   beforeEach(() => {
     wirePhaseSpies();
@@ -345,7 +348,6 @@ describe('createSession, workflow stepper seeding (#424)', () => {
   });
 
   it('pre-creates agents for all workflow steps', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -375,7 +377,6 @@ describe('createSession, workflow stepper seeding (#424)', () => {
   });
 
   it('pre-spawns nothing when no workflow and no firstAgentKind are passed', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
 
     await useAppStore.getState().createSession({
@@ -391,7 +392,6 @@ describe('createSession, workflow stepper seeding (#424)', () => {
   });
 
   it('spawnAgent creates a new agent when called for a step (e.g. retry)', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -435,7 +435,6 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
   });
 
   it('stores AGENT_KIND_DEFAULTS model for the first workflow agent (scout → haiku)', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -456,7 +455,6 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
   });
 
   it('auto-runs the first workflow agent by triggering a turn (sendTurn fires with promptPrefix)', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -486,7 +484,6 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
   });
 
   it('reaches the provider spawn from a scratch standpoint when no project is mounted', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -516,7 +513,6 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
   });
 
   it('does NOT auto-run when no workflow is attached', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
 
     await useAppStore.getState().createSession({
@@ -540,7 +536,6 @@ describe('spawnAgent, AGENT_KIND_DEFAULTS applied via CTA advance (#439)', () =>
   });
 
   it('stores planner model override when spawning Plan step via CTA', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -577,7 +572,6 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
   });
 
   it('fires sendTurn with the step promptPrefix when spawnAgent is called with a stepId', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
@@ -607,7 +601,6 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
   });
 
   it('switches selectedAgentId to the new agent before firing sendTurn', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
@@ -628,7 +621,6 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
   });
 
   it('does NOT fire sendTurn when spawnAgent has no stepId (free session)', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({ currentWorkspaceId: WS_ID, phaseTemplates: {} });
 
     await useAppStore.getState().createSession({
@@ -649,7 +641,6 @@ describe('spawnAgent, CTA auto-run next step (#442)', () => {
   });
 
   it('does NOT fire sendTurn when step has empty promptPrefix', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -703,7 +694,6 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
   });
 
   it('keeps the role-pinned kind even when the step name infers a different one', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRoleWorkflow('implementer')] },
@@ -717,18 +707,17 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
     });
 
     const insertArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(insertArgs['kind']).toBe(ROLE_TO_KIND['implementer']);
+    expect(insertArgs['kind']).toBe(kindForRole({ role: 'implementer' }));
 
     const state = useAppStore.getState();
     const agentId = state.selectedAgentId[session.id];
     expect(agentId).toBeDefined();
     expect(state.agentModelOverride[agentId!]).toBe(
-      kindRouting({ kind: ROLE_TO_KIND['implementer'] }).model,
+      kindRouting({ kind: kindForRole({ role: 'implementer' }) }).model,
     );
   });
 
   it('falls back to name inference when the step has no role', async () => {
-    const { useAppStore } = await import('./store');
     useAppStore.setState({
       currentWorkspaceId: WS_ID,
       phaseTemplates: { [WS_ID]: [makeRefactorWorkflow()] },
@@ -743,89 +732,5 @@ describe('createSession, step.role drives agent kind over name inference (#793)'
 
     const insertArgs = phaseRunInsertSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(insertArgs['kind']).toBe('scout');
-  });
-});
-
-// FINDING 2 (ordering): a mobile-launched session must be tagged mobile-origin
-// from its FIRST turn. createSession fires a kickoff turn DURING creation (the
-// workflow's first step promptPrefix sendTurn), so the mark must be registered
-// synchronously before that kickoff dispatches, never after createSession
-// resolves. The permission-mode clamp was removed, so both mobile and desktop
-// reach runTurn at bypassPermissions; only the mobile-origin mark differs.
-describe('createSession mobile-origin marking is ordered (#A2 finding 2)', () => {
-  beforeEach(async () => {
-    wirePhaseSpies();
-    runTurnSpy.mockReset();
-    runTurnSpy.mockImplementation(() => emptyStream());
-    const { clearMobileSharedSessions } = await import('../features/companion/mobileConfinement');
-    clearMobileSharedSessions();
-    const routingMod = await import('../features/providers/routing');
-    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
-      selectedProvider: 'anthropic',
-      selectedModel: 'claude-opus-4-5',
-      reason: 'preference',
-    });
-  });
-
-  afterEach(async () => {
-    vi.clearAllMocks();
-    const { clearMobileSharedSessions } = await import('../features/companion/mobileConfinement');
-    clearMobileSharedSessions();
-  });
-
-  it('marks a mobile-launched session before its FIRST kickoff turn, at full bypass', async () => {
-    const { useAppStore } = await import('./store');
-    const { isSessionMobileShared } = await import('../features/companion/mobileConfinement');
-    useAppStore.setState({
-      currentWorkspaceId: WS_ID,
-      // Prefixed steps → createSession fires the first-step kickoff turn DURING
-      // creation, which is exactly the moment that could outrun the mark.
-      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
-    });
-
-    const { session } = await useAppStore.getState().createSession({
-      workspaceId: WS_ID,
-      goal: 'mobile launch',
-      branchPrefix: 'kay',
-      workflowId: WORKFLOW_ID,
-      mobileShared: true,
-    });
-
-    // The kickoff turn must have already run; the mark landed before it (origin
-    // tag) and, with the clamp removed, runTurn sees full bypassPermissions.
-    await new Promise<void>((r) => setTimeout(r, 50));
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(callArgs['permissionMode']).toBe('bypassPermissions');
-    expect(isSessionMobileShared(session.id)).toBe(true);
-    expect(useAppStore.getState().sessions.find((s) => s.id === session.id)?.permissionMode).toBe(
-      'bypassPermissions',
-    );
-  });
-
-  it('leaves a desktop (non-mobile) session at full bypassPermissions on its first turn', async () => {
-    const { useAppStore } = await import('./store');
-    const { isSessionMobileShared } = await import('../features/companion/mobileConfinement');
-    useAppStore.setState({
-      currentWorkspaceId: WS_ID,
-      phaseTemplates: { [WS_ID]: [makeRefactorWorkflowWithPrefixes()] },
-    });
-
-    const { session } = await useAppStore.getState().createSession({
-      workspaceId: WS_ID,
-      goal: 'desktop launch',
-      branchPrefix: 'kay',
-      workflowId: WORKFLOW_ID,
-      // mobileShared omitted → default false → desktop behavior unchanged.
-    });
-
-    await new Promise<void>((r) => setTimeout(r, 50));
-    expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(callArgs['permissionMode']).toBe('bypassPermissions'); // unclamped
-    expect(isSessionMobileShared(session.id)).toBe(false);
-    expect(useAppStore.getState().sessions.find((s) => s.id === session.id)?.permissionMode).toBe(
-      'bypassPermissions',
-    );
   });
 });

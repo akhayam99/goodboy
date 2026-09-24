@@ -157,6 +157,10 @@ h2 {
   transform: translateX(3px);
 }
 
+.nobr {
+  white-space: nowrap;
+}
+
 .vh {
   position: absolute;
   width: 1px;
@@ -426,18 +430,6 @@ h2 {
   }
 }
 
-.wall:after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    -100deg,
-    rgba(255, 255, 255, 0) 4%,
-    rgba(255, 255, 255, 0.45) 46%,
-    #fff 100%
-  );
-}
-
 @media (max-width: 960px) {
   .wall {
     display: none;
@@ -607,55 +599,67 @@ h2 {
 }
 
 .belt {
+  width: min(1072px, calc(100% - 48px));
+  margin: 0 auto;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
 }
 
 .beltTrack {
   display: flex;
   width: max-content;
   padding: 2px 0;
-  animation: beltScroll 30s linear infinite;
-}
-
-.belt:hover .beltTrack {
-  animation-play-state: paused;
+  animation: beltScroll 31s linear infinite;
 }
 
 .beltTrackReverse {
   animation-direction: reverse;
 }
 
+.beltCopy {
+  display: flex;
+  flex-shrink: 0;
+}
+
 @keyframes beltScroll {
   to {
-    transform: translateX(-25%);
+    transform: translateX(-50%);
   }
 }
 
 .bchip {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 58px;
-  min-width: 210px;
-  background: #fff;
-  border: 1px solid var(--gray3);
-  border-radius: 999px;
-  padding: 0 22px;
-  margin-right: 14px;
+  justify-content: center;
+  gap: 10px;
+  height: 46px;
+  min-width: 150px;
+  background: color-mix(in oklch, var(--brand) 8%, #fff);
+  background: oklch(from var(--brand) 0.968 calc(c * 0.1) h);
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, #fff);
+  border-color: oklch(from var(--brand) 0.9 calc(c * 0.3) h);
+  border-radius: 10px;
+  padding: 0 18px;
+  margin-right: 28px;
   flex-shrink: 0;
 }
 
 .bchip .bname {
   font-size: 14px;
   font-weight: 600;
-  line-height: 1.25;
-}
-
-.bchip .bplan {
-  font-size: 12px;
-  color: var(--gray6);
   line-height: 1.25;
 }
 
@@ -672,18 +676,36 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .belt {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
   .beltTrack {
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: center;
-    row-gap: 14px;
     animation: none;
     transform: none;
+  }
+  .beltClone {
+    display: none;
+  }
+  .beltCopy {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .bchip {
+    margin-right: 0;
   }
 }
 
 section.block {
-  padding: clamp(64px, 9vw, 104px) 0;
+  padding: clamp(56px, 7vw, 88px) 0;
+}
+
+section.block:not(.alt) + section.block:not(.alt),
+section.block.alt + section.block.alt {
+  padding-top: clamp(24px, 2.5vw, 32px);
 }
 
 section.block.alt {
@@ -692,6 +714,56 @@ section.block.alt {
 
 .blockHead {
   max-width: 760px;
+}
+
+@media (min-width: 960px) {
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    grid-template-rows: auto auto 1fr;
+    column-gap: 64px;
+  }
+
+  .split > .blockHead {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .split > .blockHead h2 {
+    font-size: clamp(30px, 3vw, 44px);
+  }
+
+  .split > .blockHead .sub {
+    font-size: 18px;
+  }
+
+  .split > .more {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+  }
+
+  .split > .splitBody {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    min-width: 0;
+  }
+
+  .split > .splitBody,
+  .split > .splitBody > :first-child {
+    margin-top: 0;
+  }
+
+  .split.splitSticky > .blockHead {
+    position: sticky;
+    top: 96px;
+  }
+
+  .split.splitCenter > .splitBody {
+    align-self: center;
+  }
 }
 
 .appframe {
@@ -770,7 +842,6 @@ section.block.alt {
   font-size: 12px;
   color: var(--gray6);
 }
-
 
 .mockbtn {
   display: inline-block;
@@ -1036,20 +1107,6 @@ section.block.alt {
   color: var(--accent-bright);
 }
 
-.pledge {
-  display: flex;
-  gap: 24px;
-  margin-top: 24px;
-  flex-wrap: wrap;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.pledge span:before {
-  content: '✓ ';
-  color: var(--ok);
-}
-
 .faq {
   margin-top: 40px;
   border-top: 1px solid var(--gray3);
@@ -1201,4 +1258,11 @@ footer .right {
   margin-left: auto;
   display: flex;
   gap: 20px;
+}
+
+@media (max-width: 480px) {
+  footer .right {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
 }

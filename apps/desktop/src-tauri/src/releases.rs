@@ -1,15 +1,10 @@
-use std::sync::OnceLock;
+use crate::integration_credentials::http_client;
 
 use serde::{Deserialize, Serialize};
 
 const REPO_SLUG: &str = "akhayam99/goodboy";
 const PER_PAGE: u32 = 50;
 const CLIENT_USER_AGENT: &str = "goodboy-desktop";
-
-fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::Client::new)
-}
 
 fn releases_url() -> String {
     format!(

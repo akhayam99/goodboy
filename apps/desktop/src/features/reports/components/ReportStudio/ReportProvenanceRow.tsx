@@ -14,7 +14,7 @@ type Props = {
 const COLLAPSED_LIMIT = 4;
 
 const chipClass =
-  'inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-muted hover:text-foreground';
+  'inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground';
 
 export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArtifact }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -26,13 +26,13 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
       data-testid="report-provenance"
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted-foreground"
     >
-      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-wide">
+      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-eyebrow">
         {reportType}
       </span>
       {links.length === 0 ? (
         <span className="shrink-0">no cited source maps to this session</span>
       ) : (
-        <span className="shrink-0 uppercase tracking-wide">sources</span>
+        <span className="shrink-0 uppercase tracking-eyebrow">sources</span>
       )}
       {visible.map((link) => {
         const Glyph = link.kind === 'agent' ? CONCEPT_ICONS.agents : CONCEPT_ICONS.plans;

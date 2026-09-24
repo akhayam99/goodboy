@@ -1,4 +1,4 @@
-import { Skeleton, cn } from '@goodboy/ui';
+import { Skeleton, cn, tintClasses } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../../shared/utils/relativeDate';
 import type { FileVersionGroup } from './fileVersionGroups';
 
@@ -30,8 +30,8 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
             className={cn(
               'flex w-full flex-col gap-1 rounded-lg border border-border-soft bg-background px-3 py-2 text-left transition-colors',
               selectedPath === group.relativePath
-                ? 'border-primary/40 bg-primary/5'
-                : 'hover:bg-muted/40',
+                ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+                : 'hover:bg-hover',
             )}
           >
             <span className="truncate font-mono text-xs text-foreground">{group.relativePath}</span>

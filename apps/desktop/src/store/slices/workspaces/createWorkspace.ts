@@ -37,7 +37,6 @@ export const createWorkspace = (set: SetFn, get: GetFn) => {
       id: workspaceId,
       name: trimmed,
       slug: workspaceSlug({ name: trimmed, id: workspaceId }),
-      sessionsRoot: null,
       overrides: EMPTY_OVERRIDES,
       createdAt: now,
       updatedAt: now,

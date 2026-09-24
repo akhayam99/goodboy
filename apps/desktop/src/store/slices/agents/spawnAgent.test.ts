@@ -13,8 +13,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import {
-  buildCombinedCommentAgentArgs,
   buildCommentAgentArgs,
+  buildResolverAgentArgs,
 } from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -265,6 +265,38 @@ describe('spawnAgent focus', () => {
     await spawn(SESSION_ID, { name: 'tracked spawn' });
 
     expect(getState().sessionCreations[SESSION_ID]).toEqual([]);
+  });
+});
+
+describe('spawnAgent ordinals', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listConsumptionsForPlanSpy.mockResolvedValue([]);
+  });
+
+  it('gives two concurrent spawns in one session distinct ordinals', async () => {
+    const { spawn } = buildHarness([]);
+    const rows: Agent[] = [];
+    invokeAgentInsertSpy.mockImplementation(
+      async (args: { readonly ordinal: number; readonly name: string }) => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const row = {
+          id: `agent-${rows.length}` as AgentId,
+          sessionId: SESSION_ID,
+          ordinal: args.ordinal,
+          name: args.name,
+          status: 'pending',
+        } satisfies Agent;
+        rows.push(row);
+        return row;
+      },
+    );
+    invokeAgentListSpy.mockImplementation(async () => [...rows]);
+
+    await Promise.all([spawn(SESSION_ID, {}), spawn(SESSION_ID, {})]);
+
+    expect(rows.map((row) => row.ordinal)).toEqual([0, 1]);
+    expect(rows.map((row) => row.name)).toEqual(['agent 1', 'agent 2']);
   });
 });
 
@@ -524,8 +556,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
   it('persists every combined source thread and the first compatibility thread', async () => {
     const { spawn } = buildHarness([]);
-    const args = buildCombinedCommentAgentArgs(
-      [
+    const args = buildResolverAgentArgs({
+      threads: [
         { head: COMMENT, replies: [] },
         {
           head: {
@@ -537,8 +569,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
           replies: [],
         },
       ],
-      PR,
-    );
+      pr: PR,
+    });
 
     await spawn(SESSION_ID, {
       kindOverride: 'resolver',

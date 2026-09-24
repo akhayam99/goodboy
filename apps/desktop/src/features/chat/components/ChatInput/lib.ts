@@ -1,6 +1,12 @@
-import type { AgentId, AttachmentInput, ProviderId, TurnProviderOverride } from '@goodboy/types';
+import type {
+  AgentId,
+  AttachmentInput,
+  ProviderId,
+  TurnProviderOverride,
+  EffortLevel,
+} from '@goodboy/types';
 import { PREFIXES, type QuickActionGroup } from '../../../quick-actions/grammar';
-import { EFFORT_LEVELS, type EffortLevel } from '../../utils/chat-constants';
+import { EFFORT_LEVELS } from '../../utils/chat-constants';
 
 export const RUNNING_KINDS = new Set(['starting', 'running']);
 

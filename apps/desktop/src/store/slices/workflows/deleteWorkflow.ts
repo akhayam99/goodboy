@@ -1,6 +1,7 @@
 import type { IsoDateTime, SessionId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { invokeWorkflowDelete } from '../../../features/workflows/workflows';
 import type { GetFn, SetFn } from './types';
+import { unmarkWorkflowTitleUserEdited } from './workflowTitleUserEdited';
 
 export const deleteWorkflow = (set: SetFn, get: GetFn) => {
   return async (id: WorkflowId, workspaceId: WorkspaceId) => {
@@ -17,6 +18,7 @@ export const deleteWorkflow = (set: SetFn, get: GetFn) => {
           : [],
     );
     await invokeWorkflowDelete(id);
+    unmarkWorkflowTitleUserEdited(id);
     const now = new Date().toISOString() as IsoDateTime;
     const markDeleted = (w: Workflow): Workflow => (w.id === id ? { ...w, deletedAt: now } : w);
     set((state) => {

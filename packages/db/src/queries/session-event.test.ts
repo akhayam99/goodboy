@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionEvent, SessionEventId, SessionId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { deleteSessionEvents, insertSessionEvent, listSessionEvents } from './session-event';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
+import { insertSessionEvent, listSessionEvents } from './session-event';
 
 const workspaceId = 'w1';
 const sessionId = 's1' as SessionId;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -198,15 +195,6 @@ describe('session_events queries', () => {
     });
 
     expect((await listSessionEvents({ db, sessionId })).map((event) => event.id)).toEqual(['ev-1']);
-  });
-
-  it('deletes every event of a session', async () => {
-    const db = await seed();
-    await insertSessionEvent({ db, event: makeEvent({}) });
-
-    await deleteSessionEvents({ db, sessionId });
-
-    expect(await listSessionEvents({ db, sessionId })).toEqual([]);
   });
 
   it('wipes its rows when the session is deleted', async () => {

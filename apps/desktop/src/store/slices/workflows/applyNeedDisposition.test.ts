@@ -636,11 +636,13 @@ describe('applyNeedDisposition', () => {
     expect(refusal).toEqual({ kind: 'refused', reason: 'no allowance is left in this run' });
     expect(state.capabilityObligations[SESSION_ID]?.[0]?.ownerAgentId).toBeNull();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'need refused: review the change',
-      'no allowance is left in this run',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Need refused for review the change',
+        body: 'no allowance is left in this run',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(sendTurn).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -774,11 +776,13 @@ describe('applyNeedDisposition', () => {
     expect(h.decide).not.toHaveBeenCalled();
     expect(h.update).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'failed' }));
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'need not granted: review the change',
-      expect.stringContaining('the obligation stays open'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Need from review the change not granted',
+        body: expect.stringContaining('the obligation stays open'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 

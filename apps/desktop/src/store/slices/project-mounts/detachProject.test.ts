@@ -593,31 +593,39 @@ describe('detachProject', () => {
     });
   });
 
-  it('leaves a consistent prefix when a mount row cannot be written', async () => {
+  it('keeps detaching the next mount when one row cannot be deleted', async () => {
     const store = makeStore();
     deleteSessionMount.mockImplementation(async ({ mountId }: { mountId: string }) => {
-      if (mountId === 'mount-api-2') {
+      if (mountId === 'mount-api') {
         throw new Error('database is locked');
       }
       return true;
     });
 
-    await expect(runDetach(store)).rejects.toThrow('database is locked');
+    const outcomes = await runDetach(store);
 
-    expect(deleteSessionMount).toHaveBeenCalledWith({
-      db: {},
-      sessionId: SESSION_ID,
-      mountId: 'mount-api',
-    });
+    expect(outcomes).toEqual([
+      expect.objectContaining({
+        mountId: 'mount-api',
+        kind: 'failed',
+        reason: expect.stringContaining('database is locked'),
+      }),
+      expect.objectContaining({ mountId: 'mount-api-2', kind: 'removed' }),
+    ]);
     expect(store.sessionProjectMounts['sess-1'].map((m) => m.worktreePath)).toEqual([
-      '/container/api-2',
+      '/container/api',
       '/container/web',
     ]);
-    expect(store.sessionWorktrees['sess-1']).toEqual([
-      '/container',
-      '/container/api-2',
-      '/container/web',
-    ]);
+    expect(store.sessionActiveProject['sess-1']).toBe('project-api');
+    expect(upsertMountOperation).toHaveBeenCalledWith({
+      db: {},
+      operation: expect.objectContaining({
+        kind: 'remove',
+        status: 'uncertain',
+        mountId: null,
+        input: expect.objectContaining({ mountId: 'mount-api', finish: 'drop-row' }),
+      }),
+    });
   });
 
   it('hands the active project and the write destination to the next remaining mount', async () => {

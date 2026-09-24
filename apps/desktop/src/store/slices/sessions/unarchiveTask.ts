@@ -64,7 +64,7 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         invokeWorkflowsForSession(sessionId).catch(() => []),
       ]);
       const projects = get().projects.filter((project) => project.workspaceId === workspaceId);
-      const worktreeRows = await verifyAvailableWorktrees({
+      const { available: worktreeRows } = await verifyAvailableWorktrees({
         sessionId,
         candidates: storedRows,
         projects,
@@ -141,13 +141,13 @@ export const unarchiveTask = (set: SetFn, get: GetFn) => {
         };
       });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'session restored, but some data failed to load',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Session restored, but some data failed to load',
+        body: formatError(error),
+        sessionId,
+      });
     }
     void get()
       .reconcileOrphanWorktrees()

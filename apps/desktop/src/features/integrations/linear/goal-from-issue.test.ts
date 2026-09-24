@@ -18,25 +18,29 @@ function makeIssue(overrides: Partial<LinearIssue> = {}): LinearIssue {
 
 describe('goalFromIssue', () => {
   it('builds heading + description', () => {
-    const goal = goalFromIssue(makeIssue());
+    const goal = goalFromIssue({ issue: makeIssue() });
     expect(goal).toBe(
       '[SER-123] Add user signup\n\nUsers should be able to sign up with email and password.',
     );
   });
 
   it('returns heading only when description is null or empty', () => {
-    expect(goalFromIssue(makeIssue({ description: null }))).toBe('[SER-123] Add user signup');
-    expect(goalFromIssue(makeIssue({ description: '   ' }))).toBe('[SER-123] Add user signup');
+    expect(goalFromIssue({ issue: makeIssue({ description: null }) })).toBe(
+      '[SER-123] Add user signup',
+    );
+    expect(goalFromIssue({ issue: makeIssue({ description: '   ' }) })).toBe(
+      '[SER-123] Add user signup',
+    );
   });
 
-  it('keeps overlong descriptions intact after trimming whitespace', () => {
+  it('caps an overlong description at the goal body cap', () => {
     const long = 'x'.repeat(2000);
-    const goal = goalFromIssue(makeIssue({ description: long }));
-    expect(goal).toBe(`[SER-123] Add user signup\n\n${long}`);
+    const goal = goalFromIssue({ issue: makeIssue({ description: long }) });
+    expect(goal).toBe(`[SER-123] Add user signup\n\n${'x'.repeat(1200)}…`);
   });
 
   it('strips title whitespace', () => {
-    expect(goalFromIssue(makeIssue({ title: '  Spaced  ', description: null }))).toBe(
+    expect(goalFromIssue({ issue: makeIssue({ title: '  Spaced  ', description: null }) })).toBe(
       '[SER-123] Spaced',
     );
   });

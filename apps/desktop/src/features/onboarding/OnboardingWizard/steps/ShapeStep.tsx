@@ -1,6 +1,6 @@
 import { FolderGit2, FolderPlus, Layers } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Button, Input, cn } from '@goodboy/ui';
+import { Button, Input, cn, tintClasses } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
 import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
@@ -73,7 +73,7 @@ export const ShapeStep = ({
   if (workspace !== null) {
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+        <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
           <FolderGit2 size={26} aria-hidden />
         </span>
 
@@ -105,7 +105,7 @@ export const ShapeStep = ({
 
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft/40 bg-subtle/40 text-primary">
+      <span className="flex size-14 items-center justify-center rounded-lg border border-border-soft bg-subtle text-primary">
         <FolderGit2 size={26} aria-hidden />
       </span>
 
@@ -128,8 +128,12 @@ export const ShapeStep = ({
               className={cn(
                 'flex items-start gap-3 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors',
                 shape === option.value
-                  ? 'border-primary/60 bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-primary/5',
+                  ? cn(tintClasses('primary').border, tintClasses('primary').bgSoft)
+                  : cn(
+                      'border-border',
+                      tintClasses('primary').hoverBorder,
+                      tintClasses('primary').hoverBgSoft,
+                    ),
               )}
             >
               <span className="mt-0.5 shrink-0 text-primary">

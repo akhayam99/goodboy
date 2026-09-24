@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { MountCleanupProposal, SessionId } from '@goodboy/types';
-import { Button, formatError } from '@goodboy/ui';
+import { Button, cn, tintClasses } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
-import { formatDiskSize } from '../../../worktree/utils/formatDiskSize';
+import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,7 +23,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
   );
   const loadMountCleanupProposals = useAppStore((state) => state.loadMountCleanupProposals);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,14 +39,14 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
     try {
       await resolveMountCleanup({ sessionId, requestId: proposal.requestId, decision });
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: "Couldn't settle the worktree cleanup", error, sessionId });
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-elevated/30 px-3 py-2">
+    <div className="flex flex-col gap-1.5 rounded-lg border border-border-soft bg-elevated px-3 py-2">
       {proposals.map((proposal) => (
         <div key={proposal.requestId} className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
@@ -58,7 +57,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               {proposal.worktreePath}
               {proposal.sizeBytes === null
                 ? ''
-                : ` (${formatDiskSize({ bytes: proposal.sizeBytes })})`}
+                : ` (${formatBytes({ bytes: proposal.sizeBytes })})`}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -67,7 +66,7 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
               size="sm"
               disabled={busy !== null}
               onClick={() => void resolve(proposal, 'remove')}
-              className="text-danger hover:bg-danger/10 hover:text-danger"
+              className={cn('text-danger', tintClasses('danger').hoverBg, 'hover:text-danger')}
             >
               Remove worktree
             </Button>

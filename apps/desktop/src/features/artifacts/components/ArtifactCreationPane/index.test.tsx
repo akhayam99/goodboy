@@ -340,10 +340,10 @@ describe('ArtifactCreationPane', () => {
     fireEvent.change(screen.getByTestId('artifact-based-on'), { target: { value: RUN_ID } });
     expect(
       screen.getByText(
-        'agents and artifacts come from this run. session events, checks and the local change are session wide either way.',
+        'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('no mounted project, so no local change evidence.')).toBeTruthy();
+    expect(screen.getByText('No mounted project, so no local change evidence.')).toBeTruthy();
   });
 
   it('lists what the pack carries and what it cuts short', async () => {
@@ -410,28 +410,28 @@ describe('ArtifactCreationPane', () => {
     renderPane();
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'anything' } });
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText(/run an agent or a workflow first/)).toBeTruthy();
+    expect(screen.getByText(/Run an agent or a workflow first/)).toBeTruthy();
   });
 
   it('refuses a wireframe with no brief when nothing has run', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [] };
     renderPane({ kind: 'wireframe' });
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText(/describe the screen or flow/)).toBeTruthy();
+    expect(screen.getByText(/Describe the screen or flow/)).toBeTruthy();
   });
 
   it('stays blocked while the run is still going', () => {
     state.sessionPhaseRuns = { [SESSION_ID]: [finishedAgent({ status: 'running' })] };
     renderPane();
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('the run is still going, finish it first')).toBeTruthy();
+    expect(screen.getByText('The run is still going. Finish it first')).toBeTruthy();
   });
 
   it('disables generate when no provider is usable', () => {
     state.providers = [];
     renderPane();
     expect(screen.getByTestId('artifact-generate').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('connect a provider to generate')).toBeTruthy();
+    expect(screen.getByText('Connect a provider to generate')).toBeTruthy();
   });
 
   it('keeps the draft on back and clears it on a confirmed cancel', () => {

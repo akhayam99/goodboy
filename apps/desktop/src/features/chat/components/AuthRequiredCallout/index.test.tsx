@@ -24,10 +24,10 @@ describe('AuthRequiredCallout', () => {
 
   it('opens the provider login step inline when Connect is clicked', () => {
     const handler = vi.fn();
-    window.addEventListener('goodboy:open-provider-studio', handler);
+    window.addEventListener('goodboy:open-settings', handler);
     render(<AuthRequiredCallout providerId="codex" onRefresh={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: /connect now/i }));
-    window.removeEventListener('goodboy:open-provider-studio', handler);
+    window.removeEventListener('goodboy:open-settings', handler);
     expect(screen.getByText(/Connect codex/i)).toBeDefined();
     expect(handler).not.toHaveBeenCalled();
   });

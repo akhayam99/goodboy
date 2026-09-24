@@ -2,25 +2,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { RailCard } from '../components/RailCard';
-import { TERMINAL_DIM } from '../terminalDim';
 
 afterEach(cleanup);
 
 const cardOf = () => screen.getByRole('button', { name: 'Open the run' });
 
 describe('RailCard', () => {
-  it('keeps a live card at full strength on the elevated surface', () => {
-    render(<RailCard title="Refactor" ariaLabel="Open the run" onSelect={vi.fn()} />);
-
-    expect(cardOf().className).toContain('bg-elevated/40');
-    expect(cardOf().className).not.toContain(TERMINAL_DIM);
+  it('reports selection from a live card', () => {
+    const onSelect = vi.fn();
+    render(<RailCard title="Refactor" ariaLabel="Open the run" onSelect={onSelect} />);
+    cardOf().click();
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 
-  it('dims a terminal card and drops its fill so it recedes from the live ones', () => {
-    render(<RailCard title="Refactor" ariaLabel="Open the run" muted onSelect={vi.fn()} />);
+  it('keeps a terminal card interactive', () => {
+    const onSelect = vi.fn();
+    render(<RailCard title="Refactor" ariaLabel="Open the run" muted onSelect={onSelect} />);
+    cardOf().click();
+    expect(onSelect).toHaveBeenCalledOnce();
+  });
 
-    expect(cardOf().className).toContain(TERMINAL_DIM);
-    expect(cardOf().className).toContain('bg-transparent');
-    expect(cardOf().className).not.toContain('bg-elevated/40');
+  it('marks the selected card with the shared neutral recipe', () => {
+    render(<RailCard title="Refactor" ariaLabel="Open the run" isSelected onSelect={vi.fn()} />);
+    const card = cardOf();
+    expect(card.getAttribute('data-selected')).toBe('true');
+    expect(card.getAttribute('aria-current')).toBe('true');
+    expect(card.className).toContain('data-[selected=true]:bg-selected');
+    expect(card.className).not.toContain('ring-inset');
   });
 });
