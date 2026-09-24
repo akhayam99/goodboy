@@ -6,6 +6,7 @@ import {
   cn,
   Divider,
   EmptyState,
+  Eyebrow,
   ScrollFade,
   Skeleton,
   Tooltip,
@@ -46,7 +47,10 @@ const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
 
 const BoardSkeleton = () => (
   <div
-    className={cn('flex min-h-0 w-full flex-1 overflow-x-hidden', PANE_RHYTHM.board.colGap)}
+    className={cn(
+      'mx-auto flex min-h-0 w-fit max-w-full flex-1 overflow-x-hidden',
+      PANE_RHYTHM.board.colGap,
+    )}
     role="status"
     aria-label="Loading board"
   >
@@ -179,10 +183,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex min-w-0 items-baseline gap-2">
-              <h1 className="text-xl font-semibold leading-snug text-foreground">Board</h1>
+              <Eyebrow label="Stage board" />
               {activeSessions.length > 0 && (
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {activeSessions.length} {activeSessions.length === 1 ? 'session' : 'sessions'}
+                <span className="text-2xs tabular-nums text-faint-foreground">
+                  {activeSessions.length}
                 </span>
               )}
             </span>
@@ -265,7 +269,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <div
             ref={columnsRef}
             onPointerDown={lasso.onPointerDown}
-            className={cn('relative flex h-full min-h-0 w-full', PANE_RHYTHM.board.colGap)}
+            className={cn(
+              'relative mx-auto flex h-full min-h-0 w-fit max-w-full',
+              PANE_RHYTHM.board.colGap,
+            )}
           >
             {STAGES.map((stage) => (
               <StageColumn
