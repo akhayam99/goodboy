@@ -175,6 +175,12 @@ holds the two frames:
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
 
+Scenes that share one seed live in a folder, with one file per scene, a
+`fixtures.ts` for the data and a `seeds.ts` that writes it into the store.
+`scenes/flow-audit/` covers the workflow builder, a workflow run, the open
+questions cluster, the transcript and the command palette over one Harborline
+session.
+
 The README's feature guide is captured from these scenes. The images live in
 `docs/images/`, named after the scene that made them, so a re-capture is one
 command with no lookup. To crop a short surface, use a `--window-size` height

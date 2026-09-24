@@ -24,13 +24,11 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
-import {
-  WorkflowBuilderScene,
-  WorkflowRunScene,
-  OpenQuestionsScene,
-  TranscriptScene,
-  CommandPaletteScene,
-} from './scenes/FlowAuditScenes';
+import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
+import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
+import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
+import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
+import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
 import {
   ScriptsLensScene,
   ScriptsSidebarScene,

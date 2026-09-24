@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -31,41 +29,28 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
-import type { AgentKind } from '../../../../features/session/agent-kind';
-import type { WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
-import { WorkflowBuilderView } from '../../../../features/session/components/WorkflowBuilderView';
-import { WorkflowRunDetail } from '../../../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
-import { OpenQuestionCluster } from '../../../../features/chat/components/ChatView/OpenQuestionCluster';
-import {
-  PERSON_ANSWERS,
-  useOpenQuestions,
-} from '../../../../features/context/components/QuestionsTab/useOpenQuestions';
-import { ChatImageLoaderProvider } from '../../../../features/chat/components/ChatView/ChatImageLoaderProvider';
-import { TranscriptRows } from '../../../../features/chat/components/ChatView/TranscriptRows';
-import type { TranscriptRow } from '../../../../features/chat/utils/cluster-operations';
-import { CommandPalette } from '../../../../features/session/components/CommandPalette';
-import { QuestionsPane } from '../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
-import { ShellFrame, seedShellChrome } from './shellChrome';
+import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
+import type { AgentKind } from '../../../../../features/session/agent-kind';
+import type { WorkflowBuilderDraft } from '../../../../../store/slices/workflowDrafts/types';
+import type { TranscriptRow } from '../../../../../features/chat/utils/cluster-operations';
 
-const noop = () => undefined;
+export const noop = () => undefined;
 
-const NOW = '2026-09-16T11:20:00.000Z' as IsoDateTime;
-const EARLIER = '2026-09-16T09:05:00.000Z' as IsoDateTime;
+export const NOW = '2026-09-16T11:20:00.000Z' as IsoDateTime;
+export const EARLIER = '2026-09-16T09:05:00.000Z' as IsoDateTime;
 
-const WORKSPACE_ID = 'mock-flow-workspace-harborline' as WorkspaceId;
-const LEDGER_PROJECT_ID = 'mock-flow-project-ledger-core' as ProjectId;
-const RELAY_PROJECT_ID = 'mock-flow-project-notify-relay' as ProjectId;
+export const WORKSPACE_ID = 'mock-flow-workspace-harborline' as WorkspaceId;
+export const LEDGER_PROJECT_ID = 'mock-flow-project-ledger-core' as ProjectId;
+export const RELAY_PROJECT_ID = 'mock-flow-project-notify-relay' as ProjectId;
 const PAYMENTS_PROJECT_ID = 'mock-flow-project-payments-api' as ProjectId;
 
-const FLOW_SESSION_ID = 'mock-flow-session-settlement' as SessionId;
-const CHAT_SESSION_ID = 'mock-flow-session-relay-storm' as SessionId;
-const EXPORT_SESSION_ID = 'mock-flow-session-ledger-export' as SessionId;
-const PRICING_SESSION_ID = 'mock-flow-session-pricing-tiers' as SessionId;
+export const FLOW_SESSION_ID = 'mock-flow-session-settlement' as SessionId;
+export const CHAT_SESSION_ID = 'mock-flow-session-relay-storm' as SessionId;
+export const EXPORT_SESSION_ID = 'mock-flow-session-ledger-export' as SessionId;
+export const PRICING_SESSION_ID = 'mock-flow-session-pricing-tiers' as SessionId;
 
 const DYNAMIC_WORKFLOW_ID = 'mock-flow-workflow-settlement' as WorkflowId;
-const DYNAMIC_RUN_ID = 'mock-flow-run-settlement' as WorkflowRunId;
+export const DYNAMIC_RUN_ID = 'mock-flow-run-settlement' as WorkflowRunId;
 const PRESET_TRACE_ID = 'mock-flow-preset-trace-and-fix' as WorkflowId;
 const PRESET_HARDEN_ID = 'mock-flow-preset-harden-endpoint' as WorkflowId;
 const PRESET_MIGRATE_ID = 'mock-flow-preset-migrate-contract' as WorkflowId;
@@ -82,18 +67,18 @@ const AGENT_SCOUT_LEDGER_ID = 'mock-flow-agent-scout-ledger' as AgentId;
 const AGENT_SCOUT_RELAY_ID = 'mock-flow-agent-scout-relay' as AgentId;
 const AGENT_SCOUT_REPORTS_ID = 'mock-flow-agent-scout-reports' as AgentId;
 const AGENT_PLAN_ID = 'mock-flow-agent-plan' as AgentId;
-const AGENT_ROUNDING_ID = 'mock-flow-agent-rounding' as AgentId;
-const AGENT_BACKFILL_ID = 'mock-flow-agent-backfill' as AgentId;
+export const AGENT_ROUNDING_ID = 'mock-flow-agent-rounding' as AgentId;
+export const AGENT_BACKFILL_ID = 'mock-flow-agent-backfill' as AgentId;
 const AGENT_TESTS_ID = 'mock-flow-agent-tests' as AgentId;
 
 const CHAT_AGENT_TRIAGE_ID = 'mock-flow-agent-relay-triage' as AgentId;
 const CHAT_AGENT_BACKOFF_ID = 'mock-flow-agent-relay-backoff' as AgentId;
-const CHAT_AGENT_RESOLVER_ID = 'mock-flow-agent-relay-resolver' as AgentId;
+export const CHAT_AGENT_RESOLVER_ID = 'mock-flow-agent-relay-resolver' as AgentId;
 
 const CHAT_REPORT_RUN_ID = 'mock-flow-provider-run-settlement-report' as ProviderRunId;
 const CHAT_WIREFRAME_RUN_ID = 'mock-flow-provider-run-replay-wireframe' as ProviderRunId;
 
-const CHAT_ARTIFACTS = [
+export const CHAT_ARTIFACTS = [
   {
     id: 'mock-flow-artifact-settlement-report' as ArtifactId,
     sessionId: CHAT_SESSION_ID,
@@ -131,14 +116,14 @@ const CHAT_ARTIFACTS = [
 ] satisfies ReadonlyArray<SessionArtifact>;
 
 const QUESTION_STORE_ID = 'mock-flow-question-exemption-store' as OpenQuestionId;
-const QUESTION_SIGNALS_ID = 'mock-flow-question-replay-signals' as OpenQuestionId;
+export const QUESTION_SIGNALS_ID = 'mock-flow-question-replay-signals' as OpenQuestionId;
 const QUESTION_ANSWERED_ID = 'mock-flow-question-error-shape' as OpenQuestionId;
 
-const THREAD_BACKOFF = 'PRRT_thread_retry_backoff';
-const THREAD_ERROR_SHAPE = 'PRRT_thread_error_shape';
-const THREAD_SPELLING = 'PRRT_thread_field_spelling';
+export const THREAD_BACKOFF = 'PRRT_thread_retry_backoff';
+export const THREAD_ERROR_SHAPE = 'PRRT_thread_error_shape';
+export const THREAD_SPELLING = 'PRRT_thread_field_spelling';
 
-const OVERRIDES = {
+export const OVERRIDES = {
   defaultProviderId: null,
   defaultWorkflowId: null,
   defaultBranchPrefix: null,
@@ -152,7 +137,7 @@ const OVERRIDES = {
   attributionFooter: null,
 };
 
-const WORKSPACE: Workspace = {
+export const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
@@ -161,7 +146,7 @@ const WORKSPACE: Workspace = {
   updatedAt: NOW,
 };
 
-const PROJECTS: ReadonlyArray<Project> = [
+export const PROJECTS: ReadonlyArray<Project> = [
   {
     id: LEDGER_PROJECT_ID,
     workspaceId: WORKSPACE_ID,
@@ -224,7 +209,7 @@ const mountOf = ({
   revision: 0,
 });
 
-const FLOW_MOUNTS: ReadonlyArray<SessionProjectMount> = [
+export const FLOW_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   mountOf({
     sessionId: FLOW_SESSION_ID,
     projectId: LEDGER_PROJECT_ID,
@@ -241,7 +226,7 @@ const FLOW_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   }),
 ];
 
-const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
+export const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   mountOf({
     sessionId: CHAT_SESSION_ID,
     projectId: RELAY_PROJECT_ID,
@@ -251,7 +236,7 @@ const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   }),
 ];
 
-const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
+export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',
     binary: 'claude',
@@ -330,7 +315,7 @@ const presetOf = ({ id, name, description, goal, steps }: PresetSeedParams): Wor
   updatedAt: EARLIER,
 });
 
-const PRESETS: ReadonlyArray<Workflow> = [
+export const PRESETS: ReadonlyArray<Workflow> = [
   presetOf({
     id: PRESET_TRACE_ID,
     name: 'Trace and fix',
@@ -459,7 +444,7 @@ const DYNAMIC_STEPS: ReadonlyArray<Step> = [
   },
 ];
 
-const DYNAMIC_WORKFLOW: Workflow = {
+export const DYNAMIC_WORKFLOW: Workflow = {
   id: DYNAMIC_WORKFLOW_ID,
   workspaceId: WORKSPACE_ID,
   name: 'Settlement rounding recovery',
@@ -573,7 +558,7 @@ const flowAgentOf = ({
       }),
 });
 
-const FLOW_AGENTS: ReadonlyArray<Agent> = [
+export const FLOW_AGENTS: ReadonlyArray<Agent> = [
   flowAgentOf({
     id: AGENT_SCOUT_ID,
     stepId: STEP_SCOUT_ID,
@@ -678,7 +663,7 @@ const FLOW_AGENTS: ReadonlyArray<Agent> = [
   }),
 ];
 
-const FLOW_AGENT_KINDS: Readonly<Record<string, AgentKind>> = {
+export const FLOW_AGENT_KINDS: Readonly<Record<string, AgentKind>> = {
   [AGENT_SCOUT_ID]: 'scout',
   [AGENT_SCOUT_LEDGER_ID]: 'scout',
   [AGENT_SCOUT_REPORTS_ID]: 'scout',
@@ -689,7 +674,7 @@ const FLOW_AGENT_KINDS: Readonly<Record<string, AgentKind>> = {
   [AGENT_TESTS_ID]: 'tester',
 };
 
-const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
+export const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
   [AGENT_SCOUT_ID]: 'composer-2.5',
   [AGENT_SCOUT_LEDGER_ID]: 'claude-haiku-4-5',
   [AGENT_SCOUT_REPORTS_ID]: 'gpt-5.6-terra',
@@ -700,7 +685,7 @@ const FLOW_AGENT_MODELS: Readonly<Record<string, string>> = {
   [AGENT_TESTS_ID]: 'claude-haiku-4-5',
 };
 
-const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderDisplayInfo['id']>> = {
+export const FLOW_AGENT_PROVIDERS: Readonly<Record<string, ProviderDisplayInfo['id']>> = {
   [AGENT_SCOUT_ID]: 'cursor',
   [AGENT_SCOUT_LEDGER_ID]: 'anthropic',
   [AGENT_SCOUT_REPORTS_ID]: 'codex',
@@ -744,7 +729,7 @@ const telemetryOf = ({
   estimatedCostUsd,
 });
 
-const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
+export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
   telemetryOf({
     id: 'mock-flow-telemetry-scout',
     runId: 'mock-flow-provider-run-scout' as ProviderRunId,
@@ -849,7 +834,7 @@ const sessionOf = ({
   updatedAt,
 });
 
-const FLOW_SESSION: Session = sessionOf({
+export const FLOW_SESSION: Session = sessionOf({
   id: FLOW_SESSION_ID,
   goal: 'Stop the settlement rounding drift and repair the quarter already settled',
   state: {
@@ -862,7 +847,7 @@ const FLOW_SESSION: Session = sessionOf({
   updatedAt: NOW,
 });
 
-const CHAT_SESSION: Session = sessionOf({
+export const CHAT_SESSION: Session = sessionOf({
   id: CHAT_SESSION_ID,
   goal: 'Hold the retry storm at the relay without dropping a settlement notice',
   state: { kind: 'idle', lastActivityAt: '2026-09-16T11:06:00.000Z' as IsoDateTime },
@@ -890,9 +875,9 @@ const OTHER_SESSIONS: ReadonlyArray<Session> = [
   }),
 ];
 
-const SESSIONS: ReadonlyArray<Session> = [FLOW_SESSION, CHAT_SESSION, ...OTHER_SESSIONS];
+export const SESSIONS: ReadonlyArray<Session> = [FLOW_SESSION, CHAT_SESSION, ...OTHER_SESSIONS];
 
-const CHAT_AGENTS: ReadonlyArray<Agent> = [
+export const CHAT_AGENTS: ReadonlyArray<Agent> = [
   {
     id: CHAT_AGENT_TRIAGE_ID,
     sessionId: CHAT_SESSION_ID,
@@ -946,7 +931,7 @@ const CHAT_AGENTS: ReadonlyArray<Agent> = [
   },
 ];
 
-const SCRIPTS: ReadonlyArray<ProjectScript> = [
+export const SCRIPTS: ReadonlyArray<ProjectScript> = [
   {
     id: 'mock-flow-script-settlement-replay' as ProjectScriptId,
     projectId: LEDGER_PROJECT_ID,
@@ -967,7 +952,7 @@ const SCRIPTS: ReadonlyArray<ProjectScript> = [
   },
 ];
 
-const BUILDER_DRAFT: WorkflowBuilderDraft = {
+export const BUILDER_DRAFT: WorkflowBuilderDraft = {
   mode: 'dynamic',
   goalText:
     'Stop the settlement rounding drift and repair the quarter that already settled, without touching a reconciled payout',
@@ -998,7 +983,7 @@ const BUILDER_DRAFT: WorkflowBuilderDraft = {
   },
 };
 
-const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   {
     id: QUESTION_STORE_ID,
     sessionId: CHAT_SESSION_ID,
@@ -1072,7 +1057,7 @@ const RESOLVER_MESSAGE = [
   `<<comment-wontfix threadid="${THREAD_SPELLING}" reason="the field is spelled this way across the whole settlement schema">>`,
 ].join('\n');
 
-const CHAT_PLANS: ReadonlyArray<PlanWithCount> = [
+export const CHAT_PLANS: ReadonlyArray<PlanWithCount> = [
   {
     id: 'mock-flow-plan-rounding' as PlanId,
     sessionId: CHAT_SESSION_ID,
@@ -1086,7 +1071,7 @@ const CHAT_PLANS: ReadonlyArray<PlanWithCount> = [
   },
 ];
 
-const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
+export const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
   {
     kind: 'item',
     key: 'mock-flow-transcript-user',
@@ -1135,313 +1120,10 @@ const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
   },
 ];
 
-const seedFlowAuditBase = () => {
-  useAppStore.setState({
-    workspaces: [WORKSPACE],
-    currentWorkspaceId: WORKSPACE_ID,
-    projects: PROJECTS,
-    sessions: SESSIONS,
-    providers: PROVIDERS,
-    workspaceOverrides: { [WORKSPACE_ID]: OVERRIDES },
-    phaseTemplates: { [WORKSPACE_ID]: PRESETS },
-    projectScripts: { [WORKSPACE_ID]: SCRIPTS },
-    sessionProjectMounts: {
-      [FLOW_SESSION_ID]: FLOW_MOUNTS,
-      [CHAT_SESSION_ID]: CHAT_MOUNTS,
-    },
-    sessionActiveProject: {
-      [FLOW_SESSION_ID]: LEDGER_PROJECT_ID,
-      [CHAT_SESSION_ID]: RELAY_PROJECT_ID,
-    },
-    sessionWorktrees: {
-      [FLOW_SESSION_ID]: FLOW_MOUNTS.map((mount) => mount.worktreePath),
-      [CHAT_SESSION_ID]: CHAT_MOUNTS.map((mount) => mount.worktreePath),
-    },
-    sessionBranches: {
-      [FLOW_SESSION_ID]: 'nw/fix-settlement-rounding',
-      [CHAT_SESSION_ID]: 'nw/fix-retry-storm',
-      [EXPORT_SESSION_ID]: 'nw/feat-monthly-ledger-export',
-      [PRICING_SESSION_ID]: 'nw/refactor-rate-table',
-    },
-    sessionWorktreeRecords: {
-      [FLOW_SESSION_ID]: FLOW_MOUNTS.map((mount, index) => ({
-        id: `mock-flow-worktree-${index}`,
-        sessionId: FLOW_SESSION_ID,
-        worktreePath: mount.worktreePath,
-        branch: mount.branch,
-        parallelIndex: index,
-        projectId: mount.projectId,
-        mountName: mount.mountName,
-        repoSlug: `harborline/${mount.mountName}`,
-        createdAt: Date.parse(EARLIER),
-      })),
-      [CHAT_SESSION_ID]: CHAT_MOUNTS.map((mount, index) => ({
-        id: `mock-flow-chat-worktree-${index}`,
-        sessionId: CHAT_SESSION_ID,
-        worktreePath: mount.worktreePath,
-        branch: mount.branch,
-        parallelIndex: index,
-        projectId: mount.projectId,
-        mountName: mount.mountName,
-        repoSlug: `harborline/${mount.mountName}`,
-        createdAt: Date.parse(EARLIER),
-      })),
-    },
-    sessionSlots: {
-      [FLOW_SESSION_ID]: FLOW_SESSION.contextSlots,
-      [CHAT_SESSION_ID]: CHAT_SESSION.contextSlots,
-    },
-    sessionSlotsLoad: { [FLOW_SESSION_ID]: 'loaded', [CHAT_SESSION_ID]: 'loaded' },
-    sessionLoading: {
-      [FLOW_SESSION_ID]: {
-        agents: false,
-        transcript: false,
-        telemetry: false,
-        slots: false,
-        plans: false,
-        summary: false,
-      },
-      [CHAT_SESSION_ID]: {
-        agents: false,
-        transcript: false,
-        telemetry: false,
-        slots: false,
-        plans: false,
-        summary: false,
-      },
-    },
-    summarizerStatus: {
-      [FLOW_SESSION_ID]: {
-        status: 'idle',
-        lastUpdate: NOW,
-        error: null,
-        lastUsage: null,
-        lastAttempt: null,
-      },
-      [CHAT_SESSION_ID]: {
-        status: 'idle',
-        lastUpdate: NOW,
-        error: null,
-        lastUsage: null,
-        lastAttempt: null,
-      },
-    },
-    sessionAttachments: { [FLOW_SESSION_ID]: [], [CHAT_SESSION_ID]: [] },
-    workflowRunAttachments: {},
-    workspaceIntegrations: { [WORKSPACE_ID]: [] },
-    scriptRuns: {},
-    activeLens: { [FLOW_SESSION_ID]: null, [CHAT_SESSION_ID]: null },
-    loadGoalAttachments: async () => undefined,
-    loadSessionEvents: async () => undefined,
-    loadSessionArtifacts: async () => undefined,
-    setActiveLens: noop,
-    selectAgent: async () => undefined,
-  });
-};
-
-const seedWorkflowBuilder = () => {
-  seedFlowAuditBase();
-  useAppStore.setState({
-    currentSessionId: FLOW_SESSION_ID,
-    workflowDrafts: { [FLOW_SESSION_ID]: BUILDER_DRAFT },
-    sessionPhaseRuns: { [FLOW_SESSION_ID]: FLOW_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
-    sessionWorkflows: { [FLOW_SESSION_ID]: [DYNAMIC_WORKFLOW] },
-    sessionTelemetry: { [FLOW_SESSION_ID]: FLOW_TELEMETRY },
-    agentKindOverride: FLOW_AGENT_KINDS,
-  });
-};
-
-const seedWorkflowRun = () => {
-  seedFlowAuditBase();
-  useAppStore.setState({
-    currentSessionId: FLOW_SESSION_ID,
-    sessionPhaseRuns: { [FLOW_SESSION_ID]: FLOW_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
-    sessionWorkflows: { [FLOW_SESSION_ID]: [DYNAMIC_WORKFLOW] },
-    sessionTelemetry: { [FLOW_SESSION_ID]: FLOW_TELEMETRY },
-    agentKindOverride: FLOW_AGENT_KINDS,
-    agentModelOverride: FLOW_AGENT_MODELS,
-    agentProviderOverride: FLOW_AGENT_PROVIDERS,
-    agentRunHistory: {},
-    agentTurnState: {
-      [AGENT_BACKFILL_ID]: {
-        kind: 'running',
-        runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
-        startedAt: '2026-09-16T10:34:00.000Z' as IsoDateTime,
-      },
-    },
-    orchestratingWorkflowRuns: { [DYNAMIC_RUN_ID]: false },
-    selectedAgentId: { [FLOW_SESSION_ID]: AGENT_ROUNDING_ID },
-    focusedWorkflowRunId: { [FLOW_SESSION_ID]: DYNAMIC_RUN_ID },
-    sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },
-    budgetAlerts: [],
-  });
-};
-
-const seedChatSurfaces = () => {
-  seedFlowAuditBase();
-  useAppStore.setState({
-    currentSessionId: CHAT_SESSION_ID,
-    sessionPhaseRuns: { [CHAT_SESSION_ID]: CHAT_AGENTS },
-    sessionWorkflows: { [CHAT_SESSION_ID]: [] },
-    sessionOpenQuestions: { [CHAT_SESSION_ID]: OPEN_QUESTIONS },
-    selectedAgentId: { [CHAT_SESSION_ID]: CHAT_AGENT_RESOLVER_ID },
-    sessionPlans: { [CHAT_SESSION_ID]: CHAT_PLANS },
-    sessionArtifacts: { [CHAT_SESSION_ID]: CHAT_ARTIFACTS },
-    sessionResolveThreads: { [CHAT_SESSION_ID]: [] },
-    sessionGithub: {
-      [CHAT_SESSION_ID]: {
-        linkedIssues: [],
-        pr: null,
-        fetchedAt: NOW,
-        failedAt: null,
-        loading: false,
-        error: null,
-        detail: {
-          prNumber: 412,
-          comments: [
-            {
-              id: 'mock-flow-comment-backoff',
-              author: 'kwatanabe',
-              authorAvatarUrl: null,
-              body: 'The retry timer has no jitter, a single outage will synchronize every relay.',
-              createdAt: '2026-09-16T09:52:00.000Z',
-              url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_1',
-              source: 'review',
-              path: 'src/relay/retry.ts',
-              line: 64,
-              resolved: true,
-              threadId: THREAD_BACKOFF,
-            },
-            {
-              id: 'mock-flow-comment-error-shape',
-              author: 'a-delgado',
-              authorAvatarUrl: null,
-              body: 'A 409 here loses the retry hint, the relay cannot tell a duplicate from a conflict.',
-              createdAt: '2026-09-16T09:58:00.000Z',
-              url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_2',
-              source: 'review',
-              path: 'src/settlement/handler.ts',
-              line: 118,
-              resolved: false,
-              threadId: THREAD_ERROR_SHAPE,
-            },
-            {
-              id: 'mock-flow-comment-spelling',
-              author: 'kwatanabe',
-              authorAvatarUrl: null,
-              body: 'Field name reads oddly here.',
-              createdAt: '2026-09-16T10:01:00.000Z',
-              url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_3',
-              source: 'review',
-              path: 'src/settlement/schema.ts',
-              line: 22,
-              resolved: false,
-              threadId: THREAD_SPELLING,
-            },
-          ],
-          reviews: [],
-          reviewRequests: [],
-          checks: [],
-        },
-        detailFetchedAt: NOW,
-        detailLoading: false,
-        detailError: null,
-      },
-    },
-  });
-  useOpenQuestions.setState({
-    drafts: {
-      [QUESTION_SIGNALS_ID]: {
-        selectedSuggestions: ['Connection resets', 'HTTP 429 with a retry hint'],
-        customAnswer: '',
-        showCustomField: false,
-        answerIntent: PERSON_ANSWERS,
-      },
-    },
-    justAnswered: [],
-  });
-};
-
-type ExpandParams = Readonly<{
-  isReady: boolean;
-  selector: string;
-}>;
-
-const useAutoExpand = ({ isReady, selector }: ExpandParams) => {
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      const toggle = window.document.querySelector<HTMLButtonElement>(selector);
-      if (toggle === null) {
-        return;
-      }
-      if (toggle.getAttribute('aria-expanded') !== 'true') {
-        toggle.click();
-      }
-      window.clearInterval(interval);
-    }, 120);
-    return () => window.clearInterval(interval);
-  }, [isReady, selector]);
-};
-
-export const WorkflowBuilderScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedWorkflowBuilder();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <WorkflowBuilderView session={FLOW_SESSION} onClose={noop} />
-    </main>
-  );
-};
-
-export const WorkflowRunScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedWorkflowRun();
-    seedShellChrome({
-      session: FLOW_SESSION,
-      siblings: SESSIONS.filter((session) => session.id !== FLOW_SESSION_ID),
-      branches: {},
-      telemetryAt: NOW,
-      lens: 'workflows',
-    });
-    setIsReady(true);
-  }, []);
-
-  useAutoExpand({ isReady, selector: '[data-testid="workflow-orchestrator-decisions-toggle"]' });
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <ShellFrame
-      session={FLOW_SESSION}
-      main={
-        <div className="flex h-full min-h-0 flex-col">
-          <WorkflowRunDetail session={FLOW_SESSION} workflowRunId={DYNAMIC_RUN_ID} />
-        </div>
-      }
-    />
-  );
-};
-
 const answeredAt = (minute: number): IsoDateTime =>
   `2026-09-16T09:${String(minute).padStart(2, '0')}:00.000Z` as IsoDateTime;
 
-const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+export const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   {
     ...OPEN_QUESTIONS[0]!,
     userAnswer:
@@ -1481,105 +1163,3 @@ const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     answeredAt: answeredAt(26),
   },
 ];
-
-export const OpenQuestionsScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedChatSurfaces();
-    seedShellChrome({
-      session: CHAT_SESSION,
-      siblings: SESSIONS.filter((session) => session.id !== CHAT_SESSION_ID),
-      branches: {},
-      telemetryAt: NOW,
-      lens: 'questions',
-    });
-    useAppStore.setState({
-      sessionOpenQuestions: {
-        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.id === QUESTION_SIGNALS_ID),
-      },
-      sessionAnsweredQuestions: { [CHAT_SESSION_ID]: ANSWERED_QUESTIONS },
-      sessionDismissedQuestions: { [CHAT_SESSION_ID]: [] },
-      selectedAgentId: {},
-      loadSessionOpenQuestions: async () => undefined,
-      loadSessionAnsweredQuestions: async () => undefined,
-      loadSessionDismissedQuestions: async () => undefined,
-    });
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  return <ShellFrame session={CHAT_SESSION} main={<QuestionsPane session={CHAT_SESSION} />} />;
-};
-
-const TranscriptFeed = () => (
-  <ul
-    className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
-    aria-live="polite"
-    aria-relevant="additions"
-  >
-    <ChatImageLoaderProvider sessionId={CHAT_SESSION_ID}>
-      <TranscriptRows
-        rows={TRANSCRIPT_ROWS}
-        oqByTurnOrdinal={new Map()}
-        sessionId={CHAT_SESSION_ID}
-        selectedAgentId={CHAT_AGENT_RESOLVER_ID}
-        workingDir={CHAT_MOUNTS[0]?.worktreePath ?? null}
-        onRefreshAuth={noop}
-        onOpenDiff={noop}
-        isThinking={false}
-        thinkingContext="think"
-        onRetryError={noop}
-        retryingErrorRunId={null}
-      />
-    </ChatImageLoaderProvider>
-  </ul>
-);
-
-export const TranscriptScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedChatSurfaces();
-    setIsReady(true);
-  }, []);
-
-  useAutoExpand({ isReady, selector: '[aria-label="Expand resolve findings"]' });
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <main className="h-screen overflow-auto bg-background text-foreground">
-      <div className={PANE_RHYTHM.body}>
-        <TranscriptFeed />
-      </div>
-    </main>
-  );
-};
-
-export const CommandPaletteScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedChatSurfaces();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <main className="h-screen overflow-hidden bg-background text-foreground">
-      <div className={PANE_RHYTHM.body}>
-        <TranscriptFeed />
-      </div>
-      <CommandPalette onClose={noop} />
-    </main>
-  );
-};
