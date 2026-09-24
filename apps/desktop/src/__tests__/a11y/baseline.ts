@@ -30,7 +30,7 @@ export const A11Y_BASELINE = {
   'scene workflow-builder': ['label'],
   'scene resolve-queue-shell': ['heading-order'],
   'scene resolve-publish-blocked': ['heading-order'],
-  'scene artifacts-lens-shell': ['landmark-unique'],
+  'scene artifacts-lens-shell': [],
   'scene lens-switcher': ['heading-order'],
   'scene lens-switcher-closed': ['heading-order'],
   'scene providers': ['nested-interactive'],

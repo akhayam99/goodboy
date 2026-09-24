@@ -165,57 +165,6 @@ export const seedStudioChrome = (): void => {
   });
 };
 
-type StudioFrameProps = {
-  readonly activeStudio: string | null;
-  readonly main: ReactNode;
-};
-
-export const StudioFrame = ({ activeStudio, main }: StudioFrameProps) => {
-  const arrangement = shellArrangement({
-    hasWorkspace: true,
-    hasActiveSession: false,
-    isSidebarCollapsed: false,
-  });
-
-  return (
-    <ToastProvider>
-      <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={undefined}
-        footer={
-          <AppFooter
-            activeStudio={activeStudio}
-            githubEnabled
-            linearEnabled
-            jiraEnabled
-            sentryEnabled
-            gitlabEnabled={false}
-            bitbucketEnabled={false}
-            slackEnabled
-            onOpenWorkflows={noop}
-            onOpenProviders={noop}
-            onOpenSettings={noop}
-            onOpenImpact={noop}
-            onOpenChangelog={noop}
-            onOpenGithub={noop}
-            onOpenLinear={noop}
-            onOpenJira={noop}
-            onOpenSentry={noop}
-            onOpenGitlab={noop}
-            onOpenBitbucket={noop}
-            onOpenInbox={noop}
-            onOpenSlack={noop}
-          />
-        }
-        main={main}
-        rightSidebar={null}
-      />
-    </ToastProvider>
-  );
-};
-
 type MockWorkspaceParams = Readonly<{
   id: WorkspaceId;
   name: string;
@@ -225,7 +174,6 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
   id,
   name,
   slug: name.toLowerCase(),
-  sessionsRoot: `/mock/${name.toLowerCase()}/sessions`,
   overrides: {
     defaultProviderId: null,
     defaultWorkflowId: null,

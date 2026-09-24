@@ -3,7 +3,8 @@ import type { IsoDateTime, OverrideSettings, WorkspaceId } from '@goodboy/types'
 import { SettingsStudio } from '../../../../features/settings/components/SettingsStudio';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
-import { StudioFrame, mockWorkspace, seedStudioChrome } from './shellChrome';
+import { StudioFrame } from './StudioFrame';
+import { mockWorkspace, seedStudioChrome } from './shellChrome';
 
 const WORKSPACE_ID = 'mock-providers-workspace-cascadia' as WorkspaceId;
 
@@ -140,11 +141,12 @@ export const ProvidersScene = () => {
 
   return (
     <StudioFrame
-      activeStudio="settings"
+      target="settings"
       main={
         <SettingsStudio
           currentWorkspace={WORKSPACE}
-          initialFocus={{ scope: 'providers' }}
+          focus={{ scope: 'providers' }}
+          onScopeChange={() => undefined}
           onClose={() => undefined}
         />
       }

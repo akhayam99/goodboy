@@ -567,6 +567,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 type="file"
                 accept={ATTACHMENT_ACCEPT}
                 multiple
+                aria-label="Attach files"
+                tabIndex={-1}
                 className="hidden"
                 onChange={onFileInputChange}
               />

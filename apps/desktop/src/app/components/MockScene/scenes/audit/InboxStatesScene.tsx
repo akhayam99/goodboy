@@ -111,7 +111,7 @@ const installIpc = (): void => {
   });
 };
 
-export const InboxScene = () => {
+export const InboxStatesScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {

@@ -62,7 +62,7 @@ import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
-import { InboxScene } from './scenes/audit/InboxScene';
+import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
@@ -126,7 +126,7 @@ export const MOCK_SCENES = {
   notifications: NotificationsScene,
   changelog: ChangelogScene,
   'artifact-states': ArtifactStatesScene,
-  inbox: InboxScene,
+  'inbox-states': InboxStatesScene,
   companion: CompanionScene,
   'review-modes': ReviewModesScene,
   'workflow-studio': WorkflowStudioScene,

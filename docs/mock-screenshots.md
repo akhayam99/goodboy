@@ -167,13 +167,12 @@ map before you build anything. The surface you need is often already there,
 and the keys are the `?scene=` values. The scenes cost nothing at runtime when
 `VITE_GOODBOY_MOCK` is unset.
 
-README images always show the app around the feature. `scenes/shellChrome.tsx`
-holds the two frames:
+README images always show the app around the feature. Two frames wrap them:
 
-- `ShellFrame` (top bar, sessions sidebar, crumb bar, footer) is for anything
-  inside a session. Fill it with `seedShellChrome`.
-- `StudioFrame` (top bar and footer) is for studios such as Settings, Impact
-  and the Inbox. Fill it with `seedStudioChrome`.
+- `ShellFrame` in `scenes/shellChrome.tsx` (top bar, sessions sidebar, crumb
+  bar, footer) is for anything inside a session. Fill it with `seedShellChrome`.
+- `StudioFrame` in `scenes/StudioFrame.tsx` (top bar and footer) is for studios
+  such as Settings, Impact and the Inbox. Fill it with `seedStudioChrome`.
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
