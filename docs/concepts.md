@@ -143,6 +143,12 @@ folder. It keeps track of it and tries again at the next cleanup.
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
 
+A turn **starts in** one mount: that is where it opens its terminal, runs git
+and shows its pull request. It can still write in every mount of the session.
+The chat header names the start ("Starts in") and lists the rest of the reach
+in its tooltip. With two or more mounts, you pick where new turns start there
+or from a row's menu, and each row shows the agents working in it right now.
+
 ## Activity
 
 A session keeps a list of everything that happened to it, in order. The

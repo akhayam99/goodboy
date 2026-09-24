@@ -32,6 +32,9 @@ vi.mock('../../../../app/components/Toast', () => ({
 
 import { WriteDestinationControl } from './index';
 
+const trigger = () =>
+  screen.getByRole('button', { name: /Where turns start/ }) as HTMLButtonElement;
+
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 const PROJECT_ID = 'project-web' as ProjectId;
@@ -100,26 +103,21 @@ describe('WriteDestinationControl', () => {
 
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(screen.getByText('Runs in: web / main / ak/feat-thing')).toBeDefined();
+    expect(trigger().textContent).toBe('Starts in web / main / ak/feat-thing');
     expect(
-      screen.getByTitle(
-        'Turns run in web / main / ak/feat-thing (/sessions/one/main). They can still write in every repository this session mounts.',
-      ),
+      screen.getByTitle('Starts in web / main / ak/feat-thing (/sessions/one/main).'),
     ).toBeDefined();
   });
 
   it('falls back to the session scratch folder when there are no mounted projects', async () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(screen.getByText('Session folder')).toBeDefined();
-    const trigger = screen.getByRole('button', { name: /Working folder/ }) as HTMLButtonElement;
-    expect(trigger.disabled).toBe(true);
+    expect(trigger().textContent).toBe('Starts in session folder');
+    expect(trigger().disabled).toBe(true);
 
     await waitFor(() => {
       expect(
-        screen.getByTitle(
-          'Turns run in session scratch folder (/goodboy/scratch/session-1). They can still write in every repository this session mounts.',
-        ),
+        screen.getByTitle('Starts in session scratch folder (/goodboy/scratch/session-1).'),
       ).toBeDefined();
     });
   });
@@ -143,7 +141,7 @@ describe('WriteDestinationControl', () => {
 
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(screen.getByText('In progress: web / main / ak/feat-thing')).toBeDefined();
+    expect(trigger().textContent).toBe('Running in web / main / ak/feat-thing');
     expect(screen.getByText('Next: web / feature / ak/feat-other')).toBeDefined();
   });
 
@@ -165,7 +163,7 @@ describe('WriteDestinationControl', () => {
 
     expect(
       screen.getByTitle(
-        'This turn and the next ones run in web / main / ak/feat-thing (/sessions/one/main).',
+        'This turn runs in web / main / ak/feat-thing (/sessions/one/main). New turns start there too.',
       ),
     ).toBeDefined();
     expect(screen.queryByText(/^Next:/)).toBeNull();
@@ -182,17 +180,22 @@ describe('WriteDestinationControl', () => {
 
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Working folder/ }));
-    expect(screen.getByText('Working folder')).toBeDefined();
+    expect(
+      screen.getByTitle(
+        'Starts in web / main / ak/feat-thing (/sessions/one/main). Can also write in web / feature.',
+      ),
+    ).toBeDefined();
+    fireEvent.click(trigger());
+    expect(screen.getByText('New turns start in')).toBeDefined();
     expect(
       screen.getByText(
-        'Commands and git run here. A turn can write in every repository this session mounts.',
+        'Every agent can write in all of them. This picks where a new turn opens its terminal, runs git and shows its pull request.',
       ),
     ).toBeDefined();
     fireEvent.click(screen.getByText('web / feature'));
     expect(store.setSessionActiveMount).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use for next turns of the session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start new turns here' }));
 
     await waitFor(() => {
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -232,18 +235,18 @@ describe('WriteDestinationControl with siblings and no choice', () => {
   it('names the automatic mount instead of the scratch folder', () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(screen.getByText('Auto: web / main / ak/one')).toBeDefined();
+    expect(trigger().textContent).toBe('Starts in web / main / ak/one');
     expect(screen.queryByText(/scratch folder/)).toBeNull();
-    expect(screen.getByText('Auto: web / main / ak/one').closest('[class*="warning"]')).toBeNull();
+    expect(trigger().closest('[class*="warning"]')).toBeNull();
     expect(scratchDirPrepare).not.toHaveBeenCalled();
   });
 
   it('sets the chosen mount as the working folder of the next turns', async () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    fireEvent.click(screen.getByText('Auto: web / main / ak/one'));
+    fireEvent.click(trigger());
     fireEvent.click(screen.getByText('web / feature'));
-    fireEvent.click(screen.getByText('Use for next turns of the session'));
+    fireEvent.click(screen.getByText('Start new turns here'));
 
     await waitFor(() =>
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -271,12 +274,12 @@ describe('WriteDestinationControl with siblings and no choice', () => {
       <WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} fallback="automatic" />,
     );
 
-    expect(screen.getByText('Auto: web / feature / ak/two')).toBeDefined();
+    expect(trigger().textContent).toBe('Starts in web / feature / ak/two');
     expect(
       screen.getByTitle(
-        'Nobody chose a folder, so turns run in web / feature / ak/two (/sessions/one/feature). They can still write in every repository this session mounts.',
+        'Starts in web / feature / ak/two (/sessions/one/feature). Picked automatically. Can also write in web / main.',
       ),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: /Working folder/ })).toBeDefined();
+    expect(trigger().disabled).toBe(false);
   });
 });

@@ -12,19 +12,24 @@ import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
+import {
+  selectActiveMountId,
+  selectTurnMountCount,
+} from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { useEditorMenuItems } from '../useEditorMenuItems';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
+import { MountPresence } from './MountPresence';
 import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { MountActionsMenu } from './MountActionsMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
+import { useMountPresence } from './useMountPresence';
 import { useProjectActivity } from './useProjectActivity';
 import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
 
@@ -75,6 +80,8 @@ export const ProjectMountRow = ({
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
+  const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
+  const presence = useMountPresence({ sessionId, mountId: row.mountId });
   const reportError = useAppStore((state) => state.reportError);
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
@@ -89,7 +96,8 @@ export const ProjectMountRow = ({
   });
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
-  const isWriteDestination = row.isAttached && row.mountId === activeMountId;
+  const hasTurnChoice = turnMountCount > 1;
+  const canStartTurnsHere = hasTools && hasTurnChoice && row.mountId !== activeMountId;
   const worktreeState = mountWorktreeState({
     status: worktreeStatus,
     isPending: isStatusPendingProp,
@@ -121,26 +129,26 @@ export const ProjectMountRow = ({
     }
   };
 
-  const applyNextTurns = async () => {
+  const startTurnsHere = async () => {
     try {
       await setSessionActiveMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      void reportError({ title: `Couldn't send next turns to ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't start new turns in ${label}`, error, sessionId });
     }
   };
 
   const menuItems: ReadonlyArray<OverflowMenuItem> = hasTools
     ? [
-        ...(isWriteDestination
-          ? []
-          : [
+        ...(canStartTurnsHere
+          ? [
               {
                 kind: 'item',
-                key: 'next-turns',
-                label: 'Use for next turns',
-                onClick: () => void applyNextTurns(),
+                key: 'start-turns',
+                label: 'Start new turns here',
+                onClick: () => void startTurnsHere(),
               } satisfies OverflowMenuItem,
-            ]),
+            ]
+          : []),
         {
           kind: 'item',
           key: 'terminal',
@@ -187,16 +195,6 @@ export const ProjectMountRow = ({
               canSwitch={isRepo && row.isAttached}
             />
           )}
-          {isWriteDestination ? (
-            <Chip
-              tone="primary"
-              size="3xs"
-              bordered={false}
-              label="Writes here next"
-              title={`Next turns write to ${label} unless changed from the chat header.`}
-              className="shrink-0"
-            />
-          ) : null}
           {operation === null ? null : (
             <Chip
               tone="warning"
@@ -206,6 +204,9 @@ export const ProjectMountRow = ({
               title={operation.title}
               className="shrink-0"
             />
+          )}
+          {hasTurnChoice && row.isAttached && (
+            <MountPresence sessionId={sessionId} label={label} agents={presence} />
           )}
         </div>
         {row.series === null ? (
