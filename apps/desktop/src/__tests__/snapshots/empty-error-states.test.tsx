@@ -13,7 +13,7 @@ vi.mock('../../store', () => ({
     const state = {
       budgetAlerts: [],
       notifications: [],
-      notificationCounts: { total: 0, unread: 0 },
+      notificationCounts: [],
       providers: [],
       providerLifecycle: {
         anthropic: {

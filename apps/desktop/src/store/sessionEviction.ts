@@ -185,6 +185,8 @@ export const NON_SESSION_STATE_KEYS = [
   'notifications',
   'notificationsLoading',
   'notificationCounts',
+  'notificationScope',
+  'hasOlderNotifications',
   'planConsumptions',
   'openQuestionScrollTarget',
   'boardReady',

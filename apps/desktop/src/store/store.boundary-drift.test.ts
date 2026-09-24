@@ -110,7 +110,7 @@ describe('sendTurn boundary drift', () => {
       selectedAgentId: { [SESSION_ID]: AGENT_ID },
       agentKindOverride: { [AGENT_ID]: 'reviewer' },
       notifications: [],
-      notificationCounts: { total: 0, unread: 0 },
+      notificationCounts: [],
       workspaces: [
         buildStoryWorkspace({
           id: WORKSPACE_ID,

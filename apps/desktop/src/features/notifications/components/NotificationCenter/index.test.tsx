@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: [],
     notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
@@ -82,7 +82,7 @@ const openCenter = async () => {
 
 beforeEach(() => {
   state.notifications = [];
-  state.notificationCounts = { total: 0, unread: 0 };
+  state.notificationCounts = [];
   state.sessions = [];
   state.currentSessionId = null;
   state.loadNotifications.mockClear();
@@ -117,7 +117,7 @@ describe('NotificationCenter', () => {
     await openCenter();
 
     expect(screen.queryByRole('button', { name: /clear all/i })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open all notifications' }));
 
     expect(listener).toHaveBeenCalledOnce();
     expect(state.clearNotifications).not.toHaveBeenCalled();
@@ -139,32 +139,52 @@ describe('NotificationCenter', () => {
     expect(screen.queryByText('middle title')).toBeNull();
   });
 
-  it('expands a group to show its entries, leaving the studio link in the header', async () => {
-    state.notifications = [
-      buildNotification({ id: 'n2', title: 'newest title', coalesceKey: 'shared' }),
-      buildNotification({ id: 'n1', title: 'older title', coalesceKey: 'shared' }),
-    ];
+  it('opens on the unread tab with the rows that were new, and shows eight at most', async () => {
+    state.notifications = Array.from({ length: 10 }, (_, index) =>
+      buildNotification({
+        id: `n${index}`,
+        title: `row ${index}`,
+        coalesceKey: `key-${index}`,
+        read: index > 1,
+        ts: new Date(Date.UTC(2026, 7, 31, 12, index)).toISOString(),
+      }),
+    );
     render(<NotificationCenter />);
     await openCenter();
-    fireEvent.click(screen.getByRole('button', { name: 'Expand notifications' }));
 
-    expect(screen.getByText('older title')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'View all in studio' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open all' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /unread/i }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
+    expect(screen.getAllByRole('listitem')).toHaveLength(8);
+    expect(screen.getByText('row 9')).toBeDefined();
+    expect(screen.queryByText('row 0')).toBeNull();
   });
 
-  it('opens the studio from the header with no notifications at all', async () => {
+  it('opens the studio from a row with no session to open', async () => {
+    state.notifications = [buildNotification({ id: 'n1', title: 'app wide', coalesceKey: 'app' })];
     const listener = vi.fn();
     window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
     render(<NotificationCenter />);
     await openCenter();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'app wide' }));
+
     expect(listener).toHaveBeenCalledOnce();
     window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
   });
 
-  it('marks each row with its severity and the studio context line', async () => {
+  it('opens the studio from the footer with no notifications at all', async () => {
+    const listener = vi.fn();
+    window.addEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+    render(<NotificationCenter />);
+    await openCenter();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open all notifications' }));
+    expect(listener).toHaveBeenCalledOnce();
+    window.removeEventListener(NOTIFICATIONS_STUDIO_EVENT, listener);
+  });
+
+  it('marks each row with its severity on one line', async () => {
     state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
     state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
     state.notifications = [
@@ -179,8 +199,7 @@ describe('NotificationCenter', () => {
     await openCenter();
 
     expect(screen.getByLabelText('Warning')).toBeDefined();
-    expect(screen.getByText('Harborline · Ship grouping')).toBeDefined();
-    expect(screen.queryByText('Goodboy')).toBeNull();
+    expect(screen.queryByText('Harborline · Ship grouping')).toBeNull();
   });
 
   it('reports a notification it could not open', async () => {
@@ -212,7 +231,7 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter />);
     await openCenter();
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss group' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss "newest title"' }));
 
     expect(state.dismissNotification).toHaveBeenCalledTimes(2);
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
@@ -234,13 +253,15 @@ describe('NotificationCenter', () => {
     render(<NotificationCenter />);
     await openCenter();
 
-    const slot = screen.getByRole('button', { name: 'Dismiss group' }).closest('span');
+    const slot = screen
+      .getByRole('button', { name: 'Dismiss "step summary failed"' })
+      .closest('span');
     expect(slot?.className).toContain('group-hover:opacity-100');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
     expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
   });
 
-  it('counts unread groups in the trigger and header', async () => {
+  it('counts unread groups in the trigger and the unread tab', async () => {
     state.notifications = [
       buildNotification({ id: 'n3', title: 'same group unread', coalesceKey: 'shared' }),
       buildNotification({ id: 'n2', title: 'same group read', coalesceKey: 'shared', read: true }),
@@ -250,7 +271,7 @@ describe('NotificationCenter', () => {
 
     expect(screen.getByRole('button', { name: 'Notifications, 1 unread' })).toBeDefined();
     await openCenter();
-    expect(screen.getByText('1 unread · 2 total')).toBeDefined();
+    expect(screen.getByRole('tab', { name: /unread/i }).textContent).toContain('1');
   });
 
   it('navigates from a single-entry group with a target', async () => {
@@ -265,7 +286,9 @@ describe('NotificationCenter', () => {
     ];
     render(<NotificationCenter />);
     await openCenter();
-    fireEvent.click(screen.getByRole('button', { name: 'open session' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'open session' }));
+    });
 
     expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
   });

@@ -42,10 +42,7 @@ export const importStore = async () => (await importStoreModule()).useAppStore;
 export type StoryStore = Awaited<ReturnType<typeof importStore>>;
 
 const getSetting: ReturnType<typeof vi.fn> = vi.fn<() => Promise<string | null>>(async () => null);
-const countNotifications: ReturnType<typeof vi.fn> = vi.fn(async () => ({
-  total: 0,
-  unread: 0,
-}));
+const countNotifications: ReturnType<typeof vi.fn> = vi.fn(async () => []);
 const invokeBudgetRuleUpsert: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
 const invokeSessionBudgetGet: ReturnType<typeof vi.fn> = vi.fn(async () => null);
 const ghStatus: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(async () => ({
@@ -72,7 +69,9 @@ export const storySpies = {
   listNotifications: vi.fn(async () => [] as ReadonlyArray<Notification>),
   countNotifications,
   markNotificationRead: vi.fn(async () => undefined),
+  markAllNotificationsRead: vi.fn(async () => undefined),
   deleteNotification: vi.fn(async () => undefined),
+  clearAllNotifications: vi.fn(async () => undefined),
   insertNudgeEvent: vi.fn(async () => undefined),
   updateNudgeEventOutcome: vi.fn(async () => undefined),
   insertDiffComment: vi.fn(async () => undefined),
@@ -447,9 +446,9 @@ export const dbModuleMock = () => ({
   countNotifications: storySpies.countNotifications,
   NOTIFICATION_LIST_LIMIT: 200,
   markNotificationRead: storySpies.markNotificationRead,
-  markAllNotificationsRead: vi.fn(async () => undefined),
+  markAllNotificationsRead: storySpies.markAllNotificationsRead,
   deleteNotification: storySpies.deleteNotification,
-  clearAllNotifications: vi.fn(async () => undefined),
+  clearAllNotifications: storySpies.clearAllNotifications,
   insertNudgeEvent: storySpies.insertNudgeEvent,
   updateNudgeEventOutcome: storySpies.updateNudgeEventOutcome,
   listDiffCommentsForSession: storySpies.listDiffCommentsForSession,

@@ -133,30 +133,106 @@ export const insertNotification = async (db: Database, n: Notification): Promise
 
 export const NOTIFICATION_LIST_LIMIT = 200;
 
-export const listNotifications = async (db: Database): Promise<ReadonlyArray<Notification>> => {
+const EFFECTIVE_WORKSPACE = `COALESCE(notifications.workspace_id, (SELECT sessions.workspace_id FROM sessions WHERE sessions.id = notifications.session_id))`;
+
+const IN_WORKSPACE = `(${EFFECTIVE_WORKSPACE} IS NULL OR ${EFFECTIVE_WORKSPACE} = ?)`;
+
+export type NotificationCursor = {
+  readonly ts: IsoDateTime;
+  readonly id: string;
+};
+
+type ScopeParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId | null;
+};
+
+type ListNotificationsParams = ScopeParams & {
+  readonly before?: NotificationCursor | null;
+};
+
+type WhereClause = {
+  readonly sql: string;
+  readonly params: ReadonlyArray<unknown>;
+};
+
+type ScopeWhereParams = {
+  readonly workspaceId: WorkspaceId | null;
+};
+
+const scopeWhere = ({ workspaceId }: ScopeWhereParams): WhereClause =>
+  workspaceId == null ? { sql: '1 = 1', params: [] } : { sql: IN_WORKSPACE, params: [workspaceId] };
+
+export const listNotifications = async ({
+  db,
+  workspaceId,
+  before = null,
+}: ListNotificationsParams): Promise<ReadonlyArray<Notification>> => {
+  const scope = scopeWhere({ workspaceId });
+  const beforeTs = before == null ? null : Date.parse(before.ts);
+  const cursor: WhereClause =
+    before == null
+      ? { sql: '1 = 1', params: [] }
+      : { sql: '(ts < ? OR (ts = ? AND id < ?))', params: [beforeTs, beforeTs, before.id] };
   const rows = await db.select<NotificationRow>(
-    'SELECT * FROM notifications ORDER BY ts DESC LIMIT ?',
-    [NOTIFICATION_LIST_LIMIT],
+    `SELECT * FROM notifications WHERE ${scope.sql} AND ${cursor.sql} ORDER BY ts DESC, id DESC LIMIT ?`,
+    [...scope.params, ...cursor.params, NOTIFICATION_LIST_LIMIT],
   );
   return rows.map(toNotification);
 };
 
-export type NotificationCounts = {
-  readonly total: number;
-  readonly unread: number;
+export type NotificationCountBucket = {
+  readonly severity: NotificationSeverity;
+  readonly kind: NotificationKind;
+  readonly hasSession: boolean;
+  readonly hasAction: boolean;
+  readonly read: boolean;
+  readonly inWorkspace: boolean;
+  readonly count: number;
 };
 
-export const countNotifications = async (db: Database): Promise<NotificationCounts> => {
-  const rows = await db.select<{ total: number | null; unread: number | null }>(
-    `SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN read = 0 THEN 1 ELSE 0 END), 0) AS unread
-     FROM notifications`,
+type NotificationCountRow = {
+  severity: string;
+  kind: string;
+  has_session: number;
+  has_action: number;
+  read: number;
+  in_workspace: number;
+  count: number;
+};
+
+export const countNotifications = async ({
+  db,
+  workspaceId,
+}: ScopeParams): Promise<ReadonlyArray<NotificationCountBucket>> => {
+  const inWorkspace = workspaceId == null ? '1' : `CASE WHEN ${IN_WORKSPACE} THEN 1 ELSE 0 END`;
+  const rows = await db.select<NotificationCountRow>(
+    `SELECT severity, kind,
+       CASE WHEN session_id IS NULL THEN 0 ELSE 1 END AS has_session,
+       CASE WHEN action IS NULL THEN 0 ELSE 1 END AS has_action,
+       CASE WHEN read = 0 THEN 0 ELSE 1 END AS read,
+       ${inWorkspace} AS in_workspace,
+       COUNT(*) AS count
+     FROM notifications
+     GROUP BY severity, kind, has_session, has_action, read, in_workspace`,
+    workspaceId == null ? [] : [workspaceId],
   );
-  const row = rows[0];
-  return { total: row?.total ?? 0, unread: row?.unread ?? 0 };
+  return rows.map((row) => ({
+    severity: row.severity as NotificationSeverity,
+    kind: row.kind as NotificationKind,
+    hasSession: row.has_session !== 0,
+    hasAction: row.has_action !== 0,
+    read: row.read !== 0,
+    inWorkspace: row.in_workspace !== 0,
+    count: row.count,
+  }));
 };
 
-export const markAllNotificationsRead = async (db: Database): Promise<void> => {
-  await db.execute('UPDATE notifications SET read = 1 WHERE read = 0');
+export const markAllNotificationsRead = async ({ db, workspaceId }: ScopeParams): Promise<void> => {
+  const scope = scopeWhere({ workspaceId });
+  await db.execute(`UPDATE notifications SET read = 1 WHERE read = 0 AND ${scope.sql}`, [
+    ...scope.params,
+  ]);
 };
 
 type SingleNotificationParams = {
@@ -172,6 +248,7 @@ export const deleteNotification = async ({ db, id }: SingleNotificationParams): 
   await db.execute('DELETE FROM notifications WHERE id = ?', [id]);
 };
 
-export const clearAllNotifications = async (db: Database): Promise<void> => {
-  await db.execute('DELETE FROM notifications');
+export const clearAllNotifications = async ({ db, workspaceId }: ScopeParams): Promise<void> => {
+  const scope = scopeWhere({ workspaceId });
+  await db.execute(`DELETE FROM notifications WHERE ${scope.sql}`, scope.params);
 };

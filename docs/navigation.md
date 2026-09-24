@@ -291,11 +291,21 @@ one is open at a time.
   not count: workflow steps select agents on their own.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
-  popover (its header's Open all) and from the palette's Go to group, never
-  from the footer, since the bell already shows the unread count. The popover
-  never deletes history. That lives in the studio, behind its confirm. Report
-  an issue opens from the top bar, **Settings > App > Help** and the palette.
-  It sits next to settings, not beside the named launchers.
+  popover (its footer's Open all notifications) and from the palette's Go to
+  group, never from the footer, since the bell already shows the unread count.
+  The popover never deletes history. That lives in the studio, behind its
+  confirm. Report an issue opens from the top bar, **Settings > App > Help**
+  and the palette. It sits next to settings, not beside the named launchers.
+- **Notifications have one row and one scope.** `NotificationRow` draws a
+  group in the popover (`compact`, one line, eight rows at most, Unread or
+  All) and in the studio (`cozy`, opens in place with the body, the older
+  members and Send to developers). The studio rail filters by view, severity
+  and source with counts that come from SQL (`countNotifications`), so they
+  stay true past the loaded page; Load older pages with a cursor. Both
+  surfaces default to this workspace: a row belongs to its own workspace, or
+  its session's, and a row with neither is app-wide and shows in every
+  workspace. Mark all read and Delete all act on that same scope. In the
+  studio, j and k move, Enter runs the row's action and e dismisses.
 - **Settings nests items in its rail.** While App is active, its items
   (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
   row as indented rows, and the panel shows one item at a time. Providers &

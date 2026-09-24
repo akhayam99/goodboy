@@ -99,6 +99,16 @@ export const NOTIFICATIONS: ReadonlyArray<Notification> = [
 export const seedNotifications = (): void => {
   useAppStore.setState({
     notifications: NOTIFICATIONS,
+    notificationCounts: NOTIFICATIONS.map((notification) => ({
+      severity: notification.severity,
+      kind: notification.kind,
+      hasSession: notification.sessionId != null,
+      hasAction: notification.action != null,
+      read: notification.read,
+      inWorkspace: true,
+      count: 1,
+    })),
+    hasOlderNotifications: false,
     notificationsLoading: false,
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,

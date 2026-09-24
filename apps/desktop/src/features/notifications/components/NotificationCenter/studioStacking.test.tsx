@@ -11,7 +11,7 @@ import { StudioShell } from '../../../../shared/components/StudioShell';
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: [] as ReadonlyArray<Notification>,
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: [],
     notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
@@ -76,7 +76,7 @@ const extractThemeBlock = (css: string): string => {
 
 beforeEach(() => {
   state.notifications = [];
-  state.notificationCounts = { total: 0, unread: 0 };
+  state.notificationCounts = [];
   state.notificationsLoading = false;
   state.currentWorkspaceId = 'ws-1';
   state.currentSessionId = null;

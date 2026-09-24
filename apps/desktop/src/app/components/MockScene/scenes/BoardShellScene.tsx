@@ -14,7 +14,7 @@ const seedBoardChrome = (): void => {
   useAppStore.setState({
     notifications: [],
     notificationsLoading: false,
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: [],
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,

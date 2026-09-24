@@ -7,7 +7,7 @@ import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
-import type { Notification, NotificationCounts } from '@goodboy/db';
+import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -237,6 +237,8 @@ type AppSliceState = ArtifactsState &
   SlackThreadsSliceState &
   BugReportDraftState;
 
+export type NotificationScope = 'workspace' | 'all';
+
 export type AppState = AppSliceState & {
   readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -380,7 +382,9 @@ export type AppState = AppSliceState & {
   readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly notificationsLoading: boolean;
-  readonly notificationCounts: NotificationCounts;
+  readonly notificationCounts: ReadonlyArray<NotificationCountBucket>;
+  readonly notificationScope: NotificationScope;
+  readonly hasOlderNotifications: boolean;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;

@@ -273,7 +273,7 @@ import type { BitbucketConnection } from '../features/integrations/bitbucket/cli
 import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
-import type { AppState } from './types';
+import type { AppState, NotificationScope } from './types';
 import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
@@ -873,6 +873,8 @@ type AppActions = {
   ): Promise<void>;
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
+  loadOlderNotifications(): Promise<void>;
+  setNotificationScope(scope: NotificationScope): Promise<void>;
   emitNotification(params: EmitNotificationParams): Promise<void>;
   reportError(params: ReportErrorParams): Promise<void>;
   retryStepSummary(params: {
@@ -1139,7 +1141,9 @@ export const initialState: AppState = {
   workflowRunAttachments: {},
   notifications: [],
   notificationsLoading: false,
-  notificationCounts: { total: 0, unread: 0 },
+  notificationCounts: [],
+  notificationScope: 'workspace',
+  hasOlderNotifications: false,
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},

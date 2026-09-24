@@ -1,35 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronRight, RotateCcw, X } from 'lucide-react';
+import { Bell, ChevronRight } from 'lucide-react';
 import {
   AnchoredPopover,
   cn,
   Divider,
   EmptyState,
-  ScrollFade,
+  SegmentedTabs,
   Skeleton,
-  tintClasses,
   Tooltip,
   useDropdown,
+  type SegmentedTabOption,
 } from '@goodboy/ui';
-import { useShallow } from 'zustand/react/shallow';
-import type { Notification, NotificationAction } from '@goodboy/db';
-import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
-import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
+import type { Notification } from '@goodboy/db';
 import { useAppStore } from '../../../../store';
-import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
-import { NOTIFICATION_SEVERITY } from '../../severity';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
-import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
-import { groupNotifications } from '../../grouping';
+import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
+import { openNotificationSession } from '../../openNotificationSession';
+import { NotificationRow } from '../NotificationRow';
 
 const DROPDOWN_WIDTH = 384;
-const LIST_MAX_HEIGHT = 400;
-const HEADER_HEIGHT = 37;
-const DROPDOWN_MAX_HEIGHT = LIST_MAX_HEIGHT + HEADER_HEIGHT;
+const MAX_ROWS = 8;
+const ROW_HEIGHT = 30;
+const HEADER_HEIGHT = 41;
+const FOOTER_HEIGHT = 33;
+const DROPDOWN_MAX_HEIGHT = HEADER_HEIGHT + MAX_ROWS * ROW_HEIGHT + FOOTER_HEIGHT;
 const OPEN_EVENT = 'goodboy:open-notifications';
+
+type PopoverView = 'unread' | 'all';
+
+type UnreadKeysParams = {
+  readonly notifications: ReadonlyArray<Notification>;
+};
+
+const unreadGroupKeys = ({ notifications }: UnreadKeysParams): ReadonlySet<string> =>
+  new Set(
+    sortNotificationGroupsNewestFirst({ notifications })
+      .filter((group) => group.some((notification) => !notification.read))
+      .map((group) => notificationGroupKey({ group })),
+  );
 
 const openNotificationsStudio = () => {
   window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT));
@@ -38,6 +47,7 @@ const openNotificationsStudio = () => {
 export const NotificationCenter = () => {
   const notifications = useAppStore((s) => s.notifications);
   const notificationsLoading = useAppStore((s) => s.notificationsLoading);
+  const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
   const dismissNotification = useAppStore((s) => s.dismissNotification);
@@ -52,6 +62,8 @@ export const NotificationCenter = () => {
   });
   const { open, close, toggle } = dropdown;
   const openRef = useRef(open);
+  const [unreadKeys, setUnreadKeys] = useState<ReadonlySet<string>>(() => new Set());
+  const [view, setView] = useState<PopoverView>('all');
 
   useEffect(() => {
     openRef.current = open;
@@ -59,13 +71,16 @@ export const NotificationCenter = () => {
 
   useEffect(() => {
     void loadNotifications();
-  }, [loadNotifications]);
+  }, [loadNotifications, currentWorkspaceId]);
 
   useEffect(() => {
     const handleOpenRequest = () => {
       if (openRef.current) {
         return;
       }
+      const keys = unreadGroupKeys({ notifications: useAppStore.getState().notifications });
+      setUnreadKeys(keys);
+      setView(keys.size > 0 ? 'unread' : 'all');
       void markNotificationsRead();
     };
     window.addEventListener(OPEN_EVENT, handleOpenRequest);
@@ -77,13 +92,28 @@ export const NotificationCenter = () => {
   const handleOpen = () => {
     toggle();
     if (!open) {
+      const keys = unreadGroupKeys({ notifications });
+      setUnreadKeys(keys);
+      setView(keys.size > 0 ? 'unread' : 'all');
       void markNotificationsRead();
     }
   };
 
-  const groups = groupNotifications({ notifications });
-  const total = groups.length;
+  const groups = sortNotificationGroupsNewestFirst({ notifications });
   const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
+  const shownGroups = (
+    view === 'unread'
+      ? groups.filter((group) => unreadKeys.has(notificationGroupKey({ group })))
+      : groups
+  ).slice(0, MAX_ROWS);
+  const viewOptions: ReadonlyArray<SegmentedTabOption<PopoverView>> = [
+    {
+      value: 'unread',
+      label: 'Unread',
+      badge: <span className="tabular-nums text-muted-foreground">{unreadKeys.size}</span>,
+    },
+    { value: 'all', label: 'All' },
+  ];
 
   return (
     <div role="region" aria-label="Notifications" aria-live="polite">
@@ -119,22 +149,14 @@ export const NotificationCenter = () => {
         }
       >
         <header className="flex items-center justify-between gap-2 px-3 py-2">
-          <span className="text-xs font-semibold text-foreground">
-            {unread > 0
-              ? `${unread} unread · ${total} total`
-              : `${total} ${total === 1 ? 'notification' : 'notifications'}`}
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              close();
-              openNotificationsStudio();
-            }}
-            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
-          >
-            Open all
-            <ChevronRight size={11} aria-hidden />
-          </button>
+          <span className="text-xs font-semibold text-foreground">Notifications</span>
+          <SegmentedTabs
+            ariaLabel="Show unread or all notifications"
+            options={viewOptions}
+            value={view}
+            onChange={setView}
+            size="sm"
+          />
         </header>
         <Divider />
         {notificationsLoading && notifications.length === 0 ? (
@@ -144,351 +166,65 @@ export const NotificationCenter = () => {
             aria-label="Loading notifications"
           >
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <Skeleton className="h-3 w-2/3 rounded-sm" />
-                  <Skeleton className="h-2.5 w-1/3 rounded-sm" />
-                </div>
+              <div key={index} className="flex items-center gap-2">
+                <Skeleton className="size-3.5 shrink-0 rounded-full" />
+                <Skeleton className="h-3 w-2/3 rounded-sm" />
               </div>
             ))}
           </div>
-        ) : notifications.length === 0 ? (
+        ) : shownGroups.length === 0 ? (
           <EmptyState
             icon={Bell}
             tone={CONCEPT_TONE.notifications}
-            title="No notifications"
-            description="Run activity and alerts land here."
+            title={notifications.length === 0 ? 'No notifications' : 'You are caught up'}
+            description={
+              notifications.length === 0
+                ? 'Run activity and alerts land here.'
+                : 'Everything new has been seen. All shows the history.'
+            }
             size="inline"
             className="px-3 py-6"
           />
         ) : (
-          <ScrollFade className="max-h-[25rem]" fadeSize={16} fadeFrom="elevated">
-            <ul>
-              {groups.map((group) => {
-                const [latest] = group;
-                if (latest === undefined) {
-                  return null;
-                }
-                return (
-                  <NotificationGroup
-                    key={latest.coalesceKey ?? latest.id}
-                    latest={latest}
-                    notifications={group}
-                    onNavigated={close}
-                    onDismiss={() => {
-                      for (const notification of group) {
-                        void markNotificationRead(notification.id);
-                        void dismissNotification(notification.id);
-                      }
-                    }}
-                  />
-                );
-              })}
-            </ul>
-          </ScrollFade>
-        )}
-      </AnchoredPopover>
-    </div>
-  );
-};
-
-type NotificationGroupProps = {
-  readonly latest: Notification;
-  readonly notifications: ReadonlyArray<Notification>;
-  readonly onNavigated: () => void;
-  readonly onDismiss: () => void;
-};
-
-const NotificationGroup = ({
-  latest: n,
-  notifications,
-  onNavigated,
-  onDismiss,
-}: NotificationGroupProps) => {
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setCurrentWorkspace = useAppStore((s) => s.setCurrentWorkspace);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const reportError = useAppStore((s) => s.reportError);
-  const sessions = useAppStore((s) => s.sessions);
-  const workspaces = useAppStore((s) => s.workspaces);
-  const store = useAppStore.getState();
-  const action = n.action != null ? mapNotificationAction(n.action, store) : undefined;
-  const retryAction =
-    n.action?.kind === 'retry-summarizer' || n.action?.kind === 'retry-step-summary'
-      ? n.action
-      : null;
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const sessionId = n.sessionId;
-  const agentId = n.action?.kind === 'retry-step-summary' ? n.action.agentId : null;
-  const canSendToDevelopers = n.severity === 'warning' || n.severity === 'error';
-
-  const isUnread = notifications.some((notification) => !notification.read);
-  const context = notificationContext(n, sessions, workspaces);
-  const severity = NOTIFICATION_SEVERITY[n.severity];
-  const border =
-    n.severity === 'error'
-      ? 'border-l-danger/40'
-      : n.severity === 'warning'
-        ? 'border-l-warning/40'
-        : 'border-l-transparent';
-  const SeverityIcon = severity.icon;
-
-  const navigate = () => {
-    if (sessionId == null) {
-      return;
-    }
-    const workspaceId = n.workspaceId;
-    void (async () => {
-      if (workspaceId != null && workspaceId !== useAppStore.getState().currentWorkspaceId) {
-        await setCurrentWorkspace(workspaceId);
-      }
-      const state = useAppStore.getState();
-      if (!state.sessions.some((candidate) => candidate.id === sessionId)) {
-        return;
-      }
-      if (state.currentSessionId === sessionId) {
-        setActiveLens(sessionId, null);
-      } else {
-        await setCurrentSession(sessionId);
-      }
-      if (agentId == null) {
-        return;
-      }
-      await selectAgent(sessionId, agentId);
-    })().catch((error: unknown) => {
-      void reportError({ title: "Couldn't open this notification", error });
-    });
-    onNavigated();
-  };
-
-  return (
-    <li className={cn('group flex flex-col gap-1 border-l-2 px-3 py-2', border)}>
-      <div className="flex items-center gap-2">
-        {notifications.length > 1 ? (
-          <Tooltip content={expanded ? 'Collapse the group' : 'Expand the group'}>
-            <button
-              type="button"
-              onClick={() => setExpanded((value) => !value)}
-              aria-label={expanded ? 'Collapse notifications' : 'Expand notifications'}
-              aria-expanded={expanded}
-            >
-              <ChevronRight
-                size={ICON_SIZE.row}
-                className={cn('transition-transform', expanded && 'rotate-90')}
+          <ul className="flex flex-col py-1">
+            {shownGroups.map((group) => (
+              <NotificationRow
+                key={notificationGroupKey({ group })}
+                notifications={group}
+                density="compact"
+                isSelected={false}
+                onOpen={() => {
+                  const latest = group[0];
+                  close();
+                  if (latest != null && openNotificationSession({ notification: latest })) {
+                    return;
+                  }
+                  openNotificationsStudio();
+                }}
+                onActed={close}
+                onDismiss={() => {
+                  for (const notification of group) {
+                    void markNotificationRead(notification.id);
+                    void dismissNotification(notification.id);
+                  }
+                }}
               />
-            </button>
-          </Tooltip>
-        ) : null}
-        <SeverityIcon
-          size={ICON_SIZE.control}
-          className={cn('shrink-0', tintClasses(severity.tone).icon)}
-          aria-label={severity.label}
-        />
-        {notifications.length === 1 && sessionId != null ? (
-          <button type="button" onClick={navigate} className="min-w-0 flex-1 truncate text-left">
-            <span
-              className={cn(
-                'text-xs',
-                isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              {n.title}
-            </span>
-          </button>
-        ) : (
-          <span
-            className={cn(
-              'min-w-0 flex-1 truncate text-xs',
-              isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
-            )}
-          >
-            {n.title}
-          </span>
+            ))}
+          </ul>
         )}
-        {notifications.length > 1 ? (
-          <span className="rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground">
-            {notifications.length}
-          </span>
-        ) : null}
-        <span className="text-3xs text-muted-foreground tabular-nums">
-          {formatRelativeAge({ fromIso: n.ts })}
-        </span>
-        {action != null && (
-          <Tooltip content="Retry">
-            <button
-              type="button"
-              className="rounded-sm p-1 hover:bg-hover"
-              onClick={action.onClick}
-              aria-label="Retry"
-            >
-              <RotateCcw size={11} />
-            </button>
-          </Tooltip>
-        )}
-        <span className="flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <Tooltip content="Dismiss the group">
-            <button
-              type="button"
-              className="rounded-sm p-1 hover:bg-hover"
-              onClick={onDismiss}
-              aria-label="Dismiss group"
-            >
-              <X size={11} />
-            </button>
-          </Tooltip>
-        </span>
-      </div>
-      {context !== undefined ? (
-        <span className="truncate pl-5 text-2xs text-muted-foreground">{context}</span>
-      ) : null}
-      {expanded ? (
-        <div className="flex flex-col gap-2 border-l border-border-soft pl-3">
-          {notifications.slice(0, 5).map((entry) => (
-            <div key={entry.id} className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-2xs text-muted-foreground">
-                <span className="min-w-0 flex-1 truncate">{entry.title}</span>
-                <span>{formatRelativeAge({ fromIso: entry.ts })}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {entry.action != null &&
-                mapNotificationAction(entry.action, useAppStore.getState()) != null ? (
-                  <button
-                    type="button"
-                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
-                    onClick={mapNotificationAction(entry.action, useAppStore.getState())?.onClick}
-                  >
-                    Retry
-                  </button>
-                ) : null}
-                {entry.action?.kind === 'retry-summarizer' ||
-                entry.action?.kind === 'retry-step-summary' ? (
-                  <button
-                    type="button"
-                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
-                    onClick={() => setPickerOpen((value) => !value)}
-                  >
-                    Retry with…
-                  </button>
-                ) : null}
-                {canSendToDevelopers ? (
-                  <button
-                    type="button"
-                    className="rounded-sm px-1.5 py-0.5 text-2xs hover:bg-hover"
-                    onClick={() => sendNotificationToDevelopers({ notification: entry })}
-                  >
-                    Send to developers
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ))}
-          {pickerOpen && retryAction != null ? (
-            <RetryWithPicker action={retryAction} onDone={() => setPickerOpen(false)} />
-          ) : null}
-        </div>
-      ) : null}
-    </li>
-  );
-};
-
-type RetryAction = Extract<
-  NotificationAction,
-  { kind: 'retry-summarizer' } | { kind: 'retry-step-summary' }
->;
-
-type RetryWithPickerProps = {
-  readonly action: RetryAction;
-  readonly onDone: () => void;
-};
-
-const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
-  const connectedProviderIds = useAppStore(
-    useShallow((s) => s.providers.filter((p) => p.connection === 'connected').map((p) => p.id)),
-  );
-  const sessionProvider = useAppStore(
-    (s) => s.sessions.find((x) => x.id === action.sessionId)?.providerPreference.defaultProvider,
-  );
-  const availableProviderIds = connectedProviderIds.filter(
-    (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
-  );
-  const initialProvider =
-    sessionProvider != null && availableProviderIds.includes(sessionProvider)
-      ? sessionProvider
-      : availableProviderIds[0];
-  const [providerId, setProviderId] = useState<ProviderId | undefined>(initialProvider);
-  const [model, setModel] = useState('');
-  const [effort, setEffort] = useState<EffortLevel>('medium');
-  if (providerId == null) {
-    return null;
-  }
-  const recommendedModel = resolveTaskModel({
-    task: 'summarizer',
-    preferences: null,
-    workspaceDefaultProviderId: providerId,
-    sessionDefaultProviderId: providerId,
-  }).model;
-  const dispatch = () => {
-    const taskModel =
-      model === ''
-        ? resolveTaskModel({
-            task: 'summarizer',
-            preferences: null,
-            workspaceDefaultProviderId: providerId,
-            sessionDefaultProviderId: providerId,
-          })
-        : { providerId, model };
-    const override: TaskModelPreference = { ...taskModel, effort };
-    const store = useAppStore.getState();
-    switch (action.kind) {
-      case 'retry-summarizer':
-        store.retrySummarizer(action.sessionId, override);
-        break;
-      case 'retry-step-summary':
-        void store.retryStepSummary({
-          sessionId: action.sessionId,
-          agentId: action.agentId,
-          taskModelOverride: override,
-        });
-        break;
-      default: {
-        const _exhaustive: never = action;
-        return _exhaustive;
-      }
-    }
-    onDone();
-  };
-  return (
-    <div className="flex items-center gap-1.5 pt-1.5">
-      <div className="min-w-0 flex-1">
-        <RoutingPicker
-          ariaLabel="Retry routing"
-          connectedProviders={availableProviderIds}
-          provider={providerId}
-          model={model}
-          effort={{ editable: true, value: effort, onChange: setEffort }}
-          recommendation={{ model: recommendedModel }}
-          disabled={false}
-          onProvider={(next) => {
-            if (next === '') {
-              return;
-            }
-            setProviderId(next);
-            setModel('');
+        <Divider />
+        <button
+          type="button"
+          onClick={() => {
+            close();
+            openNotificationsStudio();
           }}
-          onModel={setModel}
-        />
-      </div>
-      <button
-        type="button"
-        className="rounded-sm px-1.5 py-0.5 text-2xs font-medium text-foreground ring-1 ring-inset ring-foreground/20 hover:bg-hover hover:text-foreground"
-        onClick={dispatch}
-        aria-label="Confirm retry with selected model"
-      >
-        Retry
-      </button>
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+        >
+          Open all notifications
+          <ChevronRight size={ICON_SIZE.row} aria-hidden />
+        </button>
+      </AnchoredPopover>
     </div>
   );
 };

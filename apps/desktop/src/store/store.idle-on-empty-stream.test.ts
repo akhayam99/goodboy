@@ -89,7 +89,7 @@ vi.mock('@goodboy/db', () => ({
   listMessagesForAgent: vi.fn(async () => []),
   insertNotification: vi.fn(async () => undefined),
   listNotifications: vi.fn(async () => []),
-  countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
+  countNotifications: vi.fn(async () => []),
   NOTIFICATION_LIST_LIMIT: 200,
   markAllNotificationsRead: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
