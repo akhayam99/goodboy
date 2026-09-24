@@ -341,6 +341,32 @@ list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
 the family does not have, add it to the family. A register never keeps a
 private one.
 
+## Notices
+
+`Notice` is the one shape for an error, a warning, an info line or a success
+that sits in the page. Its tone lives only in a left rail and in the icon. The
+surface stays neutral, the title is `foreground` and the body is
+`muted-foreground`. Tone never colors the text or fills the surface.
+
+- **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
+  (`Info`), `success` (`CircleCheck`).
+- **Placement** changes the surface and padding, never the anatomy.
+  `transcript` is transparent with no border, `inline` and `banner` sit on
+  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-elevated` with
+  a shadow. The rail is 2px in the page and 4px when floating.
+- **Title names the action** that failed ("Couldn't load pull requests"). The
+  body states the cause in plain words. Raw output (stderr, exit codes, paths,
+  URLs) goes in `detail`, which renders behind a Details disclosure in
+  monospace. `splitErrorMessage` decides whether a message is a readable
+  sentence or raw output.
+- **Actions stay neutral**: `Button variant="secondary"` for the recovery,
+  `ghost` for an alternative. Never a tone-colored button.
+
+`ErrorStrip` is a thin `Notice placement="banner"` for a failed load with
+Retry. Chat errors in the desktop app go through `formatErrorForHumans`, which
+turns a known provider failure into a sentence and keeps the raw text as the
+detail.
+
 ## Pane anatomy
 
 The package ships the pane primitives `PANE_RHYTHM`, `ScrollFade`, and

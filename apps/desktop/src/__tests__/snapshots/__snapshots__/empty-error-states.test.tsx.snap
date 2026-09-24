@@ -847,20 +847,27 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
 
 exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
 <div
-  class="flex w-full items-start gap-2 rounded-md border px-2.5 py-2 text-xs border-danger/20 bg-danger/5"
+  class="relative flex w-full min-w-0 items-start gap-2.5 overflow-hidden bg-transparent py-1.5 pl-3.5 pr-3"
+  data-placement="transcript"
+  data-tone="danger"
 >
+  <span
+    aria-hidden="true"
+    class="absolute inset-y-0 left-0 w-0.5 bg-danger"
+    data-notice-rail="true"
+  />
   <svg
     aria-hidden="true"
-    class="lucide lucide-circle-alert mt-0.5 shrink-0 text-danger"
+    class="lucide lucide-circle-alert mt-px shrink-0 text-danger"
     data-testid="transcript-error-icon"
     fill="none"
-    height="13"
+    height="14"
     stroke="currentColor"
     stroke-linecap="round"
     stroke-linejoin="round"
     stroke-width="2"
     viewBox="0 0 24 24"
-    width="13"
+    width="14"
     xmlns="http://www.w3.org/2000/svg"
   >
     <circle
@@ -882,16 +889,17 @@ exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
     />
   </svg>
   <div
-    class="flex min-w-0 flex-1 flex-col gap-1"
+    class="flex min-w-0 flex-1 flex-col items-start gap-1"
   >
-    <div
-      class="flex flex-col gap-1 min-w-0 break-words text-xs leading-relaxed text-danger"
+    <p
+      class="w-full break-words font-semibold text-foreground text-xs leading-4"
     >
-      <p
-        class="leading-relaxed wrap-anywhere"
-      >
-        provider failed to respond
-      </p>
+      The turn stopped
+    </p>
+    <div
+      class="w-full break-words text-xs leading-4 text-muted-foreground"
+    >
+      provider failed to respond
     </div>
   </div>
 </div>

@@ -215,6 +215,11 @@ about its effect is a worse defect than one that reads badly.
 
 ## Status & signals
 
+- **Errors and warnings in the page are Notices.** A tone rail and a tone icon
+  on a neutral surface, neutral text, the raw output behind Details. The
+  anatomy and placements live in
+  [packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Notices.
+
 - **The element is the signal.** A running session shows a moving border, not a
   spinner placed beside it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The

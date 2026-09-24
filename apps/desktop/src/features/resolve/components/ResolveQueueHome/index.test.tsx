@@ -283,9 +283,9 @@ describe('the resolve queue home', () => {
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('alert').textContent).toContain(
-      'Could not load the pull request: The pull request is not available',
-    );
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't load the pull request");
+    expect(alert.textContent).toContain('The pull request is not available');
   });
 
   it('opens a published comment from the history when the target names it', () => {

@@ -33,7 +33,7 @@ import {
 } from '../../../attachments/components/AttachmentChip';
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
-import { TurnErrorCallout } from '../TurnErrorCallout';
+import { ComposerErrorNotice } from './parts/ComposerErrorNotice';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 
@@ -630,24 +630,23 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           </div>
         </div>
         {dispatch.error ? (
-          <TurnErrorCallout
-            role="alert"
+          <ComposerErrorNotice
             message={dispatch.error}
-            retryAction={
+            providerId={routing.effectiveProvider}
+            onRetry={
               dispatch.lastFailedTurn != null
-                ? {
-                    label: 'retry',
-                    onClick: () => {
-                      const failed = dispatch.lastFailedTurn;
-                      if (!failed) return;
-                      dispatch.setError(null);
-                      void dispatch.dispatchTurn({
-                        content: failed.content,
-                        atts: failed.attachments,
-                        override: failed.override,
-                        agentId: failed.agentId,
-                      });
-                    },
+                ? () => {
+                    const failed = dispatch.lastFailedTurn;
+                    if (failed == null) {
+                      return;
+                    }
+                    dispatch.setError(null);
+                    void dispatch.dispatchTurn({
+                      content: failed.content,
+                      atts: failed.attachments,
+                      override: failed.override,
+                      agentId: failed.agentId,
+                    });
                   }
                 : undefined
             }

@@ -1,9 +1,6 @@
 import { Button } from './Button';
-import { AlertTriangle } from 'lucide-react';
-import { cn } from '../cn';
-import { tintClasses } from '../tint';
-
-const dangerTint = tintClasses('danger');
+import { Notice } from './Notice';
+import { splitErrorMessage } from '../splitErrorMessage';
 
 type Props = {
   readonly label: string;
@@ -16,23 +13,21 @@ export const ErrorStrip = ({ label, error, onRetry }: Props) => {
     return null;
   }
 
+  const { summary, detail } = splitErrorMessage({ message: error.message });
+
   return (
-    <div
+    <Notice
+      tone="danger"
+      placement="banner"
       role="alert"
-      className={cn(
-        'flex items-center gap-3 rounded-lg border px-3 py-2 text-xs',
-        dangerTint.border,
-        dangerTint.bg,
-        dangerTint.text,
-      )}
-    >
-      <AlertTriangle size={14} aria-hidden className="shrink-0" />
-      <span className="min-w-0 flex-1">
-        Could not load {label}: {error.message}
-      </span>
-      <Button size="sm" variant="ghost" className="text-danger" onClick={onRetry}>
-        Retry
-      </Button>
-    </div>
+      title={`Couldn't load ${label}`}
+      body={summary}
+      detail={detail}
+      actions={
+        <Button size="sm" variant="secondary" onClick={onRetry}>
+          Retry
+        </Button>
+      }
+    />
   );
 };

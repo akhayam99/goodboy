@@ -54,7 +54,7 @@ describe('resolveErrorTurnMessage', () => {
     const resolved = resolveErrorTurnMessage({ message, providerId: ANTHROPIC, identity: null });
 
     expect(resolved).toBe(
-      'This model needs anthropic CLI 2.1.280 or newer, and 2.1.259 is installed. Update the CLI or choose another model.',
+      'This model needs Claude CLI 2.1.280 or newer, and 2.1.259 is installed. Update the CLI or choose another model.',
     );
   });
 

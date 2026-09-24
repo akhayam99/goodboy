@@ -8,6 +8,7 @@ export type { DropdownController } from './useDropdown';
 export { PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
+export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
@@ -33,6 +34,8 @@ export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
 export { MetaItem } from './components/MetaItem';
+export { Notice } from './components/Notice';
+export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { NoteCard } from './components/NoteCard';
 export { NoteComposer } from './components/NoteComposer';
 export { NoteHeader } from './components/NoteHeader';

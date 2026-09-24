@@ -35,7 +35,7 @@ describe('TranscriptCard', () => {
         onRetryError={onRetryError}
       />,
     );
-    await user.click(screen.getByRole('button', { name: 'retry' }));
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetryError).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'error', key: 'error-1', runId, retryable: true }),
     );
@@ -54,10 +54,10 @@ describe('TranscriptCard', () => {
         }}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'retry' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 
-  it('discloses long transcript errors in place', async () => {
+  it('names the stop and keeps long provider output behind Details', async () => {
     const user = userEvent.setup();
     const longMessage =
       'provider stderr: ' +
@@ -74,10 +74,24 @@ describe('TranscriptCard', () => {
         }}
       />,
     );
-    const disclosure = screen.getByRole('button', { name: 'Show more' });
+    expect(screen.getByText('The turn stopped')).toBeTruthy();
+    expect(screen.queryByText(longMessage)).toBeNull();
+    const disclosure = screen.getByRole('button', { name: 'Details' });
     expect(disclosure.getAttribute('aria-expanded')).toBe('false');
     await user.click(disclosure);
     expect(disclosure.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText(longMessage)).toBeTruthy();
+  });
+
+  it('shows a busy Retry while the failed run is retrying', () => {
+    render(
+      <TranscriptCard
+        item={{ kind: 'error', key: 'error-1', message: 'boom', runId, retryable: true }}
+        onRetryError={vi.fn()}
+        retryingErrorRunId={runId}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Retrying' });
+    expect(button.hasAttribute('disabled')).toBe(true);
   });
 });
