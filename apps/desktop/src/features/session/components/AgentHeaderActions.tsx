@@ -4,6 +4,7 @@ import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
 import { InlineConfirm } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { isAgentClosable, isAgentClosedByUser, isTurnStateLive } from '../agent-lifecycle';
 import { GhostActionButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
@@ -29,6 +30,15 @@ export const AgentHeaderActions = ({
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
   const deleteAgent = useAppStore((state) => state.deleteAgent);
   const isTurnRunning = useAppStore((state) => state.agentTurnState[agent.id]?.kind === 'running');
+  const isTurnLive = useAppStore((state) =>
+    isTurnStateLive({ turnState: state.agentTurnState[agent.id] }),
+  );
+  const hasOpenQuestion = useAppStore((state) =>
+    (state.sessionOpenQuestions[sessionId] ?? []).some(
+      (question) => question.status === 'open' && question.createdByAgentId === agent.id,
+    ),
+  );
+  const isClosable = isAgentClosable({ agent, hasOpenQuestion, isTurnLive });
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -51,13 +61,15 @@ export const AgentHeaderActions = ({
   return (
     <div className="flex shrink-0 flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        {agent.doneAt == null ? (
+        {isClosable && (
           <GhostActionButton
             icon={CircleCheck}
-            label="Mark done"
+            label="Close"
+            title="Stop waiting on this agent"
             onClick={() => void setAgentDone(sessionId, agent.id)}
           />
-        ) : (
+        )}
+        {isAgentClosedByUser({ agent }) && (
           <GhostActionButton
             icon={CircleDot}
             label="Reopen"

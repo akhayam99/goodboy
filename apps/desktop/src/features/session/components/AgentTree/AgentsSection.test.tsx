@@ -307,6 +307,7 @@ function reset() {
     startWorkflowRun: vi.fn(),
     summarizerStatus: {},
     agentTurnState: {},
+    sessionOpenQuestions: {},
     setPanelSectionExpanded: h.setPanelSectionExpanded,
     sessionPanelExpanded: {},
     workflowExpand: {},

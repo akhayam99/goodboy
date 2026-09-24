@@ -46,7 +46,7 @@ import { useSuggestionActions } from '../../../../../suggestions/useSuggestionAc
 import { useTranscriptMountProposals } from '../../../../../suggestions/useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../../../../suggestions/transcriptMountProposals';
 import { ActivityFilterButton } from './ActivityFilterButton';
-import { TimelineSuggestionRow } from './TimelineSuggestionRow';
+import { TimelineSuggestionStrip } from './TimelineSuggestionStrip';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
@@ -452,59 +452,58 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
           Everything is hidden by the activity filter. Show a category to bring it back.
         </p>
       ) : (
-        <div className="@container flex flex-col">
-          {visibleSuggestions.map((suggestion) => (
-            <TimelineSuggestionRow
-              key={suggestion.id}
-              suggestion={suggestion}
-              railWidth={rail.width}
-              actions={suggestionActions({ suggestion })}
-            />
-          ))}
-          {stream.items.map((item, index) => {
-            const railRow = rail.rows[index];
-            if (railRow === undefined) {
-              return null;
-            }
-            if (item.kind === 'now') {
+        <div className="flex flex-col gap-1">
+          <TimelineSuggestionStrip
+            suggestions={visibleSuggestions}
+            railWidth={rail.width}
+            actionsFor={suggestionActions}
+          />
+          <div className="@container flex flex-col">
+            {stream.items.map((item, index) => {
+              const railRow = rail.rows[index];
+              if (railRow === undefined) {
+                return null;
+              }
+              if (item.kind === 'now') {
+                return (
+                  <TimelineNowRule
+                    key={item.id}
+                    item={item}
+                    rail={railRow}
+                    railWidth={rail.width}
+                    lanes={lanes}
+                  />
+                );
+              }
+              if (item.kind === 'day') {
+                return (
+                  <TimelineDayRule
+                    key={item.id}
+                    item={item}
+                    rail={railRow}
+                    railWidth={rail.width}
+                    lanes={lanes}
+                  />
+                );
+              }
+              const target = openTargetFor({ entry: item.entry });
               return (
-                <TimelineNowRule
+                <TimelineStreamRow
                   key={item.id}
                   item={item}
                   rail={railRow}
                   railWidth={rail.width}
+                  sessionId={sessionId}
+                  openTarget={target}
+                  action={actionFor({ item })}
+                  diffStat={diffStatFor({ item })}
+                  meta={metaFor({ item })}
                   lanes={lanes}
+                  runLane={runLaneFor({ item })}
                 />
               );
-            }
-            if (item.kind === 'day') {
-              return (
-                <TimelineDayRule
-                  key={item.id}
-                  item={item}
-                  rail={railRow}
-                  railWidth={rail.width}
-                  lanes={lanes}
-                />
-              );
-            }
-            const target = openTargetFor({ entry: item.entry });
-            return (
-              <TimelineStreamRow
-                key={item.id}
-                item={item}
-                rail={railRow}
-                railWidth={rail.width}
-                sessionId={sessionId}
-                openTarget={target}
-                action={actionFor({ item })}
-                diffStat={diffStatFor({ item })}
-                meta={metaFor({ item })}
-                lanes={lanes}
-                runLane={runLaneFor({ item })}
-              />
-            );
-          })}
+            })}
+          </div>
         </div>
       )}
     </section>

@@ -513,14 +513,23 @@ describe('TimelinePane suggestions', () => {
     expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).not.toBeNull();
   });
 
-  it('draws the rail above NOW as a dashed segment', () => {
-    suggestionState.list = [ANSWER];
+  it('gathers suggestions in one Suggested next strip that draws no rail', () => {
+    suggestionState.list = [ANSWER, MOUNT];
 
     const { container } = renderWithActivity();
 
-    const row = screen.getByTestId(`timeline-suggestion-${ANSWER.id}`);
-    expect(row.querySelectorAll('line[stroke-dasharray="3 3"]').length).toBe(1);
-    expect(container.querySelectorAll('line[stroke-dasharray="3 3"]').length).toBe(1);
+    const strip = screen.getByRole('region', { name: 'Suggested next' });
+    expect(within(strip).getByText('Suggested next')).not.toBeNull();
+    expect(within(strip).getByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
+    expect(within(strip).getByTestId(`timeline-suggestion-${MOUNT.id}`)).not.toBeNull();
+    expect(strip.querySelectorAll('svg line, svg path[stroke-dasharray]').length).toBe(0);
+    expect(container.querySelectorAll('line[stroke-dasharray="3 3"]').length).toBe(0);
+  });
+
+  it('renders no strip when nothing is suggested', () => {
+    renderWithActivity();
+
+    expect(screen.queryByRole('region', { name: 'Suggested next' })).toBeNull();
   });
 });
 

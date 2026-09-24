@@ -179,6 +179,19 @@ You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
 
+An agent finishes on its own. Once its last turn succeeded, it has no open
+question of its own, no turn is starting or running and no child still works,
+it moves to the finished agents without a click. Sending it a new message
+opens it again. There is no "mark done".
+
+**Close** is only for an agent outside a workflow that is stuck on a failed
+turn or on its own question. It means "stop waiting on this agent": the agent
+reads "Closed by you" with a neutral check, not a success, and **Reopen** takes
+it back. A workflow step never has Close. A stuck step is unblocked with Skip
+step in its next action, because closing it would leave the run blocked with
+no instruction. `isAgentFinished` and `isAgentClosable` in
+`apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
+
 ### Agent kinds
 
 The **kind** decides how an agent works: what it may change and what it gives

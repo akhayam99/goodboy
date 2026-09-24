@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   RAIL_LANE_OFFSET,
   RAIL_SPINE_X,
-  futureRailRow,
   layoutTimelineRail,
   railColumnX,
   railLaneSpans,
@@ -255,6 +254,31 @@ describe('layoutTimelineRail', () => {
     ]);
     expect(spanOf(layout, 'step-1')).toEqual(['1:18-36', '1:0-18']);
     expect(lanesOf(layout, 'step-1').map((segment) => segment.dash)).toEqual(['solid', 'dashed']);
+  });
+
+  it('ends a closed lane on its newest row with no dash toward NOW and no rejoin', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        nowRow(),
+        row({ id: 'newer-entry' }),
+        row({ id: 'child-1', groupId: 'child' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin', shape: 'open' }),
+        group({ id: 'child', originRowId: 'step-1', parentGroupId: 'lane', shape: 'closed' }),
+      ],
+    });
+
+    expect(lanesOf(layout, 'now').map((segment) => segment.column)).toEqual([1]);
+    expect(lanesOf(layout, 'newer-entry').map((segment) => segment.column)).toEqual([1]);
+    expect(railRow(layout, 'child-1').joins).toEqual([]);
+    expect(
+      lanesOf(layout, 'child-1')
+        .filter((segment) => segment.column === 2)
+        .map((segment) => `${segment.dash}:${segment.fromY}-${segment.toY}`),
+    ).toEqual(['solid:18-36']);
   });
 
   it('rejoins a queued child lane into its parent lane under the next parent step', () => {
@@ -710,27 +734,6 @@ describe('junction integrity', () => {
   });
 });
 
-describe('futureRailRow', () => {
-  it('draws one dashed spine segment on the same column as the stream rows', () => {
-    const rail = futureRailRow({ id: 'suggestion-1', height: 32 });
-
-    expect(rail.segments).toEqual([
-      {
-        column: 0,
-        laneId: null,
-        identityIndex: null,
-        isMuted: false,
-        dash: 'dashed',
-        fromY: 0,
-        toY: 32,
-      },
-    ]);
-    expect(rail.joins).toEqual([]);
-    expect(railColumnX({ column: rail.markerColumn })).toBe(RAIL_SPINE_X);
-    expect(rail.markerY).toBe(16);
-  });
-});
-
 describe('layoutTimelineRail without a spine', () => {
   const runLane = ({ shape }: { readonly shape: RailGroupShape }) =>
     group({ id: 'run', originRowId: 'step-1', shape, identityIndex: 2 });
@@ -882,6 +885,6 @@ describe('railLaneSpans', () => {
     });
 
     expect(railLaneSpans({ rail: railRow(layout, 'child') })).toEqual([]);
-    expect(railLaneSpans({ rail: futureRailRow({ id: 'future', height: 26 }) })).toEqual([]);
+    expect(railLaneSpans({ rail: railRow(layout, 'standalone-agent') })).toEqual([]);
   });
 });

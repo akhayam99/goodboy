@@ -83,7 +83,8 @@ export const StandaloneAgentsLane = ({
           onDeleteAgent={lane.onDeleteAgent}
           isInspected={run.id === inspectedAgentId}
           onInspectAgent={onInspectAgent}
-          onMarkDone={lane.onMarkDone}
+          signals={lane.signals}
+          onClose={lane.onClose}
           onReopen={lane.onReopen}
           isMuted={muted}
           density={isLens ? 'lane' : 'sidebar'}

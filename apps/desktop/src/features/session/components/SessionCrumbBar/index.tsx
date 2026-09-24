@@ -16,6 +16,7 @@ import { openLens } from '../../openLens';
 import { supportedLens } from '../../supportedLens';
 import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
+import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { PlainCrumb } from './PlainCrumb';
@@ -58,6 +59,18 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     () => settledResolverAgentIds({ attempts: resolveAttempts }),
     [resolveAttempts],
   );
+  const signals = useAgentLifecycleSignals({ sessionId });
+  const activeParentIds = useMemo(
+    () =>
+      new Set(
+        phaseRuns.flatMap((agent) =>
+          agent.parentAgentId != null && (agent.status === 'pending' || agent.status === 'running')
+            ? [agent.parentAgentId]
+            : [],
+        ),
+      ),
+    [phaseRuns],
+  );
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -87,10 +100,13 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         kind: kindOf(agent),
         isFinished: isAgentFinished({
           agent,
+          hasOpenQuestion: signals.openQuestionAgentIds.has(agent.id),
+          isTurnLive: signals.liveTurnAgentIds.has(agent.id),
+          hasActiveChild: activeParentIds.has(agent.id),
           isResolverSettled: settledResolvers.has(agent.id),
         }),
       }));
-  }, [agentKindOverride, settledResolvers]);
+  }, [agentKindOverride, settledResolvers, signals, activeParentIds]);
 
   const siblings: ReadonlyArray<SwitcherEntry> = useMemo(() => {
     if (selectedAgent == null || rootAgent == null) {

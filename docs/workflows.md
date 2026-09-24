@@ -296,6 +296,10 @@ hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
 closed. Only what the screen draws uses it: the lane of an agent's children in
 the activity rail and in the run tree of the workflow detail.
 
+A step has no Close. Closing an agent is for agents outside a workflow (see
+[concepts.md](concepts.md#agents)). A stuck step is unblocked with Skip step,
+which says what the run does next.
+
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
 on whether the summarizer finished or not. It still stops on any budget alert

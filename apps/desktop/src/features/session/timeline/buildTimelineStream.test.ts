@@ -1411,6 +1411,58 @@ describe('buildTimelineStream, session events', () => {
     expect(lane?.shape).toBe('open');
   });
 
+  it('closes the lane of a run halted on a failed step with nothing running', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({ id: 'two', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+      ],
+    });
+
+    expect(groups.find((group) => group.id === 'lane:run:run-1')?.shape).toBe('closed');
+  });
+
+  it('keeps the lane of a halted run open while one of its steps still runs', () => {
+    const { groups } = stream({
+      workflows: [
+        attachedWorkflow({
+          createdAt: localIso({ day: 18, hour: 8 }),
+          stepIds: ['one', 'two'],
+        }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'two',
+          ordinal: 2,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 10 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+
+    expect(groups.find((group) => group.id === 'lane:run:run-1')?.shape).toBe('open');
+  });
+
   it('closes the lane of a static run when every planned step has settled', () => {
     const { groups } = stream({
       workflows: [
@@ -1508,7 +1560,64 @@ describe('buildTimelineStream, session events', () => {
     });
     const lane = groups.find((group) => group.id === 'lane:agent:parent');
 
-    expect(lane?.shape).toBe('merged');
+    expect(lane?.shape).toBe('closed');
+  });
+
+  it('draws queued children of an agent you closed as skipped, off the dash', () => {
+    const { items, groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          doneAt: localIso({ day: 18, hour: 11 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          status: 'pending',
+        }),
+      ],
+    });
+    const child = items.find((item) => item.id === 'agent:child');
+
+    expect(groups.find((group) => group.id === 'lane:agent:parent')?.shape).toBe('closed');
+    expect(child?.kind === 'row' ? child.rowState.phase : null).toBe('skipped');
+    expect(child?.isPending).toBe(false);
+  });
+
+  it('closes the lane of a failed parent whose queued children cannot start', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+        }),
+        agent({ id: 'child', ordinal: 2, parentAgentId: 'parent', status: 'pending' }),
+      ],
+    });
+
+    expect(groups.find((group) => group.id === 'lane:agent:parent')?.shape).toBe('closed');
+  });
+
+  it('keeps the lane open while a queued child waits under a live parent', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 10 }),
+        }),
+        agent({ id: 'child', ordinal: 2, parentAgentId: 'parent', status: 'pending' }),
+      ],
+    });
+
+    expect(groups.find((group) => group.id === 'lane:agent:parent')?.shape).toBe('open');
   });
 
   it('closes a parent agent group once every unfinished child was closed', () => {
@@ -1535,7 +1644,7 @@ describe('buildTimelineStream, session events', () => {
     expect(lane?.shape).toBe('merged');
   });
 
-  it('keeps a parent agent group open while a failed child is still unclosed', () => {
+  it('ends a parent agent group on a failed child once nothing is scheduled above it', () => {
     const { groups } = stream({
       agents: [
         agent({
@@ -1555,7 +1664,7 @@ describe('buildTimelineStream, session events', () => {
     });
     const lane = groups.find((group) => group.id === 'lane:agent:parent');
 
-    expect(lane?.shape).toBe('open');
+    expect(lane?.shape).toBe('closed');
   });
 
   it('gives a chained agent group a colored lane', () => {

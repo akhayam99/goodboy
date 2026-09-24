@@ -5,7 +5,7 @@ const RAIL_CURVE_HANDLE = 8.84;
 
 type RailDash = 'solid' | 'dashed';
 
-export type RailGroupShape = 'open' | 'merged' | 'rejoining';
+export type RailGroupShape = 'open' | 'merged' | 'closed' | 'rejoining';
 
 export type RailGroupInput = {
   readonly id: string;
@@ -87,30 +87,6 @@ type GroupSpan = {
 
 export const railColumnX = ({ column }: { readonly column: number }): number =>
   RAIL_SPINE_X + column * RAIL_LANE_OFFSET;
-
-type FutureRowParams = {
-  readonly id: string;
-  readonly height: number;
-};
-
-export const futureRailRow = ({ id, height }: FutureRowParams): RailRow => ({
-  id,
-  height,
-  segments: [
-    {
-      column: 0,
-      laneId: null,
-      identityIndex: null,
-      isMuted: false,
-      dash: 'dashed',
-      fromY: 0,
-      toY: height,
-    },
-  ],
-  joins: [],
-  markerColumn: 0,
-  markerY: height / 2,
-});
 
 const anchorOf = ({ row }: { readonly row: RailRowInput }): number =>
   row.markerY ?? (row.topY + row.height) / 2;

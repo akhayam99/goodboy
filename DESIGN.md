@@ -278,7 +278,7 @@ Actions sit with the object they affect. The slots that carry each zone are in
 
 - **Object actions live on the context row.** The fixed breadcrumb or
   object-title row holds generic object actions (open folder, archive,
-  restore, delete) at its far end. Lifecycle actions (mark done, reopen) sit
+  restore, delete) at its far end. Lifecycle actions (close, reopen) sit
   there too, because they change the object, not the current section. A
   destructive action confirms inline, next to its trigger.
 - **The focused object's primary action sits in the fixed header.** It is the

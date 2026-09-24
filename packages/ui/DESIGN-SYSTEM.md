@@ -285,6 +285,24 @@ A child lane closes on its newest row once its parent and every child have
 settled, and at once when you close the parent. An agent you closed counts as
 settled, so a lane waiting on it stops reaching NOW.
 
+**A dashed stretch exists only while work is scheduled above it.** Scheduled
+means a row that is running, waiting on you (a question, a ready step, a spend
+limit) or queued to start by itself. When the newest work failed, was stopped
+or was closed by you and nothing else is scheduled, the lane ends on that node
+with the `closed` group shape: no dash toward NOW and no rejoin elbow, because
+the work stopped rather than came back. `merged` stays for groups that finished
+well. A run halted on a failed step closes its lane until a step runs again.
+Queued children of a failed parent cannot start, so they do not hold the lane
+open. Queued children of an agent you closed draw as skipped. Both shapes come
+from each row's `RowState` in `buildTimelineStream`, not from a second status
+check.
+
+Suggestions are not scheduled work, so they never draw a dash. They sit in one
+**Suggested next** strip above NOW, on a `bg-subtle` surface aligned with the
+row text, with no rail and no node: an eyebrow, then one line per suggestion
+with its glyph, title, detail and one action. A suggestion leaves the strip
+once its work exists, for example a plan once an agent consumes it.
+
 The workflow detail uses the same vocabulary for one run. Its run tree has no
 session spine: `layoutTimelineRail` runs with `hasSpine: false`, the run lane
 takes column 0 and starts on the run's first step (a lane whose origin row is

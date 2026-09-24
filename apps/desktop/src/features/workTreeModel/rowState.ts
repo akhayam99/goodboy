@@ -1,5 +1,6 @@
 import type { Agent, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
+import { isAgentClosedByUser } from '../session/agent-lifecycle';
 
 export type RowPhase = 'queued' | 'running' | 'waiting' | 'failed' | 'done' | 'closed' | 'skipped';
 
@@ -39,16 +40,13 @@ type AgentParams = {
   readonly isReadyStep: boolean;
 };
 
-const isClosedByUser = ({ agent }: { readonly agent: Agent }): boolean =>
-  agent.doneAt != null && agent.status !== 'completed' && agent.status !== 'skipped';
-
 export const resolveAgentRowState = ({
   agent,
   isAsking,
   question,
   isReadyStep,
 }: AgentParams): RowState => {
-  if (isClosedByUser({ agent })) {
+  if (isAgentClosedByUser({ agent })) {
     return { phase: 'closed', reason: { kind: 'closed' }, ask: null };
   }
   if (agent.status === 'failed') {

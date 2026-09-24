@@ -7,6 +7,7 @@ import { modelLabel } from '../../../chat/utils/chat-constants';
 import { agentHasUnread } from '../../../../store';
 import { formatCost } from '../../agent-row-format';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
+import { isAgentClosedByUser } from '../../agent-lifecycle';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentCard } from '../AgentCard';
 import { AgentCardAction } from '../AgentCard/AgentCardAction';
@@ -41,7 +42,7 @@ type Props = {
   readonly isInspected?: boolean;
   readonly isMuted?: boolean;
   readonly onInspect?: () => void;
-  readonly onMarkDone?: () => void;
+  readonly onClose?: () => void;
   readonly onReopen?: () => void;
 };
 
@@ -67,7 +68,7 @@ export const AgentRow = ({
   isInspected = false,
   isMuted = false,
   onInspect,
-  onMarkDone,
+  onClose,
   onReopen,
 }: Props) => {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -91,9 +92,6 @@ export const AgentRow = ({
     telemetry != null ? `Model: ${modelLabel(telemetry.model)}` : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
-  const isMarkDoneAvailable =
-    onMarkDone !== undefined && run.status !== 'running' && run.doneAt == null;
-  const isReopenAvailable = onReopen !== undefined && run.doneAt != null;
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const hoverMarkViewed = useHoverMarkViewed({
     sessionId: run.sessionId,
@@ -154,22 +152,11 @@ export const AgentRow = ({
       lifecycleActions={
         <>
           <span className="flex size-6 shrink-0 items-center justify-center">
-            {isMarkDoneAvailable && (
-              <AgentCardAction
-                icon={CircleCheck}
-                label="Mark agent done"
-                tone="success"
-                reveal
-                onClick={() => onMarkDone?.()}
-              />
+            {onClose !== undefined && (
+              <AgentCardAction icon={CircleCheck} label="Close agent" reveal onClick={onClose} />
             )}
-            {isReopenAvailable && (
-              <AgentCardAction
-                icon={RotateCcw}
-                label="Reopen agent"
-                reveal
-                onClick={() => onReopen?.()}
-              />
+            {onReopen !== undefined && (
+              <AgentCardAction icon={RotateCcw} label="Reopen agent" reveal onClick={onReopen} />
             )}
           </span>
           <span className="flex size-6 shrink-0 items-center justify-center">
@@ -190,7 +177,12 @@ export const AgentRow = ({
             kind={kind}
             title={`Agent ${run.ordinal + 1}: ${agentKindPalette({ kind }).label}`}
           />
-          {isMuted ? <Chip tone="success" size="xs" bordered={false} label="completed" /> : null}
+          {isMuted &&
+            (isAgentClosedByUser({ agent: run }) ? (
+              <Chip tone="neutral" size="xs" bordered={false} label="closed by you" />
+            ) : (
+              <Chip tone="success" size="xs" bordered={false} label="completed" />
+            ))}
         </>
       }
       meta={

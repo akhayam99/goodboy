@@ -151,6 +151,7 @@ const resetState = () => {
     sessionResolveQueueItems: {},
     sessionResolvePublications: {},
     sessionOpenQuestions: {},
+    agentTurnState: {},
     sessionBranches: { [SESSION_ID]: 'ak/feat-one' },
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },

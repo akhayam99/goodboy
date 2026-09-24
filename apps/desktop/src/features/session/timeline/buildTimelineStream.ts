@@ -7,6 +7,7 @@ import {
   DONE_ROW_STATE,
   resolveAgentRowState,
   resolveRunRowState,
+  type RowPhase,
   type RowReadyStep,
   type RowState,
 } from '../../workTreeModel/rowState';
@@ -418,6 +419,80 @@ const isLaneSettled = ({ entry }: { readonly entry: TimelineAgentEntry }): boole
   (isAgentSettled({ agent: entry.agent }) &&
     entry.children.every((child) => isAgentSettled({ agent: child.agent })));
 
+const SCHEDULED_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['running', 'waiting', 'queued']);
+
+const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
+
+const agentRowStateOf = ({
+  entry,
+  readyAgentId,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly readyAgentId: string | null;
+}): RowState =>
+  resolveAgentRowState({
+    agent: entry.agent,
+    isAsking: entry.openQuestions.length > 0 && !isQuestionDelegate({ agent: entry.agent }),
+    question: oldestAgentOpenQuestion({ entry }),
+    isReadyStep: readyAgentId === entry.agent.id,
+  });
+
+const hasScheduledChildWork = ({
+  entry,
+  parentState,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly parentState: RowState;
+}): boolean => {
+  if (SCHEDULED_PHASES.has(parentState.phase)) {
+    return true;
+  }
+  return entry.children.some((child) => {
+    const { phase } = agentRowStateOf({ entry: child, readyAgentId: null });
+    if (phase === 'queued') {
+      return parentState.phase !== 'failed';
+    }
+    return phase === 'running' || phase === 'waiting';
+  });
+};
+
+const childLaneShape = ({
+  entry,
+  parentState,
+  groupId,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly parentState: RowState;
+  readonly groupId: string | null;
+}): RailGroupShape => {
+  if (parentState.phase === 'closed') {
+    return 'closed';
+  }
+  if (isLaneSettled({ entry })) {
+    return 'merged';
+  }
+  if (!hasScheduledChildWork({ entry, parentState })) {
+    return 'closed';
+  }
+  return groupId == null ? 'open' : 'rejoining';
+};
+
+const runLaneShape = ({
+  isFinished,
+  rowState,
+  hasLiveWork,
+}: {
+  readonly isFinished: boolean;
+  readonly rowState: RowState;
+  readonly hasLiveWork: boolean;
+}): RailGroupShape => {
+  if (isFinished) {
+    return 'merged';
+  }
+  const isHalted = rowState.phase === 'failed' || rowState.phase === 'closed';
+  return isHalted && !hasLiveWork ? 'closed' : 'open';
+};
+
 const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean => {
   if (entry.run.discardedAt != null) {
     return true;
@@ -469,6 +544,7 @@ type EmitAgentParams = {
   readonly groupId: string | null;
   readonly showSubagents: boolean;
   readonly readyAgentId: string | null;
+  readonly isParentClosed: boolean;
   readonly context: EmitContext;
 };
 
@@ -484,8 +560,12 @@ const agentRows = ({
   groupId,
   showSubagents,
   readyAgentId,
+  isParentClosed,
   context,
 }: EmitAgentParams): ReadonlyArray<DraftRow> => {
+  const resolved = agentRowStateOf({ entry, readyAgentId });
+  const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
+  const rowState = isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
   const childLaneId = laneIdOf({ entryId: entry.id });
   const nested: DraftRow[] = [];
   if (showSubagents && entry.children.length > 0) {
@@ -495,7 +575,7 @@ const agentRows = ({
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
-      shape: isLaneSettled({ entry }) ? 'merged' : groupId == null ? 'open' : 'rejoining',
+      shape: childLaneShape({ entry, parentState: rowState, groupId }),
     });
     for (const child of entry.children) {
       nested.push(
@@ -508,12 +588,13 @@ const agentRows = ({
           groupId: childLaneId,
           showSubagents,
           readyAgentId: null,
+          isParentClosed: rowState.phase === 'closed' || isSkippedUnderClosed,
           context,
         }),
       );
     }
   }
-  const isPending = entry.agent.status === 'pending';
+  const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -525,12 +606,7 @@ const agentRows = ({
     groupId,
     ordinal: entry.stepLabel,
     sortOrdinal: entry.ordinal,
-    rowState: resolveAgentRowState({
-      agent: entry.agent,
-      isAsking: entry.openQuestions.length > 0 && !isQuestionDelegate({ agent: entry.agent }),
-      question: oldestAgentOpenQuestion({ entry }),
-      isReadyStep: readyAgentId === entry.agent.id,
-    }),
+    rowState,
     hasUnread:
       context.unreadAgentIds.has(entry.agent.id) ||
       (!showSubagents && hasUnreadDescendant({ entry, unreadAgentIds: context.unreadAgentIds })),
@@ -599,14 +675,27 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   const advance = context.advanceByRunId.get(entry.run.id) ?? null;
   const readyStep = readyStepOf({ entry, advance });
   const isMuted = entry.run.discardedAt != null;
-  const shape: RailGroupShape = isFinished ? 'merged' : 'open';
+  const steps = stepAgentsOf({ entry });
+  const hasRunningStep = steps.some((agent) => agent.status === 'running');
+  const isDeciding = !isFinished && context.decidingRunIds.has(entry.run.id);
+  const rowState = resolveRunRowState({
+    run: entry.run,
+    advance,
+    isFinished,
+    isDeciding,
+    hasRunningStep,
+    failedStep: failedStepOf({ entry }),
+    question: runOpenQuestion({ entry }),
+    readyStep,
+    chainedAfterTitle: chainedAfterTitleOf({ entry, context }),
+  });
   context.groups.push({
     id: laneId,
     parentGroupId: null,
     identityIndex: entry.identity.index,
     isMuted,
     originRowId: entry.id,
-    shape,
+    shape: runLaneShape({ isFinished, rowState, hasLiveWork: hasRunningStep || isDeciding }),
   });
   const nested: DraftRow[] = [];
   for (const child of entry.children) {
@@ -621,6 +710,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
           groupId: laneId,
           showSubagents: context.showWorkflowSubagents,
           readyAgentId: readyStep?.agent.id ?? null,
+          isParentClosed: false,
           context,
         }),
       );
@@ -649,18 +739,6 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     };
     nested.push(row);
   }
-  const steps = stepAgentsOf({ entry });
-  const rowState = resolveRunRowState({
-    run: entry.run,
-    advance,
-    isFinished,
-    isDeciding: !isFinished && context.decidingRunIds.has(entry.run.id),
-    hasRunningStep: steps.some((agent) => agent.status === 'running'),
-    failedStep: failedStepOf({ entry }),
-    question: runOpenQuestion({ entry }),
-    readyStep,
-    chainedAfterTitle: chainedAfterTitleOf({ entry, context }),
-  });
   const origin: DraftRow = {
     kind: 'row',
     id: entry.id,
@@ -905,6 +983,7 @@ export const buildTimelineStream = ({
           groupId: null,
           showSubagents: context.showAgentSubagents,
           readyAgentId: null,
+          isParentClosed: false,
           context,
         }),
       );

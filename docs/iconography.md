@@ -186,8 +186,8 @@ glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
 ## Suggestions
 
 One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`.
-The suggestion row and the timeline suggestion row both use it. They used to
-disagree on four of six kinds.
+The suggestion row and the "Suggested next" strip above NOW in the activity
+feed both use it. They used to disagree on four of six kinds.
 
 | Kind                 | Concept     | Glyph                |
 | -------------------- | ----------- | -------------------- |
