@@ -41,14 +41,22 @@ export const usePushBranch = ({ sessionId, mountId, onError }: Params): Result =
       kind: 'branch',
       label: PUSH_PROGRESS_LABEL,
     });
-    showToast('info', 'Pushing this branch to its remote.', { title: 'Push started' });
+    showToast({
+      kind: 'info',
+      message: 'Pushing this branch to its remote.',
+      title: 'Push started',
+    });
     try {
       const result = await pushSessionBranch({ sessionId, mountId });
       if (!result.ok) {
         fail(result.error);
         return;
       }
-      showToast('success', 'This branch is pushed to its remote.', { title: 'Push done' });
+      showToast({
+        kind: 'success',
+        message: 'This branch is pushed to its remote.',
+        title: 'Push done',
+      });
     } catch (failure) {
       fail(formatError(failure));
     } finally {

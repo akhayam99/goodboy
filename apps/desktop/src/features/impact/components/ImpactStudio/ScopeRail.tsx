@@ -1,9 +1,14 @@
-import { cn, formatUsd, SelectableRow, tintClasses } from '@goodboy/ui';
+import {
+  cn,
+  formatUsd,
+  SelectableRow,
+  tintClasses,
+  InlineMarkdown,
+  inlineMarkdownText,
+} from '@goodboy/ui';
 import { Gauge, GitPullRequest, LayoutDashboard, Timer, type LucideIcon } from 'lucide-react';
 import type { ProviderSpendEntry } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { providerLabel, spendTone, type SessionSpend } from '../../../budget/components/spend/lib';
 import type { ImpactScope, ImpactScopeId } from '../../lib';
@@ -67,7 +72,7 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
                   <div className="flex w-full items-center gap-2.5">
                     <ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />
                     <span className="flex-1 truncate text-sm font-medium capitalize text-foreground">
-                      {providerLabel(entry.provider)}
+                      {providerLabel({ provider: entry.provider })}
                     </span>
                     <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
                       {formatUsd(entry.spentUsd)}
@@ -101,7 +106,7 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
                   selected={isActive}
                   ariaCurrent={isActive}
                   onClick={() => onSelect({ kind: 'session', sessionId: session.sessionId })}
-                  title={stripInlineMarkdown({ text: session.goal })}
+                  title={inlineMarkdownText({ text: session.goal })}
                   className="items-center gap-2 px-2.5 py-2"
                 >
                   {session.isCurrent ? (

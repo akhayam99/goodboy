@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { IsoDateTime, PrComment, PullRequestState, TurnEvent } from '@goodboy/types';
-import { buildCombinedCommentAgentArgs } from '../../spawn-from-comment';
+import { buildResolverAgentArgs } from '../../spawn-from-comment';
 import { reduceTranscript } from '../../utils/transcript-items';
 import { ResolverKickoffCard } from '.';
 
@@ -40,8 +40,8 @@ const comment = (over: Partial<PrComment> = {}): PrComment => ({
 });
 
 const kickoffText = () =>
-  buildCombinedCommentAgentArgs(
-    [
+  buildResolverAgentArgs({
+    threads: [
       { head: comment(), replies: [] },
       {
         head: comment({
@@ -56,8 +56,8 @@ const kickoffText = () =>
         replies: [],
       },
     ],
-    PR,
-  ).initialPrompt;
+    pr: PR,
+  }).initialPrompt;
 
 const kickoffItem = () => {
   const events: ReadonlyArray<TurnEvent> = [

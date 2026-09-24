@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
+import { CURSOR_CATALOG } from './catalog';
 import { computeCursorCostUsd, cursorPriceFor, CURSOR_PRICES } from './cost';
 import { computeCostUsd } from '../claude/cost';
 
@@ -28,6 +29,32 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'claude-opus-4-7-thinking-high' })).toBeCloseTo(
       5 + 25,
     );
+  });
+
+  it('claude-opus-5-5-max uses opus-tier pricing', () => {
+    expect(computeCursorCostUsd({ usage, model: 'claude-opus-5-5-max' })).toBeCloseTo(5 + 25);
+  });
+
+  it('claude-fable-5-1-thinking-high matches anthropic fable 5.1 list price', () => {
+    const cursorCost = computeCursorCostUsd({
+      usage,
+      model: 'claude-fable-5-1-thinking-high',
+    });
+    const claudeCost = computeCostUsd({ usage, model: 'claude-fable-5-1' });
+    expect(cursorCost).toBeCloseTo(claudeCost);
+  });
+
+  it('gemini-3.7-flash-medium bills at the cursor flash rate', () => {
+    expect(computeCursorCostUsd({ usage, model: 'gemini-3.7-flash-medium' })).toBeCloseTo(
+      0.75 + 3.5,
+    );
+  });
+
+  it('prices every slug the catalog can emit', () => {
+    const unpriced = CURSOR_CATALOG.flatMap((model) => model.combos.map((combo) => combo.slug))
+      .filter((slug) => CURSOR_PRICES[slug] == null)
+      .sort();
+    expect(unpriced).toEqual([]);
   });
 
   it('gpt-5.5-high uses GPT-5 pricing proxy', () => {
@@ -76,6 +103,8 @@ describe('computeCursorCostUsd', () => {
     const known = Object.values(CURSOR_PRICES);
     expect(fallback.inputPerMtok).toBe(Math.max(...known.map((p) => p.inputPerMtok)));
     expect(fallback.outputPerMtok).toBe(Math.max(...known.map((p) => p.outputPerMtok)));
-    expect(fallback.cachedInputPerMtok).toBe(Math.max(...known.map((p) => p.cachedInputPerMtok)));
+    expect(fallback.cachedInputPerMtok).toBe(
+      Math.max(...known.map((p) => p.cachedInputPerMtok ?? p.inputPerMtok)),
+    );
   });
 });

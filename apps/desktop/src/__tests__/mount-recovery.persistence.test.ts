@@ -9,7 +9,6 @@ import {
   listPrSeries,
   listRetainedWorktreePaths,
   listSessionMounts,
-  softDeleteSession,
   upsertMountOperation,
   upsertMountPullRequestLink,
   upsertPrSeriesMember,
@@ -305,7 +304,10 @@ describe('mount recovery persistence', () => {
       detached: [{ mountId: mount.id, diskState: 'present' }],
       retained: [retained],
     });
-    await softDeleteSession(db, RECOVERY_SESSION_ID);
+    await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [
+      Date.now(),
+      RECOVERY_SESSION_ID,
+    ]);
 
     expect(await listRetainedWorktreePaths({ db, workspaceId: RECOVERY_WORKSPACE_ID })).toEqual([
       retained,

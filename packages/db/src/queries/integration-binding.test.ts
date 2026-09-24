@@ -8,8 +8,7 @@ import type {
   IntegrationBinding,
   IntegrationBindingId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteIntegrationBinding,
   deleteIntegrationBindingsForProvider,
@@ -22,8 +21,7 @@ const workspaceId = 'w1' as WorkspaceId;
 const projectId = 'p1' as ProjectId;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
@@ -188,5 +186,18 @@ describe('integration bindings', () => {
       projectId: null,
     });
     expect(stored?.provider).toBe('github');
+  });
+
+  it('skips a binding whose stored config is malformed instead of failing the list', async () => {
+    const db = await seed();
+    await upsertIntegrationBinding({ db, binding: makeBinding() });
+    await upsertIntegrationBinding({ db, binding: makeBinding({ id: 'binding-2', projectId }) });
+    await db.execute("UPDATE integration_bindings SET config = '{broken' WHERE id = 'binding-2'");
+
+    const listed = await listIntegrationBindingsForWorkspace({ db, workspaceId });
+    const broken = await getIntegrationBinding({ db, workspaceId, provider: 'linear', projectId });
+
+    expect(listed.map((binding) => binding.id)).toEqual(['binding-1']);
+    expect(broken).toBeNull();
   });
 });

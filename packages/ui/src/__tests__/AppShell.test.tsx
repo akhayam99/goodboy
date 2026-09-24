@@ -9,11 +9,7 @@ afterEach(cleanup);
 describe('AppShell', () => {
   it('takes the hidden left sidebar out of the tab order', () => {
     const { rerender } = render(
-      <AppShell
-        leftSidebar={<button type="button">sessions</button>}
-        main={<div>main</div>}
-        rightSidebar={null}
-      />,
+      <AppShell leftSidebar={<button type="button">sessions</button>} main={<div>main</div>} />,
     );
     const aside = screen.getByRole('button', { name: 'sessions' }).closest('aside');
 
@@ -24,7 +20,6 @@ describe('AppShell', () => {
         leftSidebar={<button type="button">sessions</button>}
         leftHidden
         main={<div>main</div>}
-        rightSidebar={null}
       />,
     );
 
@@ -38,7 +33,6 @@ describe('AppShell', () => {
         leftHidden
         leftOverlay={<div>peek</div>}
         main={<div>main</div>}
-        rightSidebar={null}
       />,
     );
     const slot = screen.getByText('peek').parentElement;
@@ -49,17 +43,44 @@ describe('AppShell', () => {
   });
 
   it('lets the footer size its own track, so a divider never pushes it past the row', () => {
-    render(<AppShell footer={<div>status</div>} main={<div>main</div>} rightSidebar={null} />);
+    render(<AppShell footer={<div>status</div>} main={<div>main</div>} />);
     const grid = screen.getByText('status').closest('[style*="grid-template-rows"]');
 
     expect(grid?.getAttribute('style')).toContain('grid-template-rows: minmax(0,1fr) auto');
   });
 
   it('omits the overlay slot when nothing is peeking', () => {
-    render(
-      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} rightSidebar={null} />,
-    );
+    render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
 
     expect(screen.queryByText('peek')).toBeNull();
+  });
+
+  it('hides the studio slot when the studio renders nothing', () => {
+    const Empty = () => null;
+    const { container } = render(<AppShell main={<div>main</div>} studio={<Empty />} />);
+
+    const slot = container.querySelector('.z-studio');
+    expect(slot?.className).toContain('empty:hidden');
+    expect(slot?.childElementCount).toBe(0);
+  });
+
+  it('spans the studio across every column of the work row, above the peek', () => {
+    render(
+      <AppShell
+        leftSidebar={<div>sessions</div>}
+        leftOverlay={<div>peek</div>}
+        footer={<div>status</div>}
+        main={<div>main</div>}
+        studio={<div>settings studio</div>}
+      />,
+    );
+    const slot = screen.getByText('settings studio').parentElement;
+    const peek = screen.getByText('peek').parentElement;
+
+    expect(slot?.style.gridColumn).toBe('1 / -1');
+    expect(slot?.style.gridRow).toBe('1 / 2');
+    expect(slot?.className).toContain('z-studio');
+    expect(peek?.className).toContain('z-20');
+    expect(screen.getByText('status').parentElement?.style.gridArea).toBe('footer');
   });
 });

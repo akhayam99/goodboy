@@ -1,4 +1,4 @@
-import { StatCard, cn } from '@goodboy/ui';
+import { StatCard, cn, tintClasses } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
@@ -33,7 +33,9 @@ export const TrendStatCard = ({
       hint={hint}
       className={cn(
         'h-full',
-        difference !== null && difference !== 0 && isImprovement ? 'border-success/30' : undefined,
+        difference !== null && difference !== 0 && isImprovement
+          ? cn(tintClasses('success').borderSoft)
+          : undefined,
       )}
     />
   );

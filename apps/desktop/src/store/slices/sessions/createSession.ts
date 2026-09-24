@@ -1,8 +1,10 @@
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AttachmentInput,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   ProjectId,
   ProviderId,
   Session,
@@ -15,7 +17,6 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import {
   deleteSession,
   insertSession,
@@ -29,7 +30,6 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentInsert } from '../../../features/workflows/workflows';
 import { kindRouting, AGENT_KIND_META, type AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
-import { markSessionMobileShared } from '../../../features/companion/mobileConfinement';
 import { workSurfaceFocus } from '../session-view/workSurfaceFocus';
 import { clampTitle } from './titleLimit';
 import { preSpawnWorkflowAgents } from '../workflows/preSpawnWorkflowAgents';
@@ -39,6 +39,7 @@ import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
 import { resolveSessionProject } from './resolveSessionProject';
 import type { GetFn, SetFn } from './types';
+import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
 
 type ExternalTaskInput = {
   provider: SessionExternalTaskProvider;
@@ -66,7 +67,6 @@ type Input = {
   kickoffPrompt?: string;
   externalTasks?: ReadonlyArray<ExternalTaskInput>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
-  mobileShared?: boolean;
   omitGoalSlot?: boolean;
 };
 
@@ -88,7 +88,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     kickoffPrompt,
     externalTasks,
     attachmentInputs,
-    mobileShared = false,
     omitGoalSlot = false,
   }: Input): Promise<{ session: Session }> => {
     const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
@@ -104,9 +103,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const trimmedFallbackRef = fallbackRef?.trim();
     const trimmedFolderName = folderName?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
-    if (mobileShared) {
-      markSessionMobileShared(sessionId);
-    }
     const existingSeparator = trimmedExisting?.lastIndexOf('/') ?? -1;
     const existingPrefix =
       existingSeparator > 0 ? trimmedExisting?.slice(0, existingSeparator) : undefined;
@@ -218,6 +214,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     }
 
     const externalTaskRows: Array<SessionExternalTask> = [];
+    const failedTaskLinks: Array<{ readonly identifier: string; readonly error: unknown }> = [];
     for (const externalTask of externalTasks ?? []) {
       const row: SessionExternalTask = {
         sessionId: session.id,
@@ -232,9 +229,23 @@ export const createSession = (set: SetFn, get: GetFn) => {
       try {
         await upsertSessionExternalTask({ db: tauriDatabase, task: row });
         externalTaskRows.push(row);
-      } catch {
-        continue;
+      } catch (error) {
+        failedTaskLinks.push({ identifier: externalTask.identifier, error });
       }
+    }
+    const firstFailedLink = failedTaskLinks[0];
+    if (firstFailedLink !== undefined) {
+      void get().reportError({
+        severity: 'warning',
+        title:
+          failedTaskLinks.length === 1
+            ? `Couldn't link ${firstFailedLink.identifier} to this session`
+            : `Couldn't link ${failedTaskLinks.length} tasks to this session`,
+        error: failedTaskLinks
+          .map(({ identifier, error }) => `${identifier}: ${formatError(error)}`)
+          .join('\n'),
+        sessionId: session.id,
+      });
     }
     for (const row of externalTaskRows) {
       await get().recordSessionEvent({
@@ -265,11 +276,17 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const agentModelOverrides: Record<string, string> = {};
     const agentKindOverrides: Record<string, string> = {};
     const agentProviderOverrides: Record<string, ProviderId> = {};
-    const agentEffortOverrides: Record<string, ModelEffort> = {};
+    const agentEffortOverrides: Record<string, EffortLevel> = {};
 
-    const workspaceVerbositySeed =
-      get().workspaceOverrides[workspaceId]?.defaultVerbosity ?? undefined;
-    const roleModels = get().workspaceOverrides[workspaceId]?.roleModels ?? null;
+    const creationSettings = resolveScopedSettings({
+      state: get(),
+      workspaceId,
+      projectId: project?.id ?? null,
+      sessionId: null,
+      defaultProviderId: session.providerPreference.defaultProvider,
+    });
+    const workspaceVerbositySeed = creationSettings.defaultVerbosityOverride ?? undefined;
+    const roleModels = creationSettings.roleModels;
 
     if (workflowId) {
       const templates = get().phaseTemplates[workspaceId] ?? [];

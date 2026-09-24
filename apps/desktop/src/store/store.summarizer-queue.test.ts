@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStoreModule,
+  type StoryStore,
+  type StoryStoreModule,
+} from './storyHarness';
 import type { SlotKey } from '@goodboy/core';
 import type {
   ContextSlot,
@@ -40,9 +46,6 @@ vi.mock('../shared/lib/db', () => ({
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -218,10 +221,13 @@ function buildSession(): Session {
   };
 }
 
-async function importStore() {
-  const mod = await import('./store');
-  return mod;
-}
+let storeModule: StoryStoreModule;
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  storeModule = await importStoreModule();
+  useAppStore = storeModule.useAppStore;
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('summarizer queue, coalescing and no-stack', () => {
   beforeEach(() => {
@@ -254,7 +260,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       )
       .mockResolvedValue(undefined);
 
-    const { useAppStore, summarizerQueues } = await import('./store');
+    const { summarizerQueues } = await import('./turn-helpers');
     summarizerQueues.clear();
 
     useAppStore.setState({
@@ -266,7 +272,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -322,7 +327,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('uses the configured summarizer task model when no override is provided', async () => {
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -351,7 +355,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -380,15 +383,37 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'cursor', model: 'sonnet-4.6' }),
     );
     useAppStore.setState({ workspaceOverrides: {} });
   });
 
+  it('drops the session queue once it drains', async () => {
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+    });
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'turn input',
+      turnOutput: 'turn output',
+      workingDir: null,
+    });
+    expect(queues.get(SESSION_ID)?.inFlight).toBe(true);
+
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
+    expect(queues.size).toBe(0);
+  });
+
   it('summarizes in the worktree the turn wrote to, not the first of the session', async () => {
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -407,7 +432,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: '/repos/app/second',
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ workingDir: '/repos/app/second' }),
     );
@@ -418,7 +443,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('uses the current workspace provider instead of the captured session provider', async () => {
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -451,7 +475,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-luna' }),
     );
@@ -459,7 +483,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('preserves an explicit codex variant for session summaries', async () => {
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -494,7 +517,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
       expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'high' }),
     );
@@ -507,7 +530,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       resolved = true;
     });
 
-    const { summarizerQueues: sq } = await import('./store');
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
@@ -559,8 +582,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           resolveTelemetryList = resolve;
         }),
     );
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -573,7 +594,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -605,7 +625,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [staleRecord, currentRecord] } });
     resolveTelemetryList?.([staleRecord]);
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(useAppStore.getState().sessionTelemetry[SESSION_ID]).toEqual([
       staleRecord,
       currentRecord,
@@ -613,7 +633,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('in-flight + multiple queued coalesces to one pending entry', async () => {
-    const { summarizerQueues: sq } = await import('./store');
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
@@ -649,12 +669,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
-    const storeModule = await import('./store');
     expect((storeModule as Record<string, unknown>)['waitForSummarizerSettled']).toBeUndefined();
   });
 
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
-    const { summarizerQueues: sq } = await import('./store');
+    const { summarizerQueues: sq } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
@@ -702,8 +721,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: 'original goal', enabled: true },
       { key: 'decisions', value: '- original decision', enabled: true },
     ];
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -715,7 +732,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -756,7 +772,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     resolveFirst();
 
     await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2));
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy.mock.calls[0]?.[2]).toMatchObject({
       key: 'decisions',
@@ -775,8 +791,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: 'same goal', enabled: true },
       { key: 'decisions', value: '- kept decision', enabled: true },
     ];
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -788,7 +802,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -816,7 +829,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       turnOutput: 'turn output',
       workingDir: null,
     });
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
 
     const decisionEvents = insertSessionEventSpy.mock.calls
       .map(([params]) => params.event)
@@ -843,8 +856,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: 'original goal', enabled: true },
       { key: 'decisions', value: '- original decision', enabled: true },
     ];
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -856,7 +867,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -893,7 +903,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizerUpserts = [];
     resolveFirst();
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(2);
     expect(upsertContextSlotSpy).not.toHaveBeenCalled();
   });
@@ -903,8 +913,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: `${index}${'x'.repeat(561)}` },
     ]);
     dbSlots = [{ key: 'goal', value: 'original goal', enabled: true }];
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -916,7 +924,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -945,7 +952,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(2);
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(2);
   });
@@ -954,8 +961,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const oversizeGoal = 'x'.repeat(561);
     summarizerUpserts = [{ key: 'goal', value: oversizeGoal }];
     dbSlots = [{ key: 'goal', value: oversizeGoal, enabled: true }];
-
-    const { useAppStore } = await import('./store');
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
     useAppStore.setState({
@@ -967,7 +972,6 @@ describe('summarizer queue, coalescing and no-stack', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -996,7 +1000,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workingDir: null,
     });
 
-    await vi.waitFor(() => expect(queues.get(SESSION_ID)?.inFlight).toBe(false));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizeSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
   });

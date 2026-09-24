@@ -47,6 +47,7 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
+  useTelemetryForSessions: () => state.sessionTelemetry,
 }));
 
 import { ImpactStudio } from './index';
@@ -106,7 +107,6 @@ const renderStudio = ({ initialScope, onClose = vi.fn() }: RenderParams = {}) =>
   render(
     <ImpactStudio
       workspaceId={'workspace-1' as WorkspaceId}
-      workspaceName="Goodboy"
       initialScope={initialScope}
       onClose={onClose}
     />,
@@ -172,7 +172,7 @@ describe('Impact studio spend scopes', () => {
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/session cost/i)).toBeDefined();
     expect(screen.getByText(/cost per turn/i)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'recent' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Recent' })).toBeDefined();
   });
 
   it('authors a new provider cap via saveBudgetRule', () => {

@@ -205,7 +205,7 @@ export const resolvePrForBranch = async (
   ];
   let raw: ReadonlyArray<RawPullRequest>;
   try {
-    raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+    raw = await runJson<ReadonlyArray<RawPullRequest>>({ runner, args, opts, shape: 'array' });
   } catch (err) {
     if (err instanceof GhCliError) {
       return null;
@@ -245,7 +245,7 @@ export const listPrsForBranch = async (
     '--json',
     PR_FIELDS.join(','),
   ];
-  const raw = await runJson<ReadonlyArray<RawPullRequest>>(runner, args, opts);
+  const raw = await runJson<ReadonlyArray<RawPullRequest>>({ runner, args, opts, shape: 'array' });
   if (raw.length === 0) {
     return [];
   }
@@ -311,11 +311,12 @@ export const fetchLinkedIssues = async (
       '--json',
       'closingIssuesReferences',
     ];
-    const res = await runJson<{ closingIssuesReferences: ReadonlyArray<ClosingIssueRef> }>(
+    const res = await runJson<{ closingIssuesReferences: ReadonlyArray<ClosingIssueRef> }>({
       runner,
       args,
       opts,
-    );
+      shape: 'object',
+    });
     const merged = new Map<number, LinkedIssue>();
     for (const item of fromBody) merged.set(item.number, item);
     for (const item of res.closingIssuesReferences ?? []) {

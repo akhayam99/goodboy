@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -233,12 +234,12 @@ export const parseJsonLine = ({ line, ctx }: ParseParams): ReadonlyArray<TurnEve
   if (trimmed.length === 0) {
     return [];
   }
-  let payload: Payload;
-  try {
-    payload = JSON.parse(trimmed) as Payload;
-  } catch {
+  const parsed = parseJsonAllowingControlChars({ text: trimmed });
+  if (!parsed.ok) {
+    devWarn('[opencode-adapter] dropped a json line that does not parse');
     return [];
   }
+  const payload = parsed.value as Payload;
   const at = ctx.now();
   const events: TurnEvent[] = [];
   const state = stateFor({ runId: ctx.runId });

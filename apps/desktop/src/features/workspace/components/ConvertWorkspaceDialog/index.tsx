@@ -329,7 +329,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
               {HOST_NAME[host]} is connected
             </span>
           ) : (
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2">
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <StatusDot tone="warning" size="sm" />
                 {reposState.kind === 'unauthenticated'

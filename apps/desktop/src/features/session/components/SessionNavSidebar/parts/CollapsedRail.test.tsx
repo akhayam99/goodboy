@@ -56,7 +56,7 @@ describe('CollapsedRail', () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
     });
 
-    expect(screen.queryByText('New workspace')).toBeNull();
+    expect(screen.queryByText('Add workspace')).toBeNull();
   });
 
   it('offers no lens navigation, per the session-list-only sidebar', () => {

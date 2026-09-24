@@ -12,7 +12,7 @@ const { state } = vi.hoisted(() => ({
     shown: new Set<WorkspaceId>(),
     openWorkspace: vi.fn(async () => undefined),
     saveSetting: vi.fn(async () => undefined),
-    deleteWorkspace: vi.fn(async () => undefined),
+    disconnectWorkspace: vi.fn(async () => undefined),
     installUpdate: vi.fn(async () => undefined),
     settings: {} as Record<string, string>,
     updaterStatus: 'idle' as string,
@@ -27,21 +27,29 @@ vi.mock('../../../../store', () => ({
     selector: (s: {
       openWorkspace: typeof state.openWorkspace;
       saveSetting: typeof state.saveSetting;
-      deleteWorkspace: typeof state.deleteWorkspace;
+      disconnectWorkspace: typeof state.disconnectWorkspace;
       installUpdate: typeof state.installUpdate;
       settings: Record<string, string>;
       updaterStatus: string;
       updateVersion: string | null;
+      updateFailure: null;
+      updateProgress: null;
+      agentTurnState: Record<string, never>;
+      focusChangelogRelease: () => void;
     }) => unknown,
   ) =>
     selector({
       openWorkspace: state.openWorkspace,
       saveSetting: state.saveSetting,
-      deleteWorkspace: state.deleteWorkspace,
+      disconnectWorkspace: state.disconnectWorkspace,
       installUpdate: state.installUpdate,
       settings: state.settings,
       updaterStatus: state.updaterStatus,
       updateVersion: state.updateVersion,
+      updateFailure: null,
+      updateProgress: null,
+      agentTurnState: {},
+      focusChangelogRelease: () => undefined,
     }),
 }));
 
@@ -49,14 +57,14 @@ import { WorkspaceLauncher } from './index';
 
 beforeEach(() => {
   state.workspaces = [
-    { id: 'ws-a', name: 'alpha', slug: 'alpha', sessionsRoot: '/repos/alpha' } as Workspace,
-    { id: 'ws-b', name: 'bravo', slug: 'bravo', sessionsRoot: '/repos/bravo' } as Workspace,
+    { id: 'ws-a', name: 'alpha', slug: 'alpha' } as Workspace,
+    { id: 'ws-b', name: 'bravo', slug: 'bravo' } as Workspace,
   ];
   state.currentWorkspace = null;
   state.shown = new Set();
   state.openWorkspace = vi.fn(async () => undefined);
   state.saveSetting = vi.fn(async () => undefined);
-  state.deleteWorkspace = vi.fn(async () => undefined);
+  state.disconnectWorkspace = vi.fn(async () => undefined);
   state.installUpdate = vi.fn(async () => undefined);
   state.settings = {};
   state.updaterStatus = 'idle';
@@ -80,9 +88,9 @@ describe('WorkspaceLauncher', () => {
   it('disconnects a workspace after an explicit confirmation', async () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByLabelText('Disconnect alpha'));
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
-    expect(state.deleteWorkspace).toHaveBeenCalledWith('ws-a');
+    expect(state.disconnectWorkspace).toHaveBeenCalledWith('ws-a');
     expect(state.openWorkspace).not.toHaveBeenCalled();
   });
 
@@ -90,7 +98,7 @@ describe('WorkspaceLauncher', () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByLabelText('Disconnect bravo'));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(state.deleteWorkspace).not.toHaveBeenCalled();
+    expect(state.disconnectWorkspace).not.toHaveBeenCalled();
   });
 
   it('shows the update action when an update is available', () => {
@@ -98,12 +106,33 @@ describe('WorkspaceLauncher', () => {
     state.updateVersion = '0.1.99';
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByRole('button', { name: 'Update to 0.1.99' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Update and restart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
     expect(state.installUpdate).toHaveBeenCalled();
   });
 
   it('hides the update action when the app is current', () => {
     render(<WorkspaceLauncher />);
     expect(screen.queryByRole('button', { name: /Update to/ })).toBeNull();
+  });
+
+  it('opens app settings from the launcher corner', () => {
+    const details: Array<unknown> = [];
+    const onOpenSettings = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        details.push(event.detail);
+      }
+    };
+    window.addEventListener('goodboy:open-settings', onOpenSettings);
+    render(<WorkspaceLauncher />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
+
+    window.removeEventListener('goodboy:open-settings', onOpenSettings);
+    expect(details).toEqual([{ scope: 'app' }]);
+  });
+
+  it('offers Add workspace as the one verb', () => {
+    render(<WorkspaceLauncher />);
+    expect(screen.getByRole('button', { name: 'Add workspace' })).toBeDefined();
   });
 });

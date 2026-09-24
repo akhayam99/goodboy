@@ -60,9 +60,10 @@ describe('the resolve queue row', () => {
     const onOpen = vi.fn();
     renderRow({ body: LONG_REQUEST, onOpen });
 
-    fireEvent.click(screen.getByText(LONG_REQUEST));
+    fireEvent.click(screen.getByRole('button', { name: LONG_REQUEST }));
 
     expect(onOpen).toHaveBeenCalledOnce();
+    expect(screen.getByText(LONG_REQUEST).closest('button')).toBeNull();
   });
 
   it('expands the clamped request without opening the comment', () => {
@@ -79,7 +80,7 @@ describe('the resolve queue row', () => {
     const onOpen = vi.fn();
     renderRow({ body: 'Cap the attempts.', onOpen });
 
-    fireEvent.click(screen.getByText('Cap the attempts.'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cap the attempts.' }));
 
     expect(onOpen).toHaveBeenCalledOnce();
     expect(screen.queryByRole('button', { name: 'Later' })).toBeNull();

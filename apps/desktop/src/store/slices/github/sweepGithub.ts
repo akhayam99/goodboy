@@ -1,7 +1,10 @@
+import { runWithLimit } from '../../../shared/utils/runWithLimit';
 import { listSessionPrFetches } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 
 type Params = { skipUnknownPr?: boolean };
+
+export const REVIEW_REFRESH_CONCURRENCY = 4;
 
 export const sweepGithub = (set: SetFn, get: GetFn) => {
   return (opts?: Params) => {
@@ -12,7 +15,7 @@ export const sweepGithub = (set: SetFn, get: GetFn) => {
     const wsAtStart = get().currentWorkspaceId;
     const { sessions, currentSessionId } = get();
     const subOpts = { silent: true, retries: 1 } as const;
-    const promises: Promise<void>[] = [];
+    const tasks: Array<() => Promise<void>> = [];
     for (const session of sessions) {
       for (const target of listSessionPrFetches({ state: get(), sessionId: session.id })) {
         const mountId = target.mount.id;
@@ -24,15 +27,16 @@ export const sweepGithub = (set: SetFn, get: GetFn) => {
         if (opts?.skipUnknownPr === true && cached?.fetchedAt != null && pr === null) {
           continue;
         }
-        const head = get().refreshSessionPr(session.id, { ...subOpts, mountId });
-        promises.push(head);
-        if (session.id === currentSessionId) {
-          void head.then(() => get().refreshSessionPrDetail(session.id, { ...subOpts, mountId }));
-        }
+        tasks.push(async () => {
+          await get().refreshSessionPr(session.id, { ...subOpts, mountId });
+          if (session.id === currentSessionId) {
+            void get().refreshSessionPrDetail(session.id, { ...subOpts, mountId });
+          }
+        });
       }
     }
-    if (promises.length > 0) {
-      void Promise.all(promises).then(() => {
+    if (tasks.length > 0) {
+      void runWithLimit({ tasks, limit: REVIEW_REFRESH_CONCURRENCY }).then(() => {
         if (get().currentWorkspaceId === wsAtStart) {
           set({ boardReady: true });
         }

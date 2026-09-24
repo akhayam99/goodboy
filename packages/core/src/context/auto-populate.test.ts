@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type {
@@ -10,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { autoPopulateContext } from './auto-populate';
 import { ContextEngine } from './engine';
+import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
 type OpenQuestionRowSnapshot = {
   readonly text: string;
@@ -33,24 +33,7 @@ type OpenQuestionProvenanceRow = {
   readonly created_by_agent_id: string | null;
 };
 
-function makeDb(): DbInterface {
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  return {
-    async exec(sql) {
-      db.exec(sql);
-    },
-    async execute(sql, params = []) {
-      const stmt = db.prepare(sql);
-      const result = stmt.run(...(params as ReadonlyArray<never>));
-      return { rowsAffected: result.changes };
-    },
-    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      const stmt = db.prepare(sql);
-      return stmt.all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
-    },
-  };
-}
+const makeDb = (): DbInterface => makeTestDatabase();
 
 async function seedSession(db: DbInterface, sessionId: SessionId): Promise<void> {
   const workspaceId = 'ws_ap' as WorkspaceId;

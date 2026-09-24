@@ -3,6 +3,7 @@ import type {
   IsoDateTime,
   MountDiskState,
   MountId,
+  MountOperation,
   ProjectId,
   SessionId,
   SessionMountView,
@@ -38,12 +39,19 @@ const h = vi.hoisted(() => ({
     decision: { kind: 'removed', path: target.worktreePath },
     diskState: 'removed',
   })),
+  operations: new Map<string, MountOperation>(),
   rows: new Map<MountId, SessionMountView>(),
   updateSessionMountLifecycle: vi.fn(async ({}: LifecycleParams) => true),
   withRepositoryAndMountLock: vi.fn(async ({ run }: LockParams) => run()),
 }));
 
 vi.mock('@goodboy/db', () => ({
+  getMountOperation: vi.fn(
+    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+  ),
+  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+    h.operations.set(operation.requestId, operation);
+  }),
   listSessionMounts: vi.fn(async ({ sessionId }: ListParams) =>
     [...h.rows.values()].filter((row) => row.sessionId === sessionId),
   ),
@@ -155,6 +163,7 @@ beforeEach(() => {
     worktreePath: '/worktrees/sibling',
   });
   h.rows.clear();
+  h.operations.clear();
   h.rows.set(TARGET_ID, target);
   h.rows.set(SIBLING_ID, sibling);
   h.updateSessionMountLifecycle.mockImplementation(async (params: LifecycleParams) => {
@@ -207,6 +216,28 @@ describe('removeMountWorktree', () => {
         isAttached: true,
         revision: 2,
       }),
+    ]);
+    expect([...h.operations.values()]).toEqual([
+      expect.objectContaining({ kind: 'remove', status: 'succeeded', mountId: TARGET_ID }),
+    ]);
+  });
+
+  it('leaves the removal uncertain when the row changed underneath it', async () => {
+    const state = stateWith({ views: [...h.rows.values()] });
+    const set: SetFn = (update) => {
+      Object.assign(state, typeof update === 'function' ? update(state) : update);
+    };
+    h.updateSessionMountLifecycle.mockResolvedValueOnce(false);
+
+    const removal = removeMountWorktree({ set, get: () => state })({
+      sessionId: SESSION_ID,
+      mountId: TARGET_ID,
+      mode: 'safe',
+    });
+
+    await expect(removal).rejects.toMatchObject({ code: 'revision-conflict' });
+    expect([...h.operations.values()]).toEqual([
+      expect.objectContaining({ kind: 'remove', status: 'uncertain' }),
     ]);
   });
 });

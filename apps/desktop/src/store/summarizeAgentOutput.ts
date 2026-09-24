@@ -2,10 +2,12 @@ import { invoke } from '@tauri-apps/api/core';
 import { formatError } from '@goodboy/ui';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { AgentId, TaskModelPreference } from '@goodboy/types';
+import type { SetFn } from './slice-types';
 
 export const SUMMARY_TIMEOUT_MS = 90_000;
 
 type Params = {
+  readonly set: SetFn;
   readonly agentId: AgentId;
   readonly output: string;
   readonly taskModel: TaskModelPreference;
@@ -13,17 +15,13 @@ type Params = {
   readonly expectedOutput?: string;
 };
 
-type RunParams = Omit<Params, 'agentId'>;
+type RunParams = Omit<Params, 'agentId' | 'set'>;
 
 export type SummarizeAgentOutputResult = {
   readonly summary: string;
   readonly degraded: boolean;
   readonly error?: string;
 };
-
-export const summarizedStepOutputs = new Map<AgentId, string>();
-
-export const stepSummaryDegraded = new Map<AgentId, boolean>();
 
 const inFlightSummaries = new Map<AgentId, Promise<SummarizeAgentOutputResult>>();
 
@@ -66,7 +64,25 @@ const runSummarization = async ({
   }
 };
 
+type RecordParams = {
+  readonly set: SetFn;
+  readonly agentId: AgentId;
+  readonly output: string;
+  readonly isDegraded: boolean;
+};
+
+const recordSummaryOutcome = ({ set, agentId, output, isDegraded }: RecordParams): void => {
+  set((state) => {
+    const { [agentId]: _stale, ...kept } = state.degradedStepOutputs;
+    return {
+      stepSummaryDegraded: { ...state.stepSummaryDegraded, [agentId]: isDegraded },
+      degradedStepOutputs: isDegraded ? { ...kept, [agentId]: output } : kept,
+    };
+  });
+};
+
 export const summarizeAgentOutput = ({
+  set,
   agentId,
   output,
   taskModel,
@@ -78,7 +94,6 @@ export const summarizeAgentOutput = ({
     return alreadyRunning;
   }
 
-  summarizedStepOutputs.set(agentId, output);
   const running = runSummarization({
     output,
     taskModel,
@@ -86,10 +101,7 @@ export const summarizeAgentOutput = ({
     ...(expectedOutput != null && { expectedOutput }),
   })
     .then((result) => {
-      stepSummaryDegraded.set(agentId, result.degraded);
-      if (!result.degraded) {
-        summarizedStepOutputs.delete(agentId);
-      }
+      recordSummaryOutcome({ set, agentId, output, isDegraded: result.degraded });
       return result;
     })
     .finally(() => {

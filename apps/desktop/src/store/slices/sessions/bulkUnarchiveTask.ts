@@ -7,9 +7,7 @@ type FailureParams = {
 };
 
 const failureMessage = ({ failed, total }: FailureParams): string =>
-  total === 1
-    ? 'failed to restore the session'
-    : `failed to restore ${failed} of ${total} sessions`;
+  total === 1 ? "Couldn't restore the session" : `Couldn't restore ${failed} of ${total} sessions`;
 
 export const bulkUnarchiveTask = (set: SetFn, get: GetFn) => {
   return async (ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult> => {
@@ -24,11 +22,11 @@ export const bulkUnarchiveTask = (set: SetFn, get: GetFn) => {
       }
     }
     if (failed.length > 0) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        failureMessage({ failed: failed.length, total: ids.length }),
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: failureMessage({ failed: failed.length, total: ids.length }),
+      });
     }
     return { succeeded, failed };
   };

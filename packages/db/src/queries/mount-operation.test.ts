@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, MountId, MountOperation, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getMountOperation,
   listMountOperations,
@@ -21,8 +19,7 @@ type OperationParams = {
 };
 
 const seed = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   const timestamp = Date.parse(now);
   await db.execute(
     'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

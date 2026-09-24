@@ -139,11 +139,14 @@ describe('reconciling the worktrees folder', () => {
     await run(store);
 
     expect(emitNotification).toHaveBeenCalledWith(
-      'orphan-worktrees',
-      'info',
-      expect.stringContaining('1 session folders left on disk'),
-      expect.any(String),
-      { workspaceId: 'ws-1', action: { kind: 'open-orphan-worktrees', workspaceId: 'ws-1' } },
+      expect.objectContaining({
+        kind: 'orphan-worktrees',
+        severity: 'info',
+        title: expect.stringContaining('1 session folders left on disk'),
+        body: expect.any(String),
+        workspaceId: 'ws-1',
+        action: { kind: 'open-orphan-worktrees', workspaceId: 'ws-1' },
+      }),
     );
   });
 

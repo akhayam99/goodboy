@@ -6,7 +6,7 @@ import type {
   SessionId,
   TelemetryRecord,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessions } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessions, useTelemetryForSessions } from '../../../../store';
 import type { ProviderSpendEntry } from '../../../../store';
 import type { SessionSpend, WorkspaceTurn } from '../../components/spend/lib';
 import { useBudgetData, type BudgetData } from '../useBudgetData';
@@ -56,7 +56,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const sessions = useSessions();
   const currentSessionId = useAppStore((s) => s.currentSessionId);
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
-  const telemetryMap = useAppStore((s) => s.sessionTelemetry);
+  const telemetryMap = useTelemetryForSessions({ sessions });
   const storedProviders = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
   const alerts = useAppStore((s) => s.budgetAlerts);
   const rules = useAppStore((s) => s.budgetRules);

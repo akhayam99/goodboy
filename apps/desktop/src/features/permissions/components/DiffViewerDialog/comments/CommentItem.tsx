@@ -1,5 +1,5 @@
 import { ArrowUpRight, Check, RotateCcw, Trash2 } from 'lucide-react';
-import { Chip, cn, Tooltip, type Tone } from '@goodboy/ui';
+import { Chip, cn, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
 import type { AgentId, DiffComment } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 
@@ -23,10 +23,10 @@ export const CommentItem = ({
   const agentName = comment.consumedByAgentId ? getAgentName(comment.consumedByAgentId) : undefined;
   const containerClass =
     comment.status === 'resolved'
-      ? 'border-success/40 bg-success/5 opacity-60'
+      ? cn(tintClasses('success').border, tintClasses('success').bgSoft, 'opacity-60')
       : comment.status === 'consumed'
-        ? 'border-info/40 bg-info/5'
-        : 'border-warning bg-warning/5';
+        ? cn(tintClasses('info').border, tintClasses('info').bgSoft)
+        : cn('border-warning', tintClasses('warning').bgSoft);
   const statusPill: { label: string; tone: Tone } | null =
     comment.status === 'resolved'
       ? { label: 'resolved', tone: 'success' }
@@ -40,12 +40,12 @@ export const CommentItem = ({
       <div className="flex items-center gap-2">
         <span
           aria-hidden
-          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-foreground/10 text-3xs font-semibold uppercase text-muted-foreground"
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-3xs font-semibold uppercase text-muted-foreground"
         >
           ME
         </span>
         <span className="text-2xs font-medium text-foreground">you</span>
-        <span className="text-3xs text-muted-foreground/70">
+        <span className="text-3xs text-faint-foreground">
           {formatRelativeAge({ fromIso: comment.createdAt })}
         </span>
         {statusPill ? (
@@ -58,7 +58,7 @@ export const CommentItem = ({
                 type="button"
                 onClick={() => onResolve(comment.id)}
                 aria-label="Mark resolved"
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-success"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-success"
               >
                 <Check size={11} />
               </button>
@@ -70,7 +70,7 @@ export const CommentItem = ({
                 type="button"
                 onClick={() => onReopen(comment.id)}
                 aria-label="Reopen note"
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-warning"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-warning"
               >
                 <RotateCcw size={11} />
               </button>
@@ -81,7 +81,7 @@ export const CommentItem = ({
               type="button"
               onClick={() => onDelete(comment.id)}
               aria-label="Delete"
-              className="rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-danger"
+              className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-danger"
             >
               <Trash2 size={11} />
             </button>
@@ -103,7 +103,11 @@ export const CommentItem = ({
               <button
                 type="button"
                 onClick={() => onViewAgent(comment.consumedByAgentId as AgentId)}
-                className="inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info hover:bg-info/10 hover:text-info"
+                className={cn(
+                  'inline-flex items-center gap-0.5 rounded-sm px-1 py-0.5 text-info',
+                  tintClasses('info').hoverBg,
+                  'hover:text-info',
+                )}
               >
                 <span className="font-medium">{agentName}</span>
                 <ArrowUpRight size={9} aria-hidden />

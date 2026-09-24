@@ -2355,6 +2355,12 @@ mod tests {
         assert!(validate_routing_values(None, Some(&oversized), None).is_err());
     }
 
+    #[test]
+    fn rejects_a_routing_lock_with_an_unknown_provider() {
+        let lock = r#"{"version":1,"pick":{"provider":"nowhere","model":"gpt-5.6","effort":"high"},"origin":"user"}"#.to_string();
+        assert!(validate_routing_values(Some(&lock), None, None).is_err());
+    }
+
     fn child_input(id: &str, ordinal: i64) -> PhaseRunInsertInput {
         PhaseRunInsertInput {
             id: Some(id.to_string()),

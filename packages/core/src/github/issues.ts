@@ -43,11 +43,12 @@ export const updateIssueBody = async ({
   body,
   opts = {},
 }: UpdateIssueBodyParams): Promise<string> => {
-  const updated = await runJson<RawUpdatedIssue>(
+  const updated = await runJson<RawUpdatedIssue>({
     runner,
-    ['api', `repos/${repoSlug}/issues/${issueNumber}`, '-X', 'PATCH', '-f', `body=${body}`],
+    args: ['api', `repos/${repoSlug}/issues/${issueNumber}`, '-X', 'PATCH', '-f', `body=${body}`],
     opts,
-  );
+    shape: 'object',
+  });
   return updated.body ?? '';
 };
 
@@ -85,11 +86,12 @@ export const listIssueComments = async ({
   issueNumber,
   opts = {},
 }: ListIssueCommentsParams): Promise<ReadonlyArray<GithubIssueComment>> => {
-  const raw = await runJson<ReadonlyArray<RawIssueComment>>(
+  const raw = await runJson<ReadonlyArray<RawIssueComment>>({
     runner,
-    ['api', `repos/${repoSlug}/issues/${issueNumber}/comments`, '--paginate'],
+    args: ['api', `repos/${repoSlug}/issues/${issueNumber}/comments`, '--paginate'],
     opts,
-  );
+    shape: 'array',
+  });
   return raw.map((comment) => toIssueComment({ raw: comment }));
 };
 
@@ -108,11 +110,19 @@ export const createIssueComment = async ({
   body,
   opts = {},
 }: CreateIssueCommentParams): Promise<GithubIssueComment> => {
-  const raw = await runJson<RawIssueComment>(
+  const raw = await runJson<RawIssueComment>({
     runner,
-    ['api', `repos/${repoSlug}/issues/${issueNumber}/comments`, '-X', 'POST', '-f', `body=${body}`],
+    args: [
+      'api',
+      `repos/${repoSlug}/issues/${issueNumber}/comments`,
+      '-X',
+      'POST',
+      '-f',
+      `body=${body}`,
+    ],
     opts,
-  );
+    shape: 'object',
+  });
   return toIssueComment({ raw });
 };
 
@@ -121,9 +131,9 @@ export const listAssignedIssues = async (
   repoSlug: string,
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubIssue>> => {
-  const issues = await runJson<ReadonlyArray<RawGithubIssue>>(
+  const issues = await runJson<ReadonlyArray<RawGithubIssue>>({
     runner,
-    [
+    args: [
       'issue',
       'list',
       '--repo',
@@ -138,7 +148,8 @@ export const listAssignedIssues = async (
       ISSUE_FIELDS.join(','),
     ],
     opts,
-  );
+    shape: 'array',
+  });
 
   return issues.map((issue) => ({
     number: issue.number,

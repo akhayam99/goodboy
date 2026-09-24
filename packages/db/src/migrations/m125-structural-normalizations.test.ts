@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -11,11 +11,7 @@ const SQLITE_MS = Date.parse(`${SQLITE_AT}Z`);
 const EPOCH_SECONDS = Math.floor(ISO_MS / 1000);
 
 const seedThrough124 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 124),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 124 });
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
      VALUES ('workspace-1', 'Workspace', 'workspace', ?, ?)`,

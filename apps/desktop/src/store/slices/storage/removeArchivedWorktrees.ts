@@ -1,18 +1,22 @@
 import { updateSessionMountLifecycle } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cleanupMountDirectory } from '../mount-cleanup';
+import { runMountRemoval } from '../project-mounts/runMountRemoval';
 import { collectArchivedWorktrees } from './collectArchivedWorktrees';
-import type { GetFn, SetFn, WorktreeRemovalResult } from './types';
+import type { GetFn, SetFn, WorktreeCleanupTally } from './types';
 
 export const removeArchivedWorktrees = (_set: SetFn, get: GetFn) => {
-  return async (): Promise<WorktreeRemovalResult> => {
+  return async (): Promise<WorktreeCleanupTally> => {
     const targets = await collectArchivedWorktrees({ projects: get().projects });
     let removed = 0;
     let failed = 0;
     for (const target of targets) {
-      const result = await cleanupMountDirectory({
+      const result = await runMountRemoval({
         get,
+        mode: 'safe',
+        keepDirectory: false,
+        finish: 'clear-path',
+        expectedRevision: target.revision,
         target: {
           sessionId: target.sessionId,
           mountId: target.mountId,
@@ -23,32 +27,37 @@ export const removeArchivedWorktrees = (_set: SetFn, get: GetFn) => {
           diskState: 'present',
           isRepoProject: true,
         },
-      });
-      const decision = result.decision;
-      switch (decision.kind) {
+        finishRow: async ({ decision, diskState }) => {
+          if (decision.kind === 'kept') {
+            return true;
+          }
+          return updateSessionMountLifecycle({
+            db: tauriDatabase,
+            sessionId: target.sessionId,
+            mountId: target.mountId,
+            worktreePath: null,
+            isAttached: false,
+            diskState,
+            expectedRevision: target.revision,
+            updatedAt: new Date().toISOString() as IsoDateTime,
+          });
+        },
+      }).catch(() => null);
+      const kind = result?.decision.kind ?? 'failed';
+      switch (kind) {
         case 'kept':
         case 'failed':
           failed += 1;
           continue;
         case 'removed':
         case 'missing':
-          break;
+          removed += 1;
+          continue;
         default: {
-          const exhaustive: never = decision;
+          const exhaustive: never = kind;
           throw exhaustive;
         }
       }
-      await updateSessionMountLifecycle({
-        db: tauriDatabase,
-        sessionId: target.sessionId,
-        mountId: target.mountId,
-        worktreePath: null,
-        isAttached: false,
-        diskState: result.diskState,
-        expectedRevision: target.revision,
-        updatedAt: new Date().toISOString() as IsoDateTime,
-      }).catch(() => undefined);
-      removed += 1;
     }
     await get().loadStorageStats();
     await get()

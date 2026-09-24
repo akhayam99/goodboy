@@ -7,7 +7,7 @@ import type { GetFn, SetFn } from './types';
 import type { SendTurnResult } from '../turn/types';
 import { createResolveSlice } from './index';
 import { createResolveThread } from './createResolveThread';
-import { selectDirtyTreeThreads, withDirtyTreeReason } from './selectDirtyTreeThreads';
+import { isDirtyTreeRow, withDirtyTreeReason } from './selectDirtyTreeThreads';
 import { resolveInitialState } from './state';
 
 type Lease = {
@@ -170,6 +170,7 @@ const h = vi.hoisted(() => {
     execute: vi.fn(),
     select: vi.fn(),
     exec: vi.fn(),
+    transaction: vi.fn(),
     listLiveRunIds: vi.fn(async () => new Set<string>()),
     agentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
     slots,
@@ -429,6 +430,7 @@ beforeEach(async () => {
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
+  h.transaction.mockReset().mockImplementation(db.transaction);
   await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
@@ -898,10 +900,9 @@ describe('resolve queue scheduler', () => {
 
     expect(harness.sendTurn).toHaveBeenCalledTimes(1);
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual(['PRRT_1']);
 
     setTree({ unstaged: 0 });
@@ -942,10 +943,9 @@ describe('resolve queue scheduler', () => {
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A, endedAttemptId });
 
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual([]);
     expect(harness.sendTurn).toHaveBeenCalledTimes(2);
     expect(harness.sendTurn.mock.calls[1]?.[0]?.content).toBe('fix two');
@@ -975,10 +975,9 @@ describe('resolve queue scheduler', () => {
     await harness.actions.drainResolveQueue({ sessionId: SESSION_A });
 
     expect(
-      selectDirtyTreeThreads({
-        sessionResolveThreads: harness.get().sessionResolveThreads,
-        sessionId: SESSION_A,
-      }),
+      (harness.get().sessionResolveThreads[SESSION_A] ?? [])
+        .filter((row) => isDirtyTreeRow({ row }))
+        .map((row) => row.threadId),
     ).toEqual(['PRRT_1']);
     expect(harness.sendTurn).not.toHaveBeenCalled();
   });

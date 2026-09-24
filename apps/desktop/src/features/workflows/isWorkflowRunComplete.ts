@@ -3,7 +3,7 @@ import { isWorkflowComplete } from '@goodboy/core';
 
 type Params = {
   readonly run: WorkflowRun;
-  readonly workflow: Workflow;
+  readonly workflow: Workflow | null;
   readonly agents: ReadonlyArray<Agent>;
 };
 
@@ -19,6 +19,9 @@ export const isWorkflowRunComplete = ({ run, workflow, agents }: Params): boolea
   }
   if (run.executionMode === 'dynamic') {
     return run.orchestrationOutcome === 'done';
+  }
+  if (workflow === null) {
+    return false;
   }
   const stepAgents = agents.filter((agent) => agent.parentAgentId == null);
   return workflow.steps.length > 0 && isWorkflowComplete(workflow, stepAgents);

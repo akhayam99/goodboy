@@ -12,7 +12,6 @@ export const WORKFLOW_ROUTING_COPY = {
     'This step has already started, so its model stays as it ran. A later attempt can run on a different model.',
   missingNode: 'This step is no longer part of the run.',
   unknownFailure: 'The model choice could not be saved.',
-  noSelection: 'No model resolved yet.',
   reasonLabel: 'Why this model',
   immutableNote: 'Fixed once the step started.',
 } as const;

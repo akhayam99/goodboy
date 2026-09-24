@@ -33,13 +33,13 @@ export const OverlayHeader = ({
 }: Props) => {
   if (variant === 'fullscreen') {
     return (
-      <header className="flex shrink-0 items-center gap-3 px-6 py-3">
+      <header aria-label={title} className="flex shrink-0 items-center gap-3 px-6 py-3">
         {glyph ??
           (Icon != null ? (
             <Icon size={18} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
           ) : null)}
         <div className="flex min-w-0 flex-col">
-          <h1 className="text-sm font-semibold text-foreground">{title}</h1>
+          <span className="text-sm font-semibold text-foreground">{title}</span>
           {subtitle != null ? (
             <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
           ) : null}
@@ -54,8 +54,8 @@ export const OverlayHeader = ({
           className={cn(
             'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
             'text-xs font-semibold text-muted-foreground transition-colors',
-            'hover:bg-muted hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'hover:bg-hover hover:text-foreground',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',
           )}
         >
@@ -66,12 +66,15 @@ export const OverlayHeader = ({
   }
 
   return (
-    <header className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}>
+    <header
+      aria-label={title}
+      className={cn('flex shrink-0 items-center gap-1.5 px-3', heightClassName)}
+    >
       {glyph ??
         (Icon != null ? (
           <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
         ) : null)}
-      <h1 className="shrink-0 text-2xs font-semibold text-foreground">{title}</h1>
+      <span className="shrink-0 text-2xs font-semibold text-foreground">{title}</span>
       {subtitle != null && subtitle !== '' ? (
         <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
       ) : null}
@@ -84,9 +87,9 @@ export const OverlayHeader = ({
           disabled={closeDisabled}
           aria-label={closeLabel}
           className={cn(
-            'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors',
-            'hover:bg-muted/50 hover:text-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors',
+            'hover:bg-hover hover:text-foreground',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',
           )}
         >

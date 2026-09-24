@@ -1,4 +1,4 @@
-import type { CatalogModel, ModelEffort, ProviderId } from '@goodboy/types';
+import type { CatalogModel, EffortLevel, ProviderId } from '@goodboy/types';
 import { catalogModelForId } from '../providers/catalogModelForId';
 
 type Params = {
@@ -9,7 +9,7 @@ type Params = {
 const workflowCatalogModel = ({ provider, model }: Params): CatalogModel | null =>
   catalogModelForId({ provider, modelId: model });
 
-export const supportedModelEfforts = ({ provider, model }: Params): ReadonlyArray<ModelEffort> => {
+export const supportedModelEfforts = ({ provider, model }: Params): ReadonlyArray<EffortLevel> => {
   const found = workflowCatalogModel({ provider, model });
   if (found === null) {
     return [];
@@ -22,7 +22,7 @@ export const supportedModelEfforts = ({ provider, model }: Params): ReadonlyArra
   return found.efforts;
 };
 
-export const defaultModelEffort = ({ provider, model }: Params): ModelEffort | null => {
+export const defaultModelEffort = ({ provider, model }: Params): EffortLevel | null => {
   const found = workflowCatalogModel({ provider, model });
   if (found === null) {
     return null;

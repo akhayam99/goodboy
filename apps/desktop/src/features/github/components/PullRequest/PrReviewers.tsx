@@ -1,0 +1,74 @@
+import { useMemo } from 'react';
+import type { PrDetail, ProjectId } from '@goodboy/types';
+import { CircleDashed } from 'lucide-react';
+import { EmptyState, Eyebrow } from '@goodboy/ui';
+import { RailBlock } from '@goodboy/ui';
+import { latestTerminalReviewsByAuthor } from '../../utils/latest-terminal-reviews-by-author';
+import { Avatar } from '@goodboy/ui';
+import { ReviewStateIcon } from '../ReviewStateIcon';
+import { ReviewerPicker } from './ReviewerPicker';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
+type Props = {
+  readonly detail: PrDetail | null;
+  readonly projectRoot: string | null;
+  readonly projectId?: ProjectId;
+  readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
+};
+
+export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: Props) => {
+  const requests = detail?.reviewRequests ?? [];
+  const reviewed = useMemo(
+    () => latestTerminalReviewsByAuthor(detail?.reviews ?? []),
+    [detail?.reviews],
+  );
+  const known = useMemo(
+    () =>
+      new Set([
+        ...requests.map((request) => request.login.toLowerCase()),
+        ...reviewed.map((review) => review.author.toLowerCase()),
+      ]),
+    [requests, reviewed],
+  );
+
+  return (
+    <RailBlock label="Reviewers">
+      <ReviewerPicker
+        projectRoot={projectRoot}
+        projectId={projectId}
+        exclude={known}
+        onAdd={onAddReviewers}
+      />
+      {reviewed.length === 0 && requests.length === 0 ? (
+        <EmptyState
+          icon={CONCEPT_ICONS.review}
+          tone={CONCEPT_TONE.review}
+          title="No reviewers yet"
+          size="inline"
+          className="basis-full"
+        />
+      ) : (
+        <ul className="flex basis-full flex-col gap-1">
+          {reviewed.map((review) => (
+            <li key={review.author} className="flex items-center gap-1.5 text-xs text-foreground">
+              <ReviewStateIcon state={review.state} size={ICON_SIZE.row} />
+              <Avatar url={review.authorAvatarUrl} alt={review.author} size="xs" />
+              <span className="min-w-0 flex-1 truncate">{review.author}</span>
+            </li>
+          ))}
+          {requests.map((request) => (
+            <li
+              key={`${request.kind}-${request.login}`}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            >
+              <CircleDashed size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
+              <Avatar url={request.avatarUrl} alt={request.login} size="xs" />
+              <span className="min-w-0 flex-1 truncate">{request.login}</span>
+              <Eyebrow label="awaiting" muted className="shrink-0" />
+            </li>
+          ))}
+        </ul>
+      )}
+    </RailBlock>
+  );
+};

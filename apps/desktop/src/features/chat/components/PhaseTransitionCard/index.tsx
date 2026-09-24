@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Milestone } from 'lucide-react';
-import { Button, Markdown, tintClasses } from '@goodboy/ui';
+import { Button, Markdown, tintClasses, Eyebrow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
@@ -101,10 +101,8 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           </Button>
         </div>
       ) : null}
-      <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-        carried forward
-      </span>
-      <div className="overflow-x-auto text-xs text-foreground/80">
+      <Eyebrow label="carried forward" />
+      <div className="overflow-x-auto text-xs text-foreground">
         <Markdown text={context} />
       </div>
     </TranscriptDisclosure>

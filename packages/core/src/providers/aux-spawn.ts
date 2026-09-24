@@ -1,4 +1,4 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { cliModelId } from './cliModelId';
 
 export type AuxSpawnResult = {
@@ -10,7 +10,7 @@ export type AuxSpawnResult = {
 type Params = {
   readonly providerId: ProviderId;
   readonly model: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly binary: string;
   readonly userMessage: string;
   readonly systemPrompt: string;

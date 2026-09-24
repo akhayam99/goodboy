@@ -167,7 +167,11 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     const res = await tauriGhRunner.run(args, ghOptions);
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr create exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', 'PR creation failed', errMsg, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't create the pull request",
+        body: errMsg,
         sessionId,
         workspaceId: workspace.id,
       });
@@ -221,24 +225,25 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
             body: appendClosingReferences({ body: created.body, references: filledReferences }),
           })
           .catch((error: unknown) => {
-            void get().emitNotification(
-              'error',
-              'warning',
-              'PR opened without its issue links',
-              `${filledReferences
+            void get().emitNotification({
+              kind: 'error',
+              severity: 'warning',
+              title: 'PR opened without its issue links',
+              body: `${filledReferences
                 .map((reference) => reference.line)
                 .join(', ')} could not be appended to the description: ${formatError(error)}`,
-              { sessionId, workspaceId: workspace.id },
-            );
+              sessionId,
+              workspaceId: workspace.id,
+            });
           });
       }
     }
-    void get().emitNotification(
-      'pr-created',
-      'success',
-      `PR created for: ${session.goal}`,
-      undefined,
-      { sessionId, workspaceId: workspace.id },
-    );
+    void get().emitNotification({
+      kind: 'pr-created',
+      severity: 'success',
+      title: `Pull request created for ${session.goal}`,
+      sessionId,
+      workspaceId: workspace.id,
+    });
   };
 };

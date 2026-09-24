@@ -166,7 +166,7 @@ describe('ToolCallCard', () => {
   it('pulses the state icon while running', () => {
     render(<ToolCallCard item={tool({ overrides: { ended: false, output: null } })} />);
     const icon = screen.getByTestId('tool-state-icon');
-    expect(icon.getAttribute('class')).toContain('animate-pulse');
+    expect(icon.getAttribute('class')).toContain('animate-soft-pulse');
     expect(icon.getAttribute('class')).toContain('text-info');
   });
 
@@ -174,7 +174,7 @@ describe('ToolCallCard', () => {
     render(<ToolCallCard item={tool()} />);
     const icon = screen.getByTestId('tool-state-icon');
     expect(icon.getAttribute('class')).toContain('text-success');
-    expect(icon.getAttribute('class')).not.toContain('animate-pulse');
+    expect(icon.getAttribute('class')).not.toContain('animate-soft-pulse');
   });
 
   it('colors the state icon red on error', () => {

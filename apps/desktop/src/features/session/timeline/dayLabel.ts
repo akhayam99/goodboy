@@ -1,3 +1,5 @@
+import { formatShortDayMonth } from '../../../shared/utils/formatShortDayMonth';
+
 type Params = {
   readonly at: string;
   readonly now?: Date;
@@ -13,5 +15,5 @@ export const dayLabel = ({ at, now = new Date() }: Params): string | null => {
   if (date.toDateString() === yesterday.toDateString()) {
     return 'Yesterday';
   }
-  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(date);
+  return formatShortDayMonth({ iso: at });
 };

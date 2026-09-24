@@ -36,7 +36,7 @@ export const switcherPeers = ({
   if (workflowRunId == null) {
     return agents
       .filter((agent) => agent.parentAgentId == null)
-      .filter((agent) => agentHomeLens(agent, kindOf(agent)) === home)
+      .filter((agent) => agentHomeLens({ agent, kind: kindOf(agent) }) === home)
       .sort((first, second) => byOrdinal(second, first));
   }
 

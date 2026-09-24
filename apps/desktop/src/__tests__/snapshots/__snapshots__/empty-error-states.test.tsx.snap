@@ -17,7 +17,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     class="flex flex-col gap-1.5"
   >
     <span
-      class="text-2xs font-semibold uppercase tracking-eyebrow tracking-[0.12em] text-muted-foreground/70"
+      class="text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
     >
       fresh session
     </span>
@@ -33,7 +33,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     </p>
   </div>
   <ul
-    class="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-muted-foreground/70"
+    class="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-faint-foreground"
   >
     <li
       class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
@@ -58,7 +58,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     </li>
   </ul>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-muted text-foreground hover:bg-muted/70 border-border h-7 px-2.5 text-xs"
+    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-muted text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
     type="button"
   >
     <svg
@@ -144,7 +144,7 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       class=""
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
         type="button"
       >
         Add workspace
@@ -165,7 +165,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
   >
     <button
       aria-label="Notifications"
-      class="relative flex items-center justify-center rounded p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50"
+      class="relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-hover"
       type="button"
     >
       <svg
@@ -277,7 +277,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         class="flex items-center gap-2"
       >
         <button
-          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] border-0 text-foreground hover:bg-muted h-7 px-2.5 text-xs"
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
           type="button"
         >
           Rescan
@@ -285,7 +285,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       </div>
     </div>
     <p
-      class="text-2xs text-muted-foreground/70"
+      class="text-2xs text-faint-foreground"
     >
       Reusable prompt fragments agents can opt into.
     </p>
@@ -294,7 +294,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
     class="flex flex-col items-center gap-3 px-6 py-10 text-center"
   >
     <span
-      class="flex size-12 items-center justify-center rounded-full bg-accent/10 text-accent"
+      class="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary"
     >
       <svg
         aria-hidden="true"
@@ -332,7 +332,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       class=""
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-7 px-2.5 text-xs"
         type="button"
       >
         New skill
@@ -363,40 +363,38 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
         Goodboy
       </span>
       <span
-        class="text-xs tracking-tight text-muted-foreground/60"
+        class="text-xs tracking-tight text-faint-foreground"
       >
         workspace orchestrator for coding agents
       </span>
     </div>
   </div>
   <div
-    class="flex w-64 flex-col gap-3 rounded-r-md border-l-2 border-danger/40 p-4 font-mono text-2xs"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
     role="alert"
   >
     <div
       class="flex flex-col gap-1"
     >
       <span
-        class="text-danger"
+        class="font-medium text-danger"
       >
-        ✗ 
-        init
-         failed
+        Init failed
       </span>
       <p
-        class="leading-relaxed text-danger/70"
+        class="leading-relaxed text-muted-foreground"
       >
         database migration failed
       </p>
     </div>
     <div
-      class="flex flex-col gap-1.5"
+      class="flex items-center gap-2"
     >
       <button
-        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
         type="button"
       >
-        report on github ↗
+        Report on GitHub
       </button>
     </div>
   </div>
@@ -424,40 +422,38 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
         Goodboy
       </span>
       <span
-        class="text-xs tracking-tight text-muted-foreground/60"
+        class="text-xs tracking-tight text-faint-foreground"
       >
         workspace orchestrator for coding agents
       </span>
     </div>
   </div>
   <div
-    class="flex w-64 flex-col gap-3 rounded-r-md border-l-2 border-danger/40 p-4 font-mono text-2xs"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
     role="alert"
   >
     <div
       class="flex flex-col gap-1"
     >
       <span
-        class="text-danger"
+        class="font-medium text-danger"
       >
-        ✗ 
-        init
-         failed
+        Init failed
       </span>
       <p
-        class="leading-relaxed text-danger/70"
+        class="leading-relaxed text-muted-foreground"
       >
         detecting-cli failed
       </p>
     </div>
     <div
-      class="flex flex-col gap-1.5"
+      class="flex items-center gap-2"
     >
       <button
-        class="text-left text-muted-foreground/60 underline-offset-2 hover:underline"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
         type="button"
       >
-        report on github ↗
+        Report on GitHub
       </button>
     </div>
   </div>
@@ -467,7 +463,8 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
 <div
   aria-label="Delete session?"
-  class="flex min-w-0 flex-col gap-2 rounded-lg border p-2.5 text-2xs border-danger/40 bg-danger/10"
+  class="flex min-w-0 flex-col gap-2 text-2xs rounded-lg border p-2.5 border-danger/40 bg-danger/10"
+  data-surface="card"
   role="group"
 >
   <div
@@ -475,7 +472,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
   >
     <span
       aria-hidden="true"
-      class="mt-px flex shrink-0 items-center text-danger"
+      class="flex h-4 shrink-0 items-center text-danger"
     >
       <svg
         aria-hidden="true"
@@ -533,10 +530,10 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     This cannot be undone. To keep the history, archive instead.
   </p>
   <div
-    class="flex items-center justify-end gap-2"
+    class="flex min-w-0 flex-wrap items-center gap-2 justify-between"
   >
     <button
-      class="mr-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
       type="button"
     >
       <svg
@@ -568,18 +565,23 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
       </svg>
       Archive instead
     </button>
-    <button
-      class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 font-semibold text-foreground motion-safe:transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-      type="button"
+    <div
+      class="flex items-center gap-2"
     >
-      Cancel
-    </button>
-    <button
-      class="rounded-md px-2 py-0.5 font-semibold motion-safe:transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 bg-danger text-danger-foreground"
-      type="button"
-    >
-      Delete
-    </button>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-muted text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
+        data-confirm-cancel="true"
+        type="button"
+      >
+        Cancel
+      </button>
+      <button
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-danger text-on-tone hover:bg-danger/90 h-7 px-2.5 text-xs"
+        type="button"
+      >
+        Delete
+      </button>
+    </div>
   </div>
 </div>
 `;
@@ -624,19 +626,19 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
       <span
         class="text-sm font-medium text-foreground"
       >
-        This session did not finish loading
+        This session did not load
       </span>
       <span
         class="max-w-xs text-xs leading-relaxed text-muted-foreground"
       >
-        Its agents and plans have not arrived. Nothing here is missing on purpose.
+        Retry, or reopen it from the board.
       </span>
     </div>
     <div
       class=""
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
         type="button"
       >
         <svg
@@ -679,119 +681,153 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
       role="status"
     >
       <div
-        class="flex flex-col gap-3"
+        class="flex flex-col gap-4"
       >
         <div
-          class="flex items-center gap-2"
+          class="flex flex-col gap-2"
+        >
+          <div
+            class="flex items-center justify-between gap-2"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
+            />
+          </div>
+          <div
+            class="flex flex-wrap items-center justify-between gap-2"
+          >
+            <div
+              class="flex items-center gap-2"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-20 rounded-md"
+              />
+            </div>
+            <div
+              class="flex items-center gap-2"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-28 rounded-md"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          aria-label="Loading"
+          class="flex flex-col gap-2"
+          role="status"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted size-2.5 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-full"
           />
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-24 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-2/3"
           />
         </div>
         <div
-          aria-hidden="true"
-          class="motion-safe:animate-pulse rounded bg-muted h-7 w-3/5"
-        />
-        <div
-          aria-hidden="true"
-          class="motion-safe:animate-pulse rounded bg-muted h-5 w-2/3"
-        />
-        <div
-          class="flex flex-wrap items-center gap-2"
+          class="flex flex-col gap-1.5"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
           />
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-32 rounded-md"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-20 rounded-full"
+            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
           />
         </div>
       </div>
       <div
-        class="flex flex-col gap-6"
+        class="flex flex-col gap-3"
       >
         <div
-          class="flex flex-col gap-2"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-12 rounded-full"
-          />
-          <div
-            class="grid grid-cols-2 gap-2"
-          >
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-11 w-full rounded-lg"
-            />
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-11 w-full rounded-lg"
-            />
-          </div>
-        </div>
-        <div
-          class="flex flex-col gap-2"
+          class="flex items-center justify-between gap-2"
         >
           <div
             aria-hidden="true"
             class="motion-safe:animate-pulse bg-muted h-3 w-16 rounded-full"
           />
           <div
-            class="flex flex-col gap-2"
+            aria-hidden="true"
+            class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+          />
+        </div>
+        <div
+          class="flex items-start gap-3"
+        >
+          <div
+            aria-hidden="true"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
+          />
+          <div
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
           >
             <div
               aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-16 w-full rounded-lg"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
             />
             <div
               aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-16 w-full rounded-lg"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
             />
           </div>
         </div>
-      </div>
-      <div
-        class="flex flex-col gap-2"
-      >
         <div
-          class="flex items-center justify-between gap-2 px-0.5"
+          class="flex items-start gap-3"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-24 rounded-full"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
           />
           <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
-          />
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+            />
+          </div>
         </div>
         <div
-          class="flex flex-col gap-2"
+          class="flex items-start gap-3"
         >
           <div
             aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-12 w-full rounded-lg"
+            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
           />
           <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-12 w-full rounded-lg"
-          />
+            class="flex min-w-0 flex-1 flex-col gap-1.5"
+          >
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+            />
+            <div
+              aria-hidden="true"
+              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+            />
+          </div>
         </div>
       </div>
     </div>

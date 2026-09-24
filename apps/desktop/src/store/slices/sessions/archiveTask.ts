@@ -42,11 +42,7 @@ export const archiveTask = (set: SetFn, get: GetFn) => {
     await get().recordSessionEvent({ sessionId, kind: 'session_archived' });
 
     await get()
-      .cleanupSessionMounts({
-        sessionId,
-        reason: 'archive',
-        keepDirectories: true,
-      })
+      .cleanupSessionMounts({ sessionId, reason: 'archive' })
       .catch(() => undefined);
 
     if (isCurrent) {

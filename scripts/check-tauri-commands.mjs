@@ -92,7 +92,7 @@ for (const directory of FRONTEND_SOURCE_DIRECTORIES) {
 }
 
 const providersSource = readFileSync(PROVIDERS_SOURCE_PATH, 'utf8');
-for (const mapName of ['TAURI_GET_CMD', 'TAURI_REFRESH_CMD']) {
+for (const mapName of ['TAURI_REFRESH_CMD']) {
   const commands = collectMapValues({ source: providersSource, mapName });
   for (const command of commands) {
     invokedCommands.add(command);

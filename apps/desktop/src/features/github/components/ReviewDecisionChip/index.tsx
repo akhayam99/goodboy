@@ -22,7 +22,7 @@ type Props = {
 
 export const ReviewDecisionChip = ({ decision }: Props) => {
   if (decision == null) {
-    return <span className="text-2xs text-muted-foreground/70">No review yet</span>;
+    return <span className="text-2xs text-faint-foreground">No review yet</span>;
   }
 
   const meta = DECISION_META[decision];

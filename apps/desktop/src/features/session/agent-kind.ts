@@ -1,14 +1,13 @@
 import {
   classifyFirstTurn,
   getCheapModel,
-  normalizeAgentRole,
   presentationKeyForRole,
+  REPORT_KIT_GUIDE,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   resolveRoleRouting,
   WIREFRAME_SCHEMA_BRIEF,
   type AgentKindLabel,
-  type WorkflowLibraryStep,
 } from '@goodboy/core';
 import type {
   Agent,
@@ -48,7 +47,12 @@ export const resolveRootAgent = ({ agents, agentId }: Params): Agent | null => {
   return null;
 };
 
-export const agentHomeLens = (agent: Agent, kind: AgentKind): AgentHomeLens => {
+type AgentHomeLensParams = {
+  readonly agent: Agent;
+  readonly kind: AgentKind;
+};
+
+export const agentHomeLens = ({ agent, kind }: AgentHomeLensParams): AgentHomeLens => {
   if (agent.workflowRunId != null && agent.stepId != null) {
     return 'workflows';
   }
@@ -79,7 +83,11 @@ const PLAN_CONSUMING_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'generic',
 ]);
 
-export const kindConsumesPlan = (kind: AgentKind): boolean => {
+type KindParams = {
+  readonly kind: AgentKind;
+};
+
+export const kindConsumesPlan = ({ kind }: KindParams): boolean => {
   return PLAN_CONSUMING_KINDS.has(kind);
 };
 
@@ -92,7 +100,7 @@ const WRITE_CAPABLE_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>([
   'generic',
 ]);
 
-export const kindWritesFiles = (kind: AgentKind): boolean => {
+export const kindWritesFiles = ({ kind }: KindParams): boolean => {
   return WRITE_CAPABLE_KINDS.has(kind);
 };
 
@@ -200,63 +208,63 @@ export type AgentKindPaletteEntry = {
 
 export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
   scout: {
-    bg: 'bg-sky-400',
-    fg: 'text-sky-400',
+    bg: 'bg-agent-scout',
+    fg: 'text-agent-scout',
     label: AGENT_KIND_META.scout.label,
   },
   planner: {
-    bg: 'bg-violet-400',
-    fg: 'text-violet-400',
+    bg: 'bg-agent-planner',
+    fg: 'text-agent-planner',
     label: AGENT_KIND_META.planner.label,
   },
   implementer: {
-    bg: 'bg-emerald-400',
-    fg: 'text-emerald-400',
+    bg: 'bg-agent-implementer',
+    fg: 'text-agent-implementer',
     label: AGENT_KIND_META.implementer.label,
   },
   debugger: {
-    bg: 'bg-amber-400',
-    fg: 'text-amber-400',
+    bg: 'bg-agent-debugger',
+    fg: 'text-agent-debugger',
     label: AGENT_KIND_META.debugger.label,
   },
   tester: {
-    bg: 'bg-teal-400',
-    fg: 'text-teal-400',
+    bg: 'bg-agent-tester',
+    fg: 'text-agent-tester',
     label: AGENT_KIND_META.tester.label,
   },
   reviewer: {
-    bg: 'bg-cyan-400',
-    fg: 'text-cyan-400',
+    bg: 'bg-agent-reviewer',
+    fg: 'text-agent-reviewer',
     label: AGENT_KIND_META.reviewer.label,
   },
   'pr-reviewer': {
-    bg: 'bg-indigo-400',
-    fg: 'text-indigo-400',
+    bg: 'bg-agent-pr-reviewer',
+    fg: 'text-agent-pr-reviewer',
     label: AGENT_KIND_META['pr-reviewer'].label,
   },
   docs: {
-    bg: 'bg-orange-400',
-    fg: 'text-orange-400',
+    bg: 'bg-agent-docs',
+    fg: 'text-agent-docs',
     label: AGENT_KIND_META.docs.label,
   },
   report: {
-    bg: 'bg-fuchsia-400',
-    fg: 'text-fuchsia-400',
+    bg: 'bg-agent-report',
+    fg: 'text-agent-report',
     label: AGENT_KIND_META.report.label,
   },
   wireframe: {
-    bg: 'bg-purple-400',
-    fg: 'text-purple-400',
+    bg: 'bg-agent-wireframe',
+    fg: 'text-agent-wireframe',
     label: AGENT_KIND_META.wireframe.label,
   },
   resolver: {
-    bg: 'bg-lime-400',
-    fg: 'text-lime-400',
+    bg: 'bg-agent-resolver',
+    fg: 'text-agent-resolver',
     label: AGENT_KIND_META.resolver.label,
   },
   generic: {
-    bg: 'bg-rose-400',
-    fg: 'text-rose-400',
+    bg: 'bg-agent-generic',
+    fg: 'text-agent-generic',
     label: AGENT_KIND_META.generic.label,
   },
 };
@@ -264,7 +272,7 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
 const UNKNOWN_KIND_LABEL_LENGTH = 9;
 
 const UNKNOWN_KIND_STYLE = {
-  bg: 'bg-muted-foreground/50',
+  bg: 'bg-faint-foreground',
   fg: 'text-muted-foreground',
 } satisfies Pick<AgentKindPaletteEntry, 'bg' | 'fg'>;
 
@@ -308,18 +316,25 @@ const AGENT_ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES.filter(
 
 export const visibleAgentRoles = (): ReadonlyArray<AgentRole> => AGENT_ROLES;
 
-export const ROLE_TO_KIND: Record<AgentRole, AgentKind> = {
-  scout: 'scout',
-  planner: 'planner',
-  implementer: 'implementer',
-  reviewer: 'reviewer',
-  tester: 'tester',
-  investigator: 'debugger',
-  docs: 'docs',
-  report: 'report',
-  wireframe: 'wireframe',
-  resolver: 'resolver',
-  custom: 'generic',
+type KindForRoleParams = {
+  readonly role: AgentRole;
+};
+
+export const kindForRole = ({ role }: KindForRoleParams): AgentKind =>
+  presentationKeyForRole({ role });
+
+type ClassifyStepParams = {
+  readonly step: {
+    readonly name: string;
+    readonly role?: AgentRole | null;
+  };
+};
+
+export const classifyStep = ({ step }: ClassifyStepParams): AgentKind => {
+  if (step.role != null) {
+    return kindForRole({ role: step.role });
+  }
+  return inferAgentKindFromName({ name: step.name });
 };
 
 export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
@@ -395,7 +410,8 @@ export const AGENT_KIND_DEFAULTS: Record<
   },
   report: {
     systemPrompt:
-      'you are a report agent. synthesize the requested report from the evidence supplied to you. ALLOWED: reading the supplied evidence and producing report content. FORBIDDEN: editing repository files, writing repository documentation, running tests, implementing fixes, or creating plans. deliver the report as an artifact envelope: a `<<artifact v=1 kind=report>>` line, then `{"title": "<report title>", "format": "markdown", "content": "<the whole report as markdown>", "metadata": {"reportType": "<session-summary or change-summary>"}}`, then a `<</artifact>>` line. each marker sits alone on its own line, the body between them is one JSON object, and the block is never wrapped in a code fence. emit at most one artifact block per turn. cite the source ids you were given and say plainly which evidence was missing or truncated.',
+      'you are a report agent. synthesize the requested report from the evidence supplied to you. ALLOWED: reading the supplied evidence and producing report content. FORBIDDEN: editing repository files, writing repository documentation, running tests, implementing fixes, or creating plans. deliver the report as an artifact envelope: a `<<artifact v=1 kind=report>>` line, then `{"title": "<report title>", "format": "markdown", "content": "<the whole report as markdown>", "metadata": {"reportType": "<session-summary or change-summary>"}}`, then a `<</artifact>>` line. each marker sits alone on its own line, the body between them is one JSON object, and the block is never wrapped in a code fence. emit at most one artifact block per turn. cite the source ids you were given and say plainly which evidence was missing or truncated. ' +
+      REPORT_KIT_GUIDE,
   },
   wireframe: {
     systemPrompt: [
@@ -447,11 +463,11 @@ export const visibleAgentKinds = (): ReadonlyArray<AgentKind> =>
       ROLE_REGISTRY[KIND_TO_ROLE[kind]].pickerEligible,
   ).sort((left, right) => AGENT_KIND_META[left].label.localeCompare(AGENT_KIND_META[right].label));
 
-export const inferAgentKindFromStep = (step: WorkflowLibraryStep): AgentKind => {
-  return presentationKeyForRole({ role: step.role });
+type InferAgentKindFromNameParams = {
+  readonly name: string;
 };
 
-export const inferAgentKindFromName = (name: string): AgentKind => {
+const inferAgentKindFromName = ({ name }: InferAgentKindFromNameParams): AgentKind => {
   const lower = name.toLowerCase();
   if (/^resolve\b|: resolve|resolve(?:r|s|d)?\b/.test(lower)) {
     return 'resolver';
@@ -483,7 +499,12 @@ export const inferAgentKindFromName = (name: string): AgentKind => {
   return 'generic';
 };
 
-export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKind => {
+type ClassifyAgentParams = {
+  readonly agent: Pick<Agent, 'kind' | 'name'>;
+  readonly override: AgentKind | null;
+};
+
+export const classifyAgent = ({ agent, override }: ClassifyAgentParams): AgentKind => {
   if (override != null) {
     if (override === 'pr-reviewer') {
       return override;
@@ -496,37 +517,49 @@ export const classifyAgent = (agent: Agent, override: AgentKind | null): AgentKi
     }
     return presentationKeyForRole({ role: agent.kind });
   }
-  return inferAgentKindFromName(agent.name);
+  return inferAgentKindFromName({ name: agent.name });
 };
 
-export const isStandaloneAgent = (agent: Agent): boolean =>
+type AgentParams = {
+  readonly agent: Agent;
+};
+
+export const isStandaloneAgent = ({ agent }: AgentParams): boolean =>
   agent.parentAgentId == null && !(agent.workflowRunId != null && agent.stepId != null);
 
-export const selectStandaloneAgents = (agents: ReadonlyArray<Agent>): ReadonlyArray<Agent> =>
-  agents.filter(isStandaloneAgent);
+type SelectNonResolverStandaloneAgentsParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
+};
 
-export const selectNonResolverStandaloneAgents = (
-  agents: ReadonlyArray<Agent>,
-  agentKindOverride: Readonly<Record<string, AgentKind>>,
-): ReadonlyArray<Agent> =>
+export const selectNonResolverStandaloneAgents = ({
+  agents,
+  agentKindOverride,
+}: SelectNonResolverStandaloneAgentsParams): ReadonlyArray<Agent> =>
   agents.filter(
     (agent) =>
-      isStandaloneAgent(agent) &&
-      classifyAgent(agent, agentKindOverride[agent.id] ?? null) !== 'resolver',
+      isStandaloneAgent({ agent }) &&
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }) !== 'resolver',
   );
 
-export const resolveAgentKind = (
-  name: string,
-  firstUserText: string | null,
-  override: AgentKind | null = null,
-): AgentKind => {
-  if (override !== null) {
+type ResolveAgentKindParams = {
+  readonly name: string;
+  readonly firstUserText: string | null;
+  readonly override?: AgentKind | null;
+};
+
+export const resolveAgentKind = ({
+  name,
+  firstUserText,
+  override,
+}: ResolveAgentKindParams): AgentKind => {
+  if (override != null) {
     if (override === 'pr-reviewer') {
       return override;
     }
     return presentationKeyForRole({ role: override });
   }
-  const fromName = inferAgentKindFromName(name);
+  const fromName = inferAgentKindFromName({ name });
   if (fromName !== 'generic') {
     return fromName;
   }

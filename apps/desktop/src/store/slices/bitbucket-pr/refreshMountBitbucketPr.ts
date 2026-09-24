@@ -1,18 +1,18 @@
-import { listMountPullRequestLinks, upsertMountPullRequestLink } from '@goodboy/db';
-import { formatError } from '@goodboy/ui';
-import type { IsoDateTime, MountId, MountPullRequestLink, SessionId } from '@goodboy/types';
+import { listMountPullRequestLinks } from '@goodboy/db';
+import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
 import {
   bitbucketGetPullRequest,
   bitbucketPullRequestForBranch,
   type BitbucketPullRequest,
 } from '../../../features/integrations/bitbucket/client';
 import { tauriDatabase } from '../../../shared/lib/db';
+import type { MountBitbucketPrState } from '../../types';
+import type { MountFetch } from '../project-mounts/mountRequests';
 import {
-  mountRevision,
-  observeMountRequestTransition,
-  requestIdentityEquals,
-  type MountFetch,
-} from '../project-mounts/mountRequests';
+  mergeLinkedRequests,
+  refreshMountRequest,
+  syncRequestLinks,
+} from '../project-mounts/refreshMountRequest';
 import {
   bitbucketRepository,
   bitbucketRequestIdentity,
@@ -21,7 +21,7 @@ import {
   toMountBitbucketPrLink,
 } from './bitbucketPrLink';
 import { applyMountBitbucketPr } from './mountBitbucketPr';
-import { resolveBitbucketPrContext } from './resolveBitbucketPrContext';
+import { resolveBitbucketPrContext, type BitbucketPrContext } from './resolveBitbucketPrContext';
 import type { GetFn, SetFn } from './types';
 
 export type RefreshSessionBitbucketPrOptions = {
@@ -38,25 +38,6 @@ type Params = {
   readonly opts?: RefreshSessionBitbucketPrOptions;
 };
 
-type MergeParams = {
-  readonly fetched: BitbucketPullRequest | null;
-  readonly links: ReadonlyArray<MountPullRequestLink>;
-};
-
-const mergeRequests = ({ fetched, links }: MergeParams): ReadonlyArray<BitbucketPullRequest> => {
-  const merged: Array<BitbucketPullRequest> = fetched === null ? [] : [fetched];
-  for (const link of links) {
-    const pr = pullRequestFromLink({ link });
-    if (pr === null) {
-      continue;
-    }
-    if (!merged.some((candidate) => candidate.id === pr.id)) {
-      merged.push(pr);
-    }
-  }
-  return merged;
-};
-
 export const refreshMountBitbucketPr = async ({
   set,
   get,
@@ -66,35 +47,29 @@ export const refreshMountBitbucketPr = async ({
 }: Params): Promise<void> => {
   const mount = target.mount;
   const mountId = mount.id;
-  const revision = mount.revision;
-  const existing = get().mountBitbucketPr?.[mountId];
-  if (opts?.force !== true && existing?.loading === true) {
-    return;
-  }
-  const context = await resolveBitbucketPrContext({ get, target });
-  if (context === null) {
-    return;
-  }
-  const repo = context.repo;
-  const isCurrent = (): boolean => mountRevision({ state: get(), sessionId, mountId }) === revision;
-  if (!isCurrent()) {
-    return;
-  }
-  const selected = get().mountSelectedBitbucketPr?.[mountId] ?? null;
-  set((state) =>
-    applyMountBitbucketPr({
-      state,
-      sessionId,
-      mountId,
-      bitbucket: {
+  await refreshMountRequest<MountBitbucketPrState, BitbucketPrContext>({
+    set,
+    get,
+    sessionId,
+    mount,
+    opts,
+    adapter: {
+      read: (state) => state.mountBitbucketPr?.[mountId],
+      apply: ({ state, entry }) =>
+        applyMountBitbucketPr({ state, sessionId, mountId, bitbucket: entry }),
+      resolveContext: async ({ isCurrent }) => {
+        const context = await resolveBitbucketPrContext({ get, target });
+        return context === null || !isCurrent() ? null : context;
+      },
+      pendingEntry: ({ existing, context }) => ({
         mountId,
         projectId: mount.projectId,
-        revision,
+        revision: mount.revision,
         host: existing?.host ?? null,
-        repo,
+        repo: context.repo,
         repository: bitbucketRepository({
-          workspaceSlug: repo.workspaceSlug,
-          repoSlug: repo.repoSlug,
+          workspaceSlug: context.repo.workspaceSlug,
+          repoSlug: context.repo.repoSlug,
         }),
         branch: mount.branch,
         prs: existing?.prs ?? [],
@@ -103,93 +78,62 @@ export const refreshMountBitbucketPr = async ({
         fetchedAt: existing?.fetchedAt ?? null,
         loading: true,
         error: null,
+      }),
+      load: async ({ context }) => {
+        const repo = context.repo;
+        const selected = get().mountSelectedBitbucketPr?.[mountId] ?? null;
+        const storedLinks = await listMountPullRequestLinks({
+          db: tauriDatabase,
+          sessionId,
+          mountId,
+        });
+        const pr =
+          selected === null
+            ? await bitbucketPullRequestForBranch({ ...repo, sourceBranch: mount.branch })
+            : await bitbucketGetPullRequest({ ...repo, pullRequestId: selected.prNumber });
+        const observedAt = new Date().toISOString() as IsoDateTime;
+        const links = await syncRequestLinks<BitbucketPullRequest>({
+          get,
+          sessionId,
+          projectId: mount.projectId,
+          storedLinks,
+          items: pr === null ? [] : [pr],
+          identity: ({ item }) =>
+            bitbucketRequestIdentity({ repo, pullRequestId: item.id, url: item.webUrl }),
+          toLink: ({ item, previous }) =>
+            toMountBitbucketPrLink({ mountId, repo, pr: item, existing: previous, observedAt }),
+          describe: ({ item }) => ({
+            title: item.title,
+            url: bitbucketRequestUrl({ repo, pullRequestId: item.id, url: item.webUrl }),
+          }),
+        });
+        return {
+          kind: 'settle',
+          next: (current) =>
+            current === undefined
+              ? null
+              : {
+                  ...current,
+                  host:
+                    pr === null
+                      ? current.host
+                      : bitbucketRequestIdentity({ repo, pullRequestId: pr.id, url: pr.webUrl })
+                          .host,
+                  prs: mergeLinkedRequests({
+                    fetched: pr === null ? [] : [pr],
+                    links,
+                    fromLink: pullRequestFromLink,
+                    key: ({ item }) => item.id,
+                  }),
+                  links,
+                  pr,
+                  fetchedAt: observedAt,
+                  loading: false,
+                  error: null,
+                },
+        };
       },
-    }),
-  );
-  try {
-    const storedLinks = await listMountPullRequestLinks({ db: tauriDatabase, sessionId, mountId });
-    const pr =
-      selected === null
-        ? await bitbucketPullRequestForBranch({ ...repo, sourceBranch: mount.branch })
-        : await bitbucketGetPullRequest({ ...repo, pullRequestId: selected.prNumber });
-    const observedAt = new Date().toISOString() as IsoDateTime;
-    const nextLinks = [...storedLinks];
-    if (pr !== null) {
-      const identity = bitbucketRequestIdentity({ repo, pullRequestId: pr.id, url: pr.webUrl });
-      const previous =
-        storedLinks.find((link) => requestIdentityEquals({ identity, candidate: link })) ?? null;
-      const link = toMountBitbucketPrLink({
-        mountId,
-        repo,
-        pr,
-        existing: previous,
-        observedAt,
-      });
-      await upsertMountPullRequestLink({ db: tauriDatabase, sessionId, link });
-      const index = nextLinks.findIndex((candidate) =>
-        requestIdentityEquals({ identity: link, candidate }),
-      );
-      if (index >= 0) {
-        nextLinks.splice(index, 1, link);
-      } else {
-        nextLinks.push(link);
-      }
-      await observeMountRequestTransition({
-        get,
-        sessionId,
-        projectId: mount.projectId,
-        previous,
-        next: link,
-        title: pr.title,
-        url: bitbucketRequestUrl({ repo, pullRequestId: pr.id, url: pr.webUrl }),
-      });
-    }
-    if (!isCurrent()) {
-      return;
-    }
-    set((state) => {
-      const current = state.mountBitbucketPr?.[mountId];
-      if (current === undefined) {
-        return state;
-      }
-      return applyMountBitbucketPr({
-        state,
-        sessionId,
-        mountId,
-        bitbucket: {
-          ...current,
-          host:
-            pr === null
-              ? current.host
-              : bitbucketRequestIdentity({ repo, pullRequestId: pr.id, url: pr.webUrl }).host,
-          prs: mergeRequests({ fetched: pr, links: nextLinks }),
-          links: nextLinks,
-          pr,
-          fetchedAt: observedAt,
-          loading: false,
-          error: null,
-        },
-      });
-    });
-  } catch (error) {
-    if (!isCurrent()) {
-      return;
-    }
-    set((state) => {
-      const current = state.mountBitbucketPr?.[mountId];
-      if (current === undefined) {
-        return state;
-      }
-      return applyMountBitbucketPr({
-        state,
-        sessionId,
-        mountId,
-        bitbucket: {
-          ...current,
-          loading: false,
-          error: opts?.silent === true ? null : formatError(error),
-        },
-      });
-    });
-  }
+      failedEntry: ({ current, error }) => ({ ...current, loading: false, error }),
+    },
+  });
 };

@@ -16,8 +16,11 @@ export const useToolConnections = ({ workspaceId }: Params) => {
       : (state.workspaceIntegrations[workspaceId] ?? NO_INTEGRATIONS),
   );
   const github = useGithubConnection({ workspaceId });
+  const globalGithub = useAppStore((state) => state.githubStatus);
+  const isGlobalGithubConnected = globalGithub !== null && globalGithub.mode !== 'absent';
+  const githubIdentity = github.user ?? globalGithub?.user ?? null;
   const connected: Record<IntegrationGlyphProvider, boolean> = {
-    github: github.isAuthenticated,
+    github: github.isAuthenticated || isGlobalGithubConnected,
     gitlab: integrations.some((binding) => binding.provider === 'gitlab'),
     bitbucket: integrations.some((binding) => binding.provider === 'bitbucket'),
     linear: integrations.some((binding) => binding.provider === 'linear'),
@@ -25,5 +28,5 @@ export const useToolConnections = ({ workspaceId }: Params) => {
     sentry: integrations.some((binding) => binding.provider === 'sentry'),
     slack: integrations.some((binding) => binding.provider === 'slack'),
   };
-  return { integrations, connected, github };
+  return { integrations, connected, github, githubIdentity };
 };

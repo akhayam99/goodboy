@@ -55,7 +55,6 @@ const resolve = (overrides: Partial<ResolveParams> = {}): WorkflowRoutingResolut
   resolveWorkflowRouting({
     agentLock: null,
     stepLock: null,
-    runRoleLock: null,
     proposal: { kind: 'missing', profile: PROFILE },
     roleDefault: null,
     sessionDefault: null,
@@ -81,11 +80,11 @@ const blocked = (result: WorkflowRoutingResolution) => {
 };
 
 describe('resolveWorkflowRouting precedence', () => {
-  it('puts the run instance lock above the run role lock', () => {
+  it('puts the run instance lock above the template step lock', () => {
     const decision = ready(
       resolve({
         agentLock: lock(pick('anthropic', 'opus-5')),
-        runRoleLock: pick('codex', 'gpt-5.6-sol'),
+        stepLock: lock(pick('codex', 'gpt-5.6-sol')),
         proposal: emitted(pick('codex', 'gpt-6')),
       }),
     );
@@ -98,23 +97,11 @@ describe('resolveWorkflowRouting precedence', () => {
     const decision = ready(
       resolve({
         stepLock: lock(pick('anthropic', 'sonnet-5')),
-        runRoleLock: pick('codex', 'gpt-5.6-sol'),
-      }),
-    );
-
-    expect(decision.source).toBe('step_lock');
-    expect(decision.selected.model).toBe('sonnet-5');
-  });
-
-  it('puts the run role lock above the emitted pick', () => {
-    const decision = ready(
-      resolve({
-        runRoleLock: pick('anthropic', 'sonnet-5'),
         proposal: emitted(pick('codex', 'gpt-5.6-sol')),
       }),
     );
 
-    expect(decision.source).toBe('run_role_lock');
+    expect(decision.source).toBe('step_lock');
     expect(decision.selected.model).toBe('sonnet-5');
   });
 
@@ -206,10 +193,10 @@ describe('resolveWorkflowRouting locks and availability', () => {
     expect(result.cause).toBe('unavailable_lock');
   });
 
-  it('blocks a cooling down run role lock rather than rerouting it', () => {
+  it('blocks a cooling down step lock rather than rerouting it', () => {
     const result = blocked(
       resolve({
-        runRoleLock: pick('anthropic', 'opus-5'),
+        stepLock: lock(pick('anthropic', 'opus-5')),
         proposal: emitted(pick('codex', 'gpt-5.6-sol')),
         availability: snapshot({ coolingDownProviders: ['anthropic'] }),
       }),
@@ -402,7 +389,7 @@ describe('resolveWorkflowRouting effort', () => {
   it('normalizes effort against the winning provider, never the losing one', () => {
     const decision = ready(
       resolve({
-        runRoleLock: pick('anthropic', 'sonnet-5'),
+        stepLock: lock(pick('anthropic', 'sonnet-5')),
         proposal: emitted(pick('codex', 'gpt-5.6-sol', 'max')),
       }),
     );

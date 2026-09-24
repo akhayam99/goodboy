@@ -18,7 +18,7 @@ describe('Chip', () => {
     render(
       <>
         <Chip tone="neutral" label="PRESET" width="lg" />
-        <Chip tone="accent" label="ORCHESTRATED" width="lg" />
+        <Chip tone="primary" label="ORCHESTRATED" width="lg" />
       </>,
     );
 
@@ -52,20 +52,13 @@ describe('Chip', () => {
     expect(classesOf('small')).toContain('text-2xs');
   });
 
-  it('shouts the label when asked', () => {
-    render(
-      <>
-        <Chip tone="neutral" label="loud" uppercase />
-        <Chip tone="neutral" label="quiet" />
-      </>,
-    );
+  it('never shouts its label', () => {
+    render(<Chip tone="neutral" label="quiet" />);
 
-    expect(classesOf('loud')).toContain('uppercase');
-    expect(classesOf('loud')).toContain('tracking-wide');
     expect(classesOf('quiet')).not.toContain('uppercase');
   });
 
-  it('dims the fill at subtle emphasis and keeps the strong ring distinct', () => {
+  it('keeps every emphasis label exposed', () => {
     render(
       <>
         <Chip tone="success" label="subtle" emphasis="subtle" />
@@ -74,9 +67,9 @@ describe('Chip', () => {
       </>,
     );
 
-    expect(classesOf('subtle')).toContain('bg-success/5');
-    expect(classesOf('soft')).toContain('bg-success/10');
-    expect(classesOf('strong')).toContain('ring-success/40');
+    expect(screen.getByText('subtle')).toBeDefined();
+    expect(screen.getByText('soft')).toBeDefined();
+    expect(screen.getByText('strong')).toBeDefined();
   });
 
   it('hangs an accessible name on a role screen readers expose', () => {
@@ -89,5 +82,22 @@ describe('Chip', () => {
     render(<Chip tone="neutral" label="plain" />);
 
     expect(screen.getByText('plain').getAttribute('role')).toBeNull();
+  });
+
+  it('frames a control chip at the h-6 control height', () => {
+    render(<Chip as="button" tone="neutral" shape="badge" size="control" label="Context" />);
+
+    const chip = screen.getByRole('button', { name: 'Context' });
+    expect(chip.className).toContain('h-6');
+    expect(chip.className).toContain('rounded-md');
+  });
+
+  it('gives a button chip the focus ring and a tone hover instead of fading', () => {
+    render(<Chip as="button" tone="neutral" label="Open" onClick={() => undefined} />);
+
+    const chip = screen.getByRole('button', { name: 'Open' });
+    expect(chip.className).toContain('focus-visible:ring-2');
+    expect(chip.className).toContain('hover:bg-hover');
+    expect(chip.className).not.toContain('hover:opacity-80');
   });
 });

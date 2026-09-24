@@ -14,10 +14,10 @@ export const PrThreadCard = ({ thread, onReply }: Props) => {
   const inline = thread.head.inline;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg bg-muted/20 p-3">
+    <div className="flex flex-col gap-1.5 rounded-lg bg-subtle p-3">
       <PrNoteHeader comment={thread.head} />
       {inline != null && (
-        <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground/70">
+        <span className="min-w-0 truncate font-mono text-2xs text-faint-foreground">
           {inline.path}
           {inline.to != null ? `:${inline.to}` : ''}
         </span>

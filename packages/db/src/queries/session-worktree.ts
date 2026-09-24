@@ -8,8 +8,9 @@ import type {
   SessionMount,
   WorkspaceId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, GuardedStatement, Statement } from '../client';
 import { UniqueViolationError } from '../shared/errors';
+import { retainedPathInsertStatement } from './retained-worktree-path';
 
 type SessionWorktreeRow = {
   readonly id: string;
@@ -73,10 +74,11 @@ type UpdateSessionMountLifecycleParams = MountKeyParams & {
 };
 
 type PathOwnerParams = {
-  readonly db: Database;
   readonly worktreePath: string;
   readonly excludedMountId: MountId | null;
 };
+
+const PATH_OWNED = 'PATH_OWNED';
 
 const toMount = (row: SessionWorktreeRow): SessionMount => ({
   id: row.id as MountId,
@@ -114,13 +116,11 @@ const toPresentWorktree = (row: SessionWorktreeRow): SessionWorktree | null => {
   };
 };
 
-const hasPathOwner = async ({
-  db,
+const pathOwnerStatement = ({
   worktreePath,
   excludedMountId,
-}: PathOwnerParams): Promise<boolean> => {
-  const rows = await db.select<{ readonly source: string }>(
-    `SELECT 'mount' AS source
+}: PathOwnerParams): GuardedStatement => ({
+  sql: `SELECT 'mount' AS source
      FROM session_worktrees mount
      JOIN sessions s ON s.id = mount.session_id
      WHERE mount.worktree_path = ? AND s.deleted_at IS NULL AND (? IS NULL OR mount.id != ?)
@@ -129,50 +129,56 @@ const hasPathOwner = async ({
      FROM retained_worktree_paths
      WHERE worktree_path = ?
      LIMIT 1`,
-    [worktreePath, excludedMountId, excludedMountId, worktreePath],
-  );
-  return rows.length > 0;
+  params: [worktreePath, excludedMountId, excludedMountId, worktreePath],
+  abortWhen: 'rows',
+  abortCode: PATH_OWNED,
+});
+
+type PathOwnerGuardParams = {
+  readonly worktreePath: string | null;
+  readonly excludedMountId: MountId | null;
 };
+
+const pathOwnerGuards = ({
+  worktreePath,
+  excludedMountId,
+}: PathOwnerGuardParams): ReadonlyArray<Statement> =>
+  worktreePath === null ? [] : [pathOwnerStatement({ worktreePath, excludedMountId })];
 
 export const insertSessionMount = async ({
   db,
   mount,
 }: InsertSessionMountParams): Promise<void> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    if (
-      mount.worktreePath !== null &&
-      (await hasPathOwner({ db, worktreePath: mount.worktreePath, excludedMountId: null }))
-    ) {
-      throw new UniqueViolationError('session mount', 'worktreePath');
-    }
-    await db.execute(
-      `INSERT INTO session_worktrees
-        (id, session_id, worktree_path, last_worktree_path, branch, base_branch, parallel_index,
-         project_id, mount_name, repo_slug, is_attached, disk_state, revision, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        mount.id,
-        mount.sessionId,
-        mount.worktreePath,
-        mount.lastWorktreePath,
-        mount.branch,
-        mount.baseBranch,
-        mount.parallelIndex,
-        mount.projectId,
-        mount.mountName,
-        mount.repoSlug,
-        mount.isAttached ? 1 : 0,
-        mount.diskState,
-        mount.revision,
-        Date.parse(mount.createdAt),
-        Date.parse(mount.updatedAt),
-      ],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      ...pathOwnerGuards({ worktreePath: mount.worktreePath, excludedMountId: null }),
+      {
+        sql: `INSERT INTO session_worktrees
+          (id, session_id, worktree_path, last_worktree_path, branch, base_branch, parallel_index,
+           project_id, mount_name, repo_slug, is_attached, disk_state, revision, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          mount.id,
+          mount.sessionId,
+          mount.worktreePath,
+          mount.lastWorktreePath,
+          mount.branch,
+          mount.baseBranch,
+          mount.parallelIndex,
+          mount.projectId,
+          mount.mountName,
+          mount.repoSlug,
+          mount.isAttached ? 1 : 0,
+          mount.diskState,
+          mount.revision,
+          Date.parse(mount.createdAt),
+          Date.parse(mount.updatedAt),
+        ],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new UniqueViolationError('session mount', 'worktreePath');
   }
 };
 
@@ -222,24 +228,23 @@ export const deleteSessionMount = async ({
   sessionId,
   mountId,
 }: MountKeyParams): Promise<boolean> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    await db.execute(
-      `UPDATE sessions SET active_mount_id = NULL, active_project_id = NULL
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: `UPDATE sessions SET active_mount_id = NULL, active_project_id = NULL
        WHERE id = ? AND active_mount_id = ?`,
-      [sessionId, mountId],
-    );
-    const result = await db.execute(
-      'DELETE FROM session_worktrees WHERE session_id = ? AND id = ?',
-      [sessionId, mountId],
-    );
-    await db.exec('COMMIT');
-    return result.rowsAffected > 0;
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+        params: [sessionId, mountId],
+      },
+      {
+        sql: 'DELETE FROM session_worktrees WHERE session_id = ? AND id = ?',
+        params: [sessionId, mountId],
+      },
+    ],
+  });
+  return outcome.status === 'committed' && (outcome.results[1]?.rowsAffected ?? 0) > 0;
 };
+
+const STALE_REVISION = 'STALE_REVISION';
 
 export const updateSessionMountLifecycle = async ({
   db,
@@ -251,37 +256,34 @@ export const updateSessionMountLifecycle = async ({
   expectedRevision,
   updatedAt,
 }: UpdateSessionMountLifecycleParams): Promise<boolean> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    if (
-      worktreePath !== null &&
-      (await hasPathOwner({ db, worktreePath, excludedMountId: mountId }))
-    ) {
-      throw new UniqueViolationError('session mount', 'worktreePath');
-    }
-    const result = await db.execute(
-      `UPDATE session_worktrees
-       SET worktree_path = ?,
-           last_worktree_path = COALESCE(?, worktree_path, last_worktree_path),
-           is_attached = ?, disk_state = ?, revision = revision + 1, updated_at = ?
-       WHERE session_id = ? AND id = ? AND revision = ?`,
-      [
-        worktreePath,
-        worktreePath,
-        isAttached ? 1 : 0,
-        diskState,
-        Date.parse(updatedAt),
-        sessionId,
-        mountId,
-        expectedRevision,
-      ],
-    );
-    await db.exec('COMMIT');
-    return result.rowsAffected > 0;
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const outcome = await db.transaction({
+    statements: [
+      ...pathOwnerGuards({ worktreePath, excludedMountId: mountId }),
+      {
+        sql: `UPDATE session_worktrees
+         SET worktree_path = ?,
+             last_worktree_path = COALESCE(?, worktree_path, last_worktree_path),
+             is_attached = ?, disk_state = ?, revision = revision + 1, updated_at = ?
+         WHERE session_id = ? AND id = ? AND revision = ?`,
+        params: [
+          worktreePath,
+          worktreePath,
+          isAttached ? 1 : 0,
+          diskState,
+          Date.parse(updatedAt),
+          sessionId,
+          mountId,
+          expectedRevision,
+        ],
+        abortWhen: 'noChanges',
+        abortCode: STALE_REVISION,
+      },
+    ],
+  });
+  if (outcome.status === 'aborted' && outcome.abortCode === PATH_OWNED) {
+    throw new UniqueViolationError('session mount', 'worktreePath');
   }
+  return outcome.status === 'committed';
 };
 
 export const insertSessionWorktree = async (
@@ -358,22 +360,18 @@ export const deleteWorktreesForSession = async (
   db: Database,
   sessionId: SessionId,
 ): Promise<void> => {
-  const now = Date.now();
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    await db.execute('UPDATE sessions SET active_mount_id = NULL WHERE id = ?', [sessionId]);
-    await db.execute(
-      `UPDATE session_worktrees
-       SET last_worktree_path = COALESCE(worktree_path, last_worktree_path), worktree_path = NULL,
-           is_attached = 0, disk_state = 'removed', revision = revision + 1, updated_at = ?
-       WHERE session_id = ?`,
-      [now, sessionId],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+  await db.transaction({
+    statements: [
+      { sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ?', params: [sessionId] },
+      {
+        sql: `UPDATE session_worktrees
+         SET last_worktree_path = COALESCE(worktree_path, last_worktree_path), worktree_path = NULL,
+             is_attached = 0, disk_state = 'removed', revision = revision + 1, updated_at = ?
+         WHERE session_id = ?`,
+        params: [Date.now(), sessionId],
+      },
+    ],
+  });
 };
 
 export const updateSessionWorktreeBranch = async (
@@ -388,46 +386,6 @@ export const updateSessionWorktreeBranch = async (
      WHERE session_id = ? AND parallel_index = ?`,
     [branch, Date.now(), sessionId, parallelIndex],
   );
-};
-
-type UpdateSessionWorktreePathParams = {
-  readonly db: Database;
-  readonly sessionId: SessionId;
-  readonly parallelIndex: number;
-  readonly worktreePath: string;
-};
-
-export const updateSessionWorktreePath = async ({
-  db,
-  sessionId,
-  parallelIndex,
-  worktreePath,
-}: UpdateSessionWorktreePathParams): Promise<void> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    const mountRows = await db.select<{ readonly id: string }>(
-      'SELECT id FROM session_worktrees WHERE session_id = ? AND parallel_index = ? LIMIT 1',
-      [sessionId, parallelIndex],
-    );
-    const mountId = mountRows[0]?.id as MountId | undefined;
-    if (
-      mountId !== undefined &&
-      (await hasPathOwner({ db, worktreePath, excludedMountId: mountId }))
-    ) {
-      throw new UniqueViolationError('session mount', 'worktreePath');
-    }
-    await db.execute(
-      `UPDATE session_worktrees
-       SET worktree_path = ?, last_worktree_path = ?, is_attached = 1,
-           disk_state = 'unchecked', revision = revision + 1, updated_at = ?
-       WHERE session_id = ? AND parallel_index = ?`,
-      [worktreePath, worktreePath, Date.now(), sessionId, parallelIndex],
-    );
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
 };
 
 type UpdateSessionWorktreeRepoSlugParams = {
@@ -554,50 +512,24 @@ export const detachSessionMounts = async ({
   retained,
 }: DetachSessionMountsParams): Promise<void> => {
   const now = Date.now();
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    await db.execute('UPDATE sessions SET active_mount_id = NULL WHERE id = ?', [sessionId]);
-    for (const mount of detached) {
-      await db.execute(`${DETACH_MOUNT_SQL} WHERE session_id = ? AND id = ?`, [
-        mount.diskState,
-        now,
-        sessionId,
-        mount.mountId,
-      ]);
-    }
-    await db.execute(`${DETACH_MOUNT_SQL} WHERE session_id = ? AND worktree_path IS NOT NULL`, [
-      'unchecked',
-      now,
-      sessionId,
-    ]);
-    for (const path of retained) {
-      await db.execute('DELETE FROM retained_worktree_paths WHERE worktree_path = ?', [
-        path.worktreePath,
-      ]);
-      await db.execute(
-        `INSERT INTO retained_worktree_paths
-          (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
-           worktree_path, branch, reason, last_checked_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          path.id,
-          path.workspaceId,
-          path.projectId,
-          path.sourceSessionId,
-          path.sourceMountId,
-          path.repoRoot,
-          path.worktreePath,
-          path.branch,
-          path.reason,
-          path.lastCheckedAt === null ? null : Date.parse(path.lastCheckedAt),
-          Date.parse(path.createdAt),
-          Date.parse(path.updatedAt),
-        ],
-      );
-    }
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+  await db.transaction({
+    statements: [
+      { sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ?', params: [sessionId] },
+      ...detached.map((mount) => ({
+        sql: `${DETACH_MOUNT_SQL} WHERE session_id = ? AND id = ?`,
+        params: [mount.diskState, now, sessionId, mount.mountId],
+      })),
+      {
+        sql: `${DETACH_MOUNT_SQL} WHERE session_id = ? AND worktree_path IS NOT NULL`,
+        params: ['unchecked', now, sessionId],
+      },
+      ...retained.flatMap((path) => [
+        {
+          sql: 'DELETE FROM retained_worktree_paths WHERE worktree_path = ?',
+          params: [path.worktreePath],
+        },
+        retainedPathInsertStatement({ retained: path }),
+      ]),
+    ],
+  });
 };

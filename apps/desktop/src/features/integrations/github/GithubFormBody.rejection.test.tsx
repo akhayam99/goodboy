@@ -4,19 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
-const { invokeMock, state } = vi.hoisted(() => ({
+const { invokeMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
-  state: {
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    disconnectGitlab: vi.fn(async () => undefined),
-  },
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
-
-vi.mock('../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-}));
 
 const WS_ID = 'ws-1' as WorkspaceId;
 
@@ -39,11 +31,13 @@ const rejectSetTokenWith = (message: string): void => {
 };
 
 beforeEach(() => {
+  useAppStore.setState({ workspaceIntegrations: {}, githubWorkspaceStatus: {} });
   invokeMock.mockReset();
   invokeMock.mockResolvedValue(DISCONNECTED_STATUS);
 });
 afterEach(cleanup);
 
+import { useAppStore } from '../../../store';
 import { GithubFormBody } from './GithubFormBody';
 
 const connectWith = async (token: string): Promise<void> => {

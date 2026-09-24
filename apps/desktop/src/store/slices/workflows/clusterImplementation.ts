@@ -32,11 +32,9 @@ import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
-import { isHandsFree } from './handsFree';
+import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
-
-const MAX_CONTINUE = 1;
 
 const MAX_START_ATTEMPTS = 3;
 
@@ -51,12 +49,6 @@ const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
   /resolved model args omit/i,
   /agent not found/i,
 ];
-
-const continueAttempts = new Map<string, number>();
-
-const childStartAttempts = new Map<string, number>();
-
-const stepStartAttempts = new Map<string, number>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -201,7 +193,7 @@ const clusterProgress = ({
   pairs.map((pair) => ({
     nodeId: pair.node.id,
     isSettled: pair.isReleased || (pair.agent !== null && isSettledChild(pair.agent)),
-    isCompleted: isCompletedPair({ pair }),
+    isCompleted: isCompletedPair({ pair }) || pair.agent?.status === 'skipped',
     isStartable:
       pair.isReleased === false && (pair.agent === null || pair.agent.status === 'pending'),
   }));
@@ -315,6 +307,7 @@ type StartChildParams = {
   readonly containerId: AgentId;
   readonly childId: AgentId;
   readonly content: string;
+  readonly attempt?: number;
 };
 
 const failChildStart = async ({
@@ -340,13 +333,13 @@ const failChildStart = async ({
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
   }
   void get().refreshUnreadWorkspaces();
-  void get().emitNotification(
-    'error',
-    'warning',
-    `cluster could not start: ${name}`,
-    `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Cluster ${name} couldn't start`,
+    body: `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
+    sessionId,
+  });
 };
 
 const handleChildStartFailure = async ({
@@ -359,10 +352,11 @@ const handleChildStartFailure = async ({
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
   const message = error instanceof Error ? error.message : String(error);
-  const failures = (childStartAttempts.get(childId) ?? 0) + 1;
-  const stepFailures = (stepStartAttempts.get(containerId) ?? 0) + 1;
-  childStartAttempts.set(childId, failures);
-  stepStartAttempts.set(containerId, stepFailures);
+  const failures = get().clusterStartAttempts[childId] ?? 1;
+  const stepFailures = (get().clusterStepStartAttempts[containerId] ?? 0) + 1;
+  set((s) => ({
+    clusterStepStartAttempts: { ...s.clusterStepStartAttempts, [containerId]: stepFailures },
+  }));
 
   if (producedWork(get, childId) || !isTransientStartFailure(error)) {
     await failChildStart({ set, get, sessionId, childId, reason: `${message}.` });
@@ -381,15 +375,29 @@ const handleChildStartFailure = async ({
 
   const delayMs = START_BACKOFF_MS[failures - 1] ?? START_BACKOFF_MS[START_BACKOFF_MS.length - 1]!;
   setTimeout(() => {
-    const child = (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === childId);
-    if (child != null && (child.status === 'completed' || child.status === 'skipped')) {
+    const phaseRuns = get().sessionPhaseRuns[sessionId] ?? [];
+    const child = phaseRuns.find((r) => r.id === childId);
+    if (child === undefined) {
+      return;
+    }
+    if (child.status === 'completed' || child.status === 'skipped') {
+      return;
+    }
+    const session = get().sessions.find((s) => s.id === sessionId);
+    if (session === undefined) {
+      return;
+    }
+    const workflowRunId =
+      child.workflowRunId ?? phaseRuns.find((r) => r.id === containerId)?.workflowRunId;
+    const run = session.workflowRuns.find((r) => r.id === workflowRunId);
+    if (run?.discardedAt != null) {
       return;
     }
     const turn = get().agentTurnState[childId];
     if (turn?.kind === 'running' || turn?.kind === 'starting') {
       return;
     }
-    startChild({ set, get, sessionId, containerId, childId, content });
+    startChild({ set, get, sessionId, containerId, childId, content, attempt: failures + 1 });
   }, delayMs);
 };
 
@@ -400,8 +408,8 @@ function startChild({
   containerId,
   childId,
   content,
+  attempt = get().clusterStartAttempts[childId] ?? 1,
 }: StartChildParams): void {
-  const attempt = (childStartAttempts.get(childId) ?? 0) + 1;
   set((s) => ({
     agentTurnState: {
       ...s.agentTurnState,
@@ -449,13 +457,13 @@ export const fanOutClusters = async (
 
   const normalized = normalizeClusterGraph({ clusters });
   if (normalized.kind === 'invalid') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${container.name}`,
-      `the plan clusters are not a valid graph: ${normalized.reason}`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${container.name} is blocked`,
+      body: `the plan clusters are not a valid graph: ${normalized.reason}`,
+      sessionId,
+    });
     return;
   }
   const nodes = orderedNodes({ graph: normalized.graph });
@@ -463,7 +471,6 @@ export const fanOutClusters = async (
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
-    workflowRunId: container.workflowRunId ?? null,
     role: 'implementer',
     requests: nodes.map((node, index) => ({
       proposal: clusters[index]?.routingProposal ?? null,
@@ -473,13 +480,13 @@ export const fanOutClusters = async (
     })),
   });
   if (batch.kind === 'blocked') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${container.name}`,
-      batch.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${container.name} is blocked`,
+      body: batch.reason,
+      sessionId,
+    });
     return;
   }
 
@@ -732,6 +739,17 @@ const resolveClustersPlan = async ({
 const isSettledChild = (agent: Agent): boolean =>
   agent.status === 'completed' || agent.status === 'skipped';
 
+const settleFinishedChild = ({
+  candidate,
+  finishedId,
+}: {
+  readonly candidate: Agent;
+  readonly finishedId: AgentId;
+}): Agent =>
+  candidate.id === finishedId && isSettledChild(candidate) === false
+    ? { ...candidate, status: 'completed' }
+    : candidate;
+
 const resolveClusterExecution = async ({
   set,
   get,
@@ -823,13 +841,13 @@ export const resumeClusterChildren = async ({
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
     void get().refreshUnreadWorkspaces();
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${next.name}`,
-      'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${next.name} is blocked`,
+      body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      sessionId,
+    });
     return false;
   }
   const revalidated = await revalidateChildRouting({
@@ -841,13 +859,13 @@ export const resumeClusterChildren = async ({
     promptText: `${next.name}\n${target.node.instructions}`,
   });
   if (revalidated.kind === 'blocked') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `cluster blocked: ${next.name}`,
-      revalidated.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${next.name} is blocked`,
+      body: revalidated.reason,
+      sessionId,
+    });
     return false;
   }
   await invokeAgentUpdateStatus(container.id, { status: 'running' });
@@ -1002,13 +1020,13 @@ const persistCompletionHold = async ({
     },
   }));
   void get().refreshUnreadWorkspaces();
-  void get().emitNotification(
-    'error',
-    'warning',
-    `cluster held: ${child.name}`,
-    completionHoldMessage({ reason, findings }),
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Cluster ${child.name} is on hold`,
+    body: completionHoldMessage({ reason, findings }),
+    sessionId,
+  });
 };
 
 export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
@@ -1063,34 +1081,23 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
 
     const doneMarker = extractClusterDone(assistantText);
     if (child !== undefined && opts?.force !== true && doneMarker?.id !== childAgentId) {
-      const handsFree = isHandsFree(get, sessionId, child.workflowRunId);
-      const attempts = continueAttempts.get(childAgentId) ?? 0;
-      if (handsFree && attempts < MAX_CONTINUE) {
-        continueAttempts.set(childAgentId, attempts + 1);
-        startChild({
-          set,
-          get,
-          sessionId,
-          containerId,
-          childId: childAgentId,
-          content: composeContinuePrompt(childAgentId, currentNode),
-        });
-      } else {
-        continueAttempts.delete(childAgentId);
-        await invokeAgentUpdateStatus(childAgentId, { status: 'failed', completedAt: nowIso() });
-        const stalled = await invokeAgentList(sessionId);
-        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: stalled } }));
-        void get().refreshUnreadWorkspaces();
-        void get().emitNotification(
-          'error',
-          'warning',
-          `cluster paused: ${child.name}`,
-          handsFree
-            ? 'the implementer stopped before completing this cluster. open the agent and continue manually.'
-            : 'autorun is off, so this cluster will not continue on its own. open the agent and continue manually, or enable autorun.',
-          { sessionId },
-        );
-      }
+      await continueOrPause({
+        set,
+        get,
+        sessionId,
+        agent: child,
+        workflowRunId: child.workflowRunId,
+        unit: 'cluster',
+        restart: () =>
+          startChild({
+            set,
+            get,
+            sessionId,
+            containerId,
+            childId: childAgentId,
+            content: composeContinuePrompt(childAgentId, currentNode),
+          }),
+      });
       return;
     }
 
@@ -1138,7 +1145,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       }
     }
 
-    continueAttempts.delete(childAgentId);
+    resetContinueAttempts({ set, get, agentId: childAgentId });
     const outputSummary =
       child !== undefined && assistantText.length > 0
         ? await summarizeWorkflowAgentOutput({
@@ -1157,8 +1164,10 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     let refreshed = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
-    const children = childrenOf(refreshed, containerId);
-    const completedCount = children.filter((c) => c.status === 'completed').length;
+    const children = childrenOf(refreshed, containerId).map((candidate) =>
+      settleFinishedChild({ candidate, finishedId: childAgentId }),
+    );
+    const settledCount = children.filter(isSettledChild).length;
     const released = releasedSourceIds({
       get,
       sessionId,
@@ -1167,14 +1176,14 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       resolvingHoldId: resolvedHold?.id ?? null,
     });
     const pairs = pairClusterNodes({ execution, children, released });
-    const completedProgress = completedCount + released.size;
+    const settledProgress = settledCount + released.size;
     const total =
       execution.graph.nodes.length > 0
         ? execution.graph.nodes.length
         : children.length + released.size;
 
     if (
-      completedProgress >= total &&
+      settledProgress >= total &&
       openCompletionHoldForContainer({
         get,
         sessionId,
@@ -1182,13 +1191,16 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         ignoredHoldId: isExplicitResolution ? resolvedHold.id : null,
       }) === null
     ) {
-      await invokeAgentUpdateStatus(containerId, {
-        status: 'completed',
-        outputSummary: `completed ${completedProgress} clusters`,
-        completedAt: nowIso(),
-      });
-      refreshed = await invokeAgentList(sessionId);
-      set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+      const container = refreshed.find((r) => r.id === containerId);
+      if (container != null && !isSettledChild(container)) {
+        await invokeAgentUpdateStatus(containerId, {
+          status: 'completed',
+          outputSummary: `completed ${settledProgress} clusters`,
+          completedAt: nowIso(),
+        });
+        refreshed = await invokeAgentList(sessionId);
+        set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
+      }
       void get().refreshUnreadWorkspaces();
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
@@ -1213,13 +1225,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       if (waiting.length === 0) {
         return;
       }
-      void get().emitNotification(
-        'error',
-        'warning',
-        `cluster blocked: ${waiting[0]!.node.title}`,
-        'every remaining cluster waits on a dependency that did not complete. resolve the failed cluster, then continue this implementation.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Cluster ${waiting[0]!.node.title} is blocked`,
+        body: 'every remaining cluster waits on a dependency that did not complete. resolve the failed cluster, then continue this implementation.',
+        sessionId,
+      });
       return;
     }
     const next = target.agent;
@@ -1228,13 +1240,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
-      void get().emitNotification(
-        'error',
-        'warning',
-        'cluster blocked: missing implementer',
-        'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: 'This cluster has no implementer',
+        body: 'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        sessionId,
+      });
       return;
     }
     if (hasInstructions({ node: target.node }) === false) {
@@ -1242,13 +1254,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
-      void get().emitNotification(
-        'error',
-        'warning',
-        `cluster blocked: ${next.name}`,
-        'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Cluster ${next.name} is blocked`,
+        body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        sessionId,
+      });
       return;
     }
     const revalidated = await revalidateChildRouting({
@@ -1262,13 +1274,13 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     if (revalidated.kind === 'blocked') {
       const held = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: held } }));
-      void get().emitNotification(
-        'error',
-        'warning',
-        `cluster blocked: ${next.name}`,
-        revalidated.reason,
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Cluster ${next.name} is blocked`,
+        body: revalidated.reason,
+        sessionId,
+      });
       return;
     }
     void get().refreshUnreadWorkspaces();

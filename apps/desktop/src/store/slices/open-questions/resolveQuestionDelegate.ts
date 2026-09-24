@@ -105,16 +105,14 @@ export const resolveQuestionDelegate = (set: SetFn, get: GetFn) => {
       completedAt: new Date().toISOString() as IsoDateTime,
     });
     await refreshRuns({ set, get, sessionId });
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'warning',
-      'The delegated agent did not answer',
-      `${question.text} stays open. Answer it yourself or hand it over again.`,
-      {
-        sessionId,
-        action: { kind: 'open-agent', sessionId, agentId },
-        coalesceKey: `question-delegate:${question.id}`,
-      },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'warning',
+      title: 'The delegated agent did not answer',
+      body: `${question.text} stays open. Answer it yourself or hand it over again.`,
+      sessionId,
+      action: { kind: 'open-agent', sessionId, agentId },
+      coalesceKey: `question-delegate:${question.id}`,
+    });
   };
 };

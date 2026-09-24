@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { cn, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
+import { cn, StatusDot, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
 import type {
   TerminalTab,
   TerminalTabId,
@@ -42,8 +42,12 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
             className={cn(
               'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
               active
-                ? 'bg-primary/10 text-foreground ring-1 ring-primary/30'
-                : 'text-muted-foreground hover:bg-muted/50',
+                ? cn(
+                    tintClasses('primary').bg,
+                    'text-foreground ring-1',
+                    tintClasses('primary').ring,
+                  )
+                : 'text-muted-foreground hover:bg-hover',
             )}
           >
             <StatusDot tone={STATUS_TONE[t.status]} size="md" />
@@ -56,7 +60,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
                   e.stopPropagation();
                   onClose(t.id);
                 }}
-                className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <X size={11} aria-hidden />
               </button>
@@ -69,7 +73,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
           type="button"
           aria-label="New terminal"
           onClick={onSpawn}
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
         </button>

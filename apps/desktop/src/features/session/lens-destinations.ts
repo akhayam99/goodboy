@@ -7,12 +7,13 @@ export type LensDestination = {
   readonly shortcut: ShortcutId;
 };
 
+export type LensTool = 'linear' | 'gitlab' | 'jira' | 'slack';
+
+export type ConnectedLensTools = Readonly<Record<LensTool, boolean>>;
+
 const DESTINATIONS = [
   { lens: null, shortcut: 'lens.overview' },
   { lens: 'context', shortcut: 'lens.context' },
-  { lens: 'goal', shortcut: 'lens.goal' },
-  { lens: 'decisions', shortcut: 'lens.decisions' },
-  { lens: 'last_output_summary', shortcut: 'lens.summary' },
   { lens: 'workflows', shortcut: 'lens.workflows' },
   { lens: 'agents', shortcut: 'lens.agents' },
   { lens: 'questions', shortcut: 'lens.questions' },
@@ -29,20 +30,37 @@ const DESTINATIONS = [
   { lens: 'slack_threads', shortcut: 'lens.slack_threads' },
 ] satisfies ReadonlyArray<LensDestination>;
 
-type Params = {
-  readonly isBranchless: boolean;
+const TOOL_OF_LENS: Partial<Record<LensKind, LensTool>> = {
+  linear: 'linear',
+  gitlab_issues: 'gitlab',
+  jira_issues: 'jira',
+  slack_threads: 'slack',
 };
 
-export const lensDestinations = ({ isBranchless }: Params): ReadonlyArray<LensDestination> =>
+type Params = {
+  readonly isBranchless: boolean;
+  readonly isGithubCodeHost: boolean;
+  readonly connectedTools: ConnectedLensTools;
+};
+
+export const lensDestinations = ({
+  isBranchless,
+  isGithubCodeHost,
+  connectedTools,
+}: Params): ReadonlyArray<LensDestination> =>
   DESTINATIONS.filter(({ lens }) => {
-    if (lens === null) {
+    if (lens === null || lens === 'explore') {
       return true;
     }
     if (lens === 'files') {
       return !isBranchless;
     }
-    if (lens === 'explore') {
-      return isBranchless;
+    if (isBranchless && !SIMPLE_LENSES.has(lens)) {
+      return false;
     }
-    return !isBranchless || SIMPLE_LENSES.has(lens);
+    if (lens === 'pr') {
+      return !isGithubCodeHost;
+    }
+    const tool = TOOL_OF_LENS[lens];
+    return tool === undefined || connectedTools[tool];
   });

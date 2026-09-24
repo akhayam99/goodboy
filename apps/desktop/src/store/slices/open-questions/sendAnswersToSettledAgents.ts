@@ -6,7 +6,7 @@ import type { GetFn } from './types';
 
 export type AskingAgentId = AgentId | null;
 
-export type SendAnswersToSettledAgentsParams = {
+type SendAnswersToSettledAgentsParams = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly askingAgentIds: ReadonlySet<AskingAgentId>;

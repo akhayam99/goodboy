@@ -7,7 +7,7 @@ import { LensEmptyState } from '@goodboy/ui';
 import { splitWorkflowRuns } from '../../../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../../../workflows/useAttachedWorkflowRuns';
 import { WorkflowAttachButton } from '../../../../workflows/components/WorkflowAttachButton';
-import { WorkflowStartButton } from '../../../../workspace/components/WorkspacesSidebar/parts/WorkflowStartButton';
+import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';

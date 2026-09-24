@@ -5,6 +5,7 @@ import type {
 } from '@goodboy/types';
 import { closingThreadCount } from './closingThreadCount';
 import type { ResolvePublishIntent } from './publishIntent';
+import { formatClockTime } from '../../shared/utils/formatClockTime';
 
 export type PublishCounts = Readonly<{
   commits: number;
@@ -71,7 +72,7 @@ export const publicationCountsLine = ({
 };
 
 export const frozenAtLabel = ({ frozenAt }: { readonly frozenAt: number }): string =>
-  `as of ${new Date(frozenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  `as of ${formatClockTime({ iso: frozenAt })}`;
 
 export const HELD_BACK_REASON: Record<'comment_changed' | 'approval_withdrawn', string> = {
   comment_changed: 'the comment changed',

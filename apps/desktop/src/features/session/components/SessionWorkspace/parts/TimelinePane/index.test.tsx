@@ -242,19 +242,16 @@ describe('TimelinePane on an empty session', () => {
   it('keeps every session action offered on the path production takes', () => {
     renderEmptySession();
 
-    for (const name of ['Create agent', 'Add workflow', 'Create report', 'Create wireframe']) {
+    for (const name of ['Create agent', 'Add workflow', 'Create wireframe']) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
     }
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
   });
 
-  it('withholds the report with a reason rather than dropping it', () => {
+  it('holds the report tile back until the session has run something', () => {
     renderEmptySession();
 
-    expect(screen.getByTestId('create-report-cta').hasAttribute('disabled')).toBe(true);
-    expect(
-      screen.getByText('nothing has run yet, so there is nothing to work from.'),
-    ).toBeDefined();
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
     expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(false);
   });
 

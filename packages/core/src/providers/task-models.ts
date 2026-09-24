@@ -1,14 +1,32 @@
 import type {
   AuxTaskId,
+  EffortLevel,
   ProviderId,
   TaskModelPreference,
   TaskModelPreferences,
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { clampEffortForModel } from './clampEffortForModel';
 import { getCheapModel, getMidModel } from './cli-defaults';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+
+type EffortParams = {
+  readonly task: AuxTaskId;
+  readonly model: string;
+};
+
+const AUTOMATIC_EFFORT: EffortLevel = 'medium';
+
+const AGENT_PRESELECT_TASKS: ReadonlySet<AuxTaskId> = new Set(['pr_draft', 'rebase']);
+
+const automaticEffort = ({ task, model }: EffortParams): EffortLevel | null => {
+  if (AGENT_PRESELECT_TASKS.has(task)) {
+    return null;
+  }
+  return clampEffortForModel({ model, effort: AUTOMATIC_EFFORT });
+};
 
 type AutomaticParams = {
   readonly task: AuxTaskId;
@@ -59,13 +77,15 @@ const preferredTaskModel = ({
     );
     return null;
   }
+  const model = resolvedStoredModelId({
+    provider: preference.providerId,
+    selection: stored.selection,
+  });
+  const effort = preference.effort ?? automaticEffort({ task, model });
   return {
     providerId: preference.providerId,
-    model: resolvedStoredModelId({
-      provider: preference.providerId,
-      selection: stored.selection,
-    }),
-    ...(preference.effort != null && { effort: preference.effort }),
+    model,
+    ...(effort != null && { effort }),
   };
 };
 
@@ -82,8 +102,11 @@ export const resolveTaskModel = ({
   if (preferred != null) {
     return preferred;
   }
+  const model = automaticModelForTask({ task, providerId: defaultProviderId });
+  const effort = automaticEffort({ task, model });
   return {
     providerId: defaultProviderId,
-    model: automaticModelForTask({ task, providerId: defaultProviderId }),
+    model,
+    ...(effort != null && { effort }),
   };
 };

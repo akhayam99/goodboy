@@ -34,8 +34,8 @@ import { WorkspaceSwitcher } from './index';
 
 beforeEach(() => {
   state.workspaces = [
-    { id: 'ws-a', name: 'alpha', slug: 'alpha', sessionsRoot: '/repos/alpha' } as Workspace,
-    { id: 'ws-b', name: 'bravo', slug: 'bravo', sessionsRoot: '/repos/bravo' } as Workspace,
+    { id: 'ws-a', name: 'alpha', slug: 'alpha' } as Workspace,
+    { id: 'ws-b', name: 'bravo', slug: 'bravo' } as Workspace,
   ];
   state.projects = [
     { id: 'proj-a', workspaceId: 'ws-a', kind: 'repo', rootPath: '/repos/alpha' },
@@ -73,7 +73,7 @@ describe('WorkspaceSwitcher', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:add-workspace', spy);
     render(<WorkspaceSwitcher onClose={onClose} />);
-    fireEvent.click(screen.getByText('New workspace'));
+    fireEvent.click(screen.getByText('Add workspace'));
     expect(spy).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:add-workspace', spy);

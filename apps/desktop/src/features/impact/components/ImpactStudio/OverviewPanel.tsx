@@ -7,7 +7,7 @@ import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { formatHours } from '../../utils/formatHours';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SessionRows } from './SessionRows';
 import { TrendStatCard } from './TrendStatCard';
 import { StudioWidget } from '@goodboy/ui';
@@ -18,6 +18,7 @@ type Props = {
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly isLoading: boolean;
   readonly spendSection: ReactNode;
+  readonly hasSpend: boolean;
   readonly onRetryOverview: () => void;
   readonly onRetryShipped: () => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
@@ -29,6 +30,7 @@ export const OverviewPanel = ({
   reviews,
   isLoading,
   spendSection,
+  hasSpend,
   onRetryOverview,
   onRetryShipped,
   onOpenSession,
@@ -47,9 +49,10 @@ export const OverviewPanel = ({
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
       title="Overview"
-      subtitle="What orchestration shipped and how quickly work reached done"
+      description="What orchestration shipped and how quickly work reached done"
     >
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
@@ -59,7 +62,7 @@ export const OverviewPanel = ({
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
       {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
-      {data !== null && data.sessionCount === 0 ? (
+      {data !== null && data.sessionCount === 0 && data.spendUsd === null && !hasSpend ? (
         <EmptyState
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}
@@ -164,6 +167,6 @@ export const OverviewPanel = ({
         </>
       ) : null}
       {spendSection}
-    </StudioPanel>
+    </PaneShell>
   );
 };

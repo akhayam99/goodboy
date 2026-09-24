@@ -1,10 +1,10 @@
 # @goodboy/core
 
-> **Read this when** you need the shape and boundaries of `@goodboy/core` before adding business logic. **Not for** the specific rules. See `CONVENTIONS.md`.
+> **Read this when** you need an overview of `@goodboy/core`, and what belongs in it, before you add business logic. **Not for** the detailed rules. See `CONVENTIONS.md`.
 
-Business logic for Goodboy. Provider adapters, routing, sessions, skills.
+The business logic of Goodboy: stream-json parsers for each provider CLI, model catalogs and prices, routing, budget and permission decisions, orchestrator and planner prompts, skills.
 
-Pure TypeScript: no React, no Tauri, no DOM. Runs in any JS runtime.
+It is pure TypeScript, with no React, no Tauri, and no DOM. Agent turns are started in Rust, and core parses their output. `@goodboy/core/node` holds the only helpers tied to Node (git worktrees).
 
 ## Conventions
 

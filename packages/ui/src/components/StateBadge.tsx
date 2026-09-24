@@ -12,7 +12,7 @@ type Props = {
 export const StateBadge = ({ tone = 'neutral', children }: Props) => {
   const t = tintClasses(tone);
   return (
-    <span className={cn('rounded px-1.5 py-0.5 text-2xs font-medium', t.bg, t.text)}>
+    <span className={cn('rounded-sm px-1.5 py-0.5 text-2xs font-medium', t.bg, t.text)}>
       {children}
     </span>
   );

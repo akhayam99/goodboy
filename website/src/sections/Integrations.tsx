@@ -1,23 +1,8 @@
 import './Integrations.css';
-import { useEffect, useState, type CSSProperties } from 'react';
-import { BrandMark, BRAND_COLOR, type BrandId } from '../components/BrandIcons';
+import { useEffect, useState } from 'react';
+import { BrandMark } from '../components/BrandIcons';
 import { delay, prefersReducedMotion, useInViewOnce } from '../components/Reveal';
 import { SITE } from '../site';
-
-type IntegrationCard = {
-  readonly brand: BrandId;
-  readonly name: string;
-};
-
-const CARDS: ReadonlyArray<IntegrationCard> = [
-  { brand: 'github', name: 'GitHub' },
-  { brand: 'gitlab', name: 'GitLab' },
-  { brand: 'bitbucket', name: 'Bitbucket' },
-  { brand: 'linear', name: 'Linear' },
-  { brand: 'jira', name: 'Jira' },
-  { brand: 'sentry', name: 'Sentry' },
-  { brand: 'slack', name: 'Slack' },
-];
 
 const ArrowGlyph = () => (
   <svg viewBox="0 0 28 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -71,9 +56,7 @@ const IntegrationsFlow = () => {
       return;
     }
     if (!inView) return;
-    const timers = STAGE_MS.map((ms, index) =>
-      window.setTimeout(() => setStage(index + 1), ms),
-    );
+    const timers = STAGE_MS.map((ms, index) => window.setTimeout(() => setStage(index + 1), ms));
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [inView, reduced]);
 
@@ -218,23 +201,10 @@ export const Integrations = () => (
         </h2>
         <p className="sub rv" style={delay(40)}>
           Most tasks start somewhere else, in an issue or a crash report. <b>One click</b> makes it
-          a card with the goal already written for you, and whatever those tools send back lands in
-          one inbox.
+          a card with the goal already written, and whatever those tools send back lands in one
+          inbox.
         </p>
       </div>
-
-      <ul className="ig-strip rv" style={delay(30)} aria-label="Connected tools">
-        {CARDS.map((card, index) => (
-          <li
-            key={card.brand}
-            className="ig-chip"
-            style={{ ...delay(30 + index * 20), '--brand': BRAND_COLOR[card.brand] } as CSSProperties}
-          >
-            <BrandMark brand={card.brand} size={16} />
-            <span>{card.name}</span>
-          </li>
-        ))}
-      </ul>
 
       <h3 className="rv" id="h3-resolve" style={delay(80)}>
         From a review comment to a commit
@@ -244,15 +214,7 @@ export const Integrations = () => (
         <IntegrationsFlow />
       </div>
 
-      <p className="caption rv" style={delay(120)}>
-        You stay in the app and the thread stays answered.
-      </p>
-
-      <a
-        className="more rv"
-        style={delay(140)}
-        href={`${SITE.concepts}#integration-surface`}
-      >
+      <a className="more rv" style={delay(140)} href={`${SITE.concepts}#integration-surface`}>
         See where each integration stands <span className="arr">→</span>
       </a>
     </div>

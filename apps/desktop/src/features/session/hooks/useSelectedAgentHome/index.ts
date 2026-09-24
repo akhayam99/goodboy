@@ -27,6 +27,6 @@ export const useSelectedAgentHome = (sessionId: SessionId): AgentHomeLens | null
     if (rootAgent == null) {
       return null;
     }
-    return agentHomeLens(rootAgent, classifyAgent(rootAgent, override));
+    return agentHomeLens({ agent: rootAgent, kind: classifyAgent({ agent: rootAgent, override }) });
   }, [rootAgent, override]);
 };

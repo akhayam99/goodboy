@@ -45,7 +45,7 @@ describe('PermissionEngine.decide', () => {
   const engine = new PermissionEngine();
 
   it('no match → deny by default', () => {
-    const result = engine.decide(makeRequest('Edit'), [], CTX);
+    const result = engine.decide({ request: makeRequest('Edit'), rules: [], context: CTX });
     expect(result.decision).toBe('deny');
     expect(result.ruleId).toBeNull();
     expect(result.decidedBy).toBe('default');
@@ -55,7 +55,7 @@ describe('PermissionEngine.decide', () => {
 
   it('no match → allow when defaultDecision=allow', () => {
     const e = new PermissionEngine({ defaultDecision: 'allow' });
-    const result = e.decide(makeRequest('Edit'), [], CTX);
+    const result = e.decide({ request: makeRequest('Edit'), rules: [], context: CTX });
     expect(result.decision).toBe('allow');
     expect(result.decidedBy).toBe('default');
   });
@@ -66,7 +66,7 @@ describe('PermissionEngine.decide', () => {
       decision: 'allow',
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [rule], CTX);
+    const result = engine.decide({ request: makeRequest('Edit'), rules: [rule], context: CTX });
     expect(result.ruleId).toBe('rule-x');
     expect(result.decidedBy).toBe('rule');
   });
@@ -87,7 +87,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [globalAllow, sessionDeny], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [globalAllow, sessionDeny],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
     expect(result.ruleId).toBe('session-deny');
   });
@@ -108,7 +112,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [globalAllow, wsDeny], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [globalAllow, wsDeny],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
     expect(result.ruleId).toBe('ws-deny');
   });
@@ -130,7 +138,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [wsAllow, sessionDeny], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [wsAllow, sessionDeny],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
     expect(result.ruleId).toBe('session-deny');
   });
@@ -151,7 +163,11 @@ describe('PermissionEngine.decide', () => {
       priority: 10,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [sessionDeny, globalAllow], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [sessionDeny, globalAllow],
+      context: CTX,
+    });
     expect(result.decision).toBe('allow');
     expect(result.ruleId).toBe('global-allow');
   });
@@ -171,7 +187,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [allow, deny], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [allow, deny],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
   });
 
@@ -183,7 +203,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Bash' },
     });
-    const result = engine.decide(makeRequest('Bash', { command: 'ls' }), [ask], CTX);
+    const result = engine.decide({
+      request: makeRequest('Bash', { command: 'ls' }),
+      rules: [ask],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
   });
 
@@ -204,7 +228,11 @@ describe('PermissionEngine.decide', () => {
       priority: 100,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [otherSession, otherWs], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [otherSession, otherWs],
+      context: CTX,
+    });
     expect(result.decision).toBe('deny');
     expect(result.ruleId).toBeNull();
   });
@@ -224,7 +252,11 @@ describe('PermissionEngine.decide', () => {
       priority: 5,
       pattern: { tool: 'Edit' },
     });
-    const result = engine.decide(makeRequest('Edit'), [glob, specific], CTX);
+    const result = engine.decide({
+      request: makeRequest('Edit'),
+      rules: [glob, specific],
+      context: CTX,
+    });
     expect(result.decision).toBe('allow');
     expect(result.ruleId).toBe('specific-allow');
   });

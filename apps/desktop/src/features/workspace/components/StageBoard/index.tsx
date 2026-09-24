@@ -6,10 +6,10 @@ import {
   cn,
   Divider,
   EmptyState,
-  Eyebrow,
   ScrollFade,
   Skeleton,
   Tooltip,
+  tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
@@ -32,7 +32,7 @@ import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
 import { ProjectGitPills } from '../ProjectGitPill';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Confirm = { readonly kind: 'delete'; readonly session: Session };
 
@@ -46,10 +46,7 @@ const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
 
 const BoardSkeleton = () => (
   <div
-    className={cn(
-      'mx-auto flex min-h-0 w-fit max-w-full flex-1 overflow-x-hidden',
-      PANE_RHYTHM.board.colGap,
-    )}
+    className={cn('flex min-h-0 w-full flex-1 overflow-x-hidden', PANE_RHYTHM.board.colGap)}
     role="status"
     aria-label="Loading board"
   >
@@ -157,6 +154,13 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
       : areAllRepoProjectsMissing
         ? 'The project folder is unreachable'
         : 'This project needs a git repository with one commit first';
+  const unreachableDescription =
+    projectGitStatuses.length === 1
+      ? 'Goodboy cannot reach the folder this project points to. Relink it in workspace settings.'
+      : 'Goodboy cannot reach the folders these projects point to. Relink them in workspace settings.';
+  const blockedDescription = areAllRepoProjectsMissing
+    ? unreachableDescription
+    : 'Sessions branch from the latest commit. Make the first commit, or link another project in workspace settings.';
 
   const newSessionButton = (
     <Button
@@ -170,15 +174,22 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
 
   return (
-    <div className={cn('flex h-full w-full', PANE_RHYTHM.stack, PANE_RHYTHM.board.pad)}>
+    <div
+      className={cn(
+        'mx-auto flex h-full w-full',
+        PANE_RHYTHM.board.maxWidth,
+        PANE_RHYTHM.stack,
+        PANE_RHYTHM.board.pad,
+      )}
+    >
       {pending || !empty || hasProjects ? (
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex min-w-0 items-baseline gap-2">
-              <Eyebrow label="Stage board" />
+              <h1 className="text-xl font-semibold leading-snug text-foreground">Board</h1>
               {activeSessions.length > 0 && (
-                <span className="text-2xs tabular-nums text-muted-foreground/60">
-                  {activeSessions.length}
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {activeSessions.length} {activeSessions.length === 1 ? 'session' : 'sessions'}
                 </span>
               )}
             </span>
@@ -230,15 +241,38 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         </div>
       )}
 
+      {!pending && hasProjects && empty && !hasUsableProject && !statusesPending && (
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={CONCEPT_ICONS.projectRepo}
+            title={blockedReason}
+            description={blockedDescription}
+            action={
+              <Button
+                size="md"
+                variant="secondary"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
+                  )
+                }
+              >
+                Open workspace settings
+              </Button>
+            }
+            size="lg"
+            headingLevel={2}
+            className="max-w-md"
+          />
+        </div>
+      )}
+
       {!pending && !empty && (
         <ScrollFade orientation="horizontal" fadeSize="w-8" className="min-h-0 flex-1">
           <div
             ref={columnsRef}
             onPointerDown={lasso.onPointerDown}
-            className={cn(
-              'relative mx-auto flex h-full min-h-0 w-fit max-w-full',
-              PANE_RHYTHM.board.colGap,
-            )}
+            className={cn('relative flex h-full min-h-0 w-full', PANE_RHYTHM.board.colGap)}
           >
             {STAGES.map((stage) => (
               <StageColumn
@@ -271,7 +305,11 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                   width: lasso.rect.width,
                   height: lasso.rect.height,
                 }}
-                className="pointer-events-none absolute z-10 rounded-sm border border-primary/60 bg-primary/10"
+                className={cn(
+                  'pointer-events-none absolute z-10 rounded-sm border',
+                  tintClasses('primary').border,
+                  tintClasses('primary').bg,
+                )}
               />
             )}
           </div>

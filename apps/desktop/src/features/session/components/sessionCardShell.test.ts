@@ -3,9 +3,9 @@ import { sessionCardShell } from './sessionCardShell';
 
 describe('sessionCardShell', () => {
   it('tints the border by stage', () => {
-    expect(sessionCardShell({ stage: 'running' })).toContain('border-info/50');
+    expect(sessionCardShell({ stage: 'running' })).toContain('border-info/40');
     expect(sessionCardShell({ stage: 'running' })).toContain('spin-border spin-border-info');
-    expect(sessionCardShell({ stage: 'attention' })).toContain('border-warning/50');
+    expect(sessionCardShell({ stage: 'attention' })).toContain('border-warning/40');
     expect(sessionCardShell({ stage: 'attention' })).not.toContain('spin-border');
     expect(sessionCardShell({ stage: 'done' })).toContain('border-border-soft');
     expect(sessionCardShell({ stage: 'done' })).not.toContain('spin-border');
@@ -23,7 +23,7 @@ describe('sessionCardShell', () => {
   it('lets selection win over the stage tint', () => {
     const classes = sessionCardShell({ stage: 'running', selected: true });
     expect(classes).toContain('border-primary');
-    expect(classes).not.toContain('border-info/50');
+    expect(classes).not.toContain('border-info/40');
     expect(classes).not.toContain('spin-border');
   });
 
@@ -32,7 +32,7 @@ describe('sessionCardShell', () => {
     expect(classes).toContain('bg-elevated');
     expect(classes).toContain('shadow-sm');
     expect(classes).toContain('border-border');
-    expect(classes).not.toContain('border-info/50');
+    expect(classes).not.toContain('border-info/40');
   });
 
   it('dims on request', () => {

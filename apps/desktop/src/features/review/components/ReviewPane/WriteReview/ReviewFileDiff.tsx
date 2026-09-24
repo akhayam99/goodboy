@@ -1,6 +1,14 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Bot, ChevronRight, MessageSquarePlus } from 'lucide-react';
-import { Chip, cn, Divider, EmptyState, Tooltip, type DiffLayoutMode } from '@goodboy/ui';
+import {
+  Chip,
+  cn,
+  Divider,
+  EmptyState,
+  Tooltip,
+  type DiffLayoutMode,
+  tintClasses,
+} from '@goodboy/ui';
 import type { DiffHunkLine, FileDiff, PrReviewDraft, ReviewDraftSide } from '@goodboy/types';
 import {
   INITIAL_VISIBLE_LINES,
@@ -129,7 +137,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
               type="button"
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? 'Expand file' : 'Collapse file'}
-              className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronRight
                 size={ICON_SIZE.row}
@@ -202,7 +210,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           <tr key={`hunk-${row.hunkIndex}`}>
                             <td
                               colSpan={columnCount}
-                              className="border-y border-border-soft/40 bg-muted/30 px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70"
+                              className="border-y border-border-soft bg-subtle px-2.5 py-1 text-3xs font-medium tabular-nums text-faint-foreground"
                             >
                               {row.header}
                             </td>
@@ -281,20 +289,20 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                           <tr
                             className={cn(
                               'group',
-                              line.kind === 'add' && 'bg-success/[0.07]',
-                              line.kind === 'del' && 'bg-danger/[0.07]',
-                              hasDraft && 'bg-draft/[0.07]',
+                              line.kind === 'add' && cn(tintClasses('success').bgSoft),
+                              line.kind === 'del' && cn(tintClasses('danger').bgSoft),
+                              hasDraft && cn(tintClasses('draft').bgSoft),
                             )}
                           >
                             <td
                               className={cn(
                                 'w-11 select-none border-l-2 px-0.5 align-top',
                                 hasDraft
-                                  ? 'border-draft/50'
+                                  ? cn(tintClasses('draft').border)
                                   : line.kind === 'add'
-                                    ? 'border-success/50'
+                                    ? cn(tintClasses('success').border)
                                     : line.kind === 'del'
-                                      ? 'border-danger/50'
+                                      ? cn(tintClasses('danger').border)
                                       : 'border-transparent',
                               )}
                             >
@@ -308,7 +316,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                       }
                                       aria-label={`Draft a comment on line ${target.line}`}
                                       className={cn(
-                                        'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+                                        'flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-hover hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                                         isActive
                                           ? 'opacity-100'
                                           : 'opacity-0 group-hover:opacity-100',
@@ -322,7 +330,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                       type="button"
                                       onClick={() => onAskAgent?.(target)}
                                       aria-label={`Ask the agent about line ${target.line}`}
-                                      className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                                      className="flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                                     >
                                       <Bot size={9} aria-hidden />
                                     </button>
@@ -330,13 +338,13 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                                 </span>
                               ) : null}
                             </td>
-                            <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
+                            <td className="w-9 select-none px-1.5 text-right text-3xs tabular-nums text-faint-foreground">
                               {line.oldLine ?? ''}
                             </td>
-                            <td className="w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50">
+                            <td className="w-9 select-none border-r border-border-soft px-1.5 text-right text-3xs tabular-nums text-faint-foreground">
                               {line.newLine ?? ''}
                             </td>
-                            <td className="whitespace-pre px-2.5 text-foreground/80">
+                            <td className="whitespace-pre px-2.5 text-foreground">
                               <span
                                 aria-hidden
                                 className={cn(

@@ -30,7 +30,7 @@ export const CredentialRow = ({
   onForget,
 }: Props) => {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle/40 px-3 py-2">
+    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-subtle px-3 py-2">
       <button
         type="button"
         onClick={onSelect}
@@ -38,7 +38,7 @@ export const CredentialRow = ({
         aria-pressed={isSelected}
         className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:opacity-50"
       >
-        <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-border-soft text-accent">
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-border-soft text-primary">
           {isSelected ? <Check size={10} aria-hidden /> : null}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">

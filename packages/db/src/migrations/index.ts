@@ -22,8 +22,12 @@ import { m160ArtifactRunPhase } from './m160-artifact-run-phase';
 import { m161WorkflowPresetNameUnique } from './m161-workflow-preset-name-unique';
 import { m162OpenQuestionBlockingAndProvenance } from './m162-open-question-blocking-and-provenance';
 import { m163OpenQuestionAnswerDelivery } from './m163-open-question-answer-delivery';
-import { m164ClusterCompletionHolds } from './m164-cluster-completion-holds';
-import { m165ClusterExecutionGraphs } from './m165-cluster-execution-graphs';
+import { m164OrchestratorHintLog } from './m164-orchestrator-hint-log';
+import { m165ProviderRunsStatusIndex } from './m165-provider-runs-status-index';
+import { m166DropWorkflowRunRoleModels } from './m166-drop-workflow-run-role-models';
+import { m167DropDeadWorkspaceAndHintColumns } from './m167-drop-dead-workspace-and-hint-columns';
+import { m168ClusterCompletionHolds } from './m168-cluster-completion-holds';
+import { m169ClusterExecutionGraphs } from './m169-cluster-execution-graphs';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -333,6 +337,10 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 161, sql: m161WorkflowPresetNameUnique },
   { version: 162, sql: m162OpenQuestionBlockingAndProvenance },
   { version: 163, sql: m163OpenQuestionAnswerDelivery },
-  { version: 164, sql: m164ClusterCompletionHolds },
-  { version: 165, sql: m165ClusterExecutionGraphs },
+  { version: 164, sql: m164OrchestratorHintLog },
+  { version: 165, sql: m165ProviderRunsStatusIndex },
+  { version: 166, sql: m166DropWorkflowRunRoleModels },
+  { version: 167, sql: m167DropDeadWorkspaceAndHintColumns },
+  { version: 168, sql: m168ClusterCompletionHolds },
+  { version: 169, sql: m169ClusterExecutionGraphs },
 ];

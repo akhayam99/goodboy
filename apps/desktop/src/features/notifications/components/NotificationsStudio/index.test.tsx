@@ -66,8 +66,7 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
   };
 };
 
-const renderStudio = () =>
-  render(<NotificationsStudio workspaceName="goodboy" onClose={vi.fn()} />);
+const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
 beforeEach(() => {
   state.notifications = [];

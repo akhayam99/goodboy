@@ -22,6 +22,23 @@ export const ANTHROPIC_CATALOG = [
     defaultEffort: 'high',
   },
   {
+    key: 'opus-5.5',
+    label: 'Opus 5.5',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Opus',
+      version: '5.5',
+      order: 34,
+      costTier: 'expensive',
+    },
+    provider: 'anthropic',
+    cliId: 'claude-opus-5-5',
+    efforts: OPUS_EFFORTS,
+    defaultEffort: 'high',
+  },
+  {
     key: 'fable-5.1',
     label: 'Fable 5.1',
     tier: 'turn',

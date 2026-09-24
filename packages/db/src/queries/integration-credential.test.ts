@@ -7,8 +7,7 @@ import type {
   IntegrationBinding,
   IntegrationBindingId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countWorkspacesPerIntegrationCredential,
   deleteIntegrationCredential,
@@ -23,8 +22,7 @@ import {
 const at = (iso: string): IsoDateTime => new Date(iso).toISOString() as IsoDateTime;
 
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   for (const id of ['w1', 'w2']) {
     await db.execute(

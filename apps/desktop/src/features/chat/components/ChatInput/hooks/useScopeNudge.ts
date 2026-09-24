@@ -47,7 +47,7 @@ export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeN
     ) {
       return false;
     }
-    const mismatch = detectScopeMismatch(content, activeAgentKind);
+    const mismatch = detectScopeMismatch({ input: content, agentKind: activeAgentKind });
     if (!mismatch) return false;
 
     const id = crypto.randomUUID();

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountOperation, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
 
 const {
@@ -15,7 +15,9 @@ const {
   worktreeWriterStatus,
   worktreeDirectorySize,
   worktreeList,
+  operations,
 } = vi.hoisted(() => ({
+  operations: new Map<string, MountOperation>(),
   listArchivedSessionRefs: vi.fn(),
   listArchivedSessionMounts: vi.fn(),
   listAllRetainedWorktreePaths: vi.fn(),
@@ -39,6 +41,12 @@ vi.mock('@goodboy/db', () => ({
   getDatabaseSizeBytes,
   updateSessionMountLifecycle,
   vacuumDatabase,
+  getMountOperation: vi.fn(
+    async ({ requestId }: { readonly requestId: string }) => operations.get(requestId) ?? null,
+  ),
+  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+    operations.set(operation.requestId, operation);
+  }),
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -122,6 +130,7 @@ const makeGet =
 
 beforeEach(() => {
   vi.clearAllMocks();
+  operations.clear();
 
   listArchivedSessionRefs.mockResolvedValue([
     { sessionId: ARCHIVED_SESSION, workspaceId: WORKSPACE_ID },
@@ -214,6 +223,29 @@ describe('removeArchivedWorktrees', () => {
     );
     expect(result).toEqual({ removed: 1, failed: 0 });
     expect(loadStats).toHaveBeenCalled();
+    expect([...operations.values()]).toEqual([
+      expect.objectContaining({
+        kind: 'remove',
+        status: 'succeeded',
+        mountId: 'wt-archived',
+        input: expect.objectContaining({ finish: 'clear-path' }),
+      }),
+    ]);
+  });
+
+  it('leaves a removal whose row write lost its revision uncertain instead of swallowing it', async () => {
+    updateSessionMountLifecycle.mockResolvedValueOnce(false);
+
+    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
+
+    expect(result).toEqual({ removed: 0, failed: 1 });
+    expect([...operations.values()]).toEqual([
+      expect.objectContaining({
+        kind: 'remove',
+        status: 'uncertain',
+        errorCode: 'revision-conflict',
+      }),
+    ]);
   });
 
   it('keeps a mount the guard refuses and counts it as a failure', async () => {

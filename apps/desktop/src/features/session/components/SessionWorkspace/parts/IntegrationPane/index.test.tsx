@@ -91,10 +91,18 @@ const h = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
-}));
+vi.mock('../../../../../../store', async () => {
+  const { createGithubConnectionStore } =
+    await import('../../../../../../__tests__/helpers/githubConnectionStore');
+  const github = createGithubConnectionStore({
+    readStatus: async () => Promise.reject(new Error('gh is not available in tests')),
+  });
+  return {
+    EMPTY_ARRAY: Object.freeze([]),
+    useAppStore: <T,>(selector: (state: Store & ReturnType<typeof github.getState>) => T) =>
+      selector({ ...h.store, ...github() }),
+  };
+});
 
 vi.mock('../../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,
@@ -341,7 +349,7 @@ describe('IntegrationPane', () => {
 
     const detail = screen.getByTestId('task-detail');
 
-    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
+    expect(screen.getByText('Linear')).toBeDefined();
     expect(within(detail).queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();

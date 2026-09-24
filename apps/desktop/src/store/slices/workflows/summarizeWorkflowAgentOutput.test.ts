@@ -23,7 +23,6 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
-import { stepSummaryDegraded, summarizedStepOutputs } from '../../summarizeAgentOutput';
 
 const SESSION_ID = 'session-step-summary' as SessionId;
 const AGENT_ID = 'agent-step-summary' as AgentId;
@@ -89,6 +88,8 @@ const buildHarness = ({ connected, cooldowns, defaultProviderId, taskModels }: H
           },
     phaseTemplates: {},
     sessionWorkflows: {},
+    stepSummaryDegraded: {},
+    degradedStepOutputs: {},
     emitNotification,
   };
   const set = vi.fn((updater: unknown) => {
@@ -113,8 +114,6 @@ describe('summarizeWorkflowAgentOutput', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     summarizeStepOutputSpy.mockReset();
-    summarizedStepOutputs.clear();
-    stepSummaryDegraded.clear();
   });
 
   afterEach(() => {
@@ -209,13 +208,13 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(state.providerCooldowns).toEqual({});
   });
 
-  it('does not write to the store for a non-cooldown failure kind', async () => {
+  it('records no cooldown for a non-cooldown failure kind', async () => {
     summarizeStepOutputSpy.mockRejectedValue(new Error('the model produced nonsense'));
-    const { call, set } = buildHarness({ connected: ['anthropic', 'codex'] });
+    const { call, state } = buildHarness({ connected: ['anthropic', 'codex'] });
 
     await call();
 
-    expect(set).not.toHaveBeenCalled();
+    expect(state.providerCooldowns).toEqual({});
   });
 
   it('notifies when every provider is cooling down before the first call', async () => {
@@ -229,7 +228,9 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy).not.toHaveBeenCalled();
     expect(summary).toContain('the step wrote three files');
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    expect(emitNotification.mock.calls[0]?.[3]).toContain('cooling down');
+    expect((emitNotification.mock.calls[0]?.[0] as { body?: string } | undefined)?.body).toContain(
+      'cooling down',
+    );
   });
 
   it('starts on a provider that is not cooling down', async () => {
@@ -283,11 +284,12 @@ describe('summarizeWorkflowAgentOutput', () => {
     await call();
 
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    const [, , title, body, opts] = emitNotification.mock.calls[0] ?? [];
-    expect(String(title)).toContain('codex/');
-    expect(String(body)).toContain('anthropic/');
-    expect(String(body)).toContain('Providers then Defaults');
-    expect(opts).toMatchObject({
+    const params = emitNotification.mock.calls[0]?.[0] as
+      { title: string; body?: string; coalesceKey?: string } | undefined;
+    expect(String(params?.title)).toContain('codex/');
+    expect(String(params?.body)).toContain('anthropic/');
+    expect(String(params?.body)).toContain('Providers then Defaults');
+    expect(params).toMatchObject({
       coalesceKey: 'summarizer-model-unavailable:codex:gpt-5.6-luna',
     });
   });
@@ -308,7 +310,9 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(summarizeStepOutputSpy).toHaveBeenCalledTimes(1);
     expect(summary).toContain('the step wrote three files');
     expect(emitNotification).toHaveBeenCalledTimes(1);
-    expect(String(emitNotification.mock.calls[0]?.[3])).toContain('carried unsummarized');
+    expect(
+      String((emitNotification.mock.calls[0]?.[0] as { body?: string } | undefined)?.body),
+    ).toContain('carried unsummarized');
   });
 
   it('truncates and notifies once when no other provider can take over', async () => {

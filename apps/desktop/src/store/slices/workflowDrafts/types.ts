@@ -1,6 +1,5 @@
-import type { ProviderId, WorkflowId } from '@goodboy/types';
+import type { ProviderId, WorkflowId, EffortLevel } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
-import type { EffortLevel } from '../../../features/chat/utils/chat-constants';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
 
 export type { SetFn, GetFn } from '../../slice-types';

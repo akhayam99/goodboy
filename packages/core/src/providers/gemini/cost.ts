@@ -1,13 +1,6 @@
-import type { ProviderUsage } from '@goodboy/types';
+import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 
-export type GeminiModelPriceOverride = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok?: number;
-  readonly assumed?: true;
-};
-
-export const GEMINI_PRICES: Readonly<Record<string, GeminiModelPriceOverride>> = {
+export const GEMINI_PRICES: Readonly<Record<string, ModelPrice>> = {
   'gemini-3.1-pro': {
     inputPerMtok: 2,
     outputPerMtok: 12,
@@ -40,7 +33,7 @@ export const GEMINI_PRICES: Readonly<Record<string, GeminiModelPriceOverride>> =
 type Params = {
   readonly usage: ProviderUsage;
   readonly model: string;
-  readonly override?: GeminiModelPriceOverride | null;
+  readonly override?: ModelPrice | null;
 };
 
 export const computeGeminiCostUsd = ({ usage, model, override }: Params): number => {

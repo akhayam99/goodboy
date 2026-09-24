@@ -1,8 +1,8 @@
-import type { ModelEffort, ProviderId } from '@goodboy/types';
+import type { EffortLevel, ProviderId } from '@goodboy/types';
 
 export type AgentSpawnConfigValue = {
   readonly provider: ProviderId | '';
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
   readonly hint: string;
 };

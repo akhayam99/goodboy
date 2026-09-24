@@ -1,3 +1,4 @@
+import type { SessionProviderPreference } from '@goodboy/types';
 import { describe, it } from 'vitest';
 import type {
   Project,
@@ -8,13 +9,17 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
 import { migrate } from './migrations/runner';
 import { migrations } from './migrations';
 import { insertWorkspace } from './queries/workspace';
 import { insertProject } from './queries/project';
 import { archiveSession, insertSession } from './queries/session';
 import { makeTestDatabase } from './test-helpers/test-db';
+
+const PROVIDER_PREFERENCE = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+} satisfies SessionProviderPreference;
 
 const shouldSeed = process.env.GOODBOY_QA_SEED === '1';
 
@@ -35,7 +40,6 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
       id: workspaceId,
       name: 'QA Sandbox',
       slug: 'qa-sandbox',
-      sessionsRoot: '/tmp/goodboy-qa-sandbox',
       overrides: {
         defaultProviderId: null,
         defaultWorkflowId: null,
@@ -69,7 +73,7 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
     const baseSession = {
       workspaceId,
       contextSlots: [],
-      providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+      providerPreference: PROVIDER_PREFERENCE,
       permissionMode: 'default',
       workflowRuns: [],
       autoRun: false,
