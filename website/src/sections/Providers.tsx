@@ -35,8 +35,8 @@ const BeltChip = ({ chip }: { chip: Chip }) => (
   </div>
 );
 
-const BeltCopy = ({ chips, clone }: { chips: readonly Chip[]; clone?: boolean }) => (
-  <div className={clone ? 'beltCopy beltClone' : 'beltCopy'} aria-hidden={clone || undefined}>
+const BeltCopy = ({ chips, isClone }: { chips: readonly Chip[]; isClone?: boolean }) => (
+  <div className={isClone ? 'beltCopy beltClone' : 'beltCopy'} aria-hidden={isClone || undefined}>
     {chips.map((chip) => (
       <BeltChip chip={chip} key={chip.brand} />
     ))}
@@ -46,7 +46,7 @@ const BeltCopy = ({ chips, clone }: { chips: readonly Chip[]; clone?: boolean })
 const renderBelt = (chips: readonly Chip[]) => (
   <>
     <BeltCopy chips={chips} />
-    <BeltCopy chips={chips} clone />
+    <BeltCopy chips={chips} isClone />
   </>
 );
 
