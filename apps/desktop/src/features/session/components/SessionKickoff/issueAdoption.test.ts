@@ -26,14 +26,16 @@ describe('proposeIssueAdoption', () => {
     expect(adoption.identifier).toBe('LIN-12');
   });
 
-  it('clamps a title past the session title limit', () => {
+  it('clamps a title past the session title limit at a word', () => {
     const adoption = proposeIssueAdoption({
-      candidate: candidate({ title: 'x'.repeat(200) }),
+      candidate: candidate({
+        title: 'Checkout fails when the promo code field is left empty on Pay',
+      }),
       currentTitle: 'Untitled session',
       currentGoal: '',
     });
 
-    expect(adoption.title?.length).toBe(60);
+    expect(adoption.title).toBe('[LIN-12] Checkout fails when the promo code field is left…');
   });
 
   it('proposes no title when the session already carries it', () => {

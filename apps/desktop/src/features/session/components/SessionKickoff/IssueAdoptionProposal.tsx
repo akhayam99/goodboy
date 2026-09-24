@@ -1,5 +1,6 @@
-import { Button, Eyebrow } from '@goodboy/ui';
+import { Button } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AdoptionRow } from './AdoptionRow';
 import type { IssueAdoption } from './issueAdoption';
 
 type Props = {
@@ -8,23 +9,6 @@ type Props = {
   readonly onUseGoal: () => void;
   readonly onDismiss: () => void;
 };
-
-type RowProps = {
-  readonly label: string;
-  readonly value: string;
-  readonly action: string;
-  readonly onUse: () => void;
-};
-
-const AdoptionRow = ({ label, value, action, onUse }: RowProps) => (
-  <div className="flex items-center gap-2">
-    <Eyebrow label={label} className="w-10 shrink-0" />
-    <span className="min-w-0 flex-1 truncate text-xs text-foreground">{value}</span>
-    <Button variant="secondary" size="sm" onClick={onUse}>
-      {action}
-    </Button>
-  </div>
-);
 
 export const IssueAdoptionProposal = ({ adoption, onUseTitle, onUseGoal, onDismiss }: Props) => (
   <section
@@ -45,10 +29,22 @@ export const IssueAdoptionProposal = ({ adoption, onUseTitle, onUseGoal, onDismi
       </Button>
     </header>
     {adoption.title !== null ? (
-      <AdoptionRow label="Title" value={adoption.title} action="Use as title" onUse={onUseTitle} />
+      <AdoptionRow
+        label="Title"
+        value={adoption.title}
+        action="Use as title"
+        isProse={false}
+        onUse={onUseTitle}
+      />
     ) : null}
     {adoption.goal !== null ? (
-      <AdoptionRow label="Goal" value={adoption.goal} action="Use as goal" onUse={onUseGoal} />
+      <AdoptionRow
+        label="Goal"
+        value={adoption.goal}
+        action="Use as goal"
+        isProse
+        onUse={onUseGoal}
+      />
     ) : null}
   </section>
 );

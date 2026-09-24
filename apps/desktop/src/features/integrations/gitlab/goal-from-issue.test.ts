@@ -35,11 +35,13 @@ describe('goalFromIssue', () => {
     );
   });
 
-  it('trims trailing whitespace and overlong descriptions', () => {
-    const long = 'x'.repeat(2000);
+  it('cuts an overlong description at a sentence and links the full issue', () => {
+    const sentence = `${'x'.repeat(49)}. `;
+    const long = sentence.repeat(40);
     const goal = goalFromIssue({ issue: makeIssue({ description: long }) });
-    expect(goal.endsWith('…')).toBe(true);
-    expect(goal.length).toBeLessThanOrEqual(1300);
+    expect(goal).toBe(
+      `[acme/web#123] Add user signup\n\n${sentence.repeat(23).trimEnd()}\n\nFull issue: acme/web#123 https://gitlab.com/acme/web/-/issues/123`,
+    );
   });
 
   it('strips title whitespace', () => {

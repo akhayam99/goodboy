@@ -388,6 +388,14 @@ integrated when you can do all three:
 - **Route it**: turn it into a session with the goal already written, and
   follow it back when the work ships
 
+A routed goal carries the item's text up to 1,200 characters, or 2,000 for a
+Slack thread. A longer text is cut at the last paragraph, line or sentence that
+fits, never inside an open code block, and ends with a line that names the full
+item and its link. Agents read the whole item through the
+[query bridge](query-bridge.md). A proposed session title is cut at a word and
+ends with an ellipsis. The proposal shows the whole goal, with Show more, before
+you use it.
+
 ### Each source
 
 - **GitHub**: read pull requests and act on them (approve, request changes,

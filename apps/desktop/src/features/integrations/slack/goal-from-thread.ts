@@ -1,4 +1,4 @@
-import { capText } from '../../../shared/utils/capText';
+import { composeGoal } from '../shared/composeGoal';
 import type { SlackMessage } from './client';
 import { slackMrkdwnToMarkdown } from './slackMrkdwnToMarkdown';
 
@@ -31,8 +31,10 @@ export const goalFromThread = ({ channelName, messages, userNames }: Params): st
     .filter((line) => line !== '')
     .join('\n\n');
 
-  if (body === '') {
-    return heading;
-  }
-  return `${heading}\n\n${capText({ text: body, capChars: GOAL_CHAR_CAP })}`;
+  return composeGoal({
+    heading,
+    body,
+    capChars: GOAL_CHAR_CAP,
+    source: { noun: 'thread', reference: `#${channelName}`, url: null },
+  });
 };

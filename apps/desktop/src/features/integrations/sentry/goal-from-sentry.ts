@@ -1,5 +1,4 @@
-import { capText } from '../../../shared/utils/capText';
-import { GOAL_BODY_CHAR_CAP } from '../shared/goalBodyCap';
+import { composeGoal } from '../shared/composeGoal';
 import type { SentryIssue, SentryIssueDetail, SentryStackFrame } from './client';
 
 const MAX_FRAMES = 10;
@@ -36,9 +35,9 @@ export const goalFromSentry = ({ issue, detail }: Params): string => {
     }
   }
 
-  const body = sections.join('\n\n');
-  if (body === '') {
-    return heading;
-  }
-  return `${heading}\n\n${capText({ text: body, capChars: GOAL_BODY_CHAR_CAP })}`;
+  return composeGoal({
+    heading,
+    body: sections.join('\n\n'),
+    source: { noun: 'issue', reference: label, url: issue.permalink },
+  });
 };

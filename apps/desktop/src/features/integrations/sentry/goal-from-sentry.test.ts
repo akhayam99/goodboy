@@ -69,7 +69,7 @@ describe('goalFromSentry', () => {
     expect(goal).not.toContain('libCall');
   });
 
-  it('caps an overlong body and prefers detail title', () => {
+  it('cuts an overlong body, links the full issue and prefers detail title', () => {
     const detail: SentryIssueDetail = {
       title: 'Detail title',
       culprit: 'x'.repeat(2000),
@@ -77,8 +77,9 @@ describe('goalFromSentry', () => {
     };
     const goal = goalFromSentry({ issue: makeIssue(), detail });
     expect(goal.startsWith('[GOODBOY-7A] Detail title')).toBe(true);
-    expect(goal.endsWith('…')).toBe(true);
-    expect(goal.length).toBeLessThanOrEqual(1300);
+    expect(goal).toBe(
+      `[GOODBOY-7A] Detail title\n\n${'x'.repeat(1200)}…\n\nFull issue: GOODBOY-7A https://sentry.io/organizations/goodboy/issues/1/`,
+    );
   });
 
   it('falls back to all frames when none are marked in-app', () => {
