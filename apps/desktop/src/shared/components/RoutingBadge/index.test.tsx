@@ -249,6 +249,61 @@ describe('RoutingBadge', () => {
       );
     });
 
+    it('draws a planned effort in faint and an observed one in the row tone', () => {
+      const { container, rerender } = render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-sonnet-5" effort="high" />,
+      );
+      const effortOf = () => container.querySelector('[data-meta-column="effort"]')!;
+      expect(effortOf().className).toContain('text-faint-foreground');
+
+      rerender(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="high"
+          isEffortObserved
+        />,
+      );
+      expect(effortOf().className).not.toContain('text-faint-foreground');
+      expect(screen.queryByTestId('effort-divergence')).toBeNull();
+    });
+
+    it('names an effort that left the plan in the tooltips', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="medium"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-5', effort: 'high' }}
+          isEffortObserved
+        />,
+      );
+
+      const effort = screen.getByTestId('effort-divergence');
+      expect(effort.textContent).toBe('Medium');
+      expect(effort.className).toContain('decoration-dotted');
+      expect(tooltipTextOf({ element: effort })).toBe('Planned High, ran Medium');
+      expect(tooltipTextOf({ element: screen.getByText('Sonnet 5').parentElement! })).toBe(
+        'Sonnet 5 Medium on Claude. Planned High, ran Medium',
+      );
+    });
+
+    it('never names a divergence for an effort nobody observed', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="medium"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-5', effort: 'high' }}
+        />,
+      );
+
+      expect(screen.queryByTestId('effort-divergence')).toBeNull();
+    });
+
     it('holds both columns empty when nothing is routed yet', () => {
       const { container } = render(<RoutingBadge variant="bare" />);
 

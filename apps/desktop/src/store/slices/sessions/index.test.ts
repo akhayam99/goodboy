@@ -18,6 +18,7 @@ import type {
   PlanId,
   PlanWithCount,
   Project,
+  ProviderRunId,
   ProjectId,
   Session,
   SessionExternalTask,
@@ -280,6 +281,34 @@ describe('store contract', () => {
 
       await vi.waitFor(() => {
         expect(store.getState().sessionSlots[SESSION_ID]).toHaveLength(2);
+      });
+    });
+
+    it('setCurrentSession restores the effort each finished run was started with', async () => {
+      const store = useAppStore;
+      const runId = 'run-1' as ProviderRunId;
+      storySpies.invokeAgentList.mockResolvedValue([
+        buildAgent({ id: AGENT_ID, status: 'completed' }),
+      ]);
+      const db = await import('@goodboy/db');
+      (db.listAgentTurnSpanRoutes as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+        {
+          runId,
+          agentId: AGENT_ID,
+          provider: 'anthropic',
+          model: 'claude-sonnet-5',
+          effort: 'medium',
+        },
+      ]);
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      await vi.waitFor(() => {
+        expect(store.getState().runRouting[AGENT_ID]?.[runId]).toEqual({
+          provider: 'anthropic',
+          model: 'claude-sonnet-5',
+          effort: 'medium',
+        });
       });
     });
 

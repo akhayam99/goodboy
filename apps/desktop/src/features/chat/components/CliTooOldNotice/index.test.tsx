@@ -113,7 +113,9 @@ describe('CliTooOldNotice', () => {
         },
       },
       runRouting: {
-        ['agent-1' as AgentId]: { [RUN]: { provider: 'anthropic', model: 'claude-opus-5' } },
+        ['agent-1' as AgentId]: {
+          [RUN]: { provider: 'anthropic', model: 'claude-opus-5', effort: null },
+        },
       },
     });
     render(<CliTooOldNotice payload={PAYLOAD} runId={RUN} isRetrying={false} />);

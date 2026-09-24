@@ -232,6 +232,12 @@ provider glyph, the model, the effort and what the row has spent. Before a
 step starts, the meta shows the routing it is planned to run on, in faint.
 Once it runs, the meta shows what actually ran, and a dotted model name means
 routing picked something other than the plan (the tooltip names both). The
+effort works the same way: once a run has started, the column shows the effort
+the CLI was started with, in the row tone, and a dotted effort means it left
+the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
+effort, like one from before turn spans existed or a CLI with no effort flag,
+keeps the planned effort in faint and never shows a made-up value. The agent
+header reads the same way. The
 run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
 orchestrated run, which has no total) and what the whole run has spent.
 

@@ -11,6 +11,7 @@ import type {
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   insertAgentTurnSpan,
+  listAgentTurnSpanRoutes,
   listSessionTurnSpans,
   listWorkspaceTurnSpans,
 } from './agent-turn-span';
@@ -233,5 +234,23 @@ describe('agent turn span queries', () => {
 
     expect(inside.map((span) => span.agentId)).toEqual([agentId]);
     expect(outside).toEqual([]);
+  });
+
+  it('lists what each run of the session was started with', async () => {
+    const database = await databaseWithRun({});
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+
+    expect(await listAgentTurnSpanRoutes({ db: database, sessionId })).toEqual([
+      { runId, agentId, provider: 'anthropic', model: 'claude-sonnet-5', effort: 'high' },
+    ]);
+  });
+
+  it('leaves out spans whose agent was deleted', async () => {
+    const database = await databaseWithRun({});
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+
+    await database.execute('DELETE FROM agents WHERE id = ?', [agentId]);
+
+    expect(await listAgentTurnSpanRoutes({ db: database, sessionId })).toEqual([]);
   });
 });

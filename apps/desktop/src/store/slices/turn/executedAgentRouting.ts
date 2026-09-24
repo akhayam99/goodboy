@@ -3,6 +3,7 @@ import type { ProviderName, ProviderRunId, TelemetryRecord } from '@goodboy/type
 export type ExecutedAgentRouting = Readonly<{
   provider: ProviderName;
   model: string;
+  effort: string | null;
 }>;
 
 type Params = {
@@ -35,10 +36,10 @@ export const executedAgentRouting = ({
   for (let index = runIds.length - 1; index >= 0; index -= 1) {
     const runId = runIds[index]!;
     const record = latestByRunId.get(runId);
-    if (record != null) {
-      return { provider: record.provider, model: record.model };
-    }
     const live = liveRouting[runId];
+    if (record != null) {
+      return { provider: record.provider, model: record.model, effort: live?.effort ?? null };
+    }
     if (live != null) {
       return live;
     }

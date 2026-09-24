@@ -376,7 +376,7 @@ The right end of a work row is `WorkMeta` in
 | column     | width | holds                                                        | in a narrow pane                 |
 | ---------- | ----- | ------------------------------------------------------------ | -------------------------------- |
 | model      | 96px  | provider glyph, then the model label                         | under 600px only the glyph stays |
-| effort     | 52px  | the effort label, always faint                               | under 720px it leaves the row    |
+| effort     | 52px  | the effort label, faint until the run reports its own        | under 720px it leaves the row    |
 | time       | 128px | measured time or estimate ("5m of ~9m", "12-20m")            | never drops                      |
 | cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px a step row drops it  |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px a step row drops it  |
@@ -394,9 +394,12 @@ columns come from `RoutingBadge variant="bare"`, the dense form of the one
 routing badge, with no fill and no chip. Planned routing (a step that has not
 started) is faint; routing that ran is muted. When the run picked something
 other than the plan, the model is underlined dotted and the tooltip names the
-plan. The activity feed, the workflow run tree and the Subagents tree of a
-Brief all end their rows with this meta, so a step and its sub-agents read the
-same wherever they appear. The inline form in headers and chips stays
+plan. The effort is faint while it is only planned and takes the row tone
+once the run reports the effort it was started with; when that differs from
+the plan, the effort is underlined dotted and both its tooltip and the model
+tooltip say "Planned High, ran Medium". The activity feed, the workflow run
+tree and the Subagents tree of a Brief all end their rows with this meta, so a
+step and its sub-agents read the same wherever they appear. The inline form in headers and chips stays
 `RoutingBadge`'s compact variant.
 
 ### The plan in the workflow builder

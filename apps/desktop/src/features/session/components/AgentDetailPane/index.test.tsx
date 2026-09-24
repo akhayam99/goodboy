@@ -14,7 +14,7 @@ const state = vi.hoisted(() => ({
 }));
 
 const executedRouting = vi.hoisted(() => ({
-  value: null as { provider: string; model: string } | null,
+  value: null as { provider: string; model: string; effort: string | null } | null,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -184,7 +184,7 @@ describe('AgentDetailPane', () => {
 
   it('shows the model that actually ran and names the plan it replaced', () => {
     Object.assign(state, { agentModelOverride: { [agentId]: 'claude-haiku-4-5' } });
-    executedRouting.value = { provider: 'codex', model: 'gpt-5.1-codex' };
+    executedRouting.value = { provider: 'codex', model: 'gpt-5.1-codex', effort: null };
 
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
@@ -193,6 +193,18 @@ describe('AgentDetailPane', () => {
     expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
     expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
     expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
+  });
+
+  it('shows the effort the run was started with and marks where it left the plan', () => {
+    Object.assign(state, { agentEffortOverride: { [agentId]: 'high' } });
+    executedRouting.value = { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' };
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByTestId('effort-divergence').textContent).toBe('Medium');
+    expect(screen.queryByText('High')).toBeNull();
   });
 
   it('reveals the transcript without changing the selected agent', () => {

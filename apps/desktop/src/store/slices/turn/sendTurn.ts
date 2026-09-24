@@ -692,7 +692,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...state.runRouting,
           [activeAgentId]: {
             ...state.runRouting[activeAgentId],
-            [runId]: { provider, model: spawnModel },
+            [runId]: { provider, model: spawnModel, effort: effortFlag ?? null },
           },
         },
       };

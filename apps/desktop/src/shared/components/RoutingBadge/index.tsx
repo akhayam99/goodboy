@@ -4,10 +4,12 @@ import { getModelProvider, modelCatalogKey, clampEffortForModel } from '@goodboy
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
+import { EffortNote } from './EffortNote';
 
 type PlannedRouting = {
   readonly provider?: string | null;
   readonly model?: string | null;
+  readonly effort?: string | null;
 };
 
 type Props = {
@@ -15,6 +17,7 @@ type Props = {
   readonly model?: string | null;
   readonly effort?: string | null;
   readonly planned?: PlannedRouting | null;
+  readonly isEffortObserved?: boolean;
   readonly variant?: 'compact' | 'full' | 'bare';
   readonly glyphPlacement?: 'leading' | 'trailing';
   readonly muted?: boolean;
@@ -69,6 +72,19 @@ const divergenceCopy = ({
   return null;
 };
 
+type ShownEffortParams = {
+  readonly model: string | null;
+  readonly effort: string | null;
+};
+
+const shownEffort = ({ model, effort }: ShownEffortParams): EffortLevel | null => {
+  const level = effort != null && effort in EFFORT_LABEL ? (effort as EffortLevel) : null;
+  if (model == null || level == null) {
+    return level;
+  }
+  return clampEffortForModel({ model, effort: level }) ?? level;
+};
+
 const MISSING_LABEL = 'Model not chosen yet';
 
 const CHIP_CLASS =
@@ -79,6 +95,7 @@ export const RoutingBadge = ({
   model = null,
   effort = null,
   planned = null,
+  isEffortObserved = false,
   variant = 'compact',
   glyphPlacement = 'leading',
   muted = false,
@@ -88,11 +105,14 @@ export const RoutingBadge = ({
   const resolvedProvider = named != null && named in PROVIDER_BRAND ? (named as ProviderId) : null;
   const providerLabel = resolvedProvider != null ? PROVIDER_LABEL[resolvedProvider] : named;
   const Glyph = resolvedProvider != null ? PROVIDER_BRAND[resolvedProvider].icon : null;
-  const level = effort != null && effort in EFFORT_LABEL ? (effort as EffortLevel) : null;
-  const resolvedEffort =
-    model != null && level != null
-      ? (clampEffortForModel({ model, effort: level }) ?? level)
-      : level;
+  const resolvedEffort = shownEffort({ model, effort });
+  const plannedEffort = isEffortObserved
+    ? shownEffort({ model: planned?.model ?? model, effort: planned?.effort ?? null })
+    : null;
+  const effortDivergence =
+    resolvedEffort != null && plannedEffort != null && plannedEffort !== resolvedEffort
+      ? `Planned ${EFFORT_LABEL[plannedEffort]}, ran ${EFFORT_LABEL[resolvedEffort]}`
+      : null;
   const glyphSize = variant === 'compact' ? 11 : 12;
   const plannedModel = planned?.model ?? null;
   const plannedProvider = planned?.provider ?? null;
@@ -155,11 +175,25 @@ export const RoutingBadge = ({
     ]
       .filter((part) => part != null)
       .join(' ');
+    const routingTooltip = [routingText, divergenceTooltip, effortDivergence]
+      .filter((part) => part != null)
+      .join('. ');
+    const effortCell = (
+      <span
+        data-meta-column="effort"
+        data-testid={effortDivergence != null ? 'effort-divergence' : undefined}
+        className={cn(
+          WORK_META_COLUMN.effort,
+          !isEffortObserved && 'text-faint-foreground',
+          effortDivergence != null && 'underline decoration-dotted underline-offset-2',
+        )}
+      >
+        {effortLabel}
+      </span>
+    );
     return (
       <>
-        <Tooltip
-          content={divergenceTooltip != null ? `${routingText}. ${divergenceTooltip}` : routingText}
-        >
+        <Tooltip content={routingTooltip}>
           <span data-meta-column="model" className={cn(WORK_META_COLUMN.model, className)}>
             {glyph}
             <span
@@ -173,9 +207,11 @@ export const RoutingBadge = ({
             </span>
           </span>
         </Tooltip>
-        <span data-meta-column="effort" className={WORK_META_COLUMN.effort}>
-          {effortLabel}
-        </span>
+        {effortDivergence != null ? (
+          <Tooltip content={effortDivergence}>{effortCell}</Tooltip>
+        ) : (
+          effortCell
+        )}
       </>
     );
   }
@@ -227,9 +263,7 @@ export const RoutingBadge = ({
         <span className="text-faint-foreground">{MISSING_LABEL}</span>
       )}
       {model != null && resolvedEffort != null && (
-        <span className="shrink-0 text-muted-foreground" title="Effort">
-          {EFFORT_LABEL[resolvedEffort]}
-        </span>
+        <EffortNote label={EFFORT_LABEL[resolvedEffort]} divergence={effortDivergence} />
       )}
       {divergenceNote}
       {glyphPlacement === 'trailing' ? glyph : null}

@@ -133,7 +133,7 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
     agentDraft: {},
     agentQueue: {},
     agentRunHistory: {},
-    runRouting: { [DOOMED]: { [RUN]: { provider: 'codex', model: 'gpt-5.6-sol' } } },
+    runRouting: { [DOOMED]: { [RUN]: { provider: 'codex', model: 'gpt-5.6-sol', effort: null } } },
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},

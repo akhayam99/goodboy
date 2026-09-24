@@ -437,6 +437,7 @@ export const dbModuleMock = () => ({
   insertTurnEventsBatch: vi.fn(async () => undefined),
   listAgentsForSessions: vi.fn(async () => new Map()),
   listAgentRunIdsForSession: vi.fn(async () => new Map()),
+  listAgentTurnSpanRoutes: vi.fn(async () => []),
   purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForSession: vi.fn(async () => []),

@@ -153,6 +153,7 @@ export {
 } from './queries/telemetry';
 export {
   insertAgentTurnSpan,
+  listAgentTurnSpanRoutes,
   listSessionTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';

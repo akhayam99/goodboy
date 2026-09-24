@@ -135,6 +135,7 @@ vi.mock('@goodboy/db', () => ({
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForSession: vi.fn(async () => []),
   listAgentRunIdsForSession: vi.fn(async () => new Map()),
+  listAgentTurnSpanRoutes: vi.fn(async () => []),
   listSessionsForWorkspace: vi.fn(async () => []),
   listArchivedSessionsForWorkspace: vi.fn(async () => []),
   listTelemetryForSession: vi.fn(async () => []),

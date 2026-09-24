@@ -44,10 +44,14 @@ provider with no bound API key stops the turn with a connect prompt instead of
 spawning.
 
 The route that actually ran is recorded per run in `runRouting`, keyed by agent
-and run id, the moment the run id exists. `executedAgentRouting` reads an
-agent's newest run from its turn telemetry and falls back to that live record,
-so the agent's chip names the model that is running before any usage lands.
-The live record is memory only and is evicted with the agent.
+and run id, the moment the run id exists: provider, model and the effort flag
+the CLI was started with (null when none was passed). `executedAgentRouting`
+reads an agent's newest run from its turn telemetry and falls back to that live
+record, so the agent's chip names the model that is running before any usage
+lands. Telemetry has no effort, so the effort always comes from `runRouting`.
+The live record is memory only and is evicted with the agent. Opening a session
+seeds it back from the session's turn spans (`seedRunRoutingFromSpans`), and a
+record a live turn already wrote wins.
 
 ## What the prompt carries
 
@@ -161,8 +165,9 @@ the agent in `error` with a retryable error event.
 - A span holds machine time only: `started_at` is taken right before the CLI starts and `ended_at` when its stream ends. Waiting on an open question, a review or a retry never falls inside a span, so an agent's execution time is the sum of its spans. `Agent.startedAt` to `lastFinishedAt` is wall clock and is not that number.
 - `provider`, `model` and `effort` are what the CLI was actually started with, after routing and clamping. `effort` is null when no effort flag was passed. `cost_usd` is the sum of the telemetry the run recorded, null when it recorded none.
 - `end_reason` is `cancelled` for a stopped turn, `failed` for a thrown turn or one with no answer, `awaiting_user` when the answer ends on a blocking question, and `succeeded` otherwise.
-- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. There is no backfill: older wall clock numbers would bring back the wrong duration.
+- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. There is no backfill: older wall clock numbers would bring back the wrong duration, so a run from before spans existed has no observed effort and its row shows the planned one in faint.
 - After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.
+- `listAgentTurnSpanRoutes` reads a session's spans back as routes (run, agent, provider, model, effort) when the session opens. That is where the observed effort in the activity meta, the run tree and the agent header comes from after a reload.
 
 ## Measured time and estimates
 

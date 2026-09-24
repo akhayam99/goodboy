@@ -63,9 +63,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
   }, []);
 
   const planned =
-    modelOverride != null || providerOverride != null
-      ? { provider: providerOverride, model: modelOverride }
+    modelOverride != null || providerOverride != null || effortOverride != null
+      ? { provider: providerOverride, model: modelOverride, effort: effortOverride }
       : null;
+  const observedEffort = executed?.effort ?? null;
 
   return (
     <StudioDetailLayout
@@ -81,8 +82,9 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
               <RoutingBadge
                 provider={executed?.provider ?? providerOverride}
                 model={executed?.model ?? modelOverride}
-                effort={effortOverride}
+                effort={observedEffort ?? effortOverride}
                 planned={planned}
+                isEffortObserved={observedEffort != null}
               />
             </>
           }

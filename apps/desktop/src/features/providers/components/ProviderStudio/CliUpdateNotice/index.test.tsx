@@ -86,7 +86,9 @@ describe('CliUpdateNotice', () => {
         },
       },
       runRouting: {
-        ['agent-1' as AgentId]: { [RUN]: { provider: 'anthropic', model: 'claude-opus-5' } },
+        ['agent-1' as AgentId]: {
+          [RUN]: { provider: 'anthropic', model: 'claude-opus-5', effort: null },
+        },
       },
     });
     render(<CliUpdateNotice providerId="anthropic" autoStart />);

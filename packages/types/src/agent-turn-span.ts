@@ -41,3 +41,8 @@ export type MeasuredTurnSpan = Readonly<{
   endReason: AgentTurnSpanEndReason;
   costUsd: number | null;
 }>;
+
+export type AgentTurnSpanRoute = Pick<
+  AgentTurnSpan,
+  'runId' | 'agentId' | 'provider' | 'model' | 'effort'
+>;

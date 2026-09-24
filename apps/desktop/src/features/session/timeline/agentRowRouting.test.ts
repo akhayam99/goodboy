@@ -40,13 +40,17 @@ describe('agentRowRouting', () => {
   it('shows what ran and keeps the plan to name a divergence', () => {
     const routing = agentRowRouting({
       ...BASE,
-      executed: { provider: 'openai', model: 'gpt-5' },
+      executed: { provider: 'openai', model: 'gpt-5', effort: null },
       step: STEP,
       kind: 'implementer',
     });
 
     expect(routing.model).toBe('gpt-5');
-    expect(routing.planned).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
+    expect(routing.planned).toEqual({
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+    });
     expect(routing.isPlanned).toBe(false);
   });
 
@@ -63,7 +67,7 @@ describe('agentRowRouting', () => {
     expect(routing).toMatchObject({
       model: 'claude-opus-4-5',
       effort: 'high',
-      planned: { provider: null, model: 'claude-opus-4-5' },
+      planned: { provider: null, model: 'claude-opus-4-5', effort: 'high' },
       isPlanned: true,
     });
   });
@@ -73,5 +77,31 @@ describe('agentRowRouting', () => {
 
     expect(routing.model).toBeNull();
     expect(routing.planned).toBeNull();
+  });
+
+  it('shows the effort the run was started with and keeps the planned one for divergence', () => {
+    const routing = agentRowRouting({
+      ...BASE,
+      executed: { provider: 'anthropic', model: 'claude-sonnet-4-5', effort: 'high' },
+      step: STEP,
+      kind: 'implementer',
+    });
+
+    expect(routing).toMatchObject({
+      effort: 'high',
+      isEffortObserved: true,
+      planned: { effort: 'medium' },
+    });
+  });
+
+  it('falls back to the planned effort when a run recorded none', () => {
+    const routing = agentRowRouting({
+      ...BASE,
+      executed: { provider: 'anthropic', model: 'claude-sonnet-4-5', effort: null },
+      step: STEP,
+      kind: 'implementer',
+    });
+
+    expect(routing).toMatchObject({ effort: 'medium', isEffortObserved: false });
   });
 });

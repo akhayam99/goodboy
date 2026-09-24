@@ -22,6 +22,7 @@ export const TimelineAgentMeta = ({ work, costUsd, shouldKeepCost }: Props) => {
           model={routing.model}
           effort={routing.effort}
           planned={routing.isPlanned ? null : routing.planned}
+          isEffortObserved={routing.isEffortObserved}
         />
       }
       time={time === undefined ? undefined : <WorkTimeCell time={time} />}

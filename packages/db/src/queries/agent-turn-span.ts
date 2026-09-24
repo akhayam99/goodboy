@@ -4,8 +4,10 @@ import type {
   AgentStatus,
   AgentTurnSpan,
   AgentTurnSpanEndReason,
+  AgentTurnSpanRoute,
   MeasuredTurnSpan,
   ProviderName,
+  ProviderRunId,
   SessionId,
   WorkflowRunId,
   WorkspaceId,
@@ -123,4 +125,32 @@ export const listSessionTurnSpans = async ({
     [sessionId],
   );
   return rows.map((row) => toMeasuredSpan({ row }));
+};
+
+type RouteRow = {
+  readonly run_id: ProviderRunId;
+  readonly agent_id: AgentId;
+  readonly provider: ProviderName;
+  readonly model: string;
+  readonly effort: string | null;
+};
+
+export const listAgentTurnSpanRoutes = async ({
+  db,
+  sessionId,
+}: SessionListParams): Promise<ReadonlyArray<AgentTurnSpanRoute>> => {
+  const rows = await db.select<RouteRow>(
+    `SELECT run_id, agent_id, provider, model, effort
+       FROM agent_turn_spans
+      WHERE session_id = ? AND agent_id IS NOT NULL
+      ORDER BY started_at ASC`,
+    [sessionId],
+  );
+  return rows.map((row) => ({
+    runId: row.run_id,
+    agentId: row.agent_id,
+    provider: row.provider,
+    model: row.model,
+    effort: row.effort,
+  }));
 };

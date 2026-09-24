@@ -126,7 +126,12 @@ export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
 export type { ProviderUsage, TurnEvent } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
-export type { AgentTurnSpan, AgentTurnSpanEndReason, MeasuredTurnSpan } from './agent-turn-span';
+export type {
+  AgentTurnSpan,
+  AgentTurnSpanEndReason,
+  AgentTurnSpanRoute,
+  MeasuredTurnSpan,
+} from './agent-turn-span';
 export type {
   EffortLevel,
   ModelCostTier,
