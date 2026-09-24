@@ -452,8 +452,13 @@ surface stays neutral, the title is `foreground` and the body is
 - **Children** render under the body at full width, for live work the notice
   owns, such as the terminal of a CLI update running inside the card.
 
-`ErrorStrip` is a thin `Notice placement="banner"` for a failed load with
-Retry. Chat errors in the desktop app go through `formatErrorForHumans`, which
+Every message shape in the desktop app renders through it. `ErrorStrip` is a
+thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
+and the unpriced-turns warning are banners. Guide tips, the degraded handoff,
+the branch switch confirmation and merge conflicts are `inline`. The sign-in
+prompt in the chat is `transcript`. Toasts are `floating`: the toast card owns
+only its timer, hover pause and dismiss, and passes its action and a ghost
+dismiss button as the Notice actions. Chat errors in the desktop app go through `formatErrorForHumans`, which
 turns a known provider failure into a sentence and keeps the raw text as the
 detail.
 

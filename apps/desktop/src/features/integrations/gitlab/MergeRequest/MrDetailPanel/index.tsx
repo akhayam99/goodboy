@@ -4,8 +4,8 @@ import {
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Markdown, cn, tintClasses } from '@goodboy/ui';
-import { AlertTriangle, FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
+import { Button, Markdown, Notice } from '@goodboy/ui';
+import { FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
@@ -323,21 +323,12 @@ export const MrDetailPanel = ({
         dock={dock}
       >
         {mr.hasConflicts ? (
-          <div
-            className={cn(
-              'flex items-start gap-2 rounded-lg border',
-              tintClasses('warning').borderSoft,
-              tintClasses('warning').bg,
-              'px-3 py-2.5 text-2xs leading-relaxed text-foreground',
-            )}
-          >
-            <AlertTriangle
-              size={ICON_SIZE.row}
-              aria-hidden
-              className="mt-0.5 shrink-0 text-warning"
-            />
-            <span>This merge request has conflicts that must be resolved before merging.</span>
-          </div>
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="This merge request has conflicts"
+            body="Resolve them before merging."
+          />
         ) : null}
 
         {section === 'overview' ? (

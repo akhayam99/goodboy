@@ -1,9 +1,8 @@
 import { LayoutDashboard } from 'lucide-react';
-import { SectionHeader } from '@goodboy/ui';
+import { Notice, SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
-import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { StageGlyph } from './StageGlyph';
 
 type Props = Record<never, never>;
@@ -62,9 +61,11 @@ export const StageBoardSection = ({}: Props) => (
       </p>
     </Block>
 
-    <Callout tone="info" icon={<CONCEPT_ICONS.suggestion size={ICON_SIZE.row} />}>
-      The board is per workspace. Spend for the whole workspace stays glanceable in the top bar, so
-      you never have to open a session to see what it is costing you.
-    </Callout>
+    <Notice
+      tone="info"
+      placement="inline"
+      title="The board is per workspace"
+      body="Spend for the whole workspace stays glanceable in the top bar, so you never have to open a session to see what it is costing you."
+    />
   </div>
 );

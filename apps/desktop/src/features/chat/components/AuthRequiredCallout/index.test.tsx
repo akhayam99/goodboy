@@ -12,7 +12,7 @@ afterEach(() => {
 describe('AuthRequiredCallout', () => {
   it('renders the provider label not signed in', () => {
     render(<AuthRequiredCallout providerId="anthropic" onRefresh={() => undefined} />);
-    expect(screen.getByText(/claude is not signed in\./i)).toBeDefined();
+    expect(screen.getByText(/claude is not signed in/i)).toBeDefined();
   });
 
   it('shows last known identity when provided', () => {

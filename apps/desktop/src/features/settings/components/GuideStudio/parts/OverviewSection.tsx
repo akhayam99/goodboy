@@ -1,10 +1,9 @@
 import { BookOpen, GitBranch, LayoutDashboard, MessageSquare } from 'lucide-react';
-import { Eyebrow, SectionHeader } from '@goodboy/ui';
+import { Eyebrow, Notice, SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
-import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Section =
   'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
@@ -26,12 +25,12 @@ export const OverviewSection = ({ onJump }: Props) => (
       }
     />
 
-    <Callout tone="info" icon={<CONCEPT_ICONS.providers size={ICON_SIZE.row} />}>
-      Goodboy does <strong className="text-foreground">not</strong> talk to providers directly. It
-      spawns each provider's own CLI as a subprocess and streams its events. Your login, usage, and
-      quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on
-      top, provider-neutral by design.
-    </Callout>
+    <Notice
+      tone="info"
+      placement="inline"
+      title="Goodboy runs each provider's own CLI"
+      body="It never talks to providers directly. It spawns each CLI as a subprocess and streams its events. Your login, usage, and quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on top, provider-neutral by design."
+    />
 
     <div>
       <Eyebrow label="Mental model" />

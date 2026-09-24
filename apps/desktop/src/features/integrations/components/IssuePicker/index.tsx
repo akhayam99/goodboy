@@ -3,9 +3,11 @@ import {
   AnchoredPopover,
   cn,
   EmptyState,
+  Notice,
   ScrollFade,
   Skeleton,
   Tooltip,
+  splitErrorMessage,
   useDropdown,
   tintClasses,
 } from '@goodboy/ui';
@@ -150,6 +152,7 @@ export const IssuePicker = ({
 
   const isLoadingState = pasted == null && isLoading && rows.length === 0;
   const isErrorState = pasted == null && error != null;
+  const errorParts = error == null ? null : splitErrorMessage({ message: error });
   const hasOptions = (pasted != null || error == null) && options.length > 0;
   const isEmptyState = error == null && !isLoading && isLoaded && options.length === 0;
   const hasPopupContent = isLoadingState || isErrorState || hasOptions || isEmptyState;
@@ -157,12 +160,7 @@ export const IssuePicker = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className={cn(
-        'bg-subtle',
-        isErrorState &&
-          !hasOptions &&
-          cn(tintClasses('danger').border, tintClasses('danger').bgSoft),
-      )}
+      className="bg-subtle"
       anchorClassName="w-full"
       trigger={
         <div
@@ -244,7 +242,14 @@ export const IssuePicker = ({
           )}
 
           {isErrorState && !hasOptions && (
-            <div className="px-3 py-2 text-xs text-danger">{error}</div>
+            <Notice
+              tone="danger"
+              placement="transcript"
+              role="alert"
+              title="Couldn't load issues"
+              body={errorParts?.summary}
+              detail={errorParts?.detail ?? null}
+            />
           )}
 
           {hasOptions && (
