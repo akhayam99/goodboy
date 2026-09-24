@@ -27,12 +27,18 @@ that agent is done, it hands a summary to the next one.
 
 Open the workflow builder in a session and choose one of three modes.
 
-1. **Preset**: pick a ready workflow. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust.
+1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. **Guidance (optional)** holds what the orchestrator should respect or avoid, and when to stop. The goal alone is enough to start.
 2. **Custom**: write the steps yourself, or describe what you want and Goodboy drafts the steps for you to edit.
-3. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes.
+3. **Preset**: pick a ready workflow. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust.
+
+The builder opens on the mode of the last workflow you started in that
+workspace, and on **Orchestrated** the first time. Only starting a workflow
+changes it, so looking at another tab does not. A remembered **Preset** falls
+back to **Orchestrated** once the workspace has no presets left.
 
 Every workflow has a name in the **Workflow name** field. It shows a default
-name until you type your own. If you rename a preset inside the builder, you
+name until you type your own, and an emptied field starts with the default, so
+the name never blocks the start. If you rename a preset inside the builder, you
 get a new workflow of your own, and the shared preset keeps its name.
 
 A workflow you are still building stays there when you switch sessions. It
@@ -65,8 +71,8 @@ scout step can split into several agents.
 
 The orchestrator is an agent that plans the run for you. In an
 **Orchestrated** run there is no fixed list of steps. After each step
-finishes, the orchestrator reads the goal, your process notes and what the
-steps so far produced. Then it decides one thing: the next step, done, or
+finishes, the orchestrator reads the goal, your guidance when you gave any,
+and what the steps so far produced. Then it decides one thing: the next step, done, or
 blocked.
 
 - It never does the work itself. It has no tools and cannot open your repository

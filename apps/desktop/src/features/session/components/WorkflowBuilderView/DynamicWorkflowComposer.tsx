@@ -4,6 +4,7 @@ import { OrchestratorModelPicker } from './OrchestratorModelPicker';
 
 type Props = {
   readonly name: string;
+  readonly namePlaceholder: string;
   readonly process: string;
   readonly orchestratorProviderOverride: ProviderId | '';
   readonly orchestratorModelOverride: string;
@@ -23,6 +24,7 @@ type Props = {
 
 export const DynamicWorkflowComposer = ({
   name,
+  namePlaceholder,
   process,
   orchestratorProviderOverride,
   orchestratorModelOverride,
@@ -50,6 +52,7 @@ export const DynamicWorkflowComposer = ({
       <Input
         id="orchestrated-workflow-name"
         value={name}
+        placeholder={namePlaceholder}
         onChange={(event) => onName(event.target.value)}
         disabled={disabled}
         className="h-8 bg-background text-sm font-medium"
@@ -58,16 +61,16 @@ export const DynamicWorkflowComposer = ({
     <Divider />
     <div className="flex flex-col gap-1 p-3">
       <label
-        htmlFor="orchestrated-workflow-intent"
+        htmlFor="orchestrated-workflow-guidance"
         className="text-2xs font-medium text-muted-foreground"
       >
-        Intent and constraints
+        Guidance (optional)
       </label>
       <Textarea
-        id="orchestrated-workflow-intent"
+        id="orchestrated-workflow-guidance"
         value={process}
         onChange={(event) => onProcess(event.target.value)}
-        placeholder="describe the intent, constraints, and stopping conditions…"
+        placeholder="anything to respect or avoid, and when to stop (e.g. leave the payments module alone, stop once the PR is open)…"
         autoGrow
         minRows={3}
         maxRows={7}

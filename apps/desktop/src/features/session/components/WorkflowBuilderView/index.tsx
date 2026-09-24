@@ -67,6 +67,7 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
 import { workflowStartGate } from './workflowStartGate';
+import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
 import {
@@ -177,6 +178,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
 const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
+const DYNAMIC_WORKFLOW_NAME = 'Orchestrated workflow';
 
 export const uniqueWorkflowName = (
   requested: string,
@@ -235,9 +237,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id]);
 
-  const [mode, setMode] = useState<Mode>(
-    initialDraft?.mode ?? (presets.length > 0 ? 'preset' : 'custom'),
-  );
+  const defaultMode = (): Mode => {
+    const last = readLastWorkflowMode({ workspaceId: session.workspaceId });
+    return last === 'preset' && presets.length === 0 ? 'dynamic' : last;
+  };
+
+  const [mode, setMode] = useState<Mode>(() => initialDraft?.mode ?? defaultMode());
   const [goalText, setGoalText] = useState(initialDraft?.goalText ?? '');
   const [goalHistory, setGoalHistory] = useState<ReadonlyArray<string>>(
     initialDraft?.goalHistory ?? [],
@@ -253,7 +258,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [customName, setCustomName] = useState(initialDraft?.customName ?? '');
   const [customNameEdited, setCustomNameEdited] = useState(initialDraft?.customNameEdited ?? false);
   const [dynamicName, setDynamicName] = useState(
-    initialDraft?.dynamicName ?? uniqueWorkflowName('Orchestrated workflow', phaseTemplates),
+    initialDraft?.dynamicName ?? uniqueWorkflowName(DYNAMIC_WORKFLOW_NAME, phaseTemplates),
   );
   const [dynamicNameEdited, setDynamicNameEdited] = useState(
     initialDraft?.dynamicNameEdited ?? false,
@@ -507,7 +512,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   };
 
   const resetDraft = () => {
-    setMode(presets.length > 0 ? 'preset' : 'custom');
+    setMode(defaultMode());
     setGoalText('');
     setGoalHistory([]);
     setSelectedPresetId(null);
@@ -519,7 +524,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setAutoRun(false);
     setCustomName('');
     setCustomNameEdited(false);
-    setDynamicName(uniqueWorkflowName('Orchestrated workflow', phaseTemplates));
+    setDynamicName(uniqueWorkflowName(DYNAMIC_WORKFLOW_NAME, phaseTemplates));
     setDynamicNameEdited(false);
     resetOrchestratorModel();
     setIsSpendLimitEnabled(false);
@@ -784,7 +789,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       ? (plan?.workflowName ?? 'Custom workflow')
       : (selectedPreset?.name ?? basePreset?.name ?? 'Custom workflow');
   const customNameValue = customNameEdited ? customName : defaultWorkflowName;
-  const isCustomNameDirty = customNameValue.trim() !== defaultWorkflowName.trim();
+  const resolvedCustomName =
+    customNameValue.trim().length > 0 ? customNameValue.trim() : defaultWorkflowName.trim();
+  const isCustomNameDirty = resolvedCustomName !== defaultWorkflowName.trim();
+  const resolvedDynamicName =
+    dynamicName.trim().length > 0 ? dynamicName.trim() : DYNAMIC_WORKFLOW_NAME;
+  const isDynamicNameChosen = dynamicNameEdited && dynamicName.trim().length > 0;
 
   const onStart = async () => {
     if (blocked) {
@@ -794,10 +804,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       mode === 'preset' && selectedPreset !== null && !presetDirty && !isCustomNameDirty;
     if (
       (mode === 'preset' && selectedPreset === null) ||
-      (mode === 'custom' && steps.length === 0) ||
-      (mode === 'dynamic' &&
-        (processText.trim().length === 0 || dynamicName.trim().length === 0)) ||
-      (mode !== 'dynamic' && customNameValue.trim().length === 0)
+      (mode === 'custom' && steps.length === 0)
     ) {
       return;
     }
@@ -806,6 +813,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     try {
       if (usePresetAsIs) {
         await attachWorkflowToSession(session.id, selectedPreset!.id, attachOptions());
+        writeLastWorkflowMode({ workspaceId: session.workspaceId, mode });
         showToast({ kind: 'success', message: `Started ${selectedPreset!.name}.` });
         handleClose();
         return;
@@ -813,7 +821,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const now = new Date().toISOString() as Workflow['createdAt'];
       const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
       const name = uniqueWorkflowName(
-        mode === 'dynamic' ? dynamicName.trim() : customNameValue.trim(),
+        mode === 'dynamic' ? resolvedDynamicName : resolvedCustomName,
         phaseTemplates,
       );
       const description =
@@ -856,7 +864,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
               ...(process.length > 0 && { processText: process }),
             },
       );
-      if (mode === 'dynamic' && !dynamicNameEdited) {
+      if (mode === 'dynamic' && !isDynamicNameChosen) {
         void generateWorkflowTitle(
           session.workspaceId,
           workflowId,
@@ -867,6 +875,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         );
       }
       await attachWorkflowToSession(session.id, workflowId, attachOptions());
+      writeLastWorkflowMode({ workspaceId: session.workspaceId, mode });
       showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
       handleClose();
     } catch (err) {
@@ -877,23 +886,15 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   };
 
   const goalMissing = goalText.trim().length === 0;
-  const approachMissing =
-    mode === 'preset'
-      ? selectedPreset === null
-      : mode === 'dynamic'
-        ? processText.trim().length === 0
-        : steps.length === 0;
+  const stepsMissing = mode === 'preset' ? selectedPreset === null : steps.length === 0;
   const spendLimitInvalid =
     mode === 'dynamic' && isSpendLimitEnabled && parseSpendLimit(spendLimitDraft) == null;
-  const nameMissing =
-    mode === 'dynamic' ? dynamicName.trim().length === 0 : customNameValue.trim().length === 0;
   const startGate = workflowStartGate({
     mode,
     isStarting: busy,
     isPlanning: planning,
     hasGoal: !goalMissing,
-    hasApproach: !approachMissing,
-    hasName: !nameMissing,
+    hasSteps: !stepsMissing,
     isSpendLimitValid: !spendLimitInvalid,
   });
   const onModeChange = (next: Mode) => {
@@ -1066,14 +1067,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                     <SegmentedTabs
                       ariaLabel="Workflow approach"
                       options={[
-                        { value: 'preset', label: 'Preset', icon: ListChecks, disabled: blocked },
-                        { value: 'custom', label: 'Custom', icon: PenLine, disabled: blocked },
                         {
                           value: 'dynamic',
                           label: 'Orchestrated',
                           icon: CONCEPT_ICONS.orchestrator,
                           disabled: blocked,
                         },
+                        { value: 'custom', label: 'Custom', icon: PenLine, disabled: blocked },
+                        { value: 'preset', label: 'Preset', icon: ListChecks, disabled: blocked },
                       ]}
                       value={mode}
                       onChange={onModeChange}
@@ -1216,6 +1217,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 ) : mode === 'dynamic' ? (
                   <DynamicWorkflowComposer
                     name={dynamicName}
+                    namePlaceholder={DYNAMIC_WORKFLOW_NAME}
                     process={processText}
                     orchestratorProviderOverride={orchestratorProviderOverride}
                     orchestratorModelOverride={orchestratorModelOverride}
@@ -1305,6 +1307,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                           <Input
                             id="workflow-name"
                             value={customNameValue}
+                            placeholder={defaultWorkflowName}
                             onChange={(event) => {
                               setCustomName(event.target.value);
                               setCustomNameEdited(true);

@@ -42,6 +42,17 @@ describe('buildOrchestratorUserPrompt', () => {
     );
   });
 
+  it('passes the operator process through when one was given', () => {
+    const prompt = buildOrchestratorUserPrompt(input());
+    expect(prompt).toContain('Operator process:\nInspect, implement, test.');
+  });
+
+  it('leaves the process section out when the operator gave only a goal', () => {
+    expect(buildOrchestratorUserPrompt(input({ processText: '  ' }))).not.toContain(
+      'Operator process',
+    );
+  });
+
   it('states the steps spent without any cap to close on', () => {
     const prompt = buildOrchestratorUserPrompt(input({ stepsUsed: 5 }));
 

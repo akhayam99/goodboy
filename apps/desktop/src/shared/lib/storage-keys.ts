@@ -20,6 +20,7 @@ export const STORAGE_PREFIXES = {
   cursorMaxMode: `${PREFIX}cursor-max-mode:`,
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
+  workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
 } as const;
 
 export const wipeLocalStorage = (): void => {

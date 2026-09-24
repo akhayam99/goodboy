@@ -71,13 +71,12 @@ export const buildOrchestratorUserPrompt = ({
   spendLimitUsd,
   spentUsd,
 }: OrchestratorInput): string => {
+  const process = processText.trim();
   const lines = [
     'Goal (the session language is the language this is written in):',
     goal.trim(),
     '',
-    'Operator process:',
-    processText.trim(),
-    '',
+    ...(process.length > 0 ? ['Operator process:', process, ''] : []),
     `Open questions: ${openQuestionCount}`,
     '',
     `Steps used: ${stepsUsed}`,

@@ -10,15 +10,13 @@ type Params = {
   readonly isStarting: boolean;
   readonly isPlanning: boolean;
   readonly hasGoal: boolean;
-  readonly hasApproach: boolean;
-  readonly hasName: boolean;
+  readonly hasSteps: boolean;
   readonly isSpendLimitValid: boolean;
 };
 
-const APPROACH_REASON: Record<Mode, string> = {
+const STEPS_REASON: Record<Exclude<Mode, 'dynamic'>, string> = {
   preset: 'Select a preset to start',
   custom: 'Add a step or generate a plan to start',
-  dynamic: 'Describe the intent and constraints to start',
 };
 
 export const workflowStartGate = ({
@@ -26,8 +24,7 @@ export const workflowStartGate = ({
   isStarting,
   isPlanning,
   hasGoal,
-  hasApproach,
-  hasName,
+  hasSteps,
   isSpendLimitValid,
 }: Params): WorkflowStartGate => {
   if (isStarting) {
@@ -39,11 +36,8 @@ export const workflowStartGate = ({
   if (!hasGoal) {
     return { isDisabled: true, reason: 'Set a goal to start' };
   }
-  if (!hasApproach) {
-    return { isDisabled: true, reason: APPROACH_REASON[mode] };
-  }
-  if (!hasName) {
-    return { isDisabled: true, reason: 'Name the workflow to start' };
+  if (mode !== 'dynamic' && !hasSteps) {
+    return { isDisabled: true, reason: STEPS_REASON[mode] };
   }
   if (!isSpendLimitValid) {
     return { isDisabled: true, reason: 'Enter a valid spend limit to start' };
