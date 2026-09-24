@@ -1,3 +1,4 @@
+import type { CliRequirement } from '@goodboy/core';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
@@ -268,6 +269,7 @@ export type AppState = AppSliceState & {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
+  readonly cliRequirements: ReadonlyArray<CliRequirement>;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;
   readonly providerCooldowns: ProviderCooldowns;
   readonly hydrated: boolean;

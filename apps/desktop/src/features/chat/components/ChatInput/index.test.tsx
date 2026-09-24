@@ -40,6 +40,7 @@ const {
     setAgentConfig: (sessionId: string, agentId: string, fields: unknown) => Promise<void>;
     workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
+    cliRequirements: ReadonlyArray<never>;
     skills: Record<string, never>;
     projectScripts: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
@@ -86,6 +87,7 @@ const {
       { id: 'cursor', connection: 'connected' },
       { id: 'codex', connection: 'connected' },
     ],
+    cliRequirements: [],
     skills: {},
     projectScripts: {},
     sessionWorktrees: {},

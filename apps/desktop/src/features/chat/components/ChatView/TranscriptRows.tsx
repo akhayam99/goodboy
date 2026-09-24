@@ -1,3 +1,4 @@
+import type { RetryRunParams } from '../../retryRun';
 import type { ReactNode } from 'react';
 import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptRow } from '../../utils/cluster-operations';
@@ -20,8 +21,8 @@ type Props = {
   onOpenDiff: (filePath: string) => void;
   isThinking: boolean;
   thinkingContext: ThinkingContext;
-  onRetryError: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
-  retryingErrorRunId: ProviderRunId | null;
+  onRetryRun: (params: RetryRunParams) => void;
+  retryingRunId: ProviderRunId | null;
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
 };
 
@@ -65,8 +66,8 @@ export const TranscriptRows = ({
   onOpenDiff,
   isThinking,
   thinkingContext,
-  onRetryError,
-  retryingErrorRunId,
+  onRetryRun,
+  retryingRunId,
   mountSuggestionsByRun,
 }: Props) => {
   const out: ReactNode[] = [];
@@ -158,8 +159,8 @@ export const TranscriptRows = ({
           workingDir={workingDir}
           onRefreshAuth={onRefreshAuth}
           onOpenDiff={onOpenDiff}
-          onRetryError={onRetryError}
-          retryingErrorRunId={retryingErrorRunId}
+          onRetryRun={onRetryRun}
+          retryingRunId={retryingRunId}
         />,
       );
       return;
@@ -175,8 +176,8 @@ export const TranscriptRows = ({
             workingDir={workingDir}
             onRefreshAuth={onRefreshAuth}
             onOpenDiff={onOpenDiff}
-            onRetryError={onRetryError}
-            retryingErrorRunId={retryingErrorRunId}
+            onRetryRun={onRetryRun}
+            retryingRunId={retryingRunId}
           />
         ) : (
           <TranscriptCard
@@ -186,8 +187,8 @@ export const TranscriptRows = ({
             workingDir={workingDir}
             onRefreshAuth={onRefreshAuth}
             onOpenDiff={onOpenDiff}
-            onRetryError={onRetryError}
-            retryingErrorRunId={retryingErrorRunId}
+            onRetryRun={onRetryRun}
+            retryingRunId={retryingRunId}
           />
         )}
       </li>,

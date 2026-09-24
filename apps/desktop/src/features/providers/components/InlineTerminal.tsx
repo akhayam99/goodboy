@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import {
   LazyGenericTerminalPanel,
   type TerminalDriver,
-} from '../../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
+} from '../../../shared/components/GenericTerminalPanel/LazyGenericTerminalPanel';
 import {
   invokeProviderLifecycleResize,
   invokeProviderLifecycleWrite,
   listenLifecycleExit,
   listenLifecycleOutput,
-} from '../../provider-lifecycle';
+} from '../provider-lifecycle';
 
 function base64ToBytes(b64: string): Uint8Array {
   const binary = atob(b64);

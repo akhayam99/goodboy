@@ -19,15 +19,17 @@ import { ProviderConnect } from '../ProviderConnect';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
+import { CliUpdateNotice } from './CliUpdateNotice';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 
 type Props = {
   readonly info: ProviderDisplayInfo | null;
   readonly autoConnect: boolean;
+  readonly autoUpdate: boolean;
 };
 
-export const ProviderDetailPanel = ({ info, autoConnect }: Props) => {
+export const ProviderDetailPanel = ({ info, autoConnect, autoUpdate }: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -45,15 +47,17 @@ export const ProviderDetailPanel = ({ info, autoConnect }: Props) => {
   if (isApiProvider({ id: info.id })) {
     return <ApiProviderDetail info={info} />;
   }
-  return <Detail info={info} autoConnect={autoConnect} />;
+  return <Detail info={info} autoConnect={autoConnect} autoUpdate={autoUpdate} />;
 };
 
 function Detail({
   info,
   autoConnect,
+  autoUpdate,
 }: {
   readonly info: ProviderDisplayInfo;
   readonly autoConnect: boolean;
+  readonly autoUpdate: boolean;
 }) {
   const id = info.id as ProviderId;
   const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
@@ -111,6 +115,9 @@ function Detail({
       description={subtitle}
       actions={action}
     >
+      {info.connection !== 'missing' && info.connection !== 'unknown' && (
+        <CliUpdateNotice providerId={id} autoStart={autoUpdate} />
+      )}
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
         {info.connection === 'error' && settled ? (

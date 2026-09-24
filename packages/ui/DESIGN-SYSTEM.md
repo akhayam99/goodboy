@@ -449,6 +449,8 @@ surface stays neutral, the title is `foreground` and the body is
   sentence or raw output.
 - **Actions stay neutral**: `Button variant="secondary"` for the recovery,
   `ghost` for an alternative. Never a tone-colored button.
+- **Children** render under the body at full width, for live work the notice
+  owns, such as the terminal of a CLI update running inside the card.
 
 `ErrorStrip` is a thin `Notice placement="banner"` for a failed load with
 Retry. Chat errors in the desktop app go through `formatErrorForHumans`, which

@@ -18,6 +18,7 @@ type Props = {
   readonly role?: 'alert' | 'status';
   readonly className?: string;
   readonly iconTestId?: string;
+  readonly children?: ReactNode;
 };
 
 const TONE_ICON = {
@@ -72,6 +73,7 @@ export const Notice = ({
   role,
   className,
   iconTestId,
+  children,
 }: Props) => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const detailId = useId();
@@ -140,6 +142,7 @@ export const Notice = ({
             {detail}
           </pre>
         )}
+        {hasContent({ node: children }) && <div className="w-full">{children}</div>}
       </div>
       {hasContent({ node: actions }) && (
         <div className="flex shrink-0 items-center gap-2">{actions}</div>

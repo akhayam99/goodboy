@@ -11,6 +11,7 @@ import { resolvePickerSelection } from '../../../../shared/components/RoutingPic
 import { resolveRouting } from '../../../../shared/components/RoutingPicker/resolveRouting';
 import { selectionForModel } from '../../../../shared/components/RoutingPicker/selectionForModel';
 import { useCursorMaxModeModels } from '../../../../shared/components/RoutingPicker/useCursorMaxModeModels';
+import { useCliGate } from '../../../providers/hooks/useCliGate';
 import type { AgentKindRouting } from '../../agent-kind';
 
 type Props = {
@@ -65,6 +66,7 @@ export const AgentRoutingSections = ({
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
+  const viewedCliGate = useCliGate({ provider: viewProvider, modelId: viewedModel.key });
 
   return (
     <>
@@ -101,6 +103,7 @@ export const AgentRoutingSections = ({
             canEditEffort
             notice={clampNotice}
             hasMaxModeAdvisory={hasMaxModeAdvisory}
+            cliGate={viewedCliGate}
             onModel={(modelKey) => {
               const model = viewedRouting.catalog.find((candidate) => candidate.key === modelKey);
               if (model == null) {

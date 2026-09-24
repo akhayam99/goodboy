@@ -1,4 +1,4 @@
-import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
@@ -18,6 +18,8 @@ export type NotificationKind =
   | 'budget-cap'
   | 'title-generation'
   | 'provider-connected'
+  | 'provider-cli-outdated'
+  | 'provider-cli-updated'
   | 'orphan-worktrees'
   | 'error';
 
@@ -37,6 +39,7 @@ export type NotificationAction =
   | { readonly kind: 'open-orphan-worktrees'; readonly workspaceId: WorkspaceId }
   | { readonly kind: 'retry-publication'; readonly sessionId: SessionId }
   | { readonly kind: 'retry-update' }
+  | { readonly kind: 'update-provider-cli'; readonly providerId: ProviderId }
   | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' };
 
 export type Notification = {
@@ -75,6 +78,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'open-orphan-worktrees': true,
   'retry-publication': true,
   'retry-update': true,
+  'update-provider-cli': true,
   'open-lens': true,
 } satisfies Record<NotificationAction['kind'], true>;
 

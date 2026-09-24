@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import { encodeCliTooOldMessage } from '../turn';
 import { reduceTranscript, type TranscriptItem } from './transcript-items';
 import { reduceTranscriptTrace, resetReduceTranscriptTrace } from './transcript-items-trace';
 
@@ -583,5 +584,22 @@ describe('reduceTranscript artifact scan reuse', () => {
       expect(reduceTranscript(prefix)).toEqual(freshPass({ events: prefix }));
     }
     expect(reduceTranscriptTrace.textScanRestarts).toBe(events.length + 1);
+  });
+});
+
+describe('reduceTranscript cli refusals', () => {
+  it('turns an encoded CLI refusal into a cli_too_old item with its run', () => {
+    const payload = {
+      providerId: 'anthropic',
+      modelKey: 'opus-5.5',
+      installedVersion: '2.1.259',
+      requiredVersion: '2.1.280',
+      fallbackModelKey: null,
+      detail: 'raw',
+    } as const;
+    const items = reduceTranscript([
+      { kind: 'error', runId: RUN, message: encodeCliTooOldMessage(payload), at: AT },
+    ]);
+    expect(items).toEqual([{ kind: 'cli_too_old', key: 'cli-0', runId: RUN, payload }]);
   });
 });

@@ -42,6 +42,8 @@ vi.mock('../../../../store', () => ({
       sessionMounts: {},
       sessions: storeMocks.sessions,
       sessionProjectMounts: storeMocks.sessionProjectMounts,
+      providers: [],
+      cliRequirements: [],
     }),
 }));
 

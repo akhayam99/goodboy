@@ -1,5 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { splitErrorMessage } from '@goodboy/ui';
+import { CLI_LABEL } from '../providers/cliLabel';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { classifyProviderError } from './classifyProviderError';
 
@@ -35,7 +36,7 @@ export const formatErrorForHumans = ({ message, providerId = null }: Params): Hu
       });
     case 'cli_too_old':
       return withDetail({
-        body: `This model needs ${name} CLI ${classification.requiredVersion} or newer. You have ${classification.installedVersion}.`,
+        body: `This model needs ${providerId !== null ? CLI_LABEL[providerId] : 'CLI'} ${classification.requiredVersion} or newer. You have ${classification.installedVersion}.`,
         message,
       });
     case 'rate_limit':

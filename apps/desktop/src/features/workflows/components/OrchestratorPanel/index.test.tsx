@@ -147,6 +147,7 @@ beforeEach(() => {
       { id: 'anthropic', connection: 'connected' },
       { id: 'codex', connection: 'missing' },
     ],
+    cliRequirements: [],
   });
 });
 

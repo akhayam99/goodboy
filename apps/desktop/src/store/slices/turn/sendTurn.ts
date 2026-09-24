@@ -151,6 +151,7 @@ import { persistAttachments } from './persistAttachments';
 import { pickedTurnExecution } from './pickedTurnExecution';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
@@ -1111,9 +1112,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                         message: rawEvent.message,
                         providerId: provider,
                         identity: get().authResults?.[provider]?.identity ?? null,
+                        model: spawnModel,
                       }),
               }
             : rawEvent;
+        if (rawEvent.kind === 'error') {
+          learnFromCliRefusal({
+            get,
+            providerId: provider,
+            model: spawnModel,
+            message: rawEvent.message,
+          });
+        }
         const event: TurnEvent =
           resolvedEvent.kind === 'provider_session_init'
             ? { ...resolvedEvent, provider }
@@ -1379,14 +1389,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               : advisorySelection.selection.key,
         });
       }
-      const message =
-        maxModeFailure != null
-          ? cursorMaxModeMessage(maxModeFailure)
-          : resolveErrorTurnMessage({
-              message: rawMessage,
-              providerId: provider,
-              identity: get().authResults?.[provider]?.identity ?? null,
-            });
+      learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
       await recordTurnSpan({
         span: {
@@ -1433,6 +1436,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               },
             }),
           });
+      const message =
+        maxModeFailure != null
+          ? cursorMaxModeMessage(maxModeFailure)
+          : resolveErrorTurnMessage({
+              message: rawMessage,
+              providerId: provider,
+              identity: get().authResults?.[provider]?.identity ?? null,
+              model: spawnModel,
+              fallbackModel:
+                fallbackPlan != null && fallbackPlan.provider === provider
+                  ? fallbackPlan.model
+                  : null,
+            });
       if (fallbackPlan != null) {
         await updateProviderRunStatus(tauriDatabase, runId, {
           kind: 'failed',
@@ -1446,16 +1462,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           retryable: false,
           at: now(),
         });
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId,
-          message: fallbackNoticeMessage({
-            provider,
-            failure: failure.kind,
-            plan: fallbackPlan,
-          }),
-          at: now(),
-        });
+        const isNamedInRefusal =
+          maxModeFailure == null &&
+          failure.kind === 'cli_too_old' &&
+          fallbackPlan.provider === provider;
+        if (!isNamedInRefusal) {
+          get().appendTurnEvent(activeAgentId, sessionId, {
+            kind: 'error',
+            runId,
+            message: fallbackNoticeMessage({
+              provider,
+              failure: failure.kind,
+              plan: fallbackPlan,
+            }),
+            at: now(),
+          });
+        }
         const retryState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const retryDerived = applyAgentTurnState(set, sessionId, activeAgentId, retryState, now());
         await updateSessionState(tauriDatabase, sessionId, retryDerived, now());

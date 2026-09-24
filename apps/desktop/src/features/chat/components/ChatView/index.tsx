@@ -1,3 +1,4 @@
+import type { RetryRunParams } from '../../retryRun';
 import {
   useCallback,
   useDeferredValue,
@@ -30,7 +31,6 @@ import {
   useTranscript,
 } from '../../../../store';
 import { reduceTranscript } from '../../utils/transcript-items';
-import type { TranscriptItem } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -117,7 +117,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
-  const [retryingErrorRunId, setRetryingErrorRunId] = useState<ProviderRunId | null>(null);
+  const [retryingRunId, setRetryingRunId] = useState<ProviderRunId | null>(null);
   const taggedItems = useMemo(
     () => ({ agentId: selectedAgentId, items }),
     [selectedAgentId, items],
@@ -250,19 +250,16 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
   const handleRefreshAuth = useCallback(() => {
     void refreshProviders();
   }, [refreshProviders]);
-  const handleRetryError = useCallback(
-    async ({ item }: { item: Extract<TranscriptItem, { kind: 'error' }> }) => {
-      if (item.retryable !== true) {
+  const handleRetryRun = useCallback(
+    async ({ runId, model }: RetryRunParams) => {
+      if (selectedAgentId == null) {
         return;
       }
-      if (item.runId == null || selectedAgentId == null) {
-        return;
-      }
-      const source = findRetrySource({ events, runId: item.runId });
+      const source = findRetrySource({ events, runId });
       if (source == null) {
         return;
       }
-      setRetryingErrorRunId(item.runId);
+      setRetryingRunId(runId);
       try {
         const { inputs: attachments, missing } = await readRetryAttachments({
           worktreePath,
@@ -271,7 +268,10 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
         if (missing.length > 0) {
           showToast({ kind: 'warning', message: missingAttachmentsMessage({ missing }) });
         }
-        const override = buildRetryOverride({ provider: source.provider, model: source.model });
+        const override = buildRetryOverride({
+          provider: source.provider,
+          model: model ?? source.model,
+        });
         await sendTurn({
           sessionId: session.id,
           agentId: selectedAgentId,
@@ -280,7 +280,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
           ...(override !== undefined ? { override } : {}),
         });
       } finally {
-        setRetryingErrorRunId(null);
+        setRetryingRunId(null);
       }
     },
     [events, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
@@ -474,8 +474,8 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
                   onOpenDiff={handleOpenDiff}
                   isThinking={isThinking}
                   thinkingContext={thinkingContext}
-                  onRetryError={(item) => void handleRetryError({ item })}
-                  retryingErrorRunId={retryingErrorRunId}
+                  onRetryRun={(params) => void handleRetryRun(params)}
+                  retryingRunId={retryingRunId}
                   mountSuggestionsByRun={mountSuggestionsByRun}
                 />
               </ChatImageLoaderProvider>

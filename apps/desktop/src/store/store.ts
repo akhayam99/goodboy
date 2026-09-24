@@ -160,6 +160,7 @@ import {
   createProvidersSlice,
   INITIAL_CONNECT_MAP,
   INITIAL_LIFECYCLE_MAP,
+  type LearnCliRequirementParams,
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
@@ -345,6 +346,9 @@ type AppActions = {
   connectProvider(providerId: ProviderId): Promise<void>;
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
+  updateProviderCli(providerId: ProviderId): Promise<void>;
+  hydrateCliRequirements(): Promise<void>;
+  learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
@@ -1056,6 +1060,7 @@ export const initialState: AppState = {
   }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,
+  cliRequirements: [],
   providerCredentials: [],
   providerCooldowns: {},
   hydrated: false,

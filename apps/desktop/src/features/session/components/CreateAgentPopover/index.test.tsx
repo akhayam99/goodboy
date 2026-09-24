@@ -7,6 +7,7 @@ import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{ readonly id: ProviderId; readonly connection: string }>;
+  readonly cliRequirements: ReadonlyArray<never>;
   readonly sessions: ReadonlyArray<Session>;
   readonly workspaceOverrides: Record<string, unknown>;
   readonly providerConnect: Readonly<Record<string, unknown>>;
@@ -60,6 +61,7 @@ vi.mock('../../../../store', () => ({
     selector({
       spawnAgent: h.spawnAgent,
       providers: h.providers,
+      cliRequirements: [],
       sessions: h.sessions as ReadonlyArray<Session>,
       workspaceOverrides: {},
       providerConnect: h.providerConnect,

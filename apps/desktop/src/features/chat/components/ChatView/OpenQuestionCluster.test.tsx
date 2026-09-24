@@ -24,6 +24,8 @@ const { state } = vi.hoisted(() => ({
       ],
     } as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
+    providers: [] as ReadonlyArray<unknown>,
+    cliRequirements: [] as ReadonlyArray<unknown>,
   },
 }));
 

@@ -7,12 +7,16 @@ import type { IsoDateTime, ProviderId, StepDef, StepDefId, WorkspaceId } from '@
 
 type Store = {
   readonly workspaceOverrides: null;
+  readonly providers: ReadonlyArray<never>;
+  readonly cliRequirements: ReadonlyArray<never>;
 };
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Store) => T) =>
     selector({
       workspaceOverrides: null,
+      providers: [],
+      cliRequirements: [],
     }),
   useCurrentWorkspace: () => null,
 }));

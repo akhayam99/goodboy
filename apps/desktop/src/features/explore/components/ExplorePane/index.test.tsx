@@ -18,6 +18,7 @@ type Store = {
     readonly id: ProviderId;
     readonly connection: string;
   }>;
+  readonly cliRequirements: ReadonlyArray<never>;
   readonly sessions: ReadonlyArray<Session>;
   readonly workspaceOverrides: Readonly<Record<string, unknown>>;
 };
@@ -70,6 +71,7 @@ vi.mock('../../../../store', () => ({
       setCurrentSession: h.setCurrentSession,
       setActiveLens: h.setActiveLens,
       providers: h.providers,
+      cliRequirements: [],
       sessions: h.sessions,
       workspaceOverrides: {},
     }),

@@ -6,6 +6,8 @@ import { useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { CLI_LABEL } from '../../../providers/cliLabel';
+import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -146,6 +148,15 @@ export const mapNotificationAction = (
       label: 'Retry',
       onClick: () => {
         void store.installUpdate();
+      },
+    };
+  }
+  if (action.kind === 'update-provider-cli') {
+    const { providerId } = action;
+    return {
+      label: `Update ${CLI_LABEL[providerId]}`,
+      onClick: () => {
+        openProviderCliUpdate({ providerId });
       },
     };
   }

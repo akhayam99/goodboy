@@ -86,6 +86,7 @@ const seedStore = (agents: ReadonlyArray<Agent>) => {
   Object.assign(storeState, {
     sessionPhaseRuns: { [SESSION_ID]: agents },
     providers: [{ id: 'codex', connection: 'connected' }],
+    cliRequirements: [],
     workflowNodeRoutingPending: {},
     workflowNodeRoutingErrors: {},
     setWorkflowNodeRoutingLock: setLockSpy,

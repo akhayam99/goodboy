@@ -22,7 +22,7 @@ describe('TranscriptCard', () => {
 
   it('renders retry in the transcript for retryable errors', async () => {
     const user = userEvent.setup();
-    const onRetryError = vi.fn();
+    const onRetryRun = vi.fn();
     render(
       <TranscriptCard
         item={{
@@ -32,13 +32,11 @@ describe('TranscriptCard', () => {
           runId,
           retryable: true,
         }}
-        onRetryError={onRetryError}
+        onRetryRun={onRetryRun}
       />,
     );
     await user.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(onRetryError).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'error', key: 'error-1', runId, retryable: true }),
-    );
+    expect(onRetryRun).toHaveBeenCalledWith({ runId, model: null });
   });
 
   it('does not render retry for non-retryable transcript errors', () => {
@@ -87,8 +85,8 @@ describe('TranscriptCard', () => {
     render(
       <TranscriptCard
         item={{ kind: 'error', key: 'error-1', message: 'boom', runId, retryable: true }}
-        onRetryError={vi.fn()}
-        retryingErrorRunId={runId}
+        onRetryRun={vi.fn()}
+        retryingRunId={runId}
       />,
     );
     const button = screen.getByRole('button', { name: 'Retrying' });

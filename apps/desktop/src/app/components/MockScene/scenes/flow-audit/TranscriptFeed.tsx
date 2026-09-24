@@ -26,8 +26,8 @@ export const TranscriptFeed = () => (
         onOpenDiff={noop}
         isThinking={false}
         thinkingContext="think"
-        onRetryError={noop}
-        retryingErrorRunId={null}
+        onRetryRun={noop}
+        retryingRunId={null}
       />
     </ChatImageLoaderProvider>
   </ul>

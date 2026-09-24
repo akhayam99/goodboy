@@ -46,6 +46,8 @@ export const notificationSource = ({
     case 'budget-cap':
       return 'budget';
     case 'provider-connected':
+    case 'provider-cli-outdated':
+    case 'provider-cli-updated':
       return 'providers';
     case 'workspace-deleted':
     case 'workspace-merged':

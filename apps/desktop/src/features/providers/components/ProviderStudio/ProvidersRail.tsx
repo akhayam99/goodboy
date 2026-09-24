@@ -1,9 +1,11 @@
+import { outdatedCliModels } from '@goodboy/core';
 import { SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../store';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
@@ -29,6 +31,7 @@ const STATUS_LABEL: Record<ProviderConnectionState, string> = {
 };
 
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
+  const learned = useAppStore((state) => state.cliRequirements);
   return (
     <ul aria-label="Providers & models settings" className="flex flex-col gap-0.5 pl-6">
       {onSelectDefaults !== undefined && (
@@ -51,8 +54,12 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
       {providers.map((p) => {
         const id = p.id as ProviderId;
         const Icon = PROVIDER_BRAND[id].icon;
-        const subtitle =
-          p.connection === 'connected'
+        const isOutdated =
+          p.connection !== 'missing' &&
+          outdatedCliModels({ provider: id, installedVersion: p.version, learned }).length > 0;
+        const subtitle = isOutdated
+          ? 'Update needed'
+          : p.connection === 'connected'
             ? (p.identity ?? STATUS_LABEL.connected)
             : STATUS_LABEL[p.connection];
         return (
@@ -61,7 +68,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
               icon={<Icon size={ICON_SIZE.control} style={{ color: brandColor(id) }} />}
               label={p.label}
               subtitle={subtitle}
-              tone={STATUS_TONE[p.connection]}
+              tone={isOutdated ? 'warning' : STATUS_TONE[p.connection]}
               selected={id === focusedId}
               onClick={() => onSelect(id)}
             />

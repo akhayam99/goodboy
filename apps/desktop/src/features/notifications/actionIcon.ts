@@ -16,6 +16,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'open-budget':
     case 'open-orphan-worktrees':
     case 'open-lens':
+    case 'update-provider-cli':
       return ChevronRight;
     default: {
       const exhaustive: never = kind;

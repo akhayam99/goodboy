@@ -73,6 +73,7 @@ describe('OrchestratorRoutingRow', () => {
         { id: 'anthropic', connection: 'connected' },
         { id: 'cursor', connection: 'connected' },
       ],
+      cliRequirements: [],
       workspaceOverrides: {},
       setWorkflowOrchestratorRouting,
     });

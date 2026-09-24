@@ -34,6 +34,7 @@ import {
 import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { ComposerErrorNotice } from './parts/ComposerErrorNotice';
+import { ComposerCliGate } from './parts/ComposerCliGate';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 
@@ -470,6 +471,10 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               drop to attach
             </div>
           </div>
+          <ComposerCliGate
+            provider={routing.effectiveProvider}
+            modelId={routing.effectiveModelId}
+          />
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
               {attachments.map((a) => (

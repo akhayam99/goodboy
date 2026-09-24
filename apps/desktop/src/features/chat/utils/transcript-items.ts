@@ -11,7 +11,7 @@ import type {
   TurnEvent,
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
-import { decodeAuthRequiredMessage } from '../turn';
+import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
 import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
 import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
 import { splitArtifactText } from './split-artifact-blocks';
@@ -64,6 +64,12 @@ export type TranscriptItem =
       runId: ProviderRunId;
     }
   | { kind: 'auth_required'; key: string; providerId: ProviderId; identity: string | null }
+  | {
+      kind: 'cli_too_old';
+      key: string;
+      runId?: ProviderRunId;
+      payload: CliTooOldPayload;
+    }
   | { kind: 'skill_invocation'; key: string; skillName: string; args: ReadonlyArray<string> }
   | {
       kind: 'step_transition';
@@ -339,22 +345,32 @@ export const reduceTranscript = (
         break;
       case 'error': {
         const authPayload = decodeAuthRequiredMessage(event.message);
-        if (authPayload) {
+        if (authPayload !== null) {
           items.push({
             kind: 'auth_required',
             key: `auth-${i}`,
             providerId: authPayload.providerId,
             identity: authPayload.identity,
           });
-        } else {
-          items.push({
-            kind: 'error',
-            key: `error-${i}`,
-            message: event.message,
-            runId: event.runId,
-            retryable: event.retryable,
-          });
+          break;
         }
+        const cliPayload = decodeCliTooOldMessage(event.message);
+        if (cliPayload !== null) {
+          items.push({
+            kind: 'cli_too_old',
+            key: `cli-${i}`,
+            ...(event.runId !== undefined && { runId: event.runId }),
+            payload: cliPayload,
+          });
+          break;
+        }
+        items.push({
+          kind: 'error',
+          key: `error-${i}`,
+          message: event.message,
+          runId: event.runId,
+          retryable: event.retryable,
+        });
         break;
       }
       case 'decision_note':

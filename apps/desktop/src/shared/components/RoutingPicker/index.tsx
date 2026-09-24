@@ -41,6 +41,7 @@ import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
+import { useCliGate } from '../../../features/providers/hooks/useCliGate';
 import { NoConnectedProviders } from './NoConnectedProviders';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 
@@ -194,6 +195,7 @@ export const RoutingPicker = ({
   const advisoryKeys =
     viewProvider === 'cursor' ? maxModeModels : ROUTING_PICKER_CONSTANTS.emptyModelKeys;
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
+  const viewedCliGate = useCliGate({ provider: viewProvider, modelId: viewedModel.key });
 
   useEffect(() => {
     if (open && !isInline) {
@@ -378,6 +380,7 @@ export const RoutingPicker = ({
             canEditEffort={editableEffort != null}
             notice={clampNotice}
             hasMaxModeAdvisory={hasMaxModeAdvisory}
+            cliGate={viewedCliGate}
             onModel={(modelKey) => {
               const nextModel = viewedRouting.catalog.find(
                 (candidate) => candidate.key === modelKey,

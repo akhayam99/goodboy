@@ -196,6 +196,14 @@ export {
   opencodeModelArg,
 } from './providers/provider-catalog';
 export { PROVIDER_LIFECYCLE_COMMANDS } from './providers/provider-commands';
+export { cleanCliVersion, isCliVersionBelow, newestCliVersion } from './providers/cliVersion';
+export {
+  cliGate,
+  cliSupportedSibling,
+  outdatedCliModels,
+  type CliGate,
+  type CliRequirement,
+} from './providers/cliGate';
 export { PROVIDER_CONNECT_CAPABILITIES } from './providers/provider-connect';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-preference';
 export { CLI_CREDENTIAL } from './providers/provider-credential';
@@ -220,6 +228,7 @@ export { resolveModelIdForProvider } from './providers/resolveModelIdForProvider
 export { canonicalModelId } from './providers/canonicalModelId';
 export { modelCatalogKey } from './providers/modelCatalogKey';
 export { MODEL_CATALOGS } from './providers/catalogs';
+export { catalogModelForId } from './providers/catalogModelForId';
 export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
 export { CODEX_CATALOG } from './providers/codex/catalog';
 export { CURSOR_CATALOG } from './providers/cursor/catalog';
