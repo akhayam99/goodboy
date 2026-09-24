@@ -7,6 +7,20 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.4.2
+
+A faster, steadier Goodboy that looks the same in light and dark mode.
+
+### [#1871] Performance and polish across the app
+
+The app does less work at startup and on the busiest screens, and code and data it no longer used are gone. Colors, toasts, settings and the board now follow one consistent style in both themes.
+
+### Fixes
+
+- A round of fixes across sessions, workflows, mounts, updates and notifications [#1871]
+- A goal made only of spaces now counts as no goal [#1871]
+- Agents know that opening a pull request or merge request needs an explicit mount [#1870]
+
 ## Goodboy v0.4.1
 
 Autorun can no longer send an agent the same instructions over and over.
