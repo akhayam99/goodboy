@@ -348,6 +348,8 @@ export {
   classifyWorkflowChain,
   findReusableAgent,
   isWorkflowComplete,
+  isAgentSettled,
+  isAgentStatusSettled,
   runsForWorkflowRun,
   type ChainCarryForwardStep,
   type ParallelCarryForwardBranch,

@@ -242,6 +242,13 @@ first, so a dynamic run marked `done` still waits for a running child. After
 that, a dynamic run finishes on its `done` outcome. A static run needs its
 template, at least one step, and every step agent settled.
 
+"Settled" has one definition in `@goodboy/core`, with two readings.
+`isAgentStatusSettled` is the status alone: `completed` or `skipped`. Every
+check that advances, chains or finishes a run uses it, so closing an agent by
+hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
+closed. Only what the screen draws uses it: the lane of an agent's children in
+the activity rail and the done count under a node in the workflow detail.
+
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
 on whether the summarizer finished or not. It still stops on any budget alert

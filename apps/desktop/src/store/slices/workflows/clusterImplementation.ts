@@ -7,7 +7,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone } from '@goodboy/core';
+import { extractClusterDone, isAgentStatusSettled } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -172,7 +172,7 @@ const handleChildStartFailure = async ({
     if (child === undefined) {
       return;
     }
-    if (child.status === 'completed' || child.status === 'skipped') {
+    if (isAgentStatusSettled({ status: child.status })) {
       return;
     }
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -477,13 +477,11 @@ const resolveClustersPlan = async ({
   return selectClustersPlan(plans, workflowRunId);
 };
 
-const isSettledChild = (agent: Agent): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
-
 export const unsettledClusterChildren = (
   runs: ReadonlyArray<Agent>,
   containerId: AgentId,
-): ReadonlyArray<Agent> => childrenOf(runs, containerId).filter((child) => !isSettledChild(child));
+): ReadonlyArray<Agent> =>
+  childrenOf(runs, containerId).filter((child) => !isAgentStatusSettled({ status: child.status }));
 
 type ResumeClusterChildrenParams = {
   readonly set: SetFn;
@@ -500,7 +498,7 @@ export const resumeClusterChildren = async ({
 }: ResumeClusterChildrenParams): Promise<boolean> => {
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
-  const next = children.find((child) => !isSettledChild(child));
+  const next = children.find((child) => !isAgentStatusSettled({ status: child.status }));
   if (next == null || next.status !== 'pending') {
     return false;
   }
@@ -641,13 +639,14 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
     const children = childrenOf(refreshed, containerId);
-    const isDone = (c: Agent): boolean => c.id === childAgentId || isSettledChild(c);
+    const isDone = (c: Agent): boolean =>
+      c.id === childAgentId || isAgentStatusSettled({ status: c.status });
     const settledCount = children.filter(isDone).length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
     if (settledCount >= total) {
       const container = refreshed.find((r) => r.id === containerId);
-      if (container != null && !isSettledChild(container)) {
+      if (container != null && !isAgentStatusSettled({ status: container.status })) {
         await invokeAgentUpdateStatus(containerId, {
           status: 'completed',
           outputSummary: `completed ${settledCount} clusters`,

@@ -211,6 +211,14 @@ describe('WorkflowStepGraph', () => {
     expect(screen.queryByRole('button', { name: /agents under Scout/i })).toBeNull();
   });
 
+  it('counts a child the user closed as done', () => {
+    renderGraph(
+      new Map([[scout.id, [{ ...subScout(1, 'failed'), doneAt: NOW }, subScout(2, 'running')]]]),
+    );
+
+    expect(screen.getByText('1/2')).toBeDefined();
+  });
+
   it('keeps showing the status of a node that has children', () => {
     renderGraph(new Map([[scout.id, [subScout(1, 'completed')]]]));
 

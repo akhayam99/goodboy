@@ -1,4 +1,5 @@
 import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
+import { isAgentSettled } from '@goodboy/core';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import type {
   TimelineAgentEntry,
@@ -411,8 +412,10 @@ const isArtifactShown = ({
 const stepAgentsOf = ({ entry }: { readonly entry: TimelineRunEntry }): ReadonlyArray<Agent> =>
   entry.children.flatMap((child) => (child.kind === 'agent' ? [child.agent] : []));
 
-const isSettled = ({ agent }: { readonly agent: Agent }): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
+const isLaneSettled = ({ entry }: { readonly entry: TimelineAgentEntry }): boolean =>
+  entry.agent.doneAt != null ||
+  (isAgentSettled({ agent: entry.agent }) &&
+    entry.children.every((child) => isAgentSettled({ agent: child.agent })));
 
 const isRunFinished = ({ entry }: { readonly entry: TimelineRunEntry }): boolean => {
   if (entry.run.discardedAt != null) {
@@ -480,13 +483,7 @@ const agentRows = ({
       identityIndex: identity?.index ?? null,
       isMuted,
       originRowId: entry.id,
-      shape:
-        isSettled({ agent: entry.agent }) &&
-        entry.children.every((child) => isSettled({ agent: child.agent }))
-          ? 'merged'
-          : groupId == null
-            ? 'open'
-            : 'rejoining',
+      shape: isLaneSettled({ entry }) ? 'merged' : groupId == null ? 'open' : 'rejoining',
     });
     for (const child of entry.children) {
       nested.push(

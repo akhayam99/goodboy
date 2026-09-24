@@ -62,6 +62,7 @@ type AgentParams = {
   readonly parentAgentId?: string;
   readonly status?: Agent['status'];
   readonly lastFinishedAt?: string;
+  readonly doneAt?: string;
 };
 
 const agent = ({
@@ -73,6 +74,7 @@ const agent = ({
   parentAgentId,
   status = 'completed',
   lastFinishedAt,
+  doneAt,
 }: AgentParams): Agent => ({
   id: typedString<AgentId>({ value: id }),
   sessionId: SESSION_ID,
@@ -92,6 +94,7 @@ const agent = ({
   ...(lastFinishedAt != null
     ? { lastFinishedAt: typedString<IsoDateTime>({ value: lastFinishedAt }) }
     : {}),
+  ...(doneAt != null ? { doneAt: typedString<IsoDateTime>({ value: doneAt }) } : {}),
 });
 
 type WorkflowParams = {
@@ -1445,6 +1448,77 @@ describe('buildTimelineStream, session events', () => {
     const lane = groups.find((group) => group.id === 'lane:agent:parent');
 
     expect(lane?.shape).toBe('merged');
+  });
+
+  it('closes a parent agent group the user closed while its children never settled', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          doneAt: localIso({ day: 18, hour: 11 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
+  it('closes a parent agent group once every unfinished child was closed', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 10 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          doneAt: localIso({ day: 18, hour: 11 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('merged');
+  });
+
+  it('keeps a parent agent group open while a failed child is still unclosed', () => {
+    const { groups } = stream({
+      agents: [
+        agent({
+          id: 'parent',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 10 }),
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          parentAgentId: 'parent',
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+        }),
+      ],
+    });
+    const lane = groups.find((group) => group.id === 'lane:agent:parent');
+
+    expect(lane?.shape).toBe('open');
   });
 
   it('gives a chained agent group a colored lane', () => {

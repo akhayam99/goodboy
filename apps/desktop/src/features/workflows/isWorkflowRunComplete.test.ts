@@ -143,6 +143,23 @@ describe('isWorkflowRunComplete', () => {
     ).toBe(false);
   });
 
+  it('never completes a run because the user closed an unfinished agent', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), { ...clusterChild(1, 'failed'), doneAt: NOW }],
+      }),
+    ).toBe(false);
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [{ ...stepAgent('pending'), doneAt: NOW }],
+      }),
+    ).toBe(false);
+  });
+
   it('leaves a static run unsettled while a step agent is pending', () => {
     expect(isWorkflowRunComplete({ run: run(), workflow, agents: [stepAgent('pending')] })).toBe(
       false,

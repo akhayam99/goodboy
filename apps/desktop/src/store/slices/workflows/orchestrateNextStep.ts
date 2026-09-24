@@ -36,6 +36,7 @@ import {
   resolveTaskModel,
   resolveWorkflowRouting,
   devWarn,
+  isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
   type OrchestratorRoleDefault,
@@ -605,7 +606,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
       const completedSteps = agents
-        .filter((agent) => agent.status === 'completed' || agent.status === 'skipped')
+        .filter((agent) => isAgentStatusSettled({ status: agent.status }))
         .map((agent) => ({
           name: agent.name,
           ...(agent.outputSummary != null && { outputSummary: agent.outputSummary }),

@@ -1,3 +1,4 @@
+import { isAgentStatusSettled } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type {
@@ -88,9 +89,6 @@ const UNKNOWN_STOP: StopPresentation = {
   showsMessage: true,
 };
 
-const isDone = (agent: Agent): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
-
 export const resolveOrchestratorState = ({
   run,
   agents,
@@ -99,7 +97,9 @@ export const resolveOrchestratorState = ({
   costUsd,
 }: Params): OrchestratorState => {
   const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
-  const doneCount = ordered.filter(isDone).length;
+  const doneCount = ordered.filter((agent) =>
+    isAgentStatusSettled({ status: agent.status }),
+  ).length;
   const base = { detail: null, waitingSince: null };
   const hasRunningStep = agents.some((agent) => agent.status === 'running');
 

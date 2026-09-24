@@ -1,5 +1,5 @@
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
-import { isWorkflowComplete } from '@goodboy/core';
+import { isAgentStatusSettled, isWorkflowComplete } from '@goodboy/core';
 
 type Params = {
   readonly run: WorkflowRun;
@@ -7,12 +7,9 @@ type Params = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const isSettled = (agent: Agent): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
-
 export const isWorkflowRunComplete = ({ run, workflow, agents }: Params): boolean => {
   const hasPendingDescendant = agents.some(
-    (agent) => agent.parentAgentId != null && !isSettled(agent),
+    (agent) => agent.parentAgentId != null && !isAgentStatusSettled({ status: agent.status }),
   );
   if (hasPendingDescendant) {
     return false;

@@ -92,7 +92,10 @@ const core = vi.hoisted(() => {
 });
 
 vi.mock('../../store/store', () => ({ useAppStore: { getState: () => h.state.value } }));
-vi.mock('@goodboy/core', () => core);
+vi.mock('@goodboy/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@goodboy/core')>();
+  return { ...core, isAgentStatusSettled: actual.isAgentStatusSettled };
+});
 vi.mock('../providers/providers', () => ({}));
 vi.mock('../workspace/window', () => ({ isMainWindow: () => true }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));

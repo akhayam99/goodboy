@@ -1,4 +1,5 @@
 import type { Step, Agent, Workflow, WorkflowRunId } from '@goodboy/types';
+import { isAgentStatusSettled } from './settled';
 
 export const runsForWorkflowRun = (
   runs: ReadonlyArray<Agent>,
@@ -38,7 +39,7 @@ export const classifyWorkflowChain = (
 ): WorkflowChainState => {
   const doneIds = new Set(
     runs
-      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .filter((r) => isAgentStatusSettled({ status: r.status }))
       .map((r) => r.stepId)
       .filter((id): id is Step['id'] => id !== undefined),
   );
@@ -57,7 +58,7 @@ export const classifyWorkflowChain = (
 export const isWorkflowComplete = (template: Workflow, runs: ReadonlyArray<Agent>): boolean => {
   const doneIds = new Set(
     runs
-      .filter((r) => r.status === 'completed' || r.status === 'skipped')
+      .filter((r) => isAgentStatusSettled({ status: r.status }))
       .map((r) => r.stepId)
       .filter((id): id is Step['id'] => id !== undefined),
   );

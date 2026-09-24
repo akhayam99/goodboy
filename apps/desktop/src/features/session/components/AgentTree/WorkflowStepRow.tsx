@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { AlertTriangle, Check, Clock, CircleHelp, Play } from 'lucide-react';
 import type { Agent, EffortLevel, ProviderId, TelemetryRecord } from '@goodboy/types';
+import { isAgentStatusSettled } from '@goodboy/core';
 import { agentHasUnread } from '../../../../store';
 import type { AgentKind } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
@@ -138,7 +139,7 @@ export const WorkflowStepRow = ({
     if (isRunning) {
       return <StatusDot tone="info" size="md" pulsing />;
     }
-    if (run.status === 'completed' || run.status === 'skipped') {
+    if (isAgentStatusSettled({ status: run.status })) {
       return (
         <span
           className={cn(

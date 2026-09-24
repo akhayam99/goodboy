@@ -2,6 +2,7 @@ import { cn, tintClasses } from '@goodboy/ui';
 import { Fragment, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId } from '@goodboy/types';
+import { isAgentStatusSettled } from '@goodboy/core';
 import { EMPTY_ARRAY, agentHasUnread } from '../../../../store';
 import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
 import type { AgentAggregate } from '../AgentMetrics';
@@ -35,9 +36,7 @@ export const ScoutSubtree = ({
     return null;
   }
   const expanded = expandState.get(containerId) ?? false;
-  const doneCount = children.filter(
-    (c) => c.status === 'completed' || c.status === 'skipped',
-  ).length;
+  const doneCount = children.filter((c) => isAgentStatusSettled({ status: c.status })).length;
   const childKinds = new Set(
     children.map((child) => classifyAgent({ agent: child, override: null })),
   );

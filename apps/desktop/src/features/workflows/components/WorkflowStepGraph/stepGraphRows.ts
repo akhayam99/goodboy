@@ -1,4 +1,5 @@
 import type { Agent, Step } from '@goodboy/types';
+import { isAgentSettled } from '@goodboy/core';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import {
   TIMELINE_RHYTHM,
@@ -37,9 +38,6 @@ type WalkParams = {
   readonly parentStepName: string | null;
 };
 
-const isSettled = ({ agent }: { readonly agent: Agent }): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
-
 export const buildStepGraphRows = ({
   runs,
   childrenByParentId,
@@ -61,7 +59,7 @@ export const buildStepGraphRows = ({
         depth,
         step,
         childCount: hasBranch ? children.length : 0,
-        doneChildCount: children.filter((child) => isSettled({ agent: child })).length,
+        doneChildCount: children.filter((child) => isAgentSettled({ agent: child })).length,
         answersForStepName: isQuestionDelegate({ agent: run }) ? parentStepName : null,
       });
       if (hasBranch) {

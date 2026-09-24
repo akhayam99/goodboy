@@ -260,6 +260,9 @@ queued 4.3 and 4.2. One dash per run reaches NOW. A child lane that still has
 work queued ends at its newest row and rejoins its parent lane there with a
 dashed join (the `rejoining` group shape), under the parent's next step. A
 child lane with no ancestor lane continuing above it stays open to NOW instead.
+A child lane closes on its newest row once its parent and every child have
+settled, and at once when you close the parent. An agent you closed counts as
+settled, so a lane waiting on it stops reaching NOW.
 
 A third rule covers what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count. No row or divider has a

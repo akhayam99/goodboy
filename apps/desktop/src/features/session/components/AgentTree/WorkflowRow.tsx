@@ -1,4 +1,5 @@
 import { Fragment, type Dispatch, type SetStateAction } from 'react';
+import { isAgentStatusSettled } from '@goodboy/core';
 import {
   cn,
   Collapsible,
@@ -189,7 +190,7 @@ export const WorkflowRow = ({
     currentTitle: workflow.name,
   });
   const total = workflow.steps.length;
-  const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
+  const done = wfAgents.filter((a) => isAgentStatusSettled({ status: a.status })).length;
   const isDynamic = run.executionMode === 'dynamic';
   const isCompleted =
     !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
