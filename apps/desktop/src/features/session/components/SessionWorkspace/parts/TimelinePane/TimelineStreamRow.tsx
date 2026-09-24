@@ -31,6 +31,7 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly meta?: ReactNode;
   readonly progress?: number | null;
+  readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
 };
@@ -48,6 +49,7 @@ export const TimelineStreamRow = ({
   diffStat = null,
   meta = null,
   progress = null,
+  menu = null,
   lanes = null,
   runLane = null,
 }: Props) => {
@@ -154,6 +156,9 @@ export const TimelineStreamRow = ({
               {action.label}
             </Button>
           )}
+        </span>
+        <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
+          {menu}
         </span>
       </div>
     </div>

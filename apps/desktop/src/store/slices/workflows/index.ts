@@ -4,6 +4,7 @@ import { advanceClusterImplementation } from './clusterImplementation';
 import { retryStepSummary } from './retryStepSummary';
 import { recoverStuckStep } from './recoverStuckStep';
 import { attachWorkflowToSession } from './attachWorkflowToSession';
+import { closeWorkflowRun } from './closeWorkflowRun';
 import { deleteStepDef } from './deleteStepDef';
 import { deleteWorkflow } from './deleteWorkflow';
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
@@ -62,6 +63,7 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),
+    closeWorkflowRun: closeWorkflowRun(set, get),
     reprocessGoalForWorkflow: reprocessGoalForWorkflow(set, get),
     activateWorkflowAgent: activateWorkflowAgent(set, get),
     addStepToWorkflowRun: addStepToWorkflowRun(set, get),

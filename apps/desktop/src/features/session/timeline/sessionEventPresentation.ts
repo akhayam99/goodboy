@@ -40,6 +40,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   workflow_started: 'plain',
   workflow_discarded: 'muted',
   workflow_restored: 'plain',
+  workflow_closed: 'muted',
   workflow_deleted: 'muted',
   decisions_changed: 'muted',
   project_materialized: 'plain',
@@ -84,6 +85,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
+  workflow_closed: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Workflow' },
   decisions_changed: {
     icon: CONCEPT_ICONS.decisions,
@@ -219,6 +221,12 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
       return [workflowSegment({ payload }), { kind: 'text', text: ' discarded' }];
     case 'workflow_restored':
       return [workflowSegment({ payload }), { kind: 'text', text: ' restored' }];
+    case 'workflow_closed':
+      return [
+        { kind: 'text', text: 'Closed ' },
+        workflowSegment({ payload }),
+        { kind: 'text', text: ' by you' },
+      ];
     case 'workflow_deleted':
       return [workflowSegment({ payload }), { kind: 'text', text: ' deleted' }];
     case 'decisions_changed':

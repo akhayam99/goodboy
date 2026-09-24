@@ -191,9 +191,9 @@ about its effect is a worse defect than one that reads badly.
   states exactly what is lost or sent, including what stays on disk. The same
   action behaves the same way from every entry point.
 - **Durable changes land in the timeline.** A change of destination, an archive
-  or restore, a discard, an answer, a publication outcome: each one is recorded
-  and linked to the object it concerns. Transcript traffic is not. A fact does
-  not arrive twice saying two different things.
+  or restore, a discard, a closed workflow, an answer, a publication outcome:
+  each one is recorded and linked to the object it concerns. Transcript traffic
+  is not. A fact does not arrive twice saying two different things.
 
 ## Color & theme
 

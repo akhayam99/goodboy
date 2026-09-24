@@ -213,6 +213,18 @@ describe('resolveRunRowState', () => {
       { runOverrides: { discardedAt: iso('2026-09-24T12:00:00Z') } },
       { node: 'closed', sentence: null, tone: 'neutral', ask: null },
     ],
+    [
+      'R15 closed by you wins over the failed step it leaves behind',
+      {
+        runOverrides: {
+          orchestrationOutcome: 'done',
+          orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+        },
+        isFinished: true,
+        failedStep: { stepLabel: '2' },
+      },
+      { node: 'closed', sentence: 'Closed by you', tone: 'neutral', ask: null },
+    ],
   ])('%s', (_name, input, expected) => {
     expect(read(runState(input))).toEqual(expected);
   });

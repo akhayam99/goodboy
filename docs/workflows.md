@@ -277,6 +277,27 @@ Getting past a blocked run always takes more than one click. A failed step
 takes two. First you confirm the skip, then the next agent starts. The failed
 step is marked **skipped**, not left as failed.
 
+### Closing a workflow
+
+**Close workflow** ends a run that nobody else will end: an orchestrated run
+between decisions, a run stuck on a failed step, a run you have seen enough
+of. It sits in the header of the workflow detail and in the menu of the run
+row in the activity feed. Goodboy asks you to confirm first. Steps that have
+not run are marked skipped, the step in flight stops and is marked skipped,
+and a failed step stays failed, because it did fail. Everything already written
+is kept.
+
+A closed run reads **Closed by you**, never complete: its node is the neutral
+check, its lane ends on its newest node with no dash to NOW, and it offers no
+Next action and no autorun. A run chained to start after it switches to a
+manual start, so closing never starts other work. The closure lands in the
+activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
+opens the run again.
+
+Close is offered once the run has started and until it ends. A queued run has
+nothing to close; discard it instead. **Discard** and **Delete** sit in the
+run menu next to it.
+
 ### Hands-free runs
 
 **Autorun** makes a run hands-free. Each next step starts without you
@@ -445,6 +466,10 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`. **Stop now** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
+  **Close workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
+  outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
+  for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
+  in flight is thrown away when it returns, as after an operator stop.
   Nothing decides again until you continue. Continuing or retrying clears the
   outcome and the stop, and a retry after an operator stop turns autorun back
   on.

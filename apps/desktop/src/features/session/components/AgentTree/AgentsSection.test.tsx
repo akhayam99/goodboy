@@ -182,7 +182,6 @@ vi.mock('./WorkflowStartButton', () => ({
 vi.mock('../../../workflows/components/RunTree', () => ({
   RunTree: () => <div data-testid="run-tree" />,
 }));
-vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../workflows/components/NextActionStrip', () => ({
   NextActionStrip: () => null,
 }));

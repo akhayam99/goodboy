@@ -233,6 +233,7 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   workflow_started: 'workflows',
   workflow_discarded: 'workflows',
   workflow_restored: 'workflows',
+  workflow_closed: 'workflows',
   workflow_deleted: 'workflows',
   decisions_changed: 'decisions',
   project_materialized: 'worktree',

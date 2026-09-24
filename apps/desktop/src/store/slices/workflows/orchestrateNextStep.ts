@@ -239,7 +239,7 @@ type PersistOutcomeParams = {
   readonly reason: string;
 };
 
-const persistOrchestrationOutcome = async ({
+export const persistOrchestrationOutcome = async ({
   set,
   sessionId,
   workflowRunId,
@@ -343,7 +343,8 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   const current = get()
     .sessions.find((candidate) => candidate.id === sessionId)
     ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
-  return current?.orchestrationStop?.kind === 'operator';
+  const kind = current?.orchestrationStop?.kind;
+  return kind === 'operator' || kind === 'closed';
 };
 
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>

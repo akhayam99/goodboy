@@ -527,6 +527,7 @@ type AppActions = {
     autoRun: boolean,
   ): Promise<void>;
   stopWorkflowRunNow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  closeWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,

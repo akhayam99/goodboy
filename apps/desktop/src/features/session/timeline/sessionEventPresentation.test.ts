@@ -80,6 +80,14 @@ describe('sessionEventTitle', () => {
     );
   });
 
+  it('names the run the user closed', () => {
+    const payload = { workflowName: 'Add rate limiting' };
+    expect(sessionEventTitle({ event: event({ kind: 'workflow_closed', payload }) })).toBe(
+      'Closed Add rate limiting by you',
+    );
+    expect(sessionEventEmphasis({ kind: 'workflow_closed' })).toBe('muted');
+  });
+
   it('counts decisions on both sides', () => {
     expect(
       sessionEventTitle({

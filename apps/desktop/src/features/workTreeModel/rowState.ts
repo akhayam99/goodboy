@@ -1,6 +1,7 @@
 import type { Agent, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
 import { isAgentClosedByUser } from '../session/agent-lifecycle';
+import { isWorkflowRunClosedByUser } from '../workflows/isWorkflowRunClosedByUser';
 
 export type RowPhase = 'queued' | 'running' | 'waiting' | 'failed' | 'done' | 'closed' | 'skipped';
 
@@ -165,6 +166,9 @@ export const resolveRunRowState = (params: RunParams): RowState => {
   const { run, advance, isFinished, isDeciding, hasRunningStep, chainedAfterTitle } = params;
   if (run.discardedAt != null) {
     return { phase: isFinished ? 'done' : 'closed', reason: { kind: 'discarded' }, ask: null };
+  }
+  if (isWorkflowRunClosedByUser({ run })) {
+    return { phase: 'closed', reason: { kind: 'closed' }, ask: null };
   }
   const waiting = waitingRunState(params);
   if (waiting != null) {

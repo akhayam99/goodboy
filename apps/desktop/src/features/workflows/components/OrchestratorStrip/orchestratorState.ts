@@ -68,6 +68,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Stopped by you · the step in flight was skipped',
     showsMessage: true,
   },
+  closed: {
+    phase: 'done',
+    tone: 'neutral',
+    sentence: 'Closed by you',
+    showsMessage: false,
+  },
 };
 
 const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
@@ -120,6 +126,15 @@ export const resolveOrchestratorState = ({
       phase: 'deciding',
       tone: 'info',
       sentence: ORCHESTRATOR_DECIDING_SENTENCE,
+    };
+  }
+  if (run.orchestrationStop?.kind === 'closed') {
+    const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;
+    return {
+      ...base,
+      phase: STOP_PRESENTATION.closed.phase,
+      tone: STOP_PRESENTATION.closed.tone,
+      sentence: `${STOP_PRESENTATION.closed.sentence} · ${steps} · ${formatUsd(costUsd)}`,
     };
   }
   if (run.orchestrationOutcome === 'done') {

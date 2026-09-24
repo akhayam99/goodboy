@@ -1434,6 +1434,34 @@ describe('buildTimelineStream, session events', () => {
     expect(groups.find((group) => group.id === 'lane:run:run-1')?.shape).toBe('closed');
   });
 
+  it('closes the lane of a dynamic run the user closed, with no dash to NOW', () => {
+    const closed = attachedWorkflow({
+      createdAt: localIso({ day: 18, hour: 8 }),
+      stepIds: ['one'],
+      executionMode: 'dynamic',
+      orchestrationOutcome: 'done',
+    });
+    const { groups } = stream({
+      workflows: [
+        {
+          ...closed,
+          run: { ...closed.run, orchestrationStop: { kind: 'closed', message: 'Closed by you' } },
+        },
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'completed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+
+    expect(groups.find((group) => group.id === 'lane:run:run-1')?.shape).toBe('closed');
+  });
+
   it('keeps the lane of a halted run open while one of its steps still runs', () => {
     const { groups } = stream({
       workflows: [

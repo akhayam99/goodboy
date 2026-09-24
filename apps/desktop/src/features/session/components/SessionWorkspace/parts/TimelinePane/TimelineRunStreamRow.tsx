@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, type ReactNode } from 'react';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
@@ -27,6 +27,7 @@ type Props = {
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
+  readonly menu: ReactNode;
 };
 
 export const TimelineRunStreamRow = ({
@@ -44,6 +45,7 @@ export const TimelineRunStreamRow = ({
   sessionProvider,
   sessionEffort,
   costUsd,
+  menu,
 }: Props) => {
   const source = useContext(WorkTimeContext);
   const time =
@@ -68,6 +70,7 @@ export const TimelineRunStreamRow = ({
       diffStat={diffStat}
       meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
       progress={time?.progress ?? null}
+      menu={menu}
       lanes={lanes}
       runLane={runLane}
     />

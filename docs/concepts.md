@@ -160,7 +160,7 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
-- Workflow runs started and discarded
+- Workflow runs started, closed and discarded
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy

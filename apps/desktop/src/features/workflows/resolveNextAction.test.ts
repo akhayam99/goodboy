@@ -244,6 +244,19 @@ describe('resolveNextAction', () => {
     });
   });
 
+  it('offers nothing on a run the user closed, failed step included', () => {
+    const action = resolve({
+      agents: stepAgents('completed', 'failed'),
+      runOverride: {
+        ...run,
+        orchestrationOutcome: 'done',
+        orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+      },
+    });
+
+    expect(action).toEqual({ kind: 'none' });
+  });
+
   it('offers nothing on a discarded run', () => {
     const action = resolve({
       agents: stepAgents('completed', 'failed'),

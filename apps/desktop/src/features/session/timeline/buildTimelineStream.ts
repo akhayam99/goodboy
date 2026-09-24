@@ -486,6 +486,9 @@ const runLaneShape = ({
   readonly rowState: RowState;
   readonly hasLiveWork: boolean;
 }): RailGroupShape => {
+  if (rowState.reason?.kind === 'closed') {
+    return 'closed';
+  }
   if (isFinished) {
     return 'merged';
   }

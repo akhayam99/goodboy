@@ -1,6 +1,7 @@
 import { findReusableAgent } from '@goodboy/core';
 import type { Agent, AgentId, OpenQuestion, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from './advanceGate';
+import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 
 export type NextAction =
   | { readonly kind: 'none' }
@@ -170,7 +171,7 @@ export const resolveNextAction = ({
   questions,
   subjectAgentId,
 }: Params): NextAction => {
-  if (run.discardedAt != null) {
+  if (run.discardedAt != null || isWorkflowRunClosedByUser({ run })) {
     return NONE;
   }
   if (subjectAgentId != null) {

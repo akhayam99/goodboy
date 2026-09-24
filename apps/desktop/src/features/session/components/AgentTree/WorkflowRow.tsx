@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core';
 import {
   cn,
   Divider,
@@ -57,8 +57,10 @@ import type { StartStepAgentParams } from './useAgentsSection';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunAsk } from './WorkflowRunAsk';
 import { WorkflowRunStartButton } from './WorkflowRunStartButton';
-import { WorkflowKillButton } from './WorkflowKillButton';
-import { WorkflowRunMenu } from './WorkflowRunMenu';
+import { WorkflowCloseButton } from '../../../workflows/components/WorkflowCloseButton';
+import { WorkflowRunMenu } from '../../../workflows/components/WorkflowRunMenu';
+import { isWorkflowRunClosable } from '../../../workflows/isWorkflowRunClosable';
+import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
 
 type Props = {
@@ -130,6 +132,8 @@ export const WorkflowRow = ({
   const sessionEffort = task.effort ?? null;
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
+  const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
+  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[task.id] ?? EMPTY_ARRAY);
   const writableMountCount = useAppStore(
     (state) => selectWritableMounts({ state, sessionId: task.id }).length,
   );
@@ -146,8 +150,15 @@ export const WorkflowRow = ({
   const total = workflow.steps.length;
   const done = wfAgents.filter((a) => isAgentStatusSettled({ status: a.status })).length;
   const isDynamic = run.executionMode === 'dynamic';
+  const isClosed = isWorkflowRunClosedByUser({ run });
   const isCompleted =
-    !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
+    !isDiscarded &&
+    (isClosed || (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total));
+  const isClosable = isWorkflowRunClosable({
+    run,
+    workflow,
+    agents: runsForWorkflowRun(sessionAgents, run.id),
+  });
   const agentCount = wfAgents.reduce(
     (sum, agent) => sum + countAgentTree({ agent, childrenByParentId }),
     0,
@@ -301,17 +312,19 @@ export const WorkflowRow = ({
                   />
                 )}
                 <Divider orientation="vertical" className="h-5 self-center" />
+                {isClosable ? (
+                  <WorkflowCloseButton onConfirm={() => void closeWorkflowRun(task.id, run.id)} />
+                ) : null}
                 {isDiscarded ? (
                   <GhostActionButton
                     icon={Undo2}
                     label="Restore"
                     onClick={() => void restoreWorkflow(task.id, run.id)}
                   />
-                ) : (
-                  <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-                )}
+                ) : null}
                 <WorkflowRunMenu
                   workflowName={name}
+                  onDiscard={isDiscarded ? null : () => void onDiscardWorkflow(run.id)}
                   onDelete={() => void onDeleteWorkflow(run.id)}
                 />
               </CardActionSlot>

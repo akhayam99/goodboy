@@ -381,6 +381,7 @@ The right end of a work row is `WorkMeta` in
 | cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px a step row drops it  |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px a step row drops it  |
 | action     | 76px  | the one visible action, reserved even when empty             | never drops                      |
+| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                      |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. A run row has no routing:

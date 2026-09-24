@@ -29,6 +29,7 @@ import { m167DropDeadWorkspaceAndHintColumns } from './m167-drop-dead-workspace-
 import { m168AgentTurnSpans } from './m168-agent-turn-spans';
 import { m169WorkflowRunTitle } from './m169-workflow-run-title';
 import { m170WorkflowRunProviderPool } from './m170-workflow-run-provider-pool';
+import { m171SessionEventWorkflowClosed } from './m171-session-event-workflow-closed';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -345,4 +346,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 168, sql: m168AgentTurnSpans },
   { version: 169, sql: m169WorkflowRunTitle },
   { version: 170, sql: m170WorkflowRunProviderPool },
+  { version: 171, sql: m171SessionEventWorkflowClosed },
 ];

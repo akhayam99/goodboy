@@ -28,6 +28,8 @@ const storeMocks = vi.hoisted(() => ({
   runSpendUsd: 0,
   sessions: [] as ReadonlyArray<Record<string, unknown>>,
   sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+  sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+  closeWorkflowRun: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -42,6 +44,8 @@ vi.mock('../../../../store', () => ({
       sessionMounts: {},
       sessions: storeMocks.sessions,
       sessionProjectMounts: storeMocks.sessionProjectMounts,
+      sessionPhaseRuns: storeMocks.sessionPhaseRuns,
+      closeWorkflowRun: storeMocks.closeWorkflowRun,
       providers: [],
       cliRequirements: [],
     }),
@@ -73,7 +77,6 @@ vi.mock('../../../workflows/components/RunTree', () => ({
 vi.mock('../../../workflows/components/RunTree/useRunTree', () => ({
   useRunTree: () => null,
 }));
-vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../workflows/components/NextActionStrip', () => ({
   NextActionStrip: ({ subjectAgentId }: { readonly subjectAgentId: string | null }) => (
     <div data-testid="next-action-strip" data-subject={subjectAgentId ?? 'run'} />
@@ -215,6 +218,8 @@ const renderDetail = ({
 beforeEach(() => {
   storeMocks.renameWorkflowRun.mockClear();
   storeMocks.sessionProjectMounts = {};
+  storeMocks.sessionPhaseRuns = {};
+  storeMocks.closeWorkflowRun.mockClear();
 });
 
 afterEach(() => {
@@ -667,5 +672,48 @@ describe('WorkflowRow dynamic runs', () => {
     const { container } = renderDetail();
 
     expect((container.firstChild as HTMLElement).className).not.toContain(TERMINAL_DIM);
+  });
+
+  it('offers Close workflow on a started run and closes it once confirmed', () => {
+    storeMocks.sessionPhaseRuns = { [SESSION_ID]: agents };
+    renderDetail();
+
+    const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
+    fireEvent.click(within(lifecycleSlot).getByRole('button', { name: 'Close workflow' }));
+    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
+
+    expect(storeMocks.closeWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+
+  it('reads a closed run as closed by you, with no Close, autorun or next action', () => {
+    const closedAgents: ReadonlyArray<Agent> = [
+      { ...agents[0]!, status: 'failed' },
+      { ...agents[1]!, status: 'skipped' },
+    ];
+    storeMocks.sessionPhaseRuns = { [SESSION_ID]: closedAgents };
+    renderDetail({
+      runOverride: {
+        ...run,
+        orchestrationOutcome: 'done',
+        orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+      },
+      agentsOverride: closedAgents,
+    });
+
+    expect(screen.getByTitle('Closed by you').textContent).toBe('Closed');
+    expect(screen.queryByRole('button', { name: 'Close workflow' })).toBeNull();
+    expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
+  });
+
+  it('keeps Discard in the actions menu, next to Delete', () => {
+    renderDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refactor workflow actions' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Discard workflow',
+      'Delete workflow run',
+    ]);
   });
 });

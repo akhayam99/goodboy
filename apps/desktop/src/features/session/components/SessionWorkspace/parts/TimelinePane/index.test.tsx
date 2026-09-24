@@ -75,6 +75,7 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       setActiveLens: vi.fn(),
       setFocusedArtifactId: vi.fn(),
       openMountDiff: vi.fn(),
+      closeWorkflowRun: vi.fn(async () => undefined),
     },
   }));
 
@@ -165,6 +166,7 @@ beforeEach(() => {
   storeState.projects = [];
   storeState.sessionProjectMounts = {};
   storeState.openMountDiff.mockReset();
+  storeState.closeWorkflowRun.mockClear();
   storeState.openArtifactCreation.mockReset();
   storeState.markAllAgentsSeen.mockReset();
   storeState.setActiveLens.mockReset();
@@ -722,6 +724,105 @@ describe('TimelinePane run waiting on an answer', () => {
 
     expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
+  });
+});
+
+describe('TimelinePane run row menu', () => {
+  const RUN = {
+    run: {
+      id: 'run-1',
+      workflowId: 'workflow-1',
+      ordinal: 0,
+      currentStep: 0,
+      autoRun: false,
+      triggerMode: 'immediate',
+      executionMode: 'dynamic',
+      createdAt: '2026-09-25T10:30:00.000Z',
+    },
+    workflow: {
+      id: 'workflow-1',
+      workspaceId: 'ws-1',
+      name: 'Add rate limiting',
+      description: '',
+      origin: 'orchestrated',
+      steps: [],
+      createdAt: '2026-09-25T10:30:00.000Z',
+      updatedAt: '2026-09-25T10:30:00.000Z',
+    },
+  };
+  const STEP = {
+    id: 'agent-plan',
+    sessionId: 'session-1',
+    stepId: 'step-1',
+    workflowRunId: 'run-1',
+    ordinal: 1,
+    name: 'Plan the rate limiter',
+    status: 'completed',
+    startedAt: '2026-09-25T10:31:00.000Z',
+    completedAt: '2026-09-25T10:40:00.000Z',
+  };
+
+  const runRow = (): HTMLElement => {
+    const row = screen.getByText('Add rate limiting').closest('.group');
+    if (!(row instanceof HTMLElement)) {
+      throw new Error('run row missing');
+    }
+    return row;
+  };
+
+  it('offers Close workflow from the menu of a run nobody closes', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    fireEvent.click(
+      within(runRow()).getByRole('button', { name: 'Add rate limiting workflow actions' }),
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Close workflow' }));
+    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
+
+    expect(storeState.closeWorkflowRun).toHaveBeenCalledWith('session-1', 'run-1');
+  });
+
+  it('reads a closed run as closed by you and drops its menu', () => {
+    attachedRuns.list = [
+      {
+        ...RUN,
+        run: {
+          ...RUN.run,
+          orchestrationOutcome: 'done',
+          orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+        },
+      },
+    ];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(within(runRow()).getByText('Closed by you')).toBeDefined();
+    expect(
+      within(runRow()).queryByRole('button', { name: 'Add rate limiting workflow actions' }),
+    ).toBeNull();
+  });
+
+  it('lands the closure in the feed as its own row', () => {
+    storeState.sessionEvents = {
+      'session-1': [
+        {
+          id: 'event-closed',
+          sessionId: 'session-1',
+          kind: 'workflow_closed',
+          payload: { runId: 'run-1', workflowName: 'Add rate limiting' },
+          createdAt: '2026-09-25T11:00:00.000Z',
+        },
+      ],
+    };
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const row = screen.getByText('Add rate limiting').closest('.group');
+    expect(row?.textContent).toContain('Closed Add rate limiting by you');
   });
 });
 

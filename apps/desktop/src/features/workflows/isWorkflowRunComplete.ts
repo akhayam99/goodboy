@@ -1,5 +1,6 @@
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusSettled, isWorkflowComplete } from '@goodboy/core';
+import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
 
 type Params = {
   readonly run: WorkflowRun;
@@ -8,6 +9,9 @@ type Params = {
 };
 
 export const isWorkflowRunComplete = ({ run, workflow, agents }: Params): boolean => {
+  if (isWorkflowRunClosedByUser({ run })) {
+    return true;
+  }
   const hasPendingDescendant = agents.some(
     (agent) => agent.parentAgentId != null && !isAgentStatusSettled({ status: agent.status }),
   );

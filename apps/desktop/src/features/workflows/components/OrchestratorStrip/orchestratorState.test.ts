@@ -131,6 +131,21 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toContain('2 steps');
   });
 
+  it('reads a run the user closed as closed, never as complete', () => {
+    const state = resolve({
+      run: makeRun({
+        orchestrationOutcome: 'done',
+        orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+      }),
+      agents: [makeAgent(0, 'completed'), makeAgent(1, 'skipped')],
+      costUsd: 1.5,
+    });
+
+    expect(state.phase).toBe('done');
+    expect(state.tone).toBe('neutral');
+    expect(state.sentence).toMatch(/^Closed by you · 2 steps/);
+  });
+
   it('reports blocked and leaves its reason to the decisions under the goal', () => {
     const state = resolve({
       run: makeRun({ orchestrationOutcome: 'blocked', orchestrationReason: 'needs a decision' }),

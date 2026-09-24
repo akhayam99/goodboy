@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { runsForWorkflowRun } from '@goodboy/core';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
 import { Button, IconButton, SectionHeader, useCopyLink } from '@goodboy/ui';
@@ -28,6 +29,8 @@ import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionR
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
+import { isWorkflowRunClosable } from '../../../../../workflows/isWorkflowRunClosable';
+import { WorkflowRunMenu } from '../../../../../workflows/components/WorkflowRunMenu';
 import {
   activityCategoryOf,
   activityCounts,
@@ -90,6 +93,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
+  const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
@@ -431,6 +435,24 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     }
   };
 
+  const menuFor = ({ item }: { readonly item: TimelineRowItem }): ReactNode => {
+    const { entry } = item;
+    if (entry.kind !== 'run') {
+      return null;
+    }
+    const { run, workflow } = entry;
+    if (!isWorkflowRunClosable({ run, workflow, agents: runsForWorkflowRun(agents, run.id) })) {
+      return null;
+    }
+    return (
+      <WorkflowRunMenu
+        workflowName={run.title ?? workflow.name}
+        onClose={() => void closeWorkflowRun(sessionId, run.id)}
+        triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:transition-opacity"
+      />
+    );
+  };
+
   const hasUnreadAgents = unreadAgentIds.size > 0;
   const feedSuggestions = suggestions.filter(
     (suggestion) =>
@@ -586,6 +608,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
                       sessionProvider={sessionProvider}
                       sessionEffort={sessionEffort}
                       costUsd={spendByRunId.get(entry.run.id) ?? 0}
+                      menu={menuFor({ item })}
                     />
                   );
                 }

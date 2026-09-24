@@ -4,6 +4,7 @@ import { isAgentStatusSettled } from '@goodboy/core';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -54,6 +55,14 @@ export const WorkflowRunStatus = ({
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
         <CONCEPT_ICONS.runCancelled size={10} aria-hidden />
         Discarded
+      </span>
+    );
+  }
+  if (isWorkflowRunClosedByUser({ run })) {
+    return (
+      <span className={cn(baseClass, 'bg-muted text-muted-foreground')} title="Closed by you">
+        <CONCEPT_ICONS.runDone size={10} aria-hidden />
+        Closed
       </span>
     );
   }
