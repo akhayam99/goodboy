@@ -91,6 +91,7 @@ export const TimelineStreamRow = ({
 
   return (
     <div
+      data-row-id={item.id}
       className="group flex min-w-0"
       style={{ height: item.height }}
       onMouseEnter={hover.onMouseEnter}

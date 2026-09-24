@@ -3,8 +3,14 @@ import type { SessionEvent, SessionEventKind } from '@goodboy/types';
 import {
   ACTIVITY_CATEGORIES,
   ACTIVITY_CATEGORY_LABEL,
+  ACTIVITY_FILTER_PRESETS,
+  ACTIVITY_GROUPS,
   DEFAULT_ACTIVITY_FILTER,
   activityCategoryOf,
+  activityCounts,
+  activityFilterPresetOf,
+  activityToggleLabel,
+  hiddenActivityToggles,
   activityChildOf,
   filterTimelineEntries,
   parseActivityFilter,
@@ -319,5 +325,121 @@ describe('parseActivityFilter', () => {
       false,
     );
     expect(parseActivityFilter({ raw: '{"agentSubagents":false}' }).agentSubagents).toBe(false);
+  });
+});
+
+describe('ACTIVITY_GROUPS', () => {
+  it('files every category in exactly one group', () => {
+    const grouped = ACTIVITY_GROUPS.flatMap((group) => group.categories);
+
+    expect([...grouped].sort()).toEqual([...ACTIVITY_CATEGORIES].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+  });
+
+  it('names the groups Work, Outputs and Session log', () => {
+    expect(ACTIVITY_GROUPS.map((group) => group.label)).toEqual(['Work', 'Outputs', 'Session log']);
+  });
+});
+
+describe('activity presets', () => {
+  it('reads the default filter as Everything', () => {
+    expect(activityFilterPresetOf({ filter: DEFAULT_ACTIVITY_FILTER })).toBe('everything');
+    expect(ACTIVITY_FILTER_PRESETS.everything).toEqual(DEFAULT_ACTIVITY_FILTER);
+  });
+
+  it('keeps only the Work group and its children on the Work preset', () => {
+    const work = ACTIVITY_FILTER_PRESETS.work;
+
+    expect(work.agents && work.agentSubagents && work.workflowSubagents).toBe(true);
+    expect(work.questions && work.suggestions).toBe(true);
+    expect(work.artifacts || work.plans || work.pullRequests || work.decisions).toBe(false);
+    expect(activityFilterPresetOf({ filter: work })).toBe('work');
+  });
+
+  it('reads any other mix as custom', () => {
+    expect(
+      activityFilterPresetOf({ filter: { ...DEFAULT_ACTIVITY_FILTER, decisions: false } }),
+    ).toBeNull();
+  });
+});
+
+describe('hiddenActivityToggles', () => {
+  it('lists a hidden parent once and leaves its children out', () => {
+    const filter: ActivityFilter = {
+      ...DEFAULT_ACTIVITY_FILTER,
+      artifacts: false,
+      plans: false,
+      session: false,
+    };
+
+    expect(hiddenActivityToggles({ filter })).toEqual(['artifacts', 'session']);
+  });
+
+  it('lists a hidden child under a shown parent in panel order', () => {
+    const filter: ActivityFilter = {
+      ...DEFAULT_ACTIVITY_FILTER,
+      wireframes: false,
+      resolver: false,
+      workflowSubagents: false,
+    };
+
+    expect(hiddenActivityToggles({ filter })).toEqual([
+      'workflowSubagents',
+      'wireframes',
+      'resolver',
+    ]);
+  });
+
+  it('names a child by what it belongs to', () => {
+    expect(activityToggleLabel({ toggle: 'workflowSubagents' })).toBe('Workflow subagents');
+    expect(activityToggleLabel({ toggle: 'session' })).toBe('Session events');
+  });
+});
+
+describe('activityCounts', () => {
+  it('counts rows per category, artifacts per kind and subagents under their parent', () => {
+    const parent = {
+      ...(agentEntry({ id: 'lead', agentKind: 'generic' }) as object),
+      children: [
+        { ...(agentEntry({ id: 'sub-1', agentKind: 'generic' }) as object), children: [] },
+        {
+          ...(agentEntry({ id: 'sub-2', agentKind: 'generic' }) as object),
+          children: [agentEntry({ id: 'sub-2-1', agentKind: 'generic' })],
+        },
+      ],
+    } as unknown as TimelineTopLevelEntry;
+    const run = {
+      kind: 'run',
+      id: 'run:1',
+      at: '2026-08-21T10:00:00.000Z',
+      children: [
+        agentEntry({ id: 'step-1', agentKind: 'implementer' }),
+        { ...(planEntry() as object), id: 'plan:run' },
+      ],
+    } as unknown as TimelineTopLevelEntry;
+
+    const counts = activityCounts({
+      entries: [
+        parent,
+        agentEntry({ id: 'resolver', agentKind: 'resolver' }),
+        run,
+        planEntry(),
+        artifactEntry({ kind: 'report' }),
+        eventEntry({ id: 'e1', kind: 'pr_created' }),
+      ],
+      suggestionCount: 2,
+    });
+
+    expect(counts.agents).toBe(1);
+    expect(counts.agentSubagents).toBe(3);
+    expect(counts.resolver).toBe(1);
+    expect(counts.workflows).toBe(1);
+    expect(counts.workflowSubagents).toBe(1);
+    expect(counts.artifacts).toBe(2);
+    expect(counts.plans).toBe(2);
+    expect(counts.reports).toBe(1);
+    expect(counts.wireframes).toBe(0);
+    expect(counts.pullRequests).toBe(1);
+    expect(counts.suggestions).toBe(2);
   });
 });

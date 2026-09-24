@@ -93,7 +93,7 @@ vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
 vi.mock('../../../CreateAgentPopover', () => ({
-  CreateAgentPopover: () => <button type="button">Create agent</button>,
+  CreateAgentPopover: () => <button type="button">Start agent</button>,
 }));
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => attachedRuns.list,
@@ -107,8 +107,8 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => ({
 vi.mock('../../../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
-vi.mock('./ActivityFilterButton', () => ({
-  ActivityFilterButton: () => <button type="button">Filter</button>,
+vi.mock('./ActivityFilterPanel', () => ({
+  ActivityFilterPanel: () => <button type="button">Filter</button>,
 }));
 vi.mock('../../../../../suggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
@@ -255,7 +255,7 @@ describe('TimelinePane on an empty session', () => {
   it('keeps every session action offered on the path production takes', () => {
     renderEmptySession();
 
-    for (const name of ['Create agent', 'Add workflow', 'Create wireframe']) {
+    for (const name of ['Start agent', 'Add workflow', 'Create wireframe']) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
     }
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
@@ -268,14 +268,25 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(false);
   });
 
-  it('offers the header the same four actions once the first activity lands', () => {
+  it('folds every other way to start into the menu of one Start agent split', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     renderEmptySession();
 
-    expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
-    for (const name of ['Create agent', 'Add workflow', 'Create report', 'Create wireframe']) {
-      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    for (const name of ['Add workflow', 'Create report', 'Create wireframe']) {
+      expect(screen.queryByRole('button', { name: new RegExp(name) })).toBeNull();
     }
+    fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
+    for (const name of ['Workflow', 'Report', 'Wireframe']) {
+      expect(screen.getByRole('menuitem', { name: new RegExp(`^${name}`) })).toBeDefined();
+    }
+  });
+
+  it('holds the filter back while the feed has a single kind of row', () => {
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
+    renderEmptySession();
+
+    expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
   });
 });
 
@@ -344,7 +355,7 @@ describe('TimelinePane kickoff', () => {
     );
 
     expect(screen.queryByTestId('kickoff')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Filter' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
   });
 });
 
@@ -581,6 +592,43 @@ describe('TimelinePane questions', () => {
 
     expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
+  });
+
+  it('counts what needs you on a chip that lands on the row and its Answer', () => {
+    questions.open = [OPEN_QUESTION];
+    questions.answered = [ANSWERED_QUESTION];
+    const scrollIntoView = vi
+      .spyOn(Element.prototype, 'scrollIntoView')
+      .mockImplementation(() => undefined);
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    fireEvent.click(screen.getByRole('button', { name: '1 needs you' }));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Answer' }));
+    scrollIntoView.mockRestore();
+  });
+
+  it('switches to Needs you when the filter hides every row that asks', () => {
+    questions.open = [OPEN_QUESTION];
+    questions.answered = [ANSWERED_QUESTION];
+    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ questions: false }));
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    expect(screen.queryByText(/Question: Which database/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '1 needs you' }));
+
+    expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
+    expect(screen.queryByText('1 question answered')).toBeNull();
+  });
+
+  it('shows no chip while nothing needs you', () => {
+    questions.answered = [ANSWERED_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
   });
 });
 

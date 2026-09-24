@@ -110,7 +110,6 @@
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/PrPane.tsx": 1,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.tsx": 3,
     "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": 1,
-    "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterButton.tsx": 4,
     "apps/desktop/src/features/session/components/WorkflowStepCard/index.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/AppScopePanel.tsx": 1,
     "apps/desktop/src/features/skills/components/SkillsPanel/index.tsx": 2,

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, SectionHeader, useCopyLink } from '@goodboy/ui';
+import { Button, IconButton, SectionHeader, useCopyLink } from '@goodboy/ui';
 import type {
   Agent,
   OpenQuestion,
@@ -28,7 +28,12 @@ import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionR
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
-import { filterTimelineEntries, isActivityChildShown } from '../../../../timeline/activityFilter';
+import {
+  activityCategoryOf,
+  activityCounts,
+  filterTimelineEntries,
+  isActivityChildShown,
+} from '../../../../timeline/activityFilter';
 import { agentSpendById } from '../../../../timeline/agentSpendById';
 import { buildTimelineGroups } from '../../../../timeline/buildTimelineGroups';
 import {
@@ -36,6 +41,11 @@ import {
   type TimelineRowItem,
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
+import {
+  firstNeedsYouRowId,
+  needsYouEntries,
+  needsYouRootIds,
+} from '../../../../timeline/needsYou';
 import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
@@ -45,7 +55,8 @@ import { useSessionSuggestions } from '../../../../../suggestions';
 import { useSuggestionActions } from '../../../../../suggestions/useSuggestionActions';
 import { useTranscriptMountProposals } from '../../../../../suggestions/useTranscriptMountProposals';
 import { transcriptOwnedProjectIds } from '../../../../../suggestions/transcriptMountProposals';
-import { ActivityFilterButton } from './ActivityFilterButton';
+import { ActivityFilterPanel } from './ActivityFilterPanel';
+import { NeedsYouChip } from './NeedsYouChip';
 import { TimelineSuggestionStrip } from './TimelineSuggestionStrip';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
@@ -54,7 +65,6 @@ import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { TimelineAgentMeta } from './TimelineAgentMeta';
 import { TimelineRunMeta } from './TimelineRunMeta';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
@@ -167,11 +177,6 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     ],
   );
 
-  const visibleEntries = useMemo(
-    () => filterTimelineEntries({ entries: model.entries, filter: activity.filter }),
-    [activity.filter, model.entries],
-  );
-
   const stepById = useMemo(() => {
     const steps = new Map<string, Step>();
     for (const { workflow } of workflows) {
@@ -220,6 +225,30 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     return deciding;
   }, [orchestratingWorkflowRuns, workflows]);
 
+  const attentionRootIds = useMemo(
+    () =>
+      needsYouRootIds({
+        items: buildTimelineStream({
+          entries: model.entries,
+          unreadAgentIds,
+          advanceByRunId,
+          decidingRunIds,
+          dayLabelFor: dayLabel,
+        }).items,
+      }),
+    [advanceByRunId, decidingRunIds, model.entries, unreadAgentIds],
+  );
+
+  const { isNeedsYou } = activity;
+
+  const visibleEntries = useMemo(
+    () =>
+      isNeedsYou
+        ? needsYouEntries({ entries: model.entries, rootIds: attentionRootIds })
+        : filterTimelineEntries({ entries: model.entries, filter: activity.filter }),
+    [activity.filter, attentionRootIds, isNeedsYou, model.entries],
+  );
+
   const stream = useMemo(
     () =>
       buildTimelineStream({
@@ -228,15 +257,37 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
-        showWorkflowSubagents: activity.filter.workflowSubagents,
-        showAgentSubagents: activity.filter.agentSubagents,
-        showPlans: isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
-        showReports: isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
-        showWireframes: isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
-        showQuestions: activity.filter.questions,
+        showWorkflowSubagents: isNeedsYou || activity.filter.workflowSubagents,
+        showAgentSubagents: isNeedsYou || activity.filter.agentSubagents,
+        showPlans: isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'plans' }),
+        showReports:
+          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'reports' }),
+        showWireframes:
+          isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
+        showQuestions: isNeedsYou || activity.filter.questions,
       }),
-    [activity.filter, advanceByRunId, decidingRunIds, unreadAgentIds, visibleEntries],
+    [activity.filter, advanceByRunId, decidingRunIds, isNeedsYou, unreadAgentIds, visibleEntries],
   );
+
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const revealNeedsYou = () => {
+    const rowId = firstNeedsYouRowId({ items: stream.items });
+    const row =
+      rowId === null
+        ? undefined
+        : Array.from(listRef.current?.querySelectorAll<HTMLElement>('[data-row-id]') ?? []).find(
+            (element) => element.dataset.rowId === rowId,
+          );
+    if (row === undefined) {
+      activity.applyPreset({ preset: 'needsYou' });
+      return;
+    }
+    row.scrollIntoView({ block: 'center' });
+    row.querySelector<HTMLElement>('[data-testid="timeline-row-action"] button')?.focus({
+      preventScroll: true,
+    });
+  };
 
   const rail = useMemo(
     () => layoutTimelineRail({ rows: stream.items, groups: stream.groups }),
@@ -403,14 +454,18 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
-  const visibleSuggestions = activity.filter.suggestions
-    ? suggestions.filter(
-        (suggestion) =>
-          suggestion.kind !== 'plan-ready' &&
-          (suggestion.kind !== 'mount-project' ||
-            !transcriptOwned.has(suggestion.payload.projectId)),
-      )
-    : [];
+  const feedSuggestions = suggestions.filter(
+    (suggestion) =>
+      suggestion.kind !== 'plan-ready' &&
+      (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
+  );
+  const visibleSuggestions = activity.filter.suggestions && !isNeedsYou ? feedSuggestions : [];
+  const counts = activityCounts({
+    entries: model.entries,
+    suggestionCount: feedSuggestions.length,
+  });
+  const rowKindCount = new Set(model.entries.map((entry) => activityCategoryOf({ entry }))).size;
+  const hasFilter = rowKindCount >= 2 || activity.hidden.length > 0 || isNeedsYou;
   const isLoading = (!areEventsLoaded || !areAgentsLoaded) && model.entries.length === 0;
   const emptyHint =
     areEventsLoaded && areAgentsLoaded && model.entries.length === 0
@@ -427,20 +482,29 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
         label="Activity"
         hint={emptyHint}
         className="px-0.5"
+        meta={<NeedsYouChip count={attentionRootIds.size} onReveal={revealNeedsYou} />}
         action={
           <div className="flex items-center gap-1">
             {hasUnreadAgents ? (
-              <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
-                <CheckCheck size={ICON_SIZE.row} aria-hidden />
-                Mark all seen
-              </Button>
+              <IconButton
+                icon={CheckCheck}
+                label="Mark all seen"
+                variant="ghost"
+                onClick={() => void markAllAgentsSeen(sessionId)}
+              />
             ) : null}
-            <ActivityFilterButton
-              filter={activity.filter}
-              hiddenCount={activity.hiddenCount}
-              onToggle={activity.setToggle}
-              onAll={activity.setAll}
-            />
+            {hasFilter ? (
+              <ActivityFilterPanel
+                filter={activity.filter}
+                hidden={activity.hidden}
+                preset={activity.preset}
+                counts={counts}
+                visibleCount={visibleEntries.length}
+                totalCount={model.entries.length}
+                onToggle={activity.setToggle}
+                onPreset={activity.applyPreset}
+              />
+            ) : null}
             {actions}
           </div>
         }
@@ -448,9 +512,20 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
       {isLoading ? (
         <TimelineSkeleton />
       ) : model.entries.length === 0 ? null : visibleEntries.length === 0 ? (
-        <p className="px-0.5 py-2 text-xs text-muted-foreground">
-          Everything is hidden by the activity filter. Show a category to bring it back.
-        </p>
+        <div className="flex items-center gap-2 px-0.5 py-2">
+          <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+            {isNeedsYou
+              ? 'Nothing needs you right now.'
+              : 'Everything is hidden by the activity filter. Show a category to bring it back.'}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => activity.applyPreset({ preset: 'everything' })}
+          >
+            Show everything
+          </Button>
+        </div>
       ) : (
         <div className="flex flex-col gap-1">
           <TimelineSuggestionStrip
@@ -458,7 +533,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
             railWidth={rail.width}
             actionsFor={suggestionActions}
           />
-          <div className="@container flex flex-col">
+          <div ref={listRef} className="@container flex flex-col">
             {stream.items.map((item, index) => {
               const railRow = rail.rows[index];
               if (railRow === undefined) {

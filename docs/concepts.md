@@ -168,6 +168,17 @@ It includes:
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
 
+The header counts the rows that wait on you ("2 need you") and jumps to the
+first one. **Filter** opens one panel with every kind of row at once, in three
+groups: Work (agents, workflows, questions, suggestions), Outputs (artifacts
+with plans, reports and wireframes, pull requests, issues) and Session log
+(branches and worktrees, resolver, decisions, session events). Each row shows
+how many of its kind the session holds. Presets set the whole filter in one
+click: **Everything**, **Work**, and **Needs you**, which shows only what
+waits on you whatever the filter hides and lasts until you leave it. The
+filter shows once the feed holds more than one kind of row. **Start agent**
+is the one primary, and its menu starts a workflow, a report or a wireframe.
+
 ## Agents
 
 An **agent** is a separate chat inside a session. Start as many as you want,

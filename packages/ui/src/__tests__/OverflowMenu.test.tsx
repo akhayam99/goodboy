@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { OverflowMenu, type OverflowMenuItem } from '../components/OverflowMenu';
+import { OverflowMenu } from '../components/OverflowMenu';
+import type { OverflowMenuItem } from '../components/MenuItems';
 
 afterEach(cleanup);
 
