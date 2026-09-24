@@ -188,6 +188,16 @@ afterEach(() => {
 });
 
 describe('app overlay hook, navigation', () => {
+  it('hands the shell no studio while no studio is open', async () => {
+    renderHarness();
+    expect(overlays().studio).toBeNull();
+
+    act(() => overlays().openInbox());
+
+    expect(await openStudios()).toEqual(['inbox']);
+    expect(overlays().studio).not.toBeNull();
+  });
+
   it('closes the open studio when the current session changes', async () => {
     renderHarness();
     act(() => overlays().openInbox());

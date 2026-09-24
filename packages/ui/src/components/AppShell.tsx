@@ -163,7 +163,7 @@ export const AppShell = ({
         ) : null}
         {studio != null ? (
           <div
-            className="relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden"
+            className="relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden empty:hidden"
             style={{ gridColumn: '1 / -1', gridRow: '1 / 2' }}
           >
             {studio}
