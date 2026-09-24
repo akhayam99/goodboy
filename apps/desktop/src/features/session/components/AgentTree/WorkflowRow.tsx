@@ -377,9 +377,6 @@ export const WorkflowRow = ({
                 agentKindOverride={agentKindOverride}
                 routing={{
                   stepById,
-                  agentModelOverride,
-                  agentProviderOverride,
-                  agentEffortOverride,
                   roleModels,
                   sessionProvider,
                   sessionEffort,

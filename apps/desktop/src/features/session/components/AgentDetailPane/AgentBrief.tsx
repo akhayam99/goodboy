@@ -125,12 +125,13 @@ export const AgentBrief = ({ session, agent }: Props) => {
   const isTerminal =
     agent.status === 'completed' || agent.status === 'failed' || agent.status === 'skipped';
   const now = agentNowState({ agent, turnState, transcript });
+  const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
-      {summary !== '' ? (
+      {summary !== '' && !isSplitIntoSubagents ? (
         <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-sm text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
@@ -173,7 +174,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
         delegates={delegates}
         questions={sessionQuestions}
       />
-      <AgentBriefChildren session={session} kind={kind} children={laneChildren} />
+      <AgentBriefChildren session={session} agent={agent} kind={kind} children={laneChildren} />
       <AgentMetaLine
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}

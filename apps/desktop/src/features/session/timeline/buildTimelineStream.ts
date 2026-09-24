@@ -1099,3 +1099,57 @@ export const buildRunTreeStream = ({
   );
   return { items: streamItemsOf({ drafts: steps }), groups };
 };
+
+type AgentTreeParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly identity: RunIdentity | null;
+  readonly unreadAgentIds: ReadonlySet<string>;
+};
+
+export const buildAgentTreeStream = ({
+  entry,
+  identity,
+  unreadAgentIds,
+}: AgentTreeParams): TimelineStream => {
+  const context: EmitContext = {
+    unreadAgentIds,
+    advanceByRunId: new Map(),
+    decidingRunIds: new Set(),
+    chainedRunById: new Map(),
+    groups: [],
+    showWorkflowSubagents: true,
+    showAgentSubagents: true,
+    showPlans: false,
+    showReports: false,
+    showWireframes: false,
+    showQuestions: false,
+  };
+  const rootLaneId = `tree:${entry.id}`;
+  context.groups.push({
+    id: rootLaneId,
+    parentGroupId: null,
+    identityIndex: identity?.index ?? null,
+    isMuted: false,
+    originRowId: entry.id,
+    shape: 'merged',
+  });
+  const rows = agentRows({
+    entry,
+    grade: 'step',
+    identity,
+    isMuted: false,
+    familyId: entry.id,
+    groupId: rootLaneId,
+    showSubagents: true,
+    readyAgentId: null,
+    isParentClosed: false,
+    context,
+  });
+  const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
+  return {
+    items: streamItemsOf({ drafts: withPendingAtFamilyHead({ drafts: sorted }) }).filter(
+      (item) => item.kind !== 'now',
+    ),
+    groups: context.groups,
+  };
+};

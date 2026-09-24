@@ -160,6 +160,8 @@ const renderTree = ({
     sessionPhaseRuns: { [SESSION_ID]: [...agents] },
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     sessionOpenQuestions: { [SESSION_ID]: [...questions] },
+    agentProviderOverride,
+    agentEffortOverride,
   });
   render(
     <RunTree
@@ -169,9 +171,6 @@ const renderTree = ({
       agentKindOverride={{}}
       routing={{
         stepById: new Map(workflow.steps.map((step) => [step.id, step])),
-        agentModelOverride: {},
-        agentProviderOverride,
-        agentEffortOverride,
         roleModels: null,
         sessionProvider: null,
         sessionEffort: null,
@@ -185,6 +184,9 @@ const renderTree = ({
 
 const rowOf = (id: string): HTMLElement => screen.getByTestId(`run-tree-row-${id}`);
 
+const metaOf = (id: string, column: 'model' | 'effort' | 'cost'): string | null =>
+  rowOf(id).querySelector(`[data-meta-column="${column}"]`)?.textContent ?? null;
+
 const rowIds = (): ReadonlyArray<string> =>
   screen
     .getAllByTestId(/^run-tree-row-/u)
@@ -197,6 +199,9 @@ beforeEach(() => {
     sessionWorkflows: {},
     orchestratingWorkflowRuns: {},
     agentTurnState: {},
+    agentModelOverride: {},
+    agentProviderOverride: {},
+    agentEffortOverride: {},
   });
 });
 
@@ -257,11 +262,11 @@ describe('RunTree', () => {
   it('keeps the planned routing for a step that has not run yet', () => {
     renderTree();
 
-    expect(within(rowOf('agent-1')).getByTitle('Model: claude-sonnet-4-5')).toBeDefined();
+    expect(metaOf('agent-1', 'model')).toBe('Sonnet 4.5');
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 
-  it('shows the model that actually ran and strikes the plan it replaced', () => {
+  it('shows the model that actually ran and marks the plan it replaced', () => {
     useAppStore.setState({
       agentRunHistory: { [scout.id]: ['run-a' as ProviderRunId] },
       sessionTelemetry: {
@@ -283,10 +288,10 @@ describe('RunTree', () => {
     });
     renderTree();
 
-    expect(within(rowOf('agent-1')).getByTitle('Model: gemini-3-pro')).toBeDefined();
-    expect(within(rowOf('agent-1')).getByTestId('routing-divergence').textContent).toBe(
-      'Sonnet 4.5',
-    );
+    const ran = within(rowOf('agent-1')).getByTestId('routing-divergence');
+    expect(ran.textContent).toBe(metaOf('agent-1', 'model'));
+    expect(ran.textContent).not.toBe('Sonnet 4.5');
+    expect(metaOf('agent-1', 'cost')).toBe('$0.10');
   });
 
   it('shows the provider the agent runs on instead of guessing it from the model id', () => {
@@ -301,7 +306,7 @@ describe('RunTree', () => {
   it('shows the planned effort next to the model of each step', () => {
     renderTree({ agentEffortOverride: { [implement.id]: 'low' } });
 
-    expect(within(rowOf('agent-2')).getByTitle('Effort').textContent).toBe('Low');
+    expect(metaOf('agent-2', 'effort')).toBe('Low');
   });
 
   it('marks the agent that asked and offers Answer on that row only', () => {

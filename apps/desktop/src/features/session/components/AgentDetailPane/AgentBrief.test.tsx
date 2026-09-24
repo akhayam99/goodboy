@@ -58,6 +58,22 @@ vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
 }));
 
+vi.mock('./AgentBriefChildren', () => ({
+  AgentBriefChildren: ({
+    children,
+  }: {
+    readonly children: ReadonlyArray<{ readonly agent: Agent }>;
+  }) =>
+    children.length === 0 ? null : (
+      <section>
+        <span>Subagents</span>
+        {children.map((child) => (
+          <span key={child.agent.id}>{child.agent.name}</span>
+        ))}
+      </section>
+    ),
+}));
+
 const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
@@ -104,6 +120,48 @@ describe('AgentBrief summary', () => {
     expect(screen.getByText('Outcome')).toBeDefined();
     expect(screen.getByText('shipped the refactor')).toBeDefined();
     expect(screen.queryByText('from the last reply')).toBeNull();
+  });
+
+  it('lets the subagent tree speak for an implementer split into parts', () => {
+    const container = makeAgent({ outputSummary: 'completed 2 clusters' });
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        container,
+        makeAgent({
+          id: 'part-1' as AgentId,
+          ordinal: 1,
+          name: 'part one',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+
+    render(<AgentBrief session={session} agent={container} />);
+
+    expect(screen.queryByText('Outcome')).toBeNull();
+    expect(screen.queryByText('completed 2 clusters')).toBeNull();
+    expect(screen.getByText('part one')).toBeTruthy();
+  });
+
+  it('keeps the outcome of a scout that spawned subagents', () => {
+    const scout = makeAgent({ kind: 'scout', outputSummary: 'mapped the store' });
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        scout,
+        makeAgent({
+          id: 'sub-1' as AgentId,
+          ordinal: 1,
+          name: 'sub scout',
+          kind: 'scout',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+
+    render(<AgentBrief session={session} agent={scout} />);
+
+    expect(screen.getByText('Outcome')).toBeDefined();
+    expect(screen.getByText('mapped the store')).toBeDefined();
   });
 
   it('falls back to the last assistant reply when outputSummary is an empty string', () => {
@@ -316,7 +374,7 @@ describe('AgentBrief delegated answers', () => {
 
     render(<AgentBrief session={session} agent={makeAgent({})} />);
 
-    expect(screen.getByText('Clusters')).toBeTruthy();
+    expect(screen.getByText('Subagents')).toBeTruthy();
     expect(screen.getByText('cluster one')).toBeTruthy();
     expect(screen.queryByText('answer: pick a database')).toBeNull();
   });

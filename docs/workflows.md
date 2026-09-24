@@ -136,9 +136,19 @@ The run tree shows which agent is waiting on you. The agent that asked, even a
 sub-agent under a step, gets the question mark on its node and an **Answer**
 action on its row, which opens the questions view on that question. An agent
 that answers a question for a step never shows it, in the tree or in the
-activity feed, because the question belongs to that step. Every row also shows
-the model and the effort the step runs with, and strikes the planned model
-when routing picked another one. Clicking a row opens that agent.
+activity feed, because the question belongs to that step. Every row ends with
+the same meta as the activity feed: the model, the effort and what the row has
+spent, with a dotted model name when routing picked another one than the plan.
+Clicking a row opens that agent.
+
+An agent's Brief draws its sub-agents with the same tree, under **Subagents**
+(`SubagentTree`, from `buildAgentTreeStream`). The agent sits at the bottom
+with its ordinal in the run, for example `3`, and its sub-agents stack above it
+one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
+spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
+header counts them in words ("2 of 3 done"). An implementer split into parts
+shows no Outcome, because the tree already says what each part did. A planner
+shows no sub-agents, and delegates and follow-ups keep their own sections.
 
 In the activity feed, every agent and step row ends with the same meta: the
 provider glyph, the model, the effort and what the row has spent. Before a

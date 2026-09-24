@@ -1,4 +1,4 @@
-import { Button, InteractiveRow, cn } from '@goodboy/ui';
+import { Button, InteractiveRow, WORK_META_COLUMN, cn } from '@goodboy/ui';
 import type {
   EffortLevel,
   OpenQuestion,
@@ -6,9 +6,9 @@ import type {
   RoleModelPreferences,
   Step,
 } from '@goodboy/types';
-import { useExecutedAgentRouting } from '../../../../store';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { TimelineAgentMeta } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineAgentMeta';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { TimelineRowMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker';
 import { TimelineRowStateLine } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRowStateLine';
@@ -17,14 +17,9 @@ import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStr
 import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
-import { resolveStepRouting } from '../../resolveStepRouting';
 
 export type RunTreeRouting = {
   readonly stepById: ReadonlyMap<string, Step>;
-  readonly agentModelOverride: Readonly<Record<string, string>>;
-  readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
-  readonly agentEffortOverride: Readonly<Record<string, EffortLevel>>;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
@@ -36,6 +31,8 @@ type Props = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly routing: RunTreeRouting;
+  readonly costUsd: number;
+  readonly isNested: boolean;
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
@@ -69,30 +66,23 @@ export const RunTreeRow = ({
   rail,
   railWidth,
   routing,
+  costUsd,
+  isNested,
   parentStepName,
   isSelected,
   onSelect,
   onAnswer,
 }: Props) => {
   const { agent } = entry;
-  const isNested = entry.stepLabel?.includes('.') === true;
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
-  const planned = resolveStepRouting({
-    step,
-    kind: entry.agentKind,
-    roleModels: routing.roleModels,
-    agentModel: routing.agentModelOverride[agent.id] ?? agent.modelOverride,
-    agentProvider: routing.agentProviderOverride[agent.id] ?? agent.providerOverride,
-    agentEffort: routing.agentEffortOverride[agent.id] ?? agent.effort,
-    sessionProvider: routing.sessionProvider,
-    sessionEffort: routing.sessionEffort,
-  });
-  const executed = useExecutedAgentRouting({ agent });
   const answer = answerOf({ ask: item.rowState.ask });
   const answersFor = isQuestionDelegate({ agent }) ? parentStepName : null;
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const label = entry.stepLabel == null ? agent.name : `Step ${entry.stepLabel}, ${agent.name}`;
+  const label =
+    entry.stepLabel == null
+      ? agent.name
+      : `${agent.workflowRunId == null ? 'Subagent' : 'Step'} ${entry.stepLabel}, ${agent.name}`;
 
   return (
     <div
@@ -147,25 +137,29 @@ export const RunTreeRow = ({
               )}
               <TimelineRowStateLine state={item.rowState} />
             </span>
-            <RoutingBadge
-              provider={executed?.provider ?? planned.provider}
-              model={executed?.model ?? planned.model}
-              effort={planned.effort}
-              planned={{ provider: planned.provider, model: planned.model }}
-              glyphPlacement="trailing"
-              className="max-w-40 shrink-0"
+            <TimelineAgentMeta
+              agent={agent}
+              kind={entry.agentKind}
+              step={step}
+              roleModels={routing.roleModels}
+              sessionProvider={routing.sessionProvider}
+              sessionEffort={routing.sessionEffort}
+              costUsd={costUsd}
+              shouldKeepCost={!isNested}
             />
-            {answer === null ? null : (
-              <Button
-                variant="warning"
-                emphasis="outline"
-                size="sm"
-                className="h-6 shrink-0"
-                onClick={() => onAnswer(answer.question)}
-              >
-                Answer
-              </Button>
-            )}
+            <span className={WORK_META_COLUMN.action}>
+              {answer === null ? null : (
+                <Button
+                  variant="warning"
+                  emphasis="outline"
+                  size="sm"
+                  className="h-6 shrink-0"
+                  onClick={() => onAnswer(answer.question)}
+                >
+                  Answer
+                </Button>
+              )}
+            </span>
           </InteractiveRow>
         </div>
       </div>

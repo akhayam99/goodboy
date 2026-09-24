@@ -380,8 +380,10 @@ columns come from `RoutingBadge variant="bare"`, the dense form of the one
 routing badge, with no fill and no chip. Planned routing (a step that has not
 started) is faint; routing that ran is muted. When the run picked something
 other than the plan, the model is underlined dotted and the tooltip names the
-plan. The inline form in headers and chips stays `RoutingBadge`'s compact
-variant.
+plan. The activity feed, the workflow run tree and the Subagents tree of a
+Brief all end their rows with this meta, so a step and its sub-agents read the
+same wherever they appear. The inline form in headers and chips stays
+`RoutingBadge`'s compact variant.
 
 ## z-index tokens
 
