@@ -164,6 +164,10 @@ export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
             onOpenSession={openSession}
           />
         );
+      default: {
+        const exhaustive: never = scope;
+        return exhaustive;
+      }
     }
   };
 

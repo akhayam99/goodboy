@@ -12,7 +12,11 @@ type PillSpec = {
   readonly labelClass: string;
 };
 
-function connectionSpec(connection: ProviderConnectionState): PillSpec {
+type SpecParams = {
+  readonly connection: ProviderConnectionState;
+};
+
+const connectionSpec = ({ connection }: SpecParams): PillSpec => {
   switch (connection) {
     case 'connected':
       return { label: 'Connected', tone: 'primary', labelClass: 'text-primary' };
@@ -34,11 +38,15 @@ function connectionSpec(connection: ProviderConnectionState): PillSpec {
         dotClassName: 'bg-muted-foreground/40',
         labelClass: 'text-muted-foreground',
       };
+    default: {
+      const exhaustive: never = connection;
+      return exhaustive;
+    }
   }
-}
+};
 
 export const StatusPill = ({ connection }: Props) => {
-  const spec = connectionSpec(connection);
+  const spec = connectionSpec({ connection });
   return (
     <span className="inline-flex items-center gap-1.5 text-2xs font-medium">
       <StatusDot tone={spec.tone} size="sm" className={spec.dotClassName} />

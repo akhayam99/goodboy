@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemEqual } from '../../utils/transcriptItemEqual';
@@ -31,7 +31,7 @@ type TranscriptCardProps = {
   readonly retryingErrorRunId?: ProviderRunId | null;
 };
 
-function TranscriptCardImpl({
+const TranscriptCardImpl = ({
   item,
   sessionId = null,
   agentId = null,
@@ -40,7 +40,7 @@ function TranscriptCardImpl({
   onOpenDiff,
   onRetryError,
   retryingErrorRunId = null,
-}: TranscriptCardProps) {
+}: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
       return (
@@ -112,8 +112,12 @@ function TranscriptCardImpl({
       return <PermissionRequestCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'permission_decision':
       return <PermissionDecisionCard item={item} sessionId={sessionId} agentId={agentId} />;
+    default: {
+      const exhaustive: never = item;
+      return exhaustive;
+    }
   }
-}
+};
 
 export const TranscriptCard = memo(
   TranscriptCardImpl,
