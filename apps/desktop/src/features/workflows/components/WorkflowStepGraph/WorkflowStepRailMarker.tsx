@@ -1,33 +1,28 @@
-import { Clock } from 'lucide-react';
-import { tintClasses } from '@goodboy/ui';
-import type { AgentStatus } from '@goodboy/types';
-import { resolveMarkerState } from '../../../session/timeline/markerState';
-import { TIMELINE_RHYTHM } from '../../../session/timeline/timelineRhythm';
-import { TimelineDashedMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineDashedMarker';
-import { TimelineMarker } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineMarker';
-import { STEP_ROW_GRADE } from './stepGraphRows';
+import { WorkNode } from '@goodboy/ui';
+import type { Agent } from '@goodboy/types';
+import { resolveAgentRowState } from '../../../workTreeModel/rowState';
+import { rowStateNode } from '../../../workTreeModel/rowStateCopy';
 
 type Props = {
-  readonly status: AgentStatus;
+  readonly agent: Agent;
+  readonly marker: string;
   readonly hasOpenQuestion: boolean;
 };
 
-export const WorkflowStepRailMarker = ({ status, hasOpenQuestion }: Props) => {
-  if (status === 'pending' && !hasOpenQuestion) {
-    return (
-      <TimelineDashedMarker tone="neutral" grade={STEP_ROW_GRADE}>
-        <Clock
-          size={TIMELINE_RHYTHM.grade[STEP_ROW_GRADE].glyphSize}
-          aria-label="Not started"
-          className={tintClasses('neutral').icon}
-        />
-      </TimelineDashedMarker>
-    );
-  }
+export const WorkflowStepRailMarker = ({ agent, marker, hasOpenQuestion }: Props) => {
+  const node = rowStateNode({
+    state: resolveAgentRowState({
+      agent,
+      isAsking: hasOpenQuestion,
+      question: null,
+      isReadyStep: false,
+    }),
+  });
   return (
-    <TimelineMarker
-      state={resolveMarkerState({ status, hasOpenQuestion, needsUser: false })}
-      grade={STEP_ROW_GRADE}
+    <WorkNode
+      state={node.state}
+      label={node.label}
+      mark={{ kind: 'index', value: marker.split('.').at(-1) ?? marker }}
     />
   );
 };

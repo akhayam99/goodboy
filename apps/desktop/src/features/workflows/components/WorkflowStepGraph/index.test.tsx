@@ -137,24 +137,25 @@ beforeEach(() => {
   useAppStore.setState({ sessionTelemetry: {}, agentRunHistory: {} });
 });
 
+const spokenMarkerOf = (marker: string): HTMLElement | undefined =>
+  screen.getAllByText(marker).find((element) => element.className.includes('sr-only'));
+
 describe('WorkflowStepGraph', () => {
   it('numbers the steps down the spine and shows a fan-out without asking', () => {
     renderGraph(new Map([[scout.id, [subScout(1, 'completed'), subScout(2, 'running')]]]));
 
-    expect(screen.getByText('1')).toBeDefined();
-    expect(screen.getByText('2')).toBeDefined();
+    for (const marker of ['1', '2', '1.1', '1.2']) {
+      expect(spokenMarkerOf(marker)).toBeDefined();
+    }
     expect(screen.getByText('Scout area 1')).toBeDefined();
-    expect(screen.getByText('1.1')).toBeDefined();
-    expect(screen.getByText('1.2')).toBeDefined();
   });
 
   it('keeps the numbering for screen readers once the rail replaces it', () => {
     renderGraph(new Map([[scout.id, [subScout(1, 'completed')]]]));
 
     for (const marker of ['1', '2', '1.1']) {
-      const label = screen.getByText(marker);
-      expect(label.className).toContain('sr-only');
-      expect(label.closest('button')).not.toBeNull();
+      const label = spokenMarkerOf(marker);
+      expect(label?.closest('button')).not.toBeNull();
     }
     expect(screen.getByRole('button', { name: /^1 /u })).toBeDefined();
   });
@@ -197,11 +198,11 @@ describe('WorkflowStepGraph', () => {
   it('marks the rail done, running, and not started the way the activity timeline does', () => {
     renderGraph(new Map([[implement.id, [subScout(1, 'pending')]]]));
 
-    expect(screen.getByLabelText('Done')).toBeDefined();
-    expect(screen.getByLabelText('Running')).toBeDefined();
-    expect(document.querySelectorAll('[class*="animate-soft-pulse"]').length).toBeGreaterThan(0);
-    const pending = screen.getByLabelText('Not started');
-    expect(pending.parentElement?.className).toContain('border-dashed');
+    expect(screen.getByRole('img', { name: 'Done' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Running' }).className).toContain('spin-border');
+    const pending = screen.getByRole('img', { name: 'Not started' });
+    expect(pending.textContent).toBe('1');
+    expect(pending.querySelector('circle')?.getAttribute('stroke-dasharray')).not.toBeNull();
   });
 
   it('counts the children without offering a way to fold them away', () => {

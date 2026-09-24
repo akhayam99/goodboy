@@ -1,6 +1,6 @@
 import { Divider, cn } from '@goodboy/ui';
 import type { TimelineDayItem } from '../../../../timeline/buildTimelineStream';
-import type { RailRow } from '../../../../timeline/railGeometry';
+import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineRail } from './TimelineRail';
 

@@ -5,7 +5,7 @@ import {
   TIMELINE_RHYTHM,
   markerCenterY,
   type TimelineRowGrade,
-} from '../../../session/timeline/timelineRhythm';
+} from '../../../workTreeModel/timelineRhythm';
 
 const MAX_DEPTH = 4;
 

@@ -16,7 +16,6 @@
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/useGitlabIssues.ts": 1,
     "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": 1,
     "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx": 1,
-    "apps/desktop/src/features/orchestration/hooks/useWorkspaceRuns/index.ts": 6,
     "apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffViewerContent.tsx": 3,
     "apps/desktop/src/features/permissions/components/DiffViewerDialog/FileDiffCard.tsx": 1,
     "apps/desktop/src/features/permissions/components/DiffViewerDialog/highlight/index.ts": 19,

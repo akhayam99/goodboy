@@ -117,8 +117,11 @@ A run waits when:
 - The summarizer is still writing the handoff
 - An agent is still running
 
-When a run waits for more than one reason, Goodboy shows the one you need to
-deal with first. An open question comes before a failed step.
+When a run waits for more than one reason, its row in the activity feed says
+one thing only. A failed step comes first, then an open question, then a step
+waiting for your click, then the spend limit. A summarizer writing the handoff
+and an agent still running are Goodboy at work, so the row shows them as
+running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
 The run's steps show which agent is waiting on you. The agent that asked,
 even a sub-agent under a step, gets the question mark on the rail and an

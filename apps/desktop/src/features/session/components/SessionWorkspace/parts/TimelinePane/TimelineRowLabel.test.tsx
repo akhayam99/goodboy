@@ -7,7 +7,11 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import { TIMELINE_RHYTHM, type TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
+import {
+  TIMELINE_RHYTHM,
+  type TimelineRowGrade,
+} from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRowLabel } from './TimelineRowLabel';
 
 afterEach(cleanup);
@@ -49,7 +53,8 @@ const itemOf = ({ entry, grade = 'entry' }: ItemParams): TimelineRowItem => ({
   identity: null,
   familyId: null,
   ordinal: null,
-  markerState: 'done',
+  nodeIndex: null,
+  rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade[grade].height,
   topY: 0,

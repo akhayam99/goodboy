@@ -15,7 +15,8 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import type { TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -132,9 +133,10 @@ const chipOf = ({ entry, grade }: ChipParams) => {
 export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} isDeciding={item.markerState === 'deciding'} />;
+    return <TimelineRunLabel entry={entry} rowState={item.rowState} />;
   }
-  const isStep = grade === 'step';
+  const isStep = grade !== 'entry';
+  const isQueued = item.rowState.phase === 'queued';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const secondary =
@@ -144,20 +146,20 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
   const segments = segmentsOf({ entry });
   return (
     <>
-      {chipOf({ entry, grade })}
       {item.ordinal != null ? (
-        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
+      {chipOf({ entry, grade })}
       <span
         title={titleOf({ entry, segments })}
         className={cn(
           'flex min-w-0 items-center overflow-hidden',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          emphasis === 'muted'
+          emphasis === 'muted' || isQueued
             ? 'text-muted-foreground'
-            : item.markerState === 'running' || item.hasUnread
+            : item.rowState.phase === 'running' || item.hasUnread
               ? 'font-medium text-foreground'
               : 'text-foreground',
         )}
@@ -181,6 +183,7 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
       {secondary != null ? (
         <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
       ) : null}
+      {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} />}
     </>
   );
 };

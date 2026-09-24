@@ -9,7 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { AgentKind } from '../../../session/agent-kind';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
-import { layoutBranchRail } from '../../../session/timeline/railGeometry';
+import { layoutBranchRail } from '../../../workTreeModel/railGeometry';
 import { STEP_ROW_HEIGHT, STEP_ROW_MARKER_Y, buildStepGraphRows } from './stepGraphRows';
 import { WorkflowStepGraphRow } from './WorkflowStepGraphRow';
 

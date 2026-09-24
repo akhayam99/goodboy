@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
-import type { RailRow } from '../../../../timeline/railGeometry';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import type { RailRow } from '../../../../../workTreeModel/railGeometry';
+import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineNowRule } from './TimelineNowRule';
 
 const item: TimelineNowItem = {

@@ -1,6 +1,10 @@
 import { TERMINAL_DIM } from '@goodboy/ui';
 import { runIdentityStroke } from '../../../../timeline/runIdentity';
-import { railColumnX, type RailRow, type RailSegment } from '../../../../timeline/railGeometry';
+import {
+  railColumnX,
+  type RailRow,
+  type RailSegment,
+} from '../../../../../workTreeModel/railGeometry';
 
 type Props = {
   readonly rail: RailRow;

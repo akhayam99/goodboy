@@ -157,3 +157,6 @@ export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipSide } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
+export { WorkNode } from './components/WorkTree/WorkNode';
+export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
+export type { WorkNodeMark, WorkNodeState } from './components/WorkTree/workNodeSpec';

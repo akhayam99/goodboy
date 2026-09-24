@@ -204,7 +204,7 @@ A run row carries the chip, one title and at most one short status line.
 workflow detail. A preset or custom workflow names itself in the chip tooltip.
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
-marker, says "Needs your answer in step 4.2" in the warning tone, and shows a
+node, says "Needs your answer in step 4.2" in the warning tone, and shows a
 visible Answer in the warning outline. Answer calls `focusQuestion` and opens
 the questions lens on that exact question. Every Answer on the feed (agent,
 question and run rows) is the same action.
@@ -245,10 +245,12 @@ agent's children are still session work. So their offset line stays in the
 neutral spine colour and does not borrow a run's colour.
 
 Geometry is computed in
-`apps/desktop/src/features/session/timeline/railGeometry.ts`. The lane offset is
-one 16px unit per level. Rows are laid out against `timelineRhythm.ts`. Its
-grades fix line height, box height and marker size, so a marker centres on its
-label's line and not on its row box.
+`apps/desktop/src/features/workTreeModel/railGeometry.ts`. The lane offset is
+one 16px unit per level. Rows are laid out against
+`apps/desktop/src/features/workTreeModel/timelineRhythm.ts`. Its grades fix
+line height and box height (entry 40px, step 32px, queued 26px), so a node
+centres on its label's line and not on its row box. Every grade carries the
+same 20px node.
 
 Two rules follow from the direction of time. Newer sits above older at every
 level. So a run's origin row is the bottom of its group and its steps stack
@@ -267,7 +269,49 @@ settled, so a lane waiting on it stops reaching NOW.
 A third rule covers what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count. No row or divider has a
 disclosure control. Density is the only protection against a wall of rows, and
-it comes from the grades in `timelineRhythm.ts`, not from hiding rows.
+it comes from the grades in `timelineRhythm.ts`, not from hiding rows. A queued
+step is a row of its own with its own dashed node, never a count behind one
+clock glyph.
+
+### Work nodes and row states
+
+Every surface that draws a sequence of work (the activity feed, the workflow
+step graph, the agents on a project) draws its nodes with one primitive,
+`WorkNode` in `packages/ui/src/components/WorkTree/`. It is 20px on every
+grade, sits on the canvas so the lane never shows through it, and knows
+nothing about agents: the caller hands it a state, a mark and a label.
+
+| node       | ring                                    | centre                   |
+| ---------- | --------------------------------------- | ------------------------ |
+| `queued`   | 1.5px dashed, `faint-foreground`        | local index, faint       |
+| `ready`    | 1.5px dashed, `warning`                 | play triangle, warning   |
+| `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot |
+| `question` | 1.5px `warning`                         | `?`, warning             |
+| `budget`   | 1.5px `warning`                         | `$`, warning             |
+| `failed`   | 1.5px `danger`                          | `!`, danger              |
+| `done`     | 1px `success` over a `success/18` fill  | check, success           |
+| `closed`   | 1px `border`                            | check, muted             |
+| `stopped`  | 1px `border`                            | small square, muted      |
+| `skipped`  | 1px `border-soft`                       | dash, faint              |
+| `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+
+The number inside is the local index (`2` for step 4.2). The full path stays
+in the ordinal column of the row, because it survives when the number turns
+into a check. A row outside a sequence (a standalone agent, a run origin)
+carries a dot instead of a number, and a fact row (plan, artifact, event,
+issue, question) carries its concept glyph. A state that asks something or
+broke replaces the number with its glyph, so colour never speaks alone.
+
+What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
+`apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
+value: the node comes from `rowStateNode`, the short status sentence after the
+title from `rowStateSentence`, and the single visible action from the ask.
+When several conditions hold, failed wins, then waiting (an answer, then the
+next click, then the spend limit), then running, then queued, then done. The
+summarizer briefing the next step and a chat turn in flight are the machine
+working: they read as running, never as "Needs you". A run you stopped reads
+as `stopped`, an agent you closed as `closed`: finished is not the same as
+succeeded.
 
 ## z-index tokens
 
@@ -451,10 +495,10 @@ states and sit outside the registry.
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
   a state that holds and is alive: the Providers launcher icon (never its
-  label) while no provider is connected, the centre dot of the running marker
-  on the activity rail, a running tool icon or scout dot, and the boot splash
-  status. On the rail it sits inside the `spin-border` ring, so the pair reads
-  as one running state, not two claims. The bar for another lasting-state
+  label) while no provider is connected, the centre dot of a running
+  `WorkNode` that carries no step number, a running tool icon or scout dot,
+  and the boot splash status. On the rail it sits inside the `spin-border`
+  ring, so the pair reads as one running state, not two claims. The bar for another lasting-state
   animation is high.
 - `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
   the digit roll.

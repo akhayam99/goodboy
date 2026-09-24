@@ -1,11 +1,11 @@
-import { Tooltip } from '@goodboy/ui';
+import { Tooltip, WorkNode } from '@goodboy/ui';
+import type { WorkNodeState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type {
   MountPresenceAgent,
   MountPresenceState,
 } from '../../../../../store/slices/project-mounts/selectMountPresence';
-import { TimelineMarker } from '../../SessionWorkspace/parts/TimelinePane/TimelineMarker';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,6 +14,13 @@ type Props = {
 };
 
 const VISIBLE_NODES = 3;
+
+const NODE: Record<MountPresenceState, { readonly state: WorkNodeState; readonly label: string }> =
+  {
+    running: { state: 'running', label: 'Running' },
+    needsUser: { state: 'question', label: 'Needs you' },
+    question: { state: 'question', label: 'Waiting on your answer' },
+  };
 
 const STATE_PHRASE: Record<MountPresenceState, string> = {
   running: 'is working',
@@ -53,7 +60,11 @@ export const MountPresence = ({ sessionId, label, agents }: Props) => {
                 onClick={() => void selectAgent(sessionId, agent.agentId)}
                 className="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
-                <TimelineMarker state={agent.state} grade="step" />
+                <WorkNode
+                  state={NODE[agent.state].state}
+                  label={NODE[agent.state].label}
+                  mark={{ kind: 'dot' }}
+                />
               </button>
             </Tooltip>
           );

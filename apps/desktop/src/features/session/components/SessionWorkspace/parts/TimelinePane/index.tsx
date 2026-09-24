@@ -24,8 +24,7 @@ import {
   type TimelineRowItem,
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
-import { layoutTimelineRail } from '../../../../timeline/railGeometry';
-import { oldestAgentOpenQuestion, runOpenQuestion } from '../../../../timeline/runOpenQuestion';
+import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
@@ -37,20 +36,17 @@ import { ActivityFilterButton } from './ActivityFilterButton';
 import { TimelineSuggestionRow } from './TimelineSuggestionRow';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
-import { TimelinePendingCluster } from './TimelinePendingCluster';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
-import type { WorkspaceRuns } from '../../../../../orchestration/hooks/useWorkspaceRuns';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
-  readonly runs: WorkspaceRuns;
   readonly actions: ReactNode;
   readonly kickoff?: ReactNode;
 };
 
-export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
+export const TimelinePane = ({ session, actions, kickoff }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -144,20 +140,6 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
 
   const advanceByRunId = useWorkflowAdvanceStates({ sessionId, workflows, agents });
 
-  const stalledRunIds = useMemo(() => {
-    const stalled = new Set<string>();
-    for (const lane of [
-      ...runs.lanes,
-      ...(runs.blockedLanes ?? []),
-      ...(runs.completedLanes ?? []),
-    ]) {
-      if (lane.steps.some((step) => step.status === 'stalled')) {
-        stalled.add(lane.runId);
-      }
-    }
-    return stalled;
-  }, [runs.lanes, runs.blockedLanes, runs.completedLanes]);
-
   const unreadAgentIds = useMemo(() => {
     const unread = new Set<string>();
     for (const agent of agents) {
@@ -178,22 +160,12 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
     return deciding;
   }, [orchestratingWorkflowRuns, workflows]);
 
-  const blockedRunIds = useMemo(() => {
-    const blocked = new Set<string>(stalledRunIds);
-    for (const [runId, state] of advanceByRunId) {
-      if (state.kind === 'blocked') {
-        blocked.add(runId);
-      }
-    }
-    return blocked;
-  }, [advanceByRunId, stalledRunIds]);
-
   const stream = useMemo(
     () =>
       buildTimelineStream({
         entries: visibleEntries,
         unreadAgentIds,
-        blockedRunIds,
+        advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
         showWorkflowSubagents: activity.filter.workflowSubagents,
@@ -203,7 +175,7 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         showWireframes: isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
         showQuestions: activity.filter.questions,
       }),
-    [activity.filter, blockedRunIds, decidingRunIds, unreadAgentIds, visibleEntries],
+    [activity.filter, advanceByRunId, decidingRunIds, unreadAgentIds, visibleEntries],
   );
 
   const rail = useMemo(
@@ -283,53 +255,32 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
         onAct: () => void copy({ text: mountPath }),
       };
     }
-    if (entry.kind === 'agent' && entry.openQuestions.length > 0) {
-      return answerAction({ question: oldestAgentOpenQuestion({ entry }) });
-    }
-    if (
-      entry.kind === 'question' &&
-      entry.questions.every((question) => question.status === 'open')
-    ) {
-      return answerAction({ question: entry.questions[0] ?? null });
-    }
-    if (entry.kind !== 'run') {
+    const { ask } = item.rowState;
+    if (ask == null) {
       return null;
     }
-    if (stalledRunIds.has(entry.run.id)) {
-      const target = openTargetFor({ entry });
-      if (target == null) {
-        return null;
+    switch (ask.kind) {
+      case 'answer':
+        return answerAction({ question: ask.question });
+      case 'restartStep': {
+        const target = openTargetFor({ entry });
+        if (target == null) {
+          return null;
+        }
+        return { label: 'Restart the step', onAct: target.open };
       }
-      return {
-        label: 'Restart the step',
-        onAct: target.open,
-      };
+      case 'runStep': {
+        const { agent } = ask;
+        return {
+          label: `Start ${ask.step.name}`,
+          onAct: () => void advanceAgent({ agent }),
+        };
+      }
+      default: {
+        const exhaustive: never = ask;
+        return exhaustive;
+      }
     }
-    const waiting = runOpenQuestion({ entry });
-    if (waiting != null) {
-      return answerAction({ question: waiting.question });
-    }
-    const advance = advanceByRunId.get(entry.run.id) ?? { kind: 'complete' as const };
-    if (advance.kind === 'blocked' && advance.reason === 'questions') {
-      return answerAction({ question: null });
-    }
-    if (advance.kind !== 'ready') {
-      return null;
-    }
-    const pending = entry.children.find(
-      (child) =>
-        child.kind === 'agent' &&
-        child.agent.stepId === advance.step.id &&
-        child.agent.status === 'pending',
-    );
-    if (pending == null || pending.kind !== 'agent') {
-      return null;
-    }
-    const { agent } = pending;
-    return {
-      label: `Start ${advance.step.name}`,
-      onAct: () => void advanceAgent({ agent }),
-    };
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
@@ -404,16 +355,6 @@ export const TimelinePane = ({ session, runs, actions, kickoff }: Props) => {
             if (item.kind === 'day') {
               return (
                 <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
-              );
-            }
-            if (item.kind === 'cluster') {
-              return (
-                <TimelinePendingCluster
-                  key={item.id}
-                  item={item}
-                  rail={railRow}
-                  railWidth={rail.width}
-                />
               );
             }
             const target = openTargetFor({ entry: item.entry });

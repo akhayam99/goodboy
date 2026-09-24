@@ -5,15 +5,12 @@ export type TimelineGap = 'none' | 'sibling' | 'entry';
 type GradeRhythm = {
   readonly lineHeight: number;
   readonly height: number;
-  readonly markerSize: number;
-  readonly glyphSize: number;
-  readonly dotSize: number;
 };
 
 const GRADE: Record<TimelineRowGrade, GradeRhythm> = {
-  entry: { lineHeight: 20, height: 36, markerSize: 18, glyphSize: 12, dotSize: 6 },
-  step: { lineHeight: 16, height: 28, markerSize: 14, glyphSize: 10, dotSize: 4 },
-  pending: { lineHeight: 16, height: 16, markerSize: 14, glyphSize: 10, dotSize: 4 },
+  entry: { lineHeight: 20, height: 40 },
+  step: { lineHeight: 16, height: 32 },
+  pending: { lineHeight: 16, height: 26 },
 };
 
 const GAP: Record<TimelineGap, number> = {

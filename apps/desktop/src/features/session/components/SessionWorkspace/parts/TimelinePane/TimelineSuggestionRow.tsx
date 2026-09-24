@@ -1,14 +1,12 @@
 import { X } from 'lucide-react';
-import { Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Tooltip, WORK_NODE_GLYPH_SIZE, WorkNode, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import { SuggestionActionButton } from '../../../../../suggestions/components/SuggestionActionButton';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
 import type { SessionSuggestion } from '../../../../../suggestions';
 import type { SuggestionActions } from '../../../../../suggestions/useSuggestionActions';
-import { futureRailRow, railColumnX } from '../../../../timeline/railGeometry';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { futureRailRow, railColumnX } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineDashedMarker } from './TimelineDashedMarker';
 import { TimelineRail } from './TimelineRail';
 
 const ROW_HEIGHT = 32;
@@ -21,7 +19,6 @@ type Props = {
 
 export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
-  const { glyphSize } = TIMELINE_RHYTHM.grade.entry;
   const rail = futureRailRow({ id: suggestion.id, height: ROW_HEIGHT });
   return (
     <div
@@ -36,9 +33,14 @@ export const TimelineSuggestionRow = ({ suggestion, railWidth, actions }: Props)
           className="absolute -translate-x-1/2 -translate-y-1/2"
           style={{ left: railColumnX({ column: 0 }), top: ROW_HEIGHT / 2 }}
         >
-          <TimelineDashedMarker tone="info" grade="entry">
-            <Icon size={glyphSize} aria-hidden className={tintClasses('info').icon} />
-          </TimelineDashedMarker>
+          <WorkNode
+            state="queued"
+            label="Suggestion"
+            mark={{
+              kind: 'glyph',
+              glyph: <Icon size={WORK_NODE_GLYPH_SIZE} className={tintClasses('info').icon} />,
+            }}
+          />
         </span>
       </span>
       <div className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-1.5">

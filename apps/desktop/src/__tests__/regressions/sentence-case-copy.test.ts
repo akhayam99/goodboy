@@ -14,6 +14,7 @@ import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/components/Scrip
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { ACTIVITY_CATEGORY_LABEL } from '../../features/session/timeline/activityFilter';
 import { ARCHIVED_SESSION_REASON } from '../../features/session/archivedSession';
+import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
 
 const BRAND_LOWERCASE = ['pnpm', 'npm', 'gh', 'git'];
 
@@ -38,6 +39,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   LENS_LABEL: Object.values(LENS_LABEL),
   ACTIVITY_CATEGORY_LABEL: Object.values(ACTIVITY_CATEGORY_LABEL),
   ARCHIVED_SESSION_REASON: [ARCHIVED_SESSION_REASON],
+  ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
 };
 
 const startsLowercase = (text: string): boolean =>

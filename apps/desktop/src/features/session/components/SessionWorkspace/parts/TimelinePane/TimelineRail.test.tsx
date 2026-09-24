@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { TERMINAL_DIM } from '@goodboy/ui';
-import type { RailJoin, RailRow, RailSegment } from '../../../../timeline/railGeometry';
+import type { RailJoin, RailRow, RailSegment } from '../../../../../workTreeModel/railGeometry';
 import { TimelineRail } from './TimelineRail';
 
 const railOf = ({

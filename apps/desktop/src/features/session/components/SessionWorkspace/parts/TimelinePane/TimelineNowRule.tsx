@@ -1,6 +1,6 @@
 import { cn } from '@goodboy/ui';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
-import { RAIL_SPINE_X, type RailRow } from '../../../../timeline/railGeometry';
+import { RAIL_SPINE_X, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineRail } from './TimelineRail';
 

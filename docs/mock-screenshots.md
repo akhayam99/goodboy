@@ -89,11 +89,6 @@ the component instead of a gap in the mock.
   Components that take `agentKindOverride` as a prop (`WorkflowStepGraph`)
   read the prop instead of the store, so an override set only in the store
   does not reach them.
-- **`useWorkspaceRuns`'s Activity lane builds its workflow lookup from
-  `state.phaseTemplates[workspaceId]`, not `state.sessionWorkflows`.**
-  `SessionOverviewPane`'s own `workflowById` union does read
-  `sessionWorkflows`. But if you fill only `sessionWorkflows`, the Activity
-  card stays empty. Fill both.
 - **Provider/model routing badges** fall back to `run.modelOverride` /
   `run.providerOverride` on the `Agent` object when the
   `agentModelOverride`/`agentProviderOverride` prop maps are empty. Use real

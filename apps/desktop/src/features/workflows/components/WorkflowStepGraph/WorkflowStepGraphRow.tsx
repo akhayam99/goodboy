@@ -1,6 +1,6 @@
 import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
-import { railColumnX, type RailRow } from '../../../session/timeline/railGeometry';
+import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import { TimelineRail } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineRail';
 import { useExecutedAgentRouting } from '../../../../store';
 import { resolveStepRouting } from '../../resolveStepRouting';
@@ -69,7 +69,11 @@ export const WorkflowStepGraphRow = ({
             style={{ left: railColumnX({ column: rail.markerColumn }), top: rail.markerY }}
             data-rail-column={rail.markerColumn}
           >
-            <WorkflowStepRailMarker status={run.status} hasOpenQuestion={hasOpenQuestion} />
+            <WorkflowStepRailMarker
+              agent={run}
+              marker={row.marker}
+              hasOpenQuestion={hasOpenQuestion}
+            />
           </span>
         )}
       </span>

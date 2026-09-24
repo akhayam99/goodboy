@@ -127,8 +127,6 @@ const SESSION = {
   workflowRuns: [],
 } as unknown as Session;
 
-const RUNS = { lanes: [], blockedLanes: [], completedLanes: [] } as never;
-
 const WORKTREE: Worktree = {
   id: 'wt-1',
   sessionId: 'session-1',
@@ -177,7 +175,7 @@ describe('TimelinePane mount rows', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     diffStats.current = new Map([['/worktrees/api', { additions: 7, deletions: 1 }]]);
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     const action = screen.getByRole('button', { name: 'View diff' });
     fireEvent.click(action);
@@ -190,7 +188,7 @@ describe('TimelinePane mount rows', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     diffStats.current = new Map([['/worktrees/api', { additions: 0, deletions: 0 }]]);
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'View diff' })).toBeNull();
@@ -214,7 +212,7 @@ describe('TimelinePane under a full filter', () => {
       }),
     );
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByText(/hidden by the activity filter/)).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
@@ -228,7 +226,7 @@ describe('TimelinePane on an empty session', () => {
     return render(
       <TimelinePane
         session={SESSION}
-        runs={RUNS}
+
         actions={<OverviewActions sessionId={SESSION.id} onOpenWorkflowBuilder={() => undefined} />}
         kickoff={
           <OverviewActions
@@ -275,7 +273,7 @@ describe('TimelinePane kickoff', () => {
     render(
       <TimelinePane
         session={SESSION}
-        runs={RUNS}
+
         actions={null}
         kickoff={<div data-testid="kickoff" />}
       />,
@@ -290,7 +288,7 @@ describe('TimelinePane kickoff', () => {
     render(
       <TimelinePane
         session={SESSION}
-        runs={RUNS}
+
         actions={null}
         kickoff={<div data-testid="kickoff" />}
       />,
@@ -304,7 +302,7 @@ describe('TimelinePane kickoff', () => {
   it('drops the skeleton once the events land', () => {
     storeState.sessionEvents = { 'session-1': [] };
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
     expect(screen.getByText(/Nothing yet/)).toBeDefined();
@@ -314,7 +312,7 @@ describe('TimelinePane kickoff', () => {
     storeState.sessionEvents = { 'session-1': [] };
     agentsLoaded.current = false;
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
@@ -326,7 +324,7 @@ describe('TimelinePane kickoff', () => {
     render(
       <TimelinePane
         session={SESSION}
-        runs={RUNS}
+
         actions={null}
         kickoff={<div data-testid="kickoff" />}
       />,
@@ -352,7 +350,7 @@ describe('TimelinePane unread affordance', () => {
       ],
     };
     unread.current = true;
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     const cta = screen.getByRole('button', { name: 'Mark all seen' });
     fireEvent.click(cta);
@@ -372,7 +370,7 @@ describe('TimelinePane unread affordance', () => {
         },
       ],
     };
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
   });
@@ -400,7 +398,7 @@ describe('TimelinePane suggestions', () => {
 
   const renderWithActivity = () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    return render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    return render(<TimelinePane session={SESSION} actions={null} />);
   };
 
   it('seats every suggestion row above the NOW rule', () => {
@@ -536,7 +534,7 @@ describe('TimelinePane questions', () => {
   } as unknown as OpenQuestion;
 
   it('loads the answered and dismissed caches on mount, alongside the open one', () => {
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(storeState.loadSessionAnsweredQuestions).toHaveBeenCalledWith('session-1');
     expect(storeState.loadSessionDismissedQuestions).toHaveBeenCalledWith('session-1');
@@ -546,7 +544,7 @@ describe('TimelinePane questions', () => {
     questions.open = [OPEN_QUESTION];
     questions.answered = [ANSWERED_QUESTION];
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
     expect(screen.getByText('1 question answered')).toBeDefined();
@@ -555,7 +553,7 @@ describe('TimelinePane questions', () => {
   it('keeps the Answer action target on the open question artifact row', () => {
     questions.open = [OPEN_QUESTION];
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
@@ -614,7 +612,7 @@ describe('TimelinePane run waiting on an answer', () => {
   it('keeps the raw goal off the run row', () => {
     attachedRuns.list = [RUN];
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
   });
@@ -624,7 +622,7 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
     const row = runRow();
     if (!(row instanceof HTMLElement)) {
       throw new Error('run row missing');
@@ -640,7 +638,7 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
     const row = runRow();
     if (!(row instanceof HTMLElement)) {
       throw new Error('run row missing');
@@ -684,7 +682,7 @@ describe('TimelinePane artifact rows', () => {
   it('loads the artifacts and seats a report and a wireframe on the feed', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(storeState.loadSessionArtifacts).toHaveBeenCalledWith('session-1');
     expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
@@ -694,7 +692,7 @@ describe('TimelinePane artifact rows', () => {
   it('opens the artifact itself where artifacts are read', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT] };
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
     fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
 
     expect(storeState.setFocusedArtifactId).toHaveBeenCalledWith('session-1', 'artifact-report');
@@ -705,7 +703,7 @@ describe('TimelinePane artifact rows', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
     localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.getByText('Settlement review flow')).toBeDefined();
@@ -715,7 +713,7 @@ describe('TimelinePane artifact rows', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
     localStorage.setItem('goodboy:activity-filter', JSON.stringify({ artifacts: false }));
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.queryByText('Settlement review flow')).toBeNull();
@@ -779,7 +777,7 @@ describe('TimelinePane artifacts inside a workflow run', () => {
     storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
     storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
     expect(screen.getByText('Round once per batch')).toBeDefined();
@@ -794,7 +792,7 @@ describe('TimelinePane artifacts inside a workflow run', () => {
       JSON.stringify({ artifacts: false, plans: true, reports: true, wireframes: true }),
     );
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.queryByText('Round once per batch')).toBeNull();
@@ -807,7 +805,7 @@ describe('TimelinePane artifacts inside a workflow run', () => {
     storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
     localStorage.setItem('goodboy:activity-filter', JSON.stringify({ reports: false }));
 
-    render(<TimelinePane session={SESSION} runs={RUNS} actions={null} />);
+    render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     expect(screen.getByText('Round once per batch')).toBeDefined();

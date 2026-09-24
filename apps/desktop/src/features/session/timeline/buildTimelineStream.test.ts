@@ -23,12 +23,13 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { buildTimelineGroups } from './buildTimelineGroups';
 import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
-import { layoutTimelineRail } from './railGeometry';
+import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed } from './runIdentity';
-import { markerCenterY, TIMELINE_RHYTHM } from './timelineRhythm';
+import { markerCenterY, TIMELINE_RHYTHM } from '../../workTreeModel/timelineRhythm';
 
 type TypedStringParams = {
   readonly value: string;
@@ -172,6 +173,7 @@ type StreamParams = {
   readonly workflows?: ReadonlyArray<ReturnType<typeof attachedWorkflow>>;
   readonly unreadAgentIds?: ReadonlySet<string>;
   readonly decidingRunIds?: ReadonlySet<string>;
+  readonly advanceByRunId?: ReadonlyMap<string, WorkflowAdvanceState>;
   readonly events?: ReadonlyArray<SessionEvent>;
   readonly plans?: ReadonlyArray<PlanWithCount>;
   readonly artifacts?: ReadonlyArray<SessionArtifact>;
@@ -189,6 +191,7 @@ const stream = ({
   workflows = [],
   unreadAgentIds = new Set(),
   decidingRunIds = new Set(),
+  advanceByRunId = new Map(),
   events = [],
   plans = [],
   artifacts = [],
@@ -214,7 +217,7 @@ const stream = ({
       agentKindOverride: {},
     }).entries,
     unreadAgentIds,
-    blockedRunIds: new Set(),
+    advanceByRunId,
     decidingRunIds,
     dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
     ...(showWorkflowSubagents != null ? { showWorkflowSubagents } : {}),
@@ -261,12 +264,17 @@ const topOfItem = ({
   readonly index: number;
 }): number => items.slice(0, index).reduce((total, item) => total + item.height, 0);
 
+const stateOf = (item: TimelineStreamItem | undefined): string | null => {
+  if (item?.kind !== 'row') {
+    return null;
+  }
+  const { phase, reason } = item.rowState;
+  return reason == null ? phase : `${phase}:${reason.kind}`;
+};
+
 const labelOf = (item: TimelineStreamItem): string => {
   if (item.kind === 'row') {
     return `${item.grade}:${item.id}`;
-  }
-  if (item.kind === 'cluster') {
-    return `cluster:${item.steps.length}`;
   }
   if (item.kind === 'day') {
     return `day:${item.label}`;
@@ -386,7 +394,7 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'step:agent:todo',
+      'pending:agent:todo',
       'day:Aug 10',
       'step:agent:done',
       'entry:run:run-1',
@@ -483,7 +491,7 @@ describe('buildTimelineStream', () => {
     ]);
   });
 
-  it('coalesces a stretch of consecutive pending steps into one marker', () => {
+  it('gives every queued step its own row and node, newest path on top', () => {
     const { items } = stream({
       workflows: [attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) })],
       agents: [
@@ -499,17 +507,27 @@ describe('buildTimelineStream', () => {
         agent({ id: 'last', ordinal: 4, status: 'pending', workflowRunId: RUN_ID }),
       ],
     });
-    const cluster = items.find((item) => item.kind === 'cluster');
+    const queued = items.filter((item) => item.kind === 'row' && item.grade === 'pending');
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'cluster:3',
+      'pending:agent:last',
+      'pending:agent:later',
+      'pending:agent:next',
       'step:agent:running',
       'entry:run:run-1',
     ]);
-    expect(cluster?.kind === 'cluster' ? cluster.height : 0).toBe(
-      3 * TIMELINE_RHYTHM.grade.pending.height,
-    );
+    expect(queued.map((item) => item.height)).toEqual([
+      TIMELINE_RHYTHM.grade.pending.height,
+      TIMELINE_RHYTHM.grade.pending.height + TIMELINE_RHYTHM.gap.sibling,
+      TIMELINE_RHYTHM.grade.pending.height + TIMELINE_RHYTHM.gap.sibling,
+    ]);
+    expect(queued.map((item) => (item.kind === 'row' ? item.nodeIndex : null))).toEqual([
+      '4',
+      '3',
+      '2',
+    ]);
+    expect(queued.map(stateOf)).toEqual(['queued', 'queued', 'queued']);
   });
 
   it('leaves one lone pending step as its own row', () => {
@@ -529,7 +547,7 @@ describe('buildTimelineStream', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'step:agent:next',
+      'pending:agent:next',
       'step:agent:running',
       'entry:run:run-1',
     ]);
@@ -544,7 +562,9 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'entry:agent:built-by-hand',
-      'cluster:3',
+      'pending:agent:ship',
+      'pending:agent:review',
+      'pending:agent:test',
       'step:agent:implement',
       'step:agent:plan',
       'entry:run:run-1',
@@ -577,19 +597,19 @@ describe('buildTimelineStream', () => {
       agents: RUN_WITH_PENDING_AGENTS,
     });
     const layout = layoutTimelineRail({ rows: items, groups });
-    const clusterIndex = items.findIndex((item) => item.kind === 'cluster');
+    const queuedIndex = items.findIndex((item) => item.kind === 'row' && item.grade === 'pending');
     const originIndex = items.findIndex((item) => item.id === 'run:run-1');
-    const clusterRail = layout.rows[clusterIndex];
+    const queuedRail = layout.rows[queuedIndex];
     const originRail = layout.rows[originIndex];
     const nowRail = layout.rows[0];
 
     expect(originRail?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual(['branch:solid']);
-    expect(originRail?.joins[0]?.path).toBe('M 24 0 C 24 8.84, 16.84 22, 8 22');
-    expect(clusterRail?.joins).toEqual([]);
+    expect(originRail?.joins[0]?.path).toBe('M 24 0 C 24 8.84, 16.84 24, 8 24');
+    expect(queuedRail?.joins).toEqual([]);
     expect(
-      clusterRail?.segments.filter((segment) => segment.column > 0).map((segment) => segment.dash),
+      queuedRail?.segments.filter((segment) => segment.column > 0).map((segment) => segment.dash),
     ).toEqual(['dashed', 'dashed']);
-    expect(clusterRail?.markerColumn).toBe(1);
+    expect(queuedRail?.markerColumn).toBe(1);
     expect(
       nowRail?.segments.filter((segment) => segment.column > 0).map((segment) => segment.dash),
     ).toEqual(['dashed']);
@@ -644,16 +664,21 @@ describe('buildTimelineStream', () => {
         }),
       ],
     });
-    const clusters = items.flatMap((item) => (item.kind === 'cluster' ? [item] : []));
+    const queued = items.flatMap((item) =>
+      item.kind === 'row' && item.grade === 'pending' ? [item] : [],
+    );
     const layout = layoutTimelineRail({ rows: items, groups });
-    const childClusterIndex = items.findIndex(
-      (item) => item.kind === 'cluster' && item.groupId === 'lane:agent:step-4',
+    const childQueuedIndex = items.findIndex(
+      (item) => item.kind === 'row' && item.id === 'agent:child-3',
     );
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'cluster:3',
-      'cluster:2',
+      'pending:agent:step-7',
+      'pending:agent:step-6',
+      'pending:agent:step-5',
+      'pending:agent:child-3',
+      'pending:agent:child-2',
       'step:agent:child-1',
       'step:agent:step-4',
       'step:agent:step-3',
@@ -661,12 +686,11 @@ describe('buildTimelineStream', () => {
       'step:agent:step-1',
       'entry:run:run-1',
     ]);
-    expect(
-      clusters.map((cluster) => cluster.steps.map((step) => step.stepLabel).join(' ')),
-    ).toEqual(['7 6 5', '4.3 4.2']);
+    expect(queued.map((item) => item.ordinal)).toEqual(['7', '6', '5', '4.3', '4.2']);
+    expect(queued.map((item) => item.nodeIndex)).toEqual(['7', '6', '5', '3', '2']);
     expect(groups.find((group) => group.id === 'lane:agent:step-4')?.shape).toBe('rejoining');
     expect(
-      layout.rows[childClusterIndex]?.joins.map(
+      layout.rows[childQueuedIndex]?.joins.map(
         (join) => `${join.kind}:${join.laneColumn}->${join.spineColumn}:${join.dash}`,
       ),
     ).toEqual(['rejoin:2->1:dashed']);
@@ -709,27 +733,36 @@ describe('buildTimelineStream', () => {
       ],
     });
     const layout = layoutTimelineRail({ rows: items, groups });
-    const clusters = items.flatMap((item, index) =>
-      item.kind === 'cluster' ? [{ item, rail: layout.rows[index] }] : [],
+    const queued = items.flatMap((item, index) =>
+      item.kind === 'row' && item.grade === 'pending' ? [{ item, rail: layout.rows[index] }] : [],
     );
     const seed = runIdentitySeed({ sessionId: SESSION_ID });
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'cluster:2',
+      'pending:agent:b-last',
+      'pending:agent:b-next',
       'step:agent:b-running',
       'entry:run:run-2',
-      'cluster:2',
+      'pending:agent:a-last',
+      'pending:agent:a-next',
       'step:agent:a-done',
       'entry:run:run-1',
     ]);
-    expect(clusters.map(({ item }) => item.groupId)).toEqual(['lane:run:run-2', 'lane:run:run-1']);
-    expect(clusters.map(({ item }) => item.identity.index)).toEqual([
+    expect(queued.map(({ item }) => item.groupId)).toEqual([
+      'lane:run:run-2',
+      'lane:run:run-2',
+      'lane:run:run-1',
+      'lane:run:run-1',
+    ]);
+    expect(queued.map(({ item }) => item.identity?.index)).toEqual([
+      runIdentity({ laneIndex: 1, seed }).index,
       runIdentity({ laneIndex: 1, seed }).index,
       runIdentity({ laneIndex: 0, seed }).index,
+      runIdentity({ laneIndex: 0, seed }).index,
     ]);
-    expect(clusters.map(({ rail }) => rail?.markerColumn)).toEqual([1, 2]);
-    expect(clusters.map(({ rail }) => rail?.joins)).toEqual([[], []]);
+    expect(queued.map(({ rail }) => rail?.markerColumn)).toEqual([1, 1, 2, 2]);
+    expect(queued.map(({ rail }) => rail?.joins)).toEqual([[], [], [], []]);
     expect(layout.columnByGroupId.get('lane:run:run-2')).toBe(1);
     expect(layout.columnByGroupId.get('lane:run:run-1')).toBe(2);
   });
@@ -754,7 +787,7 @@ describe('buildTimelineStream', () => {
     expect(items.map(labelOf)).toEqual([
       'now',
       'entry:agent:built-by-hand',
-      'step:agent:todo',
+      'pending:agent:todo',
       'day:Aug 10',
       'step:agent:done',
       'entry:run:run-1',
@@ -1261,7 +1294,7 @@ describe('buildTimelineStream, session events', () => {
     const runRow = items.find((item) => item.id === 'run:run-1');
 
     expect(lane?.shape).toBe('open');
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('pending');
+    expect(stateOf(runRow)).toBe('queued');
   });
 
   it('marks a run whose orchestrator is choosing the next step as deciding, not pending', () => {
@@ -1288,8 +1321,8 @@ describe('buildTimelineStream, session events', () => {
     const idleRow = idle.items.find((item) => item.id === 'run:run-1');
     const decidingRow = deciding.items.find((item) => item.id === 'run:run-1');
 
-    expect(idleRow?.kind === 'row' ? idleRow.markerState : null).toBe('pending');
-    expect(decidingRow?.kind === 'row' ? decidingRow.markerState : null).toBe('deciding');
+    expect(stateOf(idleRow)).toBe('queued');
+    expect(stateOf(decidingRow)).toBe('running:deciding');
   });
 
   it('keeps a run with a step in flight on running even while a decision is in flight', () => {
@@ -1314,7 +1347,7 @@ describe('buildTimelineStream, session events', () => {
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('running');
+    expect(stateOf(runRow)).toBe('running');
   });
 
   it('closes the lane of a dynamic run once the orchestrator declares it done', () => {
@@ -1348,7 +1381,7 @@ describe('buildTimelineStream, session events', () => {
     const runRow = items.find((item) => item.id === 'run:run-1');
 
     expect(lane?.shape).toBe('merged');
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('done');
+    expect(stateOf(runRow)).toBe('done');
   });
 
   it('keeps the lane of a static run open while planned steps are still unspawned', () => {
@@ -1885,9 +1918,9 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
 
     expect(items.map(labelOf)).toEqual([
       'now',
-      'step:agent:review',
-      'step:agent:sub-3',
-      'step:agent:implement',
+      'pending:agent:review',
+      'pending:agent:sub-3',
+      'pending:agent:implement',
       'step:agent:sub-2',
       'step:agent:sub-1',
       'entry:run:run-1',
@@ -2186,7 +2219,7 @@ describe('buildTimelineStream, question artifact rows', () => {
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('question');
+    expect(stateOf(runRow)).toBe('waiting:question');
   });
 
   it('lifts a question asked by a nested subagent up to the run row', () => {
@@ -2222,7 +2255,7 @@ describe('buildTimelineStream, question artifact rows', () => {
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('question');
+    expect(stateOf(runRow)).toBe('waiting:question');
   });
 
   it('leaves the run row off the question marker once the question is answered', () => {
@@ -2250,7 +2283,7 @@ describe('buildTimelineStream, question artifact rows', () => {
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
-    expect(runRow?.kind === 'row' ? runRow.markerState : null).toBe('running');
+    expect(stateOf(runRow)).toBe('running');
   });
 });
 
@@ -2486,5 +2519,115 @@ describe('buildTimelineStream, project mount runs', () => {
 
     expect(rows.map((row) => row.id)).toEqual(['event:ev-nameless', 'event:ev-api']);
     expect(rows.every((row) => projectRunOf(row) == null)).toBe(true);
+  });
+});
+
+describe('buildTimelineStream, row states from the run advance', () => {
+  const twoSteps = () => {
+    const attached = attachedWorkflow({
+      createdAt: localIso({ day: 18, hour: 8 }),
+      stepIds: ['one', 'two'],
+    });
+    const next = attached.workflow.steps[1];
+    if (next === undefined) {
+      throw new Error('fixture has two steps');
+    }
+    return { attached, next };
+  };
+  const agents = [
+    agent({
+      id: 'one',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({ id: 'two', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+  ];
+
+  it('says the next step waits for your click on the run and on the step itself', () => {
+    const { attached, next } = twoSteps();
+    const { items } = stream({
+      workflows: [attached],
+      agents,
+      advanceByRunId: new Map([[RUN_ID, { kind: 'ready', step: next }]]),
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+    const stepRow = items.find((item) => item.id === 'agent:two');
+
+    expect(stateOf(runRow)).toBe('waiting:ready');
+    expect(runRow?.kind === 'row' ? runRow.rowState.ask?.kind : null).toBe('runStep');
+    expect(stateOf(stepRow)).toBe('waiting:ready');
+    expect(stepRow?.kind === 'row' ? stepRow.rowState.ask : undefined).toBeNull();
+  });
+
+  it('keeps the run on the machine while the summarizer briefs the next step', () => {
+    const { attached, next } = twoSteps();
+    const { items } = stream({
+      workflows: [attached],
+      agents,
+      advanceByRunId: new Map([
+        [RUN_ID, { kind: 'blocked', reason: 'summarizer', step: next, failedStep: null }],
+      ]),
+    });
+
+    expect(stateOf(items.find((item) => item.id === 'run:run-1'))).toBe('running:briefing');
+  });
+
+  it('shows the failed step on the run row instead of a generic warning', () => {
+    const { attached, next } = twoSteps();
+    const { items } = stream({
+      workflows: [attached],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      advanceByRunId: new Map([
+        [RUN_ID, { kind: 'blocked', reason: 'failed-step', step: next, failedStep: next }],
+      ]),
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(stateOf(runRow)).toBe('failed:stepFailed');
+    expect(
+      runRow?.kind === 'row' && runRow.rowState.reason?.kind === 'stepFailed'
+        ? runRow.rowState.reason.stepLabel
+        : null,
+    ).toBe('1');
+  });
+
+  it('names the run a chained run waits on until that run finishes', () => {
+    const first = attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] });
+    const chained = attachedWorkflow({
+      runId: OTHER_RUN_ID,
+      name: 'Deploy workflow',
+      createdAt: localIso({ day: 18, hour: 9 }),
+      stepIds: ['deploy'],
+    });
+    const { items } = stream({
+      workflows: [first, { ...chained, run: { ...chained.run, chainAfterId: RUN_ID } }],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const chainedRow = items.find((item) => item.id === 'run:run-2');
+
+    expect(stateOf(chainedRow)).toBe('queued:chained');
+    expect(
+      chainedRow?.kind === 'row' && chainedRow.rowState.reason?.kind === 'chained'
+        ? chainedRow.rowState.reason.afterTitle
+        : null,
+    ).toBe('Release workflow');
   });
 });

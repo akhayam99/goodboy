@@ -8,10 +8,10 @@ import type {
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import type { TimelineMarkerState } from '../../../../timeline/markerState';
-import type { RailRow } from '../../../../timeline/railGeometry';
+import { DONE_ROW_STATE, type RowState } from '../../../../../workTreeModel/rowState';
+import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { runIdentity } from '../../../../timeline/runIdentity';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 
 vi.mock('../../../../../../store', () => ({
@@ -64,7 +64,8 @@ const itemOf = (): TimelineRowItem => ({
   identity: null,
   familyId: 'run:one',
   ordinal: '2',
-  markerState: 'done',
+  nodeIndex: '2',
+  rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
   topY: 0,
@@ -86,18 +87,15 @@ const runEntryOf = (): TimelineRunEntry =>
     producedPlan: null,
   }) as unknown as TimelineRunEntry;
 
-const runItemOf = ({
-  markerState,
-}: {
-  readonly markerState: TimelineMarkerState;
-}): TimelineRowItem => ({
+const runItemOf = ({ rowState }: { readonly rowState: RowState }): TimelineRowItem => ({
   ...itemOf(),
   id: 'run:one',
   grade: 'entry',
   entry: runEntryOf(),
   identity: runIdentity({ laneIndex: 0, seed: 0 }),
   ordinal: null,
-  markerState,
+  nodeIndex: null,
+  rowState,
   groupId: null,
 });
 
@@ -212,7 +210,9 @@ describe('TimelineStreamRow', () => {
   it('spins the run marker in its lane hue while the orchestrator is choosing', () => {
     const { container } = render(
       <TimelineStreamRow
-        item={runItemOf({ markerState: 'deciding' })}
+        item={runItemOf({
+          rowState: { phase: 'running', reason: { kind: 'deciding' }, ask: null },
+        })}
         rail={railOf()}
         railWidth={32}
         sessionId={SESSION_ID}
@@ -230,7 +230,7 @@ describe('TimelineStreamRow', () => {
   it('leaves a run with no decision in flight on the idle clock and no sentence', () => {
     const { container } = render(
       <TimelineStreamRow
-        item={runItemOf({ markerState: 'pending' })}
+        item={runItemOf({ rowState: { phase: 'queued', reason: null, ask: null } })}
         rail={railOf()}
         railWidth={32}
         sessionId={SESSION_ID}

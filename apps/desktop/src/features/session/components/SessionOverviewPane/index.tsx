@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   useAppStore,
@@ -9,7 +9,6 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
-import { useWorkspaceRuns } from '../../../orchestration/hooks/useWorkspaceRuns';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { HeaderBand } from './HeaderBand';
 import { GoalDetailAction } from './GoalDetailAction';
@@ -45,8 +44,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const [isGoalEditing, setIsGoalEditing] = useState(false);
   const [adoption, setAdoption] = useState<IssueAdoption | null>(null);
   const goalSlot = slots.find((slot) => slot.key === 'goal');
-  const sessionList = useMemo(() => [session], [session]);
-  const runs = useWorkspaceRuns(session.workspaceId, sessionList);
 
   const applyAdoptedTitle = () => {
     if (adoption?.title == null) {
@@ -141,7 +138,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         ) : null}
         <TimelinePane
           session={session}
-          runs={runs}
           actions={
             <ArchivedGate isArchived={isArchived}>
               <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />

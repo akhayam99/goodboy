@@ -165,9 +165,10 @@ trigger in the migrated areas.
 
 ## Timeline markers
 
-`TimelineRowMarker` sizes every glyph from `TIMELINE_RHYTHM.grade[grade]`, not
-from `ICON_SIZE`, because rail markers scale with the row grade. The glyph
-itself still comes from the registry through `sessionEventGlyph`.
+`TimelineRowMarker` draws every fact row as a `WorkNode` marker and sizes its
+glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
+20px on every grade. The glyph itself still comes from the registry through
+`sessionEventGlyph`.
 
 | Entry           | Glyph                                     |
 | --------------- | ----------------------------------------- |
