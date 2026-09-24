@@ -207,6 +207,13 @@ describe('GoalOverviewRegion', () => {
     expect(screen.getByRole('button', { name: 'Add a goal' })).toBeDefined();
   });
 
+  it('treats a goal of only spaces as no goal', () => {
+    renderRegion({ value: '   ', historyCount: 0 });
+
+    expect(screen.queryByText('Goal')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a goal' })).toBeDefined();
+  });
+
   it('keeps previous versions reachable from the quiet row', () => {
     renderRegion({
       value: 'Ship the parser rewrite',

@@ -6,7 +6,7 @@ type Params = {
 };
 
 export const goalPresence = ({ value, sessionTitle }: Params): GoalPresence => {
-  if (value === '') {
+  if (value.trim() === '') {
     return 'empty';
   }
   return value.trim() === sessionTitle.trim() ? 'title' : 'own';
