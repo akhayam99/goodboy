@@ -1,12 +1,9 @@
-import { useMemo } from 'react';
-import type { Agent, SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
+import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { cn, PANE_RHYTHM } from '@goodboy/ui';
-import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
-import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
 import { agentRoutingOverrides } from '../../agentRoutingOverrides';
-import { resolveWorkflowAdvance } from '../../advanceGate';
+import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
 import { WorkflowNextStepCta } from '../WorkflowNextStepCta';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 
@@ -22,16 +19,7 @@ type AdvanceParams = {
 };
 
 export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
-  const workflowRunId = run.id;
-  const phaseRuns = useAppStore(
-    (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
-  );
-  const isSummarizerRunning = useAppStore(
-    (state) => state.summarizerStatus?.[sessionId]?.status === 'running',
-  );
-  const openQuestions = useSessionOpenQuestions(sessionId);
-  const hasOpenQuestions = workflowRunHasOpenQuestions({ questions: openQuestions, run });
-  const isAutoRun = run.autoRun === true;
+  const { state, stepAgents } = useWorkflowRunAdvance({ sessionId, run, workflow });
   const roleModels = useSessionRoleModels({ sessionId });
   const sessionProvider = useAppStore(
     (state) =>
@@ -42,33 +30,8 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
     (state) => state.sessions?.find((candidate) => candidate.id === sessionId)?.effort ?? null,
   );
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
-  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
-  const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const emitNotification = useAppStore((state) => state.emitNotification);
 
-  const stepAgents = useMemo(
-    () =>
-      runsForWorkflowRun(phaseRuns, workflowRunId).filter(
-        (agent) => agent.parentAgentId == null && agent.stepId != null,
-      ),
-    [phaseRuns, workflowRunId],
-  );
-  const hasRunningTurn = useAppStore((state) =>
-    stepAgents.some((agent) => {
-      const turn = state.agentTurnState[agent.id];
-      return turn?.kind === 'running' || turn?.kind === 'starting';
-    }),
-  );
-  const isTurnRunning = hasRunningTurn || stepAgents.some((agent) => agent.status === 'running');
-
-  const state = resolveWorkflowAdvance({
-    workflow,
-    agents: stepAgents,
-    hasOpenQuestions,
-    isSummarizerRunning,
-    isTurnRunning,
-    isAutoRun,
-  });
   const nextStepId = state.kind === 'complete' ? null : state.step.id;
   const pendingAgent =
     stepAgents.find((agent) => agent.stepId === nextStepId && agent.status === 'pending') ?? null;
@@ -123,10 +86,6 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
       sessionEffort={sessionEffort}
       blockReason={state.kind === 'blocked' ? state.reason : null}
       onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
-      onForceAdvance={() =>
-        void skipStuckStepAndAdvance(sessionId, workflowRunId, { onlyWhenBlocked: true })
-      }
-      onRecover={() => recoverStuckStep({ sessionId, workflowRunId })}
       className={cn('shrink-0 px-10 pb-1', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
     />
   );

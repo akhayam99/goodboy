@@ -378,6 +378,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 
 - The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and inspector headers use the same `actions` slot. The focused object's primary action uses it too.
 - A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
+- A blocked object's way out is one next action strip in the `banner` slot of the detail layout: under the header, above the tabs, outside every scroll region, so every tab sees the same copy. Its tone sits on the left rail only (danger for a failed step, warning for a question, info for a wait), with a sentence that names the object, a muted cause, the technical detail behind a disclosure, one primary action and at most two secondary ones. It never repeats at the bottom of a transcript.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 
 `InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:

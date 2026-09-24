@@ -26,6 +26,12 @@ const blocksRun = ({
 export const workflowRunHasOpenQuestions = ({ questions, run }: RunParams): boolean =>
   questions.some((question) => question.status === 'open' && blocksRun({ question, run }));
 
+export const workflowRunOpenQuestions = ({
+  questions,
+  run,
+}: RunParams): ReadonlyArray<OpenQuestion> =>
+  questions.filter((question) => question.status === 'open' && blocksRun({ question, run }));
+
 type WorkflowParams = {
   readonly questions: ReadonlyArray<OpenQuestion>;
   readonly workflowId: WorkflowId;

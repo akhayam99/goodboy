@@ -154,74 +154,15 @@ describe('WorkflowNextStepCta', () => {
     );
   });
 
-  it('renders force CTA when chain is blocked (failed predecessor)', () => {
+  it('renders nothing while a failed step blocks the chain, the next action strip owns it', () => {
     const blockedRuns: Agent[] = [
       run('s1' as StepId, 'failed', 0),
       run('s2' as StepId, 'pending', 1),
     ];
-    const onAdvance = vi.fn();
-    const onForceAdvance = vi.fn();
-    render(
-      <WorkflowNextStepCta
-        workflow={wf()}
-        runs={blockedRuns}
-        onAdvance={onAdvance}
-        onForceAdvance={onForceAdvance}
-      />,
+    const { container } = render(
+      <WorkflowNextStepCta workflow={wf()} runs={blockedRuns} onAdvance={vi.fn()} />,
     );
-    expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Check completion' })).toBeDefined();
-    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
-  });
-
-  it('shows progress while the agent checks the blocked step', async () => {
-    const blockedRuns: Agent[] = [
-      run('s1' as StepId, 'failed', 0),
-      run('s2' as StepId, 'pending', 1),
-    ];
-    let finish: (() => void) | undefined;
-    const onRecover = vi.fn(
-      () =>
-        new Promise<void>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    render(
-      <WorkflowNextStepCta
-        workflow={wf()}
-        runs={blockedRuns}
-        onAdvance={vi.fn()}
-        onRecover={onRecover}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
-
-    expect(screen.getByRole('button', { name: 'Checking step' })).toBeDefined();
-    expect(screen.getByTestId('workflow-force-next-step-cta').hasAttribute('disabled')).toBe(true);
-    finish?.();
-  });
-
-  it('shows confirmation before executing force advance', async () => {
-    const blockedRuns: Agent[] = [
-      run('s1' as StepId, 'failed', 0),
-      run('s2' as StepId, 'pending', 1),
-    ];
-    const onForceAdvance = vi.fn();
-    render(
-      <WorkflowNextStepCta
-        workflow={wf()}
-        runs={blockedRuns}
-        onAdvance={vi.fn()}
-        onForceAdvance={onForceAdvance}
-      />,
-    );
-    fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
-    expect(screen.getByText(/skip the blocked step/i)).toBeDefined();
-    expect(onForceAdvance).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Skip and continue' }));
-    await Promise.resolve();
-    expect(onForceAdvance).toHaveBeenCalledTimes(1);
+    expect(container.innerHTML).toBe('');
   });
 
   it('renders nothing when workflow is complete', () => {

@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  CircleHelp,
-  CircleStop,
-  PenLine,
-  Play,
-  RotateCcw,
-  SkipForward,
-  Wallet,
-} from 'lucide-react';
+import { CircleStop, PenLine, Play, RotateCcw, Wallet } from 'lucide-react';
 import {
   ConfirmPopover,
   Eyebrow,
@@ -74,10 +66,8 @@ export const OrchestratorPanel = ({
   const removeWorkflowOrchestratorHint = useAppStore(
     (state) => state.removeWorkflowOrchestratorHint,
   );
-  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const setWorkflowRunAutoRun = useAppStore((state) => state.setWorkflowRunAutoRun);
   const stopWorkflowRunNow = useAppStore((state) => state.stopWorkflowRunNow);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
   const openQuestions = useAppStore(
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
@@ -141,17 +131,6 @@ export const OrchestratorPanel = ({
             onClick={() => void guard(() => orchestrateNextStep(sessionId, run.id))}
           />
         );
-      case 'needs-answer':
-        return (
-          <OrchestratorAction
-            icon={CircleHelp}
-            label="Answer question"
-            variant="primary"
-            tone="warning"
-            testId="orchestrator-answer-question"
-            onClick={() => setActiveLens(sessionId, 'questions')}
-          />
-        );
       case 'paused-budget':
         return sessionBudgetBlocked ? (
           <OrchestratorAction
@@ -165,19 +144,6 @@ export const OrchestratorPanel = ({
           />
         ) : (
           <RunSpendLimitPopover sessionId={sessionId} run={run} variant="primary" />
-        );
-      case 'step-failed':
-        return (
-          <OrchestratorAction
-            icon={SkipForward}
-            label="Skip the failed step"
-            variant="primary"
-            tone="danger"
-            testId="orchestrator-skip-failed-step"
-            title="Mark the failed step skipped and ask the orchestrator what comes next"
-            disabled={busy}
-            onClick={() => void guard(() => skipStuckStepAndAdvance(sessionId, run.id))}
-          />
         );
       case 'stopped':
         return (
@@ -216,6 +182,8 @@ export const OrchestratorPanel = ({
             onClick={() => void guard(() => continueWorkflowRun(sessionId, run.id))}
           />
         );
+      case 'needs-answer':
+      case 'step-failed':
       default:
         return null;
     }

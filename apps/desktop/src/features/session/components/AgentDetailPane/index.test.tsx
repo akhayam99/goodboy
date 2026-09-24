@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
@@ -27,6 +27,9 @@ vi.mock('../../../chat/components/ChatView', () => ({
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
 vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
+vi.mock('./AgentNextAction', () => ({
+  AgentNextAction: () => <div>Next action strip</div>,
+}));
 
 import { AgentDetailPane } from './index';
 
@@ -57,6 +60,20 @@ beforeEach(() => {
 });
 
 describe('AgentDetailPane', () => {
+  it('pins the next action in the fixed header, above the tabs, on both tabs', () => {
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+
+    const band = screen.getByTestId('detail-header-band');
+    const strip = within(band).getByText('Next action strip');
+    const tabs = within(band).getByRole('tab', { name: 'Brief' });
+    expect(strip.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(
+      within(screen.getByTestId('detail-header-band')).getByText('Next action strip'),
+    ).toBeDefined();
+  });
+
   it('places the title at the shared detail inset above agent metadata', () => {
     render(
       <AgentDetailPane

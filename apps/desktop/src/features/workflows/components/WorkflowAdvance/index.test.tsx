@@ -25,8 +25,6 @@ type Store = {
   agentProviderOverride: Record<string, ProviderId>;
   agentEffortOverride: Record<string, string>;
   activateWorkflowAgent: ReturnType<typeof vi.fn>;
-  skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
-  recoverStuckStep: ReturnType<typeof vi.fn>;
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
@@ -39,8 +37,6 @@ const { store, gate } = vi.hoisted(() => ({
     agentProviderOverride: {},
     agentEffortOverride: {},
     activateWorkflowAgent: vi.fn(async () => undefined),
-    skipStuckStepAndAdvance: vi.fn(async () => undefined),
-    recoverStuckStep: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
   } as Store,
   gate: { hasOpenQuestions: false },
@@ -53,7 +49,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../../../context/openQuestionsGate', () => ({
-  workflowRunHasOpenQuestions: () => gate.hasOpenQuestions,
+  workflowRunOpenQuestions: () => (gate.hasOpenQuestions ? [{ id: 'q-1', status: 'open' }] : []),
 }));
 
 import { WorkflowAdvance } from './index';
@@ -117,9 +113,6 @@ beforeEach(() => {
   store.agentEffortOverride = {};
   store.activateWorkflowAgent.mockReset();
   store.activateWorkflowAgent.mockResolvedValue(undefined);
-  store.skipStuckStepAndAdvance.mockReset();
-  store.recoverStuckStep.mockReset();
-  store.recoverStuckStep.mockResolvedValue(undefined);
   store.emitNotification.mockReset();
   store.emitNotification.mockResolvedValue(undefined);
   gate.hasOpenQuestions = false;
@@ -171,30 +164,12 @@ describe('WorkflowAdvance', () => {
     });
   });
 
-  it('forces past a stuck step only after an explicit confirmation', () => {
+  it('leaves a failed step to the next action strip in the header', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderAdvance();
+    const { container } = renderAdvance();
 
-    fireEvent.click(screen.getByTestId('workflow-force-next-step-cta'));
-    expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByText(/skip and continue/i));
-    expect(store.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      onlyWhenBlocked: true,
-    });
-  });
-
-  it('asks the failed agent to check completion without skipping its output', () => {
-    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderAdvance();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Check completion' }));
-
-    expect(store.recoverStuckStep).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
-    });
-    expect(store.skipStuckStepAndAdvance).not.toHaveBeenCalled();
+    expect(container.innerHTML).toBe('');
+    expect(screen.queryByRole('button', { name: 'Check completion' })).toBeNull();
   });
 
   it('renders nothing at all while autorun drives the run, controls live on the run card', () => {
@@ -254,13 +229,6 @@ describe('WorkflowAdvance', () => {
 
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
     expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
-  });
-
-  it('keeps the skip control under autorun once a step has failed', () => {
-    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'failed'), agent(1, 'pending')] };
-    renderAdvance(buildRun({ autoRun: true }));
-
-    expect(screen.getByTestId('workflow-force-next-step-cta')).toBeDefined();
   });
 
   it('names the blocker and frees the button when the engine rejects the advance', async () => {

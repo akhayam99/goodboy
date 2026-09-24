@@ -132,11 +132,9 @@ beforeEach(() => {
     addWorkflowOrchestratorHint: vi.fn(async () => undefined),
     removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
     setWorkflowRunSpendLimit: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
     sessionOpenQuestions: {},
     orchestratorReadingHints: {},
     budgetAlerts: [],
@@ -198,15 +196,14 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByTestId('orchestrator-panel').className).not.toContain('spin-border');
   });
 
-  it('gets a run frozen on a failed step moving again', () => {
+  it('leaves the failed step recovery to the next action strip above it', () => {
     renderPanel({
       runOverride: run({ autoRun: true }),
       agents: [agent(0, 'completed'), agent(1, 'failed')],
     });
 
-    fireEvent.click(screen.getByTestId('orchestrator-skip-failed-step'));
-
-    expect(storeState['skipStuckStepAndAdvance']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+    expect(screen.queryByRole('button', { name: /skip/i })).toBeNull();
+    expect(screen.getByTestId('orchestrator-actions').textContent).toBe('Hints');
   });
 
   it('moves its own border while it decides, with no manual control', () => {
@@ -258,7 +255,7 @@ describe('OrchestratorPanel state ladder', () => {
     expect(screen.getByRole('button', { name: 'Stop now' })).toBeDefined();
   });
 
-  it('sends the user to the questions lens when one gates the run', () => {
+  it('names a gating question and leaves the answer to the next action strip', () => {
     Object.assign(storeState, {
       sessionOpenQuestions: {
         [SESSION_ID]: [{ id: 'q-1', status: 'open', workflowRunId: RUN_ID }],
@@ -267,9 +264,7 @@ describe('OrchestratorPanel state ladder', () => {
     renderPanel({ agents: [agent(0, 'completed')] });
 
     expect(sentence()).toContain('Paused · an open question needs your answer');
-    fireEvent.click(screen.getByTestId('orchestrator-answer-question'));
-
-    expect(storeState['setActiveLens']).toHaveBeenCalledWith(SESSION_ID, 'questions');
+    expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
   });
 
   it('reads a budget pause as a pause, not as a failure', () => {
@@ -313,9 +308,7 @@ describe('OrchestratorPanel state ladder', () => {
 
     expect(sentence()).toContain('Paused · an open question needs your answer');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
-    fireEvent.click(screen.getByTestId('orchestrator-answer-question'));
-
-    expect(storeState['setActiveLens']).toHaveBeenCalledWith(SESSION_ID, 'questions');
+    expect(screen.queryByRole('button', { name: /answer/i })).toBeNull();
   });
 
   it('offers the next step again once the question behind the stop is answered', () => {

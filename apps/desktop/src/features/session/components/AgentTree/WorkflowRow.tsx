@@ -33,6 +33,7 @@ import { resolveStepRouting } from '../../../workflows/resolveStepRouting';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../AgentMetrics';
 import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
+import { NextActionStrip } from '../../../workflows/components/NextActionStrip';
 import { OrchestratorPanel } from '../../../workflows/components/OrchestratorPanel';
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
@@ -105,8 +106,6 @@ type Props = {
   readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
   readonly onResolveFirstForRun: (run: WorkflowRun) => void;
   readonly toggleClusterExpand: (id: string) => void;
-  readonly skipStuckStepAndAdvance: AppStore['skipStuckStepAndAdvance'];
-  readonly recoverStuckStep: AppStore['recoverStuckStep'];
 };
 
 const isRunning = (agent: Agent): boolean => agent.status === 'running';
@@ -165,8 +164,6 @@ export const WorkflowRow = ({
   onRenameCommit,
   onResolveFirstForRun,
   toggleClusterExpand,
-  skipStuckStepAndAdvance,
-  recoverStuckStep,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
   const sessionProvider = task.providerPreference?.defaultProvider ?? null;
@@ -460,11 +457,16 @@ export const WorkflowRow = ({
           {isDetail && !isDiscarded && writableMountCount > 1 ? (
             <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
           ) : null}
-          {expanded &&
-          !isDiscarded &&
-          !isDynamic &&
-          (isDetail || wfBlockReason === 'failed-step') ? (
-            <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
+          {!isDiscarded && (
+            <NextActionStrip
+              sessionId={task.id}
+              run={run}
+              workflow={workflow}
+              subjectAgentId={null}
+            />
+          )}
+          {isDetail && !isDiscarded && !isDynamic ? (
+            <div className="pb-1">
               <WorkflowNextStepCta
                 workflow={workflow}
                 runs={wfAgents}
@@ -484,10 +486,6 @@ export const WorkflowRow = ({
                   }
                   void onStartStepAgent({ agent: pending, isConfirmed });
                 }}
-                onForceAdvance={() =>
-                  void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
-                }
-                onRecover={() => recoverStuckStep({ sessionId: task.id, workflowRunId: run.id })}
               />
             </div>
           ) : null}

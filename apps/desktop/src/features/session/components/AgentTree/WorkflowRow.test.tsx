@@ -66,6 +66,11 @@ vi.mock('./ScoutSubtree', () => ({
 }));
 vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
+vi.mock('../../../workflows/components/NextActionStrip', () => ({
+  NextActionStrip: ({ subjectAgentId }: { readonly subjectAgentId: string | null }) => (
+    <div data-testid="next-action-strip" data-subject={subjectAgentId ?? 'run'} />
+  ),
+}));
 
 import { WorkflowRow } from './WorkflowRow';
 
@@ -218,8 +223,6 @@ const renderDetail = ({
       onRenameCommit={vi.fn(async () => undefined)}
       onResolveFirstForRun={vi.fn()}
       toggleClusterExpand={vi.fn()}
-      skipStuckStepAndAdvance={vi.fn(async () => undefined)}
-      recoverStuckStep={vi.fn(async () => undefined)}
     />,
   );
 
@@ -429,6 +432,21 @@ describe('WorkflowRow detail dashboard', () => {
     renderDetail();
 
     expect(screen.getByTestId('workflow-next-step-cta')).toBeDefined();
+  });
+
+  it('carries the run next action above the steps, scoped to the run', () => {
+    renderDetail();
+
+    const strip = screen.getByTestId('next-action-strip');
+    expect(strip.getAttribute('data-subject')).toBe('run');
+    const steps = screen.getByTestId('workflow-step-graph');
+    expect(strip.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('drops the next action on a discarded run', () => {
+    renderDetail({ runOverride: { ...run, discardedAt: NOW } });
+
+    expect(screen.queryByTestId('next-action-strip')).toBeNull();
   });
 
   it('puts the goal and its attachments after the steps and the recap', () => {
@@ -650,6 +668,13 @@ describe('WorkflowRow dynamic runs', () => {
     expect(screen.getByTestId('orchestrator-state').textContent).toContain(
       'Paused · autorun is off',
     );
+  });
+
+  it('gives an orchestrated run the same next action as a static one', () => {
+    renderDetail({ runOverride: dynamicRun, agentsOverride: doneAgents, actionableStepId: null });
+
+    expect(screen.getByTestId('next-action-strip').getAttribute('data-subject')).toBe('run');
+    expect(screen.queryByTestId('workflow-next-step-cta')).toBeNull();
   });
 
   it('leaves the orchestrator phase to the strip instead of a second pill', () => {

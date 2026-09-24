@@ -129,6 +129,23 @@ even a sub-agent under a step, gets the question mark on the rail and an
 never shows it, because the question belongs to that step. Every step row
 also shows the model and the effort the step runs with.
 
+### Next action
+
+When a run needs you, one **Next action** strip says what to do. It sits in
+the fixed header of the workflow detail and of the agent detail, above the
+tabs, so Brief and Transcript show the same strip and the transcript does not
+repeat it at the bottom. Orchestrated runs get the same strip, and the
+orchestrator card no longer carries its own answer or skip button.
+
+- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
+- An open question: "Implement asks: ..." with **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
+- The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
+
+In the agent detail, the strip shows only on the agent the failed step is
+waiting on, or on one of its sub-agents. `resolveNextAction` picks the strip
+from the advance state. It reads `resolveWorkflowAdvance` and never decides
+on its own whether the run can move.
+
 ### Skipping a failed step
 
 Getting past a blocked run always takes more than one click. A failed step
@@ -229,8 +246,10 @@ A blocked result always carries the failed step, whichever reason came first.
 So screens that name the failed step keep naming it while a short-lived block
 is showing.
 
-Every screen reads this one resolver through one view that handles every case
-of the union. No screen narrows the union on its own. The one exception on
+Every screen reads this one resolver through a view that handles every case
+of the union: `viewWorkflowAdvance` for the step rows and the advance button,
+`resolveNextAction` for the Next action strip. No screen narrows the union on
+its own. The one exception on
 purpose is the chat button, because it shows nothing under `automatic`.
 
 ### Autorun logic

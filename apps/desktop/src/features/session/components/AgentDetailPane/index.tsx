@@ -12,6 +12,7 @@ import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { AgentBrief } from './AgentBrief';
 import { AgentTitle } from './AgentTitle';
+import { AgentNextAction } from './AgentNextAction';
 
 type Props = {
   readonly session: Session;
@@ -95,6 +96,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
           }
         />
       }
+      banner={<AgentNextAction session={session} agent={agent} />}
       tabs={
         <StudioDetailTabs ariaLabel="Agent sections" options={TABS} value={tab} onChange={setTab} />
       }

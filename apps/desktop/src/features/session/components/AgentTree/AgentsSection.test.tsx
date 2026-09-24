@@ -205,6 +205,9 @@ vi.mock('./ClusterChildRow', () => ({
   ),
 }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
+vi.mock('../../../workflows/components/NextActionStrip', () => ({
+  NextActionStrip: () => null,
+}));
 vi.mock('../../../scripts/components/ScriptsSection', () => ({
   ScriptsSection: () => <div data-testid="scripts" />,
 }));
@@ -299,7 +302,6 @@ function reset() {
     sessionWorkflows: {},
     discardWorkflow: vi.fn(),
     detachWorkflowFromSession: h.detachWorkflowFromSession,
-    skipStuckStepAndAdvance: vi.fn(),
     reorderSessionWorkflows: vi.fn(),
     setWorkflowRunAutoRun: vi.fn(),
     startWorkflowRun: vi.fn(),
