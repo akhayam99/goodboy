@@ -25,7 +25,11 @@ import type {
 } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { buildTimelineGroups } from './buildTimelineGroups';
-import { buildTimelineStream, type TimelineStreamItem } from './buildTimelineStream';
+import {
+  buildRunTreeStream,
+  buildTimelineStream,
+  type TimelineStreamItem,
+} from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 import { runIdentity, runIdentitySeed } from './runIdentity';
@@ -2629,5 +2633,153 @@ describe('buildTimelineStream, row states from the run advance', () => {
         ? chainedRow.rowState.reason.afterTitle
         : null,
     ).toBe('Release workflow');
+  });
+});
+
+type RunTreeParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly workflow?: ReturnType<typeof attachedWorkflow>;
+  readonly questions?: ReadonlyArray<OpenQuestion>;
+};
+
+const runTree = ({
+  agents,
+  workflow = attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }) }),
+  questions = [],
+}: RunTreeParams) => {
+  const entry = buildTimelineGroups({
+    sessionId: SESSION_ID,
+    agents,
+    workflows: [workflow],
+    plans: [],
+    artifacts: [],
+    externalTasks: [],
+    questions,
+    worktrees: [],
+    events: [],
+    agentKindOverride: {},
+  }).entries.find((candidate) => candidate.kind === 'run');
+  if (entry === undefined || entry.kind !== 'run') {
+    throw new Error('no run entry');
+  }
+  return buildRunTreeStream({ entry, unreadAgentIds: new Set(), advance: null, isDeciding: false });
+};
+
+describe('buildRunTreeStream', () => {
+  const nestedRun: ReadonlyArray<Agent> = [
+    agent({
+      id: 'step-1',
+      ordinal: 1,
+      startedAt: localIso({ day: 18, hour: 8, minute: 10 }),
+      completedAt: localIso({ day: 18, hour: 8, minute: 20 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({
+      id: 'step-2',
+      ordinal: 2,
+      status: 'running',
+      startedAt: localIso({ day: 18, hour: 9 }),
+      workflowRunId: RUN_ID,
+    }),
+    agent({ id: 'step-3', ordinal: 3, status: 'pending', workflowRunId: RUN_ID }),
+    agent({
+      id: 'child-1',
+      ordinal: 4,
+      status: 'running',
+      startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+      workflowRunId: RUN_ID,
+      parentAgentId: 'step-2',
+    }),
+    agent({
+      id: 'child-2',
+      ordinal: 5,
+      status: 'pending',
+      workflowRunId: RUN_ID,
+      parentAgentId: 'step-2',
+    }),
+  ];
+
+  it('grows the run from its first step up to NOW, with no run row and no day rule', () => {
+    const { items } = runTree({ agents: nestedRun });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'pending:agent:step-3',
+      'pending:agent:child-2',
+      'step:agent:child-1',
+      'step:agent:step-2',
+      'step:agent:step-1',
+    ]);
+  });
+
+  it('roots the run lane on the first step so the rail needs no session spine', () => {
+    const { items, groups } = runTree({ agents: nestedRun });
+    const layout = layoutTimelineRail({ rows: items, groups, hasSpine: false });
+    const rowOf = (id: string) => layout.rows[items.findIndex((item) => item.id === id)];
+
+    expect(groups.find((group) => group.id === 'lane:run:run-1')?.originRowId).toBe('agent:step-1');
+    expect(rowOf('agent:step-1')?.markerColumn).toBe(0);
+    expect(rowOf('agent:step-1')?.joins).toEqual([]);
+    expect(rowOf('agent:child-1')?.markerColumn).toBe(1);
+    expect(rowOf('agent:child-2')?.joins.map((join) => `${join.kind}:${join.dash}`)).toEqual([
+      'rejoin:dashed',
+    ]);
+    expect(layout.rows[0]?.segments.map((segment) => `${segment.column}:${segment.dash}`)).toEqual([
+      '0:dashed',
+    ]);
+  });
+
+  it('keeps a queued run in execution order, the first step at the bottom', () => {
+    const { items } = runTree({
+      agents: [
+        agent({ id: 'step-1', ordinal: 1, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'step-2', ordinal: 2, status: 'pending', workflowRunId: RUN_ID }),
+        agent({ id: 'step-3', ordinal: 3, status: 'pending', workflowRunId: RUN_ID }),
+      ],
+    });
+
+    expect(items.map(labelOf)).toEqual([
+      'now',
+      'pending:agent:step-3',
+      'pending:agent:step-2',
+      'pending:agent:step-1',
+    ]);
+  });
+
+  it('puts the question on the step that asked, never on a delegate answering it', () => {
+    const question = (id: string, createdBy: string): OpenQuestion => ({
+      id: typedString<OpenQuestionId>({ value: id }),
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      createdByAgentId: typedString<AgentId>({ value: createdBy }),
+      text: 'Keep the legacy export?',
+      suggestedAnswers: [],
+      isBlocking: true,
+      userAnswer: null,
+      status: 'open',
+      createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 30 }) }),
+    });
+    const delegate: Agent = {
+      ...agent({
+        id: 'delegate',
+        ordinal: 6,
+        status: 'running',
+        startedAt: localIso({ day: 18, hour: 9, minute: 40 }),
+        workflowRunId: RUN_ID,
+        parentAgentId: 'step-2',
+      }),
+      sourceKind: 'open_question',
+      sourceThreadId: 'oq-1',
+    };
+    const { items } = runTree({
+      agents: [...nestedRun, delegate],
+      questions: [question('oq-1', 'child-1'), question('oq-2', 'delegate')],
+    });
+    const phaseOf = (id: string) =>
+      items.flatMap((item) => (item.kind === 'row' && item.id === id ? [item] : []))[0]?.rowState
+        .phase ?? null;
+
+    expect(phaseOf('agent:child-1')).toBe('waiting');
+    expect(phaseOf('agent:delegate')).toBe('running');
   });
 });

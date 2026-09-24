@@ -2,6 +2,7 @@ import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
 import { isAgentSettled } from '@goodboy/core';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
+import { isQuestionDelegate } from '../../context/questionDelegate';
 import {
   DONE_ROW_STATE,
   resolveAgentRowState,
@@ -526,7 +527,7 @@ const agentRows = ({
     sortOrdinal: entry.ordinal,
     rowState: resolveAgentRowState({
       agent: entry.agent,
-      isAsking: entry.openQuestions.length > 0,
+      isAsking: entry.openQuestions.length > 0 && !isQuestionDelegate({ agent: entry.agent }),
       question: oldestAgentOpenQuestion({ entry }),
       isReadyStep: readyAgentId === entry.agent.id,
     }),
@@ -781,6 +782,76 @@ const withDayBreaks = ({ drafts, dayLabelFor }: DayBreakParams): ReadonlyArray<D
   return dated;
 };
 
+type StreamItemsParams = {
+  readonly drafts: ReadonlyArray<Draft>;
+};
+
+const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStreamItem> => {
+  const items: TimelineStreamItem[] = [
+    {
+      kind: 'now',
+      id: 'now',
+      height: TIMELINE_RHYTHM.now.height,
+      topY: TIMELINE_RHYTHM.now.ruleY,
+      ruleY: TIMELINE_RHYTHM.now.ruleY,
+      markerY: null,
+      groupId: null,
+      isPending: false,
+      gap: 'none',
+    },
+  ];
+
+  let previous: Draft | null = null;
+  for (const draft of drafts) {
+    if (draft.kind === 'day') {
+      items.push({
+        kind: 'day',
+        id: draft.id,
+        label: draft.label,
+        height: TIMELINE_RHYTHM.day.height,
+        topY: 0,
+        ruleY: TIMELINE_RHYTHM.day.ruleY,
+        markerY: TIMELINE_RHYTHM.day.ruleY,
+        groupId: null,
+        isPending: false,
+        gap: 'none',
+      });
+      previous = draft;
+      continue;
+    }
+    const { familyId } = draft;
+    const gap: TimelineGap =
+      previous == null || previous.kind === 'day'
+        ? 'none'
+        : familyId != null && previous.familyId === familyId
+          ? 'sibling'
+          : 'entry';
+    items.push({
+      kind: 'row',
+      id: draft.id,
+      at: draft.at,
+      grade: draft.grade,
+      entry: draft.entry,
+      identity: draft.identity,
+      familyId: draft.familyId,
+      ordinal: draft.ordinal,
+      nodeIndex:
+        draft.entry.kind === 'agent' ? nodeIndexOf({ stepLabel: draft.entry.stepLabel }) : null,
+      rowState: draft.rowState,
+      hasUnread: draft.hasUnread,
+      height: rowBoxHeight({ grade: draft.grade, gap }),
+      topY: 0,
+      markerY: markerCenterY({ grade: draft.grade, gap }),
+      groupId: draft.groupId,
+      isPending: draft.isPending,
+      gap,
+    });
+    previous = draft;
+  }
+
+  return items;
+};
+
 export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
@@ -907,67 +978,45 @@ export const buildTimelineStream = ({
     dayLabelFor,
   });
 
-  const items: TimelineStreamItem[] = [
-    {
-      kind: 'now',
-      id: 'now',
-      height: TIMELINE_RHYTHM.now.height,
-      topY: TIMELINE_RHYTHM.now.ruleY,
-      ruleY: TIMELINE_RHYTHM.now.ruleY,
-      markerY: null,
-      groupId: null,
-      isPending: false,
-      gap: 'none',
-    },
-  ];
+  return { items: streamItemsOf({ drafts: withDays }), groups: context.groups };
+};
 
-  let previous: Draft | null = null;
-  for (const draft of withDays) {
-    if (draft.kind === 'day') {
-      items.push({
-        kind: 'day',
-        id: draft.id,
-        label: draft.label,
-        height: TIMELINE_RHYTHM.day.height,
-        topY: 0,
-        ruleY: TIMELINE_RHYTHM.day.ruleY,
-        markerY: TIMELINE_RHYTHM.day.ruleY,
-        groupId: null,
-        isPending: false,
-        gap: 'none',
-      });
-      previous = draft;
-      continue;
-    }
-    const { familyId } = draft;
-    const gap: TimelineGap =
-      previous == null || previous.kind === 'day'
-        ? 'none'
-        : familyId != null && previous.familyId === familyId
-          ? 'sibling'
-          : 'entry';
-    items.push({
-      kind: 'row',
-      id: draft.id,
-      at: draft.at,
-      grade: draft.grade,
-      entry: draft.entry,
-      identity: draft.identity,
-      familyId: draft.familyId,
-      ordinal: draft.ordinal,
-      nodeIndex:
-        draft.entry.kind === 'agent' ? nodeIndexOf({ stepLabel: draft.entry.stepLabel }) : null,
-      rowState: draft.rowState,
-      hasUnread: draft.hasUnread,
-      height: rowBoxHeight({ grade: draft.grade, gap }),
-      topY: 0,
-      markerY: markerCenterY({ grade: draft.grade, gap }),
-      groupId: draft.groupId,
-      isPending: draft.isPending,
-      gap,
-    });
-    previous = draft;
-  }
+type RunTreeParams = {
+  readonly entry: TimelineRunEntry;
+  readonly unreadAgentIds: ReadonlySet<string>;
+  readonly advance: WorkflowAdvanceState | null;
+  readonly isDeciding: boolean;
+};
 
-  return { items, groups: context.groups };
+export const buildRunTreeStream = ({
+  entry,
+  unreadAgentIds,
+  advance,
+  isDeciding,
+}: RunTreeParams): TimelineStream => {
+  const context: EmitContext = {
+    unreadAgentIds,
+    advanceByRunId: new Map(advance == null ? [] : [[entry.run.id, advance]]),
+    decidingRunIds: new Set(isDeciding ? [entry.run.id] : []),
+    chainedRunById: new Map(),
+    groups: [],
+    showWorkflowSubagents: true,
+    showAgentSubagents: true,
+    showPlans: false,
+    showReports: false,
+    showWireframes: false,
+    showQuestions: false,
+  };
+  const sorted = [...runRows({ entry, context })].sort((first, second) =>
+    compareNewestFirst({ first, second }),
+  );
+  const steps = withPendingAtFamilyHead({ drafts: sorted }).filter(
+    (draft) => draft.id !== entry.id,
+  );
+  const laneId = laneIdOf({ entryId: entry.id });
+  const root = [...steps].reverse().find((draft) => draft.groupId === laneId) ?? null;
+  const groups = context.groups.map((group) =>
+    group.id === laneId && root !== null ? { ...group, originRowId: root.id } : group,
+  );
+  return { items: streamItemsOf({ drafts: steps }), groups };
 };

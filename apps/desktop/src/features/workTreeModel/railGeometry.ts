@@ -35,7 +35,7 @@ export type RailSegment = {
 };
 
 export type RailJoin = {
-  readonly kind: 'merge' | 'branch' | 'rejoin';
+  readonly kind: 'branch' | 'rejoin';
   readonly spineColumn: number;
   readonly laneColumn: number;
   readonly identityIndex: number | null;
@@ -65,6 +65,7 @@ export type RailLayout = {
 type Params = {
   readonly rows: ReadonlyArray<RailRowInput>;
   readonly groups: ReadonlyArray<RailGroupInput>;
+  readonly hasSpine?: boolean;
 };
 
 type Interval = {
@@ -77,6 +78,7 @@ type GroupSpan = {
   readonly originIndex: number;
   readonly topIndex: number;
   readonly memberIndexes: ReadonlyArray<number>;
+  readonly isSelfOrigin: boolean;
   readonly rejoinGroupId: string | null;
   readonly interval: Interval;
 };
@@ -116,147 +118,22 @@ type LaneParams = {
 
 type JoinPathParams = {
   readonly join: PlannedJoin;
-  readonly height: number;
 };
 
-const joinPathOf = ({ join, height }: JoinPathParams): string => {
+const joinPathOf = ({ join }: JoinPathParams): string => {
   const spineX = railColumnX({ column: join.spineColumn });
   const laneX = railColumnX({ column: join.laneColumn });
   if (join.kind === 'rejoin') {
     return `M ${laneX} ${join.anchorY} C ${laneX} ${join.anchorY - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} 0, ${spineX} 0`;
   }
-  const edgeY = join.kind === 'branch' ? 0 : height;
-  const handleY = join.kind === 'branch' ? RAIL_CURVE_HANDLE : height - RAIL_CURVE_HANDLE;
-  return `M ${laneX} ${edgeY} C ${laneX} ${handleY}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
-};
-
-export type BranchRailRowInput = {
-  readonly id: string;
-  readonly depth: number;
-  readonly height: number;
-  readonly markerY: number;
-  readonly isStarted: boolean;
-};
-
-export type BranchRailLayout = {
-  readonly width: number;
-  readonly rows: ReadonlyArray<RailRow>;
-};
-
-type BranchParams = {
-  readonly rows: ReadonlyArray<BranchRailRowInput>;
-};
-
-type ColumnScanParams = {
-  readonly rows: ReadonlyArray<BranchRailRowInput>;
-  readonly from: number;
-  readonly column: number;
-};
-
-const dashOf = ({ isStarted }: { readonly isStarted: boolean }): RailDash =>
-  isStarted ? 'solid' : 'dashed';
-
-const nextOnColumn = ({ rows, from, column }: ColumnScanParams): BranchRailRowInput | null => {
-  for (let index = from + 1; index < rows.length; index += 1) {
-    const candidate = rows[index];
-    if (candidate === undefined || candidate.depth < column) {
-      return null;
-    }
-    if (candidate.depth === column) {
-      return candidate;
-    }
-  }
-  return null;
-};
-
-const hasPreviousOnColumn = ({ rows, from, column }: ColumnScanParams): boolean => {
-  for (let index = from - 1; index >= 0; index -= 1) {
-    const candidate = rows[index];
-    if (candidate === undefined || candidate.depth < column) {
-      return false;
-    }
-    if (candidate.depth === column) {
-      return true;
-    }
-  }
-  return false;
-};
-
-export const layoutBranchRail = ({ rows }: BranchParams): BranchRailLayout => {
-  const deepest = rows.reduce((widest, row) => (row.depth > widest ? row.depth : widest), 0);
-  return {
-    width: RAIL_SPINE_X + deepest * RAIL_LANE_OFFSET + RAIL_EDGE_PAD,
-    rows: rows.map((row, index) => {
-      const column = row.depth;
-      const lane = { identityIndex: null, isMuted: false };
-      const segments: RailSegment[] = [];
-      const next = nextOnColumn({ rows, from: index, column });
-
-      if (column > 0 || hasPreviousOnColumn({ rows, from: index, column })) {
-        segments.push({
-          ...lane,
-          column,
-          dash: dashOf({ isStarted: row.isStarted }),
-          fromY: 0,
-          toY: row.markerY,
-        });
-      }
-      if (next !== null) {
-        segments.push({
-          ...lane,
-          column,
-          dash: dashOf({ isStarted: next.isStarted }),
-          fromY: row.markerY,
-          toY: row.height,
-        });
-      }
-      for (let ancestor = 0; ancestor < column; ancestor += 1) {
-        const continued = nextOnColumn({ rows, from: index, column: ancestor });
-        if (continued === null) {
-          continue;
-        }
-        segments.push({
-          ...lane,
-          column: ancestor,
-          dash: dashOf({ isStarted: continued.isStarted }),
-          fromY: 0,
-          toY: row.height,
-        });
-      }
-
-      const child = rows[index + 1];
-      const branch =
-        child === undefined || child.depth !== column + 1
-          ? null
-          : ({
-              kind: 'merge',
-              spineColumn: column,
-              laneColumn: column + 1,
-              identityIndex: null,
-              isMuted: false,
-              dash: dashOf({ isStarted: child.isStarted }),
-              anchorY: row.markerY,
-            } satisfies PlannedJoin);
-
-      return {
-        id: row.id,
-        height: row.height,
-        segments,
-        joins:
-          branch === null
-            ? []
-            : [{ ...branch, path: joinPathOf({ join: branch, height: row.height }) }],
-        markerColumn: column,
-        markerY: row.markerY,
-      };
-    }),
-  };
+  return `M ${laneX} 0 C ${laneX} ${RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
 };
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
   first.from <= second.to && second.from <= first.to;
 
-export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
+export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): RailLayout => {
+  const rootParentColumn = hasSpine ? 0 : -1;
   const indexById = new Map<string, number>();
   const membersByGroupId = new Map<string, number[]>();
   for (const [index, row] of rows.entries()) {
@@ -299,14 +176,15 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const drafts: ReadonlyArray<Omit<GroupSpan, 'interval' | 'rejoinGroupId'>> = groups.flatMap(
     (group) => {
       const originIndex = indexById.get(group.originRowId) ?? lastIndex;
+      const isSelfOrigin = rows[originIndex]?.groupId === group.id;
       const memberIndexes = (membersByGroupId.get(group.id) ?? []).filter(
         (index) => index < originIndex,
       );
-      const topIndex = memberIndexes[0];
+      const topIndex = memberIndexes[0] ?? (isSelfOrigin ? originIndex : undefined);
       if (topIndex === undefined) {
         return [];
       }
-      return [{ group, originIndex, topIndex, memberIndexes }];
+      return [{ group, originIndex, topIndex, memberIndexes, isSelfOrigin }];
     },
   );
   const draftByGroupId = new Map(drafts.map((draft) => [draft.group.id, draft]));
@@ -366,7 +244,8 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   );
   for (const span of ordered) {
     const parentId = span.group.parentGroupId;
-    const parentColumn = parentId == null ? 0 : (columnByGroupId.get(parentId) ?? 0);
+    const parentColumn =
+      parentId == null ? rootParentColumn : (columnByGroupId.get(parentId) ?? rootParentColumn);
     let column = parentColumn + 1;
     while (
       placed.some(
@@ -384,10 +263,11 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
   const joinsByIndex: PlannedJoin[][] = rows.map(() => []);
 
   for (const span of spans) {
-    const { group, originIndex, memberIndexes } = span;
-    const column = columnByGroupId.get(group.id) ?? 1;
+    const { group, originIndex, memberIndexes, isSelfOrigin } = span;
+    const column = columnByGroupId.get(group.id) ?? rootParentColumn + 1;
     const parentId = group.parentGroupId;
-    const parentColumn = parentId == null ? 0 : (columnByGroupId.get(parentId) ?? 0);
+    const parentColumn =
+      parentId == null ? rootParentColumn : (columnByGroupId.get(parentId) ?? rootParentColumn);
     const root = rootOf({ group });
     const ink = {
       column,
@@ -430,7 +310,15 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
     const originRow = rows[originIndex];
     const nearestIndex = memberIndexes[memberIndexes.length - 1];
     const nearestRow = nearestIndex === undefined ? undefined : rows[nearestIndex];
-    if (originRow !== undefined && nearestRow !== undefined) {
+    if (originRow !== undefined && nearestRow !== undefined && isSelfOrigin) {
+      laneSegmentsByIndex[originIndex]?.push({
+        ...ink,
+        dash: nearestRow.isPending ? 'dashed' : 'solid',
+        fromY: originRow.topY,
+        toY: anchorOf({ row: originRow }),
+      });
+    }
+    if (originRow !== undefined && nearestRow !== undefined && !isSelfOrigin) {
       joinsByIndex[originIndex]?.push({
         kind: 'branch',
         spineColumn: parentColumn,
@@ -442,9 +330,9 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       });
     }
 
-    const topIndex = memberIndexes[0];
-    const topRow = topIndex === undefined ? undefined : rows[topIndex];
-    if (topIndex === undefined || topRow === undefined) {
+    const { topIndex } = span;
+    const topRow = rows[topIndex];
+    if (topRow === undefined) {
       continue;
     }
     if (span.rejoinGroupId !== null) {
@@ -494,19 +382,23 @@ export const layoutTimelineRail = ({ rows, groups }: Params): RailLayout => {
       id: row.id,
       height: row.height,
       segments: [
-        {
-          column: 0,
-          identityIndex: null,
-          isMuted: false,
-          dash: 'solid',
-          fromY: row.topY,
-          toY: row.height,
-        } satisfies RailSegment,
+        ...(hasSpine
+          ? [
+              {
+                column: 0,
+                identityIndex: null,
+                isMuted: false,
+                dash: 'solid',
+                fromY: row.topY,
+                toY: row.height,
+              } satisfies RailSegment,
+            ]
+          : []),
         ...(laneSegmentsByIndex[index] ?? []),
       ],
       joins: (joinsByIndex[index] ?? []).map((join) => ({
         ...join,
-        path: joinPathOf({ join, height: row.height }),
+        path: joinPathOf({ join }),
       })),
       markerColumn: row.groupId == null ? 0 : (columnByGroupId.get(row.groupId) ?? 0),
       markerY: row.markerY,

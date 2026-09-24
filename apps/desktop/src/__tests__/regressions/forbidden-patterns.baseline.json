@@ -24,7 +24,6 @@
     "apps/desktop/src/features/resolve/components/ResolveItemView/ResolveItemContainer.tsx": 1,
     "apps/desktop/src/features/scripts/classifyScript.ts": 1,
     "apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx": 1,
-    "apps/desktop/src/features/session/components/AgentTree/WorkflowStepRow.tsx": 2,
     "apps/desktop/src/features/session/components/WorkflowBuilderView/index.tsx": 2,
     "apps/desktop/src/features/workflows/components/LibraryStepForm/index.tsx": 1,
     "apps/desktop/src/features/workflows/hooks/useWorkflowDrag/index.ts": 1,

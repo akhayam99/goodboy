@@ -123,11 +123,22 @@ waiting for your click, then the spend limit. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
-The run's steps show which agent is waiting on you. The agent that asked,
-even a sub-agent under a step, gets the question mark on the rail and an
-**Answer** action on its row. An agent that answers a question for a step
-never shows it, because the question belongs to that step. Every step row
-also shows the model and the effort the step runs with.
+The workflow detail draws the run as a run tree (`RunTree`), the same stream
+the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
+the same way: the first step sits at the bottom, queued steps sit above the
+running one, and NOW closes the tree at the top. The run lane starts on the
+first step, so the tree has no session spine and no time column. Sub-agents
+sit one column right, on the run's colour. The view scrolls to the row that is
+running or waiting on you when it opens. The run header and the Next action
+strip stay pinned while the tree scrolls.
+
+The run tree shows which agent is waiting on you. The agent that asked, even a
+sub-agent under a step, gets the question mark on its node and an **Answer**
+action on its row, which opens the questions view on that question. An agent
+that answers a question for a step never shows it, in the tree or in the
+activity feed, because the question belongs to that step. Every row also shows
+the model and the effort the step runs with, and strikes the planned model
+when routing picked another one. Clicking a row opens that agent.
 
 In the activity feed, every agent and step row ends with the same meta: the
 provider glyph, the model, the effort and what the row has spent. Before a
@@ -283,7 +294,7 @@ template, at least one step, and every step agent settled.
 check that advances, chains or finishes a run uses it, so closing an agent by
 hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
 closed. Only what the screen draws uses it: the lane of an agent's children in
-the activity rail and the done count under a node in the workflow detail.
+the activity rail and in the run tree of the workflow detail.
 
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves

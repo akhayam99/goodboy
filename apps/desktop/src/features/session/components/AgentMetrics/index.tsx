@@ -1,5 +1,5 @@
 import { MetaRow, Skeleton, cn, formatUsdPrecise } from '@goodboy/ui';
-import type { Agent, EffortLevel, ProviderId, TelemetryRecord } from '@goodboy/types';
+import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 import { CostBadge } from '../../../providers/components/CostBadge';
@@ -30,7 +30,6 @@ type Props = {
   readonly density: 'compact' | 'full' | 'lane';
   readonly plannedModel?: string | null;
   readonly plannedProvider?: ProviderId | null;
-  readonly plannedEffort?: EffortLevel | null;
   readonly muted?: boolean;
 };
 
@@ -46,7 +45,6 @@ export const AgentMetrics = ({
   density,
   plannedModel = null,
   plannedProvider = null,
-  plannedEffort = null,
   muted = false,
 }: Props) => {
   const dominant = contextUsage[0] ?? null;
@@ -82,7 +80,6 @@ export const AgentMetrics = ({
                 key="model"
                 provider={provider ?? null}
                 model={model ?? null}
-                effort={plannedEffort}
                 planned={planned}
                 muted={muted}
               />

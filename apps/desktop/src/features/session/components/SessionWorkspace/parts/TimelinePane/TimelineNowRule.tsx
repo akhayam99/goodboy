@@ -8,18 +8,21 @@ type Props = {
   readonly item: TimelineNowItem;
   readonly rail: RailRow;
   readonly railWidth: number;
+  readonly hasGutter?: boolean;
 };
 
-export const TimelineNowRule = ({ item, rail, railWidth }: Props) => (
+const LABEL_CLASS =
+  'absolute -translate-y-1/2 text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground';
+
+export const TimelineNowRule = ({ item, rail, railWidth, hasGutter = true }: Props) => (
   <div className="flex min-w-0" style={{ height: item.height }}>
-    <span className={cn('relative shrink-0', TIMELINE_GUTTER)}>
-      <span
-        className="absolute right-2 -translate-y-1/2 text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground"
-        style={{ top: item.ruleY }}
-      >
-        Now
+    {hasGutter && (
+      <span className={cn('relative shrink-0', TIMELINE_GUTTER)}>
+        <span className={cn(LABEL_CLASS, 'right-2')} style={{ top: item.ruleY }}>
+          Now
+        </span>
       </span>
-    </span>
+    )}
     <span className="relative shrink-0" style={{ width: railWidth }}>
       <TimelineRail rail={rail} width={railWidth} />
       <span
@@ -29,6 +32,12 @@ export const TimelineNowRule = ({ item, rail, railWidth }: Props) => (
         style={{ left: RAIL_SPINE_X, top: item.ruleY }}
       />
     </span>
-    <span className="min-w-0 flex-1" />
+    <span className="relative min-w-0 flex-1">
+      {hasGutter ? null : (
+        <span className={cn(LABEL_CLASS, 'left-2')} style={{ top: item.ruleY }}>
+          Now
+        </span>
+      )}
+    </span>
   </div>
 );

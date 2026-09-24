@@ -22,7 +22,7 @@ The work tree shows the split. `WorkNode` in `packages/ui/src/components/WorkTre
 only draws a node from a state, a mark and a label. What a row is doing
 (`RowState`), the rail geometry and the row rhythm know agents and runs, so
 they live in `apps/desktop/src/features/workTreeModel/`, which the activity
-feed, the workflow step graph and the project rows all read. The folder is not
+feed, the workflow run tree and the project rows all read. The folder is not
 called `features/workTree`: `features/worktree` (git worktrees) already exists,
 and the macOS file system folds case, so the two would share one folder on
 disk and split in two on Linux.

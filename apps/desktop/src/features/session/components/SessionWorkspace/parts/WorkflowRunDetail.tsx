@@ -1,6 +1,4 @@
 import type { Session, WorkflowRunId } from '@goodboy/types';
-import { ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
 import { AgentsSection } from '../../AgentTree/AgentsSection';
 
 type Props = {
@@ -9,22 +7,12 @@ type Props = {
 };
 
 export const WorkflowRunDetail = ({ session, workflowRunId }: Props) => (
-  <ScrollFade className="h-full min-w-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-    <div
-      className={cn(
-        'motion-safe:animate-studio-in',
-        PANE_RHYTHM.column,
-        PANE_RHYTHM.stack,
-        PANE_RHYTHM.measure.pane,
-      )}
-    >
-      <AgentsSection
-        task={session}
-        only="workflows"
-        workflowRunId={workflowRunId}
-        workflowVariant="detail"
-        showWorkflowAttach={false}
-      />
-    </div>
-  </ScrollFade>
+  <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+    <AgentsSection
+      task={session}
+      only="workflows"
+      workflowRunId={workflowRunId}
+      showWorkflowAttach={false}
+    />
+  </div>
 );

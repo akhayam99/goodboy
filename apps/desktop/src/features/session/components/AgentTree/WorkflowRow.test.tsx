@@ -55,16 +55,19 @@ vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', 
   GoalAttachmentsStrip: () => <div data-testid="goal-attachments" />,
 }));
 
-vi.mock('./WorkflowStepRow', () => ({
-  WorkflowStepRow: ({ run }: { readonly run: Agent }) => (
-    <div data-testid={`step-${run.id}`}>{run.name}</div>
+type RunTreeProps = {
+  readonly onSelect: (id: AgentId) => void;
+};
+
+vi.mock('../../../workflows/components/RunTree', () => ({
+  RunTree: ({ onSelect }: RunTreeProps) => (
+    <div data-testid="run-tree">
+      <button type="button" onClick={() => onSelect('agent-1' as AgentId)}>
+        Step 1, Scout
+      </button>
+    </div>
   ),
 }));
-
-vi.mock('./ScoutSubtree', () => ({
-  ScoutSubtree: () => <div data-testid="scout-subtree" />,
-}));
-vi.mock('./ClusterChildRow', () => ({ ClusterChildRow: () => null }));
 vi.mock('./WorkflowKillButton', () => ({ WorkflowKillButton: () => null }));
 vi.mock('../../../workflows/components/NextActionStrip', () => ({
   NextActionStrip: ({ subjectAgentId }: { readonly subjectAgentId: string | null }) => (
@@ -147,7 +150,6 @@ type RenderParams = {
   readonly actionableStepId?: string | null;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
-  readonly clusterExpand?: ReadonlyMap<string, boolean>;
   readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
   readonly onPickAgent?: (agentId: AgentId) => void;
   readonly startWorkflowRun?: (sessionId: SessionId, runId: WorkflowRunId) => Promise<void>;
@@ -156,7 +158,6 @@ type RenderParams = {
     runId: WorkflowRunId,
     autoRun: boolean,
   ) => Promise<void>;
-  readonly variant?: 'sidebar' | 'detail';
   readonly focusedWorkflowRunId?: WorkflowRunId | null;
 };
 
@@ -167,62 +168,42 @@ const renderDetail = ({
   actionableStepId = 'step-2',
   blockReason = null,
   childrenByParentId = new Map(),
-  clusterExpand = new Map(),
   onDeleteWorkflow = vi.fn(async () => undefined),
   onPickAgent = vi.fn(),
   startWorkflowRun = vi.fn(async () => undefined),
   setWorkflowRunAutoRun = vi.fn(async () => undefined),
-  variant = 'detail',
   focusedWorkflowRunId = null,
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
       run={runOverride}
       workflow={workflowOverride}
-      index={0}
       task={session}
-      attachedRuns={[{ run: runOverride, workflow }]}
       agentsByRunId={new Map([[RUN_ID, [...agentsOverride]]])}
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
-      countUnread={() => 0}
       focusedWorkflowRunId={focusedWorkflowRunId}
       workflowExpand={undefined}
       workflowNameByRunId={new Map()}
-      forceExpanded
-      variant={variant}
       toggleWorkflowExpand={vi.fn()}
       startWorkflowRun={startWorkflowRun}
       setWorkflowRunAutoRun={setWorkflowRunAutoRun}
-      onReorderWorkflow={vi.fn(async () => undefined)}
       onDiscardWorkflow={vi.fn(async () => undefined)}
       onDeleteWorkflow={onDeleteWorkflow}
       agentKindOverride={{}}
       agentModelOverride={{}}
       agentProviderOverride={{}}
       agentEffortOverride={{}}
-      openQuestionAgentIds={new Set()}
-      onAnswerQuestions={vi.fn()}
       childrenByParentId={childrenByParentId}
-      clusterExpand={clusterExpand}
       selectedAgentId={null}
-      isTaskActive
-      editingId={null}
-      latestTelemetryByAgentId={new Map()}
       aggregatesByAgentId={
         new Map([
           ['agent-1', { inputTokens: 10, outputTokens: 5, estimatedCostUsd: 0.25, turns: 1 }],
         ])
       }
-      providerUsageByAgentId={new Map()}
-      turnsByAgentId={new Map()}
-      isTranscriptLoading={false}
       onStartStepAgent={vi.fn(async () => undefined)}
       onPickAgent={onPickAgent}
-      setEditingId={vi.fn()}
-      onRenameCommit={vi.fn(async () => undefined)}
-      onResolveFirstForRun={vi.fn()}
-      toggleClusterExpand={vi.fn()}
+      onAnswerQuestion={vi.fn()}
     />,
   );
 
@@ -331,7 +312,7 @@ describe('WorkflowRow detail dashboard', () => {
 
     const lifecycleSlot = screen.getByRole('group', { name: 'Workflow lifecycle actions' });
     const title = screen.getByRole('heading', { name: 'Refactor' });
-    const steps = screen.getByTestId('workflow-step-graph');
+    const steps = screen.getByTestId('run-tree');
 
     expect(title.compareDocumentPosition(lifecycleSlot)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(lifecycleSlot.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -439,7 +420,7 @@ describe('WorkflowRow detail dashboard', () => {
 
     const strip = screen.getByTestId('next-action-strip');
     expect(strip.getAttribute('data-subject')).toBe('run');
-    const steps = screen.getByTestId('workflow-step-graph');
+    const steps = screen.getByTestId('run-tree');
     expect(strip.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -452,7 +433,7 @@ describe('WorkflowRow detail dashboard', () => {
   it('puts the goal and its attachments after the steps and the recap', () => {
     renderDetail({ runOverride: { ...run, orchestratorSummary: '- shipped the gate' } });
 
-    const steps = screen.getByTestId('workflow-step-graph');
+    const steps = screen.getByTestId('run-tree');
     const recap = screen.getByTestId('workflow-run-summary');
     const goal = screen.getByRole('region', { name: 'What you asked for' });
     const attachments = screen.getByTestId('goal-attachments');
@@ -466,9 +447,7 @@ describe('WorkflowRow detail dashboard', () => {
     const onPickAgent = vi.fn();
     renderDetail({ onPickAgent });
 
-    const steps = screen.getByTestId('workflow-step-graph');
-    const chips = steps.querySelectorAll('button');
-    fireEvent.click(chips[0] as HTMLElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Step 1, Scout' }));
 
     expect(onPickAgent).toHaveBeenCalledWith(agents[0]!.id);
   });
@@ -476,7 +455,7 @@ describe('WorkflowRow detail dashboard', () => {
   it('closes the dashboard with the recap the orchestrator kept', () => {
     renderDetail({ runOverride: { ...run, orchestratorSummary: '- shipped the gate' } });
 
-    const steps = screen.getByTestId('workflow-step-graph');
+    const steps = screen.getByTestId('run-tree');
     const recap = screen.getByTestId('workflow-run-summary');
 
     expect(recap.textContent).toContain('shipped the gate');
@@ -503,60 +482,6 @@ describe('WorkflowRow detail dashboard', () => {
   });
 });
 
-describe('WorkflowRow substep disclosure', () => {
-  const child: Agent = {
-    id: 'agent-3' as AgentId,
-    sessionId: SESSION_ID,
-    stepId: 'step-2' as StepId,
-    workflowRunId: RUN_ID,
-    ordinal: 2,
-    name: 'Sub one',
-    status: 'pending',
-  };
-
-  it('folds the subagents away behind their count', () => {
-    renderDetail({
-      variant: 'sidebar',
-      childrenByParentId: new Map([['agent-2', [child]]]),
-    });
-
-    const trigger = screen.getByRole('button', { name: /1 subagent/i });
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-  });
-
-  it('unfolds the subagents on its own while one of them is running', () => {
-    renderDetail({
-      variant: 'sidebar',
-      childrenByParentId: new Map([['agent-2', [{ ...child, status: 'running' as const }]]]),
-    });
-
-    const trigger = screen.getByRole('button', { name: /1 subagent/i });
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-  });
-});
-
-describe('WorkflowRow sidebar autorun pause', () => {
-  it('turns autorun off immediately without a hard-stop confirmation', () => {
-    const setAutoRun = vi.fn(async () => undefined);
-    const running = agents.map((agent, index) =>
-      index === 1 ? { ...agent, status: 'running' as const } : agent,
-    );
-    renderDetail({
-      runOverride: { ...run, autoRun: true },
-      agentsOverride: running,
-      variant: 'sidebar',
-      setWorkflowRunAutoRun: setAutoRun,
-    });
-
-    expect(screen.queryByRole('heading', { name: 'Refactor' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
-
-    expect(setAutoRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
-    expect(screen.queryByRole('group', { name: 'Stop now?' })).toBeNull();
-  });
-});
-
 describe('WorkflowRow step-in-flight predicate', () => {
   it('turns autorun off while the orchestrator is deciding, even with no agent running', () => {
     const setAutoRun = vi.fn(async () => undefined);
@@ -579,7 +504,6 @@ describe('WorkflowRow step-in-flight predicate', () => {
         executionMode: 'dynamic',
         orchestrationStop: { kind: 'operator', message: 'you stopped it' },
       },
-      variant: 'sidebar',
       focusedWorkflowRunId: 'run-2' as WorkflowRunId,
     });
 
@@ -594,7 +518,6 @@ describe('WorkflowRow step-in-flight predicate', () => {
         executionMode: 'dynamic',
         orchestrationStop: { kind: 'operator', message: 'you stopped it' },
       },
-      variant: 'sidebar',
       focusedWorkflowRunId: 'run-2' as WorkflowRunId,
     });
 
@@ -635,22 +558,6 @@ describe('WorkflowRow manual start gate', () => {
     await Promise.resolve();
 
     expect(startWorkflowRun).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
-  });
-
-  it('gates the sidebar start action the same way', () => {
-    const startWorkflowRun = vi.fn(async () => undefined);
-    renderDetail({
-      runOverride: queuedRun,
-      agentsOverride: [],
-      blockReason: 'questions',
-      startWorkflowRun,
-      variant: 'sidebar',
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start workflow now' }));
-
-    expect(screen.getByRole('group', { name: 'Start this workflow anyway?' })).toBeDefined();
-    expect(startWorkflowRun).not.toHaveBeenCalled();
   });
 });
 

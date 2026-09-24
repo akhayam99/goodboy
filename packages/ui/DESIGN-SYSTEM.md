@@ -266,6 +266,13 @@ A child lane closes on its newest row once its parent and every child have
 settled, and at once when you close the parent. An agent you closed counts as
 settled, so a lane waiting on it stops reaching NOW.
 
+The workflow detail uses the same vocabulary for one run. Its run tree has no
+session spine: `layoutTimelineRail` runs with `hasSpine: false`, the run lane
+takes column 0 and starts on the run's first step (a lane whose origin row is
+one of its own members draws a straight line there, not a branch join), and
+children take column 1. There is no run row and no time column; everything
+else, dashes, rejoins and nodes, is the feed's.
+
 A third rule covers what the feed shows: **everything, always**. Nothing in the
 feed collapses, summarises or hides behind a count. No row or divider has a
 disclosure control. Density is the only protection against a wall of rows, and
@@ -276,7 +283,7 @@ clock glyph.
 ### Work nodes and row states
 
 Every surface that draws a sequence of work (the activity feed, the workflow
-step graph, the agents on a project) draws its nodes with one primitive,
+run tree, the agents on a project) draws its nodes with one primitive,
 `WorkNode` in `packages/ui/src/components/WorkTree/`. It is 20px on every
 grade, sits on the canvas so the lane never shows through it, and knows
 nothing about agents: the caller hands it a state, a mark and a label.
