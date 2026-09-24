@@ -11,12 +11,15 @@
   (needs you / running / in review / building / done). You reach chat, diff,
   terminal and open-in-IDE from the cards. You never land on them. Every
   capability stays one step away.
-- **The board frame.** A "Stage board" eyebrow with a session count sits over a
-  centred strip of fixed-width stage columns. Empty columns show only their
-  header. Collapsed columns keep a horizontal header. A card's goal is its one
-  button (up to three lines, with the full goal in the tooltip). Its quick and
-  lifecycle actions sit next to it, never nested inside it. Restoring an
-  archived card uses the `restore` glyph.
+- **The board frame.** The header has the pane title grade (`Board` plus a
+  session count), with its actions on the right. Header and columns sit in one
+  centred frame with a maximum width, so a wide or zoomed-out window never
+  stretches the board. Stage columns share that width between a minimum and a
+  maximum. Empty columns show only their header, and collapsed Done and
+  Archived keep a horizontal header. Cards have one fixed height: a goal of up
+  to two lines (the full goal in the tooltip) is the card's one button, and the
+  lifecycle menu shows next to the quick actions on hover or focus. Restoring
+  an archived card uses the `restore` glyph.
 - **An archived session is read-only until Restore.** Its overview shows an
   Archived chip with an inline Restore. The composer, new agents, workflows and
   project mounts stay disabled with "Restore this session to continue". Nothing

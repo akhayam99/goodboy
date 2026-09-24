@@ -144,19 +144,20 @@ afterEach(cleanup);
 const cardTitle = () => screen.getByRole('button', { name: session.goal });
 
 describe('StageBoardCard layout', () => {
-  it('grows with a three-line goal while always rendering the footer row', () => {
+  it('keeps a fixed height with a two-line goal and a full-width footer row', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
     const metaRow = card.children[2];
-    expect(card.className).toContain('min-h-28');
+    expect(card.className).toContain('h-28');
+    expect(card.className).not.toContain('min-h-28');
     expect(card.className).toContain('gap-y-1');
     expect(card.className).not.toContain('shadow-sm');
-    expect(title.className).toContain('line-clamp-3');
+    expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
     expect(title.className).toContain('leading-5');
     expect(cardTitle().getAttribute('title')).toBe(session.goal);
-    expect(metaRow?.className).not.toContain('col-span-2');
+    expect(metaRow?.className).toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
     expect(metaRow?.className).toContain('row-start-2');
     expect(metaRow?.className).toContain('h-5');
@@ -557,15 +558,13 @@ describe('StageBoardCard footer', () => {
     );
   });
 
-  it('keeps the lifecycle slot bottom right over the trailing metadata', () => {
+  it('reveals the lifecycle menu next to the quick actions on hover', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = screen.getByRole('article');
-    const group = screen.getByRole('group', { name: 'Session lifecycle actions' });
-    expect(group.className).toContain('col-start-2');
-    expect(group.className).toContain('row-start-2');
-    expect(group.className).toContain('justify-self-end');
-    expect(group.className).toContain('h-5');
-    expect(card?.lastElementChild).toBe(group);
+    const group = screen.getByRole('group', { name: 'Session quick actions' });
+    const trigger = within(group).getByRole('button', { name: 'Session actions' });
+    expect(trigger.className).toContain('opacity-0');
+    expect(trigger.className).toContain('group-hover/session-card:opacity-100');
+    expect(trigger.className).toContain('aria-expanded:opacity-100');
   });
 
   it('keeps cost and age at the metadata grade', () => {
