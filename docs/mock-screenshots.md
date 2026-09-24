@@ -44,7 +44,7 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
   screenshot. To add a scene, add a file under `scenes/` and a line in the
-  `SCENES` map.
+  `MOCK_SCENES` map.
 
 ## Reuse the real components, never rebuild the UI
 
@@ -145,23 +145,27 @@ render, before the snapshot is taken.
 
 A layout change is also captured at `--window-size=1100,800`, close to the
 window's minimum width, where a second rail or a fixed-width control is the
-first thing to clip. Capture both themes at both widths.
+first thing to clip. Capture both themes at both widths: `&theme=light` after
+the scene key renders the light theme.
 
 ## Data hygiene
 
 Fake workspace names, session goals and usernames must be generic but
-believable. They must never be a real client, project or person. Include at
-least one "hard" task among the fake ones (a rate-limiting bug, a rounding
-bug), not only trivial ones. If every task looks easy, the product looks like
-it's only for easy tasks.
+believable. They must never be a real client, project or person. Seeds use one
+fixed vocabulary: workspaces Harborline, Northwind, Acme and Cascadia; repos
+ledger-core, notify-relay, payments-api, billing-api, web-console and
+storefront-web; people named by role (platform lead, finance lead, reviewer),
+never by a personal name. Include at least one "hard" task among the fake ones
+(a rate-limiting bug, a rounding bug), not only trivial ones. If every task
+looks easy, the product looks like it's only for easy tasks.
 
 ## What already exists
 
 `apps/desktop/src/app/components/MockScene/` holds one scene component per
-screenshot. Each one is registered by key in the `SCENES` map and filled from
-`apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the map
-before you build anything. The surface you need is often already there, and
-the keys are the `?scene=` values. The scenes cost nothing at runtime when
+screenshot. Each one is registered by key in the `MOCK_SCENES` map and filled
+from `apps/desktop/src/store/mock-data.ts` plus its own seed module. Read the
+map before you build anything. The surface you need is often already there,
+and the keys are the `?scene=` values. The scenes cost nothing at runtime when
 `VITE_GOODBOY_MOCK` is unset.
 
 README images always show the app around the feature. `scenes/shellChrome.tsx`
@@ -174,6 +178,13 @@ holds the two frames:
 
 `scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
 its hover state, so the row actions show up in a still image.
+
+Scenes that set a state through query params (`&mode=`, `&v=`, `&open=`,
+`&view=`) live in `scenes/audit/`, one file per scene, and share the frame,
+settings and workspace seeds there. They are registered in `MOCK_SCENES` like
+every other scene. A scene opens a studio through the same entrance the app
+uses (a store opener or a click on the real control), never by mounting the
+studio itself.
 
 Scenes that share one seed live in a folder, with one file per scene, a
 `fixtures.ts` for the data and a `seeds.ts` that writes it into the store.

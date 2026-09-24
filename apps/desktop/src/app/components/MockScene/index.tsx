@@ -47,6 +47,29 @@ import {
   ModelPickerTriggersScene,
 } from './scenes/ModelPickerScenes';
 
+import { FrameScene } from './scenes/audit/FrameScene';
+import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
+import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
+import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
+import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
+import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
+import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
+import { SettingsWorkspaceScene } from './scenes/audit/SettingsWorkspaceScene';
+import { OnboardingScene } from './scenes/audit/OnboardingScene';
+import { ToastsScene } from './scenes/audit/ToastsScene';
+import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
+import { NotificationsScene } from './scenes/audit/NotificationsScene';
+import { ChangelogScene } from './scenes/audit/ChangelogScene';
+import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
+import { InboxScene } from './scenes/audit/InboxScene';
+import { CompanionScene } from './scenes/audit/CompanionScene';
+import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
+import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
+import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
+import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
+import { ExploreScene } from './scenes/audit/ExploreScene';
+
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
@@ -88,6 +111,28 @@ export const MOCK_SCENES = {
   'model-picker-cursor': ModelPickerCursorScene,
   'model-picker-codex': ModelPickerCodexScene,
   'model-picker-triggers': ModelPickerTriggersScene,
+  frame: FrameScene,
+  'board-states': BoardStatesScene,
+  'session-states': SessionStatesScene,
+  'workspace-states': WorkspaceStatesScene,
+  'settings-app': SettingsAppScene,
+  'settings-no-workspace': SettingsNoWorkspaceScene,
+  'settings-providers': SettingsProvidersScene,
+  'settings-tools': SettingsToolsScene,
+  'settings-workspace': SettingsWorkspaceScene,
+  onboarding: OnboardingScene,
+  toasts: ToastsScene,
+  'update-confirm': UpdateConfirmScene,
+  notifications: NotificationsScene,
+  changelog: ChangelogScene,
+  'artifact-states': ArtifactStatesScene,
+  inbox: InboxScene,
+  companion: CompanionScene,
+  'review-modes': ReviewModesScene,
+  'workflow-studio': WorkflowStudioScene,
+  'workflow-builder-modes': WorkflowBuilderModesScene,
+  'impact-scopes': ImpactScopesScene,
+  explore: ExploreScene,
 };
 
 export const MockScene = () => {
@@ -95,8 +140,17 @@ export const MockScene = () => {
     document.getElementById('boot-shell')?.remove();
   }, []);
 
-  const sceneName = new URLSearchParams(window.location.search).get('scene') ?? 'workspace';
-  const Scene = MOCK_SCENES[sceneName as keyof typeof MOCK_SCENES] ?? WorkspaceScene;
+  const params = new URLSearchParams(window.location.search);
+  const sceneName = params.get('scene') ?? 'workspace';
+  const Scene =
+    Object.entries(MOCK_SCENES).find(([key]) => key === sceneName)?.[1] ?? WorkspaceScene;
+
+  useEffect(() => {
+    if (params.get('theme') !== 'light') {
+      return;
+    }
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   return (
     <ToastProvider>

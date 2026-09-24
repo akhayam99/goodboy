@@ -34,6 +34,12 @@ export const A11Y_BASELINE = {
   'scene lens-switcher': ['heading-order'],
   'scene lens-switcher-closed': ['heading-order'],
   'scene providers': ['nested-interactive'],
+  'scene session-states': ['aria-allowed-role'],
+  'scene workspace-states': ['aria-allowed-role', 'aria-prohibited-attr', 'nested-interactive'],
+  'scene settings-providers': ['nested-interactive'],
+  'scene review-modes': ['heading-order'],
+  'scene workflow-studio': ['label'],
+  'scene workflow-builder-modes': ['label'],
 } satisfies Record<string, ReadonlyArray<string>>;
 
 const BASELINE_BY_CASE: Readonly<Record<string, ReadonlyArray<string>>> = A11Y_BASELINE;
