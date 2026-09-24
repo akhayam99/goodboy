@@ -106,6 +106,7 @@ describe('buildIntegrationsGuard', () => {
 
     expect(withRequests).toContain('act on ONE mount');
     expect(withRequests).toContain('pass `--mount <id>` to reach another one');
+    expect(withRequests).toContain('always need an explicit `--mount <id>`');
     expect(withoutRequests).not.toContain('act on ONE mount');
   });
 
