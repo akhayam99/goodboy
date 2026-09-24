@@ -30,7 +30,7 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
   crumbLabel: 'Create wireframe',
   generateLabel: 'Generate wireframe',
   ctaTitle: 'Draw a screen or flow from a brief and what this session did',
-  brief: { label: 'Brief', placeholder: 'which screen or flow should this show?' },
+  brief: { label: 'Brief', placeholder: 'Which screen or flow should this show?' },
   choice: {
     label: 'Fidelity',
     ariaLabel: 'Fidelity',
@@ -58,19 +58,19 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
     },
   },
   scopeCopy: {
-    session: 'agents and plans come from the whole session.',
-    run: 'agents come from this run. session plans are included either way.',
+    session: 'Agents and plans come from the whole session.',
+    run: 'Agents come from this run. Session plans are included either way.',
   },
   defaultRequest: () => WIREFRAME_DEFAULT_REQUEST,
   repoLine: ({ choice, repo }) => {
     if (choice !== 'high') {
-      return 'plain wireframe, no design files read.';
+      return 'Plain wireframe, no design files read.';
     }
     if (repo === null) {
-      return 'no mounted project, so the generic theme is used.';
+      return 'No mounted project, so the generic theme is used.';
     }
     const branch = repo.branch === null ? 'a detached head' : repo.branch;
-    return `design files read from ${repo.mountName} on ${branch}.`;
+    return `Design files read from ${repo.mountName} on ${branch}.`;
   },
   choiceOf,
   withChoice: ({ draft, choice }) => {

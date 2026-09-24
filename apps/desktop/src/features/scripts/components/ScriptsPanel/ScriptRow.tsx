@@ -132,11 +132,11 @@ export const ScriptRow = ({
         data-testid={`script-card-${script.id}`}
         data-status={status}
         className={cn(
-          'grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-muted/50',
+          'grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 rounded-md border px-2.5 py-2 motion-safe:transition-colors hover:bg-hover',
           expanded ? 'grid-rows-[auto_auto] gap-y-2' : 'grid-rows-[auto]',
           presentation.borderClass,
-          presentation.pulseClass,
-          expanded ? 'bg-muted/20' : 'bg-card/40',
+          presentation.motionClass,
+          expanded && 'bg-subtle',
         )}
       >
         <div className="col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5">
@@ -158,7 +158,7 @@ export const ScriptRow = ({
                   }
                 }}
                 aria-label="Edit script name"
-                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="min-h-7 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               />
             ) : (
               <button
@@ -198,7 +198,7 @@ export const ScriptRow = ({
                 {preview}
               </span>
               {lineCount > 1 ? (
-                <span className="shrink-0 text-2xs text-muted-foreground/60">
+                <span className="shrink-0 text-2xs text-faint-foreground">
                   +{lineCount - 1} {lineCount === 2 ? 'line' : 'lines'}
                 </span>
               ) : null}
@@ -313,9 +313,9 @@ export const ScriptRow = ({
               <button
                 type="button"
                 onClick={() => startEditing({ field: 'body' })}
-                className="cursor-text rounded-lg bg-subtle/40 p-3 text-left transition-colors hover:bg-subtle/70"
+                className="cursor-text rounded-lg bg-subtle p-3 text-left transition-colors hover:bg-subtle"
               >
-                <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground/80">
+                <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
                   {bodyDraft}
                 </pre>
               </button>

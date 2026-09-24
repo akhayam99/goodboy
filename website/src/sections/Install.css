@@ -1,10 +1,25 @@
-#install .wrap > .reassure:last-of-type {
+#install .wrap .reassure:last-of-type {
   margin-bottom: 0;
+}
+
+@media (min-width: 960px) {
+  #install .splitBody {
+    align-self: center;
+  }
+
+  #install .instRow {
+    margin-top: 0;
+    gap: 12px;
+  }
+
+  #install .instRow .cmd {
+    max-width: none;
+    flex: 1 1 100%;
+  }
 }
 
 .in-closer {
   text-align: center;
-  margin-top: 40px;
 }
 
 .in-closer .ctaRow {
@@ -12,12 +27,12 @@
 }
 
 @media (max-width: 480px) {
-  .instRow {
+  #install .instRow {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .instRow .btn {
+  #install .instRow .btn {
     justify-content: center;
   }
 }

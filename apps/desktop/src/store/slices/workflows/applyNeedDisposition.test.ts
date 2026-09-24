@@ -503,11 +503,13 @@ describe('applyNeedDisposition', () => {
     expect(refusal).toEqual({ kind: 'refused', reason: 'no allowance is left in this run' });
     expect(state.capabilityObligations[SESSION_ID]?.[0]?.ownerAgentId).toBeNull();
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'need refused: review the change',
-      'no allowance is left in this run',
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: 'Need refused for review the change',
+        body: 'no allowance is left in this run',
+        sessionId: SESSION_ID,
+      }),
     );
     expect(sendTurn).toHaveBeenLastCalledWith(
       expect.objectContaining({

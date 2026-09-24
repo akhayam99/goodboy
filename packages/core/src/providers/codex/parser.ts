@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 import { blockBoundaryPrefix, resetTextBoundary } from '../shared/text-boundary';
 
 export type ParseContext = {
@@ -144,7 +145,6 @@ function buildUsage(raw: UsagePayload | undefined): ProviderUsage {
     outputTokens,
     cachedInputTokens,
     cacheCreationInputTokens: 0,
-    contextTokens: inputTokens + outputTokens,
     estimatedCostUsd: 0,
   };
 }
@@ -155,12 +155,12 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
     return [];
   }
 
-  let payload: { type?: string } & Record<string, unknown>;
-  try {
-    payload = JSON.parse(trimmed) as { type?: string } & Record<string, unknown>;
-  } catch {
+  const parsed = parseJsonAllowingControlChars({ text: trimmed });
+  if (!parsed.ok) {
+    devWarn('[codex-adapter] dropped a json line that does not parse');
     return [];
   }
+  const payload = parsed.value as { type?: string } & Record<string, unknown>;
 
   const at = ctx.now();
   const type = payload.type;

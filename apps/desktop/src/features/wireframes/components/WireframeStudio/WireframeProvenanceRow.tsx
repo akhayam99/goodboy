@@ -50,7 +50,7 @@ export const WireframeProvenanceRow = ({ fidelity, theme, designProfile }: Props
       data-testid="wireframe-provenance"
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted-foreground"
     >
-      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-wide">
+      <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-eyebrow">
         {fidelity} fidelity
       </span>
       <span className="shrink-0">theme {theme.name}</span>

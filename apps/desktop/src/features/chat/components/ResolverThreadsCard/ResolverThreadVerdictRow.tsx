@@ -42,10 +42,10 @@ export const ResolverThreadVerdictRow = ({
         <span aria-hidden className="w-3 shrink-0" />
       )}
       <ResolverOutcomeChip kind={verdict.kind} isClosed={verdict.isClosed} />
-      <span className="shrink-0 text-2xs text-muted-foreground/70">thread {position}</span>
+      <span className="shrink-0 text-2xs text-faint-foreground">thread {position}</span>
       <span
         className={cn(
-          'min-w-0 flex-1 text-xs text-foreground/80',
+          'min-w-0 flex-1 text-xs text-foreground',
           isReasonKind({ verdict }) ? 'line-clamp-2' : 'truncate',
         )}
       >

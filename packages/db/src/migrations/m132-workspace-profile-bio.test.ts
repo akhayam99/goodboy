@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrations } from './index';
 import { migrate } from './runner';
 
@@ -16,11 +16,7 @@ type SeedProfileParams = {
 };
 
 const seedThrough131 = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 131),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 131 });
   return db;
 };
 

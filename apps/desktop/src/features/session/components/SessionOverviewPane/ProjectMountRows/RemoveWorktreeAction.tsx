@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AnchoredPopover, InlineConfirm, cn, formatError, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
@@ -40,9 +40,10 @@ const AlertIcon = CONCEPT_ICONS.errors;
 const WorktreeIcon = CONCEPT_ICONS.worktree;
 const CONFIRM_ROLE = {
   blocked: 'alert',
+  unread: 'alert',
   unmerged: 'primary',
   risky: 'danger',
-} satisfies Record<'blocked' | 'unmerged' | 'risky', 'alert' | 'primary' | 'danger'>;
+} satisfies Record<Confirm['kind'], ConfirmRole>;
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
@@ -54,6 +55,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
     (state) =>
       state.projects.find((candidate) => candidate.id === row.projectId)?.baseBranch ?? null,
   );
+  const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 170 });
   const [isChecking, setIsChecking] = useState(false);
@@ -87,20 +89,24 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       const result = await removeMountWorktree({ sessionId, mountId: row.mountId, mode });
       switch (result.kind) {
         case 'removed':
-          showToast('info', `Removed the worktree for ${label}.`);
+          showToast({ kind: 'info', message: `Removed the worktree for ${label}.` });
           break;
         case 'missing':
-          showToast('info', `The worktree for ${label} was already gone.`);
+          showToast({ kind: 'info', message: `The worktree for ${label} was already gone.` });
           break;
         case 'kept':
         case 'failed':
-          showToast('error', result.reason ?? `Could not remove the worktree for ${label}.`);
+          void reportError({
+            title: `Couldn't remove the worktree for ${label}`,
+            error: result.reason ?? '',
+            sessionId,
+          });
           break;
       }
       setConfirm(null);
       dropdown.close();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't remove the worktree for ${label}`, error, sessionId });
     } finally {
       setIsBusy(false);
     }
@@ -183,7 +189,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
       });
       reveal();
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't check the worktree for ${label}`, error, sessionId });
     } finally {
       setIsChecking(false);
     }
@@ -208,8 +214,8 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             void check();
           }}
           className={cn(
-            'shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground/70 hover:bg-muted/40 hover:text-danger',
-            'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground/70',
+            'shrink-0 rounded-md px-1.5 py-1 text-xs text-faint-foreground hover:bg-hover hover:text-danger',
+            'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-faint-foreground',
             triggerClassName,
           )}
         >
@@ -217,63 +223,43 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
         </button>
       }
     >
-      {confirm === null ? null : confirm.kind === 'unread' ? (
-        <div className="flex flex-col gap-2 p-3">
-          <span className="text-xs font-medium">Remove worktree?</span>
-          <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+      {confirm === null ? null : (
+        <InlineConfirm
+          role={CONFIRM_ROLE[confirm.kind]}
+          icon={
+            confirm.kind === 'unmerged' ? (
+              <WorktreeIcon size={ICON_SIZE.row} />
+            ) : (
+              <AlertIcon size={ICON_SIZE.row} />
+            )
+          }
+          title="Remove worktree?"
+          confirmLabel="Remove worktree"
+          surface="plain"
+          isBusy={isBusy}
+          isConfirmDisabled={confirm.kind === 'blocked' || confirm.kind === 'unread'}
+          onConfirm={() =>
+            void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
+          }
+          onCancel={() => cancel()}
+          {...(confirm.kind === 'unread'
+            ? {
+                altAction: {
+                  label: 'Check again',
+                  onClick: () => void check(),
+                  disabled: isChecking,
+                },
+              }
+            : {})}
+        >
+          <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
             {confirm.lines.map((line) => (
               <p key={line} className="break-words">
                 {line}
               </p>
             ))}
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={isChecking}
-              onClick={() => void check()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-muted"
-            >
-              Check again
-            </button>
-            <button
-              type="button"
-              onClick={() => cancel()}
-              className="rounded-md px-2 py-0.5 text-2xs font-semibold hover:bg-muted"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col p-2">
-          <InlineConfirm
-            role={CONFIRM_ROLE[confirm.kind]}
-            icon={
-              confirm.kind === 'unmerged' ? (
-                <WorktreeIcon size={ICON_SIZE.row} />
-              ) : (
-                <AlertIcon size={ICON_SIZE.row} />
-              )
-            }
-            title="Remove worktree?"
-            confirmLabel="Remove worktree"
-            isBusy={isBusy}
-            isConfirmDisabled={confirm.kind === 'blocked'}
-            onConfirm={() =>
-              void remove({ mode: confirm.kind === 'unmerged' ? 'safe' : 'confirmed' })
-            }
-            onCancel={() => cancel()}
-          >
-            <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-              {confirm.lines.map((line) => (
-                <p key={line} className="break-words">
-                  {line}
-                </p>
-              ))}
-            </div>
-          </InlineConfirm>
-        </div>
+        </InlineConfirm>
       )}
     </AnchoredPopover>
   );

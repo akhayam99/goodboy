@@ -4,9 +4,10 @@ import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
-import { summarizeAgentOutput, summarizedStepOutputs } from '../../summarizeAgentOutput';
+import { summarizeAgentOutput } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -32,16 +33,16 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       assistantDeltas.length > 0
         ? assistantDeltas.join('')
         : fallbackStepOutputSummary({ output: '' });
-    const assistantText = summarizedStepOutputs.get(agentId) ?? transcriptText;
+    const assistantText = get().degradedStepOutputs[agentId] ?? transcriptText;
 
     const taskModel =
       taskModelOverride ??
       routeTaskModel({
         taskModel: resolveTaskModel({
           task: 'summarizer',
-          preferences: get().workspaceOverrides?.[session.workspaceId]?.taskModels,
-          workspaceDefaultProviderId:
-            get().workspaceOverrides?.[session.workspaceId]?.defaultProviderId,
+          preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
+          workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
+            ?.defaultProviderOverride,
           sessionDefaultProviderId: session.providerPreference.defaultProvider,
         }),
         connectedProviders: get()
@@ -53,13 +54,14 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       });
 
     if (taskModel == null) {
-      void get().emitNotification(
-        'summarizer-degraded',
-        'warning',
-        'step summary retry unavailable',
-        'every summarizer provider is cooling down',
-        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
-      );
+      void get().emitNotification({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: "Step summary retry isn't available",
+        body: 'every summarizer provider is cooling down',
+        sessionId,
+        action: { kind: 'retry-step-summary', sessionId, agentId },
+      });
       return;
     }
 
@@ -74,6 +76,7 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
         ],
       })?.expectedOutput ?? '';
     const result = await summarizeAgentOutput({
+      set,
       agentId,
       output: assistantText,
       taskModel,
@@ -81,13 +84,14 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
       ...(expectedOutput !== '' && { expectedOutput }),
     });
     if (result.degraded) {
-      void get().emitNotification(
-        'summarizer-degraded',
-        'warning',
-        'step summary retry failed',
-        result.error ?? 'summarization failed',
-        { sessionId, action: { kind: 'retry-step-summary', sessionId, agentId } },
-      );
+      void get().emitNotification({
+        kind: 'summarizer-degraded',
+        severity: 'warning',
+        title: "Couldn't retry the step summary",
+        body: result.error ?? 'summarization failed',
+        sessionId,
+        action: { kind: 'retry-step-summary', sessionId, agentId },
+      });
       return;
     }
     await invokeAgentUpdateStatus(agentId, { status: 'completed', outputSummary: result.summary });

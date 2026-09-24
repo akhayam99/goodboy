@@ -123,13 +123,13 @@ const refuse = async ({
     reason,
   });
   rememberGraph({ set, sessionId, graph: stored });
-  void get().emitNotification(
-    'error',
-    'warning',
-    'plan revision refused',
-    `${reason}. the plan in flight stays frozen at revision ${graph.revision} and nothing was superseded.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: 'Plan revision refused',
+    body: `${reason}. the plan in flight stays frozen at revision ${graph.revision} and nothing was superseded.`,
+    sessionId,
+  });
   return { kind: 'refused', reason };
 };
 
@@ -198,7 +198,6 @@ export const adoptClusterGraphRevision = async ({
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
-    workflowRunId: graph.workflowRunId,
     role: 'implementer',
     requests: outcome.materialize.map((node: ClusterGraphNode) => ({
       proposal: null,

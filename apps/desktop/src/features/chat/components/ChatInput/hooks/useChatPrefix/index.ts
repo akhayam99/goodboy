@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState, type RefObject } from 'react';
-import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow, ProjectScript } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
-import type { ToastKind } from '../../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../../app/components/Toast';
 import {
   buildAgentActions,
   buildScriptActions,
@@ -25,7 +24,7 @@ type Params = {
   readonly session: Session;
   readonly value: string;
   readonly setValue: (next: string) => void;
-  readonly showToast: (kind: ToastKind, message: string) => void;
+  readonly showToast: ShowToast;
   readonly wrapperRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -47,6 +46,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
   const selectAgent = useAppStore((s) => s.selectAgent);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
+  const reportError = useAppStore((s) => s.reportError);
 
   const [showPopover, setShowPopover] = useState(false);
 
@@ -82,12 +82,16 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
       setShowPopover(false);
       try {
         await attachWorkflowToSession(session.id, workflow.id, { navigate: true });
-        showToast('success', `workflow "${workflow.name}" started`);
-      } catch (err) {
-        showToast('error', formatError(err));
+        showToast({ kind: 'success', message: `Started ${workflow.name}.` });
+      } catch (error) {
+        void reportError({
+          title: `Couldn't start ${workflow.name}`,
+          error,
+          sessionId: session.id,
+        });
       }
     },
-    [attachWorkflowToSession, session.id, showToast, setValue],
+    [attachWorkflowToSession, reportError, session.id, showToast, setValue],
   );
 
   const onSwitchAgent = useCallback(
@@ -104,11 +108,11 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     setShowPopover(false);
     try {
       await spawnAgent(session.id, { focus: 'agent' });
-      showToast('success', 'new agent spawned');
-    } catch (err) {
-      showToast('error', formatError(err));
+      showToast({ kind: 'success', message: 'Started a new agent.' });
+    } catch (error) {
+      void reportError({ title: "Couldn't start a new agent", error, sessionId: session.id });
     }
-  }, [spawnAgent, session.id, showToast, setValue]);
+  }, [reportError, spawnAgent, session.id, showToast, setValue]);
 
   const quickItems = useMemo<ReadonlyArray<QuickActionItem> | null>(() => {
     const symbol = parsed.prefix?.symbol;

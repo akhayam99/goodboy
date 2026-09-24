@@ -1,6 +1,5 @@
-import type { ProviderId } from '@goodboy/types';
+import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
 import type { ArtifactCreationRouting } from '../../../../store/slices/artifactDrafts/types';
 
 type Props = {

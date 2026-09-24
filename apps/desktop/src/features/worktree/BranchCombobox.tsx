@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
 import { ChevronDown } from 'lucide-react';
 import type { LocalBranchInfo } from './worktree';
 import { ICON_SIZE } from '../../shared/components/conceptIcons';
@@ -146,7 +146,7 @@ export const BranchCombobox = ({
             aria-expanded={open}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(e) => {
               setQuery(e.target.value);
               if (!open) {
@@ -177,7 +177,7 @@ export const BranchCombobox = ({
                 }
               }}
               aria-label={open ? 'Close branch list' : 'Open branch list'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronDown
                 size={ICON_SIZE.row}
@@ -205,7 +205,9 @@ export const BranchCombobox = ({
                   }}
                   className={cn(
                     'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
-                    highlightIdx === i ? 'bg-primary/10 text-foreground' : 'text-muted-foreground',
+                    highlightIdx === i
+                      ? cn(tintClasses('primary').bg, 'text-foreground')
+                      : 'text-muted-foreground',
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{b.name}</span>

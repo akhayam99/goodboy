@@ -1,5 +1,10 @@
-export const VERBOSITY_LEVELS = ['brief', 'normal', 'verbose'] as const;
-export type VerbosityLevel = (typeof VERBOSITY_LEVELS)[number];
+import type { VerbosityLevel } from '@goodboy/types';
+
+export const VERBOSITY_LEVELS = [
+  'brief',
+  'normal',
+  'verbose',
+] as const satisfies ReadonlyArray<VerbosityLevel>;
 
 export const VERBOSITY_LABEL: Record<VerbosityLevel, string> = {
   brief: 'Brief',

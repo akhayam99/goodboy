@@ -55,7 +55,7 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
     });
     act(() => {
       vi.advanceTimersByTime(140);
@@ -69,7 +69,7 @@ describe('useSessionSidebarVisibility', () => {
     expect(result.current.isPeeking).toBe(false);
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     expect(result.current.isPeeking).toBe(true);
@@ -81,7 +81,7 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderHook(() => useSessionSidebarVisibility({ hasActiveSession: true }));
 
     act(() => {
-      result.current.requestPeek({ source: 'anchor' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(500);
     });
 
@@ -94,8 +94,8 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'anchor' });
-      vi.advanceTimersByTime(100);
+      result.current.requestPeek();
+      vi.advanceTimersByTime(150);
     });
     act(() => {
       result.current.scheduleClose();
@@ -119,7 +119,7 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     act(() => {
@@ -142,7 +142,7 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     act(() => {
@@ -160,8 +160,8 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'anchor' });
-      vi.advanceTimersByTime(100);
+      result.current.requestPeek();
+      vi.advanceTimersByTime(150);
     });
     act(() => {
       result.current.pin();
@@ -182,7 +182,7 @@ describe('useSessionSidebarVisibility', () => {
     );
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     expect(result.current.isPeeking).toBe(true);
@@ -198,7 +198,7 @@ describe('useSessionSidebarVisibility', () => {
     const { result } = renderCollapsed();
 
     act(() => {
-      result.current.requestPeek({ source: 'edge' });
+      result.current.requestPeek();
       vi.advanceTimersByTime(150);
     });
     act(() => {

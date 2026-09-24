@@ -1,8 +1,8 @@
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
 import { Check, ChevronDown } from 'lucide-react';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { ROLE_LABEL, ROLE_TO_KIND, visibleAgentRoles } from '../../agent-kind';
+import { kindForRole, ROLE_LABEL, visibleAgentRoles } from '../../agent-kind';
 
 type Props = {
   value: AgentRole;
@@ -29,12 +29,12 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
           className={cn(
             'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
             open
-              ? 'border-primary bg-primary/5'
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-muted/50',
+              ? cn('border-primary', tintClasses('primary').bgSoft)
+              : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
             disabled && 'cursor-not-allowed opacity-50',
           )}
         >
-          <AgentAvatar kind={ROLE_TO_KIND[value]} size="xs" />
+          <AgentAvatar kind={kindForRole({ role: value })} size="xs" />
           <span className="flex-1 truncate font-medium text-foreground">{ROLE_LABEL[value]}</span>
           <ChevronDown
             size={11}
@@ -60,11 +60,11 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
             className={cn(
               'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
               active
-                ? 'bg-primary/10 text-foreground'
-                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                ? cn(tintClasses('primary').bg, 'text-foreground')
+                : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
-            <AgentAvatar kind={ROLE_TO_KIND[role]} size="xs" />
+            <AgentAvatar kind={kindForRole({ role })} size="xs" />
             <span className="flex-1 truncate">{ROLE_LABEL[role]}</span>
             {active ? <Check size={11} className="shrink-0 text-primary" aria-hidden /> : null}
           </button>

@@ -106,7 +106,7 @@ describe('GithubTaskDetail', () => {
     );
 
     const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const title = screen.getByRole('heading', { level: 2, name: 'Add issue dashboard' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Add issue dashboard' });
     expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -148,6 +148,6 @@ describe('GithubTaskDetail', () => {
 
     render(<GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" issueNumber={7} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: '#7' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: '#7' })).toBeDefined();
   });
 });

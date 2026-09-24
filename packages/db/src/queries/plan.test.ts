@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ArtifactId, PlanId, SessionId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { getArtifact, insertArtifact } from './artifact';
 import {
   deletePlan,
@@ -13,8 +12,7 @@ import {
 } from './plan';
 
 async function seedFixture() {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,

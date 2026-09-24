@@ -4,6 +4,7 @@ import type {
   OpenQuestion,
   OpenQuestionId,
   SessionId,
+  WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
 
@@ -19,6 +20,7 @@ import { findWorkflowActivationBlock } from './workflowActivationGate';
 const SESSION_ID = 'ses-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 const OTHER_RUN_ID = 'run-2' as WorkflowRunId;
+const WORKFLOW_ID = 'workflow-1' as WorkflowId;
 const NOW = '2026-08-05T00:00:00.000Z' as IsoDateTime;
 
 const question = (id: string, workflowRunId?: WorkflowRunId): OpenQuestion => ({
@@ -43,7 +45,11 @@ describe('findWorkflowActivationBlock', () => {
     listOpenQuestionsSpy.mockResolvedValue([question('q1', RUN_ID)]);
 
     await expect(
-      findWorkflowActivationBlock({ sessionId: SESSION_ID, workflowRunId: RUN_ID }),
+      findWorkflowActivationBlock({
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        workflowId: WORKFLOW_ID,
+      }),
     ).resolves.toBe('questions');
   });
 
@@ -51,7 +57,11 @@ describe('findWorkflowActivationBlock', () => {
     listOpenQuestionsSpy.mockResolvedValue([question('q1')]);
 
     await expect(
-      findWorkflowActivationBlock({ sessionId: SESSION_ID, workflowRunId: RUN_ID }),
+      findWorkflowActivationBlock({
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        workflowId: WORKFLOW_ID,
+      }),
     ).resolves.toBeNull();
   });
 
@@ -59,13 +69,33 @@ describe('findWorkflowActivationBlock', () => {
     listOpenQuestionsSpy.mockResolvedValue([question('q1', OTHER_RUN_ID)]);
 
     await expect(
-      findWorkflowActivationBlock({ sessionId: SESSION_ID, workflowRunId: RUN_ID }),
+      findWorkflowActivationBlock({
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        workflowId: WORKFLOW_ID,
+      }),
     ).resolves.toBeNull();
+  });
+
+  it('holds the run back on a legacy question scoped to its workflow only', async () => {
+    listOpenQuestionsSpy.mockResolvedValue([{ ...question('q1'), workflowId: WORKFLOW_ID }]);
+
+    await expect(
+      findWorkflowActivationBlock({
+        sessionId: SESSION_ID,
+        workflowRunId: RUN_ID,
+        workflowId: WORKFLOW_ID,
+      }),
+    ).resolves.toBe('questions');
   });
 
   it('skips the query for an agent outside any run', async () => {
     await expect(
-      findWorkflowActivationBlock({ sessionId: SESSION_ID, workflowRunId: undefined }),
+      findWorkflowActivationBlock({
+        sessionId: SESSION_ID,
+        workflowRunId: undefined,
+        workflowId: null,
+      }),
     ).resolves.toBeNull();
     expect(listOpenQuestionsSpy).not.toHaveBeenCalled();
   });

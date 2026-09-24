@@ -17,6 +17,9 @@ import {
   resetStorySpies,
   storyResolveQueries,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 import { mountCleanupBlockers } from './slices/mount-cleanup/cleanupPolicy';
 import { requireMountTarget } from './slices/resolve/mountTarget';
@@ -125,8 +128,7 @@ const resolverAgent = (): Agent =>
 const pathOf = ({ mountId }: { readonly mountId: MountId }): string =>
   `/repos/app/.goodboy/worktrees/${mountId}`;
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 const seed = async ({
   session,
@@ -145,8 +147,8 @@ const seed = async ({
 };
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
   resetStorySpies();

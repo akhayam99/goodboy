@@ -209,13 +209,36 @@ describe('RoleModelRow', () => {
     openPrimary();
     pickProvider('Cursor');
     view.rerender(row({ preference, connected: CONNECTED, onChange }));
-    pickChip('Auto');
+    pickChip('Kimi');
 
     expect(onChange.mock.calls.length).toBeGreaterThan(1);
     expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
       providerId: 'cursor',
-      model: 'auto',
+      model: 'kimi-k3-low',
       effort: 'low',
+    });
+  });
+
+  it('tunes nothing when the model just picked has no effort of its own', () => {
+    const onChange = vi.fn<(preference: RoleModelPreference | null) => void>();
+    const preference: RoleModelPreference = {
+      providerId: 'anthropic',
+      model: 'claude-opus-5',
+      effort: 'high',
+    };
+    const view = render(row({ preference, connected: ANTHROPIC_ONLY, onChange }));
+
+    openPrimary();
+    pickProvider('Cursor');
+    view.rerender(row({ preference, connected: CONNECTED, onChange }));
+    onChange.mockClear();
+    pickChip('Auto');
+
+    expect(onChange.mock.calls.length).toBe(1);
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      providerId: 'cursor',
+      model: 'auto',
+      effort: 'high',
     });
   });
 

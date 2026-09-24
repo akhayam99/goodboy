@@ -1,5 +1,6 @@
 import type { CachedPullRequest, GithubPrCacheEntry, IsoDateTime } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type Row = {
   branch: string;
@@ -10,14 +11,33 @@ type Row = {
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+const PULL_REQUEST_STATES = {
+  draft: true,
+  open: true,
+  approved: true,
+  queued: true,
+  merged: true,
+  closed: true,
+} satisfies Record<CachedPullRequest['state'], true>;
+
+const isCachedPullRequest = (value: unknown): value is CachedPullRequest =>
+  isJsonRecord(value) &&
+  typeof value.number === 'number' &&
+  typeof value.title === 'string' &&
+  typeof value.url === 'string' &&
+  typeof value.state === 'string' &&
+  Object.hasOwn(PULL_REQUEST_STATES, value.state) &&
+  typeof value.updatedAt === 'string';
+
 function toDomain(row: Row): GithubPrCacheEntry {
   return {
     branch: row.branch,
     repoSlug: row.repo_slug,
-    pr:
-      row.pr_json != null && row.pr_json.length > 0
-        ? (JSON.parse(row.pr_json) as CachedPullRequest)
-        : null,
+    pr: parseJsonColumn<CachedPullRequest | null>({
+      value: row.pr_json,
+      isValid: isCachedPullRequest,
+      fallback: null,
+    }),
     fetchedAt: new Date(row.fetched_at).toISOString() as IsoDateTime,
   };
 }

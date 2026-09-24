@@ -11,6 +11,9 @@ import {
   recordedEventKinds,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -49,8 +52,7 @@ const PROJECT_ID = 'project-app' as ProjectId;
 const workspace = buildStoryWorkspace({ id: WORKSPACE_ID });
 const project = buildStoryProject({ id: PROJECT_ID, workspaceId: WORKSPACE_ID });
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 const freshWorkspaceState = () => ({
   workspaces: [workspace],
@@ -65,8 +67,8 @@ const spawnedArgs = (): Record<string, unknown> =>
   (storySpies.runTurn.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(() => {
   resetStorySpies();

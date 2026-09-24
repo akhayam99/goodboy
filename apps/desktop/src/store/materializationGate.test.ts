@@ -268,7 +268,7 @@ describe('proposeMaterialization', () => {
 describe('deferredMaterializeMessage', () => {
   it('stops retries when the same proposal is already pending', () => {
     const message = deferredMaterializeMessage({
-      projectName: 'app-web',
+      projectName: 'storefront-web',
       cause: 'scope',
       isAlreadyPending: true,
     });

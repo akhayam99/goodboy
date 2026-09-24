@@ -1,10 +1,10 @@
 # @goodboy/desktop
 
-> **Read this when** you need the shape of the desktop app before wiring UI, routing, or Tauri commands. **Not for** the specific rules. See `CONVENTIONS.md`.
+> **Read this when** you need an overview of the desktop app before you connect UI, routing, or Tauri commands. **Not for** the detailed rules. See `CONVENTIONS.md`.
 
-The Goodboy desktop app: the orchestrator UI for workspaces, providers, tasks, balance. Local-only, no servers, no telemetry.
+The Goodboy desktop app. It is the orchestrator UI for workspaces, providers, tasks, and usage balance. It runs only on your machine, with no servers and no telemetry.
 
-Scripts in `package.json`.
+The scripts are in `package.json`.
 
 ## Conventions
 

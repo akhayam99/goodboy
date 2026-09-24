@@ -7,6 +7,7 @@ type Params = {
 };
 
 const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
+  'anthropic:claude-opus-5-5': { key: 'opus-5.5' },
   'anthropic:claude-opus-5': { key: 'opus-5' },
   'anthropic:claude-fable-5-1': { key: 'fable-5.1' },
   'anthropic:claude-fable-5': { key: 'fable-5' },
@@ -78,10 +79,12 @@ const LEGACY_SELECTIONS: Readonly<Record<string, ModelSelection>> = {
   'openrouter:openrouter/anthropic/claude-opus-4.8': { key: 'opus-4.8' },
   'openrouter:openrouter/openai/gpt-5.4': { key: 'gpt-5.4' },
   'openrouter:openrouter/google/gemini-3.1-pro': { key: 'gemini-3.1-pro' },
-  'openrouter:openrouter/deepseek/deepseek-v4': { key: 'deepseek-v4' },
+  'openrouter:openrouter/deepseek/deepseek-v4': { key: 'deepseek-v4-pro' },
   'openrouter:openrouter/moonshotai/kimi-k2': { key: 'kimi-k2' },
   'openrouter:openrouter/z-ai/glm-5': { key: 'glm-5' },
-  'openrouter:openrouter/x-ai/grok-4': { key: 'grok-4' },
+  'openrouter:openrouter/x-ai/grok-4': { key: 'grok-4.7' },
+  'openrouter:deepseek-v4': { key: 'deepseek-v4-pro' },
+  'openrouter:grok-4': { key: 'grok-4.7' },
 };
 
 export const parseLegacyId = ({ provider, id, effort }: Params): ModelSelection | null => {

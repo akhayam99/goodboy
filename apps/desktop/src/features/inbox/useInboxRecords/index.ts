@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
-import { useGithubIssues } from '../../github/components/GitHubStudio/useGithubIssues';
+import { useGithubIssues } from '../../github/components/PullRequest/useGithubIssues';
 import { useBitbucketPrs } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
 import { useWorkspaceBitbucketRepo } from '../../integrations/bitbucket/useWorkspaceBitbucketRepo';
-import { useGitlabIssues } from '../../integrations/gitlab/GitlabStudio/useGitlabIssues';
-import { useGitlabMrs } from '../../integrations/gitlab/GitlabStudio/useGitlabMrs';
+import { useGitlabIssues } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
+import { useGitlabMrs } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import { useJiraIssues } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import { useLinearIssues } from '../../integrations/linear/LinearStudio/useLinearIssues';
 import { useSentryIssues } from '../../integrations/sentry/SentryStudio/useSentryIssues';
@@ -17,7 +17,7 @@ import { adaptJiraIssues } from '../adapters/jira';
 import { adaptLinearIssues } from '../adapters/linear';
 import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
-import type { InboxProvider, InboxRecord } from '../types';
+import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 
 type Params = { readonly workspaceId: WorkspaceId; readonly rootPath: string };
 type Errors = Readonly<Record<InboxProvider, string | null>>;
@@ -25,8 +25,8 @@ type Result = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly isLoading: boolean;
   readonly errors: Errors;
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly refetch: () => void;
-  readonly connectedCount: number;
 };
 
 export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
@@ -81,6 +81,9 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     slack: slack.error,
     bitbucket: bitbucket.error,
   } satisfies Errors;
+  const connected = INBOX_PROVIDERS.filter((provider) =>
+    provider === 'github' ? github.hasRemote === true : has(provider),
+  );
   const refetch = (): void => {
     github.refetch();
     gitlabIssues.refetch();
@@ -94,8 +97,8 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   return {
     records,
     errors,
+    connected,
     refetch,
-    connectedCount: integrations.length + 1,
     isLoading:
       github.loading ||
       gitlabIssues.loading ||

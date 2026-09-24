@@ -32,16 +32,16 @@ export const DestinationRow = ({
         'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
         isCurrent
           ? 'bg-background text-foreground'
-          : 'text-muted-foreground hover:bg-background/60 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-background hover:text-foreground',
       )}
     >
-      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+      <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {count === null || count === 0 ? null : (
         <Chip size="3xs" tone="info" bordered={false} label={String(count)} />
       )}
       {glyphs === '' ? null : (
-        <span className="shrink-0 text-2xs tracking-wide text-muted-foreground/60">{glyphs}</span>
+        <span className="shrink-0 text-2xs tracking-wide text-faint-foreground">{glyphs}</span>
       )}
     </button>
   );

@@ -1,5 +1,5 @@
 import { ArrowUpRight, GitMerge } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { RefreshIconButton } from '@goodboy/ui';
@@ -35,10 +35,10 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
           onClick={openPane}
           title="Open merge request"
           className={cn(
-            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-foreground/5',
+            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-hover',
             mr
               ? 'ring-border-soft'
-              : 'text-muted-foreground/70 ring-border-soft/40 hover:text-foreground',
+              : 'text-faint-foreground ring-border-soft hover:text-foreground',
           )}
         >
           {mr ? (
@@ -48,7 +48,13 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               </span>
               <span className="text-2xs text-muted-foreground">{mr.state}</span>
               {mr.draft ? (
-                <span className="rounded bg-warning/15 px-1 py-px text-3xs font-medium uppercase tracking-wide text-warning">
+                <span
+                  className={cn(
+                    'rounded-sm',
+                    tintClasses('warning').bg,
+                    'px-1 py-px text-3xs font-medium uppercase tracking-eyebrow text-warning',
+                  )}
+                >
                   draft
                 </span>
               ) : null}

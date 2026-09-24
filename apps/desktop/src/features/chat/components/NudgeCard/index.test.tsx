@@ -40,7 +40,7 @@ describe('NudgeCard', () => {
     expect(container.firstElementChild?.className).toContain('border-l-2');
     expect(container.firstElementChild?.className).toContain('border-warning/40');
     expect(screen.getByRole('button', { name: /go/i }).className).toContain(
-      'bg-warning text-warning-foreground',
+      'bg-warning text-on-tone',
     );
   });
 

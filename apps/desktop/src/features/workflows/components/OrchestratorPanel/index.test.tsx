@@ -8,6 +8,7 @@ import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
+  OrchestratorHint,
   SessionId,
   Step,
   StepId,
@@ -108,6 +109,15 @@ const renderPanel = ({
     />,
   );
 
+const HINT_AT = '2026-09-23T10:00:00.000Z' as IsoDateTime;
+
+const hint = (over: Partial<OrchestratorHint>): OrchestratorHint => ({
+  id: 'hint',
+  text: 'keep it to one PR',
+  createdAt: HINT_AT,
+  ...over,
+});
+
 const sentence = () => screen.getByTestId('orchestrator-state').textContent ?? '';
 
 const openHints = () => {
@@ -119,9 +129,9 @@ beforeEach(() => {
     orchestrateNextStep: vi.fn(async () => undefined),
     retryWorkflowOrchestration: vi.fn(async () => undefined),
     continueWorkflowRun: vi.fn(async () => undefined),
-    setWorkflowOrchestratorHints: vi.fn(async () => undefined),
+    addWorkflowOrchestratorHint: vi.fn(async () => undefined),
+    removeWorkflowOrchestratorHint: vi.fn(async () => undefined),
     setWorkflowOrchestratorRouting: vi.fn(async () => undefined),
-    setWorkflowRoleModelOverrides: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     setWorkflowRunAutoRun: vi.fn(async () => undefined),
     stopWorkflowRunNow: vi.fn(async () => undefined),
@@ -422,52 +432,33 @@ describe('OrchestratorPanel state ladder', () => {
     expect(sentence()).toContain('Run complete · 3 steps · $1.28');
     expect(screen.queryByTestId('workflow-orchestrate-next-cta')).toBeNull();
 
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    fireEvent.change(screen.getByTestId('orchestrator-continue-note'), {
-      target: { value: 'tests are missing' },
-    });
-    fireEvent.click(screen.getByTestId('orchestrator-continue-confirm'));
+    fireEvent.click(screen.getByTestId('orchestrator-continue'));
 
-    expect(storeState['continueWorkflowRun']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      'tests are missing',
-    );
+    expect(storeState['continueWorkflowRun']).toHaveBeenCalledWith(SESSION_ID, RUN_ID);
+  });
+});
+
+describe('OrchestratorPanel card', () => {
+  it('keeps the model, autorun and stop in the header, and the call to action below', () => {
+    renderPanel({ agents: [agent(0, 'running')], runOverride: run({ autoRun: true }) });
+
+    const header = screen.getByTestId('orchestrator-header');
+    expect(header.contains(screen.getByTestId('orchestrator-routing'))).toBe(true);
+    expect(header.contains(screen.getByTestId('workflow-autorun-toggle'))).toBe(true);
+    expect(header.contains(screen.getByRole('button', { name: 'Stop now' }))).toBe(true);
+    expect(
+      screen
+        .getByTestId('orchestrator-actions')
+        .contains(screen.getByTestId('orchestrator-hints-toggle')),
+    ).toBe(true);
   });
 
-  it('says who decides, so an empty note is never a dead end', () => {
+  it('counts the hints on their toggle', () => {
     renderPanel({
-      runOverride: run({ orchestrationOutcome: 'done' }),
-      agents: [agent(0, 'completed')],
+      runOverride: run({ orchestratorHints: [hint({ id: 'a' }), hint({ id: 'b' })] }),
     });
 
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    const drawer = screen.getByTestId('orchestrator-continue-note').parentElement;
-    expect(drawer?.textContent).toContain('Not done? Say what is missing');
-    expect(drawer?.textContent).toContain('Leave it empty and the orchestrator decides');
-    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
-      'Continue, you decide',
-    );
-
-    fireEvent.change(screen.getByTestId('orchestrator-continue-note'), {
-      target: { value: 'the tests are missing' },
-    });
-    expect(screen.getByTestId('orchestrator-continue-confirm').textContent).toContain(
-      'Continue with this note',
-    );
-  });
-
-  it('opens one drawer at a time, so two fields never stack', () => {
-    renderPanel({
-      runOverride: run({ orchestrationOutcome: 'done' }),
-      agents: [agent(0, 'completed')],
-    });
-
-    fireEvent.click(screen.getByTestId('orchestrator-continue-toggle'));
-    openHints();
-
-    expect(screen.getByTestId('orchestrator-hints-input')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-continue-note')).toBeNull();
+    expect(screen.getByTestId('orchestrator-hints-toggle').textContent).toContain('Hints (2)');
   });
 });
 
@@ -479,33 +470,89 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('step-routing')).toBeNull();
   });
 
-  it('saves runtime hints from the disclosure', () => {
+  it('queues a hint from the disclosure', () => {
     renderPanel();
 
     openHints();
-    fireEvent.change(screen.getByTestId('orchestrator-hints-input'), {
+    fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
       target: { value: 'ignore the website' },
     });
-    fireEvent.click(screen.getByTestId('orchestrator-hints-save'));
+    fireEvent.click(screen.getByTestId('orchestrator-hint-queue'));
 
-    expect(storeState['setWorkflowOrchestratorHints']).toHaveBeenCalledWith(
-      SESSION_ID,
-      RUN_ID,
-      'ignore the website',
+    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      text: 'ignore the website',
+      delivery: 'queue',
+    });
+  });
+
+  it('sends a hint to be read now', () => {
+    renderPanel();
+
+    openHints();
+    fireEvent.change(screen.getByTestId('orchestrator-hint-input'), {
+      target: { value: 'look at the payout domain first' },
+    });
+    fireEvent.click(screen.getByTestId('orchestrator-hint-now'));
+
+    expect(storeState['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
+      text: 'look at the payout domain first',
+      delivery: 'now',
+    });
+  });
+
+  it('says what read now does in the state the run is in', () => {
+    renderPanel();
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'asks for a decision right away',
+    );
+
+    cleanup();
+    renderPanel({ agents: [agent(0, 'running')] });
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'stops the step in flight',
+    );
+
+    cleanup();
+    renderPanel({ isOrchestrating: true });
+    openHints();
+    expect(screen.getByTestId('orchestrator-hint-timing').textContent).toContain(
+      'restarts the decision in flight',
     );
   });
 
-  it('offers to clear standing hints only once there are some', () => {
-    renderPanel();
-    openHints();
-    expect(screen.queryByTestId('orchestrator-hints-clear')).toBeNull();
+  it('disables hint delivery while the orchestrator is deciding', () => {
+    renderPanel({ isOrchestrating: true });
 
-    cleanup();
-    renderPanel({ runOverride: run({ orchestratorHints: 'ignore the website' }) });
     openHints();
-    fireEvent.click(screen.getByTestId('orchestrator-hints-clear'));
+    expect(screen.getByTestId('orchestrator-hint-input').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-queue').hasAttribute('disabled')).toBe(true);
+    expect(screen.getByTestId('orchestrator-hint-now').hasAttribute('disabled')).toBe(true);
+  });
 
-    expect(storeState['setWorkflowOrchestratorHints']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, '');
+  it('lists every hint newest first with the step that first read it', () => {
+    renderPanel({
+      runOverride: run({
+        orchestratorHints: [
+          hint({ id: 'read', text: 'keep it to one PR', consumedAt: HINT_AT, consumedAtStep: 2 }),
+          hint({ id: 'queued', text: 'run a reviewer first' }),
+        ],
+      }),
+    });
+
+    openHints();
+
+    const rows = screen.getAllByTestId('orchestrator-hint-row');
+    expect(rows.map((row) => row.getAttribute('data-status'))).toEqual(['queued', 'read']);
+    expect(rows[1]?.textContent).toContain('Read at step 2');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove hint' })[0]!);
+    expect(storeState['removeWorkflowOrchestratorHint']).toHaveBeenCalledWith(
+      SESSION_ID,
+      RUN_ID,
+      'queued',
+    );
   });
 
   it('carries autorun in its own header, so the chat header does not need one', () => {
@@ -527,10 +574,19 @@ describe('OrchestratorPanel strip', () => {
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
   });
 
-  it('says standing hints are on without spending a button on it', () => {
-    renderPanel({ runOverride: run({ orchestratorHints: 'ignore the website' }) });
+  it('counts queued hints without spending a button on them', () => {
+    renderPanel({
+      runOverride: run({
+        orchestratorHints: [
+          hint({ id: 'read', consumedAt: HINT_AT, consumedAtStep: 1 }),
+          hint({ id: 'queued-1' }),
+          hint({ id: 'queued-2' }),
+        ],
+      }),
+    });
 
-    expect(screen.getByTestId('orchestrator-panel').textContent).toContain('Standing hints on');
+    const text = screen.getByTestId('orchestrator-panel').textContent ?? '';
+    expect(text).toContain('2 hints queued');
   });
 
   it('puts every control in the open, with no overflow menu left to hunt through', () => {
@@ -607,70 +663,6 @@ describe('OrchestratorPanel strip', () => {
       8,
       'notify',
     );
-  });
-
-  it('keeps role models behind a drawer, one row per role the orchestrator can pick', () => {
-    renderPanel();
-    expect(screen.queryByTestId('orchestrator-role-models')).toBeNull();
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    const drawer = screen.getByTestId('orchestrator-role-models');
-    expect(drawer.textContent).toContain('for the rest of this run');
-    expect(screen.getAllByRole('group', { name: /model$/i })).toHaveLength(11);
-    expect(screen.queryByRole('group', { name: /report model/i })).not.toBeNull();
-    expect(screen.queryByRole('group', { name: /wireframe model/i })).not.toBeNull();
-  });
-
-  it('reads the role models a run already carries', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-        },
-      }),
-    });
-
-    expect(screen.getByTestId('orchestrator-role-models-count').textContent).toContain(
-      '1 role on a chosen model',
-    );
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    const implementer = screen.getByRole('group', { name: /implementer model/i });
-    expect(implementer.textContent).toContain('GPT-5.6');
-    expect(screen.getByRole('group', { name: /scout model/i }).textContent).not.toContain(
-      'GPT-5.6',
-    );
-  });
-
-  it('drops a role back to the workspace default from the drawer', () => {
-    renderPanel({
-      runOverride: run({
-        roleModelOverrides: {
-          implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-          scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
-        },
-      }),
-    });
-
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-    const implementer = screen.getByRole('group', { name: /implementer model/i });
-    fireEvent.click(within(implementer).getByRole('button', { name: /reset routing override/i }));
-
-    expect(storeState['setWorkflowRoleModelOverrides']).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      scout: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'low' },
-    });
-  });
-
-  it('opens role models instead of hints, never both', () => {
-    renderPanel();
-
-    openHints();
-    fireEvent.click(screen.getByTestId('orchestrator-role-models-toggle'));
-
-    expect(screen.getByTestId('orchestrator-role-models')).toBeDefined();
-    expect(screen.queryByTestId('orchestrator-hints-input')).toBeNull();
   });
 
   it('folds the decisions into the strip behind a count', () => {

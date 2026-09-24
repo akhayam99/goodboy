@@ -300,11 +300,12 @@ describe('CreateAgentPopover', () => {
     expandRouting();
 
     expect(container.querySelector('select')).toBeNull();
-    expect(screen.getByRole('button', { name: '5.6 Sol' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '5.6 Terra' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '5.6 Luna' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '5.6' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sol' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Terra' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Luna' })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: '5.6 Terra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Terra' }));
     confirm();
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',

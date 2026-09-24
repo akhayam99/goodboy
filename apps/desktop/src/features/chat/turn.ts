@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
+  createJsonLineAssembler,
   parseStreamJsonLine,
   parseCursorStreamLine,
   parseCodexJsonLine,
@@ -164,6 +165,33 @@ export async function* runTurn(
   let receivedResponseEvent = false;
   const unparsedOutput: string[] = [];
 
+  const assembler = createJsonLineAssembler();
+
+  const handleLine = ({ line }: { readonly line: string }) => {
+    const parsedEvents = parseForProvider(args.provider, line, ctx);
+    if (parsedEvents.length > 0) {
+      receivedAnyEvent = true;
+    }
+    if (parsedEvents.length === 0 && line.trim() !== '') {
+      unparsedOutput.push(line.trim());
+    }
+    for (const ev of parsedEvents) {
+      if (
+        ev.kind === 'error' &&
+        classifyProviderError({ message: ev.message }).kind === 'usage_limit'
+      ) {
+        receivedResponseEvent = true;
+        error = new Error(ev.message);
+        ended = true;
+        break;
+      }
+      if (ev.kind === 'assistant_text' || ev.kind === 'done' || ev.kind === 'error') {
+        receivedResponseEvent = true;
+      }
+      queue.push(ev);
+    }
+  };
+
   const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
     if (event.payload.runId !== args.runId) {
       return;
@@ -171,32 +199,30 @@ export async function* runTurn(
 
     switch (event.payload.type) {
       case 'line': {
-        const parsedEvents = parseForProvider(args.provider, event.payload.line, ctx);
-        if (parsedEvents.length > 0) {
-          receivedAnyEvent = true;
-        }
-        if (parsedEvents.length === 0 && event.payload.line.trim() !== '') {
-          unparsedOutput.push(event.payload.line.trim());
-        }
-        for (const ev of parsedEvents) {
-          if (
-            ev.kind === 'error' &&
-            classifyProviderError({ message: ev.message }).kind === 'usage_limit'
-          ) {
-            receivedResponseEvent = true;
-            error = new Error(ev.message);
-            ended = true;
+        const assembled = assembler.push({ line: event.payload.line });
+        switch (assembled.kind) {
+          case 'line':
+            handleLine({ line: assembled.line });
             break;
+          case 'overflow':
+            for (const line of assembled.lines) {
+              handleLine({ line });
+            }
+            break;
+          case 'pending':
+            break;
+          default: {
+            const _exhaustive: never = assembled;
+            void _exhaustive;
           }
-          if (ev.kind === 'assistant_text' || ev.kind === 'done' || ev.kind === 'error') {
-            receivedResponseEvent = true;
-          }
-          queue.push(ev);
         }
         flush();
         break;
       }
       case 'end': {
+        for (const line of assembler.flush()) {
+          handleLine({ line });
+        }
         if (!receivedAnyEvent) {
           const stderrMessage = event.payload.stderr.trim();
           const stdoutMessage = unparsedOutput
@@ -267,11 +293,7 @@ export async function* runTurn(
   } finally {
     unlisten();
     if (!ended) {
-      try {
-        await invoke('turn_cancel', { runId: args.runId });
-      } catch {
-        // best-effort cancellation
-      }
+      await invoke('turn_cancel', { runId: args.runId }).catch(() => undefined);
     }
   }
 }

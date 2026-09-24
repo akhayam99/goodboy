@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { migrate } from './runner';
 import { migrations } from './index';
 
 const workspaceId = 'ws-1';
 
 const seedThrough99 = async () => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version <= 99),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 99 });
   const now = Date.now();
   await db.execute(
     'INSERT INTO workspaces (id, name, root_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',

@@ -6,7 +6,7 @@ describe('strongestModelForTier', () => {
   it('gives an implementer the strongest expensive model that is not thinker only', () => {
     expect(
       strongestModelForTier({ provider: 'anthropic', tier: 'expensive', wantsThinker: false })?.id,
-    ).toBe('opus-5');
+    ).toBe('opus-5.5');
   });
 
   it('gives a thinker the top of the same tier', () => {

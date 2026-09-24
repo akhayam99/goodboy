@@ -14,11 +14,7 @@ import {
   type SessionId,
 } from '@goodboy/types';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import {
-  inferAgentKindFromName,
-  KIND_TO_ROLE,
-  type AgentKind,
-} from '../../../features/session/agent-kind';
+import { classifyAgent, KIND_TO_ROLE, type AgentKind } from '../../../features/session/agent-kind';
 import { issuedAgentInventory } from '../turn/agentEvidenceInventory';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { applyNeedDisposition, type NeedDispositionOutcome } from './applyNeedDisposition';
@@ -86,10 +82,10 @@ export const decideCapabilityNeed = ({
     if (requester === undefined || session === undefined) {
       return { kind: 'unavailable', reason: 'the requesting agent is no longer loaded' };
     }
-    const kind =
-      (requester.kind as AgentKind | undefined) ??
-      get().agentKindOverride[requester.id] ??
-      inferAgentKindFromName(requester.name);
+    const kind = classifyAgent({
+      agent: requester,
+      override: get().agentKindOverride[requester.id] ?? null,
+    });
     const pendingRequest = buildNeedRequest({
       obligation,
       requester,
@@ -201,13 +197,13 @@ export const decideCapabilityNeed = ({
       decision.action !== 'need' ||
       decision.obligationId !== obligation.id
     ) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        `need undecided: ${requester.name}`,
-        'the orchestrator did not answer this need, so it stays open and unowned. retry it or resolve it by hand.',
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: `Need from ${requester.name} undecided`,
+        body: 'the orchestrator did not answer this need, so it stays open and unowned. retry it or resolve it by hand.',
+        sessionId,
+      });
       return { kind: 'unavailable', reason: 'the orchestrator did not answer this need' };
     }
     return applyNeedDisposition({ set, get, sessionId, obligation, decision });

@@ -27,7 +27,6 @@ import { useAppStore } from '../../../../store';
 import type { DiscoveredScriptScan } from '../../../../store/slices/scripts/state';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import {
-  REPORT_ARTIFACT_ID,
   SESSION as ARTIFACT_SESSION,
   SESSION_ID as ARTIFACT_SESSION_ID,
   seedArtifactScene,
@@ -73,7 +72,6 @@ const SCRIPTS_WORKSPACE: Workspace = {
   id: SCRIPTS_WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: SCRIPTS_EARLIER,
   updatedAt: SCRIPTS_NOW,
@@ -156,7 +154,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     mountName: 'ledger-core',
     worktreePath: LEDGER_WORKTREE,
     repoRoot: '/mock/harborline/ledger-core',
-    branch: 'ak/fix-settlement-replay',
+    branch: 'nw/fix-settlement-replay',
     parallelIndex: 0,
   }),
   makeScriptsMount({
@@ -165,7 +163,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     mountName: 'notify-relay',
     worktreePath: RELAY_WORKTREE,
     repoRoot: '/mock/harborline/notify-relay',
-    branch: 'ak/fix-settlement-replay',
+    branch: 'nw/fix-settlement-replay',
     parallelIndex: 1,
   }),
   makeScriptsMount({
@@ -174,7 +172,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     mountName: 'payments-api',
     worktreePath: PAYMENTS_WORKTREE,
     repoRoot: '/mock/harborline/payments-api',
-    branch: 'ak/fix-settlement-replay',
+    branch: 'nw/fix-settlement-replay',
     parallelIndex: 2,
   }),
 ];
@@ -840,19 +838,20 @@ export const ArtifactsLensShellScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedArtifactScene({ focusedArtifactId: REPORT_ARTIFACT_ID });
+    seedArtifactScene({ focusedArtifactId: null });
     seedShellChrome({
       session: ARTIFACT_SESSION,
       siblings: ARTIFACT_SIBLINGS,
       branches: {
-        [ARTIFACT_SESSION_ID]: 'ak/fix-posting-rounding',
-        'mock-surface-session-settled-batches': 'ak/fix-settled-batch-retries',
-        'mock-surface-session-payout-export': 'ak/feat-monthly-payout-export',
-        'mock-surface-session-webhook-audit': 'ak/chore-webhook-rotation-runbook',
+        [ARTIFACT_SESSION_ID]: 'nw/fix-posting-rounding',
+        'mock-surface-session-settled-batches': 'nw/fix-settled-batch-retries',
+        'mock-surface-session-payout-export': 'nw/feat-monthly-payout-export',
+        'mock-surface-session-webhook-audit': 'nw/chore-webhook-rotation-runbook',
       },
       telemetryAt: '2026-09-14T16:40:00.000Z' as IsoDateTime,
       lens: 'plans',
     });
+    useAppStore.setState({ artifactFilter: { [ARTIFACT_SESSION_ID]: 'plan' } });
     setIsReady(true);
   }, []);
 

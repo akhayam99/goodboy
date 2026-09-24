@@ -43,7 +43,6 @@ const workspace = (id: WorkspaceId, name: string): Workspace => ({
   id,
   name,
   slug: name,
-  sessionsRoot: null,
   overrides,
   createdAt: NOW,
   updatedAt: NOW,

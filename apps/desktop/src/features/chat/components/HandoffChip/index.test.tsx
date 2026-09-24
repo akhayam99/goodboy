@@ -10,7 +10,8 @@ type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { extractHandoffMock, showToast, state } = vi.hoisted(() => ({
   extractHandoffMock: vi.fn<(text: string) => unknown>(() => null),
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     sessions: [{ id: 'sess-1', workflowRuns: [] as ReadonlyArray<string> }],
     sessionNudges: {} as Record<string, unknown>,
@@ -155,7 +156,7 @@ describe('HandoffChip', () => {
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
     expect(state.spawnAgent).not.toHaveBeenCalled();
     expect(state.selectAgent).not.toHaveBeenCalled();
-    const opts = showToast.mock.calls[0]![2];
+    const opts = showToast.mock.calls[0]![0];
     expect(opts?.action?.label).toBe('Open the agent');
 
     opts?.action?.onClick();

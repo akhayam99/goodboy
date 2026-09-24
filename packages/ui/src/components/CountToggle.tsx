@@ -29,7 +29,7 @@ export const CountToggle = ({ label, count, isShown, icon, onChange, isFilter = 
         'flex h-7 items-center gap-1 rounded-md px-1.5 text-2xs font-medium motion-safe:transition-colors',
         isShown
           ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       <Icon size={10} aria-hidden />

@@ -281,7 +281,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
           ) : null}
         </div>
       )}
-      <span className="border-t border-border-soft px-3 py-2 text-2xs text-muted-foreground/70">
+      <span className="border-t border-border-soft px-3 py-2 text-2xs text-faint-foreground">
         Sessions keep working in their own worktree, never on this checkout.
       </span>
     </div>

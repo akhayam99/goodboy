@@ -50,7 +50,7 @@ export const Workspace = () => {
 
   return (
     <section className="block alt" id="workspace" aria-labelledby="h2-workspace">
-      <div className="wrap">
+      <div className="wrap split">
         <div className="blockHead">
           <h2 className="rv" id="h2-workspace">
             Eight repos, one goal
@@ -62,60 +62,60 @@ export const Workspace = () => {
           </p>
         </div>
 
-        <div className="ws-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
-          <div className="ws-body">
-            <div className="ws-head">
-              <span className="ws-hl">
-                <span className="ws-eyebrow">Projects</span>
-                <span className="ws-total">8</span>
-              </span>
-              <span className={cx('ws-touched', step >= 3 && 'ws-in')}>2 of 8 touched</span>
-            </div>
-            <div className="hairline" />
-
-            <div className={cx('ws-goal', step >= 1 && 'ws-in')}>
-              <span className="ws-goal-label">Goal</span>
-              <p className="ws-goal-text">
-                Ship LIN-241, bulk archive for notifications
-              </p>
-            </div>
-
-            <div className="ws-grid">
-              <div className="ws-touched-group">
-                {touchedProjects.map((project, i) => {
-                  const lit = step >= i + 2;
-
-                  return (
-                    <div className="ws-tile" key={project.name}>
-                      <span className={cx('ws-chip', lit && 'ws-lit')}>{project.name}</span>
-                      <div className="ws-stack" style={delay(i * 160)}>
-                        <span className={cx('ws-row', 'ws-branch', step >= 5 && 'ws-in')}>
-                          <span className="ws-rk">branch</span>
-                          <span className="ws-rv">gb/lin-241-bulk-archive</span>
-                        </span>
-                        <span className={cx('ws-row', 'ws-pr', step >= 6 && 'ws-in')}>
-                          <CheckGlyph />
-                          {project.pr}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+        <div className="splitBody">
+          <div className="ws-frame rv" style={delay(80)} ref={ref} aria-hidden="true">
+            <div className="ws-body">
+              <div className="ws-head">
+                <span className="ws-hl">
+                  <span className="ws-eyebrow">Projects</span>
+                  <span className="ws-total">8</span>
+                </span>
+                <span className={cx('ws-touched', step >= 3 && 'ws-in')}>2 of 8 touched</span>
               </div>
-              <div className="ws-rest-group">
-                {restProjects.map((project) => (
-                  <div className="ws-tile" key={project.name}>
-                    <span className={cx('ws-chip', step >= 3 && 'ws-off')}>{project.name}</span>
-                  </div>
-                ))}
+              <div className="hairline" />
+
+              <div className={cx('ws-goal', step >= 1 && 'ws-in')}>
+                <span className="ws-goal-label">Goal</span>
+                <p className="ws-goal-text">Ship LIN-241, bulk archive for notifications</p>
+              </div>
+
+              <div className="ws-grid">
+                <div className="ws-touched-group">
+                  {touchedProjects.map((project, i) => {
+                    const lit = step >= i + 2;
+
+                    return (
+                      <div className="ws-tile" key={project.name}>
+                        <span className={cx('ws-chip', lit && 'ws-lit')}>{project.name}</span>
+                        <div className="ws-stack" style={delay(i * 160)}>
+                          <span className={cx('ws-row', 'ws-branch', step >= 5 && 'ws-in')}>
+                            <span className="ws-rk">branch</span>
+                            <span className="ws-rv">gb/lin-241-bulk-archive</span>
+                          </span>
+                          <span className={cx('ws-row', 'ws-pr', step >= 6 && 'ws-in')}>
+                            <CheckGlyph />
+                            {project.pr}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="ws-rest-group">
+                  {restProjects.map((project) => (
+                    <div className="ws-tile" key={project.name}>
+                      <span className={cx('ws-chip', step >= 3 && 'ws-off')}>{project.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <p className="caption rv" style={delay(110)}>
-          The other six stay exactly as they were.
-        </p>
+          <p className="caption rv" style={delay(110)}>
+            The other six stay exactly as they were.
+          </p>
+        </div>
         <a className="more rv" style={delay(130)} href={SITE.concepts}>
           How workspaces work <span className="arr">→</span>
         </a>

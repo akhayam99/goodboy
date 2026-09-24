@@ -23,7 +23,7 @@ vi.mock('../CreateAgentPopover', () => ({
   ),
 }));
 
-vi.mock('../../../workspace/components/WorkspacesSidebar/parts/AdHocRow', () => ({
+vi.mock('../AgentTree/AdHocRow', () => ({
   AdHocRow: ({ run, isMuted }: { run: Agent; isMuted?: boolean }) => (
     <li data-testid="agent-row" data-muted={String(isMuted)}>
       {run.name}

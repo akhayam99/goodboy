@@ -13,7 +13,6 @@ const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
     slug: 'test-ws',
-    sessionsRoot: '/code/test-ws',
   } as Workspace,
   activityBar: { onSelectSession: vi.fn() as (id: SessionId) => void },
 }));

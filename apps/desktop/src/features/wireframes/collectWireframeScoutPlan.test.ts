@@ -63,7 +63,13 @@ const mount = {
 
 const stateWith = (overrides: Record<string, unknown> = {}): AppStore =>
   ({
-    sessions: [{ id: SESSION_ID, workspaceId: WORKSPACE_ID }],
+    sessions: [
+      {
+        id: SESSION_ID,
+        workspaceId: WORKSPACE_ID,
+        providerPreference: { defaultProvider: 'anthropic' },
+      },
+    ],
     workspaceOverrides: {},
     providers: [{ id: 'anthropic', connection: 'connected' }],
     providerCooldowns: {},
@@ -86,7 +92,6 @@ describe('wireframeScoutGate', () => {
     const gate = wireframeScoutGate({
       state: stateWith({ sessionProjectMounts: {}, sessionActiveMount: {} }),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_NO_MOUNT });
@@ -96,7 +101,6 @@ describe('wireframeScoutGate', () => {
     const gate = wireframeScoutGate({
       state: stateWith({ providers: [] }),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
@@ -117,7 +121,6 @@ describe('wireframeScoutGate', () => {
         ],
       }),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate).toEqual({ kind: 'skipped', reason: WIREFRAME_SCOUT_SKIP_BUDGET });
@@ -139,7 +142,6 @@ describe('wireframeScoutGate', () => {
         ],
       }),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('ready');
@@ -150,7 +152,6 @@ describe('wireframeScoutGate', () => {
     const gate = wireframeScoutGate({
       state: stateWith(),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('skipped');
@@ -161,7 +162,6 @@ describe('wireframeScoutGate', () => {
     const gate = wireframeScoutGate({
       state: stateWith(),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
     });
     expect(gate.kind).toBe('ready');
@@ -181,7 +181,6 @@ describe('collectWireframeScoutPlan', () => {
     const result = await collectWireframeScoutPlan({
       state: stateWith(),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
       goal: 'redraw the web checkout',
       brief: null,
@@ -196,7 +195,6 @@ describe('collectWireframeScoutPlan', () => {
     const result = await collectWireframeScoutPlan({
       state: stateWith({ sessionProjectMounts: {}, sessionActiveMount: {} }),
       sessionId: SESSION_ID,
-      workflowRunId: null,
       mountIds: [MOUNT_ID],
       goal: 'redraw the web checkout',
       brief: null,

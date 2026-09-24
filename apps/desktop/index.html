@@ -55,7 +55,12 @@
     <script>
       (function () {
         try {
-          if (localStorage.getItem('goodboy:theme') === 'light') {
+          var stored = localStorage.getItem('goodboy:theme');
+          var systemIsLight =
+            stored === 'system' &&
+            typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: light)').matches;
+          if (stored === 'light' || systemIsLight) {
             document.documentElement.setAttribute('data-theme', 'light');
           }
         } catch (e) {}

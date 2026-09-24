@@ -196,8 +196,8 @@ export const CapEditor = ({
               </Button>
             </div>
             <p className="text-2xs text-muted-foreground">
-              this number does two things: it raises the budget alert, and it moves the next turn to
-              another provider. spend above it still runs here if no other provider has room.
+              At this share of the cap Goodboy warns you and routes the next turn to another
+              provider. If none has room, work continues here.
             </p>
           </div>
         </>

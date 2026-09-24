@@ -13,7 +13,7 @@ export const selectResolverAgentIds = ({ agents, kindOverride }: Params): Readon
         (agent) =>
           agent.parentAgentId == null &&
           agent.stepId == null &&
-          classifyAgent(agent, kindOverride[agent.id] ?? null) === 'resolver',
+          classifyAgent({ agent, override: kindOverride[agent.id] ?? null }) === 'resolver',
       )
       .map((agent) => agent.id),
   );

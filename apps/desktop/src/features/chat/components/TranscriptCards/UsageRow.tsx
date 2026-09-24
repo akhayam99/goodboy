@@ -10,8 +10,8 @@ type UsageStatProps = {
 const UsageStat = ({ value, label }: UsageStatProps) => {
   return (
     <span className="inline-flex items-baseline gap-1">
-      <span className="tabular-nums text-foreground/70">{value}</span>
-      <span className="uppercase tracking-wide text-muted-foreground/50">{label}</span>
+      <span className="tabular-nums text-muted-foreground">{value}</span>
+      <span className="uppercase tracking-eyebrow text-faint-foreground">{label}</span>
     </span>
   );
 };
@@ -31,7 +31,7 @@ export const UsageRow = ({ usage }: Props) => {
             <UsageStat key="cached" value={formatTokens(usage.cachedInputTokens)} label="cached" />
           ) : null,
           usage.estimatedCostUsd > 0 ? (
-            <span key="cost" className="tabular-nums text-foreground/70">
+            <span key="cost" className="tabular-nums text-muted-foreground">
               ~{formatUsd(usage.estimatedCostUsd)}
             </span>
           ) : null,

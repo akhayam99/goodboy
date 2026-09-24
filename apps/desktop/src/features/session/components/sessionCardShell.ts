@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionStage } from '@goodboy/types';
 
 type Params = {
@@ -12,20 +12,20 @@ type RestBorderParams = Pick<Params, 'stage' | 'selected'>;
 
 const restBorder = ({ stage, selected }: RestBorderParams): string => {
   if (selected === true) {
-    return 'border-primary bg-primary/5';
+    return cn('border-primary', tintClasses('primary').bgSoft);
   }
   if (stage === 'running') {
-    return 'border-info/50 spin-border spin-border-info';
+    return cn(tintClasses('info').border, 'spin-border spin-border-info');
   }
   if (stage === 'attention') {
-    return 'border-warning/50';
+    return cn(tintClasses('warning').border);
   }
   return 'border-border-soft hover:border-border';
 };
 
 export const sessionCardShell = ({ stage, selected, active, dimmed }: Params): string =>
   cn(
-    'rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+    'rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
     active === true ? 'border-border shadow-sm' : restBorder({ stage, selected }),
     dimmed === true && 'opacity-50',
   );

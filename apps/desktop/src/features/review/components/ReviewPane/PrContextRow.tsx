@@ -10,8 +10,8 @@ import {
 } from '@goodboy/ui';
 import type { PrCheckRun, PullRequestState } from '@goodboy/types';
 import { PullRequestChip } from '../../../github/components/PullRequestChip';
-import { PrSwitcher } from '../../../github/components/GitHubStudio/PrSwitcher';
-import { checksRollup } from '../../../github/components/GitHubStudio/checksRollup';
+import { PrSwitcher } from '../../../github/components/PullRequest/PrSwitcher';
+import { checksRollup } from '../../../github/components/PullRequest/checksRollup';
 
 type Props = {
   readonly pr: PullRequestState;
@@ -23,7 +23,6 @@ type Props = {
   readonly onSelectPr: (prNumber: number) => void;
   readonly onRefresh: () => void;
   readonly onOpenChecks: () => void;
-  readonly onOpenQueue: () => void;
   readonly onOpenOnGithub: () => void;
 };
 
@@ -37,7 +36,6 @@ export const PrContextRow = ({
   onSelectPr,
   onRefresh,
   onOpenChecks,
-  onOpenQueue,
   onOpenOnGithub,
 }: Props) => {
   const rollup = checksRollup({ checks });
@@ -68,7 +66,7 @@ export const PrContextRow = ({
                 type="button"
                 onClick={onOpenChecks}
                 aria-label={`Checks ${rollup}`}
-                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Chip size="3xs" tone="neutral" label={`Checks ${rollup}`} />
               </button>
@@ -78,7 +76,6 @@ export const PrContextRow = ({
       }
       actions={
         <>
-          <GhostActionButton icon={ListChecks} label="For you" onClick={onOpenQueue} />
           <RefreshIconButton
             label="Refresh the pull request"
             isLoading={isRefreshing}

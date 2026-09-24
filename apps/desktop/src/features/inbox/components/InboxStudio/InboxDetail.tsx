@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
-import { MrDetailPanel } from '../../../integrations/gitlab/GitlabStudio/MrDetailPanel';
+import { MrDetailPanel } from '../../../integrations/gitlab/MergeRequest/MrDetailPanel';
 import { LinearIssueDetail } from '../../../integrations/linear/LinearIssueDetail';
 import { JiraIssueDetail } from '../../../integrations/jira/JiraIssueDetail';
 import { SentryIssueDetail } from '../../../integrations/sentry/SentryIssueDetail';
@@ -23,6 +23,7 @@ type Props = {
   readonly rootPath: string;
   readonly isLoading: boolean;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
   readonly onDeselect: () => void;
@@ -40,6 +41,7 @@ export const InboxDetail = ({
   rootPath,
   isLoading,
   errors,
+  connected,
   onRefresh,
   onClose,
   onDeselect,
@@ -56,6 +58,9 @@ export const InboxDetail = ({
         records={records}
         hasVisibleRecords={hasVisibleRecords}
         hasFiltersActive={hasFiltersActive}
+        errors={errors}
+        connected={connected}
+        onRetry={onRefresh}
         onClearFilters={onClearFilters}
         onOpenIntegrations={onOpenIntegrations}
       />
@@ -63,6 +68,14 @@ export const InboxDetail = ({
   }
 
   const payload = record.payload;
+  const dock = (
+    <RecordLaunchDock
+      record={record}
+      workspaceId={workspaceId}
+      onClose={onClose}
+      focusRequest={launchFocusRequest}
+    />
+  );
   const deselectAction = (
     <IconButton
       icon={X}
@@ -79,14 +92,7 @@ export const InboxDetail = ({
           issue={payload.issue}
           editContext={{ workspaceId, rootPath }}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'gitlab':
@@ -97,14 +103,7 @@ export const InboxDetail = ({
               issue={payload.issue}
               workspaceId={workspaceId}
               headerActions={deselectAction}
-              dock={
-                <RecordLaunchDock
-                  record={record}
-                  workspaceId={workspaceId}
-                  onClose={onClose}
-                  focusRequest={launchFocusRequest}
-                />
-              }
+              dock={dock}
             />
           );
         case 'mr':
@@ -116,14 +115,7 @@ export const InboxDetail = ({
               onRefresh={onRefresh}
               onClose={onClose}
               headerActions={deselectAction}
-              dock={
-                <RecordLaunchDock
-                  record={record}
-                  workspaceId={workspaceId}
-                  onClose={onClose}
-                  focusRequest={launchFocusRequest}
-                />
-              }
+              dock={dock}
             />
           );
         default: {
@@ -137,14 +129,7 @@ export const InboxDetail = ({
           issue={payload.issue}
           workspaceId={workspaceId}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'jira':
@@ -154,14 +139,7 @@ export const InboxDetail = ({
           workspaceId={workspaceId}
           onIssueWritten={onRefresh}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'sentry':
@@ -180,18 +158,8 @@ export const InboxDetail = ({
           detail={sentryDetail.detail?.issueId === payload.issue.id ? sentryDetail.detail : null}
           isLoading={sentryDetail.isLoading}
           error={sentryDetail.error}
-          summaryIsLoading={false}
-          summaryError={null}
-          onRetrySummary={() => undefined}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'slack':
@@ -204,14 +172,7 @@ export const InboxDetail = ({
           fallbackMessage={payload.head}
           fallbackUrl={record.url}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     case 'bitbucket':
@@ -226,14 +187,7 @@ export const InboxDetail = ({
           onRefresh={onRefresh}
           onClose={onClose}
           headerActions={deselectAction}
-          dock={
-            <RecordLaunchDock
-              record={record}
-              workspaceId={workspaceId}
-              onClose={onClose}
-              focusRequest={launchFocusRequest}
-            />
-          }
+          dock={dock}
         />
       );
     default: {

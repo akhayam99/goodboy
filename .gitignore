@@ -42,10 +42,11 @@ coverage/
 # misc
 .tmp-*.html
 *.tsbuildinfo
-.claude/launch.json
+**/.claude/launch.json
 .claude/scheduled_tasks.lock
 .goodboy/
 
 # refactor plan stays local
-REFACTOR_PLAN.md
+/*_PLAN.md
+/*_PROMPT.md
 SCOUT_FANOUT_DESIGN.md

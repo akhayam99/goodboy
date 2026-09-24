@@ -1,29 +1,13 @@
 use serde_json::{json, Value};
 use tauri::AppHandle;
 
+use super::args::{optional_text, required_text};
 use super::dispatch::Scope;
 use super::mount::handoff;
 use super::protocol::{BridgeError, MOUNT_UNAVAILABLE};
 
 const NO_SESSION: &str = "no session context: this command only works inside a Goodboy agent turn";
 const NO_PROJECT: &str = "a series belongs to one project: name it with --project <name>";
-
-fn text(args: &super::dispatch::Args, key: &str) -> Result<String, BridgeError> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| format!("--{} must not be empty", key).into())
-}
-
-fn optional_text(args: &super::dispatch::Args, key: &str) -> Option<String> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-}
 
 fn optional_number(args: &super::dispatch::Args, key: &str) -> Option<i64> {
     args.get(key).and_then(Value::as_i64)
@@ -57,7 +41,7 @@ pub(super) async fn dispatch(
             let Some(project) = scope.project_id() else {
                 return Err(BridgeError::coded(MOUNT_UNAVAILABLE, NO_PROJECT));
             };
-            let request_id = text(args, "request-id")?;
+            let request_id = required_text(args, "request-id")?;
             handoff(
                 app,
                 json!({
@@ -69,7 +53,7 @@ pub(super) async fn dispatch(
                     "mountId": scope.mount_id(),
                     "requestId": request_id,
                     "args": {
-                        "name": text(args, "name")?,
+                        "name": required_text(args, "name")?,
                         "total": optional_number(args, "total"),
                         "workItem": optional_text(args, "work-item"),
                         "workItemUrl": optional_text(args, "work-item-url"),
@@ -83,7 +67,7 @@ pub(super) async fn dispatch(
             .await
         }
         "set-member" => {
-            let request_id = text(args, "request-id")?;
+            let request_id = required_text(args, "request-id")?;
             handoff(
                 app,
                 json!({
@@ -95,7 +79,7 @@ pub(super) async fn dispatch(
                     "mountId": scope.mount_id(),
                     "requestId": request_id,
                     "args": {
-                        "series": text(args, "series")?,
+                        "series": required_text(args, "series")?,
                         "position": required_number(args, "position")?,
                         "label": optional_text(args, "label"),
                         "omitted": flag(args, "omitted"),

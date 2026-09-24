@@ -12,11 +12,24 @@ export type Block =
       align: ReadonlyArray<CellAlign>;
       rows: ReadonlyArray<ReadonlyArray<string>>;
     }
-  | { kind: 'callout'; tag: string; content: string }
+  | { kind: 'callout'; tag: string; content: string; blocks: ReadonlyArray<Block> }
+  | { kind: 'facts'; entries: ReadonlyArray<KitEntry> }
+  | { kind: 'metrics'; entries: ReadonlyArray<KitEntry> }
+  | { kind: 'timeline'; entries: ReadonlyArray<KitEntry> }
+  | { kind: 'pagebreak' }
   | { kind: 'paragraph'; content: string; isTree: boolean };
+
+export type KitEntry = {
+  readonly label: string;
+  readonly value: string;
+  readonly hint: string | null;
+};
+
+export type TaskState = 'open' | 'done' | 'partial';
 
 type ListItem = {
   readonly content: string;
+  readonly task: TaskState | null;
   readonly children: ReadonlyArray<Block>;
 };
 
@@ -30,6 +43,103 @@ const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
 const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
 const TREE_RE = /[├└│┌┐┘┤┬┼]/;
+const PAGEBREAK_RE = /^<<page-?break>>\s*$/i;
+const KIT_TAGS = ['facts', 'metrics', 'timeline'] as const;
+type KitTag = (typeof KIT_TAGS)[number];
+const KIT_BULLET_RE = /^\s*(?:[-*+]|\d+\.)\s+/;
+const KIT_LABEL_RE = /^\*\*([^*]+?)\*\*:?\s*|^([^:|]{1,60}?):\s+/;
+
+type KitTagParams = {
+  readonly tag: string;
+};
+
+const kitTagFor = ({ tag }: KitTagParams): KitTag | null => {
+  const normalized = tag.toLowerCase();
+  return KIT_TAGS.find((kit) => kit === normalized) ?? null;
+};
+
+type KitLineParams = {
+  readonly line: string;
+  readonly tag: KitTag;
+};
+
+const splitHint = (value: string): { readonly value: string; readonly hint: string | null } => {
+  const bar = value.indexOf(' | ');
+  if (bar === -1) {
+    return { value: value.trim(), hint: null };
+  }
+  const hint = value.slice(bar + 3).trim();
+  return { value: value.slice(0, bar).trim(), hint: hint.length > 0 ? hint : null };
+};
+
+const parseKitLine = ({ line, tag }: KitLineParams): KitEntry | null => {
+  const text = line.replace(KIT_BULLET_RE, '').trim();
+  if (text.length === 0) {
+    return null;
+  }
+  if (tag === 'timeline') {
+    const bar = text.indexOf(' | ');
+    if (bar === -1) {
+      return { label: '', value: text, hint: null };
+    }
+    return { label: text.slice(0, bar).trim(), ...splitHint(text.slice(bar + 3)) };
+  }
+  const labelled = text.match(KIT_LABEL_RE);
+  if (labelled === null) {
+    return { label: '', ...splitHint(text) };
+  }
+  const label = (labelled[1] ?? labelled[2] ?? '').replace(/:$/, '').trim();
+  return { label, ...splitHint(text.slice(labelled[0].length)) };
+};
+
+type KitBlockParams = {
+  readonly tag: KitTag;
+  readonly content: string;
+};
+
+const parseKitBlock = ({ tag, content }: KitBlockParams): Block => {
+  const entries = content
+    .split('\n')
+    .map((line) => parseKitLine({ line, tag }))
+    .filter((entry): entry is KitEntry => entry !== null);
+  return { kind: tag, entries };
+};
+
+type CalloutParams = {
+  readonly tag: string;
+  readonly content: string;
+};
+
+const calloutBlock = ({ tag, content }: CalloutParams): Block => {
+  const kit = kitTagFor({ tag });
+  if (kit !== null) {
+    return parseKitBlock({ tag: kit, content });
+  }
+  return { kind: 'callout', tag, content, blocks: parseBlocks(content) };
+};
+
+const TASK_RE = /^\[([ xX~-])\](?:\s+(.*))?$/;
+const LABEL_LINE_RE = /^\*\*[^*\n]{1,60}?(?::\*\*|\*\*:)/;
+
+const TASK_STATES: Readonly<Record<string, TaskState>> = {
+  ' ': 'open',
+  x: 'done',
+  X: 'done',
+  '~': 'partial',
+  '-': 'partial',
+};
+
+type TaskParams = {
+  readonly content: string;
+};
+
+const splitTask = ({ content }: TaskParams): Pick<ListItem, 'content' | 'task'> => {
+  const match = content.match(TASK_RE);
+  if (match === null) {
+    return { content, task: null };
+  }
+  return { content: match[2] ?? '', task: TASK_STATES[match[1] ?? ' '] ?? null };
+};
 
 type Params = {
   readonly lines: ReadonlyArray<string>;
@@ -51,6 +161,10 @@ const joinParagraphLines = ({ lines }: Params): string => {
     }
     if (line.endsWith('\\')) {
       content += `${line.slice(0, -1)}\n`;
+      continue;
+    }
+    if (LABEL_LINE_RE.test(lines[lineIndex + 1] ?? '')) {
+      content += `${line}\n`;
       continue;
     }
     content += `${line} `;
@@ -125,6 +239,7 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
       }
       items[items.length - 1] = {
         content: last.content,
+        task: last.task,
         children: [...last.children, { kind: 'list', ordered: raw.ordered, items: nested }],
       };
       continue;
@@ -132,7 +247,7 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
     if (raw.ordered !== ordered) {
       break;
     }
-    items.push({ content: raw.content, children: [] });
+    items.push({ ...splitTask({ content: raw.content }), children: [] });
     cursor.index++;
   }
 
@@ -266,6 +381,12 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       continue;
     }
 
+    if (PAGEBREAK_RE.test(line)) {
+      blocks.push({ kind: 'pagebreak' });
+      i++;
+      continue;
+    }
+
     const calloutOpen = line.match(CALLOUT_OPEN_RE);
     if (calloutOpen) {
       const tag = calloutOpen[1]!;
@@ -276,13 +397,14 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
       if (firstClose && firstClose.index !== undefined) {
         buf.push(firstLineRest.slice(0, firstClose.index));
         i++;
-        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
+        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim() }));
         continue;
       }
       if (firstLineRest.length > 0) {
         buf.push(firstLineRest);
       }
       i++;
+      const hasClose = lines.slice(i).some((rest) => closeRe.test(rest));
       let closed = false;
       while (i < lines.length) {
         const cur = lines[i] ?? '';
@@ -293,11 +415,14 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
           closed = true;
           break;
         }
+        if (!hasClose && cur.trim().length === 0) {
+          break;
+        }
         buf.push(cur);
         i++;
       }
       if (closed || buf.length > 0) {
-        blocks.push({ kind: 'callout', tag, content: buf.join('\n').trim() });
+        blocks.push(calloutBlock({ tag, content: buf.join('\n').trim() }));
         continue;
       }
     }

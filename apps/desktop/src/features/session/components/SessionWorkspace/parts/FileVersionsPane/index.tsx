@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Divider, formatError } from '@goodboy/ui';
+import { Divider, formatError, cn, tintClasses } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileVersion, FileVersionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
@@ -104,7 +104,13 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
                 type="button"
                 onClick={() => void onDeleteAll()}
                 disabled={deletingAll}
-                className="inline-flex items-center gap-1 rounded-md border border-danger/40 px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md border',
+                  tintClasses('danger').border,
+                  'px-2 py-1 text-xs font-medium text-danger transition-colors',
+                  tintClasses('danger').hoverBg,
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
               >
                 <Trash2 size={ICON_SIZE.row} aria-hidden />
                 {deletingAll ? 'Deleting' : 'Confirm delete all'}
@@ -113,7 +119,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
                 type="button"
                 onClick={() => setDeleteAllArmed(false)}
                 disabled={deletingAll}
-                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -123,7 +129,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
               type="button"
               onClick={() => setDeleteAllArmed(true)}
               disabled={versions.length === 0 || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete all
@@ -169,7 +175,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose, eyebrow }: Pr
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover"
             >
               Close
             </button>

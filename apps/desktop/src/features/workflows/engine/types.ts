@@ -5,8 +5,8 @@ import type {
   StepId,
   VerbosityLevel,
   WorkflowOrigin,
+  EffortLevel,
 } from '@goodboy/types';
-import type { EffortLevel } from '../../chat/utils/chat-constants';
 
 export type StepDraft = {
   readonly key: string;

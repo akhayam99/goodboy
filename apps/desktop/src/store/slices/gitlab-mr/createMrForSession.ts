@@ -94,7 +94,11 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       });
     } catch (err) {
       const errMsg = formatError(err);
-      void get().emitNotification('error', 'error', 'MR creation failed', errMsg, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't create the merge request",
+        body: errMsg,
         sessionId,
         workspaceId: context.workspaceId,
       });
@@ -127,12 +131,12 @@ export const createMrForSession = (_set: SetFn, get: GetFn) => {
       }),
     });
     await get().refreshSessionMr(sessionId, { force: true, mountId: mount.id });
-    void get().emitNotification(
-      'pr-created',
-      'success',
-      `MR created for: ${context.goal}`,
-      undefined,
-      { sessionId, workspaceId: context.workspaceId },
-    );
+    void get().emitNotification({
+      kind: 'pr-created',
+      severity: 'success',
+      title: `Merge request created for ${context.goal}`,
+      sessionId,
+      workspaceId: context.workspaceId,
+    });
   };
 };

@@ -91,10 +91,10 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
             aria-expanded={open}
             aria-label="Display options"
             className={cn(
-              'inline-flex shrink-0 items-center justify-center rounded p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40',
+              'inline-flex shrink-0 items-center justify-center rounded-sm p-1 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               open
-                ? 'bg-foreground/10 text-foreground'
-                : 'text-muted-foreground/70 hover:bg-foreground/10 hover:text-foreground',
+                ? 'bg-selected text-foreground'
+                : 'text-faint-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <SlidersHorizontal size={11} aria-hidden />
@@ -162,10 +162,8 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded px-2 py-1.5 text-left text-xs motion-safe:transition-colors',
-        selected
-          ? 'text-foreground'
-          : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
+        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs motion-safe:transition-colors',
+        selected ? 'text-foreground' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
       <span className="flex w-3 shrink-0 items-center justify-center text-primary">
@@ -173,7 +171,7 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-medium">{label}</span>
-        <span className="truncate text-2xs text-muted-foreground/60">{hint}</span>
+        <span className="truncate text-2xs text-faint-foreground">{hint}</span>
       </span>
     </button>
   );

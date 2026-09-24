@@ -1,28 +1,11 @@
-import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { migrate, type Database as DbInterface } from '@goodboy/db';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextEngine } from './engine';
 import { addQuestionsToSlot, removeQuestionsFromSlot } from './slot-questions';
+import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
-function makeDb(): DbInterface {
-  const db = new Database(':memory:');
-  db.pragma('foreign_keys = ON');
-  return {
-    async exec(sql) {
-      db.exec(sql);
-    },
-    async execute(sql, params = []) {
-      const result = db.prepare(sql).run(...(params as ReadonlyArray<never>));
-      return { rowsAffected: result.changes };
-    },
-    async select<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      return db
-        .prepare(sql)
-        .all(...(params as ReadonlyArray<never>)) as unknown as ReadonlyArray<T>;
-    },
-  };
-}
+const makeDb = (): DbInterface => makeTestDatabase();
 
 async function seed(db: DbInterface, sessionId: SessionId): Promise<void> {
   const workspaceId = 'ws_sq' as WorkspaceId;

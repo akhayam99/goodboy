@@ -28,8 +28,16 @@ describe('suggestHeavierModel, price of the model actually running', () => {
   const CURSOR_CANDIDATES = ['auto', 'composer-2.5', 'sonnet-4.6', 'opus-5', 'gpt-5.6'];
 
   it('prices the step up from the combo that is running, not from its base', () => {
-    const fromFast = suggestHeavierModel('composer-2.5-fast', CURSOR_CANDIDATES);
-    const fromBase = suggestHeavierModel('composer-2.5', CURSOR_CANDIDATES);
+    const fromFast = suggestHeavierModel({
+      provider: 'cursor',
+      current: 'composer-2.5-fast',
+      candidates: CURSOR_CANDIDATES,
+    });
+    const fromBase = suggestHeavierModel({
+      provider: 'cursor',
+      current: 'composer-2.5',
+      candidates: CURSOR_CANDIDATES,
+    });
 
     expect(fromFast?.id).toBe(fromBase?.id);
     expect(fromFast?.costMultiplier).toBeLessThan(fromBase?.costMultiplier ?? 0);
@@ -37,6 +45,24 @@ describe('suggestHeavierModel, price of the model actually running', () => {
   });
 
   it('keeps the composer suggestion strong, so the multiplier stays out of the card', () => {
-    expect(suggestHeavierModel('composer-2.5-fast', CURSOR_CANDIDATES)?.kind).toBe('strong');
+    expect(
+      suggestHeavierModel({
+        provider: 'cursor',
+        current: 'composer-2.5-fast',
+        candidates: CURSOR_CANDIDATES,
+      })?.kind,
+    ).toBe('strong');
+  });
+});
+
+describe('suggestHeavierModel, price from the provider that runs the model', () => {
+  it('prices a cursor step up from cursor rates, not from the codex table', () => {
+    expect(
+      suggestHeavierModel({
+        provider: 'cursor',
+        current: 'gpt-5.6-terra',
+        candidates: ['gpt-5.6-terra', 'gpt-5.6'],
+      }),
+    ).toEqual({ id: 'gpt-5.6', kind: 'strong', costMultiplier: 2.5 });
   });
 });

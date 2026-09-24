@@ -1,5 +1,6 @@
 import type { IsoDateTime, SessionId } from './ids';
-import type { ReviewablePrProvider } from './review-pr';
+
+export type ReviewablePrProvider = 'github' | 'gitlab';
 
 export type ReviewDraftSide = 'new' | 'old';
 

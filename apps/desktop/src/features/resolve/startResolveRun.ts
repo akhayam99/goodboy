@@ -1,5 +1,4 @@
-import type { AgentId, ProviderId, PullRequestState, SessionId } from '@goodboy/types';
-import type { EffortLevel } from '../chat/utils/chat-constants';
+import type { AgentId, ProviderId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from '../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 
 type SpawnAgentArgs = {

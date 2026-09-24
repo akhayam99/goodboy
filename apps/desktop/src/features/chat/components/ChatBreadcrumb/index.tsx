@@ -1,17 +1,11 @@
 import { useMemo } from 'react';
 import { ChevronRight, CornerLeftUp, GitBranch } from 'lucide-react';
 import type { Agent, AgentId, Session, Workflow, WorkspaceId } from '@goodboy/types';
-import { Divider, cn } from '@goodboy/ui';
+import { Divider, cn, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import {
-  AGENT_KIND_META,
-  inferAgentKindFromName,
-  type AgentKind,
-} from '../../../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
-import { InlineMarkdown } from '../../../../shared/components/InlineMarkdown';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { tintClasses } from '@goodboy/ui';
 import { WriteDestinationControl } from '../WriteDestinationControl';
 
@@ -107,11 +101,10 @@ export const ChatBreadcrumb = ({ session }: Props) => {
     if (!selectedAgent) {
       return null;
     }
-    const override = agentKindOverride[selectedAgent.id];
-    if (override) {
-      return override;
-    }
-    return inferAgentKindFromName(selectedAgent.name);
+    return classifyAgent({
+      agent: selectedAgent,
+      override: agentKindOverride[selectedAgent.id] ?? null,
+    });
   }, [selectedAgent, agentKindOverride]);
 
   const sessionLabel = session.goal.trim() || 'untitled session';
@@ -131,14 +124,14 @@ export const ChatBreadcrumb = ({ session }: Props) => {
               {workspace.name}
             </span>
           ) : (
-            <span className="truncate text-muted-foreground/50">no workspace</span>
+            <span className="truncate text-faint-foreground">no workspace</span>
           )}
 
           <Separator />
 
           <span
-            className="min-w-0 truncate font-medium text-foreground/90"
-            title={stripInlineMarkdown({ text: sessionLabel })}
+            className="min-w-0 truncate font-medium text-foreground"
+            title={inlineMarkdownText({ text: sessionLabel })}
           >
             <InlineMarkdown text={sessionLabel} />
           </span>
@@ -171,7 +164,7 @@ export const ChatBreadcrumb = ({ session }: Props) => {
             type="button"
             onClick={onPickParent}
             title={`Spawned by ${parentAgent.name}. go to parent`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             <CornerLeftUp size={10} aria-hidden />
             <span className="max-w-[8rem] truncate">{parentAgent.name}</span>
@@ -192,5 +185,5 @@ export const ChatBreadcrumb = ({ session }: Props) => {
 };
 
 function Separator() {
-  return <ChevronRight size={11} aria-hidden className="shrink-0 text-muted-foreground/40" />;
+  return <ChevronRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />;
 }

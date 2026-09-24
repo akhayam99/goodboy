@@ -1,8 +1,12 @@
 use std::process::Stdio;
+use std::sync::Arc;
+use std::thread;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
+
+use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
 
 #[derive(Debug, Error)]
 pub enum PlannerError {
@@ -27,6 +31,19 @@ impl PlannerError {
             PlannerError::WriterLease(_) => "writer_lease",
         }
     }
+}
+
+#[derive(Default)]
+pub struct PlannerRegistry(pub LiveChildRegistry);
+
+impl PlannerRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+pub fn shutdown(registry: &PlannerRegistry) {
+    crate::live_child::shutdown(&registry.0);
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,11 +90,13 @@ fn exposure(args: &PlannerArgs) -> Vec<String> {
 
 #[tauri::command]
 pub async fn planner_run(
+    state: State<'_, PlannerRegistry>,
     admission: State<'_, crate::invocation_admission::InvocationAdmission>,
     queue: State<'_, crate::writer_lease::WriterLeaseQueue>,
     database: State<'_, crate::db::Db>,
     args: PlannerArgs,
 ) -> Result<PlannerResult, PlannerError> {
+    let registry = Arc::clone(&state.0);
     let admission = admission.inner().clone();
     let database = database.inner().clone();
     let cli_args = build_cli_args(&args)?;
@@ -109,52 +128,76 @@ pub async fn planner_run(
             invocation.request(&args.provider_id),
             &cancel_key,
         )?;
-
-        let mut command = crate::path_env::command(&args.binary);
-        crate::aux_spawn::scrub_nested_session_env(&mut command);
-        if let Some(dir) = args.working_dir.as_deref() {
-            if !dir.is_empty() {
-                command.current_dir(dir);
+        let output = run_planner(&registry, &args, &cli_args, |process_id| {
+            permit.bind_process(process_id)?;
+            if let Some(lease) = lease.as_ref() {
+                lease.bind_process(process_id);
             }
-        }
-
-        let child = command
-            .args(&cli_args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()?;
-        let process_id = child.id();
-        let armed = crate::aux_spawn::KillOnDrop::new(child);
-        permit.bind_process(process_id)?;
-        if let Some(lease) = lease.as_ref() {
-            lease.bind_process(process_id);
-        }
-        let child = armed
-            .disarm()
-            .ok_or_else(|| PlannerError::Io(std::io::Error::other("planner child missing")))?;
-        let output = child.wait_with_output()?;
+            Ok(())
+        })?;
         drop(lease);
-        let exit_code = output.status.code();
-        let reason = if exit_code == Some(0) {
+        let reason = if output.exit_code == Some(0) {
             "completed"
         } else {
             "non_zero_exit"
         };
-        permit.release(reason, exit_code)?;
-
-        Ok(PlannerResult {
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-            exit_code,
-        })
+        permit.release(reason, output.exit_code)?;
+        Ok(output)
     })
     .await
-    .map_err(|e| {
-        PlannerError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            e.to_string(),
-        ))
-    })?
+    .map_err(|e| PlannerError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn run_planner(
+    registry: &LiveChildRegistry,
+    args: &PlannerArgs,
+    cli_args: &[String],
+    bind: impl FnOnce(u32) -> Result<(), PlannerError>,
+) -> Result<PlannerResult, PlannerError> {
+    let mut command = crate::path_env::command(&args.binary);
+    crate::aux_spawn::scrub_nested_session_env(&mut command);
+    crate::process_group::isolate(&mut command);
+    if let Some(dir) = args.working_dir.as_deref() {
+        if !dir.is_empty() {
+            command.current_dir(dir);
+        }
+    }
+
+    let child = command
+        .args(cli_args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let process_id = child.id();
+    let armed = crate::aux_spawn::KillOnDrop::new(child);
+    bind(process_id)?;
+    let mut child = armed
+        .disarm()
+        .ok_or_else(|| PlannerError::Io(std::io::Error::other("planner child missing")))?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stdout")))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| PlannerError::Io(std::io::Error::other("no stderr")))?;
+
+    let key = crate::live_child::anonymous_key("planner");
+    let live = LiveChild::new(child);
+    crate::live_child::register(registry, &key, &live);
+
+    let stdout_handle = thread::spawn(move || drain_lossy(stdout));
+    let stderr_handle = thread::spawn(move || drain_lossy(stderr));
+    let stdout_buf = stdout_handle.join().unwrap_or_default();
+    let stderr_buf = stderr_handle.join().unwrap_or_default();
+    let exit_code = wait_and_remove(&live, registry, &key);
+
+    Ok(PlannerResult {
+        stdout: stdout_buf,
+        stderr: stderr_buf,
+        exit_code,
+    })
 }
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
@@ -199,8 +242,9 @@ fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
                 "--json".to_string(),
                 "--model".to_string(),
                 args.model.clone(),
-                "-s".to_string(),
+                "--sandbox".to_string(),
                 "read-only".to_string(),
+                "--skip-git-repo-check".to_string(),
             ];
             crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
             cli_args.push("--".to_string());
@@ -315,7 +359,7 @@ mod tests {
         let cli = build_cli_args(&make_args("codex")).expect("codex args");
         assert!(cli
             .windows(2)
-            .any(|pair| pair[0] == "-s" && pair[1] == "read-only"));
+            .any(|pair| pair[0] == "--sandbox" && pair[1] == "read-only"));
     }
 
     #[test]
@@ -357,6 +401,20 @@ mod tests {
     }
 
     #[test]
+    fn codex_args_run_outside_git_repositories() {
+        let cli = build_cli_args(&make_args("codex")).expect("codex args");
+        let sep_idx = cli.iter().position(|a| a == "--").expect("separator");
+        let skip_idx = cli
+            .iter()
+            .position(|a| a == "--skip-git-repo-check")
+            .expect("--skip-git-repo-check");
+        assert!(skip_idx < sep_idx);
+        assert!(cli
+            .windows(2)
+            .any(|pair| pair[0] == "--sandbox" && pair[1] == "read-only"));
+    }
+
+    #[test]
     fn anthropic_args_isolate_user_settings() {
         let cli = build_cli_args(&make_args("anthropic")).expect("anthropic args");
         let idx = cli
@@ -394,5 +452,25 @@ mod tests {
     fn unknown_provider_is_rejected() {
         let err = build_cli_args(&make_args("nonexistent")).expect_err("unknown provider");
         assert_eq!(err.kind(), "unknown_provider");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn shutdown_kills_live_planner_runs() {
+        use crate::live_child::test_support::{
+            assert_waiter_returns, register_sleeping, spawn_waiter,
+        };
+        let registry = PlannerRegistry::new();
+        let live = register_sleeping(&registry.0, "planner-test");
+        let waiter = spawn_waiter(&registry.0, "planner-test", &live);
+
+        shutdown(&registry);
+
+        assert_waiter_returns(
+            waiter,
+            std::time::Duration::from_secs(2),
+            "shutdown left the planner running",
+        );
+        assert!(registry.0.lock().expect("registry").is_empty());
     }
 }

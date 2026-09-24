@@ -7,7 +7,6 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
     id: 'ws-1' as WorkspaceId,
     name: 'Test WS',
     slug: 'test-ws',
-    sessionsRoot: '/code/test-ws',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,
@@ -143,7 +142,7 @@ describe('AppTopBar', () => {
 
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Preferences' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Workspace settings' })).toBeDefined();
   });
 
   it('flips the real theme state from the top bar', () => {

@@ -69,8 +69,8 @@ export const RunningScriptsIndicator = () => {
             aria-label={label}
             aria-expanded={isOpen}
             className={cn(
-              'relative flex items-center gap-1 rounded p-1.5 motion-safe:transition-colors',
-              isOpen ? 'bg-muted text-info' : 'text-info hover:bg-muted/50',
+              'relative flex items-center gap-1 rounded-sm p-1.5 motion-safe:transition-colors',
+              isOpen ? 'bg-muted text-info' : 'text-info hover:bg-hover',
             )}
           >
             <CONCEPT_ICONS.scripts size={ICON_SIZE.control} aria-hidden />

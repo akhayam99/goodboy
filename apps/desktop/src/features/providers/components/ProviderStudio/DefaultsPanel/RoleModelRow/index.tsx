@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
+  clampEffortForModel,
   defaultsForRole,
   getModelProvider,
+  modelEffortLevels,
   recommendedModelForRole,
   resolveRoleRouting,
   type ResolvedRoleFallback,
@@ -16,15 +18,9 @@ import type {
   RoleModelPreferences,
 } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
-import {
-  EFFORT_LABEL,
-  PROVIDER_LABEL,
-  clampEffort,
-  modelEffortLevels,
-  modelLabel,
-} from '../../../../../chat/utils/chat-constants';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { RoutingStatusControl } from '../RoutingStatusControl';
+import { recommendationSummary } from '../../../../../../shared/components/RoutingPicker/recommendationSummary';
 
 const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
 
@@ -110,11 +106,11 @@ export const RoleModelRow = ({
   const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
   const primaryModel = resolved.isOverride ? resolved.model : recommendedModel;
   const pendingModel = useRef(primaryModel);
-  const compiledRouting = `${PROVIDER_LABEL[defaultProviderId]} · ${modelLabel(defaultModel)}`;
-  const defaultSummary =
-    modelEffortLevels(defaultModel) == null
-      ? compiledRouting
-      : `${compiledRouting} · ${EFFORT_LABEL[compiled.effort]} effort`;
+  const defaultSummary = recommendationSummary({
+    provider: defaultProviderId,
+    model: defaultModel,
+    effort: modelEffortLevels({ model: defaultModel }) === null ? null : compiled.effort,
+  });
   const isFallbackPickerVisible = resolved.fallback != null || isChoosingFallback;
 
   useEffect(() => {
@@ -223,7 +219,9 @@ export const RoleModelRow = ({
               commit({
                 providerId: next,
                 model: nextModel,
-                effort: clampEffort(nextModel, resolved.effort),
+                effort:
+                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
+                  resolved.effort,
               });
             }}
             onModel={(nextModel) => {
@@ -234,7 +232,9 @@ export const RoleModelRow = ({
               commit({
                 providerId: pendingProvider.current,
                 model: nextModel,
-                effort: clampEffort(nextModel, resolved.effort),
+                effort:
+                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
+                  resolved.effort,
               });
             }}
           />
@@ -281,7 +281,7 @@ export const RoleModelRow = ({
                   disabled={disabled}
                   onClick={() => setIsChoosingFallback(true)}
                   aria-label={`${label} fallback: automatic`}
-                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {AUTOMATIC_FALLBACK_SUMMARY}
                 </button>

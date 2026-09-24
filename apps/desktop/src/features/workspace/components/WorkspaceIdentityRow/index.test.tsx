@@ -11,7 +11,6 @@ const { workspaceRef } = vi.hoisted(() => ({
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
       slug: 'acme',
-      sessionsRoot: '/code/monorepo',
     } as Workspace | null,
   },
 }));
@@ -62,7 +61,7 @@ describe('WorkspaceIdentityRow', () => {
     fireEvent.click(trigger);
 
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('New workspace')).toBeDefined();
+    expect(screen.getByText('Add workspace')).toBeDefined();
   });
 
   it('answers the global switcher shortcut', () => {
@@ -72,7 +71,7 @@ describe('WorkspaceIdentityRow', () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
     });
 
-    expect(screen.getByText('New workspace')).toBeDefined();
+    expect(screen.getByText('Add workspace')).toBeDefined();
   });
 
   it('opens preferences from a control on the row, not from the switcher popover', () => {
@@ -80,7 +79,7 @@ describe('WorkspaceIdentityRow', () => {
     const spy = vi.fn();
     window.addEventListener('goodboy:open-settings', spy);
 
-    fireEvent.click(screen.getByLabelText('Preferences'));
+    fireEvent.click(screen.getByLabelText('Workspace settings'));
 
     expect(spy).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-settings', spy);
@@ -95,7 +94,6 @@ describe('WorkspaceIdentityRow', () => {
       id: 'ws-1' as WorkspaceId,
       name: 'Acme',
       slug: 'acme',
-      sessionsRoot: '/code/monorepo',
     } as Workspace;
   });
 });

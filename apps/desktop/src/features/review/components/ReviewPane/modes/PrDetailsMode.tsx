@@ -9,8 +9,8 @@ import { closingIssueReferences } from '../../../../github/closingIssueReference
 import { closingReferenceLines } from '../../../../github/closingReferenceLines';
 import { removeClosingReference } from '../../../../github/removeClosingReference';
 import { LinkIssueToPrPopover } from '../../../../github/components/LinkIssueToPrPopover';
-import { PrOverview } from '../../../../github/components/GitHubStudio/PrOverview';
-import { PrReviewers } from '../../../../github/components/GitHubStudio/PrReviewers';
+import { PrOverview } from '../../../../github/components/PullRequest/PrOverview';
+import { PrReviewers } from '../../../../github/components/PullRequest/PrReviewers';
 import { LinkedIssuesSection } from './LinkedIssuesSection';
 import { ModeShell } from './ModeShell';
 

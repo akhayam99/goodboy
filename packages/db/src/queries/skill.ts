@@ -1,5 +1,6 @@
 import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
+import { isJsonRecord, isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SkillRow = {
   id: string;
@@ -13,18 +14,38 @@ type SkillRow = {
   updated_at: number;
 };
 
-function toSkill(row: SkillRow): Skill {
-  return {
-    id: row.id as SkillId,
-    workspaceId: row.workspace_id as WorkspaceId,
-    name: row.name,
-    description: row.description,
-    filePath: row.file_path,
-    body: row.body,
-    frontmatter: JSON.parse(row.frontmatter_json) as SkillFrontmatter,
-    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  };
+const isOptionalStringArray = (value: unknown): boolean =>
+  value === undefined || isStringArray(value);
+
+const isSkillFrontmatter = (value: unknown): value is SkillFrontmatter =>
+  isJsonRecord(value) &&
+  typeof value.name === 'string' &&
+  typeof value.description === 'string' &&
+  isOptionalStringArray(value.args) &&
+  isOptionalStringArray(value.scripts);
+
+function toSkill(row: SkillRow): ReadonlyArray<Skill> {
+  const frontmatter = parseJsonColumn<SkillFrontmatter | null>({
+    value: row.frontmatter_json,
+    isValid: isSkillFrontmatter,
+    fallback: null,
+  });
+  if (frontmatter === null) {
+    return [];
+  }
+  return [
+    {
+      id: row.id as SkillId,
+      workspaceId: row.workspace_id as WorkspaceId,
+      name: row.name,
+      description: row.description,
+      filePath: row.file_path,
+      body: row.body,
+      frontmatter,
+      createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+      updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
+    },
+  ];
 }
 
 export const listSkillsForWorkspace = async (
@@ -35,12 +56,7 @@ export const listSkillsForWorkspace = async (
     'SELECT * FROM skills WHERE workspace_id = ? ORDER BY created_at ASC',
     [workspaceId],
   );
-  return rows.map(toSkill);
-};
-
-export const getSkillById = async (db: Database, skillId: SkillId): Promise<Skill | null> => {
-  const rows = await db.select<SkillRow>('SELECT * FROM skills WHERE id = ?', [skillId]);
-  return rows[0] ? toSkill(rows[0]) : null;
+  return rows.flatMap(toSkill);
 };
 
 export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => {
@@ -71,11 +87,4 @@ export const upsertSkill = async (db: Database, skill: Skill): Promise<void> => 
 
 export const deleteSkill = async (db: Database, skillId: SkillId): Promise<void> => {
   await db.execute('DELETE FROM skills WHERE id = ?', [skillId]);
-};
-
-export const deleteSkillsForWorkspace = async (
-  db: Database,
-  workspaceId: WorkspaceId,
-): Promise<void> => {
-  await db.execute('DELETE FROM skills WHERE workspace_id = ?', [workspaceId]);
 };

@@ -1,7 +1,8 @@
+import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
 import { useMemo } from 'react';
 import { SectionHeader, Select } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
-import { CLI_CREDENTIAL, isApiProvider, type ProviderId } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -43,7 +44,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
           return (
             <li
               key={ws.id}
-              className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-3"
+              className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-3"
             >
               <span
                 className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
@@ -53,7 +54,7 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
               </span>
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-medium text-foreground">{ws.name}</span>
-                <span className="text-2xs text-muted-foreground/70">
+                <span className="text-2xs text-faint-foreground">
                   {usingKey ? 'billed to API key' : 'billed to CLI login'}
                 </span>
               </div>

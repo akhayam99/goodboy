@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -100,9 +101,6 @@ vi.mock('../features/providers/providers', () => ({
     { id: 'cursor', binary: 'cursor-agent', connection: 'connected' },
   ],
   checkProviderAuth: vi.fn(),
-  getCursorStatus: vi.fn(),
-  getCodexStatus: vi.fn(),
-  getProviderStatus: vi.fn(),
 }));
 
 vi.mock('../features/providers/routing', () => ({
@@ -192,6 +190,12 @@ function buildRule(overrides: Partial<PermissionRule>): PermissionRule {
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
 describe('sendTurn, permission proxy integration', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
@@ -212,11 +216,6 @@ describe('sendTurn, permission proxy integration', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
-
-  async function importStore() {
-    const mod = await import('./store');
-    return mod.useAppStore;
-  }
 
   function setupSession(useAppStore: Awaited<ReturnType<typeof importStore>>) {
     const defaultAgent: Agent = {
@@ -269,7 +268,6 @@ describe('sendTurn, permission proxy integration', () => {
           id: WORKSPACE_ID,
           name: 'ws',
           slug: 'ws',
-          sessionsRoot: '/tmp',
           overrides: {
             defaultProviderId: null,
             defaultWorkflowId: null,
@@ -302,8 +300,6 @@ describe('sendTurn, permission proxy integration', () => {
       }
       return [];
     });
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hello' });
 
@@ -321,8 +317,6 @@ describe('sendTurn, permission proxy integration', () => {
       }
       return [];
     });
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
 
@@ -333,8 +327,6 @@ describe('sendTurn, permission proxy integration', () => {
 
   it('forwards empty tool lists with default mode when no rules exist (claude)', async () => {
     permissionRuleListSpy.mockResolvedValue([]);
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
 
@@ -346,7 +338,6 @@ describe('sendTurn, permission proxy integration', () => {
   });
 
   it('keeps scout restrictions in copy instead of enforcing read-only tools', async () => {
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     useAppStore.setState({ agentKindOverride: { [AGENT_ID]: 'scout' } });
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'inspect' });
@@ -365,8 +356,6 @@ describe('sendTurn, permission proxy integration', () => {
       selectedModel: 'cursor-default',
       reason: 'preference',
     });
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
 
@@ -390,8 +379,6 @@ describe('sendTurn, permission proxy integration', () => {
         at: '2026-05-07T00:00:00.000Z' as IsoDateTime,
       };
     });
-
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
 
@@ -399,7 +386,6 @@ describe('sendTurn, permission proxy integration', () => {
   });
 
   it('retryBlockedTool re-sends the turn with a prompt naming the approved tool', async () => {
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     useAppStore.setState({
       agentTurnState: {
@@ -421,7 +407,6 @@ describe('sendTurn, permission proxy integration', () => {
   });
 
   it('retryBlockedTool does nothing while that agent is still running', async () => {
-    const useAppStore = await importStore();
     setupSession(useAppStore);
     useAppStore.setState({
       agentTurnState: {

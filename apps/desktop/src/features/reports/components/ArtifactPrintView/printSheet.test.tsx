@@ -235,18 +235,66 @@ describe('print sheet styling', () => {
   });
 
   it('writes callout and chip tones as tokens, which happy-dom cannot resolve', () => {
-    expect(SHEET_CSS).toContain("[data-tone='goal']");
+    expect(SHEET_CSS).toContain("[data-color='primary']");
+    expect(SHEET_CSS).toContain("[data-color='danger']");
+    expect(SHEET_CSS).toContain('var(--color-danger)');
     expect(SHEET_CSS).toContain('var(--color-primary)');
     expect(SHEET_CSS).toContain('var(--color-success)');
     expect(SHEET_CSS).toContain('var(--color-warning)');
     expect(SHEET_CSS).toContain('var(--color-info)');
-    expect(SHEET_CSS).toMatch(/\[data-block='chip'\] \{[^}]*background: none/);
+    expect(SHEET_CSS).toMatch(
+      /\[data-block='chip'\] \{[^}]*background: color-mix\(in srgb, var\(--print-tone\) 12%/,
+    );
     expect(SHEET_CSS).toMatch(
       /\[data-block='callout'\] \{[^}]*background: color-mix\(in srgb, var\(--print-tone\) 6%/,
     );
     expect(SHEET_CSS).toMatch(
       /\[data-block='callout'\] \{[^}]*border-left: 1\.5pt solid var\(--print-tone\)/,
     );
+  });
+
+  it('draws list markers itself, since WebKit clips an outside marker at the page edge', async () => {
+    adoptSheet({ css: SHEET_CSS });
+    await renderArtifact({ artifact: reportWithList });
+
+    expect(styleOf({ selector: '.print-body ul' }).listStyle).toBe('none');
+    expect(SHEET_CSS).toMatch(
+      /ol:not\(\[data-block\]\) > li::before \{[^}]*content: counter\(print-item\) '\.'/,
+    );
+    expect(SHEET_CSS).toMatch(/ol:has\(> li:nth-child\(10\)\) > li:not\(\[data-task\]\) \{/);
+    expect(SHEET_CSS).toMatch(/ul > li::before \{[^}]*border-radius: 50%/);
+    expect(SHEET_CSS).not.toContain('::marker');
+  });
+
+  it('prints task items with their box instead of a bullet', () => {
+    expect(SHEET_CSS).toMatch(/li\[data-task\]::before \{[^}]*content: none/);
+    expect(SHEET_CSS).toMatch(/li\[data-task='done'\] \[data-block='task-mark'\]/);
+  });
+
+  it('pins table cells to the table leading, not the absolute one of text-sm', () => {
+    expect(SHEET_CSS).toMatch(/\.print-body td \{[^}]*line-height: inherit/);
+    expect(SHEET_CSS).toMatch(/\.print-body td \{[^}]*overflow-wrap: break-word/);
+  });
+
+  it('drops a separator that sits right before a ruled section', () => {
+    expect(SHEET_CSS).toContain(
+      ":has(> [role='separator']:only-child):has(+ div > :is(h1, h2):first-child)",
+    );
+  });
+
+  it('prints the report kit blocks as a page layout, not app chrome', () => {
+    expect(SHEET_CSS).toMatch(/\[data-block='facts'\] \{[^}]*display: grid/);
+    expect(SHEET_CSS).toMatch(/\[data-block='metrics'\] \{[^}]*break-inside: avoid/);
+    expect(SHEET_CSS).toMatch(/\[data-block='metric-value'\] \{[^}]*font-size: var\(--print-h1\)/);
+    expect(SHEET_CSS).toMatch(/\[data-block='timeline-dot'\] \{[^}]*var\(--print-accent\)/);
+    expect(SHEET_CSS).toMatch(/\[data-block='pagebreak'\] \{[^}]*break-after: page/);
+    expect(SHEET_CSS).toMatch(/\[data-tone='summary'\] \{[^}]*border-left-width: 2pt/);
+    expect(SHEET_CSS).toContain('.print-lead + .print-contents');
+  });
+
+  it('keeps the section rule on the heading, so it moves to the next page with it', () => {
+    expect(SHEET_CSS).toMatch(/> div > div > h2 \{[^}]*border-top: 0\.5pt solid/);
+    expect(SHEET_CSS).not.toMatch(/div:has\(> h2\) \{[^}]*border-top/);
   });
 
   it('runs a paragraph and a list item at the same leading', async () => {

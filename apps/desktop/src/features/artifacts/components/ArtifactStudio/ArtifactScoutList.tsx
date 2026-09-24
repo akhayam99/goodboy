@@ -9,7 +9,7 @@ type Props = {
 const DOT_CLASS: Record<ArtifactScoutState, string> = {
   planned: 'bg-muted-foreground/40',
   queued: 'bg-muted-foreground/40',
-  running: 'bg-info motion-safe:animate-pulse',
+  running: 'bg-info motion-safe:animate-soft-pulse',
   done: 'bg-success',
   skipped: 'bg-muted-foreground/40',
   failed: 'bg-danger',

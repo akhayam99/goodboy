@@ -15,7 +15,7 @@ import {
   invokeCapabilityObligationDecide,
   invokeCapabilityObligationSettle,
 } from '../../../features/workflows/workflows';
-import { ROLE_TO_KIND } from '../../../features/session/agent-kind';
+import { kindForRole } from '../../../features/session/agent-kind';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { adoptClusterGraphRevision } from '../workflows/adoptClusterGraphRevision';
@@ -170,13 +170,13 @@ const settleAndRelease = async ({
 }: SettleParams): Promise<string | null> => {
   const revision = await verifiedRevision({ get, sessionId });
   if (revision === null) {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `${binding.obligation.purpose} not closed`,
-      `${UNREAD_REVISION}. ${receipt}`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `${binding.obligation.purpose} not closed`,
+      body: `${UNREAD_REVISION}. ${receipt}`,
+      sessionId,
+    });
     return null;
   }
   const settled = await invokeCapabilityObligationSettle({
@@ -231,13 +231,13 @@ const refuseRevision = async ({
     reason,
   });
   rememberObligation({ set, sessionId, obligation: refused });
-  void get().emitNotification(
-    'error',
-    'warning',
-    `plan revision not adopted: ${child.name}`,
-    `${reason}. the plan in flight stays frozen, the finding stays open and nothing was superseded.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `Plan revision from ${child.name} not adopted`,
+    body: `${reason}. the plan in flight stays frozen, the finding stays open and nothing was superseded.`,
+    sessionId,
+  });
   return { kind: 'revision-refused', reason };
 };
 
@@ -292,13 +292,13 @@ const adoptProposal = async ({
     binding,
     receipt: `revision ${outcome.revision} adopted from ${child.name}`,
   });
-  void get().emitNotification(
-    'error',
-    'info',
-    `plan revision adopted: ${child.name}`,
-    `the execution now runs revision ${outcome.revision}. superseded: ${outcome.superseded.length}, quarantined results: ${outcome.quarantined.length}, appended: ${outcome.appended.length}.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'info',
+    title: `Plan revision from ${child.name} adopted`,
+    body: `the execution now runs revision ${outcome.revision}. superseded: ${outcome.superseded.length}, quarantined results: ${outcome.quarantined.length}, appended: ${outcome.appended.length}.`,
+    sessionId,
+  });
   const container =
     (get().sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === containerAgentId) ??
     null;
@@ -343,13 +343,13 @@ export const failCapabilityChild = async ({
     reason,
   });
   rememberObligation({ set, sessionId, obligation: refused });
-  void get().emitNotification(
-    'error',
-    'warning',
-    `${obligation.purpose} failed`,
-    `${reason}. the obligation is closed as refused and nothing was released.`,
-    { sessionId },
-  );
+  void get().emitNotification({
+    kind: 'error',
+    severity: 'warning',
+    title: `${obligation.purpose} failed`,
+    body: `${reason}. the obligation is closed as refused and nothing was released.`,
+    sessionId,
+  });
   return true;
 };
 
@@ -413,7 +413,7 @@ export const completeCapabilityChild = async ({
   if (verificationRole !== null) {
     const verifierAgentId = await get().spawnAgent(sessionId, {
       name: `verify ${obligation.purpose}: ${child.name}`,
-      kindOverride: ROLE_TO_KIND[verificationRole],
+      kindOverride: kindForRole({ role: verificationRole }),
       parentAgentId: obligation.requesterAgentId,
       executionPurpose: 'capability',
       ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),
@@ -441,7 +441,7 @@ export const completeCapabilityChild = async ({
   if (grant.parentOutcome === 'transferred' && replacementRole !== null) {
     const replacementAgentId = await get().spawnAgent(sessionId, {
       name: `resume the transferred work: ${obligation.purpose}`,
-      kindOverride: ROLE_TO_KIND[replacementRole],
+      kindOverride: kindForRole({ role: replacementRole }),
       parentAgentId: obligation.requesterAgentId,
       executionPurpose: 'capability',
       ...(obligation.workflowRunId !== null && { workflowRunId: obligation.workflowRunId }),

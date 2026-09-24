@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -14,7 +13,7 @@ type Props = {
 export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
   const retryBlockedTool = useAppStore((s) => s.retryBlockedTool);
   const isRunning = useAppStore((s) => s.agentTurnState[agentId]?.kind === 'running');
-  const { showToast } = useToast();
+  const reportError = useAppStore((s) => s.reportError);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -27,7 +26,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       await retryBlockedTool({ sessionId, agentId, toolName });
       setSent(true);
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'retry failed');
+      void reportError({ title: `Couldn't retry ${toolName}`, error: err, sessionId });
     } finally {
       setBusy(false);
     }
@@ -46,7 +45,12 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
       onClick={() => void handle()}
       title="Re-run the turn so the agent retries the tool with the new rule in place"
       className={cn(
-        'flex items-center gap-1 rounded border border-primary/40 px-2 py-0.5 text-2xs font-medium text-primary transition-colors hover:bg-primary/10',
+        cn(
+          'flex items-center gap-1 rounded-sm border',
+          tintClasses('primary').border,
+          'px-2 py-0.5 text-2xs font-medium text-primary transition-colors',
+          tintClasses('primary').hoverBg,
+        ),
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >

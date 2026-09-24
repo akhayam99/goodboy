@@ -40,7 +40,6 @@ import { ConvertWorkspaceDialog } from './index';
 const workspace = {
   id: 'ws-1',
   name: 'Study space',
-  sessionsRoot: '/tmp/study-space',
 } as unknown as Workspace;
 
 beforeEach(() => {

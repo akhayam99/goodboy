@@ -11,6 +11,7 @@ import {
   Textarea,
   Tooltip,
   cn,
+  tintClasses,
 } from '@goodboy/ui';
 import type { Agent, PlanWithCount, SessionId } from '@goodboy/types';
 import {
@@ -127,7 +128,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
 
   const handleAgentClick = (agentId: Agent['id'], name: string, deleted: boolean) => {
     if (deleted) {
-      showToast('info', `agent "${name}" was deleted and can no longer be opened`);
+      showToast({ kind: 'info', message: `${name} was deleted and can no longer be opened.` });
       return;
     }
     openAgent(agentId);
@@ -228,7 +229,10 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                       {selected.status === 'consumed' ? (
                         <Tooltip content="Consumed plans cannot be deleted">
                           <span
-                            className="inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5 text-danger/30"
+                            className={cn(
+                              'inline-flex cursor-not-allowed items-center justify-center rounded-md border border-border-soft p-1.5',
+                              tintClasses('danger').text,
+                            )}
                             aria-label="Consumed plans cannot be deleted"
                           >
                             <Trash2 size={ICON_SIZE.row} aria-hidden />
@@ -240,7 +244,13 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                             type="button"
                             onClick={() => handleRestore(selected)}
                             aria-label="Restore plan"
-                            className="inline-flex items-center justify-center rounded-md border border-info/20 p-1.5 text-info transition hover:border-info/40 hover:bg-info/10"
+                            className={cn(
+                              'inline-flex items-center justify-center rounded-md border',
+                              tintClasses('info').borderSoft,
+                              'p-1.5 text-info transition',
+                              tintClasses('info').hoverBorder,
+                              tintClasses('info').hoverBg,
+                            )}
                           >
                             <ArchiveRestore size={ICON_SIZE.row} aria-hidden />
                           </button>
@@ -251,7 +261,13 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                             type="button"
                             onClick={() => setDeleteArmed(true)}
                             aria-label="Delete plan"
-                            className="inline-flex items-center justify-center rounded-md border border-danger/20 p-1.5 text-danger transition hover:border-danger/40 hover:bg-danger/10"
+                            className={cn(
+                              'inline-flex items-center justify-center rounded-md border',
+                              tintClasses('danger').borderSoft,
+                              'p-1.5 text-danger transition',
+                              tintClasses('danger').hoverBorder,
+                              tintClasses('danger').hoverBg,
+                            )}
                           >
                             <Trash2 size={ICON_SIZE.row} aria-hidden />
                           </button>

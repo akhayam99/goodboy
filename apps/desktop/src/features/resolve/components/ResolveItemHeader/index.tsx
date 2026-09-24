@@ -76,7 +76,7 @@ export const ResolveItemHeader = ({
           <div className="flex min-w-0 flex-col items-start gap-1">
             <Button size="sm" variant="ghost" onClick={onBack}>
               <ArrowLeft className="size-3.5" aria-hidden />
-              {RESOLVE_ITEM_LABEL.backToResolve}
+              {RESOLVE_ITEM_LABEL.backToConversations}
             </Button>
             <div className="flex min-w-0 flex-col gap-1">
               <h2

@@ -18,9 +18,9 @@ export type ArtifactCtaParams = Readonly<{
 }>;
 
 export const ARTIFACT_CTA_BLOCK_COPY: Record<ArtifactCtaBlockReason, string> = {
-  'no-evidence': 'nothing has run yet, so there is nothing to work from',
-  'run-active': 'the run is still going, finish it first',
-  'session-busy': 'the session is busy, wait for it to settle',
+  'no-evidence': 'Nothing has run yet, so there is nothing to work from',
+  'run-active': 'The run is still going. Finish it first',
+  'session-busy': 'The session is busy. Wait for it to settle',
 };
 
 export const hasArtifactEvidence = ({ agents }: ArtifactEvidenceParams): boolean =>

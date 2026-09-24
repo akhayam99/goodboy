@@ -302,10 +302,10 @@ describe('sessionEventProjectRunLabel', () => {
       segmentsToText({
         segments: sessionEventProjectRunLabel({
           mounted: [],
-          detached: ['api', 'app-web', 'infra'],
+          detached: ['api', 'storefront-web', 'infra'],
         }),
       }),
-    ).toBe('Detached api, app-web and infra');
+    ).toBe('Detached api, storefront-web and infra');
   });
 
   it('says both verbs in one sentence, mounted first', () => {
@@ -313,30 +313,32 @@ describe('sessionEventProjectRunLabel', () => {
       segmentsToText({
         segments: sessionEventProjectRunLabel({
           mounted: ['api'],
-          detached: ['app-web', 'infra'],
+          detached: ['storefront-web', 'infra'],
         }),
       }),
-    ).toBe('Mounted api, detached app-web and infra');
+    ).toBe('Mounted api, detached storefront-web and infra');
   });
 
   it('keeps each list readable when both verbs name more than one project', () => {
     expect(
       segmentsToText({
         segments: sessionEventProjectRunLabel({
-          mounted: ['api', 'app-web'],
+          mounted: ['api', 'storefront-web'],
           detached: ['infra'],
         }),
       }),
-    ).toBe('Mounted api and app-web, detached infra');
+    ).toBe('Mounted api and storefront-web, detached infra');
   });
 
   it('keeps every project name a chip, never prose', () => {
-    expect(sessionEventProjectRunLabel({ mounted: ['api'], detached: ['app-web'] })).toEqual([
-      { kind: 'text', text: 'Mounted ' },
-      { kind: 'value', text: 'api', variant: 'project' },
-      { kind: 'text', text: ', detached ' },
-      { kind: 'value', text: 'app-web', variant: 'project' },
-    ]);
+    expect(sessionEventProjectRunLabel({ mounted: ['api'], detached: ['storefront-web'] })).toEqual(
+      [
+        { kind: 'text', text: 'Mounted ' },
+        { kind: 'value', text: 'api', variant: 'project' },
+        { kind: 'text', text: ', detached ' },
+        { kind: 'value', text: 'storefront-web', variant: 'project' },
+      ],
+    );
   });
 
   it(`names ${TIMELINE_PROJECT_NAME_LIMIT} projects and counts the rest`, () => {
@@ -344,10 +346,10 @@ describe('sessionEventProjectRunLabel', () => {
       segmentsToText({
         segments: sessionEventProjectRunLabel({
           mounted: [],
-          detached: ['api', 'app-web', 'infra', 'db', 'edge', 'docs', 'cli'],
+          detached: ['api', 'storefront-web', 'infra', 'db', 'edge', 'docs', 'cli'],
         }),
       }),
-    ).toBe('Detached api, app-web, infra and 4 more');
+    ).toBe('Detached api, storefront-web, infra and 4 more');
   });
 
   it('names the last project rather than counting one hidden name', () => {
@@ -355,25 +357,25 @@ describe('sessionEventProjectRunLabel', () => {
       segmentsToText({
         segments: sessionEventProjectRunLabel({
           mounted: [],
-          detached: ['api', 'app-web', 'infra', 'db'],
+          detached: ['api', 'storefront-web', 'infra', 'db'],
         }),
       }),
-    ).toBe('Detached api, app-web, infra and db');
+    ).toBe('Detached api, storefront-web, infra and db');
   });
 
   it('truncates each verb on its own so neither disappears', () => {
     expect(
       segmentsToText({
         segments: sessionEventProjectRunLabel({
-          mounted: ['api', 'app-web', 'infra', 'db', 'edge'],
+          mounted: ['api', 'storefront-web', 'infra', 'db', 'edge'],
           detached: ['docs', 'cli', 'agents', 'ui', 'core'],
         }),
       }),
-    ).toBe('Mounted api, app-web, infra and 2 more, detached docs, cli, agents and 2 more');
+    ).toBe('Mounted api, storefront-web, infra and 2 more, detached docs, cli, agents and 2 more');
   });
 
   it('names every project when the caller lifts the limit, as a tooltip does', () => {
-    const names = ['api', 'app-web', 'infra', 'db', 'edge'];
+    const names = ['api', 'storefront-web', 'infra', 'db', 'edge'];
 
     expect(
       segmentsToText({
@@ -383,7 +385,7 @@ describe('sessionEventProjectRunLabel', () => {
           limit: names.length,
         }),
       }),
-    ).toBe('Detached api, app-web, infra, db and edge');
+    ).toBe('Detached api, storefront-web, infra, db and edge');
   });
 });
 
@@ -402,10 +404,10 @@ describe('durable state change events', () => {
       sessionEventTitle({
         event: event({
           kind: 'write_destination_changed',
-          payload: { projectName: 'app-web', branch: 'ak/feat-x' },
+          payload: { projectName: 'storefront-web', branch: 'ak/feat-x' },
         }),
       }),
-    ).toBe('Writes now go to app-web on ak/feat-x');
+    ).toBe('Writes now go to storefront-web on ak/feat-x');
   });
 
   it('falls back when the destination payload carries no project', () => {

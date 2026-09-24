@@ -63,15 +63,35 @@ const effortAxis = ({ label, efforts }: EffortParams): EffortAxis | null => {
 };
 
 const selectionAxes = ({ model }: SelectionAxesParams) => {
-  const catalog = [...MODEL_CATALOGS[model.provider]].sort(
+  const catalog: ReadonlyArray<CatalogModel> = [...MODEL_CATALOGS[model.provider]].sort(
     (left, right) => left.presentation.order - right.presentation.order,
   );
   const groupModels = new Map<string, CatalogModel>();
   for (const candidate of catalog) {
-    const group = candidate.presentation.group ?? candidate.presentation.version;
-    groupModels.set(group, candidate);
+    groupModels.set(candidate.presentation.group, candidate);
   }
-  const activeGroup = model.presentation.group ?? model.presentation.version;
+  const activeGroup = model.presentation.group;
+  const activeCheckpoint = model.presentation.checkpoint;
+  const members = catalog.filter((candidate) => candidate.presentation.group === activeGroup);
+  const versionModels = new Map<string, CatalogModel>();
+  for (const member of members) {
+    const current = versionModels.get(member.presentation.version);
+    const keepsCheckpoint =
+      current != null &&
+      current.presentation.checkpoint === activeCheckpoint &&
+      member.presentation.checkpoint !== activeCheckpoint;
+    if (keepsCheckpoint) {
+      continue;
+    }
+    versionModels.set(member.presentation.version, member);
+  }
+  const checkpointOptions = members.flatMap((candidate) => {
+    const checkpoint = candidate.presentation.checkpoint;
+    if (checkpoint == null || candidate.presentation.version !== model.presentation.version) {
+      return [];
+    }
+    return [{ id: checkpoint, label: checkpoint, modelKey: candidate.key }];
+  });
   return {
     model: {
       label: 'Model',
@@ -83,21 +103,26 @@ const selectionAxes = ({ model }: SelectionAxesParams) => {
       activeId: activeGroup,
     },
     version:
-      model.presentation.group == null
+      versionModels.size <= 1
         ? null
         : {
-            label: 'Model Version',
-            options: catalog
-              .filter(
-                (candidate) =>
-                  (candidate.presentation.group ?? candidate.presentation.version) === activeGroup,
-              )
-              .map((candidate) => ({
-                id: candidate.key,
-                label: candidate.presentation.version,
+            label: 'Version',
+            options: [...versionModels.entries()]
+              .sort(([left], [right]) => left.localeCompare(right, 'en', { numeric: true }))
+              .map(([label, candidate]) => ({
+                id: label,
+                label,
                 modelKey: candidate.key,
               })),
-            activeId: model.key,
+            activeId: model.presentation.version,
+          },
+    checkpoint:
+      checkpointOptions.length === 0
+        ? null
+        : {
+            label: 'Variant',
+            options: checkpointOptions,
+            activeId: model.presentation.checkpoint ?? null,
           },
   };
 };

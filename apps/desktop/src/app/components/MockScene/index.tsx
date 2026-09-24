@@ -3,6 +3,8 @@ import { ToastProvider } from '../Toast';
 import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
+import { ChatShellScene } from './scenes/ChatShellScene';
+import { InboxScene } from './scenes/InboxScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
@@ -21,13 +23,12 @@ import {
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
-import {
-  WorkflowBuilderScene,
-  WorkflowRunScene,
-  OpenQuestionsScene,
-  TranscriptScene,
-  CommandPaletteScene,
-} from './scenes/FlowAuditScenes';
+import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
+import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
+import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
+import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
+import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
 import {
   ScriptsLensScene,
   ScriptsSidebarScene,
@@ -37,11 +38,44 @@ import {
 } from './scenes/SurfaceAuditScenes';
 import { LensSwitcherClosedScene, LensSwitcherScene } from './scenes/LensSwitcherScenes';
 import { CardRailsScene } from './scenes/CardRailsScene';
+import { ProvidersScene } from './scenes/ProvidersScene';
+import { ImpactScene } from './scenes/ImpactScene';
+import {
+  ModelPickerCodexScene,
+  ModelPickerCursorScene,
+  ModelPickerScene,
+  ModelPickerTriggersScene,
+} from './scenes/ModelPickerScenes';
 
-const SCENES = {
+import { FrameScene } from './scenes/audit/FrameScene';
+import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
+import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
+import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
+import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
+import { SettingsProvidersScene } from './scenes/audit/SettingsProvidersScene';
+import { SettingsToolsScene } from './scenes/audit/SettingsToolsScene';
+import { SettingsWorkspaceScene } from './scenes/audit/SettingsWorkspaceScene';
+import { OnboardingScene } from './scenes/audit/OnboardingScene';
+import { ToastsScene } from './scenes/audit/ToastsScene';
+import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
+import { NotificationsScene } from './scenes/audit/NotificationsScene';
+import { ChangelogScene } from './scenes/audit/ChangelogScene';
+import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
+import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
+import { CompanionScene } from './scenes/audit/CompanionScene';
+import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
+import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
+import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
+import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
+import { ExploreScene } from './scenes/audit/ExploreScene';
+
+export const MOCK_SCENES = {
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,
+  'chat-shell': ChatShellScene,
+  inbox: InboxScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
@@ -57,6 +91,7 @@ const SCENES = {
   'artifact-create-wireframe': ArtifactCreateWireframeScene,
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
+  'activity-run': ActivityRunScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
@@ -70,6 +105,34 @@ const SCENES = {
   'card-rails': CardRailsScene,
   'lens-switcher': LensSwitcherScene,
   'lens-switcher-closed': LensSwitcherClosedScene,
+  providers: ProvidersScene,
+  impact: ImpactScene,
+  'model-picker': ModelPickerScene,
+  'model-picker-cursor': ModelPickerCursorScene,
+  'model-picker-codex': ModelPickerCodexScene,
+  'model-picker-triggers': ModelPickerTriggersScene,
+  frame: FrameScene,
+  'board-states': BoardStatesScene,
+  'session-states': SessionStatesScene,
+  'workspace-states': WorkspaceStatesScene,
+  'settings-app': SettingsAppScene,
+  'settings-no-workspace': SettingsNoWorkspaceScene,
+  'settings-providers': SettingsProvidersScene,
+  'settings-tools': SettingsToolsScene,
+  'settings-workspace': SettingsWorkspaceScene,
+  onboarding: OnboardingScene,
+  toasts: ToastsScene,
+  'update-confirm': UpdateConfirmScene,
+  notifications: NotificationsScene,
+  changelog: ChangelogScene,
+  'artifact-states': ArtifactStatesScene,
+  'inbox-states': InboxStatesScene,
+  companion: CompanionScene,
+  'review-modes': ReviewModesScene,
+  'workflow-studio': WorkflowStudioScene,
+  'workflow-builder-modes': WorkflowBuilderModesScene,
+  'impact-scopes': ImpactScopesScene,
+  explore: ExploreScene,
 };
 
 export const MockScene = () => {
@@ -77,8 +140,17 @@ export const MockScene = () => {
     document.getElementById('boot-shell')?.remove();
   }, []);
 
-  const sceneName = new URLSearchParams(window.location.search).get('scene') ?? 'workspace';
-  const Scene = SCENES[sceneName as keyof typeof SCENES] ?? WorkspaceScene;
+  const params = new URLSearchParams(window.location.search);
+  const sceneName = params.get('scene') ?? 'workspace';
+  const Scene =
+    Object.entries(MOCK_SCENES).find(([key]) => key === sceneName)?.[1] ?? WorkspaceScene;
+
+  useEffect(() => {
+    if (params.get('theme') !== 'light') {
+      return;
+    }
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   return (
     <ToastProvider>

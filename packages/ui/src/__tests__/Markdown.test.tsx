@@ -83,6 +83,25 @@ describe('Markdown html handling', () => {
     expect(callout?.textContent).not.toContain('<');
   });
 
+  it('ends an unclosed callout at the first blank line, not at the end of the document', () => {
+    const { container } = render(
+      <Markdown text={['<<ctx-decision>> renew the key', '', '## Next', 'body'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('renew the key');
+    expect(callout?.textContent).not.toContain('body');
+    expect(container.querySelector('h2')?.textContent).toBe('Next');
+  });
+
+  it('keeps blank lines inside a callout that is closed further down', () => {
+    const { container } = render(
+      <Markdown text={['<<goal>>', 'first', '', 'second', '<</goal>>'].join('\n')} />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.textContent).toContain('first');
+    expect(callout?.textContent).toContain('second');
+  });
+
   it('closes a multi line callout without leaking a bracket onto its last line', () => {
     const { container } = render(
       <Markdown text={['<<goal>>', 'ship the print sheet', '<</goal>>'].join('\n')} />,
@@ -127,9 +146,8 @@ describe('Markdown document rhythm', () => {
   it('keeps inline code quiet and free of vertical padding', () => {
     const { container } = render(<Markdown text="run `packages/core/src/index.ts` now" />);
     const code = container.querySelector('code');
-    expect(code?.className).toContain('bg-muted/50');
+    expect(code?.className).toContain('bg-muted');
     expect(code?.className).toContain('py-0');
-    expect(code?.className).toContain('text-foreground/90');
     expect(code?.className).not.toContain('break-all');
     expect(code?.className).toContain('wrap-anywhere');
   });
@@ -148,7 +166,8 @@ describe('Markdown document rhythm', () => {
     );
     expect(container.querySelector('th')?.className).toContain('tracking-eyebrow');
     expect(container.querySelector('th')?.className).toContain('text-2xs');
-    expect(container.querySelector('td')?.className).toContain('text-sm');
+    expect(container.querySelector('td')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
+    expect(container.querySelector('table')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
   });
 });
 
@@ -176,7 +195,6 @@ describe('Markdown lists', () => {
     const lists = container.querySelectorAll('ul');
     expect(lists).toHaveLength(2);
     const nested = lists[1];
-    expect(nested?.className).toContain('marker:text-muted-foreground/70');
     expect(nested?.querySelectorAll('li')).toHaveLength(2);
     expect(lists[0]?.children).toHaveLength(2);
     expect(container.textContent).toContain('child');
@@ -190,6 +208,39 @@ describe('Markdown lists', () => {
     expect(container.querySelectorAll('ul')).toHaveLength(1);
     expect(container.querySelectorAll('ol')).toHaveLength(1);
     expect(container.querySelector('ul li ol')).not.toBeNull();
+  });
+
+  it('renders task items as boxes with their state, not as bracket text', () => {
+    const { container } = render(
+      <Markdown text={['- [ ] open', '- [x] done', '- [~] partial', '- plain'].join('\n')} />,
+    );
+    const items = [...container.querySelectorAll('li')];
+    expect(items.map((item) => item.getAttribute('data-task'))).toEqual([
+      'open',
+      'done',
+      'partial',
+      null,
+    ]);
+    expect(container.querySelectorAll('[data-block="task-mark"]')).toHaveLength(3);
+    expect(container.textContent).not.toContain('[');
+  });
+
+  it('reads a bare task marker with no text as a task, and names its state', () => {
+    const { container } = render(<Markdown text={['- [ ]', '- [x]'].join('\n')} />);
+    const marks = container.querySelectorAll('[data-block="task-mark"]');
+    expect(marks).toHaveLength(2);
+    expect(marks[0]?.getAttribute('aria-label')).toBe('open task');
+    expect(marks[1]?.getAttribute('aria-label')).toBe('done task');
+    expect(container.textContent).not.toContain('[');
+  });
+
+  it('keeps a run of bold label lines on their own lines', () => {
+    const { container } = render(
+      <Markdown text={['**Date:** today', '**Source:** the session', 'plain tail'].join('\n')} />,
+    );
+    const paragraph = container.querySelector('p');
+    expect(paragraph?.querySelectorAll('br')).toHaveLength(1);
+    expect(paragraph?.textContent).toContain('the session plain tail');
   });
 
   it('splits sibling lists when the marker type changes at the same indent', () => {
@@ -310,5 +361,124 @@ describe('Markdown print hooks', () => {
   it('leaves an ordinary paragraph without a block attribute', () => {
     const { container } = render(<Markdown text="a plain line of prose" />);
     expect(container.querySelector('p')?.hasAttribute('data-block')).toBe(false);
+  });
+});
+
+describe('Markdown report kit', () => {
+  it('lays facts out as label and value pairs', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '<<facts>>',
+          'Ticket: ACME-412',
+          '**Owner:** ops',
+          'Scope: web | read-only',
+          '<</facts>>',
+        ].join('\n')}
+      />,
+    );
+    const facts = container.querySelector('[data-block="facts"]');
+    expect([...(facts?.querySelectorAll('dt') ?? [])].map((dt) => dt.textContent)).toEqual([
+      'Ticket',
+      'Owner',
+      'Scope',
+    ]);
+    expect(facts?.querySelectorAll('dd')[2]?.textContent).toBe('web · read-only');
+  });
+
+  it('turns metrics into tiles with value, label and hint', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '<<metrics>>',
+          'Leads lost: ~200 | last week',
+          'Checks: 3 of 4',
+          '<</metrics>>',
+        ].join('\n')}
+      />,
+    );
+    const tiles = container.querySelectorAll('[data-block="metric"]');
+    expect(tiles).toHaveLength(2);
+    expect(tiles[0]?.querySelector('[data-block="metric-value"]')?.textContent).toBe('~200');
+    expect(tiles[0]?.textContent).toContain('last week');
+    expect(tiles[1]?.children).toHaveLength(2);
+  });
+
+  it('keeps a colon inside a timeline time instead of splitting on it', () => {
+    const { container } = render(
+      <Markdown
+        text={['<<timeline>>', '10:32 | deploy starts', '10:40 | rollback', '<</timeline>>'].join(
+          '\n',
+        )}
+      />,
+    );
+    const entries = container.querySelectorAll('[data-block="timeline-entry"]');
+    expect(entries).toHaveLength(2);
+    expect(entries[0]?.textContent).toContain('10:32');
+    expect(entries[0]?.textContent).toContain('deploy starts');
+  });
+
+  it('reads a capitalised timeline tag as a timeline, time first', () => {
+    const { container } = render(
+      <Markdown text={['<<Timeline>>', '2026-09-01 | deploy', '<</Timeline>>'].join('\n')} />,
+    );
+    const entry = container.querySelector('[data-block="timeline-entry"]');
+    const [time, event] = [...(entry?.querySelectorAll(':scope > span:not([aria-hidden])') ?? [])];
+    expect(time?.textContent).toBe('2026-09-01');
+    expect(event?.textContent).toBe('deploy');
+  });
+
+  it('reads an uppercase facts tag as facts', () => {
+    const { container } = render(
+      <Markdown text={['<<FACTS>>', 'Ticket: ACME-412', '<</FACTS>>'].join('\n')} />,
+    );
+    const facts = container.querySelector('[data-block="facts"]');
+    expect(facts?.querySelector('dt')?.textContent).toBe('Ticket');
+    expect(facts?.querySelector('dd')?.textContent).toBe('ACME-412');
+  });
+
+  it('renders a page break as its own marker', () => {
+    const { container } = render(
+      <Markdown text={['one', '', '<<pagebreak>>', '', 'two'].join('\n')} />,
+    );
+    expect(container.querySelector('[data-block="pagebreak"]')).not.toBeNull();
+    expect(container.textContent).not.toContain('pagebreak');
+  });
+
+  it('parses a callout body as markdown, so a list inside stays a list', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '<<risk>>',
+          'two ways this fails:',
+          '',
+          '- stale key',
+          '- wrong env',
+          '<</risk>>',
+        ].join('\n')}
+      />,
+    );
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.getAttribute('data-color')).toBe('danger');
+    expect(callout?.querySelectorAll('li')).toHaveLength(2);
+  });
+
+  it('colors a status chip by tone and lets it carry its own words', () => {
+    const { container } = render(
+      <Markdown text="tests <<ok>> and prod <<fail: 2 regions down>>" />,
+    );
+    const chips = container.querySelectorAll('[data-block="chip"]');
+    expect(chips[0]?.getAttribute('data-color')).toBe('success');
+    expect(chips[0]?.textContent).toBe('ok');
+    expect(chips[1]?.getAttribute('data-color')).toBe('danger');
+    expect(chips[1]?.getAttribute('data-labelled')).toBe('true');
+    expect(chips[1]?.textContent).toBe('2 regions down');
+  });
+
+  it('gives a summary callout its own tone instead of the output one', () => {
+    const { container } = render(<Markdown text="<<summary>>shipped<</summary>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    expect(callout?.getAttribute('data-tone')).toBe('summary');
+    expect(callout?.getAttribute('data-color')).toBe('primary');
   });
 });

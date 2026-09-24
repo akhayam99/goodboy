@@ -9,7 +9,8 @@ type PushResult = { ok: true } | { ok: false; error: string };
 type ToastOptions = { readonly title?: string };
 
 const { showToast, state } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     pushSessionBranch: vi.fn(async (): Promise<PushResult> => ({ ok: true })),
     beginSessionCreation: vi.fn(() => 'creation-1'),
@@ -57,7 +58,7 @@ describe('usePushBranch', () => {
 
     await act(() => result.current.run());
 
-    expect(showToast.mock.calls.map((call) => call[2]?.title)).toEqual([
+    expect(showToast.mock.calls.map((call) => call[0]?.title)).toEqual([
       'Push started',
       'Push done',
     ]);
@@ -78,7 +79,7 @@ describe('usePushBranch', () => {
     await act(() => result.current.run());
 
     expect(result.current.error).toBe('remote rejected the branch');
-    expect(showToast.mock.calls.map((call) => call[2]?.title)).toEqual(['Push started']);
+    expect(showToast.mock.calls.map((call) => call[0]?.title)).toEqual(['Push started']);
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
   });
 

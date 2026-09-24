@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { WorkspaceTurn } from './lib';
 import { SessionBudgetContent } from './SessionBudgetContent';
@@ -39,10 +39,11 @@ export const SessionPanel = ({
   onOpenSession,
 }: Props) => {
   return (
-    <StudioPanel
+    <PaneShell
+      scroll="body"
       title={goal}
-      subtitle={isCurrent ? 'Current session' : 'Session spend'}
-      action={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
+      description={isCurrent ? 'Current session' : 'Session spend'}
+      actions={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
     >
       <ErrorStrip
         label="session telemetry"
@@ -57,6 +58,6 @@ export const SessionPanel = ({
         onSaveCap={onSaveCap}
         onOpenSession={onOpenSession}
       />
-    </StudioPanel>
+    </PaneShell>
   );
 };

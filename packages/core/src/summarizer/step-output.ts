@@ -1,4 +1,4 @@
-import type { ModelEffort } from '@goodboy/types';
+import type { EffortLevel } from '@goodboy/types';
 import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
@@ -50,7 +50,7 @@ type Params = {
 
 type SummarizeParams = Params & {
   readonly model: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly expectedOutput?: string;
   readonly runId?: string;
   readonly onUsage?: (usage: StepOutputUsage) => Promise<void>;

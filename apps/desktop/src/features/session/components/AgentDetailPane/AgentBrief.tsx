@@ -61,7 +61,7 @@ export const AgentBrief = ({ session, agent }: Props) => {
     () => selectSpawnedChildren({ runs, parentAgentId: agent.id, turnStates }),
     [agent.id, runs, turnStates],
   );
-  const kind = classifyAgent(agent, kindOverride);
+  const kind = classifyAgent({ agent, override: kindOverride });
   const followUps = useMemo(
     () =>
       selectFollowUpChildren({

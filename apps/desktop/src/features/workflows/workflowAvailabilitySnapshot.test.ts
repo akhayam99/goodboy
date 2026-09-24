@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { BudgetAlert, IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
-import type { ProviderInfo } from '../providers/providers';
+import type { ProviderDisplayInfo } from '../providers/providers';
 import { workflowAvailabilitySnapshot } from './workflowAvailabilitySnapshot';
 
 const SESSION_ID = 'session-1' as SessionId;
 const NOW = 1_000_000;
 
-const provider = (id: ProviderId, connection: string): ProviderInfo =>
-  ({ id, connection, label: id, error: null, docsUrl: '' }) as unknown as ProviderInfo;
+const provider = (id: ProviderId, connection: string): ProviderDisplayInfo =>
+  ({ id, connection, label: id, error: null, docsUrl: '' }) as unknown as ProviderDisplayInfo;
 
 const alert = (overrides: Partial<BudgetAlert>): BudgetAlert => ({
   id: 'alert-1',

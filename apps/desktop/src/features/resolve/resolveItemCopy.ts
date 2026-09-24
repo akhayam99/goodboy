@@ -33,7 +33,7 @@ export const RESOLVE_ITEM_LABEL = {
   agentAnswer: 'Answer for agent',
   run: 'Run',
   openInDiff: 'Open diff',
-  backToResolve: 'Back to Resolve',
+  backToConversations: 'Back to conversations',
   backToComment: 'Back to comment',
   editReply: 'Edit reply',
   runBothTrees: 'Run checks',

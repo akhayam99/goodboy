@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from './app/components/AppFooter';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
@@ -20,7 +20,7 @@ import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekO
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
-import { ReleaseToast } from './features/changelog/components/ReleaseToast';
+import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
@@ -28,7 +28,7 @@ import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
-import { useZoomShortcuts } from './shared/hooks/useZoomShortcuts';
+import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import {
   useAppStore,
@@ -39,24 +39,20 @@ import {
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
-import { useGithubConnection } from './features/integrations/github/useGithubConnection';
+import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
+import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
-import { MOCK_ENABLED } from './store/mock-data';
-import { MockScene } from './app/components/MockScene';
 import { shellArrangement } from './app/shellArrangement';
 
 const KEEP_ALIVE_CAP = 5;
 
 export const App = () => {
-  if (MOCK_ENABLED) {
-    return <MockScene />;
-  }
-
   const hydrate = useAppStore((s) => s.hydrate);
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const bootPhase = useAppStore((s) => s.bootPhase);
+  const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
   const [splashFinished, setSplashFinished] = useState(false);
   const workspaces = useWorkspaces();
@@ -72,70 +68,27 @@ export const App = () => {
   const currentWorkspaceSessions = useSessions();
   const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
-  const githubConnection = useGithubConnection({ workspaceId: currentWorkspace?.id ?? null });
-  const hasLinear = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'linear',
-    ),
-  );
-  const hasSentry = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'sentry',
-    ),
-  );
-  const hasJira = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'jira',
-    ),
-  );
-  const hasGitlab = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'gitlab',
-    ),
-  );
-  const hasBitbucket = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'bitbucket',
-    ),
-  );
-  const hasSlack = useAppStore((s) =>
-    (s.workspaceIntegrations?.[currentWorkspace?.id ?? ('' as WorkspaceId)] ?? []).some(
-      (i) => i.provider === 'slack',
-    ),
-  );
+  const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
   const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
   const {
-    activeStudio,
+    footer,
     armDeleteConfirm,
     openAddWorkspace,
-    openBitbucket,
     openChangelog,
-    openGithub,
-    openGitlab,
     openImpact,
     openInbox,
-    openJira,
-    openLinear,
+    openIntegration,
     openPalette,
     openProviders,
-    openSentry,
     openSettings,
     openShortcutHelp,
-    openSlack,
     openSpend,
     openWorkflows,
-    overlays,
+    studio,
+    layers,
   } = useAppOverlays({
-    connected: {
-      github: githubConnection.isAuthenticated,
-      linear: hasLinear,
-      sentry: hasSentry,
-      jira: hasJira,
-      gitlab: hasGitlab,
-      bitbucket: hasBitbucket,
-      slack: hasSlack,
-    },
+    connected,
     currentSession,
     currentWorkspace,
     workspaceProjectRoot,
@@ -155,88 +108,13 @@ export const App = () => {
   useProviderRefreshOnFocus();
   useUpdaterPolling();
   useWindowPresence();
-  useZoomShortcuts();
+  useWindowShortcuts();
   useUnhandledRejectionNotice();
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenBridgeCommands().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenProjectMaterializeRequests().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void listenMountCommands().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void startWorktreeWriterBridge().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    let off: (() => void) | undefined;
-    let cancelled = false;
-    void startPrWriteBridge().then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      off = fn;
-    });
-    return () => {
-      cancelled = true;
-      off?.();
-    };
-  }, []);
+  useAsyncSubscription({ start: listenBridgeCommands });
+  useAsyncSubscription({ start: listenProjectMaterializeRequests });
+  useAsyncSubscription({ start: listenMountCommands });
+  useAsyncSubscription({ start: startWorktreeWriterBridge });
+  useAsyncSubscription({ start: startPrWriteBridge });
 
   useEffect(() => {
     setKeepAliveIds([]);
@@ -290,6 +168,7 @@ export const App = () => {
     return (
       <BootSplash
         phase={bootPhase}
+        failedPhase={bootFailedPhase}
         error={error}
         onRetry={retryHydrate}
         onFinished={() => setSplashFinished(true)}
@@ -301,7 +180,7 @@ export const App = () => {
     return (
       <ToastProvider>
         <NotificationToastBridge />
-        {overlays}
+        {layers}
       </ToastProvider>
     );
   }
@@ -312,35 +191,22 @@ export const App = () => {
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
       <SessionArchiveBridge />
-      <ReleaseToast onOpenChangelog={openChangelog} />
+      <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
         topBar={<AppTopBar onOpenSpend={openSpend} />}
         footer={
-          arrangement.hasFooter ? (
-            <AppFooter
-              activeStudio={activeStudio}
-              githubEnabled={githubConnection.isAuthenticated}
-              linearEnabled={hasLinear}
-              jiraEnabled={hasJira}
-              sentryEnabled={hasSentry}
-              gitlabEnabled={hasGitlab}
-              bitbucketEnabled={hasBitbucket}
-              slackEnabled={hasSlack}
-              onOpenWorkflows={openWorkflows}
-              onOpenProviders={openProviders}
-              onOpenSettings={openSettings}
-              onOpenImpact={openImpact}
-              onOpenChangelog={openChangelog}
-              onOpenInbox={openInbox}
-              onOpenGithub={openGithub}
-              onOpenLinear={openLinear}
-              onOpenJira={openJira}
-              onOpenSentry={openSentry}
-              onOpenGitlab={openGitlab}
-              onOpenBitbucket={openBitbucket}
-              onOpenSlack={openSlack}
-            />
-          ) : undefined
+          <AppFooter
+            scope={arrangement.footer}
+            target={footer}
+            connected={connected}
+            onOpenIntegration={openIntegration}
+            onOpenInbox={openInbox}
+            onOpenWorkflows={openWorkflows}
+            onOpenProviders={openProviders}
+            onOpenSettings={openSettings}
+            onOpenImpact={openImpact}
+            onOpenChangelog={openChangelog}
+          />
         }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
@@ -357,7 +223,7 @@ export const App = () => {
           currentSession && arrangement.leftOverlaySlot === 'peek' ? (
             <SidebarPeekOverlay
               isPeeking={sessionSidebar.isPeeking}
-              onEdgeEnter={() => sessionSidebar.requestPeek({ source: 'edge' })}
+              onEdgeEnter={sessionSidebar.requestPeek}
               onEdgeLeave={() => {
                 sessionSidebar.cancelPeek();
                 sessionSidebar.scheduleClose();
@@ -378,9 +244,7 @@ export const App = () => {
         }
         main={
           <div className="relative h-full w-full">
-            {error ? (
-              <p className="p-6 text-sm text-danger">init error: {error}</p>
-            ) : currentSession ? (
+            {currentSession ? (
               <div className="relative h-full w-full">
                 {deferredRenderedIds.map((id) => (
                   <KeepAliveWorkSurface
@@ -399,10 +263,9 @@ export const App = () => {
             <OnboardingCard />
           </div>
         }
-        rightSidebar={null}
-        overlay={null}
+        studio={studio}
       />
-      {overlays}
+      {layers}
     </ToastProvider>
   );
 };

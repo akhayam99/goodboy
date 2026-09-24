@@ -19,6 +19,8 @@ const reasonFor = ({ failure }: { readonly failure: TurnFailureKind }): string =
       return 'was unreachable';
     case 'model_not_available':
       return 'does not accept this model';
+    case 'cli_too_old':
+      return 'runs a CLI too old for this model';
     case 'other':
       return 'failed';
     default: {

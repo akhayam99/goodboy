@@ -2,6 +2,7 @@ import { Chip, SelectableRow, Skeleton } from '@goodboy/ui';
 import type { ReleaseNote } from '../../changelog';
 import { formatReleaseDate } from '../../formatReleaseDate';
 import { isInstalledRelease } from '../../isInstalledRelease';
+import { isNewerRelease } from '../../isNewerRelease';
 
 type Props = {
   readonly releases: ReadonlyArray<ReleaseNote>;
@@ -38,6 +39,7 @@ export const ChangelogRail = ({
           tag: release.version,
           installed: installedVersion,
         });
+        const isAvailable = isNewerRelease({ tag: release.version, installed: installedVersion });
         return (
           <SelectableRow
             key={release.version}
@@ -48,6 +50,7 @@ export const ChangelogRail = ({
           >
             <span className="min-w-0 flex-1 truncate text-sm">{release.version}</span>
             {isInstalled && <Chip tone="neutral" width="sm" label="installed" />}
+            {isAvailable && <Chip tone="primary" width="sm" label="available" />}
             <span className="w-14 shrink-0 text-right text-2xs tabular-nums text-muted-foreground">
               {formatReleaseDate({ iso: release.publishedAt, style: 'short' })}
             </span>

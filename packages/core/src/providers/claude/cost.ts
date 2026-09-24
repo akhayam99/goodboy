@@ -1,10 +1,4 @@
-import type { ProviderUsage } from '@goodboy/types';
-
-type ModelPrice = {
-  readonly inputPerMtok: number;
-  readonly outputPerMtok: number;
-  readonly cachedInputPerMtok: number;
-};
+import type { ModelPrice, ProviderUsage } from '@goodboy/types';
 
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
@@ -21,6 +15,10 @@ const OPUS_PRICE: ModelPrice = {
   outputPerMtok: 25,
   cachedInputPerMtok: 0.5,
 };
+const OPUS_55_PRICE: ModelPrice = {
+  ...OPUS_PRICE,
+  assumed: true,
+};
 const SONNET_PRICE: ModelPrice = {
   inputPerMtok: 3,
   outputPerMtok: 15,
@@ -35,6 +33,7 @@ const SONNET_5_PRICE: ModelPrice = {
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5-1': FABLE_51_PRICE,
   'claude-fable-5': FABLE_PRICE,
+  'claude-opus-5-5': OPUS_55_PRICE,
   'claude-opus-5': OPUS_PRICE,
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
@@ -64,7 +63,7 @@ export const computeCostUsd = ({ usage, model }: Params): number => {
   const price = priceFor(model);
   return (
     (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * price.cachedInputPerMtok) / 1_000_000 +
+    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
     ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
     (usage.outputTokens * price.outputPerMtok) / 1_000_000
   );

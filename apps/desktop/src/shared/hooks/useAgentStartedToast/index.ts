@@ -11,6 +11,7 @@ type AnnounceParams = {
   readonly message: string;
   readonly actionLabel?: string;
   readonly lens?: LensKind;
+  readonly onOpen?: () => void;
 };
 
 export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
@@ -26,11 +27,14 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
       message,
       actionLabel = 'Open the agent',
       lens = 'agents',
+      onOpen,
     }: AnnounceParams) => {
       if (agentId == null) {
         return;
       }
-      showToast('info', message, {
+      showToast({
+        kind: 'info',
+        message,
         title,
         action: {
           label: actionLabel,
@@ -39,6 +43,7 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
               await setCurrentSession(sessionId);
               setActiveLens(sessionId, lens);
               await selectAgent(sessionId, agentId);
+              onOpen?.();
             })();
           },
         },

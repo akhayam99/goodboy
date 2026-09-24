@@ -17,7 +17,7 @@ import { loadArtifactProvenance } from '../../../features/artifacts/artifactProv
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import {
   KIND_TO_ROLE,
-  inferAgentKindFromName,
+  classifyAgent,
   resolveRootAgent,
   type AgentKind,
 } from '../../../features/session/agent-kind';
@@ -29,13 +29,13 @@ import { reserveGeneration } from '../agents/reserveGeneration';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import type { GetFn, SetFn } from './types';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 
 export const SCOUT_DEPTH_CAP = 2;
 const FAN_OUT_DEPTH_CAP = 1;
 export const FAN_OUT_MAX_CHILDREN = 4;
 
 const synthesisStarted = new Set<string>();
-const selfExploreTasked = new Set<string>();
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -60,14 +60,15 @@ export const scoutDepth = (runs: ReadonlyArray<Agent>, agentId: AgentId): number
   return depth;
 };
 
-const resolveAgentKind = (agent: Agent): AgentKind => {
-  const persisted = agent.kind as AgentKind | undefined;
-  return persisted ?? inferAgentKindFromName(agent.name);
+type AgentKindLookupParams = {
+  readonly agent: Agent;
+  readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
 };
 
-const resolveAgentRole = (agent: Agent): AgentRole => {
-  return KIND_TO_ROLE[resolveAgentKind(agent)] ?? 'custom';
-};
+const agentKindOf = ({ agent, agentKindOverride }: AgentKindLookupParams): AgentKind =>
+  classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
+
+const agentRoleOf = (params: AgentKindLookupParams): AgentRole => KIND_TO_ROLE[agentKindOf(params)];
 
 const depthCapForRole = (role: AgentRole): number => {
   if (role === 'scout') {
@@ -77,11 +78,7 @@ const depthCapForRole = (role: AgentRole): number => {
 };
 
 const fanOutEnabled = (get: GetFn, sessionId: SessionId): boolean => {
-  const session = get().sessions.find((s) => s.id === sessionId);
-  if (!session) {
-    return false;
-  }
-  return get().workspaceOverrides[session.workspaceId]?.parallelAgents === true;
+  return selectResolvedSettings({ state: get(), sessionId })?.parallelAgents === true;
 };
 
 const composeChildKickoff = ({
@@ -311,14 +308,14 @@ const canFanOutByRole = async ({
   return false;
 };
 
-export type FanOutChildSpec = Readonly<{
+type FanOutChildSpec = Readonly<{
   name: string;
   promptText: string;
   kickoff: string;
   routingProposal: WorkflowRoutingProposal | null;
 }>;
 
-export type FanOutStartResult =
+type FanOutStartResult =
   | Readonly<{ kind: 'started'; childIds: ReadonlyArray<AgentId> }>
   | Readonly<{ kind: 'blocked'; reason: string }>
   | Readonly<{ kind: 'skipped' }>;
@@ -348,7 +345,6 @@ export const startFanOutChildren = async ({
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
-    workflowRunId: container.workflowRunId ?? null,
     role,
     requests: specs.map((spec) => ({
       proposal: spec.routingProposal,
@@ -456,7 +452,7 @@ export const startFanOutChildren = async ({
   return { kind: 'started', childIds };
 };
 
-const fanOutAgents = async ({
+export const fanOutAgents = async ({
   set,
   get,
   sessionId,
@@ -474,13 +470,13 @@ const fanOutAgents = async ({
   const clamped = areas.slice(0, FAN_OUT_MAX_CHILDREN);
   const dropped = areas.length - clamped.length;
   if (dropped > 0) {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'info',
-      `agent fan-out capped: ${container.name}`,
-      `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'info',
+      title: `Agent fan-out capped for ${container.name}`,
+      body: `dropped ${dropped} area(s) over the ${FAN_OUT_MAX_CHILDREN}-child limit`,
+      sessionId,
+    });
   }
   if (clamped.length < 2) {
     return;
@@ -493,7 +489,7 @@ const fanOutAgents = async ({
     sessionId,
     container,
     role,
-    childKind: resolveAgentKind(container),
+    childKind: agentKindOf({ agent: container, agentKindOverride: get().agentKindOverride }),
     specs: clamped.map((area) => ({
       name: area.area,
       promptText: `${area.area}\n${area.query}`,
@@ -502,24 +498,14 @@ const fanOutAgents = async ({
     })),
   });
   if (started.kind === 'blocked') {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'warning',
-      `agent fan-out held: ${container.name}`,
-      started.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'warning',
+      title: `Agent fan-out held for ${container.name}`,
+      body: started.reason,
+      sessionId,
+    });
   }
-};
-
-export const fanOutScouts = async (
-  set: SetFn,
-  get: GetFn,
-  sessionId: SessionId,
-  container: Agent,
-  areas: ReadonlyArray<ExtractedFanOutArea>,
-): Promise<void> => {
-  await fanOutAgents({ set, get, sessionId, container, areas, role: 'scout' });
 };
 
 const maybeSynthesizeParent = async ({
@@ -564,7 +550,7 @@ const maybeSynthesizeParent = async ({
     sessionId,
     agentId: parentId,
     content: composeSynthesisKickoff({
-      role: resolveAgentRole(container),
+      role: agentRoleOf({ agent: container, agentKindOverride: get().agentKindOverride }),
       containerName: container.name,
       children: siblings,
     }),
@@ -606,7 +592,9 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
 
     const root = resolveRootAgent({ agents: runs, agentId });
     const isWireframeScout =
-      root !== null && root.id !== agentId && resolveAgentKind(root) === 'wireframe';
+      root !== null &&
+      root.id !== agentId &&
+      agentKindOf({ agent: root, agentKindOverride: get().agentKindOverride }) === 'wireframe';
     if (isWireframeScout) {
       await settleAgent({
         set,
@@ -618,7 +606,7 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
       return;
     }
 
-    const role = resolveAgentRole(agent);
+    const role = agentRoleOf({ agent, agentKindOverride: get().agentKindOverride });
     const capability = fanOutCapabilityForRole(role);
     const split = extractFanOut({
       assistantText,
@@ -639,8 +627,10 @@ export const advanceScoutTree = (set: SetFn, get: GetFn) => {
         await fanOutAgents({ set, get, sessionId, container: agent, areas: split, role });
         return;
       }
-      if (agent.parentAgentId == null && !selfExploreTasked.has(agentId)) {
-        selfExploreTasked.add(agentId);
+      if (agent.parentAgentId == null && get().scoutSelfExploreTasked[agentId] !== true) {
+        set((state) => ({
+          scoutSelfExploreTasked: { ...state.scoutSelfExploreTasked, [agentId]: true },
+        }));
         const reason =
           !fanOutEnabled(get, sessionId) && conditionMet
             ? 'parallel agents is off for this workspace'

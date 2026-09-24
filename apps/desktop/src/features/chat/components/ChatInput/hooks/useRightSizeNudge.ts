@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { assessTurnWeight } from '@goodboy/core';
 import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
-import type { IsoDateTime, SessionId } from '@goodboy/types';
+import type { IsoDateTime, ProviderId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../../shared/lib/db';
 import { suggestHeavierModel, suggestLighterModel } from '../../../utils/chat-constants';
 import type { PendingAttachment } from '../lib';
@@ -27,6 +27,7 @@ type Params = {
   readonly isFirstTurnForAgent: boolean;
   readonly value: string;
   readonly attachments: ReadonlyArray<PendingAttachment>;
+  readonly effectiveProvider: ProviderId;
   readonly effectiveModel: string;
   readonly modelCandidates: ReadonlyArray<string>;
   readonly allowOverride: boolean;
@@ -37,6 +38,7 @@ export const useRightSizeNudge = ({
   isFirstTurnForAgent,
   value,
   attachments,
+  effectiveProvider,
   effectiveModel,
   modelCandidates,
   allowOverride,
@@ -49,14 +51,22 @@ export const useRightSizeNudge = ({
     if (!isFirstTurnForAgent || rightSizeDismissed) return null;
     const weight = assessTurnWeight(value, { attachmentCount: attachments.length });
     if (weight === 'light') {
-      const s = suggestLighterModel(effectiveModel, modelCandidates);
-      return s
+      const s = suggestLighterModel({
+        provider: effectiveProvider,
+        current: effectiveModel,
+        candidates: modelCandidates,
+      });
+      return s !== null
         ? { direction: 'lighter', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
         : null;
     }
     if (weight === 'heavy') {
-      const s = suggestHeavierModel(effectiveModel, modelCandidates);
-      return s
+      const s = suggestHeavierModel({
+        provider: effectiveProvider,
+        current: effectiveModel,
+        candidates: modelCandidates,
+      });
+      return s !== null
         ? { direction: 'heavier', model: s.id, kind: s.kind, costMultiplier: s.costMultiplier }
         : null;
     }
@@ -65,6 +75,7 @@ export const useRightSizeNudge = ({
     isFirstTurnForAgent,
     rightSizeDismissed,
     value,
+    effectiveProvider,
     effectiveModel,
     modelCandidates,
     attachments,

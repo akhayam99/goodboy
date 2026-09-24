@@ -8,7 +8,8 @@ type ToastAction = { readonly label: string; readonly onClick: () => void };
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 const { state, showToast } = vi.hoisted(() => ({
-  showToast: vi.fn<(kind: string, message: string, opts?: ToastOptions) => void>(),
+  showToast:
+    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   state: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -148,7 +149,7 @@ describe('PlanStudio', () => {
     await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
     expect(state.selectAgent).not.toHaveBeenCalled();
-    const opts = showToast.mock.calls[0]![2];
+    const opts = showToast.mock.calls[0]![0];
     expect(opts?.title).toBe('Implementer started');
     expect(opts?.action?.label).toBe('Open the agent');
 
@@ -176,9 +177,9 @@ describe('PlanStudio', () => {
     expect(screen.getByText('Nothing active')).toBeDefined();
     const emptyCard = screen.getByText('Nothing active').closest('.border-dashed');
     expect(emptyCard).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show finished (1)' }));
     expect(screen.getByText('Implement auth module')).toBeDefined();
     expect(screen.getByText('consumed')).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Finished history' })).toBeDefined();
   });
 
   it('shows consumed plans alongside active plans too', () => {
@@ -207,6 +208,7 @@ describe('PlanStudio', () => {
     render(<PlanStudio sessionId={'sess-1' as never} />);
 
     expect(screen.queryByText('Nothing active')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Show finished/ }));
     expect(screen.getByText('Old plan')).toBeDefined();
   });
 
@@ -370,6 +372,7 @@ describe('PlanStudio consumer provenance', () => {
       },
     ];
     render(<PlanStudio sessionId={'sess-1' as never} />);
+    fireEvent.click(screen.getByRole('button', { name: /Show finished/ }));
 
     expect(screen.getByText('Run by implementer +1 more')).toBeDefined();
   });
@@ -431,7 +434,7 @@ describe('PlanStudio subpage', () => {
     ];
     state.focusedPlanId = { 'sess-1': 'plan-2' };
     const { container } = render(<PlanStudio sessionId={'sess-1' as never} />);
-    const title = screen.getByRole('heading', { level: 2, name: 'Second plan' });
+    const title = screen.getByRole('heading', { level: 1, name: 'Second plan' });
     const status = screen.getByText('active');
 
     expect(screen.getByText('body two')).toBeDefined();

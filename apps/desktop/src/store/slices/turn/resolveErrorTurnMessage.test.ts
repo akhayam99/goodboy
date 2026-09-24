@@ -47,6 +47,17 @@ describe('resolveErrorTurnMessage', () => {
     );
   });
 
+  it('tells the user to update the CLI when the model outranks it', () => {
+    const message =
+      'API Error: 400 Claude Code 2.1.259 does not support this model; version 2.1.280 or newer is required.';
+
+    const resolved = resolveErrorTurnMessage({ message, providerId: ANTHROPIC, identity: null });
+
+    expect(resolved).toBe(
+      'This model needs anthropic CLI 2.1.280 or newer, and 2.1.259 is installed. Update the CLI or choose another model.',
+    );
+  });
+
   it('tells a Codex user to choose a model supported by their account', () => {
     const message =
       '{"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The \'gpt-5.6\' model is not supported when using Codex with a ChatGPT account."}}';

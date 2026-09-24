@@ -1,6 +1,5 @@
 import { Divider, Input, Textarea } from '@goodboy/ui';
-import type { ProviderId } from '@goodboy/types';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
+import type { ProviderId, EffortLevel } from '@goodboy/types';
 import { OrchestratorModelPicker } from './OrchestratorModelPicker';
 
 type Props = {
@@ -40,7 +39,7 @@ export const DynamicWorkflowComposer = ({
   onOrchestratorEffort,
   onOrchestratorReset,
 }: Props) => (
-  <div className="overflow-hidden rounded-lg border border-border-soft bg-subtle/40">
+  <div className="overflow-hidden rounded-lg border border-border-soft bg-subtle">
     <div className="flex flex-col gap-1 p-3">
       <label
         htmlFor="orchestrated-workflow-name"
@@ -53,7 +52,7 @@ export const DynamicWorkflowComposer = ({
         value={name}
         onChange={(event) => onName(event.target.value)}
         disabled={disabled}
-        className="h-8 bg-background/70 text-sm font-medium"
+        className="h-8 bg-background text-sm font-medium"
       />
     </div>
     <Divider />
@@ -73,7 +72,7 @@ export const DynamicWorkflowComposer = ({
         minRows={3}
         maxRows={7}
         disabled={disabled}
-        className="resize-none bg-background/70 text-sm"
+        className="resize-none bg-background text-sm"
       />
     </div>
     <Divider />

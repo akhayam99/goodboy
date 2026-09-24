@@ -123,8 +123,9 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
       sorted
         .filter(
           (run) =>
-            isStandaloneAgent(run) &&
-            classifyAgent(run, agentKindOverride[run.id] ?? null) !== 'resolver',
+            isStandaloneAgent({ agent: run }) &&
+            classifyAgent({ agent: run, override: agentKindOverride[run.id] ?? null }) !==
+              'resolver',
         )
         .sort((a, b) => b.ordinal - a.ordinal),
     [sorted, agentKindOverride],

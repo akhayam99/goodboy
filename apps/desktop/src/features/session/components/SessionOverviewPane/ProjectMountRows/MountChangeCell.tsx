@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
@@ -20,9 +20,9 @@ type Props = {
 };
 
 const TEXT_TONE: Record<MountWorktreeState['kind'], string> = {
-  reading: 'text-muted-foreground/50',
-  unknown: 'text-warning/80',
-  clean: 'text-muted-foreground/50',
+  reading: 'text-faint-foreground',
+  unknown: cn(tintClasses('warning').text),
+  clean: 'text-faint-foreground',
   modified: 'text-muted-foreground',
 };
 
@@ -37,7 +37,7 @@ export const MountChangeCell = ({ sessionId, label, worktreePath, diffStat, stat
           type="button"
           aria-label={`View the changes of ${label}`}
           onClick={() => openMountDiff(sessionId, worktreePath)}
-          className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-muted/40"
+          className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs tabular-nums hover:bg-hover"
         >
           <CONCEPT_ICONS.diff
             size={ICON_SIZE.row}
