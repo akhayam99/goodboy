@@ -1,5 +1,6 @@
 mod artifacts;
 mod attachment;
+mod attempt_checkout;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
@@ -213,6 +214,9 @@ pub fn run() {
             scratch_dir::scratch_dir_prepare,
             scratch_dir::scratch_dir_remove,
             worktree::worktree_create,
+            attempt_checkout::worktree_checkout_cleanliness,
+            attempt_checkout::worktree_prepare_checkout,
+            attempt_checkout::worktree_validate_write_scope,
             worktree::worktree_inspect,
             worktree::worktree_git_common_dir,
             worktree::worktree_remove_checked,
@@ -267,6 +271,8 @@ pub fn run() {
             worktree_writer::worktree_writer_abandon,
             worktree_writer::worktree_writer_status,
             writer_lease::writer_lease_acquire,
+            writer_lease::writer_lease_acquire_application,
+            writer_lease::writer_lease_acquire_owned,
             writer_lease::writer_lease_acquire_waiting,
             writer_lease::writer_lease_release,
             writer_lease::writer_lease_unknown,

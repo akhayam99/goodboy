@@ -36,6 +36,7 @@ import { m174CapabilityGrantDelivery } from './m174-capability-grant-delivery';
 import { m175ClusterGraphRevisions } from './m175-cluster-graph-revisions';
 import { m176WriterLeaseReleaseEvidence } from './m176-writer-lease-release-evidence';
 import { m177TransferredAgentStatus } from './m177-transferred-agent-status';
+import { m178PrivateAttemptMounts } from './m178-private-attempt-mounts';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -359,4 +360,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 175, sql: m175ClusterGraphRevisions },
   { version: 176, sql: m176WriterLeaseReleaseEvidence },
   { version: 177, sql: m177TransferredAgentStatus },
+  { version: 178, sql: m178PrivateAttemptMounts },
 ];

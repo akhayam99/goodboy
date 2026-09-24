@@ -33,6 +33,10 @@ export type WorkspaceProfile = Readonly<{
   bio: string | null;
 }>;
 
+export type ProjectSetupCommand =
+  | Readonly<{ kind: 'command'; command: string; revision: number; updatedAt: IsoDateTime }>
+  | Readonly<{ kind: 'none'; revision: number; updatedAt: IsoDateTime }>;
+
 export type Project = Readonly<{
   id: ProjectId;
   workspaceId: WorkspaceId;
@@ -41,6 +45,7 @@ export type Project = Readonly<{
   kind: 'repo' | 'folder';
   baseBranch?: string | null;
   overrides: OverrideSettings;
+  setup?: ProjectSetupCommand;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
   disconnectedAt?: IsoDateTime;

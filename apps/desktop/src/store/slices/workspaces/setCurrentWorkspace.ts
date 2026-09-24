@@ -51,6 +51,7 @@ import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMount
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
+import { loadClusterAttemptLedgers } from '../cluster-attempts/loadClusterAttemptLedgers';
 import type { GetFn, SetFn } from './types';
 
 type RepairedDestination = {
@@ -91,6 +92,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       sessionPhaseRuns: {},
       clusterCompletionHolds: {},
       clusterExecutionGraphs: {},
+      clusterAttempts: {},
+      clusterExecutionEligibility: {},
       capabilityObligations: {},
       capabilityGrants: {},
       selectedAgentId: {},
@@ -131,23 +134,29 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         now: recoveryNow,
       });
       const sessionIds = sessions.map((s) => s.id);
-      const [loadedWorktreesBySession, agentsBySession, externalTasks, clusterEntries] =
-        await Promise.all([
-          listWorktreesForSessions(tauriDatabase, sessionIds),
-          listAgentsForSessions(tauriDatabase, sessionIds),
-          listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
-          Promise.all(
-            sessionIds.map(async (sessionId) => {
-              const [holds, graphs, obligations, grants] = await Promise.all([
-                invokeClusterCompletionHolds({ sessionId }),
-                invokeClusterExecutionGraphs({ sessionId }),
-                invokeCapabilityObligations({ sessionId }),
-                invokeCapabilityGrants({ sessionId }),
-              ]);
-              return { sessionId, holds, graphs, obligations, grants };
-            }),
-          ),
-        ]);
+      const [
+        loadedWorktreesBySession,
+        agentsBySession,
+        externalTasks,
+        clusterEntries,
+        attemptLedgers,
+      ] = await Promise.all([
+        listWorktreesForSessions(tauriDatabase, sessionIds),
+        listAgentsForSessions(tauriDatabase, sessionIds),
+        listExternalTasksForWorkspace({ db: tauriDatabase, workspaceId: id }),
+        Promise.all(
+          sessionIds.map(async (sessionId) => {
+            const [holds, graphs, obligations, grants] = await Promise.all([
+              invokeClusterCompletionHolds({ sessionId }),
+              invokeClusterExecutionGraphs({ sessionId }),
+              invokeCapabilityObligations({ sessionId }),
+              invokeCapabilityGrants({ sessionId }),
+            ]);
+            return { sessionId, holds, graphs, obligations, grants };
+          }),
+        ),
+        loadClusterAttemptLedgers({ sessionIds }),
+      ]);
       const worktreesBySession = loadedWorktreesBySession;
       const sessionWorktrees: Record<string, ReadonlyArray<string>> = {};
       const sessionWorktreeRecords: Record<string, ReadonlyArray<SessionWorktree>> = {};
@@ -264,6 +273,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         sessionPhaseRuns,
         clusterCompletionHolds,
         clusterExecutionGraphs,
+        clusterAttempts: attemptLedgers.clusterAttempts,
+        clusterExecutionEligibility: attemptLedgers.clusterExecutionEligibility,
         capabilityObligations,
         capabilityGrants,
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },

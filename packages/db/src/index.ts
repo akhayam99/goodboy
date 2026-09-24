@@ -64,6 +64,8 @@ export {
   reconnectProject,
   updateProjectKind,
   updateProjectBaseBranch,
+  updateProjectSetup,
+  type ProjectSetupInput,
 } from './queries/project';
 export {
   describeProjectAdoption,
@@ -235,6 +237,20 @@ export {
   type FreezeClusterExecutionGraphParams,
   type RefuseClusterGraphRevisionParams,
 } from './queries/cluster-execution-graph';
+export {
+  bindClusterAttemptLease,
+  bindClusterAttemptMount,
+  claimClusterAttempt,
+  getClusterAttempt,
+  listClusterAttemptsForSessions,
+  listClusterExecutionEligibilityForSessions,
+  recordClusterAttemptPreparation,
+  recordClusterExecutionEligibility,
+  settleClusterAttempt,
+  type ClaimClusterAttemptResult,
+  type ClusterAttemptClaim,
+  type ClusterAttemptPreparationRecord,
+} from './queries/cluster-attempt';
 export {
   insertSessionWorktree,
   insertSessionMount,

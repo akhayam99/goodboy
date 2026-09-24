@@ -4,7 +4,11 @@ import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
-import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
+import {
+  type SessionConfigUpdate,
+  type AgentConfigUpdate,
+  type ProjectSetupInput,
+} from '@goodboy/db';
 import type {
   AgentId,
   AgentExecutionPurpose,
@@ -86,6 +90,7 @@ import type { EmitNotificationParams } from './slices/notifications/emitNotifica
 import type { ReportErrorParams } from './slices/notifications/reportError';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
+import { clusterAttemptsInitialState, createClusterAttemptsSlice } from './slices/cluster-attempts';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import type {
@@ -374,6 +379,7 @@ type AppActions = {
     projectId: ProjectId;
     baseBranch: string | null;
   }): Promise<void>;
+  updateProjectSetup(input: { projectId: ProjectId; setup: ProjectSetupInput }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
@@ -1025,6 +1031,7 @@ type AppActions = {
 export type AppStore = AppState &
   AppActions &
   ReturnType<typeof createArtifactsSlice> &
+  ReturnType<typeof createClusterAttemptsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice>;
@@ -1152,6 +1159,7 @@ export const initialState: AppState = {
   ...resolveInitialState,
   ...reviewNavigationInitialState,
   ...artifactsInitialState,
+  ...clusterAttemptsInitialState,
   agentDraft: {},
   workflowDrafts: {},
   artifactDrafts: {},
@@ -1188,6 +1196,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createNotificationsSlice(set, get),
   ...createNudgesSlice(set, get),
   ...createArtifactsSlice(set, get),
+  ...createClusterAttemptsSlice(set, get),
   ...createPlansSlice(set, get),
   ...createOpenQuestionsSlice(set, get),
   ...createBudgetSlice(set, get),

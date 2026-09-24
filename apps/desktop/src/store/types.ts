@@ -1,4 +1,5 @@
 import type { ArtifactsState } from './slices/artifacts/state';
+import type { ClusterAttemptsState } from './slices/cluster-attempts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
@@ -233,6 +234,7 @@ export type PendingOrchestration = {
 };
 
 type AppSliceState = ArtifactsState &
+  ClusterAttemptsState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &

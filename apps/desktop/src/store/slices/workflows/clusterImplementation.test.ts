@@ -92,6 +92,9 @@ const hoisted = vi.hoisted(() => {
     ),
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
+    validateWriteScope: vi.fn(
+      async (): Promise<ReadonlyArray<{ readonly path: string; readonly reason: string }>> => [],
+    ),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
     invokeClusterCompletionHoldResolve: vi.fn(async () => undefined),
     invokeClusterCompletionHolds: vi.fn(async () => [] as ReadonlyArray<unknown>),
@@ -118,6 +121,11 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowNodeRoutingUpdate: hoisted.invokeWorkflowNodeRoutingUpdate,
   invokeClusterCompletionHoldResolve: hoisted.invokeClusterCompletionHoldResolve,
   invokeClusterCompletionHolds: hoisted.invokeClusterCompletionHolds,
+}));
+
+vi.mock('../../../features/worktree/worktree', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../../features/worktree/worktree')>()),
+  validateWriteScope: hoisted.validateWriteScope,
 }));
 
 vi.mock('../../../features/plans/plans', () => ({
@@ -564,6 +572,120 @@ afterEach(() => {
   hoisted.invokeAgentList.mockResolvedValue([]);
   hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
   hoisted.summarizeAgentOutput.mockResolvedValue({ summary: 'model summary', degraded: false });
+});
+
+const scopedClusters: ReadonlyArray<ImplementationCluster> = [
+  {
+    id: 'impl-a',
+    title: 'c0',
+    instructions: 'do 0',
+    writeScope: { version: 1, files: ['vendor/lib.ts'], directories: [] },
+  },
+  {
+    id: 'impl-b',
+    title: 'c1',
+    instructions: 'do 1',
+    writeScope: { version: 1, files: [], directories: ['docs'] },
+  },
+];
+
+const repositoryTarget = {
+  sessionProjectMounts: {
+    [SID]: [
+      {
+        mountId: 'mount-1',
+        sessionId: SID,
+        projectId: 'project-1',
+        mountName: 'api',
+        worktreePath: '/repo/api',
+        lastWorktreePath: null,
+        repoRoot: '/repo/api',
+        branch: 'ak/session',
+        baseBranch: 'main',
+        parallelIndex: 0,
+        isAttached: true,
+        diskState: 'present',
+        revision: 1,
+      },
+    ],
+  },
+  sessionActiveMount: { [SID]: 'mount-1' },
+  projects: [{ id: 'project-1', kind: 'repo', name: 'api', rootPath: '/repo/api' }],
+};
+
+describe('fanOutClusters write scopes', () => {
+  it('blocks a scoped graph whose scope escapes the repository through a symlink', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    const c = container();
+    const evaluateClusterExecutionEligibility = vi.fn(async () => null);
+    const { get, set, emitNotification, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      evaluateClusterExecutionEligibility,
+      ...repositoryTarget,
+    });
+    hoisted.validateWriteScope.mockResolvedValueOnce([
+      { path: 'vendor/lib.ts', reason: 'resolves outside the repository through a symlink' },
+    ]);
+
+    await fanOutClusters(set, get, SID, c, scopedClusters, 'goal');
+
+    expect(hoisted.validateWriteScope).toHaveBeenCalledWith({
+      repoPath: '/repo/api',
+      files: ['vendor/lib.ts'],
+      directories: [],
+    });
+    expect(emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: `Cluster ${c.name} is blocked`,
+        body: 'the plan clusters are not a valid graph: cluster "impl-a" declares write scope path "vendor/lib.ts", which resolves outside the repository through a symlink',
+        sessionId: SID,
+      }),
+    );
+    expect(hoisted.insertArgs).toHaveLength(0);
+    expect(sendTurn).not.toHaveBeenCalled();
+    expect(evaluateClusterExecutionEligibility).not.toHaveBeenCalled();
+  });
+
+  it('evaluates private attempt eligibility for a scoped graph and still runs one child', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    const c = container();
+    const evaluateClusterExecutionEligibility = vi.fn(async () => null);
+    const { get, set, sendTurn } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      evaluateClusterExecutionEligibility,
+      ...repositoryTarget,
+    });
+
+    await fanOutClusters(set, get, SID, c, scopedClusters, 'goal');
+
+    expect(hoisted.insertArgs).toHaveLength(2);
+    expect(evaluateClusterExecutionEligibility).toHaveBeenCalledWith({
+      sessionId: SID,
+      containerAgentId: PARENT,
+    });
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as Record<string, unknown>;
+    expect(call.mountTarget).toBeUndefined();
+  });
+
+  it('leaves a graph without the contract exactly as before', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    const c = container();
+    const evaluateClusterExecutionEligibility = vi.fn(async () => null);
+    const { get, set } = makeStore({
+      sessionPhaseRuns: { [SID]: [c] },
+      evaluateClusterExecutionEligibility,
+      ...repositoryTarget,
+    });
+
+    await fanOutClusters(set, get, SID, c, clusters, 'goal');
+
+    expect(hoisted.validateWriteScope).not.toHaveBeenCalled();
+    expect(evaluateClusterExecutionEligibility).not.toHaveBeenCalled();
+    expect(hoisted.insertArgs).toHaveLength(2);
+  });
 });
 
 describe('fanOutClusters', () => {

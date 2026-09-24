@@ -12,6 +12,7 @@ type Props = {
   readonly initialConflicts?: ReadonlyArray<ProjectAttachConflict>;
   readonly emptyHint?: string;
   readonly rowAccessory?: (params: { readonly project: Project }) => ReactNode;
+  readonly rowDetail?: (params: { readonly project: Project }) => ReactNode;
 };
 
 export const ProjectLinkList = ({
@@ -19,6 +20,7 @@ export const ProjectLinkList = ({
   initialConflicts,
   emptyHint,
   rowAccessory,
+  rowDetail,
 }: Props) => {
   const linking = useProjectLinking({ workspaceId, initialConflicts });
 
@@ -35,6 +37,7 @@ export const ProjectLinkList = ({
               project={project}
               busy={linking.busy}
               accessory={rowAccessory?.({ project })}
+              detail={rowDetail?.({ project })}
               onUnlink={linking.unlink}
             />
           ))}

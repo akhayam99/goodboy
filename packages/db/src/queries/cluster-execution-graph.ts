@@ -6,6 +6,7 @@ import type {
   ClusterGraphNode,
   ClusterNodeResultState,
   ClusterNodeState,
+  ClusterWriteScope,
   IsoDateTime,
   PlanClusterRole,
   SessionId,
@@ -60,6 +61,25 @@ const toRole = ({ value }: { readonly value: string }): PlanClusterRole => {
   return match ?? 'implementer';
 };
 
+type StoredValueParams = {
+  readonly value: unknown;
+};
+
+const toStringList = ({ value }: StoredValueParams): ReadonlyArray<string> | null =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string') ? value : null;
+
+export const parseStoredWriteScope = ({ value }: StoredValueParams): ClusterWriteScope | null => {
+  if (!isRecord(value) || typeof value.version !== 'number') {
+    return null;
+  }
+  const files = toStringList({ value: value.files });
+  const directories = toStringList({ value: value.directories });
+  if (files === null || directories === null) {
+    return null;
+  }
+  return { version: value.version, files, directories };
+};
+
 const parseGraphNodes = ({
   value,
 }: {
@@ -85,6 +105,7 @@ const parseGraphNodes = ({
     if (id.length === 0) {
       continue;
     }
+    const writeScope = parseStoredWriteScope({ value: entry.writeScope });
     nodes.push({
       id,
       ordinal: typeof entry.ordinal === 'number' ? entry.ordinal : nodes.length,
@@ -95,6 +116,7 @@ const parseGraphNodes = ({
         ? entry.dependsOn.filter((dep): dep is string => typeof dep === 'string')
         : [],
       expectedOutput: typeof entry.expectedOutput === 'string' ? entry.expectedOutput : null,
+      ...(writeScope !== null && { writeScope }),
     });
   }
   return nodes;

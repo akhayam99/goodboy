@@ -1,7 +1,10 @@
 import {
+  acquireOwnedWriterLease,
   acquireWriterLeaseWaiting,
   releaseWriterLease,
   repositoryWriterResource,
+  type OwnedReservation,
+  type WriterLeaseOutcome,
 } from '../../../features/worktree/writerLease';
 
 type LockParams<T> = {
@@ -30,18 +33,51 @@ export const withMountLock = async <T>({ key, run }: LockParams<T>): Promise<T> 
 type RepoLockParams<T> = {
   readonly repoRoot: string;
   readonly mountKey: string;
+  readonly ownedReservations?: ReadonlyArray<OwnedReservation>;
   readonly run: () => Promise<T>;
+};
+
+type RepositoryLeaseParams = {
+  readonly repoRoot: string;
+  readonly mountKey: string;
+  readonly ownedReservations: ReadonlyArray<OwnedReservation>;
+};
+
+const acquireRepositoryLease = async ({
+  repoRoot,
+  mountKey,
+  ownedReservations,
+}: RepositoryLeaseParams): Promise<WriterLeaseOutcome> => {
+  const holder = `mount:${mountKey}`;
+  const resources = [repositoryWriterResource({ repoRoot })];
+  if (ownedReservations.length === 0) {
+    return acquireWriterLeaseWaiting({ holder, resources });
+  }
+  const owned = await acquireOwnedWriterLease({ holder, resources, owners: ownedReservations });
+  switch (owned.outcome) {
+    case 'granted': {
+      return { outcome: 'granted', token: owned.token };
+    }
+    case 'denied': {
+      return owned;
+    }
+    case 'refused': {
+      throw new Error(`the owned mount operation was refused: ${owned.reason}`);
+    }
+    default: {
+      const exhaustive: never = owned;
+      return exhaustive;
+    }
+  }
 };
 
 const withRepositoryWriterLease = async <T>({
   repoRoot,
   mountKey,
+  ownedReservations = [],
   run,
 }: RepoLockParams<T>): Promise<T> => {
-  const lease = await acquireWriterLeaseWaiting({
-    holder: `mount:${mountKey}`,
-    resources: [repositoryWriterResource({ repoRoot })],
-  });
+  const lease = await acquireRepositoryLease({ repoRoot, mountKey, ownedReservations });
   switch (lease.outcome) {
     case 'denied': {
       throw new Error(
@@ -68,6 +104,7 @@ const withRepositoryWriterLease = async <T>({
 export const withRepositoryAndMountLock = async <T>({
   repoRoot,
   mountKey,
+  ownedReservations,
   run,
 }: RepoLockParams<T>): Promise<T> =>
   withMountLock({
@@ -75,6 +112,12 @@ export const withRepositoryAndMountLock = async <T>({
     run: () =>
       withMountLock({
         key: `mount:${mountKey}`,
-        run: () => withRepositoryWriterLease({ repoRoot, mountKey, run }),
+        run: () =>
+          withRepositoryWriterLease({
+            repoRoot,
+            mountKey,
+            run,
+            ...(ownedReservations !== undefined && { ownedReservations }),
+          }),
       }),
   });

@@ -7,6 +7,7 @@ import type {
 } from '@goodboy/types';
 import {
   normalizeClusterGraph,
+  parseClusterWriteScope,
   resolvePlanClusterRole,
   unsupportedClusterRoleReason,
 } from '../clusters';
@@ -81,6 +82,10 @@ const toCluster = (
       reason: unsupportedClusterRoleReason({ label, declared: role.declared }),
     };
   }
+  const writeScope = parseClusterWriteScope({ value: value['writeScope'], label });
+  if (writeScope.kind === 'invalid') {
+    return { kind: 'invalid', reason: writeScope.reason };
+  }
   return {
     kind: 'valid',
     cluster: {
@@ -90,6 +95,7 @@ const toCluster = (
       ...(value['role'] !== undefined && { role: role.role }),
       ...(dependsOn !== undefined && { dependsOn }),
       ...(expectedOutput.length > 0 && { expectedOutput }),
+      ...(writeScope.kind === 'valid' && { writeScope: writeScope.scope }),
     },
   };
 };

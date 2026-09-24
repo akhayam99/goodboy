@@ -7,6 +7,7 @@ import {
   invokeClusterCompletionHolds,
   invokeClusterExecutionGraphs,
 } from '../../../features/workflows/workflows';
+import { loadClusterAttemptLedgers } from '../cluster-attempts/loadClusterAttemptLedgers';
 import type { SetFn } from './types';
 
 const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIES).filter(
@@ -15,12 +16,13 @@ const PROVIDER_IDS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIE
 
 export const loadPhaseRunsForSession = (set: SetFn) => {
   return async (sessionId: SessionId) => {
-    const [runs, holds, graphs, obligations, grants] = await Promise.all([
+    const [runs, holds, graphs, obligations, grants, ledgers] = await Promise.all([
       invokeAgentList(sessionId),
       invokeClusterCompletionHolds({ sessionId }),
       invokeClusterExecutionGraphs({ sessionId }),
       invokeCapabilityObligations({ sessionId }),
       invokeCapabilityGrants({ sessionId }),
+      loadClusterAttemptLedgers({ sessionIds: [sessionId] }),
     ]);
     set((state) => {
       const modelOverrides = { ...state.agentModelOverride };
@@ -44,6 +46,14 @@ export const loadPhaseRunsForSession = (set: SetFn) => {
         capabilityObligations: { ...state.capabilityObligations, [sessionId]: obligations },
         capabilityGrants: { ...state.capabilityGrants, [sessionId]: grants },
         clusterExecutionGraphs: { ...state.clusterExecutionGraphs, [sessionId]: graphs },
+        clusterAttempts: {
+          ...state.clusterAttempts,
+          [sessionId]: ledgers.clusterAttempts[sessionId] ?? [],
+        },
+        clusterExecutionEligibility: {
+          ...state.clusterExecutionEligibility,
+          [sessionId]: ledgers.clusterExecutionEligibility[sessionId] ?? [],
+        },
         agentModelOverride: modelOverrides,
         agentProviderOverride: providerOverrides,
         agentEffortOverride: effortOverrides,

@@ -119,3 +119,44 @@ export type DiffView =
   | { readonly kind: 'working'; readonly scope: WorktreeDiffScope }
   | { readonly kind: 'commit'; readonly sha: string }
   | { readonly kind: 'branch' };
+
+export type CheckoutCleanliness =
+  | Readonly<{ kind: 'clean'; headSha: string }>
+  | Readonly<{
+      kind: 'dirty';
+      headSha: string;
+      staged: number;
+      unstaged: number;
+      unmerged: number;
+      untracked: number;
+    }>
+  | Readonly<{ kind: 'unknown'; reason: string }>;
+
+export type CheckoutBaseline = Readonly<{
+  headSha: string;
+  treeSha: string;
+  statusDigest: string;
+}>;
+
+export type CheckoutPreparationOutcome =
+  'succeeded' | 'failed' | 'source-changed' | 'shared-dependencies';
+
+export const CHECKOUT_PREPARATION_OUTCOMES = [
+  'succeeded',
+  'failed',
+  'source-changed',
+  'shared-dependencies',
+] as const satisfies ReadonlyArray<CheckoutPreparationOutcome>;
+
+export type CheckoutPreparation = Readonly<{
+  outcome: CheckoutPreparationOutcome;
+  exitCode: number | null;
+  output: string;
+  baseline: CheckoutBaseline | null;
+  reason: string | null;
+}>;
+
+export type WriteScopeViolation = Readonly<{
+  path: string;
+  reason: string;
+}>;

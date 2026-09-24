@@ -297,6 +297,7 @@ export const adoptGraphRevision = ({
       role: node.role,
       dependsOn: remap({ dependencies: node.dependsOn }),
       ...(node.expectedOutput !== null && { expectedOutput: node.expectedOutput }),
+      ...(node.writeScope !== undefined && { writeScope: node.writeScope }),
     });
   }
   for (const id of retainedIds) {
@@ -314,6 +315,7 @@ export const adoptGraphRevision = ({
       role: node.role,
       dependsOn: remap({ dependencies: node.dependsOn }),
       ...(node.expectedOutput !== null && { expectedOutput: node.expectedOutput }),
+      ...(node.writeScope !== undefined && { writeScope: node.writeScope }),
     });
   }
   for (const entry of validation.entries) {

@@ -14,6 +14,8 @@ pub enum WriterLeaseError {
     Sqlite(#[from] rusqlite::Error),
     #[error("writer lease mutex poisoned")]
     Poisoned,
+    #[error("writer lease refused: {0}")]
+    Refused(String),
 }
 
 impl WriterLeaseError {
@@ -21,6 +23,7 @@ impl WriterLeaseError {
         match self {
             WriterLeaseError::Sqlite(_) => "sqlite",
             WriterLeaseError::Poisoned => "poisoned",
+            WriterLeaseError::Refused(_) => "refused",
         }
     }
 }
@@ -29,6 +32,8 @@ crate::util::impl_error_serialize!(WriterLeaseError);
 
 pub const REPOSITORY_PREFIX: &str = "repo:";
 pub const WORKTREE_PREFIX: &str = "tree:";
+pub const PROCESS_OWNER: &str = "process";
+pub const APPLICATION_OWNER: &str = "application";
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,6 +55,13 @@ pub struct UnknownWriterLease {
     pub run_id: Option<String>,
     pub resources: Vec<String>,
     pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OwnedReservation {
+    pub lease_id: String,
+    pub token: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -236,6 +248,279 @@ struct HeldResource {
     resource: String,
 }
 
+fn held_resources(
+    transaction: &rusqlite::Transaction<'_>,
+) -> Result<Vec<HeldResource>, WriterLeaseError> {
+    let mut statement = transaction.prepare(
+        "SELECT lease.id, lease.holder, lease.state, resource.resource
+           FROM writer_leases lease
+           JOIN writer_lease_resources resource ON resource.lease_id = lease.id
+          WHERE lease.state IN ('active','unknown')",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(HeldResource {
+            lease_id: row.get(0)?,
+            holder: row.get(1)?,
+            state: row.get(2)?,
+            resource: row.get(3)?,
+        })
+    })?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+fn first_conflict<'a>(
+    held: &'a [HeldResource],
+    resources: &[String],
+    excluded_leases: &[String],
+) -> Option<&'a HeldResource> {
+    held.iter().find(|entry| {
+        !excluded_leases.contains(&entry.lease_id)
+            && resources
+                .iter()
+                .any(|wanted| resources_conflict(wanted, &entry.resource))
+    })
+}
+
+fn blocking(entry: &HeldResource) -> BlockingLease {
+    BlockingLease {
+        holder: entry.holder.clone(),
+        state: entry.state.clone(),
+        resource: entry.resource.clone(),
+    }
+}
+
+fn granted(id: String, holder: &str, token: String) -> WriterLeaseGrant {
+    WriterLeaseGrant {
+        id: Some(id),
+        holder: holder.to_string(),
+        token: Some(token),
+        is_granted: true,
+        blocked_by: None,
+        blocked_state: None,
+        blocked_resource: None,
+    }
+}
+
+fn insert_lease(
+    transaction: &rusqlite::Transaction<'_>,
+    holder: &str,
+    resources: &[String],
+    run_id: Option<&str>,
+    owner_kind: &str,
+) -> Result<(String, String), WriterLeaseError> {
+    let id = uuid_like();
+    let token = uuid_like();
+    let now = crate::util::now_ms();
+    transaction.execute(
+        "INSERT INTO writer_leases
+         (id, holder, token, state, owner_process_id, process_id, run_id, created_at, updated_at,
+          owner_kind)
+         VALUES (?1, ?2, ?3, 'active', ?4, NULL, ?5, ?6, ?6, ?7)",
+        params![
+            id,
+            holder,
+            token,
+            std::process::id(),
+            run_id,
+            now,
+            owner_kind
+        ],
+    )?;
+    for resource in resources {
+        transaction.execute(
+            "INSERT OR IGNORE INTO writer_lease_resources (lease_id, resource) VALUES (?1, ?2)",
+            params![id, resource],
+        )?;
+    }
+    Ok((id, token))
+}
+
+fn sorted(resources: &[String]) -> Vec<String> {
+    let mut values: Vec<String> = resources.to_vec();
+    values.sort();
+    values.dedup();
+    values
+}
+
+pub fn acquire_application(
+    db: &Db,
+    holder: &str,
+    resources: &[String],
+) -> Result<WriterLeaseGrant, WriterLeaseError> {
+    if resources.is_empty() {
+        return Err(WriterLeaseError::Refused(
+            "an application reservation needs at least one resource".to_string(),
+        ));
+    }
+    reconcile(db)?;
+    let mut conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let held = held_resources(&transaction)?;
+    let existing = transaction
+        .query_row(
+            "SELECT id, token, owner_kind FROM writer_leases
+              WHERE holder = ?1 AND state = 'active'",
+            params![holder],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            },
+        )
+        .optional()?;
+    if let Some((lease_id, token, owner_kind)) = existing {
+        let owned: Vec<String> = held
+            .iter()
+            .filter(|entry| entry.lease_id == lease_id)
+            .map(|entry| entry.resource.clone())
+            .collect();
+        transaction.commit()?;
+        if owner_kind != APPLICATION_OWNER || sorted(&owned) != sorted(resources) {
+            return Err(WriterLeaseError::Refused(format!(
+                "{holder} already holds a different reservation"
+            )));
+        }
+        return Ok(granted(lease_id, holder, token));
+    }
+    if let Some(entry) = first_conflict(&held, resources, &[]) {
+        let blocked = blocking(entry);
+        transaction.commit()?;
+        return Ok(denied(holder, &blocked));
+    }
+    let (id, token) = insert_lease(&transaction, holder, resources, None, APPLICATION_OWNER)?;
+    transaction.commit()?;
+    Ok(granted(id, holder, token))
+}
+
+fn authenticate_owner(
+    transaction: &rusqlite::Transaction<'_>,
+    owner: &OwnedReservation,
+) -> Result<String, WriterLeaseError> {
+    let found = transaction
+        .query_row(
+            "SELECT holder, token, state, owner_kind FROM writer_leases WHERE id = ?1",
+            params![owner.lease_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                ))
+            },
+        )
+        .optional()?;
+    let Some((holder, token, state, owner_kind)) = found else {
+        return Err(WriterLeaseError::Refused(format!(
+            "reservation {} does not exist",
+            owner.lease_id
+        )));
+    };
+    if token != owner.token || state != "active" || owner_kind != APPLICATION_OWNER {
+        return Err(WriterLeaseError::Refused(format!(
+            "reservation {} is not an active application reservation of this caller",
+            owner.lease_id
+        )));
+    }
+    let bound: i64 = transaction.query_row(
+        "SELECT COUNT(*) FROM cluster_attempts
+          WHERE lease_id = ?1 AND state IN ('allocated','prepared')",
+        params![owner.lease_id],
+        |row| row.get(0),
+    )?;
+    if bound == 0 {
+        return Err(WriterLeaseError::Refused(format!(
+            "reservation {} is not bound to a live attempt",
+            owner.lease_id
+        )));
+    }
+    Ok(holder)
+}
+
+fn same_path(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+    match (std::fs::canonicalize(left), std::fs::canonicalize(right)) {
+        (Ok(one), Ok(other)) => one == other,
+        _ => false,
+    }
+}
+
+pub fn application_reservation_holder(
+    db: &Db,
+    worktree_path: &str,
+) -> Result<Option<String>, WriterLeaseError> {
+    let conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
+    let mut statement = conn.prepare(
+        "SELECT lease.holder, resource.resource
+           FROM writer_leases lease
+           JOIN writer_lease_resources resource ON resource.lease_id = lease.id
+          WHERE lease.state = 'active' AND lease.owner_kind = 'application'",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
+    for row in rows {
+        let (holder, resource) = row?;
+        let Some(reserved) = resource
+            .strip_prefix(WORKTREE_PREFIX)
+            .and_then(|rest| rest.split_once('|'))
+            .map(|(_, path)| path.to_string())
+        else {
+            continue;
+        };
+        if same_path(&reserved, worktree_path) {
+            return Ok(Some(holder));
+        }
+    }
+    Ok(None)
+}
+
+pub fn acquire_owned_operation(
+    db: &Db,
+    holder: &str,
+    resources: &[String],
+    owners: &[OwnedReservation],
+    run_id: Option<&str>,
+) -> Result<WriterLeaseGrant, WriterLeaseError> {
+    if owners.is_empty() {
+        return Err(WriterLeaseError::Refused(
+            "an owned operation must present its reservation".to_string(),
+        ));
+    }
+    reconcile(db)?;
+    let mut conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
+    let transaction = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let mut owner_holders: Vec<String> = Vec::new();
+    for owner in owners {
+        owner_holders.push(authenticate_owner(&transaction, owner)?);
+    }
+    let held = held_resources(&transaction)?;
+    let holder_leases: i64 = transaction.query_row(
+        "SELECT COUNT(*) FROM writer_leases WHERE holder = ?1 AND state IN ('active','unknown')",
+        params![holder],
+        |row| row.get(0),
+    )?;
+    let holds_already = owner_holders.iter().any(|owner| owner == holder) || holder_leases > 0;
+    if holds_already {
+        return Err(WriterLeaseError::Refused(format!(
+            "{holder} already holds a lease; an owned operation takes a grant of its own"
+        )));
+    }
+    let excluded: Vec<String> = owners.iter().map(|owner| owner.lease_id.clone()).collect();
+    if let Some(entry) = first_conflict(&held, resources, &excluded) {
+        let blocked = blocking(entry);
+        transaction.commit()?;
+        return Ok(denied(holder, &blocked));
+    }
+    let (id, token) = insert_lease(&transaction, holder, resources, run_id, PROCESS_OWNER)?;
+    transaction.commit()?;
+    Ok(granted(id, holder, token))
+}
+
 pub fn acquire(
     db: &Db,
     holder: &str,
@@ -264,11 +549,16 @@ pub fn acquire(
     };
     let existing = held.iter().find(|entry| entry.holder == holder);
     if let Some(entry) = existing {
-        let token: String = transaction.query_row(
-            "SELECT token FROM writer_leases WHERE id = ?1",
+        let (token, owner_kind): (String, String) = transaction.query_row(
+            "SELECT token, owner_kind FROM writer_leases WHERE id = ?1",
             params![entry.lease_id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
+        if owner_kind != PROCESS_OWNER {
+            let blocked = blocking(entry);
+            transaction.commit()?;
+            return Ok(denied(holder, &blocked));
+        }
         let lease_id = entry.lease_id.clone();
         transaction.commit()?;
         return Ok(WriterLeaseGrant {
@@ -550,7 +840,8 @@ pub fn reconcile(db: &Db) -> Result<(), WriterLeaseError> {
     let conn = db.0.lock().map_err(|_| WriterLeaseError::Poisoned)?;
     let stale = {
         let mut statement = conn.prepare(
-            "SELECT id, owner_process_id, process_id FROM writer_leases WHERE state = 'active'",
+            "SELECT id, owner_process_id, process_id FROM writer_leases
+              WHERE state = 'active' AND owner_kind = 'process'",
         )?;
         let rows = statement.query_map([], |row| {
             Ok((
@@ -794,6 +1085,32 @@ pub async fn writer_lease_acquire_waiting(
 }
 
 #[tauri::command]
+pub fn writer_lease_acquire_application(
+    database: tauri::State<'_, Db>,
+    holder: String,
+    resources: Vec<String>,
+) -> Result<WriterLeaseGrant, WriterLeaseError> {
+    acquire_application(database.inner(), &holder, &resources)
+}
+
+#[tauri::command]
+pub fn writer_lease_acquire_owned(
+    database: tauri::State<'_, Db>,
+    holder: String,
+    resources: Vec<String>,
+    owners: Vec<OwnedReservation>,
+    run_id: Option<String>,
+) -> Result<WriterLeaseGrant, WriterLeaseError> {
+    acquire_owned_operation(
+        database.inner(),
+        &holder,
+        &resources,
+        &owners,
+        run_id.as_deref(),
+    )
+}
+
+#[tauri::command]
 pub fn writer_lease_release(
     database: tauri::State<'_, Db>,
     token: String,
@@ -840,12 +1157,18 @@ mod tests {
                updated_at INTEGER NOT NULL,
                released_at INTEGER,
                released_by TEXT,
-               release_evidence TEXT
+               release_evidence TEXT,
+               owner_kind TEXT NOT NULL DEFAULT 'process'
              );
              CREATE TABLE writer_lease_resources (
                lease_id TEXT NOT NULL,
                resource TEXT NOT NULL,
                PRIMARY KEY (lease_id, resource)
+             );
+             CREATE TABLE cluster_attempts (
+               id TEXT PRIMARY KEY,
+               lease_id TEXT,
+               state TEXT NOT NULL
              );",
         )
         .expect("schema");
@@ -1241,11 +1564,8 @@ mod tests {
         acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
         let lease_id: String = {
             let conn = db.0.lock().expect("lock");
-            conn.execute(
-                "UPDATE writer_leases SET state = 'unknown'",
-                params![],
-            )
-            .expect("simulate a stale unknown row");
+            conn.execute("UPDATE writer_leases SET state = 'unknown'", params![])
+                .expect("simulate a stale unknown row");
             conn.query_row("SELECT id FROM writer_leases", params![], |row| row.get(0))
                 .expect("id")
         };
@@ -1280,8 +1600,7 @@ mod tests {
         let granted = acquire(&db, "agent-1", &resources, Some("run-1")).expect("granted");
         let lease_id = granted.id.clone().expect("id");
 
-        let refused =
-            release_unknown(&db, &lease_id, "the user", "looks stuck").expect("refusal");
+        let refused = release_unknown(&db, &lease_id, "the user", "looks stuck").expect("refusal");
 
         assert_eq!(
             refused,
@@ -1622,5 +1941,245 @@ mod tests {
             Duration::from_secs(30 * 60)
         );
         assert_eq!(WAIT_CEILING_MS, 30 * 60 * 1000);
+    }
+
+    const ATTEMPT_TREE: &str = "/repos/app/.goodboy/worktrees/attempt-1";
+
+    fn attempt_tree() -> Vec<String> {
+        vec![worktree_resource("/repos/app", ATTEMPT_TREE)]
+    }
+
+    fn bind_attempt(db: &Db, lease_id: &str, state: &str) {
+        let conn = db.0.lock().expect("lock");
+        conn.execute(
+            "INSERT INTO cluster_attempts (id, lease_id, state) VALUES (?1, ?2, ?3)",
+            params![format!("attempt-for-{lease_id}"), lease_id, state],
+        )
+        .expect("attempt row");
+    }
+
+    fn owned_reservation(db: &Db) -> OwnedReservation {
+        let grant = acquire_application(db, "attempt:attempt-1", &attempt_tree()).expect("owned");
+        assert!(grant.is_granted);
+        let lease_id = grant.id.expect("lease id");
+        bind_attempt(db, &lease_id, "prepared");
+        OwnedReservation {
+            lease_id,
+            token: grant.token.expect("token"),
+        }
+    }
+
+    #[test]
+    fn an_application_reservation_is_idempotent_for_its_holder() {
+        let db = test_db();
+        let first = acquire_application(&db, "attempt:attempt-1", &attempt_tree()).expect("first");
+        let again = acquire_application(&db, "attempt:attempt-1", &attempt_tree()).expect("again");
+        assert_eq!(first.id, again.id);
+        assert_eq!(first.token, again.token);
+        let widened = acquire_application(
+            &db,
+            "attempt:attempt-1",
+            &[
+                worktree_resource("/repos/app", ATTEMPT_TREE),
+                worktree_resource("/repos/app", "/repos/app/other"),
+            ],
+        );
+        assert!(matches!(widened, Err(WriterLeaseError::Refused(_))));
+    }
+
+    #[test]
+    fn an_application_reservation_survives_the_death_of_the_process_that_took_it() {
+        let db = test_db();
+        acquire_application(&db, "attempt:attempt-1", &attempt_tree()).expect("owned");
+        {
+            let conn = db.0.lock().expect("lock");
+            conn.execute(
+                "UPDATE writer_leases SET owner_process_id = 999998",
+                params![],
+            )
+            .expect("simulate restart");
+        }
+        reconcile(&db).expect("reconcile");
+        let turn = acquire(&db, "agent-1", &attempt_tree(), Some("run-1")).expect("turn");
+        assert!(!turn.is_granted);
+        assert_eq!(turn.blocked_by.as_deref(), Some("attempt:attempt-1"));
+        assert!(unknown_leases(&db).expect("unknown").is_empty());
+    }
+
+    #[test]
+    fn a_turn_cannot_borrow_an_application_reservation_through_its_holder_name() {
+        let db = test_db();
+        acquire_application(&db, "attempt:attempt-1", &attempt_tree()).expect("owned");
+        let borrowed = acquire(&db, "attempt:attempt-1", &attempt_tree(), None).expect("turn");
+        assert!(!borrowed.is_granted);
+        assert!(borrowed.token.is_none());
+    }
+
+    #[test]
+    fn a_repository_mutation_on_an_owned_mount_is_blocked_by_its_own_reservation_without_the_owned_path(
+    ) {
+        let db = test_db();
+        owned_reservation(&db);
+        let plain = acquire(
+            &db,
+            "op:attempt-1",
+            &[repository_resource("/repos/app")],
+            None,
+        )
+        .expect("plain");
+        assert!(!plain.is_granted);
+        assert_eq!(plain.blocked_by.as_deref(), Some("attempt:attempt-1"));
+    }
+
+    #[test]
+    fn an_owned_operation_takes_the_repository_while_keeping_its_tree_reservation() {
+        let db = test_db();
+        let owner = owned_reservation(&db);
+        let operation = acquire_owned_operation(
+            &db,
+            "op:attempt-1",
+            &[repository_resource("/repos/app")],
+            std::slice::from_ref(&owner),
+            None,
+        )
+        .expect("owned operation");
+        assert!(operation.is_granted);
+        assert_ne!(operation.id.as_deref(), Some(owner.lease_id.as_str()));
+        let turn = acquire(&db, "agent-1", &attempt_tree(), Some("run-1")).expect("turn");
+        assert!(!turn.is_granted, "the tree reservation is still held");
+        assert!(release(&db, &operation.token.expect("token")).expect("release"));
+        let still = acquire(&db, "agent-2", &attempt_tree(), Some("run-2")).expect("turn");
+        assert_eq!(still.blocked_by.as_deref(), Some("attempt:attempt-1"));
+    }
+
+    #[test]
+    fn an_owned_operation_still_conflicts_with_a_foreign_holder() {
+        let db = test_db();
+        let owner = owned_reservation(&db);
+        let foreign = vec![worktree_resource("/repos/app", "/repos/app/.worktrees/two")];
+        assert!(
+            acquire(&db, "agent-foreign", &foreign, Some("run-9"))
+                .expect("foreign")
+                .is_granted
+        );
+        let operation = acquire_owned_operation(
+            &db,
+            "op:attempt-1",
+            &[repository_resource("/repos/app")],
+            &[owner],
+            None,
+        )
+        .expect("owned operation");
+        assert!(!operation.is_granted);
+        assert_eq!(operation.blocked_by.as_deref(), Some("agent-foreign"));
+    }
+
+    #[test]
+    fn an_owned_operation_refuses_forged_unbound_or_reused_ownership() {
+        let db = test_db();
+        let owner = owned_reservation(&db);
+        let forged = acquire_owned_operation(
+            &db,
+            "op:forged",
+            &[repository_resource("/repos/app")],
+            &[OwnedReservation {
+                lease_id: owner.lease_id.clone(),
+                token: "not-the-token".to_string(),
+            }],
+            None,
+        );
+        assert!(matches!(forged, Err(WriterLeaseError::Refused(_))));
+        let unbound = acquire_application(
+            &db,
+            "attempt:attempt-2",
+            &[worktree_resource(
+                "/repos/app",
+                "/repos/app/.goodboy/worktrees/attempt-2",
+            )],
+        )
+        .expect("unbound");
+        let refused = acquire_owned_operation(
+            &db,
+            "op:unbound",
+            &[repository_resource("/repos/app")],
+            &[OwnedReservation {
+                lease_id: unbound.id.expect("id"),
+                token: unbound.token.expect("token"),
+            }],
+            None,
+        );
+        assert!(matches!(refused, Err(WriterLeaseError::Refused(_))));
+        let turn_lease = acquire(&db, "agent-7", &[], None).expect("turn");
+        assert!(turn_lease.is_granted);
+        let reused = acquire_owned_operation(
+            &db,
+            "agent-7",
+            &[repository_resource("/repos/app")],
+            std::slice::from_ref(&owner),
+            None,
+        );
+        assert!(matches!(reused, Err(WriterLeaseError::Refused(_))));
+        let as_owner = acquire_owned_operation(
+            &db,
+            "attempt:attempt-1",
+            &[repository_resource("/repos/app")],
+            &[owner],
+            None,
+        );
+        assert!(matches!(as_owner, Err(WriterLeaseError::Refused(_))));
+        assert!(matches!(
+            acquire_owned_operation(
+                &db,
+                "op:none",
+                &[repository_resource("/repos/app")],
+                &[],
+                None
+            ),
+            Err(WriterLeaseError::Refused(_))
+        ));
+    }
+
+    #[test]
+    fn ordinary_turns_in_other_trees_keep_running_beside_an_owned_attempt() {
+        let db = test_db();
+        owned_reservation(&db);
+        let other_tree = exposure_of("claude", "default", false, "/repos/app/.worktrees/one", &[]);
+        let other_repo = vec![worktree_resource("/repos/other", "/repos/other")];
+        assert!(
+            acquire(&db, "run-1", &other_tree, Some("run-1"))
+                .expect("same repository, other tree")
+                .is_granted
+        );
+        assert!(
+            acquire(&db, "run-2", &other_repo, Some("run-2"))
+                .expect("other repository")
+                .is_granted
+        );
+    }
+
+    #[test]
+    fn a_reserved_checkout_is_found_by_its_path_and_released_ones_are_not() {
+        let db = test_db();
+        owned_reservation(&db);
+        assert_eq!(
+            application_reservation_holder(&db, ATTEMPT_TREE).expect("lookup"),
+            Some("attempt:attempt-1".to_string())
+        );
+        assert_eq!(
+            application_reservation_holder(&db, "/repos/app/.worktrees/one").expect("lookup"),
+            None
+        );
+        acquire(
+            &db,
+            "agent-1",
+            &[worktree_resource("/repos/app", "/repos/app/.worktrees/one")],
+            None,
+        )
+        .expect("turn");
+        assert_eq!(
+            application_reservation_holder(&db, "/repos/app/.worktrees/one").expect("lookup"),
+            None,
+            "an ordinary turn lease is not an application reservation"
+        );
     }
 }

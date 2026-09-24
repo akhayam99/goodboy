@@ -59,6 +59,9 @@ const respondWith = ({
   readonly grants?: ReadonlyArray<unknown>;
 }) => {
   invokeSpy.mockImplementation(async (command: string) => {
+    if (command === 'db_select') {
+      return [];
+    }
     if (command === 'cluster_completion_holds_for_session') {
       return holds;
     }

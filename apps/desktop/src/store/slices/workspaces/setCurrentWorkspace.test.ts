@@ -41,6 +41,8 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@goodboy/db', () => ({
   listAgentsForSessions: vi.fn(async () => new Map()),
+  listClusterAttemptsForSessions: vi.fn(async () => new Map()),
+  listClusterExecutionEligibilityForSessions: vi.fn(async () => new Map()),
   listExternalTasksForWorkspace: vi.fn(async () => []),
   listProjectsForWorkspace: vi.fn(async () => h.projects),
   listSessionsForWorkspace: vi.fn(async () => h.sessions),

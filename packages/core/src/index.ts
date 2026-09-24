@@ -2,8 +2,13 @@ export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from
 
 export {
   adoptGraphRevision,
+  evaluateClusterExecutionEligibility,
+  hasClusterExecutionContract,
   normalizeClusterGraph,
+  parseClusterWriteScope,
   selectReadyClusterNode,
+  type ClusterExecutionEligibilityVerdict,
+  type ClusterWriteScopeResult,
   type ClusterAdoptionParams,
   type ClusterAdoptionProgress,
   type ClusterAdoptionResult,

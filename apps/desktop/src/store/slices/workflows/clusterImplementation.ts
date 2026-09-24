@@ -16,6 +16,7 @@ import type {
 import {
   extractClusterDone,
   extractClusterOutcome,
+  hasClusterExecutionContract,
   normalizeClusterGraph,
   presentationKeyForRole,
   selectReadyClusterNode,
@@ -34,6 +35,8 @@ import {
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
 import { composeClusterOutcomeBoundary, composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { reserveGeneration } from '../agents/reserveGeneration';
+import { findWriteScopeEscape } from '../cluster-attempts/findWriteScopeEscape';
+import { resolveClusterSessionTarget } from '../cluster-attempts/resolveClusterSessionTarget';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { clusterSourceProgress, isCompletedAmong } from './clusterSourceProgress';
 import { revalidateChildRouting } from './revalidateChildRouting';
@@ -468,6 +471,25 @@ export const fanOutClusters = async (
     });
     return;
   }
+  const isScoped = hasClusterExecutionContract({ nodes: normalized.graph.nodes });
+  const scopeTarget = isScoped ? resolveClusterSessionTarget({ state: get(), sessionId }) : null;
+  const scopeEscape =
+    scopeTarget === null
+      ? null
+      : await findWriteScopeEscape({
+          graph: normalized.graph,
+          repoPath: scopeTarget.mount.worktreePath,
+        });
+  if (scopeEscape !== null) {
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Cluster ${container.name} is blocked`,
+      body: `the plan clusters are not a valid graph: ${scopeEscape}`,
+      sessionId,
+    });
+    return;
+  }
   const nodes = orderedNodes({ graph: normalized.graph });
 
   const batch = childRoutingBatch({
@@ -604,6 +626,12 @@ export const fanOutClusters = async (
       agentEffortOverride,
     };
   });
+
+  if (isScoped) {
+    void get()
+      .evaluateClusterExecutionEligibility({ sessionId, containerAgentId: container.id })
+      .catch(() => null);
+  }
 
   const execution: ClusterExecution = {
     goalTitle,

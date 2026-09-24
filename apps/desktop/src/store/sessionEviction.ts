@@ -40,6 +40,8 @@ export const SESSION_EVICTION = [
   { key: 'capabilityGrants', keyedBy: 'session', evictOn: 'archive' },
   { key: 'clusterCompletionHolds', keyedBy: 'session', evictOn: 'archive' },
   { key: 'clusterExecutionGraphs', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'clusterAttempts', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'clusterExecutionEligibility', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGithub', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },

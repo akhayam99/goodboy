@@ -7,6 +7,8 @@ import type {
   WorktreeInspection,
 } from '@goodboy/types';
 
+import type { OwnedReservation } from '../../../features/worktree/writerLease';
+
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type EnsureProjectMountedInput = {
@@ -33,6 +35,8 @@ export type ForkMountInput = {
   readonly requestId?: string;
   readonly branch?: string;
   readonly baseBranch?: string;
+  readonly exactBaseSha?: string;
+  readonly ownedReservations?: ReadonlyArray<OwnedReservation>;
   readonly mountName?: string;
   readonly adoptExistingBranch?: boolean;
 };

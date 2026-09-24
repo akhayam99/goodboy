@@ -16,6 +16,7 @@ import {
   reconnectProject,
   updateProjectKind,
   updateProjectBaseBranch,
+  updateProjectSetup,
 } from './project';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -131,6 +132,51 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBe('develop');
     await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: null });
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
+  });
+
+  it('keeps the setup command unset until the owner configures one', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+
+    expect((await getProjectById({ db, id: project.id }))?.setup).toBeUndefined();
+  });
+
+  it('bumps the setup revision on every change and keeps an explicit no-op apart from unset', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+
+    const command = await updateProjectSetup({
+      db,
+      projectId: project.id,
+      setup: {
+        kind: 'command',
+        command: '  CI=1 pnpm install --frozen-lockfile --ignore-scripts ',
+      },
+    });
+    const none = await updateProjectSetup({ db, projectId: project.id, setup: { kind: 'none' } });
+    const unset = await updateProjectSetup({ db, projectId: project.id, setup: { kind: 'unset' } });
+
+    expect(command).toMatchObject({
+      kind: 'command',
+      command: 'CI=1 pnpm install --frozen-lockfile --ignore-scripts',
+      revision: 1,
+    });
+    expect(none).toMatchObject({ kind: 'none', revision: 2 });
+    expect(unset).toBeNull();
+    expect((await getProjectById({ db, id: project.id }))?.setup).toBeUndefined();
+  });
+
+  it('refuses an empty setup command instead of treating it as success', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+
+    await expect(
+      updateProjectSetup({ db, projectId: project.id, setup: { kind: 'command', command: '   ' } }),
+    ).rejects.toThrow(/cannot be empty/);
+    expect((await getProjectById({ db, id: project.id }))?.setup).toBeUndefined();
   });
 
   it('disconnects and reconnects a project', async () => {

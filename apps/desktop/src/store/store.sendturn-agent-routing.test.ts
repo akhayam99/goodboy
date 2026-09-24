@@ -175,6 +175,8 @@ vi.mock('@goodboy/db', async () => {
     listWorktreesForSession: listWorktreesForSessionSpy,
     getAgentById: getAgentByIdSpy,
     listAgentsForSessions: vi.fn(async () => new Map()),
+    listClusterAttemptsForSessions: vi.fn(async () => new Map()),
+    listClusterExecutionEligibilityForSessions: vi.fn(async () => new Map()),
     listTurnEventsForAgent: vi.fn(async () => []),
     listTurnEventsForTask: vi.fn(async () => []),
     listMessagesForAgent: vi.fn(async () => []),

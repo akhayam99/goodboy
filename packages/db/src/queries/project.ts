@@ -3,6 +3,7 @@ import type {
   OverrideSettings,
   Project,
   ProjectId,
+  ProjectSetupCommand,
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -19,29 +20,57 @@ type ProjectRow = OverrideRow & {
   readonly updated_at: number;
   readonly disconnected_at: number | null;
   readonly last_accessed_at: number | null;
+  readonly setup_mode?: string | null;
+  readonly setup_command?: string | null;
+  readonly setup_revision?: number | null;
+  readonly setup_updated_at?: number | null;
+};
+
+type SetupFromRowParams = {
+  readonly row: ProjectRow;
+};
+
+const setupFromRow = ({ row }: SetupFromRowParams): ProjectSetupCommand | null => {
+  const revision = row.setup_revision ?? 0;
+  const updatedAt = new Date(row.setup_updated_at ?? row.updated_at).toISOString() as IsoDateTime;
+  if (row.setup_mode === 'none') {
+    return { kind: 'none', revision, updatedAt };
+  }
+  if (row.setup_mode !== 'command') {
+    return null;
+  }
+  const command = (row.setup_command ?? '').trim();
+  if (command.length === 0) {
+    return null;
+  }
+  return { kind: 'command', command, revision, updatedAt };
 };
 
 type ToDomainParams = {
   readonly row: ProjectRow;
 };
 
-const toDomain = ({ row }: ToDomainParams): Project => ({
-  id: row.id as ProjectId,
-  workspaceId: row.workspace_id as WorkspaceId,
-  name: row.name,
-  rootPath: row.root_path,
-  kind: row.kind,
-  baseBranch: row.base_branch,
-  overrides: overridesFromRow({ row }),
-  createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
-  updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
-  ...(row.disconnected_at === null
-    ? {}
-    : { disconnectedAt: new Date(row.disconnected_at).toISOString() as IsoDateTime }),
-  ...(row.last_accessed_at === null
-    ? {}
-    : { lastAccessedAt: new Date(row.last_accessed_at).toISOString() as IsoDateTime }),
-});
+const toDomain = ({ row }: ToDomainParams): Project => {
+  const setup = setupFromRow({ row });
+  return {
+    id: row.id as ProjectId,
+    workspaceId: row.workspace_id as WorkspaceId,
+    name: row.name,
+    rootPath: row.root_path,
+    kind: row.kind,
+    baseBranch: row.base_branch,
+    overrides: overridesFromRow({ row }),
+    ...(setup !== null && { setup }),
+    createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
+    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
+    ...(row.disconnected_at === null
+      ? {}
+      : { disconnectedAt: new Date(row.disconnected_at).toISOString() as IsoDateTime }),
+    ...(row.last_accessed_at === null
+      ? {}
+      : { lastAccessedAt: new Date(row.last_accessed_at).toISOString() as IsoDateTime }),
+  };
+};
 
 const serializeObject = ({ value }: { readonly value: object | null }): string | null =>
   value === null || Object.keys(value).length === 0 ? null : JSON.stringify(value);
@@ -223,4 +252,73 @@ export const updateProjectBaseBranch = async ({
     Date.now(),
     projectId,
   ]);
+};
+
+export type ProjectSetupInput =
+  | Readonly<{ kind: 'command'; command: string }>
+  | Readonly<{ kind: 'none' }>
+  | Readonly<{ kind: 'unset' }>;
+
+type UpdateProjectSetupParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly setup: ProjectSetupInput;
+};
+
+type SetupColumns = Readonly<{ mode: string | null; command: string | null }>;
+
+type SetupColumnsParams = {
+  readonly setup: ProjectSetupInput;
+};
+
+const setupColumns = ({ setup }: SetupColumnsParams): SetupColumns => {
+  switch (setup.kind) {
+    case 'command': {
+      const command = setup.command.trim();
+      if (command.length === 0) {
+        throw new Error('a setup command cannot be empty; choose no setup explicitly instead');
+      }
+      return { mode: 'command', command };
+    }
+    case 'none': {
+      return { mode: 'none', command: null };
+    }
+    case 'unset': {
+      return { mode: null, command: null };
+    }
+    default: {
+      const exhaustive: never = setup;
+      return exhaustive;
+    }
+  }
+};
+
+export const updateProjectSetup = async ({
+  db,
+  projectId,
+  setup,
+}: UpdateProjectSetupParams): Promise<ProjectSetupCommand | null> => {
+  const columns = setupColumns({ setup });
+  const now = Date.now();
+  const result = await db.execute(
+    `UPDATE projects
+        SET setup_mode = ?, setup_command = ?, setup_revision = setup_revision + 1,
+            setup_updated_at = ?, updated_at = ?
+      WHERE id = ?`,
+    [columns.mode, columns.command, now, now, projectId],
+  );
+  if (result.rowsAffected === 0) {
+    throw new Error(`project not found: ${projectId}`);
+  }
+  const project = await getProjectById({ db, id: projectId });
+  return project?.setup ?? null;
+};
+
+type ProjectIdParams = {
+  readonly db: Database;
+  readonly id: ProjectId;
+};
+
+export const touchProjectLastAccessed = async ({ db, id }: ProjectIdParams): Promise<void> => {
+  await db.execute('UPDATE projects SET last_accessed_at = ? WHERE id = ?', [Date.now(), id]);
 };
