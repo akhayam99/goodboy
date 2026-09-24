@@ -32,6 +32,7 @@ const step = (key: string, role: PlanStepInput['role'] = 'implementer'): PlanSte
   provider: 'anthropic',
   model: 'claude-sonnet-5',
   effort: 'medium',
+  size: null,
 });
 
 describe('planEstimates', () => {
@@ -74,6 +75,30 @@ describe('planEstimates', () => {
     });
     expect(estimates?.total?.label).toBe('≈ 16-25m · $1.60-2.40 · + your reviews');
     expect(estimates?.total?.detail).toContain('Machine time only');
+  });
+
+  it('narrows each row to the band of the size the planner gave it', () => {
+    const estimates = planEstimates({
+      history: WARM,
+      steps: [
+        { ...step('a'), size: 'small' },
+        { ...step('b'), size: 'large' },
+      ],
+      isOrchestrated: false,
+      isReviewed: false,
+      nowMs: NOW,
+    });
+
+    expect(estimates?.steps.get('a')).toMatchObject({
+      time: { label: '6-10m' },
+      cost: '$0.60-1.00',
+      note: '6-10m · $0.60-1.00 · sized small, based on 10 finished implementer steps on Sonnet 5 medium',
+    });
+    expect(estimates?.steps.get('b')?.time.label).toBe('10-14m');
+    expect(estimates?.steps.get('b')?.time.detail).toContain(
+      'The planner sized this step large, so this is the slower half of past runs.',
+    );
+    expect(estimates?.total?.label).toBe('≈ 16-25m · $1.60-2.40');
   });
 
   it('marks a step it cannot estimate with a dash and drops the total', () => {

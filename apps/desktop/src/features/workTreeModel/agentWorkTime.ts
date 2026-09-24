@@ -1,5 +1,5 @@
 import { clampEffortForModel, estimateDuration, type EstimateKey } from '@goodboy/core';
-import type { AgentId, AgentRole, EffortLevel } from '@goodboy/types';
+import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { estimateBasis, unknownEstimateBasis } from './estimateBasis';
 import type { RowPhase } from './rowState';
 import { workEstimateOf, workTime, type WorkEstimate, type WorkTime } from './workTime';
@@ -10,13 +10,15 @@ type KeyParams = {
   readonly provider: string | null;
   readonly model: string | null;
   readonly effort: EffortLevel | null;
+  readonly size: StepSize | null;
 };
 
-export const estimateKeyOf = ({ role, provider, model, effort }: KeyParams): EstimateKey => ({
+export const estimateKeyOf = ({ role, provider, model, effort, size }: KeyParams): EstimateKey => ({
   role,
   provider,
   model,
   effort: model === null || effort === null ? effort : clampEffortForModel({ model, effort }),
+  size,
 });
 
 type EstimateParams = {

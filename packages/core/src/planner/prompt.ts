@@ -27,7 +27,8 @@ no code fences. The schema is:
       "name": "<short imperative title>",
       "role": "<${PLANNER_ROLE_VOCABULARY}>",
       "promptPrefix": "<system-style instructions for the step's agent>",
-      "expectedOutput": "<one sentence describing what the step should produce>"
+      "expectedOutput": "<one sentence describing what the step should produce>",
+      "size": "<small|medium|large>"
     },
     ...
   ]
@@ -39,6 +40,11 @@ Rules:
 - A step's promptPrefix should make sense without seeing the user's original description;
   the description will be appended automatically as the user message.
 - expectedOutput tells the post-step summarizer what to extract; be specific.
+- size is how much work the step is compared with the same kind of step elsewhere:
+  "small" for a narrow lookup or a change in one place, "medium" for a usual step,
+  "large" for work that spans many files or needs a lot of exploration. It is a
+  relative size, never a duration: do not mention minutes, hours or deadlines anywhere,
+  and never put the size in promptPrefix.
 - Pick roles from the canonical list above. Use "custom" only if none fit.
 - The role value MUST be one of the canonical English keywords above. Never translate or rename it, even when every other field is written in another language.
 - Names should be short (1-3 words), in title case.

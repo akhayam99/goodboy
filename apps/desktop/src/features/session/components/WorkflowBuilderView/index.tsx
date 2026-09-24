@@ -916,6 +916,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       provider: resolvedProvider(step),
       model: resolvedModel(step),
       effort: step.effort ?? roleEffort(step.role),
+      size: step.size,
     })),
     isOrchestrated: mode === 'dynamic',
     isReviewed: !autoRun && steps.length > 1,

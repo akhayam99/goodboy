@@ -193,6 +193,7 @@ export const LibraryStepForm = ({
                     model: modelOverride,
                     effort,
                     verbosity,
+                    size: null,
                   },
                   provider: pendingProvider.current,
                   model: m,

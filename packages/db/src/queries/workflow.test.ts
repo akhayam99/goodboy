@@ -57,6 +57,22 @@ describe('workflow queries', () => {
     expect(stored!.steps[1]!.expectedOutput).toBeUndefined();
   });
 
+  it('round-trips the planner size of a step and rejects an unknown one', async () => {
+    const workflow = buildWorkflow();
+    await upsertWorkflow(db, {
+      ...workflow,
+      steps: [{ ...workflow.steps[0]!, size: 'large' }, workflow.steps[1]!],
+    });
+
+    const stored = await getWorkflow(db, workflowId);
+
+    expect(stored!.steps[0]!.size).toBe('large');
+    expect(stored!.steps[1]!.size).toBeUndefined();
+    await expect(
+      db.execute("UPDATE steps SET size = 'huge' WHERE id = 'step-2'"),
+    ).rejects.toThrow();
+  });
+
   it('overwrites the expected output on re-save instead of keeping the stale one', async () => {
     const workflow = buildWorkflow();
     await upsertWorkflow(db, workflow);

@@ -36,6 +36,10 @@ const KEY: EstimateKey = {
   effort: 'medium',
 };
 
+type SizedParams = {
+  readonly size: EstimateKey['size'];
+};
+
 describe('unionDurationMs', () => {
   it('counts overlapping intervals once and skips gaps', () => {
     expect(
@@ -60,11 +64,39 @@ describe('estimateDuration', () => {
     expect(estimate).toMatchObject({
       tier: 'exact',
       sampleCount: 5,
-      p25Ms: 6 * MINUTE,
-      p50Ms: 8 * MINUTE,
-      p75Ms: 10 * MINUTE,
-      cost: { p25Usd: 0.5, p75Usd: 0.5 },
+      lowMs: 6 * MINUTE,
+      midMs: 8 * MINUTE,
+      highMs: 10 * MINUTE,
+      cost: { lowUsd: 0.5, highUsd: 0.5 },
     });
+  });
+
+  it('picks the band from the planner size and keeps the middle band when unsized', () => {
+    const samples = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((minutes) =>
+      sample({ minutes, costUsd: minutes / 10 }),
+    );
+    const sized = ({ size }: SizedParams) =>
+      estimateDuration({ samples, key: { ...KEY, size }, nowMs: NOW });
+
+    expect(sized({ size: null })).toMatchObject({
+      size: null,
+      lowMs: 3.5 * MINUTE,
+      highMs: 8.5 * MINUTE,
+    });
+    expect(sized({ size: 'medium' })).toMatchObject({ size: 'medium', lowMs: 3.5 * MINUTE });
+    expect(sized({ size: 'small' })).toMatchObject({
+      size: 'small',
+      lowMs: 2 * MINUTE,
+      midMs: 4 * MINUTE,
+      highMs: 6 * MINUTE,
+    });
+    expect(sized({ size: 'large' })).toMatchObject({
+      size: 'large',
+      lowMs: 6 * MINUTE,
+      midMs: 8 * MINUTE,
+      highMs: 10 * MINUTE,
+    });
+    expect(sized({ size: 'large' })?.cost?.highUsd).toBeCloseTo(1);
   });
 
   it('falls back from effort to model, then provider and role with stricter minimums', () => {
@@ -102,7 +134,7 @@ describe('estimateDuration', () => {
 
     const estimate = estimateDuration({ samples, key: KEY, nowMs: NOW });
 
-    expect(estimate?.p75Ms).toBe(10 * MINUTE);
+    expect(estimate?.highMs).toBe(10 * MINUTE);
     expect(estimate?.sampleCount).toBe(20);
   });
 
@@ -124,9 +156,9 @@ describe('sumEstimates', () => {
     });
 
     expect(sumEstimates({ estimates: [estimate, estimate] })).toEqual({
-      p25Ms: 12 * MINUTE,
-      p75Ms: 20 * MINUTE,
-      cost: { p25Usd: 1, p75Usd: 1 },
+      lowMs: 12 * MINUTE,
+      highMs: 20 * MINUTE,
+      cost: { lowUsd: 1, highUsd: 1 },
     });
     expect(sumEstimates({ estimates: [estimate, null] })).toBeNull();
     expect(sumEstimates({ estimates: [] })).toBeNull();

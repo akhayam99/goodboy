@@ -212,10 +212,11 @@ export type {
   AgentStatus,
   Step,
   StepDef,
+  StepSize,
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isWorkflowOrigin } from './workflow';
+export { WORKFLOW_ORIGINS, isStepSize, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

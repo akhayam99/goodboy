@@ -66,6 +66,10 @@ step, and the tooltip always names the basis. With **Autorun** off the total
 adds "+ your reviews", because your time between steps is not estimated. An
 orchestrated run shows a total only once the workspace has 5 finished
 orchestrated runs. The open editor repeats the step's estimate in its footer.
+Steps drafted with the planner carry the planner's size (small, medium or
+large), and the range narrows to the faster or slower half of past runs; the
+tooltip and the editor footer say so. The planner never gives minutes, and the
+agents never see the size.
 Every estimate is machine time only ([turns.md](turns.md#measured-time-and-estimates)).
 
 The page draws the plan bottom up, but the page order stays the run order:

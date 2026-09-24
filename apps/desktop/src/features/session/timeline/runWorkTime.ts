@@ -27,9 +27,9 @@ const agentsOf = ({
   entries.flatMap((entry) => [entry.agent.id, ...agentsOf({ entries: entry.children })]);
 
 type Band = {
-  readonly p25Ms: number;
-  readonly p50Ms: number;
-  readonly p75Ms: number;
+  readonly lowMs: number;
+  readonly midMs: number;
+  readonly highMs: number;
   readonly isFallback: boolean;
 };
 
@@ -60,7 +60,7 @@ const runEstimate = ({
         : familyActiveTime({ agentIds: agentsOf({ entries: [child] }), source });
     if (agent?.status === 'completed') {
       const activeMs = active?.activeMs ?? 0;
-      bands.push({ p25Ms: activeMs, p50Ms: activeMs, p75Ms: activeMs, isFallback: false });
+      bands.push({ lowMs: activeMs, midMs: activeMs, highMs: activeMs, isFallback: false });
       continue;
     }
     const kind = child?.agentKind ?? kindForRole({ role: step.role ?? 'custom' });
@@ -81,6 +81,7 @@ const runEstimate = ({
         provider: routing.provider,
         model: routing.model,
         effort: routing.effort,
+        size: step.size ?? null,
       }),
       source,
     });
@@ -89,9 +90,9 @@ const runEstimate = ({
     }
     const activeMs = active?.activeMs ?? 0;
     bands.push({
-      p25Ms: Math.max(activeMs, estimate.p25Ms),
-      p50Ms: Math.max(activeMs, estimate.p50Ms),
-      p75Ms: Math.max(activeMs, estimate.p75Ms),
+      lowMs: Math.max(activeMs, estimate.lowMs),
+      midMs: Math.max(activeMs, estimate.midMs),
+      highMs: Math.max(activeMs, estimate.highMs),
       isFallback: estimate.isFallback,
     });
   }
@@ -99,9 +100,9 @@ const runEstimate = ({
     return null;
   }
   return {
-    p25Ms: bands.reduce((total, band) => total + band.p25Ms, 0),
-    p50Ms: bands.reduce((total, band) => total + band.p50Ms, 0),
-    p75Ms: bands.reduce((total, band) => total + band.p75Ms, 0),
+    lowMs: bands.reduce((total, band) => total + band.lowMs, 0),
+    midMs: bands.reduce((total, band) => total + band.midMs, 0),
+    highMs: bands.reduce((total, band) => total + band.highMs, 0),
     isFallback: bands.some((band) => band.isFallback),
     basis: RUN_BASIS,
   };

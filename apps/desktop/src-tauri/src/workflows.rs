@@ -36,6 +36,7 @@ pub struct StepRow {
     pub routing_decision: Option<String>,
     #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
+    pub size: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -136,6 +137,7 @@ pub struct StepInput {
     pub routing_decision: Option<String>,
     #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
+    pub size: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -427,6 +429,12 @@ fn valid_task_profile(value: &serde_json::Value) -> bool {
         && string_in(profile.get("basis"), &["agent", "heuristic", "unknown"])
 }
 
+fn step_size(value: Option<&String>) -> Option<String> {
+    value
+        .filter(|size| matches!(size.as_str(), "small" | "medium" | "large"))
+        .cloned()
+}
+
 fn valid_routing_lock(value: &serde_json::Value) -> bool {
     let Some(lock) = value.as_object() else {
         return false;
@@ -537,7 +545,7 @@ fn load_steps(
     let mut stmt = conn.prepare(
         "SELECT id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                orchestrator_reason, routing_lock, routing_decision, task_profile
+                orchestrator_reason, routing_lock, routing_decision, task_profile, size
          FROM steps
          WHERE workflow_id = ?1 AND deleted_at IS NULL
          ORDER BY ordinal ASC",
@@ -560,6 +568,7 @@ fn load_steps(
             routing_lock: row.get(13)?,
             routing_decision: row.get(14)?,
             task_profile: row.get(15)?,
+            size: row.get(16)?,
         })
     })?;
     rows.collect()
@@ -796,12 +805,13 @@ pub async fn workflow_upsert(
             def.task_profile.as_ref(),
         )?;
         let def_id = def.id.clone().unwrap_or_else(crate::util::uuid_v4);
+        let size = step_size(def.size.as_ref());
         conn.execute(
             "INSERT INTO steps
                (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix,
                 expected_output, provider_override, model_override, effort, verbosity,
-                orchestrator_reason, routing_lock, routing_decision, task_profile, deleted_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, NULL)
+                orchestrator_reason, routing_lock, routing_decision, task_profile, size, deleted_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, NULL)
              ON CONFLICT(id) DO UPDATE SET
                workflow_id      = excluded.workflow_id,
                library_step_id  = excluded.library_step_id,
@@ -818,6 +828,7 @@ pub async fn workflow_upsert(
                routing_lock     = excluded.routing_lock,
                routing_decision = excluded.routing_decision,
                task_profile     = excluded.task_profile,
+               size             = excluded.size,
                deleted_at       = NULL",
             rusqlite::params![
                 def_id,
@@ -836,6 +847,7 @@ pub async fn workflow_upsert(
                 def.routing_lock,
                 def.routing_decision,
                 def.task_profile,
+                size,
             ],
         )?;
         kept_ids.push(def_id.clone());
@@ -856,6 +868,7 @@ pub async fn workflow_upsert(
             routing_lock: def.routing_lock.clone(),
             routing_decision: def.routing_decision.clone(),
             task_profile: def.task_profile.clone(),
+            size,
         });
     }
 
@@ -2032,5 +2045,14 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["c3"]
         );
+    }
+
+    #[test]
+    fn step_size_keeps_only_known_sizes() {
+        let known = "large".to_string();
+        let unknown = "huge".to_string();
+        assert_eq!(step_size(Some(&known)).as_deref(), Some("large"));
+        assert_eq!(step_size(Some(&unknown)), None);
+        assert_eq!(step_size(None), None);
     }
 }

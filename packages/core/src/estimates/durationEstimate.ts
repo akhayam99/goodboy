@@ -1,4 +1,4 @@
-import type { AgentRole } from '@goodboy/types';
+import type { AgentRole, StepSize } from '@goodboy/types';
 
 export type RunDurationSample = {
   readonly activeMs: number;
@@ -18,27 +18,29 @@ export type EstimateKey = {
   readonly provider: string | null;
   readonly model: string | null;
   readonly effort: string | null;
+  readonly size?: StepSize | null;
 };
 
 export type EstimateTier = 'exact' | 'model' | 'provider' | 'role' | 'runs';
 
 export type CostRange = {
-  readonly p25Usd: number;
-  readonly p75Usd: number;
+  readonly lowUsd: number;
+  readonly highUsd: number;
 };
 
 export type DurationEstimate = {
   readonly tier: EstimateTier;
+  readonly size: StepSize | null;
   readonly sampleCount: number;
-  readonly p25Ms: number;
-  readonly p50Ms: number;
-  readonly p75Ms: number;
+  readonly lowMs: number;
+  readonly midMs: number;
+  readonly highMs: number;
   readonly cost: CostRange | null;
 };
 
 export type EstimateTotal = {
-  readonly p25Ms: number;
-  readonly p75Ms: number;
+  readonly lowMs: number;
+  readonly highMs: number;
   readonly cost: CostRange | null;
 };
 
@@ -52,6 +54,20 @@ const ESTIMATE_MIN_SAMPLES: Record<EstimateTier, number> = {
   provider: 8,
   role: 8,
   runs: 5,
+};
+
+type Band = {
+  readonly low: number;
+  readonly mid: number;
+  readonly high: number;
+};
+
+const UNSIZED_BAND: Band = { low: 0.25, mid: 0.5, high: 0.75 };
+
+const SIZE_BANDS: Record<StepSize, Band> = {
+  small: { low: 0.1, mid: 0.3, high: 0.5 },
+  medium: UNSIZED_BAND,
+  large: { low: 0.5, mid: 0.7, high: 0.9 },
 };
 
 type QuantileParams = {
@@ -84,9 +100,10 @@ const winsorized = ({ values }: ValuesParams): ReadonlyArray<number> => {
 type TierParams = {
   readonly samples: ReadonlyArray<RunDurationSample>;
   readonly tier: EstimateTier;
+  readonly size: StepSize | null;
 };
 
-const estimateFrom = ({ samples, tier }: TierParams): DurationEstimate | null => {
+const estimateFrom = ({ samples, tier, size }: TierParams): DurationEstimate | null => {
   const minimum = ESTIMATE_MIN_SAMPLES[tier];
   if (samples.length < minimum) {
     return null;
@@ -97,18 +114,20 @@ const estimateFrom = ({ samples, tier }: TierParams): DurationEstimate | null =>
   const durations = winsorized({ values: recent.map((sample) => sample.activeMs) });
   const costs = recent.flatMap((sample) => (sample.costUsd === null ? [] : [sample.costUsd]));
   const costSorted = costs.length >= minimum ? winsorized({ values: costs }) : null;
+  const band = size === null ? UNSIZED_BAND : SIZE_BANDS[size];
   return {
     tier,
+    size,
     sampleCount: recent.length,
-    p25Ms: quantile({ sorted: durations, q: 0.25 }),
-    p50Ms: quantile({ sorted: durations, q: 0.5 }),
-    p75Ms: quantile({ sorted: durations, q: 0.75 }),
+    lowMs: quantile({ sorted: durations, q: band.low }),
+    midMs: quantile({ sorted: durations, q: band.mid }),
+    highMs: quantile({ sorted: durations, q: band.high }),
     cost:
       costSorted === null
         ? null
         : {
-            p25Usd: quantile({ sorted: costSorted, q: 0.25 }),
-            p75Usd: quantile({ sorted: costSorted, q: 0.75 }),
+            lowUsd: quantile({ sorted: costSorted, q: band.low }),
+            highUsd: quantile({ sorted: costSorted, q: band.high }),
           },
   };
 };
@@ -155,7 +174,11 @@ type EstimateParams = {
 export const estimateDuration = ({ samples, key, nowMs }: EstimateParams) => {
   const recent = inWindow({ samples, nowMs });
   for (const { tier, matches } of keyTiers({ key })) {
-    const estimate = estimateFrom({ samples: recent.filter(matches), tier });
+    const estimate = estimateFrom({
+      samples: recent.filter(matches),
+      tier,
+      size: key.size ?? null,
+    });
     if (estimate !== null) {
       return estimate;
     }
@@ -169,7 +192,7 @@ type RunEstimateParams = {
 };
 
 export const estimateOrchestratedRun = ({ runs, nowMs }: RunEstimateParams) =>
-  estimateFrom({ samples: inWindow({ samples: runs, nowMs }), tier: 'runs' });
+  estimateFrom({ samples: inWindow({ samples: runs, nowMs }), tier: 'runs', size: null });
 
 type SumParams = {
   readonly estimates: ReadonlyArray<DurationEstimate | null>;
@@ -185,13 +208,13 @@ export const sumEstimates = ({ estimates }: SumParams): EstimateTotal | null => 
   }
   const costs = known.flatMap((estimate) => (estimate.cost === null ? [] : [estimate.cost]));
   return {
-    p25Ms: known.reduce((total, estimate) => total + estimate.p25Ms, 0),
-    p75Ms: known.reduce((total, estimate) => total + estimate.p75Ms, 0),
+    lowMs: known.reduce((total, estimate) => total + estimate.lowMs, 0),
+    highMs: known.reduce((total, estimate) => total + estimate.highMs, 0),
     cost:
       costs.length === known.length
         ? {
-            p25Usd: costs.reduce((total, cost) => total + cost.p25Usd, 0),
-            p75Usd: costs.reduce((total, cost) => total + cost.p75Usd, 0),
+            lowUsd: costs.reduce((total, cost) => total + cost.lowUsd, 0),
+            highUsd: costs.reduce((total, cost) => total + cost.highUsd, 0),
           }
         : null,
   };

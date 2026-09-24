@@ -9,9 +9,9 @@ import { familyActiveTime, type WorkTimeSource } from './workTimeSource';
 const MINUTE = 60_000;
 
 const ESTIMATE: WorkEstimate = {
-  p25Ms: 5 * MINUTE,
-  p50Ms: 7 * MINUTE,
-  p75Ms: 9 * MINUTE,
+  lowMs: 5 * MINUTE,
+  midMs: 7 * MINUTE,
+  highMs: 9 * MINUTE,
   isFallback: false,
   basis: 'Based on 23 finished implementer steps on Sonnet 5 medium.',
 };
@@ -116,13 +116,13 @@ describe('workTime', () => {
 describe('estimate formatting', () => {
   it('rounds past 20 minutes, collapses a narrow band and floors short work', () => {
     expect(
-      formatEstimateRange({ p25Ms: 22 * MINUTE, p50Ms: 30 * MINUTE, p75Ms: 43 * MINUTE }),
+      formatEstimateRange({ lowMs: 22 * MINUTE, midMs: 30 * MINUTE, highMs: 43 * MINUTE }),
     ).toBe('20-45m');
-    expect(formatEstimateRange({ p25Ms: 8 * MINUTE, p50Ms: 9 * MINUTE, p75Ms: 10 * MINUTE })).toBe(
+    expect(formatEstimateRange({ lowMs: 8 * MINUTE, midMs: 9 * MINUTE, highMs: 10 * MINUTE })).toBe(
       '≈ 9m',
     );
-    expect(formatEstimateRange({ p25Ms: 30_000, p50Ms: 45_000, p75Ms: 90_000 })).toBe('<2m');
-    expect(formatCostRange({ p25Usd: 0.9, p75Usd: 1.6 })).toBe('$0.90-1.60');
+    expect(formatEstimateRange({ lowMs: 30_000, midMs: 45_000, highMs: 90_000 })).toBe('<2m');
+    expect(formatCostRange({ lowUsd: 0.9, highUsd: 1.6 })).toBe('$0.90-1.60');
   });
 });
 
@@ -186,6 +186,7 @@ describe('agentWorkTime', () => {
       provider: 'anthropic',
       model: 'claude-sonnet-5',
       effort: null,
+      size: null,
     });
 
     const time = agentWorkTime({
@@ -202,7 +203,15 @@ describe('agentWorkTime', () => {
 
   it('says which history a fallback estimate leans on', () => {
     const basis = estimateBasis({
-      estimate: { tier: 'provider', sampleCount: 31, p25Ms: 1, p50Ms: 2, p75Ms: 3, cost: null },
+      estimate: {
+        tier: 'provider',
+        size: null,
+        sampleCount: 31,
+        lowMs: 1,
+        midMs: 2,
+        highMs: 3,
+        cost: null,
+      },
       key: { role: 'planner', provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
     });
 

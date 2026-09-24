@@ -1,3 +1,4 @@
+import { isStepSize } from '@goodboy/types';
 import { normalizeSelectableAgentRole } from '../roles';
 import type { PlannerOutput, PlannerStep } from './types';
 
@@ -81,7 +82,14 @@ export const parsePlannerOutput = (raw: string): PlannerOutput => {
       throw new PlannerParseError(`planner step at index ${index} missing "expectedOutput"`, raw);
     }
     const normalizedRole = normalizeSelectableAgentRole({ role });
-    steps.push({ name, role: normalizedRole, promptPrefix, expectedOutput });
+    const size = typeof e.size === 'string' ? e.size.trim().toLowerCase() : null;
+    steps.push({
+      name,
+      role: normalizedRole,
+      promptPrefix,
+      expectedOutput,
+      size: isStepSize(size) ? size : null,
+    });
   }
 
   return {

@@ -4,9 +4,9 @@ import { formatDuration } from '../chat/utils/format-duration';
 import type { RowPhase } from './rowState';
 
 export type WorkEstimate = {
-  readonly p25Ms: number;
-  readonly p50Ms: number;
-  readonly p75Ms: number;
+  readonly lowMs: number;
+  readonly midMs: number;
+  readonly highMs: number;
   readonly isFallback: boolean;
   readonly basis: string;
 };
@@ -60,20 +60,20 @@ export const formatEstimateTime = ({ ms }: MsParams): string =>
   minutesLabel({ minutes: estimateMinutes({ ms }) });
 
 type RangeParams = {
-  readonly p25Ms: number;
-  readonly p50Ms: number;
-  readonly p75Ms: number;
+  readonly lowMs: number;
+  readonly midMs: number;
+  readonly highMs: number;
 };
 
-export const formatEstimateRange = ({ p25Ms, p50Ms, p75Ms }: RangeParams): string => {
-  if (p75Ms < 2 * MINUTE_MS) {
+export const formatEstimateRange = ({ lowMs, midMs, highMs }: RangeParams): string => {
+  if (highMs < 2 * MINUTE_MS) {
     return '<2m';
   }
-  if (p25Ms > 0 && p75Ms / p25Ms < NARROW_BAND) {
-    return `≈ ${formatEstimateTime({ ms: p50Ms })}`;
+  if (lowMs > 0 && highMs / lowMs < NARROW_BAND) {
+    return `≈ ${formatEstimateTime({ ms: midMs })}`;
   }
-  const low = estimateMinutes({ ms: p25Ms });
-  const high = estimateMinutes({ ms: p75Ms });
+  const low = estimateMinutes({ ms: lowMs });
+  const high = estimateMinutes({ ms: highMs });
   if (low >= high) {
     return `≈ ${minutesLabel({ minutes: high })}`;
   }
@@ -83,9 +83,9 @@ export const formatEstimateRange = ({ p25Ms, p50Ms, p75Ms }: RangeParams): strin
   return `${minutesLabel({ minutes: low })}-${minutesLabel({ minutes: high })}`;
 };
 
-export const formatCostRange = ({ p25Usd, p75Usd }: CostRange): string => {
-  const low = formatUsd(p25Usd);
-  const high = formatUsd(p75Usd);
+export const formatCostRange = ({ lowUsd, highUsd }: CostRange): string => {
+  const low = formatUsd(lowUsd);
+  const high = formatUsd(highUsd);
   if (low === high) {
     return `≈ ${high}`;
   }
@@ -107,9 +107,9 @@ type EstimateParams = {
 };
 
 export const workEstimateOf = ({ estimate, basis }: EstimateParams): WorkEstimate => ({
-  p25Ms: estimate.p25Ms,
-  p50Ms: estimate.p50Ms,
-  p75Ms: estimate.p75Ms,
+  lowMs: estimate.lowMs,
+  midMs: estimate.midMs,
+  highMs: estimate.highMs,
   isFallback: isFallbackTier({ tier: estimate.tier }),
   basis,
 });
@@ -145,15 +145,15 @@ const runningTime = ({
       progress: null,
     };
   }
-  const usual = `~${formatEstimateTime({ ms: estimate.p75Ms })}`;
+  const usual = `~${formatEstimateTime({ ms: estimate.highMs })}`;
   const detail = `${exact} Most finish within ${usual}. ${estimate.basis}`;
-  if (activeMs > estimate.p75Ms) {
+  if (activeMs > estimate.highMs) {
     return { label: `${active}, usually ${usual}`, detail, progress: 1 };
   }
   return {
     label: `${active} of ${usual}`,
     detail,
-    progress: estimate.p75Ms === 0 ? 1 : activeMs / estimate.p75Ms,
+    progress: estimate.highMs === 0 ? 1 : activeMs / estimate.highMs,
   };
 };
 
@@ -164,12 +164,12 @@ const pausedTime = ({
 }: Omit<Params, 'phase' | 'hasStarted'>): WorkTime => {
   const running = runningTime({ activeMs, estimate, unknownBasis });
   const active = formatActiveTime({ ms: activeMs });
-  if (estimate === null || activeMs > estimate.p75Ms) {
+  if (estimate === null || activeMs > estimate.highMs) {
     return { ...running, label: `Paused, ${active}` };
   }
   return {
     ...running,
-    label: `Paused, ${active} of ~${formatEstimateTime({ ms: estimate.p75Ms })}`,
+    label: `Paused, ${active} of ~${formatEstimateTime({ ms: estimate.highMs })}`,
   };
 };
 

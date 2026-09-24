@@ -1,5 +1,5 @@
 import type { DurationEstimate, EstimateKey } from '@goodboy/core';
-import { PROVIDER_IDS } from '@goodboy/types';
+import { PROVIDER_IDS, type StepSize } from '@goodboy/types';
 import { EFFORT_LABEL, modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { ROLE_LABEL } from '../session/agent-kind';
@@ -66,17 +66,29 @@ const basisScope = ({ estimate, key }: Params): string => {
   }
 };
 
+const SIZE_BAND: Record<StepSize, string> = {
+  small: 'the faster half of',
+  medium: 'the middle of',
+  large: 'the slower half of',
+};
+
 export const estimateBasis = ({ estimate, key }: Params): string => {
   const route = routeName({ key });
   const missing =
     route === null || estimate.tier === 'exact' || estimate.tier === 'runs'
       ? ''
       : `Not enough runs on ${route} yet. `;
-  return `${missing}Based on ${basisScope({ estimate, key })}, ${WINDOW_NOTE}`;
+  const sized =
+    estimate.size === null
+      ? ''
+      : `The planner sized this step ${estimate.size}, so this is ${SIZE_BAND[estimate.size]} past runs. `;
+  return `${sized}${missing}Based on ${basisScope({ estimate, key })}, ${WINDOW_NOTE}`;
 };
 
 export const estimateBasisShort = ({ estimate, key }: Params): string =>
-  `based on ${basisScope({ estimate, key })}`;
+  estimate.size === null
+    ? `based on ${basisScope({ estimate, key })}`
+    : `sized ${estimate.size}, based on ${basisScope({ estimate, key })}`;
 
 export const unknownEstimateBasis = ({ key }: KeyParams): string => {
   const role = ROLE_LABEL[key.role];

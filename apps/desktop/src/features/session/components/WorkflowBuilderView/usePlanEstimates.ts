@@ -27,7 +27,9 @@ export const usePlanEstimates = ({
   }, [isLoaded, loadWorkspaceDurationHistory, workspaceId]);
 
   const signature = steps
-    .map((step) => [step.key, step.role, step.provider, step.model, step.effort].join('|'))
+    .map((step) =>
+      [step.key, step.role, step.provider, step.model, step.effort, step.size].join('|'),
+    )
     .join(',');
   const stepsRef = useMemo(() => steps, [signature]);
 

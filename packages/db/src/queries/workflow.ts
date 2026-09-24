@@ -11,7 +11,7 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { isWorkflowOrigin } from '@goodboy/types';
+import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
 import {
   isWorkflowRoutingDecision,
@@ -53,6 +53,7 @@ type StepRow = {
   routing_lock: string | null;
   routing_decision: string | null;
   task_profile: string | null;
+  size: string | null;
 };
 
 function toStep(row: StepRow): Step {
@@ -89,6 +90,7 @@ function toStep(row: StepRow): Step {
     routingLock,
     routingDecision: routing.routingDecision,
     taskProfile: routing.taskProfile,
+    ...(isStepSize(row.size) && { size: row.size }),
   };
 }
 
@@ -157,8 +159,8 @@ export const getWorkflow = async (db: Database, id: WorkflowId): Promise<Workflo
 const STEP_UPSERT_SQL = `INSERT INTO steps
     (id, workflow_id, library_step_id, role, ordinal, name, prompt_prefix, expected_output,
      provider_override, model_override, effort, verbosity,
-     orchestrator_reason, routing_lock, routing_decision, task_profile, deleted_at)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+     orchestrator_reason, routing_lock, routing_decision, task_profile, size, deleted_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
    ON CONFLICT(id) DO UPDATE SET
      workflow_id      = excluded.workflow_id,
      library_step_id  = excluded.library_step_id,
@@ -175,6 +177,7 @@ const STEP_UPSERT_SQL = `INSERT INTO steps
      routing_lock     = excluded.routing_lock,
      routing_decision = excluded.routing_decision,
      task_profile     = excluded.task_profile,
+     size             = excluded.size,
      deleted_at       = NULL`;
 
 export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
@@ -209,6 +212,7 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
         isValid: isWorkflowTaskProfile,
         field: 'task profile',
       }),
+      step.size ?? null,
     ],
   }));
   const workflowStatement: PlainStatement = {

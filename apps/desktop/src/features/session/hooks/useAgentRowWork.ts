@@ -57,6 +57,7 @@ export const useAgentRowWork = ({
     provider: routing.provider,
     model: routing.model,
     effort: routing.effort,
+    size: step?.size ?? null,
     phase,
   });
   return { routing, time };

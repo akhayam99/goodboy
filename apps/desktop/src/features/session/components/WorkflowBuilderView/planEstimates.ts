@@ -5,7 +5,7 @@ import {
   type DurationEstimate,
   type DurationHistory,
 } from '@goodboy/core';
-import type { AgentRole, EffortLevel } from '@goodboy/types';
+import type { AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { estimateKeyOf } from '../../../workTreeModel/agentWorkTime';
 import {
   estimateBasis,
@@ -28,6 +28,7 @@ export type PlanStepInput = {
   readonly provider: string;
   readonly model: string;
   readonly effort: EffortLevel | null;
+  readonly size: StepSize | null;
 };
 
 export type PlanStepEstimate = {
@@ -130,9 +131,9 @@ export const planEstimates = ({
   }
   const range = estimateRangeLabel({
     estimate: {
-      p25Ms: sum.p25Ms,
-      p50Ms: (sum.p25Ms + sum.p75Ms) / 2,
-      p75Ms: sum.p75Ms,
+      lowMs: sum.lowMs,
+      midMs: (sum.lowMs + sum.highMs) / 2,
+      highMs: sum.highMs,
       isFallback: false,
       basis: '',
     },

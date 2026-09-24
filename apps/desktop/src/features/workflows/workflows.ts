@@ -27,6 +27,7 @@ import type {
   StepDef,
   StepDefId,
   StepId,
+  StepSize,
   Agent,
   AgentId,
   AgentStatus,
@@ -43,7 +44,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { isWorkflowOrigin } from '@goodboy/types';
+import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -62,6 +63,7 @@ type RawWorkflowStepRow = {
   readonly routingLock: string | null;
   readonly routingDecision: string | null;
   readonly taskProfile: string | null;
+  readonly size: string | null;
 };
 
 type RawStepDefRow = {
@@ -172,6 +174,7 @@ function rowToStep(row: RawWorkflowStepRow): Step {
       isValid: isWorkflowTaskProfile,
       field: 'task profile',
     }),
+    ...(isStepSize(row.size) && { size: row.size }),
   };
 }
 
@@ -315,6 +318,7 @@ export type WorkflowStepUpsertArgs = {
   readonly routingLock?: WorkflowRoutingLock | null;
   readonly routingDecision?: WorkflowRoutingDecision | null;
   readonly taskProfile?: WorkflowTaskProfile | null;
+  readonly size?: StepSize;
 };
 
 export type WorkflowUpsertArgs = {
@@ -368,6 +372,7 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
           isValid: isWorkflowTaskProfile,
           field: 'task profile',
         }),
+        size: d.size ?? null,
       })),
     },
   });
