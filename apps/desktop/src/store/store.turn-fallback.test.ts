@@ -16,6 +16,9 @@ import {
   emptyTurnStream,
   resetStorySpies,
   storySpies,
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
 } from './storyHarness';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
@@ -54,12 +57,11 @@ const AGENT_A = 'agent-fallback-a' as AgentId;
 const WORKSPACE_ID = 'workspace-fallback' as WorkspaceId;
 const NOW = '2026-07-30T00:00:00.000Z' as IsoDateTime;
 
-type StoreModule = typeof import('./store');
-let useAppStore: StoreModule['useAppStore'];
+let useAppStore: StoryStore;
 
 beforeAll(async () => {
-  ({ useAppStore } = await import('./store'));
-}, 60_000);
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
 
 describe('sendTurn, provider failure fallback', () => {
   beforeEach(async () => {
@@ -122,9 +124,7 @@ describe('sendTurn, provider failure fallback', () => {
       agentEffortOverride: {},
       agentProviderOverride: {},
       agentModelOverride: {},
-      workspaces: [
-        buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws', sessionsRoot: '/tmp' }),
-      ],
+      workspaces: [buildStoryWorkspace({ id: WORKSPACE_ID, name: 'ws', slug: 'ws' })],
       ...connectedAnthropicState(),
     });
   };

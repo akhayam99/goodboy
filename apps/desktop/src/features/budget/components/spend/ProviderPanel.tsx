@@ -10,10 +10,11 @@ import { CapEditor } from './CapEditor';
 import { CostRing } from './CostRing';
 import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: ProviderName;
@@ -59,10 +60,11 @@ export const ProviderPanel = ({
   const coverage = useMemo(() => coverageTurnCounts(models), [models]);
 
   return (
-    <StudioPanel
-      icon={<ProviderIcon provider={provider} size={20} />}
-      title={providerLabel(provider)}
-      subtitle={`${formatUsd(spent)} total spend`}
+    <PaneShell
+      scroll="body"
+      glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
+      title={providerLabel({ provider })}
+      description={`${formatUsd(spent)} total spend`}
     >
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip
@@ -72,7 +74,7 @@ export const ProviderPanel = ({
       />
       {isLoading && <PanelLoading label="Loading budget data" />}
       {capUsd !== null ? (
-        <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-muted/20 p-5">
+        <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-subtle p-5">
           <CostRing pct={pct} centerLabel={`${Math.round(pct * 100)}%`} subLabel="of cap" />
           <div className="grid flex-1 grid-cols-3 gap-3">
             <div title={formatUsdPrecise(spent)}>
@@ -96,7 +98,7 @@ export const ProviderPanel = ({
 
       <CapEditor
         label="monthly cap"
-        hint="cap monthly spend for this provider"
+        hint="Cap the monthly spend for this provider"
         currentCapUsd={rule?.capUsd ?? null}
         {...(rule !== null
           ? { threshold: { pct: rule.alertThresholdPct, onSave: onSaveThreshold } }
@@ -110,6 +112,6 @@ export const ProviderPanel = ({
       </StudioWidget>
 
       <TurnsTable turns={filtered} showSession onOpenSession={onOpenSession} />
-    </StudioPanel>
+    </PaneShell>
   );
 };

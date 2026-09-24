@@ -19,7 +19,15 @@ const PLANNING_FRAME_RE =
 const IMPLEMENT_FRAME_RE =
   /\b(implementa(?:lo)?|implement(?:s|ing|ed)?|scrivi(?:lo|mi)?|write\s+(?:code|the\s+function|it))\b/i;
 
-export const detectScopeMismatch = (input: string, agentKind: AgentKind): ScopeMismatch | null => {
+type DetectScopeMismatchParams = {
+  readonly input: string;
+  readonly agentKind: AgentKind;
+};
+
+export const detectScopeMismatch = ({
+  input,
+  agentKind,
+}: DetectScopeMismatchParams): ScopeMismatch | null => {
   const trimmed = input.trim();
   if (trimmed.length === 0) {
     return null;

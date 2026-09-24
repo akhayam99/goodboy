@@ -54,13 +54,13 @@ type CategoryRule = {
 
 export const SCRIPT_CATEGORIES: ReadonlyArray<ScriptCategoryDefinition> = [
   { id: 'dev', label: 'Dev', icon: Play, tone: 'info' },
-  { id: 'build', label: 'Build', icon: Hammer, tone: 'accent' },
+  { id: 'build', label: 'Build', icon: Hammer, tone: 'neutral' },
   { id: 'test', label: 'Test', icon: FlaskConical, tone: 'success' },
   { id: 'lint', label: 'Lint', icon: SearchCheck, tone: 'warning' },
   { id: 'typecheck', label: 'Typecheck', icon: ShieldCheck, tone: 'info' },
   { id: 'format', label: 'Format', icon: Brush, tone: 'neutral' },
-  { id: 'db', label: 'Database', icon: Database, tone: 'accent' },
-  { id: 'generate', label: 'Generate', icon: FileCode2, tone: 'accent' },
+  { id: 'db', label: 'Database', icon: Database, tone: 'neutral' },
+  { id: 'generate', label: 'Generate', icon: FileCode2, tone: 'neutral' },
   { id: 'install', label: 'Install', icon: Package, tone: 'neutral' },
   { id: 'deploy', label: 'Deploy', icon: Rocket, tone: 'danger' },
   { id: 'clean', label: 'Clean', icon: Trash2, tone: 'neutral' },

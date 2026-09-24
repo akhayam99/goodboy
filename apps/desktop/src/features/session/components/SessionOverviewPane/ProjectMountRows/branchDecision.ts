@@ -16,23 +16,33 @@ export type BranchDecisionAction = Readonly<{
 export type BranchDecision = Readonly<{
   title: string;
   description: string;
-  notes: ReadonlyArray<string>;
   confirm: BranchDecisionAction;
   alt: BranchDecisionAction | null;
 }>;
-
-const RECHECK_NOTE = 'Check this mount again reads its directory and updates this note.';
-const NOT_NOW_NOTE = 'Not now hides this note for now and changes nothing.';
 
 type RecheckParams = {
   readonly isDisabled: boolean;
 };
 
 const recheck = ({ isDisabled }: RecheckParams): BranchDecisionAction => ({
-  label: 'Check this mount again',
+  label: 'Check again',
   resolution: 'recheck',
   isDisabled,
 });
+
+type LocationParams = {
+  readonly holder: MountBranchHolder;
+};
+
+const holderLocation = ({ holder }: LocationParams): string => {
+  if (holder.mountId === null) {
+    return 'in another worktree of this project';
+  }
+  if (holder.label === null) {
+    return 'in another mount of this session';
+  }
+  return `as ${holder.label} in this session`;
+};
 
 export const buildBranchDecision = ({
   observation,
@@ -47,53 +57,40 @@ export const buildBranchDecision = ({
     case 'unavailable':
       return {
         title: `${projectName}'s branch could not be read`,
-        description: `Expected ${recorded}, but the directory could not be read. Nothing was changed.`,
-        notes: [RECHECK_NOTE, NOT_NOW_NOTE],
+        description: `Expected ${recorded}, but its directory could not be read.`,
         confirm: recheck({ isDisabled: false }),
         alt: null,
       };
     case 'detached': {
-      const isChecking = holder === 'checking';
-      const isHeld = holder !== null && holder !== 'checking';
+      const title = `${projectName} is not on a branch`;
+      const cause = `Expected ${recorded}, found a commit with no branch.`;
+      if (holder !== null && holder !== 'checking') {
+        return {
+          title,
+          description: `${cause} ${recorded} is already mounted ${holderLocation({ holder })}.`,
+          confirm: recheck({ isDisabled: false }),
+          alt: null,
+        };
+      }
       return {
-        title: `${projectName} is not on a branch`,
-        description: `Expected ${recorded}, found a commit with no branch. Nothing was changed.`,
-        notes: [
-          ...(isChecking
-            ? [
-                `Goodboy is checking whether ${recorded} is mounted in another worktree.`,
-                `Put it back on ${recorded} stays off until this check finishes.`,
-              ]
-            : []),
-          ...(isHeld
-            ? [
-                `${recorded} is already mounted in another worktree, so putting it back here is turned off.`,
-              ]
-            : isChecking
-              ? []
-              : [`Put it back on ${recorded} moves this mount onto ${recorded} again.`]),
-          RECHECK_NOTE,
-          NOT_NOW_NOTE,
-        ],
+        title,
+        description: cause,
         confirm: {
           label: `Put it back on ${recorded}`,
           resolution: 'restore-recorded',
-          isDisabled: isChecking || isHeld,
+          isDisabled: holder === 'checking',
         },
         alt: recheck({ isDisabled: false }),
       };
     }
     case 'mismatch': {
       const found = observed ?? 'another branch';
+      const title = `${projectName} is not on the branch it was left on`;
+      const cause = `Expected ${recorded}, found ${found}.`;
       if (holder === 'checking') {
         return {
-          title: `${projectName} is not on the branch it was left on`,
-          description: `Expected ${recorded}, found ${found}. Nothing was changed.`,
-          notes: [
-            `Goodboy is checking whether ${found} is mounted in another worktree.`,
-            RECHECK_NOTE,
-            NOT_NOW_NOTE,
-          ],
+          title,
+          description: cause,
           confirm: {
             label: 'Use this branch here',
             resolution: 'adopt-observed',
@@ -103,36 +100,16 @@ export const buildBranchDecision = ({
         };
       }
       if (holder !== null) {
-        const location =
-          holder.mountId === null
-            ? 'in another worktree of this project'
-            : holder.label === null
-              ? 'in another mount of this session'
-              : `as ${holder.label} in this session`;
         return {
-          title: `${projectName} is not on the branch it was left on`,
-          description: `Expected ${recorded}, found ${found}. That branch is already mounted ${location}. Git keeps one branch in one worktree, so using it here would fail.`,
-          notes: [
-            `Use this branch here is turned off because ${found} is mounted elsewhere.`,
-            RECHECK_NOTE,
-            NOT_NOW_NOTE,
-          ],
-          confirm: {
-            label: 'Use this branch here',
-            resolution: 'adopt-observed',
-            isDisabled: true,
-          },
-          alt: recheck({ isDisabled: false }),
+          title,
+          description: `${cause} ${found} is already mounted ${holderLocation({ holder })}, and git keeps one branch in one worktree.`,
+          confirm: recheck({ isDisabled: false }),
+          alt: null,
         };
       }
       return {
-        title: `${projectName} is not on the branch it was left on`,
-        description: `Expected ${recorded}, found ${found}. Nothing was changed.`,
-        notes: [
-          `Use this branch here records ${found} as this mount's branch and leaves the directory alone.`,
-          `Keep both branches records ${found} here, then mounts ${recorded} again in a row of its own.`,
-          NOT_NOW_NOTE,
-        ],
+        title,
+        description: `${cause} Keep both branches records ${found} here and mounts ${recorded} again in a row of its own.`,
         confirm: { label: 'Use this branch here', resolution: 'adopt-observed', isDisabled: false },
         alt: { label: 'Keep both branches', resolution: 'keep-both', isDisabled: false },
       };

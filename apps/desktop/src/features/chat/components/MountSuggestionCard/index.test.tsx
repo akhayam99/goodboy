@@ -19,7 +19,7 @@ const renderCard = ({
 }: RenderCardParams = {}) => {
   render(
     <MountSuggestionCard
-      projectName="app-web"
+      projectName="storefront-web"
       agentName="Scout"
       reason="reading the router"
       cause={cause}
@@ -36,7 +36,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Mount app-web so Scout can use it in this session; this expands the session beyond its two-project allowance for unauthorized projects.',
+        'Mount storefront-web so Scout can use it in this session. It adds a third project to this session.',
       ),
     ).toBeTruthy();
     expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Mount project');
@@ -48,7 +48,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Mount app-web so Scout can use it in this session; this request has already mounted two projects.',
+        'Mount storefront-web so Scout can use it in this session. This request has already mounted two projects.',
       ),
     ).toBeTruthy();
   });
@@ -56,7 +56,7 @@ describe('MountSuggestionCard', () => {
   it('keeps the reason and the dismissal behind the disclosure', () => {
     const { onDismiss } = renderCard();
 
-    fireEvent.click(screen.getByLabelText('Mount suggestion details for app-web'));
+    fireEvent.click(screen.getByLabelText('Mount suggestion details for storefront-web'));
 
     expect(screen.getByText('Reason')).toBeTruthy();
     expect(screen.getByText('reading the router')).toBeTruthy();

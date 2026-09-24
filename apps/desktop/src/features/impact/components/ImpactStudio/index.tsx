@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade, SegmentedTabs, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, SegmentedTabs, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { stripInlineMarkdown } from '../../../../shared/components/InlineMarkdown/stripInlineMarkdown';
 import { useAppStore } from '../../../../store';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
@@ -24,14 +23,13 @@ import { ShippedPanel } from './ShippedPanel';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly workspaceName: string;
   readonly initialScope?: ImpactScope;
   readonly onClose: () => void;
 };
 
 const DAY_MS = 86_400_000;
 
-export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose }: Props) => {
+export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
   const [scope, setScope] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
   const setCurrentSession = useAppStore((state) => state.setCurrentSession);
@@ -72,6 +70,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
             onRetryOverview={() => metrics.retry('overview')}
             onRetryShipped={() => metrics.retry('shipped')}
             onOpenSession={openSession}
+            hasSpend={spend.providers.length > 0}
             spendSection={
               <SpendSection
                 providers={spend.providers}
@@ -149,7 +148,7 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
         return selectedSession === null ? null : (
           <SessionPanel
             sessionId={selectedSession.sessionId}
-            goal={stripInlineMarkdown({ text: selectedSession.goal })}
+            goal={inlineMarkdownText({ text: selectedSession.goal })}
             isCurrent={selectedSession.isCurrent}
             turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
             softCapUsd={spend.softCapUsd(selectedSession.sessionId)}
@@ -165,6 +164,10 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
             onOpenSession={openSession}
           />
         );
+      default: {
+        const exhaustive: never = scope;
+        return exhaustive;
+      }
     }
   };
 
@@ -173,7 +176,6 @@ export const ImpactStudio = ({ workspaceId, workspaceName, initialScope, onClose
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
       title="Impact studio"
-      workspaceName={workspaceName}
       closeLabel="close impact studio"
       headerAccessory={
         <SegmentedTabs

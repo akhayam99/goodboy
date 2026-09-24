@@ -41,7 +41,11 @@ export const editPr = (_set: SetFn, get: GetFn) => {
     });
     if (res.exitCode !== 0) {
       const errMsg = res.stderr.trim() || `gh pr edit exited with ${res.exitCode}`;
-      void get().emitNotification('error', 'error', 'Edit failed', errMsg, {
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: "Couldn't edit the pull request",
+        body: errMsg,
         sessionId,
         workspaceId: workspace.id,
       });

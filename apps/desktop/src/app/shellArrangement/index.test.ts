@@ -28,7 +28,7 @@ describe('shellArrangement', () => {
     expect(
       shellArrangement({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: false }),
     ).toEqual({
-      hasFooter: true,
+      footer: 'workspace',
       leftHidden: true,
       leftSidebarCollapsed: false,
       leftSlot: 'none',
@@ -40,7 +40,7 @@ describe('shellArrangement', () => {
     expect(
       shellArrangement({ hasWorkspace: true, hasActiveSession: false, isSidebarCollapsed: true }),
     ).toEqual({
-      hasFooter: true,
+      footer: 'workspace',
       leftHidden: true,
       leftSidebarCollapsed: false,
       leftSlot: 'none',
@@ -52,7 +52,7 @@ describe('shellArrangement', () => {
     expect(
       shellArrangement({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: false }),
     ).toEqual({
-      hasFooter: true,
+      footer: 'workspace',
       leftHidden: false,
       leftSidebarCollapsed: false,
       leftSlot: 'sessions',
@@ -64,7 +64,7 @@ describe('shellArrangement', () => {
     expect(
       shellArrangement({ hasWorkspace: true, hasActiveSession: true, isSidebarCollapsed: true }),
     ).toEqual({
-      hasFooter: true,
+      footer: 'workspace',
       leftHidden: false,
       leftSidebarCollapsed: true,
       leftSlot: 'rail',
@@ -72,11 +72,11 @@ describe('shellArrangement', () => {
     });
   });
 
-  it('drops the footer with no workspace, which no session can outlive', () => {
+  it('keeps an app footer with no workspace, which no session can outlive', () => {
     expect(
       shellArrangement({ hasWorkspace: false, hasActiveSession: true, isSidebarCollapsed: false }),
     ).toEqual({
-      hasFooter: false,
+      footer: 'app',
       leftHidden: true,
       leftSidebarCollapsed: false,
       leftSlot: 'none',

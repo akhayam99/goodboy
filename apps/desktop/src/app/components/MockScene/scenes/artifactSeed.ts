@@ -74,7 +74,6 @@ const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
   name: 'Harborline',
   slug: 'harborline',
-  sessionsRoot: '/mock/harborline/sessions',
   overrides: OVERRIDES,
   createdAt: EARLIER,
   updatedAt: NOW,
@@ -108,7 +107,7 @@ const LEDGER_MOUNT: SessionProjectMount = {
   mountName: 'ledger-core',
   worktreePath: '/mock/harborline/ledger-core-rounding',
   repoRoot: '/mock/harborline/ledger-core',
-  branch: 'ak/fix-posting-rounding',
+  branch: 'nw/fix-posting-rounding',
   mountId: 'mock-artifact-mount-ledger' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -124,7 +123,7 @@ const RELAY_MOUNT: SessionProjectMount = {
   mountName: 'notify-relay',
   worktreePath: '/mock/harborline/notify-relay-backoff',
   repoRoot: '/mock/harborline/notify-relay',
-  branch: 'ak/fix-retry-backoff',
+  branch: 'nw/fix-retry-backoff',
   mountId: 'mock-artifact-mount-relay' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -376,7 +375,7 @@ worktrees on disk: nothing has been pushed and nothing has been reviewed.
 
 ## ledger-core
 
-Branch \`ak/fix-posting-rounding\` off \`main\`, 3 commits ahead, head \`a41f9c2\`.
+Branch \`nw/fix-posting-rounding\` off \`main\`, 3 commits ahead, head \`a41f9c2\`.
 
 | Commit | Subject |
 | --- | --- |
@@ -389,7 +388,7 @@ per batch. The backfill script is committed but no scheduler calls it.
 
 ## notify-relay
 
-Branch \`ak/fix-retry-backoff\` off \`main\`, 1 commit ahead, head \`7b30e15\`.
+Branch \`nw/fix-retry-backoff\` off \`main\`, 1 commit ahead, head \`7b30e15\`.
 
 4 files changed, 74 additions, 31 deletions. Retries now read batch state before
 scheduling the next attempt.
@@ -946,6 +945,24 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
   WIREFRAME_HIGH_ARTIFACT,
 ];
 
+const ACTIVE_PLAN_BODY = `## Approach
+
+Replay every batch settled in the last quarter through the new allocation path,
+behind a dry run flag, and compare each payout with the one already sent.
+
+## Steps
+
+1. Add a \`--dry-run\` flag to the backfill job in \`ledger-core\`.
+2. Replay the settled batches in weekly chunks, oldest first.
+3. Write every payout that moves by a cent or more to a review table.
+4. Post the totals to the finance channel before anything is written back.
+
+## Done when
+
+- Two nightly runs match the ledger snapshot
+- Finance has signed off on the review table
+`;
+
 const PLANS: ReadonlyArray<PlanWithCount> = [
   {
     id: PLAN_ID,
@@ -959,14 +976,25 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     consumptionCount: 1,
   },
   {
+    id: 'mock-artifact-plan-half-cent' as PlanId,
+    sessionId: SESSION_ID,
+    agentId: PLANNER_AGENT_ID,
+    title: 'Cover the half cent cases',
+    bodyMd: 'Add a test for every split where the residual lands on a half cent.',
+    status: 'consumed',
+    createdAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
+    consumptionCount: 1,
+  },
+  {
     id: OLD_PLAN_ID,
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
     title: 'Backfill the settled batches',
-    bodyMd: 'Replay the settled batches from the last quarter behind a dry run flag.',
+    bodyMd: ACTIVE_PLAN_BODY,
     status: 'active',
-    createdAt: '2026-09-14T15:34:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-14T15:34:00.000Z' as IsoDateTime,
+    createdAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
+    updatedAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
     consumptionCount: 0,
   },
 ];

@@ -263,4 +263,30 @@ describe('runTurn', () => {
 
     await expect(iterator.next()).rejects.toThrow(message);
   });
+
+  it('rejoins an event whose string was split by a raw newline', async () => {
+    const runId = 'split-line-provider-run' as ProviderRunId;
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({ runId, type: 'line', line: '{"type":"error","message":"stream' });
+        capturedListeners[0]?.({ runId, type: 'line', line: 'dropped"}' });
+        capturedListeners[0]?.({ runId, type: 'end', exit_code: 0, stderr: '' });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn({
+      runId,
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      workingDir: '/tmp/worktree',
+      writableRoots: [],
+      prompt: 'hello',
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: { kind: 'error', message: 'stream\ndropped' },
+    });
+  });
 });

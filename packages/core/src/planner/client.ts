@@ -1,4 +1,4 @@
-import type { InvocationContext, ModelEffort, ProviderId } from '@goodboy/types';
+import type { EffortLevel, InvocationContext, ProviderId } from '@goodboy/types';
 import { estimateSpendReservation } from '../budget/reservation';
 import { extractAuxOutput } from '../providers/aux-output';
 import { computeProviderCostUsd } from '../providers/provider-cost';
@@ -29,7 +29,7 @@ type InvokeFn = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 export type PlannerClientDeps = {
   readonly providerId: ProviderId;
   readonly model: string;
-  readonly effort?: ModelEffort;
+  readonly effort?: EffortLevel;
   readonly binary?: string;
   readonly workingDir?: string;
   readonly invokeFn: InvokeFn;
@@ -57,7 +57,7 @@ export class PlannerClient {
   private readonly providerId: ProviderId;
   private readonly binary: string;
   private readonly model: string;
-  private readonly effort: ModelEffort | undefined;
+  private readonly effort: EffortLevel | undefined;
   private readonly workingDir: string | undefined;
   private readonly invokeFn: InvokeFn;
   private readonly invocation: InvocationContext | undefined;

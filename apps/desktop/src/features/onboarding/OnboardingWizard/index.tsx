@@ -1,31 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, ScrollFade, cn, formatError, type ButtonVariant } from '@goodboy/ui';
+import { Button, ScrollFade, cn, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { initRepo, scanChildRepos, validateGitRepo } from '../../../shared/lib/repo';
 import type { DetectedChildRepos } from '../../../shared/hooks/useChildRepoDetection';
 import { useProjectAdoption } from '../../../shared/hooks/useProjectAdoption';
 import { finishWizard } from '../onboarding-store';
+import { requestNewSession } from '../../session/requestNewSession';
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { Stepper } from './Stepper';
-import { WelcomeStep } from './steps/WelcomeStep';
-import { ProvidersStep } from './steps/ProvidersStep';
-import { ShapeStep, type WorkspaceShape } from './steps/ShapeStep';
-import { ProjectsStep } from './steps/ProjectsStep';
-import { ProfileStep } from './steps/ProfileStep';
-import { ReadyStep } from './steps/ReadyStep';
+import type { WorkspaceShape } from './steps/ShapeStep';
+import { WizardStepBody } from './WizardStepBody';
+import { visibleWizardSteps, type WizardStepId } from './wizardSteps';
+import { wizardCta, type WizardCtaAction } from './wizardCta';
 
-const STEP_COUNT = 6;
-const SETUP_START_STEP = 4;
 const EXIT_MS = 200;
-const ALL_STEPS = Array.from({ length: STEP_COUNT }, (_, index) => index);
-
-type Cta = {
-  readonly label: string;
-  readonly onClick: () => void;
-  readonly variant: ButtonVariant;
-  readonly disabled?: boolean;
-};
 
 export const OnboardingWizard = () => {
   const { open, mode, providersConnected, hasWorkspace, workspace, projectCount } =
@@ -37,7 +26,7 @@ export const OnboardingWizard = () => {
   const addProjects = useAppStore((s) => s.addProjects);
   const adoptProject = useAppStore((s) => s.adoptProject);
   const previewProjectAdoption = useAppStore((s) => s.previewProjectAdoption);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<WizardStepId>('welcome');
   const [shape, setShape] = useState<WorkspaceShape | null>(null);
   const [singleDetection, setSingleDetection] = useState<DetectedChildRepos | null>(null);
   const [singleConflict, setSingleConflict] = useState<ProjectAttachConflict | null>(null);
@@ -56,11 +45,8 @@ export const OnboardingWizard = () => {
   );
   const adoption = useProjectAdoption({ workspaceId: workspace?.id ?? null, detectedPaths });
 
-  const steps = (
-    mode === 'setup' ? ALL_STEPS.filter((candidate) => candidate >= SETUP_START_STEP) : ALL_STEPS
-  ).filter((candidate) => candidate !== 3 || shape !== 'single');
-  const minStep = steps[0] ?? 0;
-  const last = STEP_COUNT - 1;
+  const steps = visibleWizardSteps({ mode, shape });
+  const minStep = steps[0] ?? 'welcome';
 
   useEffect(() => {
     if (!open) {
@@ -91,7 +77,7 @@ export const OnboardingWizard = () => {
   const goNext = () =>
     setStep((current) => {
       const index = steps.indexOf(current);
-      return steps[index + 1] ?? last;
+      return steps[index + 1] ?? 'ready';
     });
   const goBack = () =>
     setStep((current) => {
@@ -99,10 +85,18 @@ export const OnboardingWizard = () => {
       return steps[index - 1] ?? minStep;
     });
   const canSkipSetup = hasWorkspace;
-  const canDismiss = step < last && canSkipSetup;
+  const canDismiss = step !== 'ready' && canSkipSetup;
+  const isFirstStep = step === minStep;
   const dismiss = () => {
     setClosing(true);
     window.setTimeout(finishWizard, EXIT_MS);
+  };
+  const finishAndStartSession = () => {
+    setClosing(true);
+    window.setTimeout(() => {
+      finishWizard();
+      requestNewSession();
+    }, EXIT_MS);
   };
 
   const runStepAction = (action: () => Promise<void | 'stay'>) => {
@@ -192,7 +186,7 @@ export const OnboardingWizard = () => {
       const repos = await scanChildRepos({ path: parentPath });
       if (repos.length === 0) {
         throw new Error(
-          `no git repository at ${path}. pick a folder with a .git directory, or use New project to initialize one`,
+          `No git repository at ${path}. Pick a folder with a .git directory, or use New project to initialize one.`,
         );
       }
       setSingleDetection({ parentPath, repos });
@@ -221,7 +215,7 @@ export const OnboardingWizard = () => {
       setSingleDetection(null);
       setShape('workspace');
       setWorkspaceName(name);
-      setStep(3);
+      setStep('projects');
       return 'stay';
     });
 
@@ -252,75 +246,21 @@ export const OnboardingWizard = () => {
       });
     });
 
-  let body = <WelcomeStep />;
-  let cta: Cta = { label: 'Get started', onClick: goNext, variant: 'primary' };
-
-  if (step === 1) {
-    body = <ProvidersStep />;
-    cta = {
-      label: 'Continue',
-      onClick: goNext,
-      variant: 'primary',
-      disabled: providersConnected === 0,
-    };
-  } else if (step === 2) {
-    body = (
-      <ShapeStep
-        workspace={workspace}
-        shape={shape}
-        onShapeChange={setShape}
-        name={workspaceName}
-        onNameChange={setWorkspaceName}
-        busy={busy}
-        onSingleProject={commitSingleProject}
-        detection={singleDetection}
-        knownRepos={adoption.knownRepos}
-        singleConflict={singleConflict}
-        onMoveSingleConflict={commitSingleConflict}
-        onKeepSingleConflict={() => setSingleConflict(null)}
-        onConfirmDetection={commitDetectedProjects}
-        onDismissDetection={() => setSingleDetection(null)}
-      />
-    );
-    cta =
-      shape === 'single' && workspace === null
-        ? {
-            label: 'Continue',
-            onClick: goNext,
-            variant: 'primary',
-            disabled: true,
-          }
-        : {
-            label: workspace === null ? 'Create workspace' : 'Continue',
-            onClick: commitWorkspaceName,
-            variant: 'primary',
-            disabled: busy || shape === null || workspaceName.trim().length === 0,
-          };
-  } else if (step === 3) {
-    body =
-      workspace === null ? (
-        <WelcomeStep />
-      ) : (
-        <ProjectsStep workspace={workspace} initialConflicts={pendingConflicts} />
-      );
-    cta = {
-      label: 'Continue',
-      onClick: goNext,
-      variant: 'primary',
-      disabled: projectCount === 0,
-    };
-  } else if (step === 4) {
-    body = <ProfileStep bio={bioDraft} onBioChange={setBioDraft} />;
-    cta = {
-      label: 'Continue',
-      onClick: commitProfile,
-      variant: 'primary',
-      disabled: busy,
-    };
-  } else if (step === 5) {
-    body = <ReadyStep />;
-    cta = { label: 'Start building', onClick: dismiss, variant: 'primary' };
-  }
+  const cta = wizardCta({
+    step,
+    providersConnected,
+    shape,
+    hasWorkspace: workspace !== null,
+    workspaceName,
+    projectCount,
+    busy,
+  });
+  const CTA_HANDLERS: Readonly<Record<WizardCtaAction, () => void>> = {
+    next: goNext,
+    'commit-name': commitWorkspaceName,
+    'commit-profile': commitProfile,
+    finish: finishAndStartSession,
+  };
 
   return (
     <div
@@ -340,7 +280,7 @@ export const OnboardingWizard = () => {
         dismiss();
       }}
       className={cn(
-        'fixed inset-0 z-50 flex flex-col overflow-hidden bg-background outline-none',
+        'fixed inset-0 z-onboarding flex flex-col overflow-hidden bg-background outline-none',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
@@ -356,14 +296,14 @@ export const OnboardingWizard = () => {
       <header className="relative grid min-h-[3.25rem] shrink-0 grid-cols-3 items-center px-6 pt-5">
         <span aria-hidden />
         <div className="flex justify-center">
-          {step > minStep && <Stepper current={step} steps={steps} />}
+          {!isFirstStep && <Stepper current={step} steps={steps} />}
         </div>
         <div className="flex justify-end">
           {canDismiss && (
             <button
               type="button"
               onClick={dismiss}
-              className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="rounded-md px-2 py-1 text-xs font-medium text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Skip setup
             </button>
@@ -375,27 +315,67 @@ export const OnboardingWizard = () => {
         <div className="flex min-h-full items-center justify-center px-6 py-10">
           <div className="flex w-full max-w-xl flex-col gap-8">
             <div key={step} className="motion-safe:animate-fade-in">
-              {body}
+              <WizardStepBody
+                step={step}
+                workspace={workspace}
+                pendingConflicts={pendingConflicts}
+                bio={bioDraft}
+                onBioChange={setBioDraft}
+                shapeStep={{
+                  workspace,
+                  shape,
+                  onShapeChange: setShape,
+                  name: workspaceName,
+                  onNameChange: setWorkspaceName,
+                  busy,
+                  onSingleProject: commitSingleProject,
+                  detection: singleDetection,
+                  knownRepos: adoption.knownRepos,
+                  singleConflict,
+                  onMoveSingleConflict: commitSingleConflict,
+                  onKeepSingleConflict: () => setSingleConflict(null),
+                  onConfirmDetection: commitDetectedProjects,
+                  onDismissDetection: () => setSingleDetection(null),
+                }}
+              />
             </div>
             {stepError !== null ? (
               <p role="alert" className="text-center text-xs text-danger">
                 {stepError}
               </p>
             ) : null}
-            <div
-              className={cn(
-                'flex items-center pt-2',
-                step > minStep ? 'justify-between' : 'justify-center',
+            <div className="flex flex-col gap-2 pt-2">
+              <div
+                className={cn(
+                  'flex items-center',
+                  isFirstStep ? 'justify-center' : 'justify-between',
+                )}
+              >
+                {!isFirstStep && (
+                  <Button variant="ghost" size="sm" onClick={goBack} disabled={busy}>
+                    Back
+                  </Button>
+                )}
+                {cta !== null && (
+                  <Button
+                    variant="primary"
+                    onClick={CTA_HANDLERS[cta.action]}
+                    disabled={cta.disabled}
+                  >
+                    {cta.label}
+                  </Button>
+                )}
+              </div>
+              {cta !== null && cta.hint !== null && (
+                <p
+                  className={cn(
+                    'text-xs text-muted-foreground',
+                    isFirstStep ? 'text-center' : 'text-right',
+                  )}
+                >
+                  {cta.hint}
+                </p>
               )}
-            >
-              {step > minStep && (
-                <Button variant="ghost" size="sm" onClick={goBack} disabled={busy}>
-                  Back
-                </Button>
-              )}
-              <Button variant={cta.variant} onClick={cta.onClick} disabled={cta.disabled}>
-                {cta.label}
-              </Button>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { rearmMountRecovery } from './mountRecoveryGuard';
 
 export type MountOperationResult = {
   readonly mountId: MountId;
@@ -29,6 +30,10 @@ type SettleParams = {
   readonly operation: MountOperation;
   readonly result?: MountOperationResult;
   readonly errorCode?: string;
+};
+
+type UncertainParams = SettleParams & {
+  readonly shouldRearmRecovery?: boolean;
 };
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
@@ -128,7 +133,8 @@ export const markMountOperationUncertain = async ({
   operation,
   result,
   errorCode,
-}: SettleParams): Promise<void> => {
+  shouldRearmRecovery = true,
+}: UncertainParams): Promise<void> => {
   await upsertMountOperation({
     db: tauriDatabase,
     operation: {
@@ -139,6 +145,9 @@ export const markMountOperationUncertain = async ({
       updatedAt: nowIso(),
     },
   });
+  if (shouldRearmRecovery) {
+    rearmMountRecovery({ sessionId: operation.sessionId });
+  }
 };
 
 type MatchParams = {

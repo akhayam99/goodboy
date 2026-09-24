@@ -75,7 +75,9 @@ export const QUERY_BRIDGE_VERBS: Readonly<
 const MOUNT_SCOPED_PROVIDERS: ReadonlyArray<IntegrationBindingProvider> = ['github', 'gitlab'];
 
 const MOUNT_SCOPE_LINE =
-  'The verbs that read or write a checkout (push, pr-create, mr-create) act on ONE mount. They default to the mount this turn is bound to; pass `--mount <id>` to reach another one.';
+  'The verbs that read or write a checkout (push, pr-create, mr-create) act on ONE mount. ' +
+  '`push` defaults to the mount this turn is bound to; pass `--mount <id>` to reach another one. ' +
+  '`github pr-create` and `gitlab mr-create` always need an explicit `--mount <id>`.';
 
 type GuardParams = {
   readonly providers: ReadonlyArray<IntegrationBindingProvider>;

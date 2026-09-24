@@ -103,6 +103,21 @@ describe('ScriptsSection', () => {
     expect(state.cancelScript).toHaveBeenCalledWith('sess-1', 'sc-1');
   });
 
+  it('pulses the kit status dot while a script runs', () => {
+    state.scriptRuns = { 'sess-1': { 'sc-1': { status: 'pending', result: null } } };
+    render(<ScriptsSection sessionId={'sess-1' as never} workspaceId={'ws-1' as never} />);
+
+    const dot = screen.getByRole('img', { name: 'Running' });
+    expect(dot.className).toContain('animate');
+  });
+
+  it('marks a failed last run with the danger dot', () => {
+    state.scriptRuns = { 'sess-1': { 'sc-1': { status: 'error', result: null } } };
+    render(<ScriptsSection sessionId={'sess-1' as never} workspaceId={'ws-1' as never} />);
+
+    expect(screen.getByRole('img', { name: 'Last run failed' }).className).toContain('bg-danger');
+  });
+
   it('defaults to collapsed, hiding rows behind a count summary', () => {
     state.sessionPanelExpanded = {};
     render(<ScriptsSection sessionId={'sess-1' as never} workspaceId={'ws-1' as never} />);

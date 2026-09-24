@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
@@ -134,17 +134,15 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             disabled={isPending}
             onClick={onSpawn}
             className={cn(
-              'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
-              'hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+              'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
           >
-            {isPending ? (
-              <LoaderCircle size={10} className="animate-spin" aria-hidden />
-            ) : (
-              <ArrowRight size={10} aria-hidden />
-            )}
-            <span>{isPending ? `Spawning ${handoff.kind}` : `Spawn ${handoff.kind}`}</span>
+            <ArrowRight size={10} aria-hidden />
+            <span className={cn(isPending && 'text-shimmer')}>
+              {isPending ? `Spawning ${handoff.kind}` : `Spawn ${handoff.kind}`}
+            </span>
           </button>
         ) : (
           <>
@@ -154,8 +152,8 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               type="button"
               onClick={onOpen}
               className={cn(
-                'rounded px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
-                'hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]',
+                'rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+                'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               )}
             >
               Go to chat

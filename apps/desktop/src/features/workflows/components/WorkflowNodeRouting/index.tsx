@@ -3,13 +3,13 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Divider } from '@goodboy/ui';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';
-import type { ProviderInfo } from '../../../providers/providers';
+import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { useAppStore } from '../../../../store/store';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
 import { WorkflowNodeRoutingRow } from './WorkflowNodeRoutingRow';
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
-const EMPTY_PROVIDERS: ReadonlyArray<ProviderInfo> = [];
+const EMPTY_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [];
 
 type Props = {
   readonly sessionId: SessionId;

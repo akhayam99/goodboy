@@ -31,7 +31,7 @@ export const buildClaudeFlags = (input: {
     if (rule.decision === 'ask') {
       continue;
     }
-    const rendered = formatToolPattern(rule.pattern);
+    const rendered = formatToolPattern({ pattern: rule.pattern });
     if (rule.decision === 'allow') {
       if (!allowedSet.has(rendered)) {
         allowedSet.add(rendered);

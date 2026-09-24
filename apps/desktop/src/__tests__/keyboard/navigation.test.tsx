@@ -73,10 +73,6 @@ vi.mock('../../shared/lib/editor', () => ({
   openUrl: vi.fn(),
 }));
 
-vi.mock('../../routing', () => ({
-  resolveProviderForTurn: vi.fn().mockResolvedValue('anthropic'),
-}));
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

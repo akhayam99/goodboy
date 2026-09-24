@@ -1,6 +1,7 @@
 import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveQueueFilter } from '../../store/slices/session-view';
 
-export const RESOLVE_QUEUE_TITLE = 'Resolve';
+export const RESOLVE_QUEUE_TITLE = 'Conversations';
 
 export const RESOLVE_QUEUE_STATUS_LABEL: Record<ResolveQueueStatus, string> = {
   fix_ready: 'Fix ready, on your machine',
@@ -72,22 +73,11 @@ export const RESOLVE_DELIVERY_SUPPORT = {
   threadLeftOpen: 'Thread left open',
 } as const;
 
-const countedLabel = ({
-  label,
-  count,
-}: {
-  readonly label: string;
-  readonly count: number;
-}): string => (count === 0 ? label : `${label} ${count}`);
-
-export const needsReviewFilterLabel = ({ count }: { readonly count: number }): string =>
-  countedLabel({ label: 'Needs review', count });
-
-export const activeFilterLabel = ({ count }: { readonly count: number }): string =>
-  countedLabel({ label: 'Active', count });
-
-export const retryableFilterLabel = ({ count }: { readonly count: number }): string =>
-  countedLabel({ label: 'Retryable', count });
+export const RESOLVE_QUEUE_FILTER_LABEL: Record<ResolveQueueFilter, string> = {
+  needs_review: 'Needs review',
+  everything: 'Active',
+  retryable: 'Retryable',
+};
 
 export const RESOLVE_QUEUE_RETRYABLE_EMPTY = 'Nothing to retry right now';
 

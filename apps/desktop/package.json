@@ -1,6 +1,6 @@
 {
   "name": "@goodboy/desktop",
-  "version": "0.3.11",
+  "version": "0.4.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,8 +10,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:a11y": "vitest run --passWithNoTests src/__tests__/a11y",
+    "test": "vitest run --project unit --passWithNoTests",
+    "test:a11y": "vitest run --project a11y",
     "build:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

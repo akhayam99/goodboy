@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getAgentDurations,
   getCacheEfficiency,
@@ -28,8 +27,7 @@ const SINCE = NOW - 30 * DAY_MS;
 const iso = (value: number): string => new Date(value).toISOString();
 
 const seedDb = async (): Promise<Database> => {
-  const db = makeTestDatabase();
-  await migrate(db);
+  const db = await makeMigratedTestDatabase();
   for (const id of [workspaceId, otherWorkspaceId]) {
     await db.execute(
       `INSERT INTO workspaces (id, name, slug, created_at, updated_at)

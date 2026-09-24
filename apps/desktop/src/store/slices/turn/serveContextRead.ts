@@ -41,13 +41,13 @@ export const serveContextRead = async ({
     return { kind: 'none' };
   }
   if (extraction.kind === 'malformed') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `context read refused: ${agent.name}`,
-      extraction.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read refused for ${agent.name}`,
+      body: extraction.reason,
+      sessionId,
+    });
     return { kind: 'refused', reason: extraction.reason };
   }
 
@@ -62,23 +62,23 @@ export const serveContextRead = async ({
     heading: '## requested sources (retrieved by the host, no agent was created)',
   });
   if (delivery.kind === 'refused') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `context read refused: ${agent.name}`,
-      delivery.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read refused for ${agent.name}`,
+      body: delivery.reason,
+      sessionId,
+    });
     return { kind: 'refused', reason: delivery.reason };
   }
   if (delivery.kind === 'held') {
-    void get().emitNotification(
-      'error',
-      'warning',
-      `context read held: ${agent.name}`,
-      delivery.reason,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'error',
+      severity: 'warning',
+      title: `Context read held for ${agent.name}`,
+      body: delivery.reason,
+      sessionId,
+    });
     return { kind: 'held', reason: delivery.reason };
   }
   return { kind: 'served', delivered: delivery.deliveredCount, refused: delivery.refusedCount };

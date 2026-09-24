@@ -7,7 +7,7 @@ const SIZE: Record<AgentCardDensity, string> = {
 };
 
 const RESTING_COLOR: Record<AgentCardDensity, string> = {
-  lane: 'text-foreground/80',
+  lane: 'text-foreground',
   sidebar: 'text-muted-foreground',
 };
 

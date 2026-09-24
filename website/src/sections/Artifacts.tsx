@@ -127,8 +127,7 @@ export const Artifacts = () => {
           </h2>
           <p className="sub rv" style={delay(80)}>
             A chat buries the plan under the next hundred lines. Here the plan, the open question
-            and the decision are <b>objects that stay where you left them</b>, and you can edit,
-            answer or reread them any time.
+            and the decision <b>stay where you left them</b>, ready to edit, answer or reread.
           </p>
         </div>
 

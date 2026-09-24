@@ -54,6 +54,7 @@ const h = vi.hoisted(() => ({
   execute: vi.fn(),
   select: vi.fn(),
   exec: vi.fn(),
+  transaction: vi.fn(),
   leases: new Map<string, string>(),
   failFinalizeOnce: false,
 }));
@@ -344,6 +345,7 @@ beforeEach(async () => {
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
+  h.transaction.mockReset().mockImplementation(db.transaction);
   h.leases.clear();
   h.failFinalizeOnce = false;
   await migrate(db);

@@ -1,7 +1,7 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { slackGetThread } from '../../../features/integrations/slack/client';
-import { slackThreadKey } from './state';
+import { capSlackThreads, slackThreadKey } from './state';
 import type { GetFn, SetFn, SlackThreadParams } from './types';
 
 export type RefreshSlackThreadOptions = {
@@ -32,15 +32,17 @@ export const refreshSlackThread = (set: SetFn, get: GetFn) => {
     try {
       const messages = await slackGetThread({ workspaceId, channelId, threadTs });
       set((state) => ({
-        slackThreads: {
-          ...state.slackThreads,
-          [key]: {
-            messages,
-            fetchedAt: new Date().toISOString() as IsoDateTime,
-            loading: false,
-            error: null,
+        slackThreads: capSlackThreads({
+          threads: {
+            ...state.slackThreads,
+            [key]: {
+              messages,
+              fetchedAt: new Date().toISOString() as IsoDateTime,
+              loading: false,
+              error: null,
+            },
           },
-        },
+        }),
       }));
     } catch (error) {
       set((state) => ({

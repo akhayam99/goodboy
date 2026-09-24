@@ -1,6 +1,5 @@
-import { PROVIDER_CAPABILITIES, getModelProvider } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, getModelProvider, clampEffortForModel } from '@goodboy/core';
 import type { AgentEffort, ProviderId, RoleModelPreferences, Session } from '@goodboy/types';
-import { clampEffort } from '../chat/utils/chat-constants';
 import { isRightSizedKind, kindRouting, type AgentKind, type AgentKindRouting } from './agent-kind';
 
 type SpawnRoutingOrigin = 'chat' | 'right-sized' | 'role-default';
@@ -34,7 +33,12 @@ const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting 
   if (provider == null) {
     return null;
   }
-  return { provider, model, effort: clampEffort(model, session.effort ?? fallbackEffort) };
+  const requested = session.effort ?? fallbackEffort;
+  return {
+    provider,
+    model,
+    effort: clampEffortForModel({ model, effort: requested }) ?? requested,
+  };
 };
 
 export const resolveSpawnRouting = ({ kind, roleModels, session }: Params): SpawnRouting => {

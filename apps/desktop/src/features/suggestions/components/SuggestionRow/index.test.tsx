@@ -15,7 +15,7 @@ const suggestion = {
 
 describe('SuggestionRow', () => {
   afterEach(() => document.body.replaceChildren());
-  it.each(['row', 'card', 'compact'] as const)('renders the %s variant', (size) => {
+  it.each(['card', 'compact'] as const)('renders the %s variant', (size) => {
     render(
       <SuggestionRow suggestion={suggestion} size={size} actionLabel="Run" onAction={vi.fn()} />,
     );

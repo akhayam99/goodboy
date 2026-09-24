@@ -7,6 +7,7 @@ import {
   Skeleton,
   Tooltip,
   useDropdown,
+  tintClasses,
 } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
@@ -156,7 +157,12 @@ export const IssuePicker = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className={cn('bg-subtle', isErrorState && !hasOptions && 'border-danger/40 bg-danger/5')}
+      className={cn(
+        'bg-subtle',
+        isErrorState &&
+          !hasOptions &&
+          cn(tintClasses('danger').border, tintClasses('danger').bgSoft),
+      )}
       anchorClassName="w-full"
       trigger={
         <div
@@ -177,7 +183,7 @@ export const IssuePicker = ({
             aria-expanded={isOpen}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(event) => {
               setQuery(event.target.value);
               if (!isOpen) {
@@ -200,7 +206,7 @@ export const IssuePicker = ({
                   void openUrl(value.url);
                 }}
                 aria-label="Open issue in browser"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <ExternalLink size={ICON_SIZE.row} aria-hidden />
               </button>
@@ -212,7 +218,7 @@ export const IssuePicker = ({
               tabIndex={-1}
               onClick={togglePanel}
               aria-label={isOpen ? 'Close issue list' : 'Open issue list'}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <ChevronDown
                 size={ICON_SIZE.row}
@@ -230,8 +236,8 @@ export const IssuePicker = ({
             <div role="status" aria-label="Loading issues" className="py-0.5">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="flex items-center gap-2 px-2.5 py-1.5">
-                  <Skeleton className="h-3 w-12 shrink-0 rounded" />
-                  <Skeleton className="h-3 min-w-0 flex-1 rounded" />
+                  <Skeleton className="h-3 w-12 shrink-0 rounded-sm" />
+                  <Skeleton className="h-3 min-w-0 flex-1 rounded-sm" />
                 </div>
               ))}
             </div>
@@ -256,7 +262,7 @@ export const IssuePicker = ({
                     }}
                     className={cn(
                       'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                      highlightIdx === index && 'bg-primary/10',
+                      highlightIdx === index && cn(tintClasses('primary').bg),
                     )}
                   >
                     <div className="flex items-center gap-2 text-sm">

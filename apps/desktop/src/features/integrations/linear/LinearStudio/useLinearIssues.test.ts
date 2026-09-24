@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Session, SessionExternalTask, SessionId } from '@goodboy/types';
 import { buildIssueGroups, resolveIssueSessions, type SessionPrRef } from './useLinearIssues';
 import type { LinearAttachment, LinearIssue } from '../client';
+import { collectLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 function makeIssue(overrides: Partial<LinearIssue> = {}): LinearIssue {
   return {
@@ -71,6 +72,10 @@ describe('buildIssueGroups', () => {
 });
 
 describe('resolveIssueSessions', () => {
+  const linkedFor = (
+    sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>,
+    sessions: ReadonlyArray<Session>,
+  ) => collectLinkedExternalIds({ sessionExternalTasks, providers: ['linear'], sessions });
   const NO_BRANCHES: Record<string, string> = {};
   const NO_TASKS: Record<string, ReadonlyArray<SessionExternalTask>> = {};
   const NO_PRS = new Map<string, SessionPrRef>();
@@ -80,7 +85,13 @@ describe('resolveIssueSessions', () => {
     const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
       s1: [{ externalId: 'lin-x', provider: 'linear' } as SessionExternalTask],
     };
-    const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, tasks, NO_PRS);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      NO_BRANCHES,
+      linkedFor(tasks, [session('s1')]),
+      NO_PRS,
+    );
     expect(map.get('lin-x')).toBe('s1');
   });
 
@@ -90,7 +101,13 @@ describe('resolveIssueSessions', () => {
       attachments: { nodes: [prAttachment('acme/web', 42)] },
     });
     const prs = new Map<string, SessionPrRef>([['s1', { number: 42, repo: 'acme/web' }]]);
-    const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, NO_TASKS, prs);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      NO_BRANCHES,
+      linkedFor(NO_TASKS, [session('s1')]),
+      prs,
+    );
     expect(map.get('lin-x')).toBe('s1');
   });
 
@@ -100,14 +117,26 @@ describe('resolveIssueSessions', () => {
       attachments: { nodes: [prAttachment('acme/web', 42)] },
     });
     const prs = new Map<string, SessionPrRef>([['s1', { number: 42, repo: 'other/repo' }]]);
-    const map = resolveIssueSessions([issue], [session('s1')], NO_BRANCHES, NO_TASKS, prs);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      NO_BRANCHES,
+      linkedFor(NO_TASKS, [session('s1')]),
+      prs,
+    );
     expect(map.get('lin-x')).toBeUndefined();
   });
 
   it('links by exact Linear branch name', () => {
     const issue = makeIssue({ id: 'lin-x', branchName: 'amin/ser-1-fix' });
     const branches = { s1: 'amin/ser-1-fix' };
-    const map = resolveIssueSessions([issue], [session('s1')], branches, NO_TASKS, NO_PRS);
+    const map = resolveIssueSessions(
+      [issue],
+      [session('s1')],
+      branches,
+      linkedFor(NO_TASKS, [session('s1')]),
+      NO_PRS,
+    );
     expect(map.get('lin-x')).toBe('s1');
   });
 
@@ -121,7 +150,7 @@ describe('resolveIssueSessions', () => {
       [issue],
       [session('s1'), session('s2')],
       branches,
-      tasks,
+      linkedFor(tasks, [session('s1'), session('s2')]),
       NO_PRS,
     );
     expect(map.get('lin-x')).toBe('s2');

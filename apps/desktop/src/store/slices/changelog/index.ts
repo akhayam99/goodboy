@@ -1,3 +1,4 @@
+import { focusChangelogRelease } from './focusChangelogRelease';
 import { hydrateChangelogSeen } from './hydrateChangelogSeen';
 import { loadChangelog } from './loadChangelog';
 import { markChangelogSeen } from './markChangelogSeen';
@@ -10,5 +11,6 @@ export const createChangelogSlice = (set: SetFn, get: GetFn) => {
     reloadChangelog: reloadChangelog(set, get),
     hydrateChangelogSeen: hydrateChangelogSeen(set, get),
     markChangelogSeen: markChangelogSeen(set, get),
+    focusChangelogRelease: focusChangelogRelease(set, get),
   };
 };

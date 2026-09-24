@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrations } from '../migrations';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   NOTIFICATION_LIST_LIMIT,
   countNotifications,
@@ -17,8 +15,7 @@ import {
 type SeedParams = Record<string, never>;
 
 const seed = async ({}: SeedParams) => {
-  const db = makeTestDatabase();
-  await migrate(db, migrations);
+  const db = await makeMigratedTestDatabase();
   return db;
 };
 

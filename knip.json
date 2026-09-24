@@ -7,26 +7,24 @@
       "ignoreDependencies": ["@commitlint/cli"]
     },
     "apps/desktop": {
-      "entry": ["src/main.tsx"],
-      "project": ["src/**/*.{ts,tsx}"],
-      "ignore": [
-        "src/features/companion/commandExecutor.ts",
-        "src/features/github/components/GitHubStudio/useGithubIssues.ts",
-        "src/features/integrations/gitlab/GitlabStudio/useGitlabIssues.ts",
-        "src/features/integrations/gitlab/GitlabStudio/useGitlabMrs/index.ts",
-        "src/features/integrations/jira/JiraStudio/useJiraIssues.ts",
-        "src/features/integrations/linear/LinearStudio/useLinearIssues.ts",
-        "src/features/integrations/sentry/SentryStudio/useSentryIssues.ts",
-        "src/features/session/timeline/activityFilter.ts",
-        "src/features/session/timeline/railGeometry.ts",
-        "src/features/session/timeline/sessionEventPresentation.ts",
-        "src/store/selectors.ts"
+      "project": [
+        "src/**/*.{ts,tsx}!",
+        "!src/__tests__/**!",
+        "!src/**/testing/**!",
+        "!src/store/storyHarness.ts!"
       ],
-      "ignoreFiles": [
-        "scripts/generate-icons.mjs",
-        "src/__tests__/**",
-        "src/store/storyHarness.ts"
-      ],
+      "ignoreIssues": {
+        "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
+        "src/features/companion/mobileConfinement.ts": ["exports"],
+        "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
+        "src/features/session/timeline/sessionEventPresentation.ts": ["exports"],
+        "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],
+        "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
+        "src/store/slices/project-mounts/mountRecoveryGuard.ts": ["exports"],
+        "src/store/slices/turn/mountContinuations.ts": ["exports"],
+        "src/store/slices/turn/turnStartWindow.ts": ["exports"],
+        "src/store/slices/turn/workflowTurnBreaker.ts": ["exports"]
+      },
       "ignoreDependencies": ["tailwindcss"]
     },
     "packages/core": {
@@ -46,8 +44,7 @@
     },
     "website": {
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["tailwindcss"],
-      "ignoreBinaries": ["vite"]
+      "ignoreDependencies": ["tailwindcss"]
     }
   }
 }

@@ -36,7 +36,7 @@ import {
   revealBugReportImages,
   stageBugReportImages,
   type StagedBugReport,
-} from './stageImages';
+} from '../../settings';
 import { truncationNotice } from './truncationNotice';
 import { uploadIssueAttachments } from './uploadIssueAttachments';
 
@@ -200,19 +200,18 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
           void discardBugReportImages({ dir: stagedImagesDir });
         }
         if (stagedImagesDir == null || uploaded != null) {
-          showToast(
-            'success',
-            uploaded == null
-              ? 'Filed on GitHub, under your account.'
-              : 'Filed on GitHub with your images, under your account.',
-            {
-              title: 'Issue sent',
-              action:
-                issueUrl == null
-                  ? undefined
-                  : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
-            },
-          );
+          showToast({
+            kind: 'success',
+            message:
+              uploaded == null
+                ? 'Filed on GitHub, under your account.'
+                : 'Filed on GitHub with your images, under your account.',
+            title: 'Issue sent',
+            action:
+              issueUrl == null
+                ? undefined
+                : { label: 'View issue', onClick: () => void openUrl(issueUrl) },
+          });
           return;
         }
         const action =
@@ -228,11 +227,13 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   void revealBugReportImages({ dir: stagedImagesDir });
                 },
               };
-        showToast(
-          'success',
-          "Your images aren't on it yet. GitHub only takes them by drag and drop.",
-          { title: 'Issue sent', persist: true, action },
-        );
+        showToast({
+          kind: 'success',
+          message: "Your images aren't on it yet. GitHub only takes them by drag and drop.",
+          title: 'Issue sent',
+          persist: true,
+          action,
+        });
       } catch (err) {
         setSendState('error');
         setErrorMessage(formatError(err));
@@ -265,14 +266,16 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
       icon={CONCEPT_ICONS.reportIssue}
       tone={CONCEPT_TONE.reportIssue}
       title="Report an issue"
-      workspaceName="Posts to your own GitHub account"
+      subtitle="Opens a prefilled GitHub issue"
       closeLabel="close report an issue"
       onClose={onClose}
     >
       {(requestClose) => (
         <div className="flex min-h-0 flex-1 flex-col">
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+            <div
+              className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.reading, 'flex flex-col gap-6')}
+            >
               <div className="flex flex-col gap-4">
                 <SegmentedTabs
                   size="md"
@@ -354,7 +357,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 <div className="flex flex-col gap-3">
                   <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
                     <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
-                    <p className="whitespace-pre-wrap text-foreground/85">{previewBody}</p>
+                    <p className="whitespace-pre-wrap text-foreground">{previewBody}</p>
                   </div>
                   {previewTruncation != null ? (
                     <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>

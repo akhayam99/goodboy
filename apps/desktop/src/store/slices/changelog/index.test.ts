@@ -127,4 +127,24 @@ describe('changelog slice', () => {
     expect(getState().changelogStatus).toBe('ready');
     expect(getState().changelogError).toBeNull();
   });
+
+  it('marks the seen version as hydrated even when nothing is stored', async () => {
+    getSettingMock.mockResolvedValueOnce(null);
+    const { slice, getState } = harness();
+
+    await slice.hydrateChangelogSeen();
+
+    expect(getState().changelogSeenHydrated).toBe(true);
+    expect(getState().changelogSeenVersion).toBeNull();
+  });
+
+  it('holds the release to focus until it is cleared', () => {
+    const { slice, getState } = harness();
+
+    slice.focusChangelogRelease({ version: '0.3.14' });
+    expect(getState().changelogFocusVersion).toBe('0.3.14');
+
+    slice.focusChangelogRelease({ version: null });
+    expect(getState().changelogFocusVersion).toBeNull();
+  });
 });

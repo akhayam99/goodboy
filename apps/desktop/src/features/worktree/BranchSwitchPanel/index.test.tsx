@@ -119,6 +119,23 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('BranchSwitchPanel', () => {
+  it('copies the current branch name from its header row without a toast', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(
+      <BranchSwitchPanel
+        sessionId={'sess-1' as never}
+        mountId={'mount-1' as never}
+        onDone={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy branch name' }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('feat/current'));
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
   it('opens on the Create new tab with the branch name input ready to type', () => {
     render(
       <BranchSwitchPanel
@@ -221,7 +238,7 @@ describe('BranchSwitchPanel', () => {
         createNew: false,
       }),
     );
-    expect(showToast).toHaveBeenCalledWith('success', 'branch switched to feat/next');
+    expect(showToast).toHaveBeenCalledWith({ kind: 'success', message: 'Switched to feat/next.' });
     expect(onDone).toHaveBeenCalledOnce();
   });
 

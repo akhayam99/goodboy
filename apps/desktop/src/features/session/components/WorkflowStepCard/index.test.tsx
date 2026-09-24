@@ -2,9 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AgentRole, ProviderId } from '@goodboy/types';
+import type { AgentRole, ProviderId, EffortLevel } from '@goodboy/types';
 import type { AgentKind } from '../../agent-kind';
-import type { EffortLevel } from '../../../chat/utils/chat-constants';
 
 vi.mock('../RoleSelect', () => ({
   RoleSelect: ({ onChange }: { onChange: (v: string) => void }) => (

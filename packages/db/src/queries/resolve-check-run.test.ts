@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ResolveCandidate, ResolveCheckRun, SessionId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import { insertResolveCandidate } from './resolve-candidate';
 import {
@@ -56,8 +55,7 @@ const candidateRun: ResolveCheckRun = {
 let db: Database;
 
 beforeEach(async () => {
-  db = makeTestDatabase();
-  await migrate(db);
+  db = await makeMigratedTestDatabase();
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

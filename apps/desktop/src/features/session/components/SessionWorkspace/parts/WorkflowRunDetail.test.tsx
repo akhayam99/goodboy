@@ -16,7 +16,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   cn: (...parts: ReadonlyArray<unknown>) => parts.filter(Boolean).join(' '),
 }));
 
-vi.mock('../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection', () => ({
+vi.mock('../../AgentTree/AgentsSection', () => ({
   AgentsSection: ({
     workflowRunId,
     workflowVariant,

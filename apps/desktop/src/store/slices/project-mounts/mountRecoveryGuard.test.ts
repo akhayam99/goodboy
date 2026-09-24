@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetMountRecoveryGuard, runMountRecoveryOnce } from './mountRecoveryGuard';
+import {
+  rearmMountRecovery,
+  resetMountRecoveryGuard,
+  runMountRecoveryOnce,
+} from './mountRecoveryGuard';
 
 const SESSION_ID = 'sess-1' as never;
 
@@ -59,5 +63,42 @@ describe('runMountRecoveryOnce', () => {
 
     expect(recovered).toHaveBeenCalledTimes(1);
     errorSpy.mockRestore();
+  });
+});
+
+describe('rearmMountRecovery', () => {
+  it('lets the next call run after a settled recovery', async () => {
+    const run = vi.fn(async () => undefined);
+    runMountRecoveryOnce({ sessionId: SESSION_ID, run });
+    await flushMicrotasks();
+
+    rearmMountRecovery({ sessionId: SESSION_ID });
+    runMountRecoveryOnce({ sessionId: SESSION_ID, run });
+    await flushMicrotasks();
+
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('still dedupes a call made while recovery runs', async () => {
+    let finish = (): void => undefined;
+    const run = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    runMountRecoveryOnce({ sessionId: SESSION_ID, run });
+    await flushMicrotasks();
+
+    rearmMountRecovery({ sessionId: SESSION_ID });
+    runMountRecoveryOnce({ sessionId: SESSION_ID, run });
+    expect(run).toHaveBeenCalledTimes(1);
+
+    finish();
+    await flushMicrotasks();
+    runMountRecoveryOnce({ sessionId: SESSION_ID, run });
+    await flushMicrotasks();
+
+    expect(run).toHaveBeenCalledTimes(2);
   });
 });

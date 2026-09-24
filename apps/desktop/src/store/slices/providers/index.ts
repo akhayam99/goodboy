@@ -10,7 +10,6 @@ import type { GetFn, SetFn } from './types';
 export type {
   ProviderConnectMap,
   ProviderConnectPhase,
-  ProviderConnectState,
   ProviderConnectStep,
   ProviderLifecycleMap,
 } from './types';

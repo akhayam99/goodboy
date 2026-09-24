@@ -1,6 +1,15 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronRight, ExternalLink, MessageSquarePlus } from 'lucide-react';
-import { Chip, cn, type DiffLayoutMode, Divider, EmptyState, Tooltip } from '@goodboy/ui';
+import {
+  Chip,
+  cn,
+  type DiffLayoutMode,
+  Divider,
+  EmptyState,
+  Tooltip,
+  tintClasses,
+  Eyebrow,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
 import type {
@@ -362,13 +371,13 @@ export const FileDiffCard = ({
               className={cn(
                 'inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-3xs font-medium transition-colors',
                 isReviewed
-                  ? 'border-success/40 bg-success/10 text-success'
-                  : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+                  ? cn(tintClasses('success').border, tintClasses('success').bg, 'text-success')
+                  : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',
               )}
             >
               <span
                 className={cn(
-                  'flex size-3 items-center justify-center rounded-[3px] border',
+                  'flex size-3 items-center justify-center rounded-sm border',
                   isReviewed
                     ? 'border-success bg-success text-background'
                     : 'border-muted-foreground/50',
@@ -389,7 +398,7 @@ export const FileDiffCard = ({
               <button
                 type="button"
                 onClick={() => setShowResolved((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-3xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-3xs text-muted-foreground hover:bg-hover hover:text-foreground"
               >
                 <ChevronRight
                   size={10}
@@ -406,9 +415,7 @@ export const FileDiffCard = ({
           ) : null}
           {fileLevelComments.length > 0 || fileLevelComposerOpen ? (
             <div className="mb-3 flex flex-col gap-1.5">
-              <span className="text-3xs font-semibold uppercase tracking-wide text-muted-foreground">
-                file notes
-              </span>
+              <Eyebrow label="file notes" />
               {fileLevelComments.map((c) => (
                 <CommentItem
                   key={c.id}
@@ -456,12 +463,12 @@ export const FileDiffCard = ({
                         <tr key={`hunk-${row.hunkIndex}`}>
                           <td
                             colSpan={columnCount}
-                            className="border-y border-border-soft/40 bg-muted/30"
+                            className="border-y border-border-soft bg-subtle"
                           >
                             <div
                               className={cn(
                                 isSplit ? undefined : DIFF_SCROLL_CONTENT_CLASS,
-                                'px-2.5 py-1 text-3xs font-medium tabular-nums text-muted-foreground/70',
+                                'px-2.5 py-1 text-3xs font-medium tabular-nums text-faint-foreground',
                               )}
                             >
                               {row.header}
@@ -533,9 +540,9 @@ export const FileDiffCard = ({
                         <tr
                           onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}
                           className={cn(
-                            line.kind === 'add' && 'bg-success/[0.07]',
-                            line.kind === 'del' && 'bg-danger/[0.07]',
-                            selecting && 'bg-primary/15',
+                            line.kind === 'add' && cn(tintClasses('success').bgSoft),
+                            line.kind === 'del' && cn(tintClasses('danger').bgSoft),
+                            selecting && cn(tintClasses('primary').bg),
                           )}
                         >
                           <td
@@ -566,16 +573,16 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-l-2 px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 oldAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
+                                'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                               oldRangeCommented
-                                ? 'border-warning/60'
+                                ? cn(tintClasses('warning').border)
                                 : line.kind === 'add'
-                                  ? 'border-success/50'
+                                  ? cn(tintClasses('success').border)
                                   : line.kind === 'del'
-                                    ? 'border-danger/50'
+                                    ? cn(tintClasses('danger').border)
                                     : 'border-transparent',
                             )}
                           >
@@ -609,15 +616,15 @@ export const FileDiffCard = ({
                                 : undefined
                             }
                             className={cn(
-                              'w-9 select-none border-r border-border-soft/40 px-1.5 text-right text-3xs tabular-nums text-muted-foreground/50',
+                              'w-9 select-none border-r border-border-soft px-1.5 text-right text-3xs tabular-nums text-faint-foreground',
                               canComment &&
                                 newAnchor !== null &&
-                                'cursor-pointer transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60',
+                                'cursor-pointer transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring',
                             )}
                           >
                             {line.newLine ?? ''}
                           </td>
-                          <td className="whitespace-pre px-2.5 text-foreground/80">
+                          <td className="whitespace-pre px-2.5 text-foreground">
                             <DiffLineText line={line} lang={lang} />
                           </td>
                         </tr>

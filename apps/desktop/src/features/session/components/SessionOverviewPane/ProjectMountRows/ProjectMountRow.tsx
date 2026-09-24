@@ -1,14 +1,21 @@
 import { useState } from 'react';
-import { Chip, IconButton, Skeleton, Tooltip, cn, formatError, tintClasses } from '@goodboy/ui';
+import {
+  Chip,
+  IconButton,
+  Skeleton,
+  Tooltip,
+  cn,
+  tintClasses,
+  type OverflowMenuItem,
+} from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { useToast } from '../../../../../app/components/Toast';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
-import { EditorMenu } from '../EditorMenu';
+import { useEditorMenuItems } from '../useEditorMenuItems';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
@@ -16,10 +23,9 @@ import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
-import { ProjectDetachMenu } from './ProjectDetachMenu';
+import { MountActionsMenu } from './MountActionsMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useProjectActivity } from './useProjectActivity';
-import { WriteDestinationAction } from './WriteDestinationAction';
 import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
 
 type Props = {
@@ -30,20 +36,14 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
-  readonly hasSeriesColumn?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
 const UTILITY_REVEAL =
   'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100';
 
-const SLOT_BRANCH = 'flex min-w-0 flex-1 items-center gap-1';
-const SLOT_SERIES = 'flex w-14 shrink-0 items-center';
-const SLOT_SYNC = 'flex w-7 shrink-0 items-center justify-center';
-const SLOT_DIFF = 'flex w-24 shrink-0 items-center';
-const SLOT_STATE = 'flex w-32 shrink-0 items-center';
-const SLOT_ACTION = 'flex w-20 shrink-0 items-center';
-const SLOT_UTILITY = 'flex w-28 shrink-0 items-center justify-end';
+const CELL = 'flex items-center px-1';
+const NARROW_HIDDEN = '@max-[36rem]:px-0 @max-[36rem]:*:hidden';
 
 const ACTIVITY_DOT = cn(
   'pointer-events-none absolute -right-0.5 -top-0.5 size-1.5 rounded-full',
@@ -68,14 +68,14 @@ export const ProjectMountRow = ({
   diffStat,
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
-  hasSeriesColumn = false,
   onSelectLens,
 }: Props) => {
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
+  const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
-  const { showToast } = useToast();
+  const reportError = useAppStore((state) => state.reportError);
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
   const worktreePath = row.worktreePath;
@@ -95,6 +95,7 @@ export const ProjectMountRow = ({
     isPending: isStatusPendingProp,
   });
   const operation = mountOperationView({ status: worktreeStatus, label });
+  const editorItems = useEditorMenuItems({ worktreePath: hasTools ? worktreePath : null });
 
   const openLens = ({ lens }: OpenLensParams) => {
     if (lens === 'terminal') {
@@ -114,20 +115,61 @@ export const ProjectMountRow = ({
     try {
       await attachMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      showToast('error', formatError(error));
+      void reportError({ title: `Couldn't mount ${label}`, error, sessionId });
     } finally {
       setIsAttaching(false);
     }
   };
 
+  const applyNextTurns = async () => {
+    try {
+      await setSessionActiveMount({ sessionId, mountId: row.mountId });
+    } catch (error) {
+      void reportError({ title: `Couldn't send next turns to ${label}`, error, sessionId });
+    }
+  };
+
+  const menuItems: ReadonlyArray<OverflowMenuItem> = hasTools
+    ? [
+        ...(isWriteDestination
+          ? []
+          : [
+              {
+                kind: 'item',
+                key: 'next-turns',
+                label: 'Use for next turns',
+                onClick: () => void applyNextTurns(),
+              } satisfies OverflowMenuItem,
+            ]),
+        {
+          kind: 'item',
+          key: 'terminal',
+          label: 'Open terminal',
+          icon: CONCEPT_ICONS.terminal,
+          onClick: () => openLens({ lens: 'terminal' }),
+        },
+        {
+          kind: 'item',
+          key: 'scripts',
+          label: 'Open scripts',
+          icon: CONCEPT_ICONS.scripts,
+          onClick: () => openLens({ lens: 'scripts' }),
+        },
+        ...editorItems,
+      ]
+    : [];
+
   return (
     <li
       data-testid="project-mount-row"
       aria-label={label}
-      className="group/mount-row flex w-full flex-col"
+      className="group/mount-row col-span-full grid grid-cols-subgrid"
     >
-      <div className="flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-muted/40">
-        <div className={SLOT_BRANCH}>
+      <div
+        data-testid="project-mount-cells"
+        className="col-span-full grid min-h-8 grid-cols-subgrid items-center rounded-md px-1 py-1 hover:bg-hover"
+      >
+        <div className={cn(CELL, 'min-w-0 gap-1')}>
           <MountKindGlyph
             projectKind={row.projectKind}
             isMainCheckout={row.isMainCheckout}
@@ -150,17 +192,9 @@ export const ProjectMountRow = ({
               tone="primary"
               size="3xs"
               bordered={false}
-              label="Next turns"
+              label="Writes here next"
               title={`Next turns write to ${label} unless changed from the chat header.`}
               className="shrink-0"
-            />
-          ) : null}
-          {!isWriteDestination && hasTools ? (
-            <WriteDestinationAction
-              sessionId={sessionId}
-              mountId={row.mountId}
-              label={label}
-              className={UTILITY_REVEAL}
             />
           ) : null}
           {operation === null ? null : (
@@ -174,20 +208,20 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        {hasSeriesColumn ? (
-          <div className={SLOT_SERIES}>
-            {row.series === null ? null : (
-              <Tooltip content={`Part ${row.series.label} of ${row.series.name}`}>
-                <span className="truncate text-3xs tabular-nums text-muted-foreground/70">
-                  {`Part ${row.series.label}`}
-                </span>
-              </Tooltip>
-            )}
+        {row.series === null ? (
+          <span />
+        ) : (
+          <div className={CELL}>
+            <Tooltip content={`Part ${row.series.label} of ${row.series.name}`}>
+              <span className="truncate text-3xs tabular-nums text-faint-foreground">
+                {`Part ${row.series.label}`}
+              </span>
+            </Tooltip>
           </div>
-        ) : null}
-        <div className={SLOT_SYNC}>
-          {isRepo && row.isAttached && !row.isCompleted ? (
-            isStatusPending ? (
+        )}
+        {isRepo && row.isAttached && !row.isCompleted ? (
+          <div className={cn(CELL, 'justify-center', NARROW_HIDDEN)}>
+            {isStatusPending ? (
               <span data-testid="project-distance-skeleton" className="shrink-0">
                 <Skeleton className="size-7 rounded-md" />
               </span>
@@ -198,11 +232,15 @@ export const ProjectMountRow = ({
                 mountId={row.mountId}
                 status={worktreeStatus}
               />
-            )
-          ) : null}
-        </div>
-        <div className={SLOT_DIFF}>
-          {!row.isAttached || !isRepo ? null : (
+            )}
+          </div>
+        ) : (
+          <span />
+        )}
+        {!row.isAttached || !isRepo ? (
+          <span />
+        ) : (
+          <div className={cn(CELL, NARROW_HIDDEN)}>
             <MountChangeCell
               sessionId={sessionId}
               label={label}
@@ -210,16 +248,15 @@ export const ProjectMountRow = ({
               diffStat={diffStat}
               state={worktreeState}
             />
-          )}
-        </div>
-        <div className={SLOT_STATE}>
+          </div>
+        )}
+        <div className={CELL}>
           {row.isAttached ? (
             <MountRequestLink sessionId={sessionId} row={row} label={label} />
           ) : (
             <Chip
               tone="neutral"
               size="3xs"
-              uppercase
               bordered={false}
               icon={<CONCEPT_ICONS.worktree size={9} aria-hidden />}
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}
@@ -232,7 +269,7 @@ export const ProjectMountRow = ({
             />
           )}
         </div>
-        <div className={SLOT_ACTION}>
+        <div className={CELL}>
           {row.isAttached && row.isCompleted && isRepo && worktreePath !== null ? (
             <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />
           ) : row.isAttached ? (
@@ -250,7 +287,7 @@ export const ProjectMountRow = ({
               aria-label={`Mount ${label}`}
               onClick={() => void mount()}
               className={cn(
-                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}
             >
@@ -258,15 +295,9 @@ export const ProjectMountRow = ({
             </button>
           )}
         </div>
-        <div className={SLOT_UTILITY}>
-          {!hasTools || worktreePath === null ? null : (
+        <div className={cn(CELL, 'justify-end')}>
+          {!hasTools ? null : (
             <>
-              <EditorMenu
-                sessionId={sessionId}
-                density="compact"
-                target={{ name: label, worktreePath }}
-                triggerClassName={UTILITY_REVEAL}
-              />
               <span
                 className={cn(
                   'relative inline-flex shrink-0',
@@ -307,7 +338,7 @@ export const ProjectMountRow = ({
               </span>
             </>
           )}
-          <ProjectDetachMenu
+          <MountActionsMenu
             sessionId={sessionId}
             projectId={row.projectId}
             workspaceId={workspaceId ?? undefined}
@@ -315,16 +346,16 @@ export const ProjectMountRow = ({
             menuLabel={`${label} actions`}
             worktreePath={worktreePath ?? row.lastWorktreePath ?? ''}
             worktreeStatus={worktreeStatus}
-            triggerClassName={UTILITY_REVEAL}
             mountId={row.mountId}
             isMountAttached={row.isAttached}
             branch={row.branch}
             canDetachProject={false}
+            items={menuItems}
           />
         </div>
       </div>
       {observation === null ? null : (
-        <div className="flex flex-col px-2 pb-2">
+        <div className="col-span-full flex flex-col px-2 pb-2">
           <MountBranchDecision
             sessionId={sessionId}
             mountId={row.mountId}

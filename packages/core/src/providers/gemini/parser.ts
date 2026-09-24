@@ -1,5 +1,6 @@
 import type { IsoDateTime, ProviderRunId, ProviderUsage, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { parseJsonAllowingControlChars } from '../shared/parseJsonAllowingControlChars';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
@@ -29,6 +30,11 @@ type ReadNumberParams = {
 
 type BuildUsageParams = {
   readonly raw: Readonly<Record<string, unknown>> | undefined;
+  readonly contextTokens?: number;
+};
+
+type RequestContextParams = {
+  readonly raw: Readonly<Record<string, unknown>> | undefined;
 };
 
 type BuildErrorMessageParams = {
@@ -48,15 +54,15 @@ const tryParseJson = ({ line }: TryParseJsonParams): Payload | null => {
     return null;
   }
 
-  try {
-    const parsed: unknown = JSON.parse(line);
-    if (typeof parsed !== 'object' || parsed === null) {
-      return null;
-    }
-    return parsed as Payload;
-  } catch {
+  const parsed = parseJsonAllowingControlChars({ text: line });
+  if (!parsed.ok) {
+    devWarn('[gemini-adapter] dropped a json line that does not parse');
     return null;
   }
+  if (typeof parsed.value !== 'object' || parsed.value === null) {
+    return null;
+  }
+  return parsed.value as Payload;
 };
 
 const readNumber = ({ payload, key }: ReadNumberParams): number | undefined => {
@@ -67,16 +73,29 @@ const readNumber = ({ payload, key }: ReadNumberParams): number | undefined => {
   return value;
 };
 
-const buildUsage = ({ raw }: BuildUsageParams): ProviderUsage => {
+const LAST_REQUEST_CONTEXT = new WeakMap<ParseContext, number>();
+
+const requestContextTokens = ({ raw }: RequestContextParams): number | undefined => {
+  const totalTokens = readNumber({ payload: raw, key: 'total_tokens' });
+  if (totalTokens != null) {
+    return totalTokens;
+  }
+  const inputTokens = readNumber({ payload: raw, key: 'input_tokens' });
+  if (inputTokens == null) {
+    return undefined;
+  }
+  return inputTokens + (readNumber({ payload: raw, key: 'output_tokens' }) ?? 0);
+};
+
+const buildUsage = ({ raw, contextTokens }: BuildUsageParams): ProviderUsage => {
   const inputTokens = readNumber({ payload: raw, key: 'input_tokens' }) ?? 0;
   const outputTokens = readNumber({ payload: raw, key: 'output_tokens' }) ?? 0;
-  const totalTokens = readNumber({ payload: raw, key: 'total_tokens' });
   return {
     inputTokens,
     outputTokens,
     cachedInputTokens: readNumber({ payload: raw, key: 'cache_read_tokens' }) ?? 0,
     cacheCreationInputTokens: 0,
-    contextTokens: totalTokens ?? inputTokens + outputTokens,
+    ...(contextTokens != null && { contextTokens }),
     estimatedCostUsd: 0,
   };
 };
@@ -149,6 +168,10 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
       if (stepUpdate?.['step_type'] !== 'agent_response') {
         return [];
       }
+      const stepContext = requestContextTokens({ raw: toRecord({ value: stepUpdate['usage'] }) });
+      if (stepContext != null) {
+        LAST_REQUEST_CONTEXT.set(ctx, stepContext);
+      }
       const delta = stepUpdate['text_delta'];
       if (typeof delta !== 'string' || delta.length === 0) {
         return [];
@@ -159,8 +182,17 @@ export const parseJsonLine = (line: string, ctx: ParseContext): ReadonlyArray<Tu
     case 'result': {
       const result = toRecord({ value: payload.result });
       const rawUsage = toRecord({ value: result?.['usage'] });
+      const lastRequest = LAST_REQUEST_CONTEXT.get(ctx);
+      LAST_REQUEST_CONTEXT.delete(ctx);
+      const isSingleRequest = result?.['num_turns'] === 1;
+      const contextTokens = isSingleRequest ? requestContextTokens({ raw: rawUsage }) : lastRequest;
       const events: TurnEvent[] = [
-        { kind: 'usage', runId: ctx.runId, usage: buildUsage({ raw: rawUsage }), at },
+        {
+          kind: 'usage',
+          runId: ctx.runId,
+          usage: buildUsage({ raw: rawUsage, ...(contextTokens != null && { contextTokens }) }),
+          at,
+        },
       ];
       if (result?.['status'] !== 'SUCCESS') {
         events.push({

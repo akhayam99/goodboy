@@ -56,6 +56,7 @@ const EMPTY_TELEMETRY: ReadonlyArray<TelemetryRecord> = [];
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
 const EMPTY_PROJECT_FILTER_IDS: ReadonlyArray<string> = [];
 const EMPTY_PROJECT_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
+const EMPTY_SESSIONS: ReadonlyArray<Session> = [];
 
 export const sumSessionCost = (records: readonly TelemetryRecord[]): number => {
   let sum = 0;
@@ -82,6 +83,7 @@ export const useRunSpendUsd = (sessionId: SessionId, workflowRunId: WorkflowRunI
   );
 
 const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
+const EMPTY_RUN_ROUTING: Readonly<Record<ProviderRunId, ExecutedAgentRouting>> = {};
 
 type ExecutedRoutingParams = {
   readonly agent: Pick<Agent, 'id' | 'sessionId' | 'runId'>;
@@ -94,10 +96,11 @@ export const useExecutedAgentRouting = ({
     (state) => state.sessionTelemetry[agent.sessionId] ?? EMPTY_TELEMETRY,
   );
   const runHistory = useAppStore((state) => state.agentRunHistory[agent.id] ?? EMPTY_RUN_IDS);
+  const liveRouting = useAppStore((state) => state.runRouting[agent.id] ?? EMPTY_RUN_ROUTING);
   const agentRunId = agent.runId ?? null;
   return useMemo(
-    () => executedAgentRouting({ agentRunId, runHistory, records }),
-    [agentRunId, runHistory, records],
+    () => executedAgentRouting({ agentRunId, runHistory, records, liveRouting }),
+    [agentRunId, runHistory, records, liveRouting],
   );
 };
 
@@ -142,12 +145,50 @@ type UseProjectFilteredSessionsParams = UseSelectedProjectIdsParams & {
   readonly sessions: ReadonlyArray<Session>;
 };
 
+type SessionsParams = {
+  readonly sessions: ReadonlyArray<Session>;
+};
+
+export const useProjectMountsForSessions = ({
+  sessions,
+}: SessionsParams): AppState['sessionProjectMounts'] =>
+  useAppStore(
+    useShallow((state) => {
+      const picked: Record<string, ReadonlyArray<SessionProjectMount>> = {};
+      for (const session of sessions) {
+        const mounts = state.sessionProjectMounts[session.id];
+        if (mounts === undefined) {
+          continue;
+        }
+        picked[session.id] = mounts;
+      }
+      return picked;
+    }),
+  );
+
+export const useTelemetryForSessions = ({
+  sessions,
+}: SessionsParams): AppState['sessionTelemetry'] =>
+  useAppStore(
+    useShallow((state) => {
+      const picked: Record<string, ReadonlyArray<TelemetryRecord>> = {};
+      for (const session of sessions) {
+        const records = state.sessionTelemetry[session.id];
+        if (records === undefined) {
+          continue;
+        }
+        picked[session.id] = records;
+      }
+      return picked;
+    }),
+  );
+
 export const useProjectFilteredSessions = ({
   workspaceId,
   sessions,
 }: UseProjectFilteredSessionsParams): ReadonlyArray<Session> => {
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
-  const sessionProjectMounts = useAppStore((state) => state.sessionProjectMounts);
+  const sessionProjectMounts = useProjectMountsForSessions({ sessions });
   return useMemo(
     () =>
       sessions.filter((session) =>
@@ -212,6 +253,11 @@ function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): 
   return runs ? runs.some((r) => r.status === 'running') : false;
 }
 
+function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  return runs === undefined || runs.length > 0;
+}
+
 function sessionIsDecidingIn(state: StageInfoState, session: Session): boolean {
   return session.workflowRuns.some(
     (run) => state.orchestratingWorkflowRuns?.[run.id] === true && run.discardedAt == null,
@@ -246,6 +292,7 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     isDecidingWorkflow: sessionIsDecidingIn(state, session),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
+    hasRun: sessionHasRunIn(state, sessionId),
   });
 }
 
@@ -300,9 +347,9 @@ export const useSortedGroupedSessions = (
   const sessionWorktrees = useAppStore((s) =>
     needsStage ? s.sessionWorktrees : (EMPTY_GITHUB_STATE as typeof s.sessionWorktrees),
   );
-  const sessionProjectMounts = useAppStore((s) =>
-    needsStage ? s.sessionProjectMounts : (EMPTY_GITHUB_STATE as typeof s.sessionProjectMounts),
-  );
+  const sessionProjectMounts = useProjectMountsForSessions({
+    sessions: needsStage ? filteredSessions : EMPTY_SESSIONS,
+  });
   const sessionActiveProject = useAppStore((s) =>
     needsStage ? s.sessionActiveProject : (EMPTY_GITHUB_STATE as typeof s.sessionActiveProject),
   );
@@ -424,7 +471,7 @@ export const useStageGroupedSessions = (
   const projects = useAppStore((s) => s.projects);
   const sessionBranches = useAppStore((s) => s.sessionBranches);
   const sessionWorktrees = useAppStore((s) => s.sessionWorktrees);
-  const sessionProjectMounts = useAppStore((s) => s.sessionProjectMounts);
+  const sessionProjectMounts = useProjectMountsForSessions({ sessions: filteredSessions });
   const sessionActiveProject = useAppStore((s) => s.sessionActiveProject);
   const sessionMounts = useAppStore((s) => s.sessionMounts);
   const sessionActiveMount = useAppStore((s) => s.sessionActiveMount);
@@ -505,7 +552,7 @@ export const useWorkspaceRollup = (
   sessions: ReadonlyArray<Session>,
 ): WorkspaceRollup => {
   const groups = useStageGroupedSessions(workspaceId, sessions);
-  const sessionTelemetry = useAppStore((s) => s.sessionTelemetry);
+  const sessionTelemetry = useTelemetryForSessions({ sessions });
   return useMemo(() => {
     const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
     const startOfDay = new Date();
@@ -513,8 +560,8 @@ export const useWorkspaceRollup = (
     const cutoff = startOfDay.toISOString();
     let todaySpend = 0;
     for (const session of sessions) {
-      const recs = sessionTelemetry[session.id as SessionId];
-      if (!recs) {
+      const recs = sessionTelemetry[session.id];
+      if (recs === undefined) {
         continue;
       }
       for (const rec of recs) {
@@ -862,7 +909,7 @@ export const useNonResolverStandaloneAgents = (sessionId: SessionId): ReadonlyAr
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
   const agentKindOverride = useSessionAgentKindOverrides(sessionId);
   return useMemo(
-    () => selectNonResolverStandaloneAgents(phaseRuns, agentKindOverride),
+    () => selectNonResolverStandaloneAgents({ agents: phaseRuns, agentKindOverride }),
     [phaseRuns, agentKindOverride],
   );
 };

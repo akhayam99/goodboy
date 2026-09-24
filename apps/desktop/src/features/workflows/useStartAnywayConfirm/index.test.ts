@@ -29,10 +29,12 @@ describe('useStartAnywayConfirm', () => {
 
     await waitFor(() => expect(state.emitNotification).toHaveBeenCalledTimes(1));
     expect(state.emitNotification).toHaveBeenCalledWith(
-      'error',
-      'warning',
-      'the next step did not start',
-      'open questions are waiting for an answer',
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'warning',
+        title: "The next step didn't start",
+        body: 'open questions are waiting for an answer',
+      }),
     );
     expect(result.current.isBusy).toBe(false);
   });

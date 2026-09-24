@@ -1,29 +1,17 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
 use crate::secrets;
 
 const PROVIDER: &str = "slack";
 use crate::util::epoch_secs_to_datetime;
 
-pub struct SlackTokenCache(integration_credentials::SecretCache);
-
-impl SlackTokenCache {
-    pub fn new() -> Self {
-        Self(Mutex::new(HashMap::new()))
-    }
-}
-
-fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(reqwest::Client::new)
-}
+integration_credentials::token_cache!(SlackTokenCache);
 
 const API_BASE: &str = "https://slack.com/api";
 const MAX_PAGES: u32 = 20;
@@ -954,7 +942,7 @@ pub async fn slack_add_reaction(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     const BASE: &str = "https://slack.com/api";

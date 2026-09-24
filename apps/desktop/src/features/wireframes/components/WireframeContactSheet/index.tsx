@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { WireframeDocument } from '@goodboy/core';
-import { Button, cn } from '@goodboy/ui';
+import { Button, cn, Eyebrow } from '@goodboy/ui';
 import { contactSheetPlates } from '../../contactSheetLayout';
 import type { WireframePalette } from '../../wireframePalette';
 import type { WireframeSheetInteraction } from './interaction';
@@ -10,7 +10,6 @@ import { WireframeSheetFrame } from './WireframeSheetFrame';
 type Props = {
   readonly document: WireframeDocument;
   readonly palette: WireframePalette;
-  readonly isLowFidelity: boolean;
   readonly surface?: WireframeSheetSurface;
   readonly interaction?: WireframeSheetInteraction | null;
 };
@@ -18,7 +17,6 @@ type Props = {
 export const WireframeContactSheet = ({
   document,
   palette,
-  isLowFidelity,
   surface = 'app',
   interaction = null,
 }: Props) => {
@@ -43,8 +41,8 @@ export const WireframeContactSheet = ({
       className="print-screens flex min-w-0 flex-col gap-3"
     >
       <div className="flex items-baseline gap-2">
-        <h3 className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
-          Screens
+        <h3>
+          <Eyebrow label="Screens" />
         </h3>
         <span className="tabular-nums text-2xs text-muted-foreground">
           {document.screens.length}
@@ -94,7 +92,6 @@ export const WireframeContactSheet = ({
                 screen={screen}
                 palette={palette}
                 plates={plates}
-                isLowFidelity={isLowFidelity}
                 isCurrent={isCurrent}
                 surface={surface}
                 interaction={interaction}

@@ -67,7 +67,7 @@ export const NudgeCard = ({
               type="button"
               onClick={onDismiss}
               aria-label="Dismiss"
-              className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground"
               data-testid={testId ? `${testId}-dismiss` : undefined}
             >
               <X size={ICON_SIZE.row} aria-hidden />
@@ -106,7 +106,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={secondary.onClick}
                     data-testid={secondary.testId}
-                    className="rounded-md border border-border px-2 py-0.5 text-2xs font-semibold text-foreground hover:bg-muted"
+                    className="rounded-md border border-border px-2 py-0.5 text-2xs font-semibold text-foreground hover:bg-hover"
                   >
                     {secondary.label}
                   </button>
@@ -116,7 +116,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={tertiary.onClick}
                     data-testid={tertiary.testId}
-                    className="rounded-md px-2 py-0.5 text-2xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="rounded-md px-2 py-0.5 text-2xs font-semibold text-muted-foreground hover:bg-hover hover:text-foreground"
                   >
                     {tertiary.label}
                   </button>

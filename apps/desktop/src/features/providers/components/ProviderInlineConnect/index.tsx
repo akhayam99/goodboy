@@ -1,20 +1,26 @@
+import { isApiProvider } from '@goodboy/core';
 import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
-import { isApiProvider, type ProviderId, type ProviderLifecycleAction } from '@goodboy/types';
+import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL } from '../../../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../../providerLabel';
 import { ProviderConnect } from '../ProviderConnect';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProviderCredentialsSection } from '../ProviderStudio/ProviderCredentialsSection';
 
 type Props = {
   readonly providerId: ProviderId;
-  readonly action?: ProviderLifecycleAction;
   readonly onDone: () => void;
   readonly onInFlightChange?: (isInFlight: boolean) => void;
+  readonly autoStart?: boolean;
 };
 
-export const ProviderInlineConnect = ({ providerId, onDone, onInFlightChange }: Props) => {
+export const ProviderInlineConnect = ({
+  providerId,
+  onDone,
+  onInFlightChange,
+  autoStart = false,
+}: Props) => {
   const phase = useAppStore((state) => state.providerConnect[providerId].phase);
   const running = isConnectRunning({ phase });
 
@@ -44,7 +50,12 @@ export const ProviderInlineConnect = ({ providerId, onDone, onInFlightChange }: 
   return (
     <ScrollFade className="min-h-0 max-h-96" fadeFrom="subtle">
       <div className="p-3">
-        <ProviderConnect providerId={providerId} chrome="inline" onDone={onDone} />
+        <ProviderConnect
+          providerId={providerId}
+          chrome="inline"
+          autoStart={autoStart}
+          onDone={onDone}
+        />
       </div>
     </ScrollFade>
   );

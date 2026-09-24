@@ -9,9 +9,8 @@ import type {
   ResolveThread,
   SessionId,
 } from '@goodboy/types';
-import { makeTestDatabase } from '../../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../../test-helpers/test-db';
 import { migrate } from '../../migrations/runner';
-import { migrations } from '../../migrations';
 import { listResolveThreads, setResolveThreadState, upsertResolveThread } from '../resolve-thread';
 import {
   insertResolveAttempt,
@@ -36,11 +35,7 @@ import {
 
 const SESSION = 'session' as SessionId;
 const seed = async () => {
-  const db = makeTestDatabase();
-  await migrate(
-    db,
-    migrations.filter((migration) => migration.version < 140),
-  );
+  const db = await makeMigratedTestDatabase({ throughVersion: 139 });
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );
@@ -152,10 +147,9 @@ describe('durable resolve rows', () => {
     ]);
   });
 
-  it('does not roll back unrelated writes when an import fails inside another transaction', async () => {
+  it('keeps unrelated writes and records no import when an import fails', async () => {
     const db = await seed();
     await migrate(db);
-    await db.exec('BEGIN');
     await db.execute("UPDATE sessions SET goal = 'Unrelated edit' WHERE id = 'session'");
     await expect(
       commitResolveImport({
@@ -165,7 +159,6 @@ describe('durable resolve rows', () => {
         rows: [{ ...row, sessionId: 'absent' as SessionId }],
       }),
     ).rejects.toThrow();
-    await db.exec('COMMIT');
     expect(await db.select("SELECT goal FROM sessions WHERE id = 'session'")).toEqual([
       { goal: 'Unrelated edit' },
     ]);

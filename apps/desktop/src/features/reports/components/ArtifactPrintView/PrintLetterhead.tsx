@@ -1,5 +1,5 @@
 import type { ArtifactKind } from '@goodboy/types';
-import { DogMascot } from '../../../../shared/components/DogMascot';
+import mascotInk from '../../../../assets/mascot-ink.png';
 import type { PrintMetaField } from './artifactMetaFields';
 import { PrintMetaBlock } from './PrintMetaBlock';
 
@@ -16,7 +16,7 @@ export const PrintLetterhead = ({ kind, title, fields }: Props) => (
     <div className="print-eyebrow">
       <span className="print-kind">{kind}</span>
       <span role="img" aria-label="Goodboy" className="print-wordmark">
-        <DogMascot size={MARK_SIZE} className="print-mark" />
+        <img src={mascotInk} alt="" width={MARK_SIZE} height={MARK_SIZE} className="print-mark" />
         <span aria-hidden>Goodboy</span>
       </span>
     </div>

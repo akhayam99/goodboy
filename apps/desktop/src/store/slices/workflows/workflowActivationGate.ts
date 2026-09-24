@@ -1,5 +1,5 @@
 import { listOpenQuestionsForSession } from '@goodboy/db';
-import type { SessionId, WorkflowRunId } from '@goodboy/types';
+import type { SessionId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
@@ -22,17 +22,19 @@ export class WorkflowGateError extends Error {
 type Params = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId | undefined;
+  readonly workflowId: WorkflowId | null;
 };
 
 export const findWorkflowActivationBlock = async ({
   sessionId,
   workflowRunId,
+  workflowId,
 }: Params): Promise<WorkflowBlockReason | null> => {
   if (workflowRunId == null) {
     return null;
   }
   const questions = await listOpenQuestionsForSession(tauriDatabase, sessionId, 'open');
-  if (!workflowRunHasOpenQuestions(questions, workflowRunId)) {
+  if (!workflowRunHasOpenQuestions({ questions, run: { id: workflowRunId, workflowId } })) {
     return null;
   }
   return 'questions';

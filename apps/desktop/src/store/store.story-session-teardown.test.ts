@@ -173,7 +173,7 @@ type Store = {
     state: { kind: string };
   }>;
   archivedSessions: Record<string, ReadonlyArray<unknown>>;
-  workspaces: ReadonlyArray<{ id: string; sessionsRoot: string | null }>;
+  workspaces: ReadonlyArray<{ id: string }>;
   projects: ReadonlyArray<ProjectRow>;
   sessionBranches: Record<string, string>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
@@ -222,7 +222,7 @@ const makeStore = ({
     },
   ],
   archivedSessions: {},
-  workspaces: [{ id: WORKSPACE_ID, sessionsRoot: '/tmp/sessions' }],
+  workspaces: [{ id: WORKSPACE_ID }],
   projects,
   sessionBranches: { [SESSION_ID]: branch },
   sessionWorktrees: {

@@ -57,14 +57,14 @@ export const WorkflowKickoffCard = ({ item }: Props) => {
           ) : null}
           {item.marker.length > 0 ? (
             <Section label="marker to emit">
-              <div className="overflow-x-auto text-xs text-foreground/60">
+              <div className="overflow-x-auto text-xs text-muted-foreground">
                 <Markdown text={codeFenceMarkers({ text: item.marker })} />
               </div>
             </Section>
           ) : null}
         </>
       ) : (
-        <div className="overflow-x-auto text-xs text-foreground/85">
+        <div className="overflow-x-auto text-xs text-foreground">
           <Markdown text={codeFenceMarkers({ text: item.raw })} />
         </div>
       )}

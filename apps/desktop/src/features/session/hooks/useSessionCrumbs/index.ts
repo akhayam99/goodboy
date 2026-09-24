@@ -9,7 +9,7 @@ import {
   type LensKind,
 } from '../../../../store';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
-import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';

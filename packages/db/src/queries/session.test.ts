@@ -1,9 +1,14 @@
-import type { IsoDateTime, MountId, Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  Session,
+  SessionId,
+  SessionProviderPreference,
+  WorkspaceId,
+} from '@goodboy/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   getSessionById,
   insertSession,
@@ -13,6 +18,11 @@ import {
   updateSessionAutoRun,
   updateSessionWriteDestination,
 } from './session';
+
+const PROVIDER_PREFERENCE = {
+  defaultProvider: 'anthropic',
+  allowTurnOverride: true,
+} satisfies SessionProviderPreference;
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -41,8 +51,7 @@ describe('purgeSessionForDelete', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],
@@ -235,8 +244,7 @@ describe('updateSessionWriteDestination', () => {
   };
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],
@@ -370,7 +378,7 @@ describe('session auto_run', () => {
     goal: 'Free agents, hands free',
     state: { kind: 'idle', lastActivityAt: NOW },
     contextSlots: [],
-    providerPreference: DEFAULT_SESSION_PROVIDER_PREFERENCE,
+    providerPreference: PROVIDER_PREFERENCE,
     permissionMode: 'bypassPermissions',
     workflowRuns: [],
     autoRun,
@@ -380,8 +388,7 @@ describe('session auto_run', () => {
   });
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, 1, 1)',
       [workspaceId, 'Workspace', '/tmp/workspace'],

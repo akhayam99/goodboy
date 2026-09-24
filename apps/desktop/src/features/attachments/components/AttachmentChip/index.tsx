@@ -88,7 +88,7 @@ export const AttachmentChip = ({
         label={`Remove ${fileName}`}
         iconSize={10}
         onClick={onRemove}
-        className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground/70 p-0 text-background opacity-0 transition-opacity hover:bg-foreground hover:text-background focus-visible:opacity-100 group-hover:opacity-100"
+        className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground p-0 text-background opacity-0 transition-opacity hover:bg-foreground hover:text-background focus-visible:opacity-100 group-hover:opacity-100"
       />
     );
 
@@ -111,7 +111,7 @@ export const AttachmentChip = ({
         {thumbnail.status === 'loading' ? (
           <Skeleton className="h-full w-full rounded-none" />
         ) : thumbnail.status === 'failed' ? (
-          <div className="flex h-full w-full items-center justify-center bg-foreground/5 text-muted-foreground">
+          <div className="flex h-full w-full items-center justify-center bg-subtle text-muted-foreground">
             <ImageOff size={ICON_SIZE.control} aria-hidden />
           </div>
         ) : !canPreview ? (
@@ -137,13 +137,13 @@ export const AttachmentChip = ({
   const body = (
     <>
       <Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="truncate text-xs text-foreground/80">{fileName}</span>
+      <span className="truncate text-xs text-foreground">{fileName}</span>
     </>
   );
 
   return (
     <div
-      className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background/60 py-2 pl-2.5 pr-6 ring-1 ring-border-soft"
+      className="group relative flex h-16 max-w-[12rem] items-center gap-2 rounded-md bg-background py-2 pl-2.5 pr-6 ring-1 ring-border-soft"
       title={title}
     >
       {!canPreview ? (

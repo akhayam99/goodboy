@@ -1,7 +1,7 @@
 import type {
   Agent,
   AgentId,
-  ModelEffort,
+  EffortLevel,
   ProviderId,
   RoleModelPreferences,
   Step,
@@ -21,7 +21,7 @@ type Props = {
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
-  readonly sessionEffort: ModelEffort | null;
+  readonly sessionEffort: EffortLevel | null;
   readonly selectedAgentId: AgentId | null;
   readonly onSelect: (id: AgentId) => void;
 };

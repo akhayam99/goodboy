@@ -2,7 +2,7 @@ import { CLAUDE_PERMISSION_MODES, PROVIDER_IDS } from '@goodboy/types';
 import type {
   ClaudePermissionMode,
   IsoDateTime,
-  ModelEffort,
+  EffortLevel,
   MountId,
   ProjectId,
   ProviderId,
@@ -21,6 +21,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { SESSION_WORKFLOW_COLS, toWorkflowRun, type SessionWorkflowRow } from './session-workflow';
+import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SessionRow = {
   id: string;
@@ -67,21 +68,11 @@ function serializeEnabledProviders(
 }
 
 function parseEnabledProviders(raw: string | null): ReadonlyArray<ProviderId> | undefined {
-  if (raw === null) {
-    return undefined;
-  }
-  try {
-    const values: unknown = JSON.parse(raw);
-    if (!Array.isArray(values)) {
-      return undefined;
-    }
-    const providers = values.filter(
-      (value): value is ProviderId => typeof value === 'string' && VALID_PROVIDER_IDS.has(value),
-    );
-    return providers.length > 0 ? providers : undefined;
-  } catch {
-    return undefined;
-  }
+  const values = parseJsonColumn({ value: raw, isValid: isJsonArray, fallback: [] });
+  const providers = values.filter(
+    (value): value is ProviderId => typeof value === 'string' && VALID_PROVIDER_IDS.has(value),
+  );
+  return providers.length > 0 ? providers : undefined;
 }
 
 const VALID_PERMISSION_MODES: ReadonlySet<string> = new Set(CLAUDE_PERMISSION_MODES);
@@ -135,7 +126,7 @@ const toDomain = (
     }),
     ...(row.verbosity && { verbosity: row.verbosity as 'brief' | 'normal' | 'verbose' }),
     ...(row.effort && {
-      effort: row.effort as ModelEffort,
+      effort: row.effort as EffortLevel,
     }),
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override }),
@@ -157,7 +148,7 @@ async function loadWorkflowsForSession(
 
 export type SessionConfigUpdate = {
   verbosity?: VerbosityLevel | null;
-  effort?: ModelEffort | null;
+  effort?: EffortLevel | null;
   modelOverride?: string | null;
   providerOverride?: string | null;
   defaultProvider?: ProviderId | null;
@@ -231,7 +222,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, role_model_overrides, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -243,9 +234,6 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.discardedAt != null ? Date.parse(run.discardedAt) : null,
         run.executionMode,
         run.orchestrationOutcome ?? null,
-        run.roleModelOverrides != null && Object.keys(run.roleModelOverrides).length > 0
-          ? JSON.stringify(run.roleModelOverrides)
-          : null,
         run.createdAt != null ? Date.parse(run.createdAt) : Date.parse(session.createdAt),
       ],
     );
@@ -437,15 +425,12 @@ export const renameSession = async (
 };
 
 export const deleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.exec('BEGIN IMMEDIATE');
-  try {
-    await db.execute('UPDATE sessions SET active_mount_id = NULL WHERE id = ?', [id]);
-    await db.execute('DELETE FROM sessions WHERE id = ?', [id]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
+  await db.transaction({
+    statements: [
+      { sql: 'UPDATE sessions SET active_mount_id = NULL WHERE id = ?', params: [id] },
+      { sql: 'DELETE FROM sessions WHERE id = ?', params: [id] },
+    ],
+  });
 };
 
 export const purgeSessionForDelete = async ({
@@ -455,40 +440,28 @@ export const purgeSessionForDelete = async ({
   readonly db: Database;
   readonly id: SessionId;
 }): Promise<void> => {
-  await db.exec('BEGIN');
-  try {
-    await db.execute('DELETE FROM messages WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM turn_events WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM file_versions WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM context_slots WHERE session_id = ?', [id]);
-    await db.execute('DELETE FROM context_slot_history WHERE session_id = ?', [id]);
-    await db.execute(
-      `DELETE FROM goal_attachments
-       WHERE session_id = ?
-          OR workflow_run_id IN (
-            SELECT workflow_run_id FROM session_workflows WHERE session_id = ?
-          )`,
-      [id, id],
-    );
-    const now = Date.now();
-    await db.execute('UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?', [
-      now,
-      now,
-      id,
-    ]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
-  }
-};
-
-export const softDeleteSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
-};
-
-export const restoreSession = async (db: Database, id: SessionId): Promise<void> => {
-  await db.execute('UPDATE sessions SET deleted_at = NULL WHERE id = ?', [id]);
+  const now = Date.now();
+  await db.transaction({
+    statements: [
+      { sql: 'DELETE FROM messages WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM turn_events WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM file_versions WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM context_slots WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM context_slot_history WHERE session_id = ?', params: [id] },
+      {
+        sql: `DELETE FROM goal_attachments
+         WHERE session_id = ?
+            OR workflow_run_id IN (
+              SELECT workflow_run_id FROM session_workflows WHERE session_id = ?
+            )`,
+        params: [id, id],
+      },
+      {
+        sql: 'UPDATE sessions SET deleted_at = ?, updated_at = ? WHERE id = ?',
+        params: [now, now, id],
+      },
+    ],
+  });
 };
 
 export const archiveSession = async (db: Database, id: SessionId): Promise<void> => {

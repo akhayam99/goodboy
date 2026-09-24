@@ -6,7 +6,7 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { liveQuestionDelegate } from '../../../features/context/questionDelegate';
 import type { GetFn, SetFn } from './types';
 
-export type CancelQuestionDelegatesParams = {
+type CancelQuestionDelegatesParams = {
   readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;

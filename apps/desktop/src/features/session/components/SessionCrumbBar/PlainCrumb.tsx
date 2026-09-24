@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import type { BreadcrumbCrumb } from '../../../../app/components/AppBreadcrumb/buildBreadcrumb';
+import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -13,7 +13,7 @@ export const PlainCrumb = ({ crumb, isLast }: PlainCrumbProps) => {
   const content = (
     <>
       {Icon == null ? null : (
-        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/70" />
+        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
       )}
       <span aria-current={isLast ? 'page' : undefined} className="min-w-0 truncate">
         {crumb.label}

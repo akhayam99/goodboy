@@ -10,6 +10,29 @@ export const INBOX_KIND_FILTERS: ReadonlyArray<InboxKindFilter> = [
   'error',
 ];
 
+export const INBOX_KIND_PROVIDERS: Record<
+  Exclude<InboxKindFilter, 'all'>,
+  ReadonlyArray<InboxProvider>
+> = {
+  issue: ['github', 'gitlab', 'linear', 'jira'],
+  'pr-mr': ['gitlab', 'bitbucket'],
+  thread: ['slack'],
+  error: ['sentry'],
+};
+
+type VisibleKindFiltersParams = {
+  readonly connected: ReadonlyArray<InboxProvider>;
+};
+
+export const visibleKindFilters = ({
+  connected,
+}: VisibleKindFiltersParams): ReadonlyArray<InboxKindFilter> =>
+  INBOX_KIND_FILTERS.filter(
+    (filter) =>
+      filter !== 'pr-mr' ||
+      INBOX_KIND_PROVIDERS['pr-mr'].some((provider) => connected.includes(provider)),
+  );
+
 type MatchesKindParams = {
   readonly kind: InboxKind;
   readonly filter: InboxKindFilter;

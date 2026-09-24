@@ -64,7 +64,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
               <li
                 key={item.id}
                 className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
-                  i === activeIndex ? 'bg-muted' : 'hover:bg-muted/50'
+                  i === activeIndex ? 'bg-muted' : 'hover:bg-hover'
                 }`}
                 onMouseEnter={() => setActiveIndex(i)}
                 onMouseDown={(e) => {
@@ -79,7 +79,7 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                   ) : null}
                 </div>
                 {item.trailing ? (
-                  <span className="flex shrink-0 items-center gap-1.5 text-2xs uppercase tracking-wide text-muted-foreground">
+                  <span className="flex shrink-0 items-center gap-1.5 text-2xs uppercase tracking-eyebrow text-muted-foreground">
                     <span>{item.trailing.label}</span>
                     {item.trailing.kind ? (
                       <AgentAvatar kind={item.trailing.kind} size="sm" />

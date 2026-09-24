@@ -234,6 +234,7 @@ describe('WriteDestinationControl with siblings and no choice', () => {
 
     expect(screen.getByText('Auto: web / main / ak/one')).toBeDefined();
     expect(screen.queryByText(/scratch folder/)).toBeNull();
+    expect(screen.getByText('Auto: web / main / ak/one').closest('[class*="warning"]')).toBeNull();
     expect(scratchDirPrepare).not.toHaveBeenCalled();
   });
 

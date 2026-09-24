@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button, formatError, Input, SegmentedTabs } from '@goodboy/ui';
+import { AlertTriangle, Check, Copy, GitBranch } from 'lucide-react';
+import {
+  Button,
+  IconButton,
+  formatError,
+  Input,
+  SegmentedTabs,
+  cn,
+  tintClasses,
+  useCopyLink,
+} from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../app/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
@@ -33,6 +42,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
     (state) => resolveSessionRepo({ state, sessionId, mountId })?.repoRoot ?? null,
   );
   const { showToast } = useToast();
+  const { copiedKey, failedKey, copy } = useCopyLink();
   const [branchMode, setBranchMode] = useState<'existing' | 'new'>('new');
   const [branchTarget, setBranchTarget] = useState('');
   const [branches, setBranches] = useState<ReadonlyArray<LocalBranchInfo>>(() =>
@@ -108,7 +118,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
         branch: target,
         createNew: branchMode === 'new',
       });
-      showToast('success', `branch switched to ${target}`);
+      showToast({ kind: 'success', message: `Switched to ${target}.` });
       onDone();
     } catch (caught) {
       setError(formatError(caught));
@@ -125,6 +135,31 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           Move this branch mount to another branch
         </span>
       </div>
+
+      {branch === null ? null : (
+        <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+          <GitBranch size={11} aria-hidden className="shrink-0" />
+          <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
+            {branch}
+          </span>
+          <IconButton
+            variant="ghost"
+            icon={copiedKey === null ? Copy : Check}
+            iconSize={11}
+            label="Copy branch name"
+            tooltip={
+              copiedKey !== null
+                ? 'Copied'
+                : failedKey !== null
+                  ? 'Copy failed'
+                  : 'Copy branch name'
+            }
+            tone={copiedKey !== null ? 'success' : failedKey !== null ? 'danger' : 'neutral'}
+            onClick={() => void copy({ text: branch })}
+            className="size-6 shrink-0"
+          />
+        </div>
+      )}
 
       <SegmentedTabs
         ariaLabel="Branch source"
@@ -176,7 +211,13 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
       )}
 
       {needsConfirmation ? (
-        <div className="flex items-start gap-2 rounded-md bg-warning/10 p-3 text-xs">
+        <div
+          className={cn(
+            'flex items-start gap-2 rounded-md',
+            tintClasses('warning').bg,
+            'p-3 text-xs',
+          )}
+        >
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
           <div className="flex flex-col gap-1">
             <ul className="list-disc pl-4 text-muted-foreground">
@@ -184,7 +225,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
               {isInUseElsewhere ? <li>Checked out in another git worktree</li> : null}
               {isDirty ? <li>That worktree has uncommitted changes</li> : null}
             </ul>
-            <span className="text-2xs text-warning/80">
+            <span className={cn('text-2xs', tintClasses('warning').text)}>
               Click {isReuseConfirmed ? '"Confirm switch"' : '"Switch branch"'} again to confirm
             </span>
           </div>

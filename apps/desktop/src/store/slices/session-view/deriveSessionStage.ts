@@ -19,6 +19,7 @@ type Params = {
   prFetchState?: SessionPrFetchState;
   remainingWork?: number;
   remainingReason?: string | null;
+  readonly hasRun?: boolean;
 };
 
 const isPrLive = (pr: PullRequestState | null): pr is PullRequestState =>
@@ -39,6 +40,7 @@ const deriveStage = ({
   prFetchState = 'known',
   remainingWork = 0,
   remainingReason = null,
+  hasRun = true,
 }: Params): StageWithoutRequest => {
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
   if (isBranchless) {
@@ -64,7 +66,11 @@ const deriveStage = ({
     if (hasUnread) {
       return { stage: 'attention', reason: 'unread agent reply', attention: 'unread-reply' };
     }
-    return { stage: 'building', reason: 'ready for work', attention: null };
+    return {
+      stage: 'building',
+      reason: hasRun ? 'ready for work' : 'not started',
+      attention: null,
+    };
   }
   if (session.state.kind === 'error') {
     return { stage: 'attention', reason: 'agent errored', attention: 'agent-error' };
@@ -118,7 +124,7 @@ const deriveStage = ({
     return { stage: 'building', reason: 'GitHub unreachable', attention: null };
   }
   if (pr === null) {
-    return { stage: 'building', reason: 'no PR yet', attention: null };
+    return { stage: 'building', reason: hasRun ? 'no PR yet' : 'not started', attention: null };
   }
   if (pr.state === 'merged' || pr.state === 'closed') {
     const settled = pr.state === 'merged' ? 'merged' : 'closed';

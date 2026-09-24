@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -79,7 +79,8 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   }, [phaseRuns, selectedAgent]);
 
   const toEntries = useMemo(() => {
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return (peers: ReadonlyArray<Agent>): ReadonlyArray<SwitcherEntry> =>
       peers.map((agent) => ({
         agent,
@@ -95,13 +96,14 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     if (selectedAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return toEntries(
       switcherPeers({
         agents: phaseRuns,
         selectedAgent,
         rootAgent,
-        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        home: agentHomeLens({ agent: rootAgent, kind: kindOf(rootAgent) }),
         kindOf,
       }),
     );
@@ -111,13 +113,14 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     if (parentAgent == null || rootAgent == null) {
       return EMPTY_ARRAY as ReadonlyArray<SwitcherEntry>;
     }
-    const kindOf = (agent: Agent) => classifyAgent(agent, agentKindOverride[agent.id] ?? null);
+    const kindOf = (agent: Agent) =>
+      classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return toEntries(
       switcherPeers({
         agents: phaseRuns,
         selectedAgent: parentAgent,
         rootAgent,
-        home: agentHomeLens(rootAgent, kindOf(rootAgent)),
+        home: agentHomeLens({ agent: rootAgent, kind: kindOf(rootAgent) }),
         kindOf,
       }),
     );
@@ -153,12 +156,15 @@ const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
         const visibleCrumb = accessory === crumb.accessory ? crumb : { ...crumb, accessory };
 
         return (
-          <span key={crumb.id} className="flex min-w-0 items-center gap-2">
+          <span
+            key={crumb.id}
+            className={cn('flex min-w-0 items-center gap-2', isLast ? 'flex-1' : 'shrink')}
+          >
             {index > 0 ? (
               <ChevronRight
                 size={ICON_SIZE.row}
                 aria-hidden
-                className="shrink-0 text-muted-foreground/40"
+                className="shrink-0 text-faint-foreground"
               />
             ) : null}
             {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (

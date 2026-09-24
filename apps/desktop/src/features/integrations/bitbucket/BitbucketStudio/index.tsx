@@ -16,11 +16,10 @@ import { useBitbucketPrs } from './useBitbucketPrs';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly workspaceName: string;
   readonly onClose: () => void;
 };
 
-export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) => {
+export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
   const workspaceId = useAppStore(
     (state) => state.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
   );
@@ -70,7 +69,6 @@ export const BitbucketStudio = ({ sessionId, workspaceName, onClose }: Props) =>
     <StudioShell
       glyph={<IntegrationGlyph provider="bitbucket" size={20} />}
       title="Bitbucket"
-      workspaceName={workspaceName}
       closeLabel="close bitbucket studio"
       headerAccessory={
         isConnected && workspaceId != null ? (

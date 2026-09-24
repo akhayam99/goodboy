@@ -1,11 +1,11 @@
 import { PROVIDER_ID_TO_NAME, type WorkflowRoutingAvailabilitySnapshot } from '@goodboy/core';
 import { PROVIDER_IDS, type BudgetAlert, type ProviderId, type SessionId } from '@goodboy/types';
-import type { ProviderInfo } from '../providers/providers';
+import type { ProviderDisplayInfo } from '../providers/providers';
 import { providersCoolingDown } from '../providers/taskModelRouting';
 import type { ProviderCooldowns } from '../providers/routing';
 
 type Params = {
-  readonly providers: ReadonlyArray<ProviderInfo>;
+  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly cooldowns: ProviderCooldowns;
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly sessionId: SessionId | null;

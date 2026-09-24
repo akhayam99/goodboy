@@ -72,6 +72,11 @@ export const CURSOR_AGENT_MODEL_IDS = [
   'claude-opus-4-8-thinking-xhigh-fast',
   'claude-opus-4-8-xhigh',
   'claude-opus-4-8-xhigh-fast',
+  'claude-opus-5-5-high',
+  'claude-opus-5-5-low',
+  'claude-opus-5-5-max',
+  'claude-opus-5-5-medium',
+  'claude-opus-5-5-xhigh',
   'claude-opus-5-high',
   'claude-opus-5-high-fast',
   'claude-opus-5-low',
@@ -212,6 +217,8 @@ export const CURSOR_AGENT_MODEL_IDS = [
   'gpt-5.6-terra-none-fast',
   'gpt-5.6-terra-xhigh',
   'gpt-5.6-terra-xhigh-fast',
+  'grok-4.7-medium',
+  'grok-4.7-medium-fast',
   'kimi-k2.7-code',
   'kimi-k3-high',
   'kimi-k3-low',
@@ -222,4 +229,4 @@ export const CURSOR_AGENT_MODEL_IDS = [
   'muse-spark-1.3-medium',
   'muse-spark-1.3-minimal',
   'muse-spark-1.3-xhigh',
-] as const satisfies ReadonlyArray<string>;
+] satisfies ReadonlyArray<string>;

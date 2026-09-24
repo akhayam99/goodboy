@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react';
 import { SectionHeader, Tooltip } from '@goodboy/ui';
 import { CircleCheck, RotateCw, TriangleAlert } from 'lucide-react';
-import type { ProviderInfo } from '../../../../features/providers/providers';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
-import { StudioPanel } from '../../../../shared/components/StudioPanel';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly info: ProviderInfo;
+  readonly info: ProviderDisplayInfo;
 };
 
 export const ApiProviderDetail = ({ info }: Props) => {
@@ -38,7 +38,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
           aria-label="Re-detect OpenCode"
           disabled={isRefreshing}
           onClick={() => void onRefresh()}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
         >
           <RotateCw size={ICON_SIZE.control} aria-hidden />
         </button>
@@ -47,18 +47,20 @@ export const ApiProviderDetail = ({ info }: Props) => {
   );
 
   return (
-    <StudioPanel
-      icon={<Icon size={20} aria-hidden className="shrink-0" style={{ color }} />}
+    <PaneShell
+      scroll="body"
+      measure="reading"
+      glyph={<Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0" style={{ color }} />}
       title={info.label}
-      subtitle="Runs through the OpenCode runtime"
-      action={action}
+      description="Runs through the OpenCode runtime"
+      actions={action}
     >
       <section className="flex flex-col gap-2">
         <SectionHeader
           label="Runtime"
           hint={`Sessions for ${info.label} execute through this locally installed runtime.`}
         />
-        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-muted/20 p-4">
+        <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
           <span
             className={
               isRuntimeReady
@@ -90,7 +92,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
             type="button"
             disabled={isRefreshing}
             onClick={() => void onRefresh()}
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
           >
             Detect
           </button>
@@ -99,6 +101,6 @@ export const ApiProviderDetail = ({ info }: Props) => {
 
       <ProviderCredentialsSection providerId={info.id} />
       <ProviderBindingsSection providerId={info.id} cliIdentity={null} />
-    </StudioPanel>
+    </PaneShell>
   );
 };

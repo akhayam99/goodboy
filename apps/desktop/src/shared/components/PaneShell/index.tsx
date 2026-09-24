@@ -15,6 +15,7 @@ type BaseProps = {
 type TitleHeaderProps = {
   readonly title: string;
   readonly icon?: LucideIcon;
+  readonly glyph?: ReactNode;
   readonly tone?: Tone;
   readonly description?: string;
   readonly meta?: ReactNode;
@@ -26,6 +27,7 @@ type CustomHeaderProps = {
   readonly header: ReactElement;
   readonly title?: undefined;
   readonly icon?: undefined;
+  readonly glyph?: undefined;
   readonly tone?: undefined;
   readonly description?: undefined;
   readonly meta?: undefined;
@@ -52,7 +54,11 @@ export const PaneShell = (props: Props) => {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex items-baseline gap-2">
-              {props.icon != null ? (
+              {props.glyph != null ? (
+                <span aria-hidden className="flex shrink-0 translate-y-0.5">
+                  {props.glyph}
+                </span>
+              ) : props.icon != null ? (
                 <props.icon
                   size={16}
                   aria-hidden

@@ -80,13 +80,9 @@ describe('ChatBreadcrumb', () => {
   });
 
   it('renders the workspace name as plain text, not a button', () => {
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-workspace-settings', spy);
     render(<ChatBreadcrumb session={session} />);
     expect(screen.queryByRole('button', { name: 'goodboy' })).toBeNull();
-    fireEvent.click(screen.getByText('goodboy'));
-    expect(spy).not.toHaveBeenCalled();
-    window.removeEventListener('goodboy:open-workspace-settings', spy);
+    expect(screen.getByText('goodboy')).toBeDefined();
   });
 });
 

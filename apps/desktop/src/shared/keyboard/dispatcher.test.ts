@@ -2,7 +2,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
+const { platform } = vi.hoisted(() => ({
+  platform: { current: 'darwin' as 'darwin' | 'linux' | 'win32' },
+}));
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
@@ -23,9 +25,30 @@ const bind = (id: Parameters<typeof registerShortcut>[0], handler: () => void) =
   cleanups.push(registerShortcut(id, handler));
 };
 
+const keyEvent = (init: KeyboardEventInit): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', { cancelable: true, bubbles: true, ...init });
+  const altGraph = init.modifierAltGraph === true;
+  Object.defineProperty(event, 'getModifierState', {
+    value: (key: string) => (key === 'AltGraph' ? altGraph : false),
+  });
+  return event;
+};
+
 const press = (init: KeyboardEventInit): KeyboardEvent => {
-  const event = new KeyboardEvent('keydown', { cancelable: true, ...init });
+  const event = keyEvent(init);
   window.dispatchEvent(event);
+  return event;
+};
+
+const typeInto = ({
+  target,
+  init,
+}: {
+  readonly target: HTMLElement;
+  readonly init: KeyboardEventInit;
+}): KeyboardEvent => {
+  const event = keyEvent(init);
+  target.dispatchEvent(event);
   return event;
 };
 
@@ -95,14 +118,15 @@ describe('shortcut dispatcher on darwin', () => {
   });
 
   it('matches on the physical code and every modifier', () => {
+    const entry = SHORTCUTS['palette.open'];
     expect(
-      eventMatches(new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true }), 'cmd+KeyK'),
+      eventMatches({ event: new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true }), entry }),
     ).toBe(true);
     expect(
-      eventMatches(
-        new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true, shiftKey: true }),
-        SHORTCUTS['palette.open'].combo,
-      ),
+      eventMatches({
+        event: new KeyboardEvent('keydown', { code: 'KeyK', metaKey: true, shiftKey: true }),
+        entry,
+      }),
     ).toBe(false);
   });
 
@@ -166,23 +190,84 @@ describe('shortcut dispatcher off darwin', () => {
 
   it('resolves every registry combo to ctrl and never to the command key', () => {
     for (const entry of Object.values(SHORTCUTS)) {
-      const code = entry.combo.split('+').at(-1) ?? '';
-      const shiftKey = entry.combo.includes('shift');
-      const altKey = entry.combo.includes('alt');
+      const combo: string = 'offMacCombo' in entry ? entry.offMacCombo : entry.combo;
+      const code = combo.split('+').at(-1) ?? '';
+      const shiftKey = combo.includes('shift');
+      const altKey = combo.includes('alt');
       expect(
-        eventMatches(
-          new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
-          entry.combo,
-        ),
-        `${entry.combo} does not resolve to ctrl`,
+        eventMatches({
+          event: new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
+          entry,
+        }),
+        `${combo} does not resolve to ctrl`,
       ).toBe(true);
       expect(
-        eventMatches(
-          new KeyboardEvent('keydown', { code, metaKey: true, shiftKey, altKey }),
-          entry.combo,
-        ),
-        `${entry.combo} still answers to the command key`,
+        eventMatches({
+          event: new KeyboardEvent('keydown', { code, metaKey: true, shiftKey, altKey }),
+          entry,
+        }),
+        `${combo} still answers to the command key`,
       ).toBe(false);
     }
+  });
+});
+
+describe('typing wins over the lens plane off darwin', () => {
+  beforeEach(() => {
+    platform.current = 'win32';
+  });
+
+  it('lets an AltGr character through instead of opening a lens', () => {
+    const onQuestions = vi.fn();
+    bind('lens.questions', onQuestions);
+
+    const event = press({
+      key: '@',
+      code: 'KeyQ',
+      ctrlKey: true,
+      altKey: true,
+      modifierAltGraph: true,
+    });
+
+    expect(onQuestions).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('ignores a ctrl and alt combo typed into a textarea', () => {
+    const onDecisions = vi.fn();
+    bind('lens.decisions', onDecisions);
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+
+    const event = typeInto({
+      target: textarea,
+      init: { key: '€', code: 'KeyE', ctrlKey: true, altKey: true },
+    });
+
+    expect(onDecisions).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('still fires the lens combo outside an editable field', () => {
+    const onAgents = vi.fn();
+    bind('lens.agents', onAgents);
+
+    press({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+
+    expect(onAgents).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the darwin option plane working inside a textarea', () => {
+    platform.current = 'darwin';
+    const onAgents = vi.fn();
+    bind('lens.agents', onAgents);
+    const textarea = document.createElement('textarea');
+    document.body.appendChild(textarea);
+    textarea.focus();
+
+    typeInto({ target: textarea, init: { key: 'å', code: 'KeyA', metaKey: true, altKey: true } });
+
+    expect(onAgents).toHaveBeenCalledOnce();
   });
 });

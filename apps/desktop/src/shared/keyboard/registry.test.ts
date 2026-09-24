@@ -4,13 +4,37 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
-import {
-  RESERVED_COMBOS,
-  SHORTCUTS,
-  formatCombo,
-  shortcutGlyphs,
-  withShortcutHint,
-} from './registry';
+import { SHORTCUTS, formatCombo, shortcutGlyphs, withShortcutHint } from './registry';
+
+const RESERVED_COMBOS: ReadonlyArray<string> = [
+  'cmd+KeyQ',
+  'cmd+KeyW',
+  'cmd+KeyM',
+  'cmd+KeyH',
+  'cmd+alt+KeyH',
+  'cmd+alt+KeyD',
+  'cmd+shift+KeyQ',
+  'cmd+alt+shift+KeyQ',
+  'cmd+shift+Slash',
+  'cmd+shift+Digit3',
+  'cmd+shift+Digit4',
+  'cmd+shift+Digit5',
+  'cmd+Space',
+  'cmd+Tab',
+  'cmd+shift+Tab',
+  'cmd+Backquote',
+  'cmd+KeyA',
+  'cmd+KeyC',
+  'cmd+KeyV',
+  'cmd+KeyX',
+  'cmd+KeyZ',
+  'cmd+shift+KeyZ',
+  'cmd+Backspace',
+  'cmd+ArrowLeft',
+  'cmd+ArrowRight',
+  'cmd+ArrowUp',
+  'cmd+ArrowDown',
+];
 
 const entries = Object.entries(SHORTCUTS);
 
@@ -26,6 +50,25 @@ describe('shortcut registry', () => {
       expect(clash, `${id} and ${clash} both bind ${entry.combo}`).toBeUndefined();
       seen.set(entry.combo, id);
     }
+  });
+
+  it('binds every combo exactly once off macOS too, with per-OS combos resolved', () => {
+    const seen = new Map<string, string>();
+    for (const [id, entry] of entries) {
+      const combo: string =
+        'offMacCombo' in entry ? entry.offMacCombo : entry.combo.replace('cmd', 'ctrl');
+      const clash = seen.get(combo);
+      expect(clash, `${id} and ${clash} both bind ${combo} off macOS`).toBeUndefined();
+      seen.set(combo, id);
+    }
+  });
+
+  it('renders the per-OS combo where the platform has one', () => {
+    platform.current = 'darwin';
+    expect(shortcutGlyphs('terminal.newTab')).toBe('⌘T');
+
+    platform.current = 'linux';
+    expect(shortcutGlyphs('terminal.newTab')).toBe('Ctrl+Shift+T');
   });
 
   it('gives the review lens exactly one chord', () => {

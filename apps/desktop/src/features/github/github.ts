@@ -130,11 +130,12 @@ export const ghIssueByNumber = async (
   if (slug == null) {
     throw new Error('could not detect a GitHub repository for this project');
   }
-  const raw = await ghRunJson<RawGithubIssueView>(
-    tauriGhRunner,
-    ['issue', 'view', String(issueNumber), '--repo', slug, '--json', ISSUE_VIEW_FIELDS],
-    { cwd, workspaceId },
-  );
+  const raw = await ghRunJson<RawGithubIssueView>({
+    runner: tauriGhRunner,
+    args: ['issue', 'view', String(issueNumber), '--repo', slug, '--json', ISSUE_VIEW_FIELDS],
+    opts: { cwd, workspaceId },
+    shape: 'object',
+  });
   return {
     number: raw.number,
     title: raw.title,

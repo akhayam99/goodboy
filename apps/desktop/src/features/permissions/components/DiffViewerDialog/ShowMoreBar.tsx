@@ -14,16 +14,16 @@ export const ShowMoreBar = ({ step, rendered, total, onShowMore }: Props) => {
   return (
     <>
       <Divider />
-      <div className="flex flex-col items-center gap-1 bg-muted/20 py-3">
+      <div className="flex flex-col items-center gap-1 bg-subtle py-3">
         <button
           type="button"
           onClick={onShowMore}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
+          className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-hover"
         >
           <ChevronsDown size={ICON_SIZE.row} aria-hidden />
           Show {formatInteger(step)} more lines
         </button>
-        <span className="text-3xs text-muted-foreground/60">
+        <span className="text-3xs text-faint-foreground">
           showing {formatInteger(rendered)} of {formatInteger(total)} lines
         </span>
       </div>

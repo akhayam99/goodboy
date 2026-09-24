@@ -1,13 +1,18 @@
-import type { ModelCostTier, ModelFamily, ModelTier, ProviderId } from './provider-registry';
-
-export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+import type {
+  EffortLevel,
+  ModelCostTier,
+  ModelFamily,
+  ModelTier,
+  ProviderId,
+} from './provider-registry';
 
 export type ModelKey = string;
 
 export type ModelPresentation = {
   readonly family: ModelFamily;
-  readonly group: string | null;
+  readonly group: string;
   readonly version: string;
+  readonly checkpoint?: string;
   readonly order: number;
   readonly costTier: ModelCostTier;
 };
@@ -143,6 +148,7 @@ export type ToggleAxis = {
 export type ModelAxes = {
   readonly model: ModelAxis;
   readonly version: ModelAxis | null;
+  readonly checkpoint: ModelAxis | null;
   readonly effort: EffortAxis | null;
   readonly variant: VariantAxis | null;
   readonly toggles: ReadonlyArray<ToggleAxis>;

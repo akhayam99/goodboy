@@ -29,8 +29,8 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
         'group flex w-full items-center gap-3 rounded-md border px-3 text-left transition-colors',
         density === 'card' ? 'py-2.5' : 'py-2',
         highlighted
-          ? 'border-border bg-muted/60'
-          : 'border-transparent hover:border-border-soft hover:bg-muted/40',
+          ? 'border-border bg-muted'
+          : 'border-transparent hover:border-border-soft hover:bg-hover',
       )}
     >
       <span
@@ -45,11 +45,9 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
             <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}
         </span>
-        <span className="block truncate text-xs text-muted-foreground/80">{projectsLabel}</span>
+        <span className="block truncate text-xs text-muted-foreground">{projectsLabel}</span>
       </span>
-      {lastSeen ? (
-        <span className="shrink-0 text-xs text-muted-foreground/60">{lastSeen}</span>
-      ) : null}
+      {lastSeen ? <span className="shrink-0 text-xs text-faint-foreground">{lastSeen}</span> : null}
     </button>
   );
 };

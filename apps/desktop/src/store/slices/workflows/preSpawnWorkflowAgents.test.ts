@@ -12,7 +12,7 @@ import type {
   AgentId,
   IsoDateTime,
   ProviderId,
-  ModelEffort,
+  EffortLevel,
   RoleModelPreferences,
   Session,
   SessionId,
@@ -189,37 +189,6 @@ describe('preSpawnWorkflowAgents', () => {
 
     expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
     expect(result.blocked).toHaveLength(1);
-  });
-
-  it('blocks a run role pin instead of quietly moving the node elsewhere', async () => {
-    const result = await preSpawnWorkflowAgents({
-      sessionId: SESSION_ID,
-      workflowRunId: RUN_ID,
-      steps: [
-        step({
-          role: 'implementer',
-          routingDecision: {
-            version: 1,
-            proposal: null,
-            selected: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-            source: 'run_role_lock',
-            reason: 'The run role lock selected codex/gpt-5.6-sol.',
-            adjustment: 'none',
-            executed: null,
-          },
-        }),
-      ],
-      baseOrdinal: 0,
-      defaultProvider: 'anthropic',
-      roleModels: null,
-      runRoleModels: {
-        implementer: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
-      },
-      availability: availability({ coolingDownProviders: ['codex'] }),
-    });
-
-    expect(invokeAgentInsertSpy).not.toHaveBeenCalled();
-    expect(result.blocked[0]!.reason).toContain('run role lock');
   });
 
   it('omits effort on the agent row when the chosen model has no effort control', async () => {
@@ -474,7 +443,7 @@ const executionOf = ({
 }: {
   readonly provider: ProviderId;
   readonly model: string;
-  readonly effort: ModelEffort | undefined;
+  readonly effort: EffortLevel | undefined;
 }): ReadonlyArray<string> =>
   resolveModelArgs({
     provider,

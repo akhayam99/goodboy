@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 
 const PIN_TOLERANCE_PX = 32;
 
-export const useScrollPin = (deps: ReadonlyArray<unknown>, resetKey?: unknown) => {
+type Params = {
+  readonly deps: ReadonlyArray<unknown>;
+  readonly resetKey?: unknown;
+};
+
+export const useScrollPin = ({ deps, resetKey }: Params) => {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pinned, setPinned] = useState(true);
   const [atTop, setAtTop] = useState(true);

@@ -1,12 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionExternalTask, SessionId, WorkspaceId } from '@goodboy/types';
-import {
-  buildIssueRows,
-  dedupById,
-  resolveSentrySessions,
-  useSentryIssues,
-} from './useSentryIssues';
+import { buildIssueRows, dedupById, useSentryIssues } from './useSentryIssues';
 import { sentryFetchIssues } from '../client';
 import type { SentryIssue, SentryIssuesPage } from '../client';
 
@@ -62,23 +57,11 @@ describe('dedupById', () => {
   });
 });
 
-describe('resolveSentrySessions', () => {
-  it('links sentry external tasks by external id, ignoring other providers', () => {
-    const tasks: Record<string, ReadonlyArray<SessionExternalTask>> = {
-      s1: [{ provider: 'sentry', externalId: 'sentry-1' } as SessionExternalTask],
-      s2: [{ provider: 'linear', externalId: 'lin-1' } as SessionExternalTask],
-    };
-    const map = resolveSentrySessions(tasks);
-    expect(map.get('sentry-1')).toBe('s1');
-    expect(map.has('lin-1')).toBe(false);
-  });
-});
-
 describe('buildIssueRows', () => {
   it('attaches the linked session id when present', () => {
     const rows = buildIssueRows(
       [makeIssue({ id: 'sentry-1' }), makeIssue({ id: 'sentry-2' })],
-      new Map<string, SessionId>([['sentry-1', 's1' as SessionId]]),
+      new Map<string, SessionId>([['sentry:sentry-1', 's1' as SessionId]]),
     );
     expect(rows.find((r) => r.issue.id === 'sentry-1')?.sessionId).toBe('s1');
     expect(rows.find((r) => r.issue.id === 'sentry-2')?.sessionId).toBeNull();

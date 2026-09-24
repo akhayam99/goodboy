@@ -1,11 +1,12 @@
-import type { MountId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { resolveArtifactMounts, type ArtifactMountOption } from '../artifacts/artifactMountChoice';
 import {
   childRoutingBatch,
   type ChildRoutingBatch,
 } from '../../store/slices/workflows/childRoutingBatch';
-import { PROVIDER_LABEL, modelLabel } from '../chat/utils/chat-constants';
+import { modelLabel } from '../chat/utils/chat-constants';
+import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { exploreList, exploreRead } from '../explore/explore';
 import { kindRouting } from '../session/agent-kind';
 import { workflowAvailabilitySnapshot } from '../workflows/workflowAvailabilitySnapshot';
@@ -21,6 +22,7 @@ import {
   type WireframeScoutRoot,
 } from './wireframeScoutPlan';
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
+import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 
 export type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
@@ -34,14 +36,12 @@ export type WireframeScoutGate =
 type GateParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
-  workflowRunId: WorkflowRunId | null;
   mountIds: ReadonlyArray<MountId>;
 }>;
 
 export const wireframeScoutGate = ({
   state,
   sessionId,
-  workflowRunId,
   mountIds,
 }: GateParams): WireframeScoutGate => {
   const mounts = resolveArtifactMounts({ state, sessionId, mountIds });
@@ -70,7 +70,6 @@ export const wireframeScoutGate = ({
   const routing = childRoutingBatch({
     state,
     sessionId,
-    workflowRunId,
     role: 'scout',
     requests: WIREFRAME_SCOUTS.map((scout) => ({
       proposal: null,
@@ -81,9 +80,7 @@ export const wireframeScoutGate = ({
   if (routing.kind === 'blocked') {
     return { kind: 'skipped', reason: wireframeScoutSkipRouting({ reason: routing.reason }) };
   }
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
-  const roleModels =
-    session === null ? undefined : state.workspaceOverrides?.[session.workspaceId]?.roleModels;
+  const roleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
   const fallback = kindRouting({ kind: 'scout', roleModels });
   const first = routing.entries[0];
   const provider = first?.providerOverride ?? fallback.provider;
@@ -99,7 +96,6 @@ export const wireframeScoutGate = ({
 type PlanParams = Readonly<{
   state: AppStore;
   sessionId: SessionId;
-  workflowRunId: WorkflowRunId | null;
   mountIds: ReadonlyArray<MountId>;
   goal: string;
   brief: string | null;
@@ -140,12 +136,11 @@ const pinnedRootOf = async ({
 export const collectWireframeScoutPlan = async ({
   state,
   sessionId,
-  workflowRunId,
   mountIds,
   goal,
   brief,
 }: PlanParams): Promise<WireframeScoutPlanResult> => {
-  const gate = wireframeScoutGate({ state, sessionId, workflowRunId, mountIds });
+  const gate = wireframeScoutGate({ state, sessionId, mountIds });
   if (gate.kind === 'skipped') {
     return { plan: { kind: 'skipped', reason: gate.reason }, gate };
   }

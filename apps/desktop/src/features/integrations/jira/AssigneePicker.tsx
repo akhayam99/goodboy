@@ -30,7 +30,7 @@ type FilterParams = {
 const UNASSIGN_ROW_ID = 'unassign';
 
 const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50';
+  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const filterAssignees = ({ users, query }: FilterParams): ReadonlyArray<JiraUser> => {
   const needle = query.trim().toLowerCase();

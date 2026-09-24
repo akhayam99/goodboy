@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from '../../../../permissions/components/DiffViewerDialog/DiffLineText';
@@ -26,36 +26,36 @@ type SideStateParams = {
 
 const sideTone = ({ line, hasDraft }: SideStateParams): string => {
   if (line === null) {
-    return 'bg-muted/20';
+    return 'bg-subtle';
   }
   if (hasDraft) {
-    return 'bg-draft/[0.07]';
+    return cn(tintClasses('draft').bgSoft);
   }
   if (line.kind === 'add') {
-    return 'bg-success/[0.07]';
+    return cn(tintClasses('success').bgSoft);
   }
   if (line.kind === 'del') {
-    return 'bg-danger/[0.07]';
+    return cn(tintClasses('danger').bgSoft);
   }
   return '';
 };
 
 const sideAccent = ({ line, hasDraft }: SideStateParams): string => {
   if (hasDraft) {
-    return 'border-draft/50';
+    return cn(tintClasses('draft').border);
   }
   if (line?.kind === 'add') {
-    return 'border-success/50';
+    return cn(tintClasses('success').border);
   }
   if (line?.kind === 'del') {
-    return 'border-danger/50';
+    return cn(tintClasses('danger').border);
   }
   return 'border-transparent';
 };
 
 const ACTIONS_CLASS = 'select-none border-l-2 px-0.5 align-top';
 const GUTTER_CLASS = 'select-none px-1.5 text-right align-top text-3xs tabular-nums';
-const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground/80';
+const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-foreground';
 
 export const ReviewPairCells = ({
   pair,
@@ -88,7 +88,7 @@ export const ReviewPairCells = ({
           onAskAgent={onAskAgent}
         />
       </td>
-      <td className={cn(GUTTER_CLASS, 'text-muted-foreground/50', oldTone)}>
+      <td className={cn(GUTTER_CLASS, 'text-faint-foreground', oldTone)}>
         {pair.old?.oldLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, oldTone)}>
@@ -97,7 +97,7 @@ export const ReviewPairCells = ({
       <td
         className={cn(
           ACTIONS_CLASS,
-          newAccent === 'border-transparent' ? 'border-border-soft/40' : newAccent,
+          newAccent === 'border-transparent' ? 'border-border-soft' : newAccent,
           newTone,
         )}
       >
@@ -108,7 +108,7 @@ export const ReviewPairCells = ({
           onAskAgent={onAskAgent}
         />
       </td>
-      <td className={cn(GUTTER_CLASS, 'text-muted-foreground/50', newTone)}>
+      <td className={cn(GUTTER_CLASS, 'text-faint-foreground', newTone)}>
         {pair.new?.newLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, newTone)}>

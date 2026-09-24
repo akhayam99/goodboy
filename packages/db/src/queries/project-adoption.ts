@@ -110,6 +110,8 @@ type MoveProjectToWorkspaceParams = {
   readonly targetWorkspaceId: WorkspaceId;
 };
 
+const PROJECT_MOVED = 'PROJECT_MOVED';
+
 export const moveProjectToWorkspace = async ({
   db,
   projectId,
@@ -135,32 +137,35 @@ export const moveProjectToWorkspace = async ({
     throw new Error(`workspace not found: ${targetWorkspaceId}`);
   }
   const { moved, ambiguous } = await splitSessions({ db, projectId, sourceWorkspaceId });
-  await db.exec('BEGIN');
-  try {
-    if (moved.length > 0) {
-      const placeholders = moved.map(() => '?').join(', ');
-      await db.execute(`UPDATE sessions SET workspace_id = ? WHERE id IN (${placeholders})`, [
-        targetWorkspaceId,
-        ...moved.map((row) => row.id),
-      ]);
-    }
-    await db.execute('UPDATE projects SET workspace_id = ?, updated_at = ? WHERE id = ?', [
-      targetWorkspaceId,
-      Date.now(),
-      projectId,
-    ]);
-    await db.execute('UPDATE integration_bindings SET workspace_id = ? WHERE project_id = ?', [
-      targetWorkspaceId,
-      projectId,
-    ]);
-    await db.execute('UPDATE permission_rules SET workspace_id = ? WHERE project_id = ?', [
-      targetWorkspaceId,
-      projectId,
-    ]);
-    await db.exec('COMMIT');
-  } catch (error) {
-    await db.exec('ROLLBACK');
-    throw error;
+  const movedIds = moved.map((row) => row.id);
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE projects SET workspace_id = ?, updated_at = ? WHERE id = ? AND workspace_id = ?',
+        params: [targetWorkspaceId, Date.now(), projectId, sourceWorkspaceId],
+        abortWhen: 'noChanges',
+        abortCode: PROJECT_MOVED,
+      },
+      ...(movedIds.length === 0
+        ? []
+        : [
+            {
+              sql: `UPDATE sessions SET workspace_id = ? WHERE id IN (${movedIds.map(() => '?').join(', ')})`,
+              params: [targetWorkspaceId, ...movedIds],
+            },
+          ]),
+      {
+        sql: 'UPDATE integration_bindings SET workspace_id = ? WHERE project_id = ?',
+        params: [targetWorkspaceId, projectId],
+      },
+      {
+        sql: 'UPDATE permission_rules SET workspace_id = ? WHERE project_id = ?',
+        params: [targetWorkspaceId, projectId],
+      },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(`project moved while it was being adopted: ${projectId}`);
   }
   return {
     movedSessionCount: moved.filter((row) => row.deleted_at === null).length,

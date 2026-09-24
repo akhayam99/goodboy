@@ -128,13 +128,11 @@ export const composeCapabilityKickoff = ({
     if (transfer.executionTarget !== null) {
       lines.push(`Execution target: ${transfer.executionTarget}`);
     }
-    if (transfer.replacementRole === null) {
-      lines.push('You own both the capability above and that remaining work.');
-    } else {
-      lines.push(
-        `You own the capability above only. The remaining work goes to a replacement ${transfer.replacementRole} once you report back.`,
-      );
-    }
+    lines.push(
+      transfer.replacementRole === null
+        ? 'You own both the capability above and that remaining work.'
+        : `You own the capability above only. The remaining work goes to a replacement ${transfer.replacementRole} once you report back.`,
+    );
   }
   return lines.join('\n');
 };

@@ -1,5 +1,5 @@
 import { Fragment, type KeyboardEvent } from 'react';
-import { Bug, CircleDot, GitPullRequest, MessagesSquare, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import {
   Chip,
   cn,
@@ -20,7 +20,7 @@ import {
 import { groupRecordsByAge } from '../../ageSections';
 import {
   filterInboxRecords,
-  INBOX_KIND_FILTERS,
+  visibleKindFilters,
   kindFilterCounts,
   type InboxKindFilter,
 } from '../../kindFilter';
@@ -35,14 +35,6 @@ const KIND_LABEL: Record<InboxKindFilter, string> = {
   error: 'Errors',
 };
 
-const KIND_ICON: Record<InboxKindFilter, SegmentedTabOption<InboxKindFilter>['icon']> = {
-  all: CONCEPT_ICONS.inbox,
-  issue: CircleDot,
-  'pr-mr': GitPullRequest,
-  thread: MessagesSquare,
-  error: Bug,
-};
-
 const NO_PROVIDER_FILTER: ReadonlySet<InboxProvider> = new Set();
 
 type ErrorEntry = {
@@ -51,6 +43,7 @@ type ErrorEntry = {
 };
 
 type Props = {
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly records: ReadonlyArray<InboxRecord>;
   readonly allRecords: ReadonlyArray<InboxRecord>;
   readonly selectedProviders: ReadonlySet<InboxProvider>;
@@ -126,6 +119,7 @@ const handleListKeyDown = ({
 };
 
 export const InboxRail = ({
+  connected,
   records,
   allRecords,
   selectedProviders,
@@ -145,14 +139,13 @@ export const InboxRail = ({
   onRefresh,
 }: Props) => {
   const counts = kindFilterCounts({ records: allRecords });
-  const kindOptions: ReadonlyArray<SegmentedTabOption<InboxKindFilter>> = INBOX_KIND_FILTERS.map(
-    (filter) => ({
-      value: filter,
-      label: KIND_LABEL[filter],
-      icon: KIND_ICON[filter],
-      badge: String(counts[filter]),
-    }),
-  );
+  const kindOptions: ReadonlyArray<SegmentedTabOption<InboxKindFilter>> = visibleKindFilters({
+    connected,
+  }).map((filter) => ({
+    value: filter,
+    label: KIND_LABEL[filter],
+    ...(counts[filter] > 0 && { badge: String(counts[filter]) }),
+  }));
   const providerCountRecords = filterInboxRecords({
     records: allRecords,
     query,
@@ -182,7 +175,7 @@ export const InboxRail = ({
         )}
       >
         <div className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-2.5 focus-within:border-primary">
-          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground/60" />
+          <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
           <input
             type="text"
             value={query}
@@ -190,7 +183,7 @@ export const InboxRail = ({
             placeholder="Search the inbox"
             aria-label="Search the inbox"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
         <SegmentedTabs
@@ -248,7 +241,7 @@ export const InboxRail = ({
             ) : null}
           </div>
         ) : null}
-        <div className="flex items-center justify-between gap-2 text-3xs text-muted-foreground/60">
+        <div className="flex items-center justify-between gap-2 text-3xs text-faint-foreground">
           <span className="flex items-center gap-1.5">
             <KbdPill className="h-4 min-w-4 text-3xs">↑↓</KbdPill>
             <span>navigate</span>
@@ -259,7 +252,7 @@ export const InboxRail = ({
             <button
               type="button"
               onClick={onClearFilters}
-              className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-focus-ring)]"
+              className="text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Clear filters
             </button>
@@ -277,11 +270,11 @@ export const InboxRail = ({
             <div key={index} className="flex flex-col gap-1 px-3 py-2">
               <div className="flex items-center gap-2">
                 <Skeleton className="size-3.5 shrink-0 rounded-full" />
-                <Skeleton className="h-3 flex-1 rounded" />
+                <Skeleton className="h-3 flex-1 rounded-sm" />
               </div>
               <div className="flex items-center gap-2">
                 <span aria-hidden className="size-3.5 shrink-0" />
-                <Skeleton className="h-2.5 w-1/3 rounded" />
+                <Skeleton className="h-2.5 w-1/3 rounded-sm" />
               </div>
             </div>
           ))}
@@ -310,7 +303,7 @@ export const InboxRail = ({
                   ? undefined
                   : inboxOptionId({ key: selectedKey })
               }
-              className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+              className="flex flex-col gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               onKeyDown={(event) =>
                 handleListKeyDown({ event, orderedRecords, selectedKey, onSelect, onActivate })
               }
@@ -338,7 +331,7 @@ export const InboxRail = ({
               </p>
             ) : null}
             {hasFiltersActive && records.length > 0 ? (
-              <p className="px-1 text-2xs text-muted-foreground/60">
+              <p className="px-1 text-2xs text-faint-foreground">
                 {records.length} of {totalCount} shown
               </p>
             ) : null}

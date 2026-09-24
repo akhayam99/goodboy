@@ -183,11 +183,13 @@ describe('mapNotificationAction', () => {
     await vi.waitFor(() => expect(emitNotificationSpy).toHaveBeenCalled());
 
     expect(emitNotificationSpy).toHaveBeenCalledWith(
-      'error',
-      'error',
-      'retry failed, conversations left open',
-      expect.stringContaining('the pull request could not be read'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'error',
+        title: 'Retry failed, the conversations stay open',
+        body: expect.stringContaining('the pull request could not be read'),
+        sessionId: SESSION_ID,
+      }),
     );
     expect(publishConversationsSpy).not.toHaveBeenCalled();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -208,11 +210,13 @@ describe('mapNotificationAction', () => {
     await vi.waitFor(() => expect(emitNotificationSpy).toHaveBeenCalled());
 
     expect(emitNotificationSpy).toHaveBeenCalledWith(
-      'error',
-      'error',
-      'retry failed, conversations left open',
-      expect.stringContaining('github refused the reply'),
-      { sessionId: SESSION_ID },
+      expect.objectContaining({
+        kind: 'error',
+        severity: 'error',
+        title: 'Retry failed, the conversations stay open',
+        body: expect.stringContaining('github refused the reply'),
+        sessionId: SESSION_ID,
+      }),
     );
   });
 });

@@ -5,25 +5,19 @@ use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
+use super::args::{optional_text, required_text};
 use super::mount::MountRow;
 use super::protocol::{spec_for, Access, BridgeError, QueryRequest, MOUNT_UNAVAILABLE};
 use crate::db::Db;
 
 pub(super) type Args = BTreeMap<String, Value>;
 
+fn text(args: &Args, key: &str) -> Result<String, String> {
+    required_text(args, key).map_err(|error| error.message)
+}
+
 fn encode<T: Serialize>(value: T) -> Result<Value, String> {
     serde_json::to_value(value).map_err(|error| error.to_string())
-}
-
-fn text(args: &Args, key: &str) -> Result<String, String> {
-    args.get(key)
-        .and_then(Value::as_str)
-        .map(str::to_string)
-        .ok_or_else(|| format!("missing argument: {}", key))
-}
-
-fn optional_text(args: &Args, key: &str) -> Option<String> {
-    args.get(key).and_then(Value::as_str).map(str::to_string)
 }
 
 fn number(args: &Args, key: &str) -> Result<i64, String> {

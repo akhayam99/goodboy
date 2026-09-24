@@ -27,10 +27,7 @@ export const MountKindGlyph = ({ projectKind, isMainCheckout, label }: Props) =>
         <Glyph
           size={ICON_SIZE.row}
           aria-hidden
-          className={cn(
-            'shrink-0',
-            isMainCheckout ? 'text-foreground/70' : 'text-muted-foreground',
-          )}
+          className={cn('shrink-0', isMainCheckout ? 'text-foreground' : 'text-muted-foreground')}
         />
       </span>
     </Tooltip>

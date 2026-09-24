@@ -1,6 +1,6 @@
 import { PREFIXES, type PrefixMeta, type QuickActionGroup } from '../../../quick-actions/grammar';
 
-export type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'>;
+export type PaletteGroup = Exclude<QuickActionGroup, 'skill' | 'workflow'> | 'goto';
 
 export const PALETTE_PREFIXES: ReadonlyArray<PrefixMeta> = PREFIXES.filter(
   (prefix) => prefix.group !== 'skill' && prefix.group !== 'workflow',

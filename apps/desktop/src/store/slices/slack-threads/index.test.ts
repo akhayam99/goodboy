@@ -21,6 +21,7 @@ vi.mock('../../../features/integrations/slack/client', () => ({
 
 const { createSlackThreadsSlice, initialSlackThreadsState, slackChannelKey, slackThreadKey } =
   await import('./index');
+const { SLACK_THREAD_CACHE_LIMIT, pruneSlackWorkspace } = await import('./state');
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const CHANNEL_ID = 'C024BE7LR';
@@ -253,5 +254,86 @@ describe('slack-threads slice', () => {
     expect(
       (store.getState().slackUsers as Record<string, ReadonlyArray<unknown>>)[WORKSPACE_ID],
     ).toHaveLength(1);
+  });
+
+  describe('thread cache bounds', () => {
+    it('keeps at most the cache limit, evicting the oldest fetched thread', async () => {
+      const store = buildStore();
+      const seeded: Record<string, unknown> = {};
+      for (let index = 0; index < SLACK_THREAD_CACHE_LIMIT; index += 1) {
+        seeded[
+          slackThreadKey({
+            workspaceId: WORKSPACE_ID,
+            channelId: CHANNEL_ID,
+            threadTs: `old-${index}`,
+          })
+        ] = {
+          messages: [],
+          fetchedAt: `2026-09-01T00:00:${String(index).padStart(2, '0')}.000Z`,
+          loading: false,
+          error: null,
+        };
+      }
+      Object.assign(store.getState(), { slackThreads: seeded });
+      getThreadSpy.mockResolvedValueOnce([]);
+
+      await store.slice.refreshSlackThread({
+        workspaceId: WORKSPACE_ID,
+        channelId: CHANNEL_ID,
+        threadTs: THREAD_TS,
+      });
+
+      const threads = store.getState().slackThreads as Record<string, unknown>;
+      expect(Object.keys(threads)).toHaveLength(SLACK_THREAD_CACHE_LIMIT);
+      expect(
+        threads[
+          slackThreadKey({ workspaceId: WORKSPACE_ID, channelId: CHANNEL_ID, threadTs: 'old-0' })
+        ],
+      ).toBeUndefined();
+      expect(
+        threads[
+          slackThreadKey({ workspaceId: WORKSPACE_ID, channelId: CHANNEL_ID, threadTs: THREAD_TS })
+        ],
+      ).toBeDefined();
+    });
+  });
+
+  describe('pruneSlackWorkspace', () => {
+    it('drops every cached entry of the disconnected workspace and keeps the others', () => {
+      const other = 'ws-2' as WorkspaceId;
+      const entry = { messages: [], fetchedAt: null, loading: false, error: null };
+      const pruned = pruneSlackWorkspace({
+        state: {
+          slackChannels: {
+            [WORKSPACE_ID]: { channels: [], loading: false, error: null },
+            [other]: { channels: [], loading: false, error: null },
+          },
+          slackUsers: { [WORKSPACE_ID]: [], [other]: [] },
+          slackThreadHeads: {
+            [slackChannelKey({ workspaceId: WORKSPACE_ID, channelId: CHANNEL_ID })]: {
+              heads: [],
+              loading: false,
+              error: null,
+            },
+          },
+          slackThreads: {
+            [slackThreadKey({
+              workspaceId: WORKSPACE_ID,
+              channelId: CHANNEL_ID,
+              threadTs: THREAD_TS,
+            })]: entry,
+            [slackThreadKey({ workspaceId: other, channelId: CHANNEL_ID, threadTs: THREAD_TS })]:
+              entry,
+          },
+        },
+        workspaceId: WORKSPACE_ID,
+      });
+      expect(Object.keys(pruned.slackChannels)).toEqual([other]);
+      expect(Object.keys(pruned.slackUsers)).toEqual([other]);
+      expect(pruned.slackThreadHeads).toEqual({});
+      expect(Object.keys(pruned.slackThreads)).toEqual([
+        slackThreadKey({ workspaceId: other, channelId: CHANNEL_ID, threadTs: THREAD_TS }),
+      ]);
+    });
   });
 });

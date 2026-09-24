@@ -73,7 +73,7 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
         </span>
         <span className="min-w-0 flex-1 truncate text-xs">{record.title}</span>
         {relativeTime !== '' ? (
-          <span className="shrink-0 text-3xs tabular-nums text-muted-foreground/60">
+          <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">
             {relativeTime}
           </span>
         ) : null}
@@ -83,7 +83,7 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
         <span className="shrink-0 text-2xs text-muted-foreground">{providerLabel}</span>
         <StateBadge tone={stateTone}>{STATE_LABEL[record.state]}</StateBadge>
         <span
-          className="min-w-0 flex-1 truncate text-2xs text-muted-foreground/70"
+          className="min-w-0 flex-1 truncate text-2xs text-faint-foreground"
           title={record.meta}
         >
           {record.meta}

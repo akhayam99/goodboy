@@ -33,7 +33,7 @@ const harness = ({ cachedPrs }: { readonly cachedPrs: ReadonlyArray<{ number: nu
   const refreshSessionPrDetail = vi.fn(async () => undefined);
   const recordSessionEvent = vi.fn(async () => undefined);
   const state = {
-    projects: [{ id: PROJECT_ID, name: 'app-web' }],
+    projects: [{ id: PROJECT_ID, name: 'storefront-web' }],
     recordSessionEvent,
     sessions: [{ id: SESSION_ID, activeMountId: FIRST_MOUNT }],
     sessionMounts: {},
@@ -127,7 +127,7 @@ describe('setSessionActiveMount', () => {
       payload: {
         mountId: SECOND_MOUNT,
         projectId: PROJECT_ID,
-        projectName: 'app-web',
+        projectName: 'storefront-web',
         branch: 'ak/two',
       },
     });

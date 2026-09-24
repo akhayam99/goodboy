@@ -1,7 +1,6 @@
-import type { IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { runsForWorkflowRun } from '@goodboy/core';
-import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
+import { cancelRunningSteps } from './cancelRunningSteps';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
@@ -28,22 +27,7 @@ const runStop = async ({ set, get, sessionId, workflowRunId }: Params): Promise<
     stop: { kind: 'operator', message: OPERATOR_STOP_MESSAGE },
   });
   await get().setWorkflowRunAutoRun(sessionId, workflowRunId, false);
-  const running = runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId).filter(
-    (agent) => agent.status === 'running',
-  );
-  if (running.length === 0) {
-    return;
-  }
-  for (const agent of running) {
-    await get().cancelCurrentTurn(sessionId, agent.id);
-    await invokeAgentUpdateStatus(agent.id, {
-      status: 'skipped',
-      completedAt: new Date().toISOString() as IsoDateTime,
-    });
-  }
-  const refreshed = await invokeAgentList(sessionId);
-  set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshed } }));
-  void get().refreshUnreadWorkspaces();
+  await cancelRunningSteps({ set, get, sessionId, workflowRunId });
 };
 
 export const stopWorkflowRunNow = (set: SetFn, get: GetFn) => {
@@ -51,13 +35,13 @@ export const stopWorkflowRunNow = (set: SetFn, get: GetFn) => {
     try {
       await runStop({ set, get, sessionId, workflowRunId });
     } catch (error) {
-      void get().emitNotification(
-        'error',
-        'warning',
-        'the run was not fully stopped',
-        formatError(error),
-        { sessionId },
-      );
+      void get().emitNotification({
+        kind: 'error',
+        severity: 'warning',
+        title: "The run didn't fully stop",
+        body: formatError(error),
+        sessionId,
+      });
     }
   };
 };

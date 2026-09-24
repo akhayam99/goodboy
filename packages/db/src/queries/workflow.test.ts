@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { makeTestDatabase } from '../test-helpers/test-db';
-import { migrate } from '../migrations/runner';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import { deleteWorkflow, getWorkflow, listWorkflows, upsertWorkflow } from './workflow';
 
@@ -41,8 +40,7 @@ describe('workflow queries', () => {
   let db: Database;
 
   beforeEach(async () => {
-    db = makeTestDatabase();
-    await migrate(db);
+    db = await makeMigratedTestDatabase();
     await db.execute(
       'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
       [workspaceId, 'ws', 'ws', Date.now(), Date.now()],
@@ -150,5 +148,90 @@ describe('workflow queries', () => {
     await expect(
       upsertWorkflow(db, { ...buildWorkflow(), id: 'wf-2' as WorkflowId, steps: [] }),
     ).rejects.toThrow();
+  });
+
+  it('writes neither the workflow nor any step when a later step has invalid routing', async () => {
+    const workflow = buildWorkflow();
+    const broken: Workflow = {
+      ...workflow,
+      steps: [
+        ...workflow.steps,
+        {
+          id: 'step-3' as StepId,
+          workflowId,
+          ordinal: 2,
+          name: 'Implement',
+          promptPrefix: 'write the change',
+          routingLock: {
+            version: 1,
+            pick: { provider: 'nowhere', model: 'gpt-5.6', effort: 'high' },
+            origin: 'user',
+          } as unknown as NonNullable<Workflow['steps'][number]['routingLock']>,
+        },
+      ],
+    };
+
+    await expect(upsertWorkflow(db, broken)).rejects.toThrow('Invalid routing lock');
+    expect(await db.select('SELECT id FROM workflows')).toEqual([]);
+    expect(await db.select('SELECT id FROM steps')).toEqual([]);
+  });
+
+  it('leaves the previous steps in place when a re-save fails validation', async () => {
+    await upsertWorkflow(db, buildWorkflow());
+    const renamed: Workflow = {
+      ...buildWorkflow(),
+      name: 'Renamed',
+      steps: [
+        {
+          id: 'step-1' as StepId,
+          workflowId,
+          ordinal: 0,
+          name: 'Scout again',
+          promptPrefix: 'map the area',
+          taskProfile: { taskType: 'nope' } as unknown as NonNullable<
+            Workflow['steps'][number]['taskProfile']
+          >,
+        },
+      ],
+    };
+
+    await expect(upsertWorkflow(db, renamed)).rejects.toThrow('Invalid task profile');
+    const stored = await getWorkflow(db, workflowId);
+    expect(stored?.name).toBe('Refactor');
+    expect(stored?.steps[0]?.name).toBe('Scout');
+  });
+
+  it('lists each workflow with only its own steps in step order', async () => {
+    const second: Workflow = {
+      ...buildWorkflow(),
+      id: 'wf-2' as WorkflowId,
+      name: 'Review',
+      createdAt: '2026-07-26T00:00:00.000Z' as IsoDateTime,
+      steps: [
+        {
+          id: 'step-b2' as StepId,
+          workflowId: 'wf-2' as WorkflowId,
+          ordinal: 1,
+          name: 'Report',
+          promptPrefix: 'write it up',
+        },
+        {
+          id: 'step-b1' as StepId,
+          workflowId: 'wf-2' as WorkflowId,
+          ordinal: 0,
+          name: 'Read',
+          promptPrefix: 'read the diff',
+        },
+      ],
+    };
+    await upsertWorkflow(db, buildWorkflow());
+    await upsertWorkflow(db, second);
+
+    const listed = await listWorkflows(db, workspaceId);
+
+    expect(listed.map((workflow) => [workflow.id, workflow.steps.map((step) => step.id)])).toEqual([
+      ['wf-1', ['step-1', 'step-2']],
+      ['wf-2', ['step-b1', 'step-b2']],
+    ]);
   });
 });

@@ -1,7 +1,16 @@
-import type { GithubIssueGroup } from '../../github/components/GitHubStudio/useGithubIssues';
+import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
 import type { InboxRecord } from '../types';
 
 type Params = { readonly groups: ReadonlyArray<GithubIssueGroup> };
+
+type RepoParams = {
+  readonly url: string;
+};
+
+const repoOf = ({ url }: RepoParams): string => {
+  const match = /github\.com\/([^/]+\/[^/]+)/.exec(url);
+  return match?.[1] ?? '';
+};
 
 export const adaptGithubIssues = ({ groups }: Params): InboxRecord[] =>
   groups.flatMap((group) =>
@@ -14,7 +23,7 @@ export const adaptGithubIssues = ({ groups }: Params): InboxRecord[] =>
       state: 'open',
       updatedAt: issue.updatedAt,
       url: issue.url,
-      meta: 'GitHub',
+      meta: repoOf({ url: issue.url }),
       payload: { provider: 'github', kind: 'issue', issue, sessionId },
     })),
   );

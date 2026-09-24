@@ -5,12 +5,8 @@ const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
-import {
-  SUMMARY_TIMEOUT_MS,
-  stepSummaryDegraded,
-  summarizeAgentOutput,
-  summarizedStepOutputs,
-} from './summarizeAgentOutput';
+import { SUMMARY_TIMEOUT_MS, summarizeAgentOutput } from './summarizeAgentOutput';
+import type { SetFn } from './slice-types';
 
 const AGENT_ONE = 'agent-1' as AgentId;
 const AGENT_TWO = 'agent-2' as AgentId;
@@ -29,6 +25,18 @@ const successEnvelope = (summary: string) => ({
   exitCode: 0,
 });
 
+type SummaryState = {
+  stepSummaryDegraded: Record<string, boolean>;
+  degradedStepOutputs: Record<string, string>;
+};
+
+const state: SummaryState = { stepSummaryDegraded: {}, degradedStepOutputs: {} };
+
+const set = ((update: unknown) => {
+  const patch = typeof update === 'function' ? update(state) : update;
+  Object.assign(state, patch);
+}) as unknown as SetFn;
+
 const neverSettling = (command: string): Promise<unknown> =>
   command === 'summarize_session' ? new Promise(() => undefined) : Promise.resolve(null);
 
@@ -36,8 +44,8 @@ describe('summarizeAgentOutput', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     invokeSpy.mockReset();
-    summarizedStepOutputs.clear();
-    stepSummaryDegraded.clear();
+    state.stepSummaryDegraded = {};
+    state.degradedStepOutputs = {};
   });
 
   afterEach(() => {
@@ -51,6 +59,7 @@ describe('summarizeAgentOutput', () => {
     invokeSpy.mockImplementation((command: string) => neverSettling(command));
 
     const pending = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'raw step output',
       taskModel: TASK_MODEL,
@@ -82,11 +91,13 @@ describe('summarizeAgentOutput', () => {
     );
 
     const first = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'first output',
       taskModel: TASK_MODEL,
     });
     const second = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'second output',
       taskModel: TASK_MODEL,
@@ -110,11 +121,13 @@ describe('summarizeAgentOutput', () => {
     );
 
     const first = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'output one',
       taskModel: TASK_MODEL,
     });
     const second = summarizeAgentOutput({
+      set,
       agentId: AGENT_TWO,
       output: 'output two',
       taskModel: TASK_MODEL,
@@ -131,8 +144,8 @@ describe('summarizeAgentOutput', () => {
   it('clears the guard after a successful run', async () => {
     invokeSpy.mockResolvedValue(successEnvelope('a summary'));
 
-    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'one', taskModel: TASK_MODEL });
-    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'two', taskModel: TASK_MODEL });
+    await summarizeAgentOutput({ set, agentId: AGENT_ONE, output: 'one', taskModel: TASK_MODEL });
+    await summarizeAgentOutput({ set, agentId: AGENT_ONE, output: 'two', taskModel: TASK_MODEL });
 
     expect(callsFor('summarize_session')).toHaveLength(2);
   });
@@ -141,11 +154,12 @@ describe('summarizeAgentOutput', () => {
     invokeSpy.mockResolvedValue({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
 
     const failed = await summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'one',
       taskModel: TASK_MODEL,
     });
-    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'two', taskModel: TASK_MODEL });
+    await summarizeAgentOutput({ set, agentId: AGENT_ONE, output: 'two', taskModel: TASK_MODEL });
 
     expect(failed.degraded).toBe(true);
     expect(callsFor('summarize_session')).toHaveLength(2);
@@ -156,6 +170,7 @@ describe('summarizeAgentOutput', () => {
     invokeSpy.mockImplementation((command: string) => neverSettling(command));
 
     const pending = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'one',
       taskModel: TASK_MODEL,
@@ -163,6 +178,7 @@ describe('summarizeAgentOutput', () => {
     await vi.advanceTimersByTimeAsync(SUMMARY_TIMEOUT_MS);
     await pending;
     const second = summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'two',
       taskModel: TASK_MODEL,
@@ -176,48 +192,52 @@ describe('summarizeAgentOutput', () => {
   it('keeps the summarized output for a retry only while the summary is degraded', async () => {
     invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
     await summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'degraded source',
       taskModel: TASK_MODEL,
     });
-    expect(summarizedStepOutputs.get(AGENT_ONE)).toBe('degraded source');
+    expect(state.degradedStepOutputs[AGENT_ONE]).toBe('degraded source');
 
     invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
     await summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'degraded source',
       taskModel: TASK_MODEL,
     });
-    expect(summarizedStepOutputs.has(AGENT_ONE)).toBe(false);
+    expect(state.degradedStepOutputs).toEqual({});
   });
 
   it('records whether each agent summary degraded, and leaves unseen agents unknown', async () => {
     invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
     await summarizeAgentOutput({
+      set,
       agentId: AGENT_ONE,
       output: 'raw output',
       taskModel: TASK_MODEL,
     });
-    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(true);
+    expect(state.stepSummaryDegraded[AGENT_ONE]).toBe(true);
 
     invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
     await summarizeAgentOutput({
+      set,
       agentId: AGENT_TWO,
       output: 'raw output',
       taskModel: TASK_MODEL,
     });
-    expect(stepSummaryDegraded.get(AGENT_TWO)).toBe(false);
-    expect(stepSummaryDegraded.get('agent-never-run' as AgentId)).toBeUndefined();
+    expect(state.stepSummaryDegraded[AGENT_TWO]).toBe(false);
+    expect(state.stepSummaryDegraded['agent-never-run' as AgentId]).toBeUndefined();
   });
 
   it('clears the degraded record once a retry succeeds', async () => {
     invokeSpy.mockResolvedValueOnce({ stdout: '', stderr: 'cli exploded', exitCode: 1 });
-    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
-    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(true);
+    await summarizeAgentOutput({ set, agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
+    expect(state.stepSummaryDegraded[AGENT_ONE]).toBe(true);
 
     invokeSpy.mockResolvedValueOnce(successEnvelope('a good summary'));
-    await summarizeAgentOutput({ agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
+    await summarizeAgentOutput({ set, agentId: AGENT_ONE, output: 'raw', taskModel: TASK_MODEL });
 
-    expect(stepSummaryDegraded.get(AGENT_ONE)).toBe(false);
+    expect(state.stepSummaryDegraded[AGENT_ONE]).toBe(false);
   });
 });

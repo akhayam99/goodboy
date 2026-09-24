@@ -3,7 +3,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { DraftAttachment } from '../../../../../store/slices/agents/setAgentAttachments';
 import { deleteAttachment, readAttachment, writeAttachment } from '../../../turn';
-import type { ToastKind } from '../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../app/components/Toast';
 import { dataUrlToBase64, type PendingAttachment } from '../lib';
 import { usePendingAttachments } from './usePendingAttachments';
 
@@ -12,7 +12,7 @@ type Params = {
   readonly selectedAgentId: AgentId | null;
   readonly sessionWorktree: string | null;
   readonly providerDisconnected: boolean;
-  readonly showToast: (kind: ToastKind, message: string) => void;
+  readonly showToast: ShowToast;
 };
 
 export const useAttachments = ({

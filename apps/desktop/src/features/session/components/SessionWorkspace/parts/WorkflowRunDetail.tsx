@@ -1,7 +1,7 @@
 import type { Session, WorkflowRunId } from '@goodboy/types';
 import { ScrollFade, cn } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { AgentsSection } from '../../../../workspace/components/WorkspacesSidebar/parts/AgentsSection';
+import { AgentsSection } from '../../AgentTree/AgentsSection';
 
 type Props = {
   readonly session: Session;

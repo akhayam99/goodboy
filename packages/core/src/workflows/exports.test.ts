@@ -4,7 +4,7 @@ import * as phases from './index';
 
 describe('phases barrel exports', () => {
   it('exposes browser-safe sequencer and propagator from @goodboy/core root', () => {
-    expect(core.nextStep).toBeTypeOf('function');
+    expect(core.classifyWorkflowChain).toBeTypeOf('function');
     expect(core.buildChainCarryForward).toBeTypeOf('function');
     expect(core.buildParallelCarryForward).toBeTypeOf('function');
     expect(core.buildStepPrompt).toBeTypeOf('function');
@@ -12,7 +12,7 @@ describe('phases barrel exports', () => {
   });
 
   it('exposes the same symbols from the phases sub-barrel', () => {
-    expect(phases.nextStep).toBeTypeOf('function');
+    expect(phases.classifyWorkflowChain).toBeTypeOf('function');
     expect(phases.buildChainCarryForward).toBeTypeOf('function');
     expect(phases.buildParallelCarryForward).toBeTypeOf('function');
     expect(phases.buildStepPrompt).toBeTypeOf('function');

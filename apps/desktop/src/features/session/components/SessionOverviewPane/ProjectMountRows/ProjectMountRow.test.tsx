@@ -10,10 +10,16 @@ import type {
   WorkspaceId,
   WorktreeStatus,
 } from '@goodboy/types';
+import type { OverflowMenuItem } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 
 type RemoveWorktreeProps = {
   readonly label: string;
+};
+
+type MenuProps = {
+  readonly menuLabel?: string;
+  readonly items?: ReadonlyArray<OverflowMenuItem>;
 };
 
 const { store, remoteKind } = vi.hoisted(() => ({
@@ -54,9 +60,18 @@ vi.mock('./ProjectBranchChip', () => ({
 vi.mock('./ProjectSyncControl', () => ({
   ProjectSyncControl: () => <span data-testid="sync-control" />,
 }));
-vi.mock('./ProjectDetachMenu', () => ({
-  ProjectDetachMenu: ({ menuLabel }: { readonly menuLabel?: string }) => (
-    <span data-testid="detach-menu">{menuLabel}</span>
+vi.mock('./MountActionsMenu', () => ({
+  MountActionsMenu: ({ menuLabel, items = [] }: MenuProps) => (
+    <span data-testid="detach-menu">
+      <span data-testid="menu-label">{menuLabel}</span>
+      {items.map((item) =>
+        item.kind === 'item' ? (
+          <button key={item.key} type="button" role="menuitem" onClick={item.onClick}>
+            {item.label}
+          </button>
+        ) : null,
+      )}
+    </span>
   ),
 }));
 vi.mock('./RemoveWorktreeAction', () => ({
@@ -111,7 +126,6 @@ const renderRow = ({
   diffStat = null,
   worktreeStatus = null,
   isStatusPending = false,
-  hasSeriesColumn = false,
   row = baseRow,
   label = 'API',
   onSelectLens = vi.fn(),
@@ -119,7 +133,6 @@ const renderRow = ({
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly worktreeStatus?: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
-  readonly hasSeriesColumn?: boolean;
   readonly row?: MountRowView;
   readonly label?: string;
   readonly onSelectLens?: (lens: string) => void;
@@ -134,7 +147,6 @@ const renderRow = ({
         diffStat={diffStat}
         worktreeStatus={worktreeStatus}
         isStatusPending={isStatusPending}
-        hasSeriesColumn={hasSeriesColumn}
         onSelectLens={onSelectLens}
       />
     </ul>,
@@ -267,14 +279,15 @@ describe('ProjectMountRow availability', () => {
     renderRow({ row: detached });
 
     expect(screen.queryByRole('button', { name: 'Open terminal for API' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Open the folder of API' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Open terminal' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'VS Code' })).toBeNull();
   });
 
   it('names the row and its action menu after the mount label', () => {
     renderRow({ row: { ...baseRow }, label: 'API on feat/api' });
 
     expect(screen.getByRole('listitem', { name: 'API on feat/api' })).toBeDefined();
-    expect(screen.getByTestId('detach-menu').textContent).toBe('API on feat/api actions');
+    expect(screen.getByTestId('menu-label').textContent).toBe('API on feat/api actions');
   });
 
   it('renders the branch decision surface when the mount reports a mismatch', () => {
@@ -314,7 +327,7 @@ describe('ProjectMountRow write destination', () => {
     };
     renderRow({});
 
-    expect(screen.getByText('Next turns')).toBeDefined();
+    expect(screen.getByText('Writes here next')).toBeDefined();
   });
 
   it('leaves the badge off a row that is not the resolved destination', () => {
@@ -327,7 +340,7 @@ describe('ProjectMountRow write destination', () => {
     };
     renderRow({});
 
-    expect(screen.queryByText('Next turns')).toBeNull();
+    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 });
 
@@ -343,40 +356,41 @@ const openRequest: MountRowView['request'] = {
 };
 
 const slotsOf = (): ReadonlyArray<Element> =>
-  Array.from(screen.getByRole('listitem').firstElementChild?.children ?? []);
+  Array.from(screen.getByTestId('project-mount-cells').children);
 
 describe('ProjectMountRow column grammar', () => {
   const detached: MountRowView = { ...baseRow, isAttached: false, worktreePath: null };
 
-  it('lays every state of a row on the same slots in the same order', () => {
+  it('fills the seven grid columns in the same order in every state', () => {
     renderRow({
       diffStat: { additions: 3, deletions: 1 },
       row: { ...baseRow, request: openRequest },
     });
-    const attached = slotsOf().map((slot) => slot.className);
+    const attached = slotsOf();
     cleanup();
     renderRow({ row: detached });
-    const unmounted = slotsOf().map((slot) => slot.className);
+    const unmounted = slotsOf();
 
-    expect(attached).toHaveLength(6);
-    expect(unmounted).toEqual(attached);
+    expect(attached).toHaveLength(7);
+    expect(unmounted).toHaveLength(7);
+    expect(screen.getByTestId('project-mount-cells').className).toContain('grid-cols-subgrid');
   });
 
-  it('leads with the branch and gives it every pixel the metadata does not take', () => {
+  it('leads with the branch', () => {
     renderRow({ row: { ...baseRow, request: openRequest } });
     const [branch] = slotsOf();
 
-    expect(branch?.className).toContain('flex-1');
     expect(branch?.querySelector('[data-testid="branch-chip"]')).not.toBeNull();
   });
 
-  it('adds the series column only where a group declares a split', () => {
+  it('renders an empty cell with no width of its own where a column has nothing', () => {
     renderRow({ row: baseRow });
-    expect(slotsOf()).toHaveLength(6);
+    const series = slotsOf()[1];
+    expect(series?.tagName).toBe('SPAN');
+    expect(series?.className).toBe('');
     cleanup();
 
     renderRow({
-      hasSeriesColumn: true,
       row: {
         ...baseRow,
         series: {
@@ -388,67 +402,61 @@ describe('ProjectMountRow column grammar', () => {
         },
       },
     });
-    const slots = slotsOf();
 
-    expect(slots).toHaveLength(7);
-    expect(slots[1]?.textContent).toBe('Part 3/6');
+    expect(slotsOf()[1]?.textContent).toBe('Part 3/6');
   });
 
-  it('holds the state of a row in one slot, request state and number together', () => {
+  it('holds the state of a row in one cell, request state and number together', () => {
     renderRow({
       diffStat: { additions: 3, deletions: 1 },
       row: { ...baseRow, request: openRequest },
     });
-    expect(slotsOf()[3]?.textContent).toBe('In review·#12');
+    expect(slotsOf()[4]?.textContent).toBe('In review·#12');
     cleanup();
 
     renderRow({ row: detached });
-    expect(slotsOf()[3]?.textContent).toBe('Files kept');
+    expect(slotsOf()[4]?.textContent).toBe('Files kept');
   });
 
-  it('keeps the mount action in the action slot and the menu last', () => {
+  it('keeps the mount action in the action cell and the menu last', () => {
     renderRow({ row: detached });
     const slots = slotsOf();
 
-    expect(slots[4]?.textContent).toBe('Mount');
+    expect(slots[5]?.textContent).toBe('Mount');
     expect(slots.at(-1)?.querySelector('[data-testid="detach-menu"]')).not.toBeNull();
   });
 
-  it('leaves the diff slot empty rather than letting the next column slide left', () => {
-    renderRow({ row: detached });
-    expect(slotsOf()[2]?.textContent).toBe('');
+  it('hides sync and diff in a narrow container without dropping their cells', () => {
+    renderRow({ diffStat: { additions: 3, deletions: 1 } });
+    const slots = slotsOf();
+
+    expect(slots[2]?.className).toContain('@max-[36rem]:*:hidden');
+    expect(slots[3]?.className).toContain('@max-[36rem]:*:hidden');
   });
 });
 
-describe('ProjectMountRow folder action', () => {
-  it('names the folder action after the mount and reads it out in the tooltip', () => {
+describe('ProjectMountRow menu', () => {
+  it('lists terminal, scripts and the editors of this mount in the row menu', () => {
     renderRow({});
 
-    const folder = screen.getByRole('button', { name: 'Open the folder of API' });
-    expect(tooltipTextOf({ element: folder })).toBe('Open API in an editor, or copy its path');
+    expect(screen.getByRole('menuitem', { name: 'Open terminal' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Open scripts' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'VS Code' })).toBeDefined();
   });
 
   it('opens the worktree of the mount, not the first worktree of the session', () => {
     renderRow({});
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open the folder of API' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'VS Code' }));
 
     expect(openInEditor).toHaveBeenCalledWith('/api', 'code');
   });
 
-  it('leads the trio folder, terminal, scripts', () => {
+  it('keeps no hover-only class on the menu and moves the editor off the row', () => {
     renderRow({});
 
-    const folder = screen.getByRole('button', { name: 'Open the folder of API' });
-    const terminal = screen.getByRole('button', { name: 'Open terminal for API' });
-    const scripts = screen.getByRole('button', { name: 'Open scripts for API' });
-    expect(
-      folder.compareDocumentPosition(terminal) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      terminal.compareDocumentPosition(scripts) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open the folder of API' })).toBeNull();
+    expect(screen.getByTestId('detach-menu').closest('.opacity-0')).toBeNull();
   });
 });
 
@@ -668,7 +676,7 @@ describe('ProjectMountRow worktree state', () => {
 });
 
 describe('ProjectMountRow write destination', () => {
-  it('offers the inline destination action on a mount that is not the destination', async () => {
+  it('offers the destination in the menu of a mount that is not the destination', async () => {
     store.sessionProjectMounts = {
       [sessionId]: [
         { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
@@ -678,7 +686,7 @@ describe('ProjectMountRow write destination', () => {
     store.sessionActiveMount = { [sessionId]: 'mount-2' };
     renderRow({});
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use API for the next turns' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Use for next turns' }));
 
     await waitFor(() =>
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -686,7 +694,7 @@ describe('ProjectMountRow write destination', () => {
         mountId: 'mount-1',
       }),
     );
-    expect(screen.queryByText('Next turns')).toBeNull();
+    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 
   it('badges the destination mount and offers no action on it', () => {
@@ -699,7 +707,7 @@ describe('ProjectMountRow write destination', () => {
     store.sessionActiveMount = { [sessionId]: 'mount-1' };
     renderRow({});
 
-    expect(screen.getByText('Next turns')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Use API for the next turns' })).toBeNull();
+    expect(screen.getByText('Writes here next')).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Use for next turns' })).toBeNull();
   });
 });

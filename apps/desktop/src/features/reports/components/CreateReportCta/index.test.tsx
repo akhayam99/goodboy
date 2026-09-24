@@ -55,16 +55,10 @@ describe('CreateReportCta', () => {
     expect(trigger.getAttribute('title')).toBe('Write a report from what this session did');
   });
 
-  it('shows the tile but withholds it while the session has produced nothing', () => {
+  it('hides the tile while the session has produced nothing', () => {
     render(<CreateReportCta sessionId={SESSION_ID} variant="tile" />);
 
-    const trigger = screen.getByTestId('create-report-cta');
-    expect(trigger.hasAttribute('disabled')).toBe(true);
-    expect(
-      screen.getByText('nothing has run yet, so there is nothing to work from.'),
-    ).toBeDefined();
-
-    fireEvent.click(trigger);
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
     expect(state.openArtifactCreation).not.toHaveBeenCalled();
   });
 

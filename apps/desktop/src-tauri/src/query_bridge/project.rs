@@ -7,6 +7,7 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::oneshot;
 
+use super::args::required_text;
 use super::protocol::{BridgeError, QueryRequest, AMBIGUOUS_MOUNT};
 use crate::db::Db;
 
@@ -26,17 +27,6 @@ fn request_id() -> String {
     let mut bytes = [0u8; 16];
     rand::rng().fill_bytes(&mut bytes);
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
-}
-
-fn text_arg(request: &QueryRequest, key: &str) -> Result<String, BridgeError> {
-    request
-        .args
-        .get(key)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| format!("--{} must not be empty", key).into())
 }
 
 struct ResolvedProject {
@@ -113,8 +103,8 @@ pub async fn materialize(app: &AppHandle, request: &QueryRequest) -> Result<Valu
             "no session context: this command only works inside a Goodboy agent turn".into(),
         );
     }
-    let name = text_arg(request, "name")?;
-    let reason = text_arg(request, "reason")?;
+    let name = required_text(&request.args, "name")?;
+    let reason = required_text(&request.args, "reason")?;
     let project = resolve_project(app, &request.workspace_id, &request.session_id, &name)?;
     refuse_when_already_split(app, request, &project)?;
     let id = request_id();
@@ -233,7 +223,7 @@ mod tests {
     fn a_blank_reason_is_refused_before_anything_runs() {
         let refused = request(&[("name", Value::from("app")), ("reason", Value::from("   "))]);
 
-        assert!(text_arg(&refused, "reason")
+        assert!(required_text(&refused.args, "reason")
             .expect_err("blank reason")
             .message
             .contains("--reason"));
@@ -243,7 +233,7 @@ mod tests {
     fn a_missing_name_is_refused_with_its_own_flag() {
         let refused = request(&[("reason", Value::from("the plan says so"))]);
 
-        assert!(text_arg(&refused, "name")
+        assert!(required_text(&refused.args, "name")
             .expect_err("missing name")
             .message
             .contains("--name"));

@@ -1,35 +1,15 @@
-import { updateSessionMountLifecycle } from '@goodboy/db';
-import type { IsoDateTime, SessionMountView } from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { applyMountViews, loadMountViews } from '../project-mounts/mountViews';
-import { cleanupMountDirectory } from './cleanupPolicy';
+import type { MountCleanupDecision } from '@goodboy/types';
+import { loadMountViews } from '../project-mounts/mountViews';
 import { saveCleanupProposal } from './cleanupProposals';
 import { buildCleanupProposal, publishCleanupProposal } from './proposeMountCleanup';
 import type { CleanupSessionMountsInput, GetFn, SessionCleanupOutcome, SetFn } from './types';
 
-type TargetParams = {
-  readonly get: GetFn;
-  readonly view: SessionMountView;
-  readonly worktreePath: string;
-};
-
-const toTarget = ({ get, view, worktreePath }: TargetParams) => ({
-  sessionId: view.sessionId,
-  mountId: view.id,
-  projectId: view.projectId,
-  repoRoot: view.repoRoot,
-  worktreePath,
-  branch: view.branch,
-  diskState: view.diskState,
-  isRepoProject:
-    get().projects.find((candidate) => candidate.id === view.projectId)?.kind === 'repo',
-});
+const KEPT_REASON = 'directory kept on request';
 
 export const cleanupSessionMounts = (set: SetFn, get: GetFn) => {
   return async ({
     sessionId,
     reason,
-    keepDirectories = false,
   }: CleanupSessionMountsInput): Promise<ReadonlyArray<SessionCleanupOutcome>> => {
     const views = await loadMountViews({ get, sessionId });
     const outcomes: Array<SessionCleanupOutcome> = [];
@@ -38,43 +18,16 @@ export const cleanupSessionMounts = (set: SetFn, get: GetFn) => {
       if (worktreePath === null) {
         continue;
       }
-      const result = await cleanupMountDirectory({
-        get,
-        target: toTarget({ get, view, worktreePath }),
-        keepDirectory: keepDirectories,
-      });
-      const decision = result.decision;
-      switch (decision.kind) {
-        case 'kept':
-        case 'failed': {
-          const proposal = await buildCleanupProposal({ get, view, reason, request: null });
-          if (proposal !== null && (await saveCleanupProposal({ proposal }))) {
-            publishCleanupProposal({ set, sessionId, proposal });
-          }
-          break;
-        }
-        case 'removed':
-        case 'missing':
-          await updateSessionMountLifecycle({
-            db: tauriDatabase,
-            sessionId,
-            mountId: view.id,
-            worktreePath: null,
-            isAttached: false,
-            diskState: result.diskState,
-            expectedRevision: view.revision,
-            updatedAt: new Date().toISOString() as IsoDateTime,
-          }).catch(() => undefined);
-          break;
-        default: {
-          const exhaustive: never = decision;
-          throw exhaustive;
-        }
+      const proposal = await buildCleanupProposal({ get, view, reason, request: null });
+      if (proposal !== null && (await saveCleanupProposal({ proposal }))) {
+        publishCleanupProposal({ set, sessionId, proposal });
       }
-      outcomes.push({ mountId: view.id, worktreePath, decision: result.decision });
-    }
-    if (outcomes.length > 0) {
-      applyMountViews({ set, sessionId, views: await loadMountViews({ get, sessionId }) });
+      const decision: MountCleanupDecision = {
+        kind: 'kept',
+        path: worktreePath,
+        reason: KEPT_REASON,
+      };
+      outcomes.push({ mountId: view.id, worktreePath, decision });
     }
     return outcomes;
   };

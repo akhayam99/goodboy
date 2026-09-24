@@ -26,10 +26,14 @@ vi.mock('@goodboy/db', () => ({
   updateSessionMountLifecycle: h.updateSessionMountLifecycle,
   insertSessionMount: vi.fn(async () => undefined),
   listMountOperations: h.listMountOperations,
+  getMountOperation: vi.fn(
+    async ({ requestId }: { readonly requestId: string }) => h.operations.get(requestId) ?? null,
+  ),
   upsertMountOperation: h.upsertMountOperation,
 }));
 
 import { loadSessionMounts } from './loadSessionMounts';
+import { markMountOperationUncertain } from './mountOperations';
 import { resetMountRecoveryGuard } from './mountRecoveryGuard';
 
 const SESSION_ID = 'session-load' as SessionId;
@@ -134,7 +138,7 @@ describe('loadSessionMounts', () => {
     await vi.waitFor(() => expect(settledStatus()).toBe('succeeded'));
   });
 
-  it('recovers once per session however often the mounts are hydrated', async () => {
+  it('recovers once while nothing turns uncertain', async () => {
     const state = makeState();
 
     await load(state);
@@ -143,6 +147,34 @@ describe('loadSessionMounts', () => {
     await load(state);
 
     expect(h.listMountOperations).toHaveBeenCalledTimes(1);
+  });
+
+  it('recovers again on the next hydration after an operation turns uncertain', async () => {
+    const state = makeState();
+    await load(state);
+    await vi.waitFor(() => expect(settledStatus()).toBe('succeeded'));
+
+    await markMountOperationUncertain({
+      operation: { ...unsettledOperation(), status: 'running' },
+      errorCode: 'revision-conflict',
+    });
+    await load(state);
+
+    await vi.waitFor(() => expect(settledStatus()).toBe('succeeded'));
+    expect(h.listMountOperations).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders a worktree git reported missing as missing when the row write loses', async () => {
+    const state = makeState();
+    h.mounts.set('mount-lost', mountFixture({ id: 'mount-lost', worktreePath: GONE_PATH }));
+    h.updateSessionMountLifecycle.mockImplementation(async () => false);
+
+    const views = await load(state);
+
+    expect(views.find((view) => view.id === 'mount-lost')).toMatchObject({
+      isAttached: false,
+      diskState: 'missing',
+    });
   });
 
   it('never republishes a mount that hydration could not find on disk', async () => {

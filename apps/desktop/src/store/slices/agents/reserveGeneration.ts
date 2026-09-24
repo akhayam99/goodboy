@@ -44,13 +44,13 @@ export const reserveGeneration = async ({
     return outcome;
   }
   if (outcome.isFirstRefusal) {
-    void get().emitNotification(
-      'agent-auto-spawn',
-      'warning',
-      `generation refused: ${label}`,
-      `${outcome.reason}. the work already done stays available and the obligation stays open and unowned. finish within your own capabilities or hand it over by hand.`,
-      { sessionId },
-    );
+    void get().emitNotification({
+      kind: 'agent-auto-spawn',
+      severity: 'warning',
+      title: `Generation refused for ${label}`,
+      body: `${outcome.reason}. the work already done stays available and the obligation stays open and unowned. finish within your own capabilities or hand it over by hand.`,
+      sessionId,
+    });
   }
   return outcome;
 };

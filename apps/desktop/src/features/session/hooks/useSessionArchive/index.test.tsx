@@ -67,9 +67,9 @@ describe('useSessionArchive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'archive' }));
 
     await waitFor(() => expect(state.bulkArchiveTask).toHaveBeenCalledWith(['s-1', 's-2']));
-    const [kind, message, options] = toastMock.mock.calls[0] ?? [];
-    expect(kind).toBe('info');
-    expect(message).toContain('stay on disk');
+    const [options] = toastMock.mock.calls[0] ?? [];
+    expect(options.kind).toBe('info');
+    expect(options.message).toContain('stay on disk');
     expect(options.title).toBe('2 sessions archived');
 
     options.action.onClick();
@@ -83,7 +83,7 @@ describe('useSessionArchive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'archive' }));
 
     await waitFor(() => expect(toastMock).toHaveBeenCalled());
-    expect(toastMock.mock.calls[0]?.[2].title).toBe('Session archived');
+    expect(toastMock.mock.calls[0]?.[0].title).toBe('Session archived');
   });
 
   it('does nothing at all for an empty selection', async () => {
@@ -104,7 +104,7 @@ describe('useSessionArchive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'restore' }));
 
     await waitFor(() => expect(state.bulkUnarchiveTask).toHaveBeenCalledWith(['s-1']));
-    expect(toastMock.mock.calls[0]?.[2].title).toBe('Session restored');
+    expect(toastMock.mock.calls[0]?.[0].title).toBe('Session restored');
   });
 
   it('titles the toast with the words the timeline row uses for the same fact', async () => {
@@ -117,13 +117,13 @@ describe('useSessionArchive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'archive' }));
     await waitFor(() => expect(toastMock).toHaveBeenCalled());
 
-    expect(toastMock.mock.calls[0]?.[2].title).toBe(titleOf('session_archived'));
+    expect(toastMock.mock.calls[0]?.[0].title).toBe(titleOf('session_archived'));
 
     toastMock.mockReset();
     fireEvent.click(screen.getByRole('button', { name: 'restore' }));
     await waitFor(() => expect(toastMock).toHaveBeenCalled());
 
-    expect(toastMock.mock.calls[0]?.[2].title).toBe(titleOf('session_restored'));
+    expect(toastMock.mock.calls[0]?.[0].title).toBe(titleOf('session_restored'));
   });
 
   it('says nothing when the restore brought nothing back', async () => {
@@ -162,9 +162,9 @@ describe('useSessionArchive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'archive' }));
 
     await waitFor(() => expect(toastMock).toHaveBeenCalled());
-    expect(toastMock.mock.calls[0]?.[2].title).toBe('2 sessions archived');
+    expect(toastMock.mock.calls[0]?.[0].title).toBe('2 sessions archived');
 
-    toastMock.mock.calls[0]?.[2].action.onClick();
+    toastMock.mock.calls[0]?.[0].action.onClick();
 
     await waitFor(() => expect(state.bulkUnarchiveTask).toHaveBeenCalledWith(['s-1', 's-3']));
   });

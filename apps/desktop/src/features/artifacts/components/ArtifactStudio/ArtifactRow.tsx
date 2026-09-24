@@ -1,20 +1,17 @@
 import { MetaRow, RailCard } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
-import { SELECTED_ROW_CLASS } from './selectedRow';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 
 type Props = {
   readonly artifact: SessionArtifact;
-  readonly isSelected: boolean;
   readonly onSelect: () => void;
 };
 
-export const ArtifactRow = ({ artifact, isSelected, onSelect }: Props) => (
+export const ArtifactRow = ({ artifact, onSelect }: Props) => (
   <RailCard
     title={artifact.title}
     muted={artifact.status === 'discarded'}
-    className={isSelected ? SELECTED_ROW_CLASS : undefined}
     status={<ArtifactStatusChip kind={artifact.kind} status={artifact.status} />}
     meta={
       <MetaRow

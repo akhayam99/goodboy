@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type {
-  ModelEffort,
+  EffortLevel,
   OpenQuestion,
   OpenQuestionId,
   OpenQuestionSelectMode,
@@ -12,7 +12,7 @@ const UNDO_TTL_MS = 5_000;
 export type DelegateRouting = {
   readonly provider: ProviderId | '';
   readonly model: string;
-  readonly effort: ModelEffort;
+  readonly effort: EffortLevel;
 };
 
 export type AnswerIntent =

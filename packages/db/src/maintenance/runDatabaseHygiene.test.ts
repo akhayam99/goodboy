@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Database } from '../client';
-import { migrate } from '../migrations/runner';
-import { makeTestDatabase } from '../test-helpers/test-db';
+import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { runDatabaseHygiene } from './runDatabaseHygiene';
 
 const NOW = Date.UTC(2026, 7, 22, 12, 0, 0);
@@ -26,8 +25,7 @@ const seedSession = async ({ db }: { readonly db: Database }): Promise<void> => 
 
 describe('runDatabaseHygiene', () => {
   it('cancels only stale in-flight provider runs through the status updater', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `INSERT INTO provider_runs
@@ -59,8 +57,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('does not cancel a stale run that finishes after zombie selection', async () => {
-    const sourceDb = makeTestDatabase();
-    await migrate(sourceDb);
+    const sourceDb = await makeMigratedTestDatabase();
     await seedSession({ db: sourceDb });
     await sourceDb.execute(
       `INSERT INTO provider_runs
@@ -85,6 +82,7 @@ describe('runDatabaseHygiene', () => {
         }
         return rows;
       },
+      transaction: (transactionParams) => sourceDb.transaction(transactionParams),
     };
 
     const result = await runDatabaseHygiene({ db, now: NOW });
@@ -99,8 +97,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('removes expired audit events, old turn events, and orphaned PR cache rows', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `INSERT INTO session_worktrees
@@ -160,8 +157,7 @@ describe('runDatabaseHygiene', () => {
   });
 
   it('caps audit and turn event tables to their newest rows', async () => {
-    const db = makeTestDatabase();
-    await migrate(db);
+    const db = await makeMigratedTestDatabase();
     await seedSession({ db });
     await db.execute(
       `WITH RECURSIVE sequence(value) AS (
@@ -209,5 +205,54 @@ describe('runDatabaseHygiene', () => {
     expect(result.turnEventRowsDeleted).toBe(1);
     expect(auditCount[0]?.count).toBe(5000);
     expect(eventCount[0]?.count).toBe(200_000);
+  });
+
+  it('prunes only old terminal provider runs that no spend, agent or file version points at', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedSession({ db });
+    const old = NOW - 91 * DAY_MS;
+    await db.execute(
+      `INSERT INTO provider_runs
+         (id, session_id, provider, model, status_kind, status_payload, created_at)
+       VALUES
+         ('orphan-old', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('orphan-failed', 'session-1', 'anthropic', 'model', 'failed', '{}', ?),
+         ('orphan-recent', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('with-spend', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('with-agent', 'session-1', 'anthropic', 'model', 'cancelled', '{}', ?),
+         ('with-file', 'session-1', 'anthropic', 'model', 'succeeded', '{}', ?),
+         ('in-flight', 'session-1', 'anthropic', 'model', 'pending', '{}', ?)`,
+      [old, old, NOW - 10 * DAY_MS, old, old, old, old],
+    );
+    await db.execute(
+      `INSERT INTO telemetry_records
+         (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens, estimated_cost_usd, recorded_at)
+       VALUES ('spend-1', 'with-spend', 'session-1', 'turn', 'anthropic', 'model', 1, 1, 1, ?)`,
+      [old],
+    );
+    await db.execute("UPDATE agents SET provider_run_id = 'with-agent' WHERE id = 'agent-1'");
+    await db.execute(
+      `INSERT INTO file_versions
+         (id, session_id, relative_path, stored_name, size_bytes, content_hash, change_kind, snapshot_source, provider_run_id, captured_at)
+       VALUES ('fv-1', 'session-1', 'a.md', 'fv-1.bin', 1, 'hash', 'modified', 'agent_turn', 'with-file', ?)`,
+      [old],
+    );
+
+    const result = await runDatabaseHygiene({ db, now: NOW });
+    const rows = await db.select<{ id: string; status_kind: string }>(
+      'SELECT id, status_kind FROM provider_runs ORDER BY id',
+    );
+    const spend = await db.select<{ id: string }>('SELECT id FROM telemetry_records');
+
+    expect(result.providerRunsDeleted).toBe(2);
+    expect(rows.map((row) => row.id)).toEqual([
+      'in-flight',
+      'orphan-recent',
+      'with-agent',
+      'with-file',
+      'with-spend',
+    ]);
+    expect(rows.find((row) => row.id === 'in-flight')?.status_kind).toBe('cancelled');
+    expect(spend).toEqual([{ id: 'spend-1' }]);
   });
 });

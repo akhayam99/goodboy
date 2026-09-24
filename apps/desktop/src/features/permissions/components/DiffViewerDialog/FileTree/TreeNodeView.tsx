@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, ChevronRight } from 'lucide-react';
-import { Chip, cn } from '@goodboy/ui';
+import { Chip, cn, tintClasses } from '@goodboy/ui';
 import { CopyButton } from '@goodboy/ui';
 import { STATUS_COLOR, STATUS_GLYPH, type ReviewState } from '../lib';
 import type { TreeNode } from './tree';
@@ -37,8 +37,8 @@ export const TreeNodeView = ({
         className={cn(
           'group relative flex w-full items-center gap-2 py-1 pr-1 font-mono text-xs transition-colors',
           isSelected
-            ? 'border-l-2 border-primary bg-muted/60 text-foreground'
-            : 'border-l-2 border-transparent text-muted-foreground/80 hover:bg-muted/30 hover:text-foreground',
+            ? 'border-l-2 border-primary bg-muted text-foreground'
+            : 'border-l-2 border-transparent text-muted-foreground hover:bg-hover hover:text-foreground',
           reviewState === 'reviewed' && !isSelected && 'opacity-50',
         )}
         style={{ paddingLeft: 10 + indent }}
@@ -94,8 +94,8 @@ export const TreeNodeView = ({
           label="copy file path"
           size={10}
           className={cn(
-            'shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground',
-            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+            'shrink-0 rounded-md p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-hover hover:text-foreground',
+            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             'group-hover:opacity-100 motion-reduce:opacity-60',
           )}
         />
@@ -108,7 +108,7 @@ export const TreeNodeView = ({
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-1 py-1 pr-2.5 text-left text-xs text-muted-foreground/60 hover:text-foreground"
+        className="flex w-full items-center gap-1 py-1 pr-2.5 text-left text-xs text-faint-foreground hover:text-foreground"
         style={{ paddingLeft: 6 + indent }}
         title={node.name}
       >
@@ -123,9 +123,13 @@ export const TreeNodeView = ({
         <span className="min-w-0 flex-1 truncate font-mono">{node.name}</span>
         {!expanded && (node.additions > 0 || node.deletions > 0) ? (
           <span className="shrink-0 text-3xs tabular-nums">
-            {node.additions > 0 && <span className="text-success/70">+{node.additions}</span>}
+            {node.additions > 0 && (
+              <span className={cn(tintClasses('success').text)}>+{node.additions}</span>
+            )}
             {node.additions > 0 && node.deletions > 0 && <span className="opacity-40"> </span>}
-            {node.deletions > 0 && <span className="text-danger/70">−{node.deletions}</span>}
+            {node.deletions > 0 && (
+              <span className={cn(tintClasses('danger').text)}>−{node.deletions}</span>
+            )}
           </span>
         ) : null}
       </button>
