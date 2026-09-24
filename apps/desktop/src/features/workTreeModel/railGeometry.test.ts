@@ -5,6 +5,7 @@ import {
   futureRailRow,
   layoutTimelineRail,
   railColumnX,
+  railLaneSpans,
   type RailGroupInput,
   type RailGroupShape,
   type RailRowInput,
@@ -85,6 +86,7 @@ describe('layoutTimelineRail', () => {
         kind: 'branch',
         spineColumn: 0,
         laneColumn: 1,
+        laneId: 'lane',
         identityIndex: 0,
         isMuted: false,
         dash: 'solid',
@@ -172,7 +174,15 @@ describe('layoutTimelineRail', () => {
 
     expect(railRow(layout, 'standalone').markerColumn).toBe(0);
     expect(lanesOf(layout, 'standalone')).toEqual([
-      { column: 1, identityIndex: 0, isMuted: false, dash: 'solid', fromY: 0, toY: 36 },
+      {
+        column: 1,
+        laneId: 'lane',
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 0,
+        toY: 36,
+      },
     ]);
     expect(railRow(layout, 'standalone').joins).toEqual([]);
   });
@@ -189,8 +199,24 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(railRow(layout, 'day').segments).toEqual([
-      { column: 0, identityIndex: null, isMuted: false, dash: 'solid', fromY: 0, toY: 48 },
-      { column: 1, identityIndex: 0, isMuted: false, dash: 'solid', fromY: 0, toY: 48 },
+      {
+        column: 0,
+        laneId: null,
+        identityIndex: null,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 0,
+        toY: 48,
+      },
+      {
+        column: 1,
+        laneId: 'lane',
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 0,
+        toY: 48,
+      },
     ]);
   });
 
@@ -206,10 +232,26 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'now')).toEqual([
-      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 12, toY: 48 },
+      {
+        column: 1,
+        laneId: 'lane',
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'dashed',
+        fromY: 12,
+        toY: 48,
+      },
     ]);
     expect(lanesOf(layout, 'newer-entry')).toEqual([
-      { column: 1, identityIndex: 0, isMuted: false, dash: 'dashed', fromY: 0, toY: 36 },
+      {
+        column: 1,
+        laneId: 'lane',
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'dashed',
+        fromY: 0,
+        toY: 36,
+      },
     ]);
     expect(spanOf(layout, 'step-1')).toEqual(['1:18-36', '1:0-18']);
     expect(lanesOf(layout, 'step-1').map((segment) => segment.dash)).toEqual(['solid', 'dashed']);
@@ -240,6 +282,7 @@ describe('layoutTimelineRail', () => {
         kind: 'rejoin',
         spineColumn: 1,
         laneColumn: 2,
+        laneId: 'lane',
         identityIndex: 0,
         isMuted: false,
         dash: 'dashed',
@@ -472,7 +515,15 @@ describe('layoutTimelineRail', () => {
     });
 
     expect(lanesOf(layout, 'child')).toEqual([
-      { column: 2, identityIndex: 4, isMuted: true, dash: 'solid', fromY: 18, toY: 36 },
+      {
+        column: 2,
+        laneId: 'lane',
+        identityIndex: 4,
+        isMuted: true,
+        dash: 'solid',
+        fromY: 18,
+        toY: 36,
+      },
     ]);
     expect(railRow(layout, 'step-1').joins.map((join) => join.identityIndex)).toEqual([4]);
     expect(railRow(layout, 'step-1').joins.every((join) => join.isMuted)).toBe(true);
@@ -664,7 +715,15 @@ describe('futureRailRow', () => {
     const rail = futureRailRow({ id: 'suggestion-1', height: 32 });
 
     expect(rail.segments).toEqual([
-      { column: 0, identityIndex: null, isMuted: false, dash: 'dashed', fromY: 0, toY: 32 },
+      {
+        column: 0,
+        laneId: null,
+        identityIndex: null,
+        isMuted: false,
+        dash: 'dashed',
+        fromY: 0,
+        toY: 32,
+      },
     ]);
     expect(rail.joins).toEqual([]);
     expect(railColumnX({ column: rail.markerColumn })).toBe(RAIL_SPINE_X);
@@ -692,14 +751,30 @@ describe('layoutTimelineRail without a spine', () => {
     expect(railRow(layout, 'step-1').markerColumn).toBe(0);
     expect(railRow(layout, 'step-1').joins).toEqual([]);
     expect(railRow(layout, 'step-1').segments).toEqual([
-      { column: 0, identityIndex: 2, isMuted: false, dash: 'solid', fromY: 0, toY: 18 },
+      {
+        column: 0,
+        laneId: 'run',
+        identityIndex: 2,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 0,
+        toY: 18,
+      },
     ]);
     expect(railRow(layout, 'step-2').segments.map((segment) => segment.dash)).toEqual([
       'solid',
       'dashed',
     ]);
     expect(railRow(layout, 'now').segments).toEqual([
-      { column: 0, identityIndex: 2, isMuted: false, dash: 'dashed', fromY: 12, toY: 48 },
+      {
+        column: 0,
+        laneId: 'run',
+        identityIndex: 2,
+        isMuted: false,
+        dash: 'dashed',
+        fromY: 12,
+        toY: 48,
+      },
     ]);
   });
 
@@ -716,7 +791,15 @@ describe('layoutTimelineRail without a spine', () => {
 
     expect(railRow(layout, 'now').segments).toEqual([]);
     expect(railRow(layout, 'step-2').segments).toEqual([
-      { column: 0, identityIndex: 2, isMuted: false, dash: 'solid', fromY: 18, toY: 36 },
+      {
+        column: 0,
+        laneId: 'run',
+        identityIndex: 2,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 18,
+        toY: 36,
+      },
     ]);
   });
 
@@ -728,7 +811,15 @@ describe('layoutTimelineRail without a spine', () => {
     });
 
     expect(railRow(layout, 'step-1').segments).toEqual([
-      { column: 0, identityIndex: 2, isMuted: false, dash: 'dashed', fromY: 0, toY: 18 },
+      {
+        column: 0,
+        laneId: 'run',
+        identityIndex: 2,
+        isMuted: false,
+        dash: 'dashed',
+        fromY: 0,
+        toY: 18,
+      },
     ]);
     expect(railRow(layout, 'now').segments.map((segment) => segment.dash)).toEqual(['dashed']);
   });
@@ -753,5 +844,44 @@ describe('layoutTimelineRail without a spine', () => {
     expect(railRow(layout, 'step-1').joins.map((join) => [join.kind, join.spineColumn])).toEqual([
       ['branch', 0],
     ]);
+  });
+});
+
+describe('railLaneSpans', () => {
+  it('names every nested lane after the run lane it belongs to', () => {
+    const layout = layoutTimelineRail({
+      rows: [
+        row({ id: 'child-1', groupId: 'stub' }),
+        row({ id: 'step-2', groupId: 'lane' }),
+        row({ id: 'between' }),
+        row({ id: 'step-1', groupId: 'lane' }),
+        row({ id: 'origin' }),
+      ],
+      groups: [
+        group({ id: 'lane', originRowId: 'origin' }),
+        group({ id: 'stub', originRowId: 'step-2', parentGroupId: 'lane' }),
+      ],
+    });
+
+    expect(railLaneSpans({ rail: railRow(layout, 'child-1') })).toEqual([
+      { laneId: 'lane', column: 2, identityIndex: 0, fromY: 18, toY: 36 },
+    ]);
+    expect(railRow(layout, 'step-2').joins.map((join) => join.laneId)).toEqual(['lane']);
+    expect(railLaneSpans({ rail: railRow(layout, 'between') })).toEqual([
+      { laneId: 'lane', column: 1, identityIndex: 0, fromY: 0, toY: 36 },
+    ]);
+    expect(railLaneSpans({ rail: railRow(layout, 'step-1') })).toEqual([
+      { laneId: 'lane', column: 1, identityIndex: 0, fromY: 0, toY: 36 },
+    ]);
+  });
+
+  it('leaves the spine and neutral stubs out', () => {
+    const layout = layoutTimelineRail({
+      rows: [row({ id: 'child', groupId: 'stub' }), row({ id: 'standalone-agent' })],
+      groups: [group({ id: 'stub', originRowId: 'standalone-agent', identityIndex: null })],
+    });
+
+    expect(railLaneSpans({ rail: railRow(layout, 'child') })).toEqual([]);
+    expect(railLaneSpans({ rail: futureRailRow({ id: 'future', height: 26 }) })).toEqual([]);
   });
 });

@@ -2,6 +2,7 @@ export type RunIdentity = {
   readonly stroke: string;
   readonly chip: string;
   readonly mutedChip: string;
+  readonly litChip: string;
   readonly spin: string;
   readonly index: number;
 };
@@ -11,6 +12,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-1)',
     chip: 'bg-identity-1/12 text-identity-1 ring-identity-1/35',
     mutedChip: 'bg-transparent text-identity-1 ring-identity-1/20',
+    litChip: 'bg-identity-1/20 text-identity-1 ring-identity-1',
     spin: 'spin-border-identity-1',
     index: 0,
   },
@@ -18,6 +20,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-2)',
     chip: 'bg-identity-2/12 text-identity-2 ring-identity-2/35',
     mutedChip: 'bg-transparent text-identity-2 ring-identity-2/20',
+    litChip: 'bg-identity-2/20 text-identity-2 ring-identity-2',
     spin: 'spin-border-identity-2',
     index: 1,
   },
@@ -25,6 +28,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-3)',
     chip: 'bg-identity-3/12 text-identity-3 ring-identity-3/35',
     mutedChip: 'bg-transparent text-identity-3 ring-identity-3/20',
+    litChip: 'bg-identity-3/20 text-identity-3 ring-identity-3',
     spin: 'spin-border-identity-3',
     index: 2,
   },
@@ -32,6 +36,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-4)',
     chip: 'bg-identity-4/12 text-identity-4 ring-identity-4/35',
     mutedChip: 'bg-transparent text-identity-4 ring-identity-4/20',
+    litChip: 'bg-identity-4/20 text-identity-4 ring-identity-4',
     spin: 'spin-border-identity-4',
     index: 3,
   },
@@ -39,6 +44,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-5)',
     chip: 'bg-identity-5/12 text-identity-5 ring-identity-5/35',
     mutedChip: 'bg-transparent text-identity-5 ring-identity-5/20',
+    litChip: 'bg-identity-5/20 text-identity-5 ring-identity-5',
     spin: 'spin-border-identity-5',
     index: 4,
   },
@@ -46,6 +52,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-6)',
     chip: 'bg-identity-6/12 text-identity-6 ring-identity-6/35',
     mutedChip: 'bg-transparent text-identity-6 ring-identity-6/20',
+    litChip: 'bg-identity-6/20 text-identity-6 ring-identity-6',
     spin: 'spin-border-identity-6',
     index: 5,
   },
@@ -53,6 +60,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-7)',
     chip: 'bg-identity-7/12 text-identity-7 ring-identity-7/35',
     mutedChip: 'bg-transparent text-identity-7 ring-identity-7/20',
+    litChip: 'bg-identity-7/20 text-identity-7 ring-identity-7',
     spin: 'spin-border-identity-7',
     index: 6,
   },
@@ -60,6 +68,7 @@ const IDENTITIES: ReadonlyArray<RunIdentity> = [
     stroke: 'var(--color-identity-8)',
     chip: 'bg-identity-8/12 text-identity-8 ring-identity-8/35',
     mutedChip: 'bg-transparent text-identity-8 ring-identity-8/20',
+    litChip: 'bg-identity-8/20 text-identity-8 ring-identity-8',
     spin: 'spin-border-identity-8',
     index: 7,
   },

@@ -2,15 +2,16 @@ import { Divider, cn } from '@goodboy/ui';
 import type { TimelineDayItem } from '../../../../timeline/buildTimelineStream';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineRail } from './TimelineRail';
+import { TimelineRail, type TimelineLaneControl } from './TimelineRail';
 
 type Props = {
   readonly item: TimelineDayItem;
   readonly railWidth: number;
   readonly rail: RailRow;
+  readonly lanes?: TimelineLaneControl | null;
 };
 
-export const TimelineDayRule = ({ item, rail, railWidth }: Props) => (
+export const TimelineDayRule = ({ item, rail, railWidth, lanes = null }: Props) => (
   <div className="flex min-w-0 items-center" style={{ height: item.height }}>
     <span
       className={cn('shrink-0 pr-2 text-2xs font-medium text-muted-foreground', TIMELINE_GUTTER)}
@@ -18,7 +19,7 @@ export const TimelineDayRule = ({ item, rail, railWidth }: Props) => (
       {item.label}
     </span>
     <span className="relative shrink-0 self-stretch" style={{ width: railWidth }}>
-      <TimelineRail rail={rail} width={railWidth} />
+      <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
     </span>
     <span className="flex min-w-0 flex-1 items-center pl-2 pr-1.5">
       <Divider className="min-w-0 flex-1" />

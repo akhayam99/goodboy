@@ -177,9 +177,10 @@ hues, with no red. Two accessors read it, and nothing else does:
   picks a start slot per session from a hash of the session id. Then it walks
   the set with stride 3 across workflow runs and agent chains, ordered by
   creation time and id. 3 and 8 share no factor, so every slot is used before
-  one repeats. It gives four versions of one slot: `stroke` for an SVG lane,
-  `chip` for the run's own chip, `mutedChip` for a discarded run's chip, and
-  `spin` for the running border. `runIdentityStroke`, next to it, turns the
+  one repeats. It gives five versions of one slot: `stroke` for an SVG lane,
+  `chip` for the run's own chip, `mutedChip` for a discarded run's chip,
+  `litChip` for the chip while its lane is hovered, and `spin` for the running
+  border. `runIdentityStroke`, next to it, turns the
   index the rail geometry carries back into a stroke.
 - `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
   workspace id onto the same eight slots for its sidebar dot.
@@ -228,6 +229,24 @@ make up the whole grammar. Nothing outside this list may appear on the rail:
 
 The spine is the backbone of the feed. It is full height, always drawn, never
 tinted and never broken.
+
+### A lane is a control
+
+The coloured lane is the run, so it opens the run. Every row draws a
+transparent 12px hit area centred on each run lane that crosses it, child
+lanes included, because a child lane is the same run one column over. A click
+anywhere on it opens the workflow, however far the origin row has scrolled
+away. A click on the row text still opens the row's own leaf (the agent, the
+question, the artifact). The node on the lane lets the pointer through to the
+lane. Hovering a lane thickens every segment and join of that run to 3px in
+every row, washes its column in the run hue at 12%, lights the run chip
+(`litChip`) and shows "Open workflow: <name> (⇧↵)". The hover state lives in
+the activity pane, never in the store. The hit areas stay out of the tab
+order: from the keyboard, Shift+Enter on a focused row opens the run of its
+lane (`activity.openRun` in the shortcut registry). The spine, a standalone
+agent's stub and an agent chain lane are drawing only, since none of them is
+a run. The workflow run tree draws the same rail without hit areas, because
+it already is the run.
 
 ### What a rail line says
 

@@ -262,6 +262,11 @@ groups in that order, read top to bottom per column. Entries that share a
 workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
 family is only for chords that do the same thing to a different index: the
 integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
+A few entries are keys a focused control answers, not global chords: Submit
+comment (⌘↵) and Open the workflow of an activity row (⇧↵, the only combo
+without ⌘). They sit in the registry so the list and the tooltips name them.
+The control that owns each one handles its own key event and never registers
+it with the dispatcher; the activity row matches through `eventMatches`.
 **A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the

@@ -9,6 +9,7 @@ type Props = {
   readonly workflowName: string;
   readonly identity: RunIdentity;
   readonly muted?: boolean;
+  readonly lit?: boolean;
 };
 
 type KindGlyph = {
@@ -29,15 +30,21 @@ const KIND: Record<RunWorkflowKind, KindGlyph> = {
 
 const GLYPH_SIZE = 10;
 
-export const TimelineRunChip = ({ kind, workflowName, identity, muted = false }: Props) => {
+export const TimelineRunChip = ({
+  kind,
+  workflowName,
+  identity,
+  muted = false,
+  lit = false,
+}: Props) => {
   const { icon: Icon, label, isNamedInTooltip } = KIND[kind];
   const name = workflowName.trim();
   const tooltip = isNamedInTooltip && name.length > 0 ? `${name} ${label.toLowerCase()}` : label;
   return (
     <span
       className={cn(
-        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium ring-1',
-        muted ? identity.mutedChip : identity.chip,
+        'inline-flex min-w-24 shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium ring-1 motion-safe:transition-colors',
+        lit ? identity.litChip : muted ? identity.mutedChip : identity.chip,
       )}
       title={tooltip}
     >

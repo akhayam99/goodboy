@@ -142,6 +142,12 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
+  'activity.openRun': {
+    combo: 'shift+Enter',
+    label: 'Open the workflow of an activity row',
+    plane: 'session',
+    group: 'session',
+  },
   'terminal.newTab': {
     combo: 'cmd+KeyT',
     offMacCombo: 'ctrl+shift+KeyT',

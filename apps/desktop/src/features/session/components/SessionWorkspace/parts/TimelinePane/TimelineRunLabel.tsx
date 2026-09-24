@@ -8,9 +8,10 @@ import { TimelineRunChip } from './TimelineRunChip';
 type Props = {
   readonly entry: TimelineRunEntry;
   readonly rowState: RowState;
+  readonly isLaneLit?: boolean;
 };
 
-export const TimelineRunLabel = ({ entry, rowState }: Props) => {
+export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
   return (
     <>
@@ -19,6 +20,7 @@ export const TimelineRunLabel = ({ entry, rowState }: Props) => {
         workflowName={entry.workflow.name}
         identity={entry.identity}
         muted={isDiscarded}
+        lit={isLaneLit}
       />
       <span
         title={entry.workflow.name}

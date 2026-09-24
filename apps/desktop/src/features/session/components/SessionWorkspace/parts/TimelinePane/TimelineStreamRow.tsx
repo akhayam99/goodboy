@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { Button, WORK_META_COLUMN, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
@@ -8,8 +8,10 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
+import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
+import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { TimelineRail } from './TimelineRail';
+import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
 
@@ -28,6 +30,8 @@ type Props = {
   readonly action: TimelineRowAction | null;
   readonly diffStat?: MountDiffStat | null;
   readonly meta?: ReactNode;
+  readonly lanes?: TimelineLaneControl | null;
+  readonly runLane?: TimelineLaneTarget | null;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -42,6 +46,8 @@ export const TimelineStreamRow = ({
   action,
   diffStat = null,
   meta = null,
+  lanes = null,
+  runLane = null,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -50,6 +56,17 @@ export const TimelineStreamRow = ({
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const isWaiting = item.rowState.phase === 'waiting';
+  const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (runLane === null) {
+      return;
+    }
+    if (!eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['activity.openRun'] })) {
+      return;
+    }
+    event.preventDefault();
+    runLane.open();
+  };
   const contentClassName = cn(
     'flex min-w-0 flex-1 items-center gap-2 rounded-md pl-2 pr-1.5 text-left',
     openTarget == null
@@ -61,7 +78,7 @@ export const TimelineStreamRow = ({
   const content = (
     <>
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <TimelineRowLabel item={item} diffStat={diffStat} />
+        <TimelineRowLabel item={item} diffStat={diffStat} isLaneLit={isLaneLit} />
       </span>
       {openTarget == null ? null : (
         <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
@@ -88,10 +105,10 @@ export const TimelineStreamRow = ({
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>
-        <TimelineRail rail={rail} width={railWidth} />
+        <TimelineRail rail={rail} width={railWidth} lanes={lanes} />
         {rail.markerY == null ? null : (
           <span
-            className="absolute -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
             style={{
               left: railColumnX({ column: rail.markerColumn }),
               top: rail.markerY,
@@ -110,6 +127,8 @@ export const TimelineStreamRow = ({
           <button
             type="button"
             onClick={openTarget.open}
+            onKeyDown={onKeyDown}
+            aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
             className={contentClassName}
             style={{ height: boxHeight }}
           >

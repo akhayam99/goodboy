@@ -23,6 +23,7 @@ import { DiffStat } from '../../../DiffStat';
 type Props = {
   readonly item: TimelineRowItem;
   readonly diffStat?: MountDiffStat | null;
+  readonly isLaneLit?: boolean;
 };
 
 type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
@@ -130,10 +131,10 @@ const chipOf = ({ entry, grade }: ChipParams) => {
   );
 };
 
-export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
+export const TimelineRowLabel = ({ item, diffStat = null, isLaneLit = false }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} rowState={item.rowState} />;
+    return <TimelineRunLabel entry={entry} rowState={item.rowState} isLaneLit={isLaneLit} />;
   }
   const isStep = grade !== 'entry';
   const isQueued = item.rowState.phase === 'queued';

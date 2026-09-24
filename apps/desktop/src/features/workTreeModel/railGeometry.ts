@@ -27,6 +27,7 @@ export type RailRowInput = {
 
 export type RailSegment = {
   readonly column: number;
+  readonly laneId: string | null;
   readonly identityIndex: number | null;
   readonly isMuted: boolean;
   readonly dash: RailDash;
@@ -38,6 +39,7 @@ export type RailJoin = {
   readonly kind: 'branch' | 'rejoin';
   readonly spineColumn: number;
   readonly laneColumn: number;
+  readonly laneId: string | null;
   readonly identityIndex: number | null;
   readonly isMuted: boolean;
   readonly dash: RailDash;
@@ -97,6 +99,7 @@ export const futureRailRow = ({ id, height }: FutureRowParams): RailRow => ({
   segments: [
     {
       column: 0,
+      laneId: null,
       identityIndex: null,
       isMuted: false,
       dash: 'dashed',
@@ -127,6 +130,37 @@ const joinPathOf = ({ join }: JoinPathParams): string => {
     return `M ${laneX} ${join.anchorY} C ${laneX} ${join.anchorY - RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} 0, ${spineX} 0`;
   }
   return `M ${laneX} 0 C ${laneX} ${RAIL_CURVE_HANDLE}, ${spineX + RAIL_CURVE_HANDLE} ${join.anchorY}, ${spineX} ${join.anchorY}`;
+};
+
+export type RailLaneSpan = {
+  readonly laneId: string;
+  readonly column: number;
+  readonly identityIndex: number;
+  readonly fromY: number;
+  readonly toY: number;
+};
+
+export const railLaneSpans = ({
+  rail,
+}: {
+  readonly rail: RailRow;
+}): ReadonlyArray<RailLaneSpan> => {
+  const spans = new Map<string, RailLaneSpan>();
+  for (const segment of rail.segments) {
+    if (segment.laneId === null || segment.identityIndex === null) {
+      continue;
+    }
+    const key = `${segment.laneId}:${segment.column}`;
+    const known = spans.get(key);
+    spans.set(key, {
+      laneId: segment.laneId,
+      column: segment.column,
+      identityIndex: segment.identityIndex,
+      fromY: known === undefined ? segment.fromY : Math.min(known.fromY, segment.fromY),
+      toY: known === undefined ? segment.toY : Math.max(known.toY, segment.toY),
+    });
+  }
+  return [...spans.values()];
 };
 
 const overlaps = ({ first, second }: { readonly first: Interval; readonly second: Interval }) =>
@@ -271,6 +305,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
     const root = rootOf({ group });
     const ink = {
       column,
+      laneId: root.id,
       identityIndex: root.identityIndex,
       isMuted: root.isMuted,
     };
@@ -323,6 +358,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
         kind: 'branch',
         spineColumn: parentColumn,
         laneColumn: column,
+        laneId: root.id,
         identityIndex: root.identityIndex,
         isMuted: root.isMuted,
         dash: nearestRow.isPending ? 'dashed' : 'solid',
@@ -340,6 +376,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
         kind: 'rejoin',
         spineColumn: columnByGroupId.get(span.rejoinGroupId) ?? parentColumn,
         laneColumn: column,
+        laneId: root.id,
         identityIndex: root.identityIndex,
         isMuted: root.isMuted,
         dash: 'dashed',
@@ -386,6 +423,7 @@ export const layoutTimelineRail = ({ rows, groups, hasSpine = true }: Params): R
           ? [
               {
                 column: 0,
+                laneId: null,
                 identityIndex: null,
                 isMuted: false,
                 dash: 'solid',

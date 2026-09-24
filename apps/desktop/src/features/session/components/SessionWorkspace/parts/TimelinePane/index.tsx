@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
@@ -36,6 +36,7 @@ import {
   type TimelineRowItem,
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
+import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
@@ -52,6 +53,7 @@ import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { TimelineAgentMeta } from './TimelineAgentMeta';
 import { TimelineRunMeta } from './TimelineRunMeta';
+import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -240,6 +242,42 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
     () => layoutTimelineRail({ rows: stream.items, groups: stream.groups }),
     [stream.groups, stream.items],
   );
+
+  const [hoveredLaneId, setHoveredLaneId] = useState<string | null>(null);
+
+  const laneRuns = useMemo(
+    () => timelineLaneRuns({ items: stream.items, groups: stream.groups }),
+    [stream.groups, stream.items],
+  );
+
+  const laneTargetFor = useCallback(
+    ({ laneId }: { readonly laneId: string }): TimelineLaneTarget | null => {
+      const entry = laneRuns.runByLaneId.get(laneId);
+      if (entry === undefined) {
+        return null;
+      }
+      const target = openTargetFor({ entry });
+      if (target === null) {
+        return null;
+      }
+      return { laneId, title: entry.workflow.name, open: target.open };
+    },
+    [laneRuns, openTargetFor],
+  );
+
+  const lanes = useMemo(
+    (): TimelineLaneControl => ({
+      targetFor: laneTargetFor,
+      hoveredLaneId,
+      onHover: ({ laneId }) => setHoveredLaneId(laneId),
+    }),
+    [hoveredLaneId, laneTargetFor],
+  );
+
+  const runLaneFor = ({ item }: { readonly item: TimelineRowItem }): TimelineLaneTarget | null => {
+    const laneId = laneRuns.laneIdByRowId.get(item.id);
+    return laneId === undefined ? null : laneTargetFor({ laneId });
+  };
 
   const mountPathByProjectId = useMemo(() => {
     const paths = new Map<string, string>();
@@ -430,12 +468,24 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
             }
             if (item.kind === 'now') {
               return (
-                <TimelineNowRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+                <TimelineNowRule
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                  lanes={lanes}
+                />
               );
             }
             if (item.kind === 'day') {
               return (
-                <TimelineDayRule key={item.id} item={item} rail={railRow} railWidth={rail.width} />
+                <TimelineDayRule
+                  key={item.id}
+                  item={item}
+                  rail={railRow}
+                  railWidth={rail.width}
+                  lanes={lanes}
+                />
               );
             }
             const target = openTargetFor({ entry: item.entry });
@@ -450,6 +500,8 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
                 action={actionFor({ item })}
                 diffStat={diffStatFor({ item })}
                 meta={metaFor({ item })}
+                lanes={lanes}
+                runLane={runLaneFor({ item })}
               />
             );
           })}
