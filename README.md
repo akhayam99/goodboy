@@ -253,12 +253,6 @@ Start at the [documentation index](./docs/README.md). From there:
 &nbsp;
 [<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
 
-Your face fits here too.
-
-- Pick an [issue](https://github.com/akhayam99/goodboy/issues)
-- Read [AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md)
-- Open a pull request
-
 <br>
 
 ## Support Goodboy
@@ -266,9 +260,11 @@ Your face fits here too.
 The best support is using it.
 
 - Run it on your real work
-- Open an issue when something feels off
-- Send a pull request
+- Open an [issue](https://github.com/akhayam99/goodboy/issues) when something feels off
+- Send a pull request, after a look at [AGENTS.md](./AGENTS.md) and [CONVENTIONS.md](./CONVENTIONS.md)
 - Leave a star if it earns one
+
+When your pull request lands, your face joins the [contributors](#contributors).
 
 [![Star Goodboy on GitHub](https://img.shields.io/github/stars/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=%E2%AD%90%20Star%20Goodboy&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/stargazers)
 
