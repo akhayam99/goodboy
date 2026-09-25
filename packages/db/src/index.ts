@@ -272,6 +272,13 @@ export {
   type StorageSessionRef,
 } from './queries/storage-folders';
 export {
+  listOrphanArtifacts,
+  markArtifactOpened,
+  setArtifactKeep,
+  purgeOrphanArtifact,
+  type OrphanArtifactRow,
+} from './queries/artifact-orphan';
+export {
   listWorktreeRoots,
   markWorktreeRootScanned,
   registerWorktreeRoot,
@@ -360,6 +367,10 @@ export {
   getArtifact,
   getArtifactBySourceTurn,
   listArtifactsForSession,
+  listArtifactMirrorPage,
+  type ArtifactMirrorCursor,
+  type ArtifactMirrorPage,
+  type ArtifactMirrorRow,
   updateArtifactSource,
   setArtifactStatus,
   deleteArtifact,

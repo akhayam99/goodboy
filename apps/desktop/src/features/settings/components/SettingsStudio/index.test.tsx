@@ -35,6 +35,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     loadStorage: vi.fn(async () => undefined),
     pruneArchivedTranscripts: vi.fn(async () => 0),
     storageFolders: [],
+    storageArtifacts: [],
+    storageDeletingArtifacts: {},
     storageRoots: [],
     storageFocus: null,
     storageOutcome: null,

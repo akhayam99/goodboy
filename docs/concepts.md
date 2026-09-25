@@ -158,6 +158,14 @@ days. A clean folder idle longer than "Suggest cleanup after" (30 days by
 default) can go in one bulk step. Its branch stays, even with commits that were
 never pushed.
 
+Storage also lists **artifacts from deleted sessions**: the plans, reports and
+wireframes whose session is gone, with their saved copy on disk. Each row says
+when its session was deleted and when you last used it, which is the later of
+its last edit and the last time you opened it. You can open one, keep it for 30
+days or always, or delete it. Deleting removes both the copy and the record. An
+artifact whose session was deleted longer ago than "Suggest cleanup after" and
+that you have not used for twice that long is suggested for one bulk delete.
+
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
 
@@ -334,7 +342,11 @@ with at most one main action, the document at reading size, and a right panel
 for its details and for a chat with the agent that wrote it. **Open in
 window**, under `⋯`, shows the same document as a light page in its own
 window, with Print and Copy; **Print** opens that page straight in the print
-dialog, where the system saves the PDF.
+dialog, where the system saves the PDF. Goodboy also keeps a copy of every
+artifact on disk, under the workspace folder described in
+[architecture.md](architecture.md#on-disk-data-layout): the Details panel
+shows its path under **Saved copy**, and **Show in Finder**, under `⋯` or
+next to the path, opens its folder.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its

@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
-import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
-import { artifactPrintHash, type ArtifactWindowMode } from '../../../reports/artifactPrintRequest';
+import { openArtifactWindow } from '../../openArtifactWindow';
+import type { ArtifactWindowMode } from '../../../reports/artifactPrintRequest';
 import { artifactFileSlug } from './artifactFileSlug';
 import { artifactExportContents, artifactSourceExport } from './artifactSourceExport';
 
@@ -41,12 +41,6 @@ export type ArtifactExport = Readonly<{
 
 type Params = {
   readonly artifact: SessionArtifact;
-};
-
-const documentWindowLabel = ({ mode }: { readonly mode: ArtifactWindowMode }): string => {
-  const raw = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
-  const prefix = mode === 'read' ? 'win-reader' : 'win-print';
-  return `${prefix}-${raw.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
 };
 
 export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
@@ -115,23 +109,13 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
   ]);
 
   const openDocumentWindow = useCallback(
-    async ({ mode }: { readonly mode: ArtifactWindowMode }): Promise<void> => {
-      const hash = artifactPrintHash({
+    async ({ mode }: { readonly mode: ArtifactWindowMode }): Promise<void> =>
+      openArtifactWindow({
         sessionId: artifact.sessionId,
         artifactId: artifact.id,
-        mode,
-      });
-      const win = new WebviewWindow(documentWindowLabel({ mode }), {
-        url: `index.html#${hash}`,
         title: artifact.title,
-        width: 820,
-        height: 1000,
-      });
-      await new Promise<void>((resolve, reject) => {
-        void win.once('tauri://created', () => resolve());
-        void win.once('tauri://error', (event) => reject(new Error(String(event.payload))));
-      });
-    },
+        mode,
+      }),
     [artifact.id, artifact.sessionId, artifact.title],
   );
 

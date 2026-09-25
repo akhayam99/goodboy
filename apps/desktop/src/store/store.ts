@@ -1142,6 +1142,8 @@ export const initialState: AppState = {
   storageRemovingPaths: {},
   storageOutcome: null,
   storageFocus: null,
+  storageArtifacts: [],
+  storageDeletingArtifacts: {},
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],

@@ -16,6 +16,8 @@ import {
 import { planPartsPresentation } from '../../../plans/components/PlanParts/planPartsPresentation';
 import { usePlanPartRows } from '../../../plans/components/PlanParts/usePlanPartRows';
 import { useArtifactExport } from '../../hooks/useArtifactExport';
+import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
+import { useRecordArtifactOpened } from '../../hooks/useRecordArtifactOpened';
 import { useReportRegenerate } from '../../../reports/useReportRegenerate';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
@@ -54,6 +56,8 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const selectAgent = useAppStore((s) => s.selectAgent);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const exporter = useArtifactExport({ artifact });
+  const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
+  useRecordArtifactOpened({ artifactId: artifact.id });
   const regenerate = useReportRegenerate({ sessionId, artifact });
   const announceAgentStarted = useAgentStartedToast();
   const [draft, setDraft] = useState<string | null>(null);
@@ -168,6 +172,11 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       onClick: () => void exporter.saveSource(),
       label: `${exporter.sourceActionLabel} to…`,
       isDisabled: exporter.status.kind === 'busy',
+    },
+    showInFinder: {
+      onClick: savedCopy.reveal,
+      isDisabled: savedCopy.location === null || !savedCopy.location.exists,
+      hint: savedCopy.error ?? undefined,
     },
     regenerate: {
       onClick: regenerate.regenerate,

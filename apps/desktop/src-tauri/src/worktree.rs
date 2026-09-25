@@ -1596,7 +1596,7 @@ fn canonical_key(path: &Path) -> String {
         .into_owned()
 }
 
-fn directory_size(path: &Path) -> (Option<u64>, bool) {
+pub(crate) fn directory_size(path: &Path) -> (Option<u64>, bool) {
     let entries = match std::fs::read_dir(path) {
         Ok(found) => found,
         Err(_) => return (None, true),

@@ -1,4 +1,4 @@
-import type { WorktreeRemovalReason } from '@goodboy/types';
+import type { ArtifactKind, WorktreeRemovalReason } from '@goodboy/types';
 import type {
   StorageFolder,
   StorageFolderStatus,
@@ -92,6 +92,17 @@ export const formatSince = ({ from, now }: SinceParams): string => {
   const days = Math.floor(elapsed / DAY);
   return days === 1 ? '1 day' : `${days} days`;
 };
+
+export const formatAgo = ({ from, now }: SinceParams): string => {
+  const since = formatSince({ from, now });
+  return since === '' ? '' : `${since} ago`;
+};
+
+export const ARTIFACT_KIND_LABEL = {
+  plan: 'Plan',
+  report: 'Report',
+  wireframe: 'Wireframe',
+} as const satisfies Record<ArtifactKind, string>;
 
 const REASON_COPY: ReadonlyArray<readonly [WorktreeRemovalReason, string]> = [
   ['writer-lease-held', 'an agent is writing there'],
