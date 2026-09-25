@@ -3,10 +3,11 @@ import { useShallow } from 'zustand/react/shallow';
 import { REVIEW_REPLY_SAMPLE_SIZE } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button, Textarea, formatError } from '@goodboy/ui';
-import { Sparkles } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
+
+const LearnIcon = CONCEPT_ICONS.enhance;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -71,7 +72,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
           disabled={isDisabled || isLearning}
           onClick={() => void learn()}
         >
-          <Sparkles size={ICON_SIZE.row} aria-hidden />
+          <LearnIcon size={ICON_SIZE.row} aria-hidden />
           {isLearning ? 'Reading your replies' : 'Learn from my replies'}
         </Button>
         <span className="text-2xs text-faint-foreground">
