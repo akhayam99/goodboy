@@ -32,6 +32,7 @@ const learn = () =>
     projectRoots: ['/repos/ledger-core', '/repos/ledger-core-copy', '/notes'],
     overrides: null,
     connectedProviders: ['anthropic'],
+    limitContext: null,
   });
 
 beforeEach(() => {

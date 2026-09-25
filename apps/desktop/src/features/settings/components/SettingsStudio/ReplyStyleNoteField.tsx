@@ -5,6 +5,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { Button, Textarea, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { learnWorkspaceReplyStyle } from '../../../resolve/learnWorkspaceReplyStyle';
 
 const LearnIcon = CONCEPT_ICONS.enhance;
@@ -36,6 +37,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
         .map((provider) => provider.id),
     ),
   );
+  const limitContext = useAutoLimitContext();
 
   useEffect(() => {
     setDraft(value ?? '');
@@ -50,6 +52,7 @@ export const ReplyStyleNoteField = ({ workspaceId, value, isDisabled, onSave }: 
         projectRoots,
         overrides,
         connectedProviders,
+        limitContext,
       });
       setDraft(note);
       onSave(note);

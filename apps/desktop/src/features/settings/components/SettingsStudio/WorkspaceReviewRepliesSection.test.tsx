@@ -97,6 +97,7 @@ describe('WorkspaceReviewRepliesSection', () => {
       projectRoots: ['/repos/ledger-core'],
       overrides: state.workspaceOverrides[WORKSPACE],
       connectedProviders: ['anthropic'],
+      limitContext: null,
     });
     expect(screen.getByLabelText('Style note')).toHaveProperty(
       'value',

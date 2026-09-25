@@ -4,9 +4,10 @@ import {
   detectRepoSlug,
   learnReplyStyle,
   listMyReviewReplies,
-  resolveTaskModel,
 } from '@goodboy/core';
 import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../../store/slices/providerLimits/resolveLimitedTaskModel';
 import { tauriGhRunner } from '../github/github';
 
 export const NO_WORKSPACE_REPO = 'No project in this workspace is a GitHub repository.';
@@ -18,6 +19,7 @@ type Params = {
   readonly projectRoots: ReadonlyArray<string>;
   readonly overrides: OverrideSettings | null;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
+  readonly limitContext: AutoLimitContext | null;
 };
 
 export const learnWorkspaceReplyStyle = async ({
@@ -25,6 +27,7 @@ export const learnWorkspaceReplyStyle = async ({
   projectRoots,
   overrides,
   connectedProviders,
+  limitContext,
 }: Params): Promise<string> => {
   const slugs = await Promise.all(
     projectRoots.map((root) => detectRepoSlug(tauriGhRunner, root, workspaceId).catch(() => null)),
@@ -41,7 +44,8 @@ export const learnWorkspaceReplyStyle = async ({
   if (replies.length === 0) {
     throw new Error(NO_REVIEW_REPLIES);
   }
-  const taskModel = resolveTaskModel({
+  const taskModel = resolveLimitedTaskModel({
+    limitContext,
     task: 'prose_polish',
     preferences: overrides?.taskModels,
     workspaceDefaultProviderId: overrides?.defaultProviderId,
