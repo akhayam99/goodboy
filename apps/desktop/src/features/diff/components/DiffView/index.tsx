@@ -16,13 +16,7 @@ import { DiffFile } from './DiffFile';
 import { DiffToolbar } from './DiffToolbar';
 import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './types';
 
-export type {
-  DiffComments,
-  DiffFileActions,
-  DiffLineTarget,
-  DiffThread,
-  DiffViewed,
-} from './types';
+export type { DiffComments, DiffThread } from './types';
 
 const BATCH_SIZE = 20;
 

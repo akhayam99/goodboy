@@ -3,7 +3,7 @@ import type { HighlightRequest, HighlightResponse } from './protocol';
 import type { SyntaxLines } from './theme';
 
 export { CODE_TOKEN_CLASS as SYNTAX_CLASS } from '@goodboy/ui';
-export type { SyntaxKind, SyntaxLines, SyntaxToken } from './theme';
+export type { SyntaxLines, SyntaxToken } from './theme';
 export { languageForName, languageForPath, type SyntaxLang } from './languages';
 
 type Transport = (request: Omit<HighlightRequest, 'id'>) => Promise<SyntaxLines | null>;

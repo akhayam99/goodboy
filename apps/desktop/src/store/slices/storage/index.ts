@@ -7,8 +7,6 @@ import { removeStorageFolders } from './removeStorageFolders';
 import { scanStorageRepository } from './scanStorageRepository';
 import type { GetFn, SetFn, StorageFocus } from './types';
 
-export type { StorageStats } from './types';
-
 export const createStorageSlice = (set: SetFn, get: GetFn) => {
   return {
     loadStorage: loadStorage(set, get),

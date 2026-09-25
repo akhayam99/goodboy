@@ -47,7 +47,6 @@ export type {
   LensHistory,
   DiffFocus,
   ResolveDiffReturn,
-  ResolveQueueFilter,
   ResolveQueueView,
   ResolveAgentReturn,
   ResolvePublicationReturn,

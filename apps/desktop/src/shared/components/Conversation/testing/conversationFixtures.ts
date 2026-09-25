@@ -3,7 +3,7 @@ import type {
   ConversationMessage,
   ConversationSource,
   ConversationThread,
-} from './types';
+} from '../types';
 
 type MessageParams = {
   readonly id: string;

@@ -19,7 +19,3 @@ export const endHandoff = ({ agentId }: Params): void => {
 };
 
 export const isHandoffPending = ({ agentId }: Params): boolean => pending.has(agentId);
-
-export const resetHandoffs = (): void => {
-  pending.clear();
-};

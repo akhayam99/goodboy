@@ -9,10 +9,14 @@ const { listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(() =>
 vi.mock('@goodboy/db', () => ({ listAgentQueuedMessages, replaceAgentQueuedMessages }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { createAgentQueueSlice } from './index';
-import { resetHandoffs } from './handoff';
-import { markTurnActive, markTurnSettled, resetTurnSettled } from '../turn/turnSettled';
 import type { AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './types';
+
+type QueueModule = typeof import('./index');
+type SettledModule = typeof import('../turn/turnSettled');
+
+let createAgentQueueSlice: QueueModule['createAgentQueueSlice'];
+let markTurnActive: SettledModule['markTurnActive'];
+let markTurnSettled: SettledModule['markTurnSettled'];
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -21,7 +25,7 @@ type SentTurn = { readonly content: string; readonly sentVia?: string };
 
 type Harness = {
   readonly state: Record<string, unknown>;
-  readonly slice: ReturnType<typeof createAgentQueueSlice>;
+  readonly slice: ReturnType<QueueModule['createAgentQueueSlice']>;
   readonly sent: Array<SentTurn>;
   readonly cancelCurrentTurn: ReturnType<typeof vi.fn>;
   readonly queue: () => ReadonlyArray<AgentQueuedTurn>;
@@ -71,10 +75,11 @@ const harness = ({ running = true }: { readonly running?: boolean } = {}): Harne
 };
 
 describe('agent queue', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
-    resetHandoffs();
-    resetTurnSettled();
+    vi.resetModules();
+    ({ createAgentQueueSlice } = await import('./index'));
+    ({ markTurnActive, markTurnSettled } = await import('../turn/turnSettled'));
   });
 
   it('queues in order and persists every change', async () => {

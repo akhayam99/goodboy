@@ -221,7 +221,6 @@ pub fn run() {
             storage::disk_free,
             storage::app_data_usage,
             storage::reveal_in_file_manager,
-            worktree::worktree_list,
             worktree::worktree_remote_url,
             worktree::worktree_diff,
             worktree::worktree_diff_file,

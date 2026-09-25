@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fixtureMessage } from './conversationFixtures';
+import { fixtureMessage } from './testing/conversationFixtures';
 import { quoteBody } from './quoteBody';
 
 describe('quoteBody', () => {

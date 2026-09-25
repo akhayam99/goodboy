@@ -40,7 +40,3 @@ export const markTurnSettled = ({ agentId }: Params): void => {
 
 export const waitTurnSettled = ({ agentId }: Params): Promise<void> =>
   active.get(agentId)?.promise ?? Promise.resolve();
-
-export const resetTurnSettled = (): void => {
-  active.clear();
-};

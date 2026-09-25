@@ -379,17 +379,6 @@ export const diskFree = async ({ path }: DiskFreeParams): Promise<DiskFree> => {
   return invoke<DiskFree>('disk_free', { path });
 };
 
-export type WorktreeEntry = {
-  readonly path: string;
-  readonly branch: string | null;
-  readonly head: string;
-  readonly isMain: boolean;
-};
-
-export const worktreeList = async (repoPath: string): Promise<ReadonlyArray<WorktreeEntry>> => {
-  return invoke<ReadonlyArray<WorktreeEntry>>('worktree_list', { repoPath });
-};
-
 type WorktreeBaseParams = {
   readonly worktreePath: string;
   readonly baseBranch?: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { composerPlaceholder } from './composerPlaceholder';
-import { fixtureMessage } from './conversationFixtures';
+import { fixtureMessage } from './testing/conversationFixtures';
 
 describe('composerPlaceholder', () => {
   it.each([

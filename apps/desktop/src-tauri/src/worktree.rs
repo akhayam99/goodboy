@@ -1907,18 +1907,6 @@ pub async fn worktree_folder_remove(
 }
 
 #[tauri::command]
-pub async fn worktree_list(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_list_blocking(repo_path))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
-}
-
-fn worktree_list_blocking(repo_path: String) -> Result<Vec<WorktreeInfo>, WorktreeError> {
-    let stdout = git(Path::new(&repo_path), &["worktree", "list", "--porcelain"])?;
-    Ok(parse_porcelain(&stdout))
-}
-
-#[tauri::command]
 pub async fn worktree_remote_url(repo_path: String) -> Option<String> {
     tauri::async_runtime::spawn_blocking(move || worktree_remote_url_blocking(repo_path))
         .await

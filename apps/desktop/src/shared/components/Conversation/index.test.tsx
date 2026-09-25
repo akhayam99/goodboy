@@ -2,7 +2,7 @@
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixtureMessage, fixtureSource, fixtureThread } from './conversationFixtures';
+import { fixtureMessage, fixtureSource, fixtureThread } from './testing/conversationFixtures';
 import type { ConversationSource } from './types';
 import { useConversationPane } from './useConversationPane';
 
