@@ -3,6 +3,7 @@ import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordH
 import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
+import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
@@ -11,7 +12,10 @@ import { stateWord } from '../../../inbox/stateWord';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
 import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
-import { IssueConversation } from '../IssueConversation';
+import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { GITLAB_ISSUE_CAPABILITIES, gitlabIssueConversation } from '../gitlabIssueConversation';
+import { systemNoteFootnote } from '../systemNoteFootnote';
 
 type Props = {
   readonly issue: GitlabIssue;
@@ -22,11 +26,37 @@ type Props = {
 
 export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
   const { description, save } = useGitlabIssueDescription({ issue, workspaceId, projectId });
-  const notes = useGitlabIssueNotes({ issue, workspaceId, projectId });
+  const {
+    notes: noteList,
+    isLoading,
+    error,
+    reload,
+    post,
+  } = useGitlabIssueNotes({ issue, workspaceId, projectId });
+  const source = useMemo<ConversationSource>(() => {
+    const conversation = gitlabIssueConversation({ notes: noteList });
+    return {
+      toolLabel: 'GitLab issues',
+      threads: conversation.threads,
+      capabilities: GITLAB_ISSUE_CAPABILITIES,
+      isLoading,
+      error,
+      onRetry: reload,
+      onPost: post == null ? null : ({ body }) => post(body),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'Notes on this issue show up here.',
+      footnote: systemNoteFootnote({ count: conversation.systemNoteCount }),
+      composerNote: null,
+      renderMessageFooter: null,
+    };
+  }, [noteList, isLoading, error, reload, post]);
+  const conversation = useConversationPane({ source, resetKey: issue.webUrl });
 
   return (
     <PaneShell
       scroll="body"
+      dock={conversation.composer}
       header={
         <RecordHeader
           provider="gitlab"
@@ -51,23 +81,7 @@ export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null 
             defaultOpen: true,
             content: <DescriptionSection text={description} onSave={save} />,
           },
-          {
-            key: 'conversation',
-            kind: 'conversation',
-            label: 'Conversation',
-            count: notes.notes.length,
-            isCollapsible: false,
-            defaultOpen: true,
-            content: (
-              <IssueConversation
-                notes={notes.notes}
-                isLoading={notes.isLoading}
-                error={notes.error}
-                onRetry={notes.reload}
-                onPost={notes.post}
-              />
-            ),
-          },
+          conversation.section,
         ]}
       />
     </PaneShell>

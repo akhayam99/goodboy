@@ -45,6 +45,9 @@ export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): 
 
   useEffect(() => {
     setNotes([]);
+  }, [workspaceId, host, projectPath, issueIid, projectId]);
+
+  useEffect(() => {
     setError(null);
     if (host == null || projectPath == null || issueIid == null) {
       setIsLoading(false);

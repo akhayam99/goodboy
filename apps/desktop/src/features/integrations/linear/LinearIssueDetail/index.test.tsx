@@ -74,7 +74,7 @@ describe('LinearIssueDetail', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Merging this' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(postComment).toHaveBeenCalledWith('Merging this'));
   });

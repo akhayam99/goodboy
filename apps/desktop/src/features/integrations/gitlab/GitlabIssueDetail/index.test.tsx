@@ -160,10 +160,10 @@ describe('GitlabIssueDetail', () => {
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
     await waitFor(() => expect(listIssueNotes).toHaveBeenCalledOnce());
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Write a note' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Reproduced on main' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(createIssueNote).toHaveBeenCalledWith({

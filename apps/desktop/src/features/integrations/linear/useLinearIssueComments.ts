@@ -15,6 +15,7 @@ type Result = {
   readonly comments: ReadonlyArray<LinearIssueComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly reload: () => void;
   readonly post: ((body: string) => Promise<void>) | null;
 };
 
@@ -22,12 +23,16 @@ export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Para
   const [comments, setComments] = useState<ReadonlyArray<LinearIssueComment>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const isAttributed = useAppStore((state) =>
     isAttributionEnabled({ overrides: state.workspaceOverrides[workspaceId] }),
   );
 
   useEffect(() => {
     setComments([]);
+  }, [issueId, workspaceId, projectId]);
+
+  useEffect(() => {
     setError(null);
     if (issueId == null) {
       setIsLoading(false);
@@ -59,7 +64,11 @@ export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Para
     return () => {
       isCancelled = true;
     };
-  }, [issueId, workspaceId, projectId]);
+  }, [issueId, workspaceId, projectId, reloadToken]);
+
+  const reload = useCallback(() => {
+    setReloadToken((token) => token + 1);
+  }, []);
 
   const post = useCallback(
     async (body: string) => {
@@ -77,5 +86,5 @@ export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Para
     [issueId, workspaceId, projectId, isAttributed],
   );
 
-  return { comments, isLoading, error, post: issueId != null ? post : null };
+  return { comments, isLoading, error, reload, post: issueId != null ? post : null };
 };

@@ -72,6 +72,9 @@ export const useGitlabMrDiscussions = ({
 
   useEffect(() => {
     setDiscussions([]);
+  }, [workspaceId, host, projectPath, mrIid]);
+
+  useEffect(() => {
     setError(null);
     if (workspaceId == null || host == null || projectPath == null || mrIid == null) {
       setIsLoading(false);

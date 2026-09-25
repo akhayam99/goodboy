@@ -491,6 +491,19 @@ one is open at a time.
   Conversation with its count. `RecordSections` owns the order, the fact
   registries in `shared/detail-fields` own the slots. A changed file opens its
   diff in a full-screen dialog.
+- **One conversation, one composer, what the tool can do.** Every record's
+  Conversation is `shared/components/Conversation`: messages without cards, a
+  thread's replies under a neutral rail (the last three open, the rest behind
+  Show earlier replies), a code anchor chip on review threads, and a resolved
+  thread folded into one row. Each tool has a pure adapter next to its client
+  that turns its comments into threads and declares its capabilities: Reply
+  where the tool has threads, Quote where it is flat (the post quotes the
+  message, and mentions the author on GitHub), Resolve only where the tool
+  resolves, reactions only on Slack. The composer sits in the drawer's dock,
+  only when the tool lets Goodboy write. Reply (or `r` on a focused message)
+  puts a Replying to bar above it, Escape clears it, ⌘↵ sends. A sent message
+  shows Sending in place, and a refused one stays with its text, Retry, Copy
+  text and Discard.
 
 ## Lens surfaces
 
