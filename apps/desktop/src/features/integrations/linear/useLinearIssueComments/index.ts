@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { linearCreateComment, linearFetchIssueComments, type LinearIssueComment } from './client';
-import { useAppStore } from '../../../store';
-import { appendAttribution, isAttributionEnabled } from '../../../shared/utils/attribution';
+import { linearCreateComment, linearFetchIssueComments, type LinearIssueComment } from '../client';
+import { useAppStore } from '../../../../store';
+import { appendAttribution, isAttributionEnabled } from '../../../../shared/utils/attribution';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
@@ -11,12 +11,17 @@ type Params = {
   readonly projectId?: ProjectId;
 };
 
+type PostParams = {
+  readonly body: string;
+  readonly parentId: string | null;
+};
+
 type Result = {
   readonly comments: ReadonlyArray<LinearIssueComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
-  readonly post: ((body: string) => Promise<void>) | null;
+  readonly post: ((params: PostParams) => Promise<void>) | null;
 };
 
 export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Params): Result => {
@@ -71,7 +76,7 @@ export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Para
   }, []);
 
   const post = useCallback(
-    async (body: string) => {
+    async ({ body, parentId }: PostParams) => {
       if (issueId == null) {
         return;
       }
@@ -79,6 +84,7 @@ export const useLinearIssueComments = ({ workspaceId, issueId, projectId }: Para
         workspaceId,
         issueId,
         body: appendAttribution({ body, isEnabled: isAttributed, syntax: 'markdown' }),
+        parentId,
         projectId,
       });
       setComments((current) => [...current, created]);

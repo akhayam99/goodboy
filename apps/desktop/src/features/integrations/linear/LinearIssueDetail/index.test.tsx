@@ -19,7 +19,15 @@ vi.mock('../useLinearIssueComments', () => ({
         id: 'comment-1',
         body: 'The fix is ready for review.',
         createdAt: new Date(Date.now() - 60_000).toISOString(),
-        user: { name: 'Ada Lovelace' },
+        parent: null,
+        user: { name: 'Ada Lovelace', avatarUrl: null },
+      },
+      {
+        id: 'comment-2',
+        body: 'Tests are green on my side.',
+        createdAt: new Date(Date.now() - 30_000).toISOString(),
+        parent: { id: 'comment-1' },
+        user: { name: 'Robin Vale', avatarUrl: null },
       },
     ],
     isLoading: false,
@@ -69,14 +77,29 @@ describe('LinearIssueDetail', () => {
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
   });
 
-  it('sends a comment written in the conversation tab back to Linear', async () => {
+  it('starts a new thread on Linear when no message is targeted', async () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
-    fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Start a new thread' }), {
       target: { value: 'Merging this' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
-    await waitFor(() => expect(postComment).toHaveBeenCalledWith('Merging this'));
+    await waitFor(() =>
+      expect(postComment).toHaveBeenCalledWith({ body: 'Merging this', parentId: null }),
+    );
+  });
+
+  it('replies under the root comment of the thread Reply was clicked on', async () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reply' })[1]!);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write a reply' }), {
+      target: { value: 'On it' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() =>
+      expect(postComment).toHaveBeenCalledWith({ body: 'On it', parentId: 'comment-1' }),
+    );
   });
 
   it('keeps a fenced description as a code block', () => {

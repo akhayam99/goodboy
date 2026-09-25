@@ -571,6 +571,7 @@ async fn run_write(
                 scope.project.clone(),
                 text(args, "id")?,
                 text(args, "body")?,
+                optional_text(args, "parent"),
                 app.state(),
             )
             .await

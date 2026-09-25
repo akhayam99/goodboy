@@ -348,9 +348,9 @@ pub const CATALOG: &[VerbSpec] = &[
     VerbSpec {
         provider: "linear",
         verb: "comment-create",
-        params: &[req("id"), req("body")],
+        params: &[req("id"), req("body"), opt("parent")],
         access: Access::Write,
-        summary: "post a comment on an issue",
+        summary: "post a comment on an issue, or a reply under the parent comment",
     },
     VerbSpec {
         provider: "linear",

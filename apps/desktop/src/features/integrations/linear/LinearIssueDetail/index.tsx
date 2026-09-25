@@ -37,7 +37,7 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
       isLoading,
       error,
       onRetry: reload,
-      onPost: post == null ? null : ({ body }) => post(body),
+      onPost: post == null ? null : ({ body, threadId }) => post({ body, parentId: threadId }),
       onResolve: null,
       resolveError: null,
       emptyDescription: 'This issue has no comments yet.',
