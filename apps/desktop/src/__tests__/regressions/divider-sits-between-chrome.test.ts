@@ -275,7 +275,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/shared/components/FinishedRegister/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/shared/components/PaneShell/FocusedPane.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/RoutingPicker/index.tsx': { count: 1, reason: 'chrome' },

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { CountToggle, Divider, Eyebrow } from '@goodboy/ui';
+import { CountToggle, Eyebrow } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
@@ -24,8 +24,7 @@ export const FinishedRegister = ({
   }
 
   return (
-    <section className="flex flex-col gap-4" aria-label={`${label} history`}>
-      <Divider />
+    <section className="flex flex-col gap-4 pt-4" aria-label={`${label} history`}>
       <div className="flex items-center justify-between gap-2">
         <h2>
           <Eyebrow label={label} />
