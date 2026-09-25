@@ -103,7 +103,9 @@ A copy whose name is taken here gets its workspace name added, for example
 edited or deleted in this workspace. It puts back their name and steps, drops
 the steps you added to them, and leaves your own workflows alone. With nothing
 changed the menu item is off and says so. A built-in whose name one of your
-own workflows now holds is left out.
+own workflows now holds is left out. When an update brings a new built-in,
+every workspace gets it at the next launch, unless one of your workflows
+already has that name. A built-in you never had is not counted as deleted.
 A row opens the editor: the builder without its launch bar, with the same step
 tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
@@ -412,6 +414,7 @@ The schema is in `packages/db/src/migrations/`. A few things it does not tell yo
 - `is_preset = 0` marks a one-off run. It does not show up in the preset picker
 - `step_library` holds only workspace steps. The rows with a `NULL` `workspace_id` are soft-deleted anchors (`m180`): they keep the `seed_*` ids that `steps.library_step_id` points at valid. `step_def_list` never returns them, and `step_def_upsert` and `step_def_delete` refuse them. A new built-in step needs an anchor row in a migration, or a workflow step that links to it fails the foreign key
 - A built-in workflow has the id `wf_seed_<slug>_<workspace id>`, so a restore only reaches its own workspace. The slug stays when the name changes: `Refactor` keeps `refactor-example`, and `m188` renamed it from `Refactor (example)` only where the user had left that name. The Studio compares each seeded row with its `WORKFLOW_LIBRARY` entry (`restorableBuiltins`) and a restore goes through `restoreSeededWorkflow`, which also clears `deleted_at` and soft-deletes the steps the user added
+- Every launch runs `seedMissingBuiltinWorkflows` after the migrations: it inserts a built-in only where its `wf_seed_*` id has no row at all and the name is free among the live presets. Deleting a built-in keeps its row with `deleted_at` set, which is how the Studio tells "deleted" (`listRemovedSeededWorkflowIds`) from "never had", and why a launch never brings a deleted one back
 
 Adding a workflow creates every agent of the run at once, each one `pending`.
 Each step's settings are worked out per agent. When a step sets nothing, the

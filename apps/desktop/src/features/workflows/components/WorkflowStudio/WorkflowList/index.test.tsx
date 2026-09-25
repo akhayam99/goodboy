@@ -49,11 +49,15 @@ const seeded = (overrides: Partial<Workflow> = {}): Workflow => {
   });
 };
 
-const renderList = (workflows: ReadonlyArray<Workflow>) => {
+const renderList = (
+  workflows: ReadonlyArray<Workflow>,
+  removedBuiltinIds: ReadonlySet<string> = new Set(),
+) => {
   const onOpen = vi.fn();
   render(
     <WorkflowList
       workflows={workflows}
+      removedBuiltinIds={removedBuiltinIds}
       workspaceName="Harborline"
       isRestoring={false}
       tabs={<span>Workflows</span>}
@@ -103,6 +107,7 @@ describe('WorkflowList', () => {
     render(
       <WorkflowList
         workflows={[seeded()]}
+        removedBuiltinIds={new Set(['wf_seed_plan-and-ship_ws-1', 'wf_seed_fix-a-bug_ws-1'])}
         workspaceName="Harborline"
         isRestoring={false}
         tabs={null}
@@ -142,6 +147,13 @@ describe('WorkflowList', () => {
     const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
     expect((item as HTMLButtonElement).disabled).toBe(true);
     expect(item.textContent).toContain('Built-in workflows are unchanged');
+  });
+
+  it('keeps the restore off when the missing built-ins were never there', () => {
+    renderList([seeded()]);
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
+    expect((item as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows the empty state when there is nothing to list', () => {

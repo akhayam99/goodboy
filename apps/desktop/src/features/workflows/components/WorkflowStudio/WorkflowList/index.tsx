@@ -16,6 +16,7 @@ import { WorkflowListRow } from './WorkflowListRow';
 
 type Props = {
   readonly workflows: ReadonlyArray<Workflow>;
+  readonly removedBuiltinIds: ReadonlySet<string>;
   readonly workspaceName: string | null;
   readonly isRestoring: boolean;
   readonly tabs: ReactNode;
@@ -36,6 +37,7 @@ const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): strin
 
 export const WorkflowList = ({
   workflows,
+  removedBuiltinIds,
   workspaceName,
   isRestoring,
   tabs,
@@ -45,7 +47,10 @@ export const WorkflowList = ({
   onRestore,
 }: Props) => {
   const [isConfirmingRestore, setIsConfirmingRestore] = useState(false);
-  const restorable = useMemo(() => restorableBuiltins({ workflows }), [workflows]);
+  const restorable = useMemo(
+    () => restorableBuiltins({ workflows, removedIds: removedBuiltinIds }),
+    [workflows, removedBuiltinIds],
+  );
   const hasRestorable = restorable.length > 0;
 
   return (

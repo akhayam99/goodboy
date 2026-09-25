@@ -46,14 +46,20 @@ export type RestorableBuiltin = {
 
 type WorkflowsParams = {
   readonly workflows: ReadonlyArray<Workflow>;
+  readonly removedIds: ReadonlySet<string>;
 };
 
-export const restorableBuiltins = ({ workflows }: WorkflowsParams): RestorableBuiltin[] =>
+export const restorableBuiltins = ({
+  workflows,
+  removedIds,
+}: WorkflowsParams): RestorableBuiltin[] =>
   WORKFLOW_LIBRARY.flatMap((entry): RestorableBuiltin[] => {
-    const seeded = workflows.find((workflow) =>
-      workflow.id.startsWith(`${SEED_ID_PREFIX}${entry.slug}_`),
-    );
+    const prefix = `${SEED_ID_PREFIX}${entry.slug}_`;
+    const seeded = workflows.find((workflow) => workflow.id.startsWith(prefix));
     if (seeded !== undefined && matchesEntry({ workflow: seeded, entry })) {
+      return [];
+    }
+    if (seeded === undefined && ![...removedIds].some((id) => id.startsWith(prefix))) {
       return [];
     }
     const nameTaken = workflows.some(
