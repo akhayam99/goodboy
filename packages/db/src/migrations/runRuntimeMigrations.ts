@@ -1,6 +1,7 @@
 import type { Database } from '../client';
 import { migrations as defaultMigrations, type Migration } from './index';
 import { migrate, type MigrateResult } from './runner';
+import { assertKnownMigrations } from './downgradeGuard';
 
 const SNAPSHOT_RETENTION = 2;
 
@@ -109,6 +110,7 @@ export const runRuntimeMigrations = async ({
   `);
   const rows = await db.select<VersionRow>('SELECT version FROM schema_version');
   const applied = new Set(rows.map((row) => row.version));
+  assertKnownMigrations({ appliedVersions: [...applied], migrations });
   const pending = migrations.filter((migration) => !applied.has(migration.version));
   const isFileDatabase =
     databasePath != null && databasePath.length > 0 && databasePath !== ':memory:';

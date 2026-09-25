@@ -191,6 +191,7 @@ pub fn run() {
             db::db_list_migration_snapshots,
             db::db_path,
             db::db_remove_migration_snapshot,
+            db::db_restore_migration_snapshot,
             db::db_select,
             db::db_transaction,
             db::db_wipe,

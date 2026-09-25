@@ -10,6 +10,7 @@ import {
 } from '../../storyHarness';
 import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
 import { SETTING_CHANGELOG_SEEN } from '../changelog/state';
+import { NewerDatabaseError } from '../../../shared/lib/newerDatabase';
 import type {
   Agent,
   AgentId,
@@ -345,6 +346,24 @@ describe('store contract', () => {
       expect(store.getState().bootPhase).toBe('ready');
       expect(store.getState().bootFailedPhase).toBeNull();
       expect(storySpies.runDbMigrations).toHaveBeenCalledTimes(2);
+    });
+
+    it('blocks on a database from a newer build and boots after restoring its backup', async () => {
+      const store = useAppStore;
+      const snapshot = '/tmp/data.db.pre-m174-from-m173-20260901T120000000Z.bak';
+      storySpies.runDbMigrations.mockRejectedValueOnce(
+        new NewerDatabaseError({ message: 'newer', restorableSnapshot: snapshot }),
+      );
+
+      await store.getState().hydrate();
+      expect(store.getState().bootPhase).toBe('error');
+      expect(store.getState().newerDatabase).toEqual({ restorableSnapshot: snapshot });
+
+      await store.getState().restoreNewerDatabaseBackup();
+
+      expect(storySpies.restoreMigrationSnapshot).toHaveBeenCalledWith({ path: snapshot });
+      expect(store.getState().bootPhase).toBe('ready');
+      expect(store.getState().newerDatabase).toBeNull();
     });
 
     it('survives a boot breadcrumb command that throws synchronously', async () => {

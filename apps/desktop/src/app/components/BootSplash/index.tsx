@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { BootPhase } from '../../../store/types';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
+import type { NewerDatabase } from '../../../shared/lib/newerDatabase';
 import { BootBrand } from './BootBrand';
 import { BootErrorRecovery } from './BootErrorRecovery';
+import { NewerDatabaseScreen } from './NewerDatabaseScreen';
 import { BootSlowNotice } from './BootSlowNotice';
 import { useElapsedSincePhase } from './useElapsedSincePhase';
 
@@ -23,7 +25,10 @@ type BootSplashProps = {
   phase: BootPhase;
   failedPhase?: BootPhase | null;
   error: string | null;
+  newerDatabase?: NewerDatabase | null;
   onRetry?: () => void;
+  onRestoreBackup?: () => Promise<void>;
+  onQuit?: () => void;
   onFinished?: () => void;
 };
 
@@ -31,7 +36,10 @@ export const BootSplash = ({
   phase,
   failedPhase = null,
   error,
+  newerDatabase = null,
   onRetry,
+  onRestoreBackup = async () => undefined,
+  onQuit = () => undefined,
   onFinished,
 }: BootSplashProps) => {
   const hasError = error != null;
@@ -52,6 +60,16 @@ export const BootSplash = ({
       onFinished?.();
     }
   }, [phase, hasError, onFinished]);
+
+  if (hasError && newerDatabase !== null) {
+    return (
+      <NewerDatabaseScreen
+        restorableSnapshot={newerDatabase.restorableSnapshot}
+        onRestore={onRestoreBackup}
+        onQuit={onQuit}
+      />
+    );
+  }
 
   if (hasError) {
     const isDatabaseFailure = error === DATABASE_UNAVAILABLE_MESSAGE;

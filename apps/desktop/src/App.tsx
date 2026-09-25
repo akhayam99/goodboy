@@ -54,6 +54,9 @@ export const App = () => {
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
+  const newerDatabase = useAppStore((s) => s.newerDatabase);
+  const restoreNewerDatabaseBackup = useAppStore((s) => s.restoreNewerDatabaseBackup);
+  const quitApp = useAppStore((s) => s.quitApp);
   const [splashFinished, setSplashFinished] = useState(false);
   const workspaces = useWorkspaces();
   const hasWorkspaces = workspaces.length > 0;
@@ -170,7 +173,10 @@ export const App = () => {
         phase={bootPhase}
         failedPhase={bootFailedPhase}
         error={error}
+        newerDatabase={newerDatabase}
         onRetry={retryHydrate}
+        onRestoreBackup={restoreNewerDatabaseBackup}
+        onQuit={() => void quitApp()}
         onFinished={() => setSplashFinished(true)}
       />
     );

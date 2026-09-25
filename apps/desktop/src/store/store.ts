@@ -320,6 +320,8 @@ type AppActions = {
   setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
   hydrate(): Promise<void>;
   retryHydrate(): Promise<void>;
+  restoreNewerDatabaseBackup(): Promise<void>;
+  quitApp(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   relaunchApp(): Promise<void>;
@@ -1070,6 +1072,7 @@ export const initialState: AppState = {
   hydrated: false,
   bootPhase: 'pending',
   bootFailedPhase: null,
+  newerDatabase: null,
   error: null,
   transcripts: {},
   messages: {},

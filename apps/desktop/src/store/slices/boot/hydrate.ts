@@ -4,6 +4,7 @@ import { getSetting, listProjectsForWorkspace, listWorkspaces } from '@goodboy/d
 import { invoke } from '@tauri-apps/api/core';
 import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
 import { migrateLsToDb } from '../../../shared/lib/ls-to-db-migration';
+import { newerDatabaseFromError } from '../../../shared/lib/newerDatabase';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
 import { consumeReloadIntent } from '../../../features/workspace/windowView';
@@ -47,7 +48,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
       try {
         recordBootBreadcrumb({ phase: 'pending', detail: 'start' });
         const migratingAt = Date.now();
-        set({ bootPhase: 'migrating', bootFailedPhase: null, error: null });
+        set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
         await runDbMigrations();
         await migrateLsToDb();
         await hydrateOnboardingFromDb();
@@ -229,6 +230,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         set({
           bootPhase: 'error',
           bootFailedPhase: get().bootPhase,
+          newerDatabase: newerDatabaseFromError({ error: err }),
           error: formatError(err),
           hydrated: true,
         });

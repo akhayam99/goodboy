@@ -93,6 +93,7 @@ export const storySpies = {
   upsertProjectScript: vi.fn(async () => undefined),
   deleteProjectScript: vi.fn(async () => undefined),
   runDbMigrations: vi.fn(async () => undefined),
+  restoreMigrationSnapshot: vi.fn(async (_params: { readonly path: string }) => ''),
   listLiveRunIds: vi.fn(async () => new Set<string>()),
   invokeBudgetRuleList: vi.fn(async () => [] as ReadonlyArray<BudgetRule>),
   invokeBudgetRuleUpsert,
@@ -478,6 +479,7 @@ export const tauriEventModuleMock = () => ({ listen: vi.fn(async () => () => und
 
 export const dbLibModuleMock = () => ({
   runDbMigrations: storySpies.runDbMigrations,
+  restoreMigrationSnapshot: storySpies.restoreMigrationSnapshot,
   wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 });

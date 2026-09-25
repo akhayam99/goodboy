@@ -149,6 +149,71 @@ describe('BootSplash failed phase', () => {
   });
 });
 
+describe('BootSplash newer database', () => {
+  afterEach(cleanup);
+
+  const snapshot = '/tmp/data.db.pre-m174-from-m173-20260901T120000000Z.bak';
+
+  it('blocks the window and offers the backup or quitting', async () => {
+    const onRestoreBackup = vi.fn(async () => undefined);
+    const onQuit = vi.fn();
+    render(
+      <BootSplash
+        phase="error"
+        failedPhase="migrating"
+        error="newer"
+        newerDatabase={{ restorableSnapshot: snapshot }}
+        onRetry={vi.fn()}
+        onRestoreBackup={onRestoreBackup}
+        onQuit={onQuit}
+      />,
+    );
+
+    expect(screen.getByText('This database was upgraded by a newer Goodboy.')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Quit' }));
+    expect(onQuit).toHaveBeenCalledOnce();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Restore backup' }));
+    });
+    expect(onRestoreBackup).toHaveBeenCalledOnce();
+  });
+
+  it('only offers quitting when no backup can be read by this build', () => {
+    render(
+      <BootSplash
+        phase="error"
+        error="newer"
+        newerDatabase={{ restorableSnapshot: null }}
+        onQuit={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Restore backup' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Quit' })).toBeDefined();
+  });
+
+  it('keeps the screen and says why when the restore fails', async () => {
+    render(
+      <BootSplash
+        phase="error"
+        error="newer"
+        newerDatabase={{ restorableSnapshot: snapshot }}
+        onRestoreBackup={async () => {
+          throw new Error('disk full');
+        }}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Restore backup' }));
+    });
+
+    expect(screen.getByText(/The backup could not be restored/)).toBeDefined();
+  });
+});
+
 describe('bootErrorCategory', () => {
   it('names the database ahead of whichever phase was running', () => {
     expect(bootErrorCategory({ phase: 'migrating', isDatabaseFailure: true })).toBe('database');
