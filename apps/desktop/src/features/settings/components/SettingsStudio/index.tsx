@@ -93,6 +93,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
           workspaceId={currentWorkspace?.id ?? null}
           initialFocus={focus.provider}
           initialAction={focus.action}
+          {...(focus.section != null && { initialSection: focus.section })}
           frame={frameFor('providers')}
         />
       );

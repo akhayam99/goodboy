@@ -24,6 +24,7 @@ export type BaseModel = {
   readonly contextWindow: number;
   readonly presentation: ModelPresentation;
   readonly minCliVersion?: string;
+  readonly legacy?: true;
 };
 
 export type AnthropicModel = BaseModel & {

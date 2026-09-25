@@ -78,6 +78,7 @@ export const CODEX_CATALOG = [
   },
   {
     key: 'gpt-5.5',
+    legacy: true,
     label: 'GPT-5.5',
     tier: 'turn',
     contextWindow: 400_000,

@@ -1,10 +1,12 @@
 import { useEffect, useState, type RefObject } from 'react';
 import {
   MODEL_CATALOGS,
+  isApiProvider,
   modelAxes,
   modelIdForSelection,
   remapModelSelection,
   resolveStoredModelSelection,
+  visibleCatalog,
 } from '@goodboy/core';
 import { Button, cn, Divider } from '@goodboy/ui';
 import type {
@@ -17,6 +19,8 @@ import type {
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL, VERBOSITY_LEVELS } from '../../../features/settings/verbosity';
 import { useCliGate } from '../../../features/providers/hooks/useCliGate';
+import { useHiddenModels } from '../../../features/providers/hooks/useHiddenModels';
+import { ModelVisibilityLink } from './ModelVisibilityLink';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 import { AxesSection } from './AxesSection';
 import { verbosityTone } from './chipTone';
@@ -135,7 +139,18 @@ export const RoutingPickerBody = ({
   if (viewedModel == null) {
     throw new Error(`provider catalog is empty: ${viewProvider}`);
   }
-  const axes = modelAxes({ model: viewedModel, selection: viewedRouting.selection });
+  const hiddenModels = useHiddenModels();
+  const hiddenKeys = new Set(hiddenModels[viewProvider] ?? []);
+  const shownCatalog = visibleCatalog({
+    provider: viewProvider,
+    hidden: hiddenModels,
+    currentKey: viewedModel.key,
+  });
+  const axes = modelAxes({
+    model: viewedModel,
+    selection: viewedRouting.selection,
+    catalog: shownCatalog,
+  });
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
@@ -267,7 +282,12 @@ export const RoutingPickerBody = ({
           {separator}
         </>
       )}
-      <PickerSection label="Provider">
+      <PickerSection
+        label="Provider"
+        {...(!isApiProvider({ id: viewProvider }) && {
+          action: <ModelVisibilityLink provider={viewProvider} onNavigate={onClose} />,
+        })}
+      >
         {connectedProviders.length === 0 && availability === 'run' ? (
           <NoConnectedProviders onNavigate={onClose} />
         ) : (
@@ -330,6 +350,7 @@ export const RoutingPickerBody = ({
             notice={clampNotice}
             hasMaxModeAdvisory={hasMaxModeAdvisory}
             cliGate={viewedCliGate}
+            hiddenKeys={hiddenKeys}
             onModel={(modelKey) => {
               const nextModel = viewedRouting.catalog.find(
                 (candidate) => candidate.key === modelKey,

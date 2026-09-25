@@ -242,6 +242,15 @@ export { parseLegacyId } from './providers/parseLegacyId';
 export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
+export {
+  isModelHidden,
+  legacyHiddenModels,
+  parseHiddenModels,
+  visibleCatalog,
+  visibleModelCount,
+  withModelsVisible,
+  type HiddenModels,
+} from './providers/modelVisibility';
 export { modelHasEffortAxis } from './providers/modelHasEffortAxis';
 export { clampEffortForModel, modelEffortLevels } from './providers/clampEffortForModel';
 export { resolveModelArgs } from './providers/resolveModelArgs';

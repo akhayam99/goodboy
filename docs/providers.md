@@ -172,6 +172,20 @@ clears them after a confirm.
   the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
   ladder above choose
 
+## Models in the picker
+
+Each CLI provider page has a **Models in the picker** section under Account. It
+changes only what the model picker lists, for every workspace in the app. Auto and
+pinned models keep working.
+
+- Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
+  version. A lit chip shows in the picker
+- Older versions start hidden. **Show all** brings them back
+- The last visible model of a provider stays visible
+- A pinned value always shows in the picker, marked **Hidden in the picker**
+- In the picker, the settings icon next to **Provider** opens this section for the
+  provider you are looking at
+
 ## Switching accounts
 
 Each provider uses one account at a time, and the card shows which one. That account

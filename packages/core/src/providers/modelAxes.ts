@@ -31,6 +31,7 @@ const ANTHROPIC_EFFORT_ORDER: ReadonlyArray<EffortLevel> = EFFORT_ORDER.filter((
 type Params = {
   readonly model: CatalogModel;
   readonly selection: ModelSelection;
+  readonly catalog?: ReadonlyArray<CatalogModel>;
 };
 
 type EffortParams = {
@@ -40,11 +41,13 @@ type EffortParams = {
 
 type SelectionAxesParams = {
   readonly model: CatalogModel;
+  readonly catalog?: ReadonlyArray<CatalogModel>;
 };
 
 type CursorParams = {
   readonly model: CursorModel;
   readonly selection: ModelSelection;
+  readonly catalog?: ReadonlyArray<CatalogModel>;
 };
 
 type CursorToggleParams = CursorParams & {
@@ -62,8 +65,8 @@ const effortAxis = ({ label, efforts }: EffortParams): EffortAxis | null => {
   };
 };
 
-const selectionAxes = ({ model }: SelectionAxesParams) => {
-  const catalog: ReadonlyArray<CatalogModel> = [...MODEL_CATALOGS[model.provider]].sort(
+const selectionAxes = ({ model, catalog: shown }: SelectionAxesParams) => {
+  const catalog: ReadonlyArray<CatalogModel> = [...(shown ?? MODEL_CATALOGS[model.provider])].sort(
     (left, right) => left.presentation.order - right.presentation.order,
   );
   const groupModels = new Map<string, CatalogModel>();
@@ -154,7 +157,7 @@ const cursorToggles = ({
   return toggles;
 };
 
-const cursorAxes = ({ model, selection }: CursorParams): ModelAxes => {
+const cursorAxes = ({ model, selection, catalog }: CursorParams): ModelAxes => {
   const thinking = selection.toggles?.thinking ?? model.combos[0]?.thinking ?? false;
   const fast = selection.toggles?.fast ?? model.combos[0]?.fast ?? false;
   const hasEffort = model.combos.some((combo) => combo.effort != null);
@@ -170,7 +173,7 @@ const cursorAxes = ({ model, selection }: CursorParams): ModelAxes => {
       }
     : null;
   return {
-    ...selectionAxes({ model }),
+    ...selectionAxes({ model, ...(catalog != null && { catalog }) }),
     effort,
     variant: null,
     toggles: cursorToggles({ model, selection, thinking, fast }),
@@ -199,8 +202,8 @@ const variantAxis = ({ model, selection }: VariantParams): VariantAxis | null =>
   };
 };
 
-export const modelAxes = ({ model, selection }: Params): ModelAxes => {
-  const selections = selectionAxes({ model });
+export const modelAxes = ({ model, selection, catalog }: Params): ModelAxes => {
+  const selections = selectionAxes({ model, ...(catalog != null && { catalog }) });
   switch (model.provider) {
     case 'anthropic':
       return {
@@ -228,7 +231,7 @@ export const modelAxes = ({ model, selection }: Params): ModelAxes => {
         requiresMaxMode: false,
       };
     case 'cursor':
-      return cursorAxes({ model, selection });
+      return cursorAxes({ model, selection, ...(catalog != null && { catalog }) });
     case 'gemini':
     case 'opencode':
     case 'openrouter':

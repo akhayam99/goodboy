@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   MODEL_CATALOGS,
@@ -13,6 +13,9 @@ import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { cursorMaxModeAdvisory } from '../../lib/cursorMaxModeAdvisory';
 import { RoutingPicker } from './index';
+import { resolveRouting } from './resolveRouting';
+import { useAppStore } from '../../../store';
+import { SETTING_HIDDEN_MODELS } from '../../../features/settings/settings';
 import { withShortcutHint } from '../../keyboard/registry';
 
 const baseProps = {
@@ -46,7 +49,12 @@ const providers = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
 );
 
+beforeEach(() => {
+  useAppStore.setState({ settings: { [SETTING_HIDDEN_MODELS]: '{}' } });
+});
+
 afterEach(() => {
+  useAppStore.setState({ settings: {} });
   cleanup();
   localStorage.clear();
   vi.clearAllMocks();
@@ -251,6 +259,60 @@ describe('RoutingPicker', () => {
     fireEvent.click(trigger);
     const row = screen.getByRole('button', { name: /^Auto, now/ });
     expect(row.textContent).toBe('AutoNow: Claude · Sonnet 4.6 · Medium');
+  });
+
+  it('lists only the models chosen for the picker and never changes the routing', () => {
+    useAppStore.setState({
+      settings: { [SETTING_HIDDEN_MODELS]: JSON.stringify({ anthropic: ['opus-4.8', 'opus-5'] }) },
+    });
+    const before = resolveRouting({
+      providers: ['anthropic'],
+      provider: 'anthropic',
+      model: 'claude-opus-5-5',
+      effort: 'high',
+    });
+    render(<RoutingPicker {...baseProps} model="claude-opus-5-5" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const versions = within(screen.getByRole('group', { name: 'Version' }));
+    expect(versions.queryByRole('button', { name: '4.8' })).toBeNull();
+    expect(versions.queryByRole('button', { name: '5' })).toBeNull();
+    expect(versions.getByRole('button', { name: '5.5' })).toBeDefined();
+    expect(
+      resolveRouting({
+        providers: ['anthropic'],
+        provider: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+      }),
+    ).toEqual(before);
+  });
+
+  it('keeps a hidden current value in the list and marks it hidden', () => {
+    useAppStore.setState({
+      settings: { [SETTING_HIDDEN_MODELS]: JSON.stringify({ anthropic: ['opus-4.6'] }) },
+    });
+    render(<RoutingPicker {...baseProps} model="claude-opus-4-6" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    const current = within(screen.getByRole('group', { name: 'Version' })).getByRole('button', {
+      name: /4\.6/,
+    });
+    expect(current.getAttribute('aria-pressed')).toBe('true');
+    expect(current.getAttribute('title')).toBe('Hidden in the picker');
+  });
+
+  it('opens the page of the provider in view from the gear', () => {
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-settings', listener);
+    render(<RoutingPicker {...baseProps} provider="codex" model="gpt-5.6-sol" />);
+    fireEvent.click(screen.getByRole('button', { name: /routing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose which Codex models show here' }));
+    window.removeEventListener('goodboy:open-settings', listener);
+    const event: unknown = listener.mock.calls[0]?.[0];
+    expect(event instanceof CustomEvent ? event.detail : null).toEqual({
+      scope: 'providers',
+      provider: 'codex',
+      section: 'models',
+    });
   });
 
   it('shows the pinned model with an x that goes back to Auto', () => {

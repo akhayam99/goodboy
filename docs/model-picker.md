@@ -26,6 +26,16 @@ straight inside their own popovers, so both list every connected provider and
 the same Model, Version, Variant and Effort rows. A launching popover seeds it
 from its role: Resolve from `resolver`, Explore from `scout`.
 
+## Models in the picker
+
+Which models the list shows is a per app choice, stored in the settings key
+value store (`providers.hiddenModels`). Catalog entries marked `legacy` start
+hidden. The body filters the catalog before `modelAxes` builds the rows, so a
+family with every version hidden leaves the Model row. The filter never touches
+routing, and the current value always shows, marked `Hidden in the picker`. The
+settings icon next to **Provider** opens that provider's **Models in the picker**
+section.
+
 ## What a catalog entry declares
 
 Grouping, ordering and chip text come from the `presentation` object on the

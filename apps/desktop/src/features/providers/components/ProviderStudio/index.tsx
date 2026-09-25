@@ -8,11 +8,13 @@ import { ProvidersRail } from './ProvidersRail';
 import { ProviderDetailPanel } from './ProviderDetailPanel';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
+import { MODELS_SECTION } from './ModelVisibilitySection/constants';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly initialFocus?: ProviderId | null;
   readonly initialAction?: ProviderLifecycleAction | null;
+  readonly initialSection?: string;
   readonly frame: ScopeFrame;
 };
 
@@ -20,6 +22,7 @@ export const ProviderSettingsScope = ({
   workspaceId,
   initialFocus,
   initialAction,
+  initialSection,
   frame,
 }: Props) => {
   const providers = useAppStore((s) => s.providers);
@@ -86,6 +89,7 @@ export const ProviderSettingsScope = ({
           info={selected}
           autoConnect={autoConnect && selected?.id === initialFocus}
           autoUpdate={autoUpdate && selected?.id === initialFocus}
+          focusModels={initialSection === MODELS_SECTION && selected?.id === initialFocus}
         />
       ),
   });

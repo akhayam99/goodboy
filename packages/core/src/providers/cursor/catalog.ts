@@ -66,6 +66,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'opus-4.7',
+    legacy: true,
     label: 'Opus 4.7',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -143,6 +144,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'gpt-5.5',
+    legacy: true,
     label: 'GPT-5.5',
     tier: 'turn',
     contextWindow: 400_000,
@@ -303,6 +305,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'grok-4.6',
+    legacy: true,
     label: 'Grok 4.6',
     tier: 'turn',
     contextWindow: 500_000,
@@ -757,6 +760,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'gemini-3.6-flash',
+    legacy: true,
     label: 'Gemini 3.6 Flash',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -795,6 +799,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'gemini-3.5-flash',
+    legacy: true,
     label: 'Gemini 3.5 Flash',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -819,6 +824,7 @@ export const CURSOR_CATALOG = [
   },
   {
     key: 'gemini-3-flash',
+    legacy: true,
     label: 'Gemini 3 Flash',
     tier: 'turn',
     contextWindow: 1_000_000,
