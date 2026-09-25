@@ -21,9 +21,11 @@ import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types'
 
 type Params = { readonly workspaceId: WorkspaceId; readonly rootPath: string };
 type Errors = Readonly<Record<InboxProvider, string | null>>;
+type Loading = Readonly<Record<InboxProvider, boolean>>;
 type Result = {
   readonly records: ReadonlyArray<InboxRecord>;
   readonly isLoading: boolean;
+  readonly loading: Loading;
   readonly errors: Errors;
   readonly connected: ReadonlyArray<InboxProvider>;
   readonly refetch: () => void;
@@ -56,7 +58,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
         ...adaptLinearIssues({ groups: linear.groups }),
         ...adaptJiraIssues({ groups: jira.groups }),
         ...adaptSentryIssues({ rows: sentry.rows }),
-        ...adaptSlackThreads({ groups: slack.groups }),
+        ...adaptSlackThreads({ groups: slack.groups, now: new Date() }),
         ...adaptBitbucketPrs({ groups: bitbucket.groups, repo: bitbucketRepo }),
       ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
     [
@@ -81,6 +83,15 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     slack: slack.error,
     bitbucket: bitbucket.error,
   } satisfies Errors;
+  const loading = {
+    github: github.loading,
+    gitlab: gitlabIssues.loading || gitlabMrs.loading,
+    linear: linear.loading,
+    jira: jira.isLoading,
+    sentry: sentry.loading,
+    slack: slack.isLoading,
+    bitbucket: bitbucket.loading,
+  } satisfies Loading;
   const connected = INBOX_PROVIDERS.filter((provider) =>
     provider === 'github' ? github.hasRemote === true : has(provider),
   );
@@ -99,14 +110,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     errors,
     connected,
     refetch,
-    isLoading:
-      github.loading ||
-      gitlabIssues.loading ||
-      gitlabMrs.loading ||
-      linear.loading ||
-      jira.isLoading ||
-      sentry.loading ||
-      slack.isLoading ||
-      bitbucket.loading,
+    loading,
+    isLoading: INBOX_PROVIDERS.some((provider) => loading[provider]),
   };
 };

@@ -1,6 +1,7 @@
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { InboxRecord, InboxState } from '../types';
+import { stateWord } from '../stateWord';
 
 type Params = {
   readonly issueGroups: ReadonlyArray<GitlabIssueGroup>;
@@ -24,9 +25,10 @@ export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecor
       identifier: issue.references.full,
       title: issue.title,
       state: normalize({ state: issue.state }),
+      stateLabel: stateWord({ value: issue.state }),
       updatedAt: issue.updatedAt,
       url: issue.webUrl,
-      meta: group.label,
+      context: group.label,
       payload: { provider: 'gitlab' as const, kind: 'issue' as const, issue, sessionId },
     })),
   ),
@@ -38,9 +40,10 @@ export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecor
       identifier: `!${mr.iid}`,
       title: mr.title,
       state: normalize({ state: mr.state }),
+      stateLabel: stateWord({ value: mr.state }),
       updatedAt: mr.updatedAt,
       url: mr.webUrl,
-      meta: group.label,
+      context: group.label,
       payload: { provider: 'gitlab' as const, kind: 'mr' as const, mr, host },
     })),
   ),

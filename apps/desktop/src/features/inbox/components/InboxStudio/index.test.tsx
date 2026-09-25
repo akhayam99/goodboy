@@ -2,13 +2,24 @@ import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import type { InboxRecord } from '../../types';
+import type { InboxProvider, InboxRecord } from '../../types';
 
 const LINKED_SESSION_ID = 'session-7' as SessionId;
+
+const ALL_PROVIDERS: ReadonlyArray<InboxProvider> = [
+  'github',
+  'gitlab',
+  'bitbucket',
+  'linear',
+  'jira',
+  'slack',
+  'sentry',
+];
 
 const h = vi.hoisted(() => ({
   records: [] as InboxRecord[],
   isLoading: false,
+  connected: [] as ReadonlyArray<string>,
   errors: {
     github: null as string | null,
     gitlab: null as string | null,
@@ -19,22 +30,24 @@ const h = vi.hoisted(() => ({
     bitbucket: null as string | null,
   },
   refetch: vi.fn(),
+  openUrl: vi.fn(async () => undefined),
+  isEscapeEnabled: true as boolean,
 }));
 
 vi.mock('../../../../shared/components/StudioShell', () => ({
   StudioShell: ({
     children,
-    headerAccessory,
+    isEscapeEnabled,
   }: {
     children: (requestClose: () => void) => ReactNode;
-    headerAccessory: ReactNode;
-  }) => (
-    <div>
-      {headerAccessory}
-      {children(vi.fn())}
-    </div>
-  ),
+    isEscapeEnabled: boolean;
+  }) => {
+    h.isEscapeEnabled = isEscapeEnabled;
+    return <div>{children(vi.fn())}</div>;
+  },
 }));
+
+vi.mock('../../../../shared/lib/editor', () => ({ openUrl: h.openUrl }));
 
 vi.mock('../../../../store', () => ({
   useSessionById: (id: SessionId | null) =>
@@ -45,8 +58,17 @@ vi.mock('../../useInboxRecords', () => ({
   useInboxRecords: () => ({
     records: h.records,
     isLoading: h.isLoading,
+    loading: {
+      github: false,
+      gitlab: false,
+      linear: false,
+      jira: false,
+      sentry: false,
+      slack: false,
+      bitbucket: false,
+    },
     errors: h.errors,
-    connected: ['github', 'gitlab', 'bitbucket', 'linear', 'jira', 'slack', 'sentry'],
+    connected: h.connected,
     refetch: h.refetch,
   }),
 }));
@@ -54,28 +76,17 @@ vi.mock('../../useInboxRecords', () => ({
 vi.mock('./InboxDetail', () => ({
   InboxDetail: ({
     record,
-    hasFiltersActive,
-    onClearFilters,
     onDeselect,
-    onOpenIntegrations,
+    launchFocusRequest,
   }: {
-    record: InboxRecord | null;
-    hasFiltersActive: boolean;
-    onClearFilters: () => void;
+    record: InboxRecord;
     onDeselect: () => void;
-    onOpenIntegrations: () => void;
+    launchFocusRequest: number;
   }) => (
-    <div data-testid="detail">
-      {record?.identifier ?? 'none'}
-      {record == null ? null : (
-        <button type="button" data-testid="detail-deselect" onClick={onDeselect} />
-      )}
-      {record == null && hasFiltersActive ? (
-        <button type="button" data-testid="detail-clear-filters" onClick={onClearFilters} />
-      ) : null}
-      {record == null && !hasFiltersActive ? (
-        <button type="button" data-testid="detail-open-integrations" onClick={onOpenIntegrations} />
-      ) : null}
+    <div data-testid="detail" data-launch-request={launchFocusRequest}>
+      {record.identifier}
+      <button type="button" data-testid="detail-deselect" onClick={onDeselect} />
+      <textarea aria-label="Comment" />
     </div>
   ),
 }));
@@ -90,7 +101,8 @@ const record = (overrides: Partial<InboxRecord> & Pick<InboxRecord, 'key'>): Inb
   state: 'open',
   updatedAt: '2026-08-01T10:00:00Z',
   url: '',
-  meta: '',
+  stateLabel: 'Open',
+  context: '',
   payload: {
     provider: 'github',
     kind: 'issue',
@@ -236,10 +248,27 @@ const renderStudio = (overrides: Partial<Parameters<typeof InboxStudio>[0]> = {}
     <InboxStudio workspaceId={workspaceId} rootPath="/repo" onClose={vi.fn()} {...overrides} />,
   );
 
+const detailText = (): string => screen.queryByTestId('detail')?.textContent ?? 'none';
+
+const rowOrder = (): ReadonlyArray<string> =>
+  within(screen.getByRole('listbox', { name: 'Inbox items' }))
+    .getAllByRole('option')
+    .map((option) => option.textContent ?? '');
+
+const facet = (section: string, name: RegExp) =>
+  within(
+    within(screen.getByRole('navigation', { name: 'Filter the inbox' })).getByRole('region', {
+      name: section,
+    }),
+  ).getByRole('button', { name });
+
+const press = (key: string) => fireEvent.keyDown(window, { key, code: key });
+
 beforeEach(() => {
   localStorage.clear();
   h.records = [sentryError, linearIssue, slackThread, githubIssue];
   h.isLoading = false;
+  h.connected = ALL_PROVIDERS;
   h.errors = {
     github: null,
     gitlab: null,
@@ -250,6 +279,7 @@ beforeEach(() => {
     bitbucket: null,
   };
   h.refetch.mockReset();
+  h.openUrl.mockClear();
 });
 
 afterEach(() => {
@@ -258,14 +288,17 @@ afterEach(() => {
 });
 
 describe('InboxStudio', () => {
-  it('renders every row with alerts first, then newest first', () => {
+  it('orders rows by time only, newest first, never by state', () => {
+    h.records = [
+      sentryError,
+      linearIssue,
+      slackThread,
+      { ...githubIssue, updatedAt: '2026-08-09T10:00:00Z' },
+    ];
+
     renderStudio();
 
-    const identifiers = within(screen.getByRole('listbox', { name: 'Inbox items' }))
-      .getAllByText(/^(#1|ENG-1|#eng|GBY-1)$/)
-      .map((node) => node.textContent);
-
-    expect(identifiers).toEqual(['GBY-1', 'ENG-1', '#eng', '#1']);
+    expect(rowOrder().map((text) => text.split(' ')[0])).toEqual(['#1', 'GBY-1', 'ENG-1', '#eng']);
   });
 
   it('filters rows by the search query', () => {
@@ -279,93 +312,140 @@ describe('InboxStudio', () => {
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('shows kind counts as string badges and filters on the errors tab', () => {
+  it('filters on the type facet and counts each type', () => {
     renderStudio();
 
-    const tablist = screen.getByRole('tablist', { name: 'Inbox kind filter' });
-    expect(tablist.textContent).toContain('4');
-
-    fireEvent.click(screen.getByRole('tab', { name: /Errors/ }));
+    const errors = facet('Type', /Errors/);
+    expect(errors.textContent).toContain('1');
+    fireEvent.click(errors);
 
     expect(screen.getByText('TypeError boom')).toBeDefined();
     expect(screen.queryByText('Fix the flaky test')).toBeNull();
   });
 
-  it('filters rows by provider chip', () => {
+  it('hides the types no connected tool can produce', () => {
+    h.connected = ['github'];
+
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
+    expect(screen.queryByRole('region', { name: 'Type' })).not.toBeNull();
+    expect(() => facet('Type', /Threads/)).toThrow();
+    expect(() => facet('Type', /Errors/)).toThrow();
+  });
+
+  it('filters rows on one source at a time', () => {
+    renderStudio();
+
+    fireEvent.click(facet('Source', /GitHub/));
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
+
+    fireEvent.click(facet('Source', /Linear/));
+
+    expect(screen.getByText('Ship the inbox')).toBeDefined();
+    expect(screen.queryByText('Fix the flaky test')).toBeNull();
   });
 
-  it('opens with nothing selected and follows a click', () => {
+  it('opens with nothing selected and opens the detail on a click', () => {
     renderStudio();
 
-    expect(screen.getByTestId('detail').textContent).toBe('none');
+    expect(detailText()).toBe('none');
 
-    fireEvent.click(screen.getByText('Ship the inbox'));
+    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
 
-    expect(screen.getByTestId('detail').textContent).toBe('ENG-1');
+    expect(detailText()).toBe('ENG-1');
   });
 
-  it('returns to the empty state when the record is closed', () => {
+  it('closes the detail from its close control and keeps the list', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByText('Ship the inbox'));
-    expect(screen.getByTestId('detail').textContent).toBe('ENG-1');
-
+    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
     fireEvent.click(screen.getByTestId('detail-deselect'));
 
-    expect(screen.getByTestId('detail').textContent).toBe('none');
+    expect(detailText()).toBe('none');
     expect(screen.getByText('Ship the inbox')).toBeDefined();
   });
 
-  it('selects with the arrow keys from the empty state', () => {
+  it('moves with j and k and the detail follows', () => {
     renderStudio();
 
-    const listbox = screen.getByRole('listbox', { name: 'Inbox items' });
-    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+    press('j');
+    expect(detailText()).toBe('GBY-1');
 
-    expect(screen.getByTestId('detail').textContent).toBe('GBY-1');
+    press('j');
+    expect(detailText()).toBe('ENG-1');
 
-    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+    press('k');
+    expect(detailText()).toBe('GBY-1');
+  });
 
-    expect(screen.getByTestId('detail').textContent).toBe('ENG-1');
+  it('runs the primary action on Enter', () => {
+    renderStudio();
+
+    press('j');
+    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('0');
+
+    press('Enter');
+
+    expect(screen.getByTestId('detail').getAttribute('data-launch-request')).toBe('1');
+  });
+
+  it('opens the selected record in its tool on o', () => {
+    h.records = [{ ...linearIssue, url: 'https://example.invalid/linear/ENG-1' }];
+    renderStudio();
+
+    press('j');
+    press('o');
+
+    expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-1');
+  });
+
+  it('focuses the search on / and the composer on r', () => {
+    renderStudio();
+
+    press('/');
+    expect(document.activeElement).toBe(screen.getByLabelText('Search the inbox'));
+
+    (document.activeElement as HTMLElement).blur();
+    press('j');
+    press('r');
+    expect(document.activeElement).toBe(screen.getByLabelText('Comment'));
+  });
+
+  it('closes the detail on Escape before the studio', () => {
+    renderStudio();
+
+    expect(h.isEscapeEnabled).toBe(true);
+    fireEvent.click(screen.getByRole('option', { name: /Ship the inbox/ }));
+    expect(h.isEscapeEnabled).toBe(false);
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(detailText()).toBe('none');
+    expect(h.isEscapeEnabled).toBe(true);
   });
 
   it('keeps the selected record in the detail when the filters hide it', () => {
     renderStudio();
 
-    fireEvent.click(screen.getByText('TypeError boom'));
-
+    fireEvent.click(screen.getByRole('option', { name: /TypeError boom/ }));
     fireEvent.change(screen.getByLabelText('Search the inbox'), {
       target: { value: 'nothing matches this' },
     });
 
-    expect(screen.getByText('No matching items')).toBeDefined();
-    expect(screen.getByTestId('detail').textContent).toBe('GBY-1');
+    expect(screen.getByText('No items match these filters')).toBeDefined();
+    expect(detailText()).toBe('GBY-1');
   });
 
-  it('never forces a selection when the kind filter changes', () => {
-    renderStudio();
-
-    fireEvent.click(screen.getByRole('tab', { name: /Errors/ }));
-
-    expect(screen.getByText('TypeError boom')).toBeDefined();
-    expect(screen.getByTestId('detail').textContent).toBe('none');
-  });
-
-  it('shows a nothing-connected empty state when the inbox has no records', () => {
+  it('asks to connect a tool when nothing is connected', () => {
     h.records = [];
+    h.connected = [];
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
     renderStudio();
 
-    expect(screen.getByText('No inbox items')).toBeDefined();
-
-    fireEvent.click(screen.getByTestId('detail-open-integrations'));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect a tool' }));
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'goodboy:open-settings', detail: { scope: 'tools' } }),
@@ -373,44 +453,55 @@ describe('InboxStudio', () => {
     dispatchSpy.mockRestore();
   });
 
-  it('renders a deep-linked provider that has no records and recovers with clear filters', () => {
+  it('recovers from a deep-linked source with no records through clear filters', () => {
     renderStudio({ initialProvider: 'jira' });
 
-    const jiraChip = screen.getByRole('button', { name: /^Jira, / });
-    expect(jiraChip.getAttribute('aria-pressed')).toBe('true');
-    expect(jiraChip.textContent).toContain('0');
-    expect(screen.getByText('No matching items')).toBeDefined();
-    expect(screen.getByTestId('detail').textContent).toContain('none');
+    expect(facet('Source', /Jira/).getAttribute('aria-current')).toBe('true');
+    expect(screen.getByText('No items match these filters')).toBeDefined();
 
-    fireEvent.click(screen.getByTestId('detail-clear-filters'));
-
-    expect(screen.getByText('Fix the flaky test')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Jira, / })).toBeNull();
-  });
-
-  it('toggles off a selected provider that has no records', () => {
-    renderStudio({ initialProvider: 'jira' });
-
-    fireEvent.click(screen.getByRole('button', { name: /^Jira, / }));
+    const [clear] = screen.getAllByRole('button', { name: 'Clear filters' });
+    fireEvent.click(clear as HTMLElement);
 
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
   });
 
-  it('persists the provider selection per workspace', () => {
+  it('persists the source per workspace', () => {
     const first = renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^GitHub, / }));
+    fireEvent.click(facet('Source', /GitHub/));
     first.unmount();
 
     renderStudio();
 
-    expect(screen.getByRole('button', { name: /^GitHub, / }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(facet('Source', /GitHub/).getAttribute('aria-current')).toBe('true');
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });
 
-  it('scopes the rows to the session it was opened for and names it in a chip', () => {
+  it('keeps the first provider of a legacy multi-select as the source', () => {
+    localStorage.setItem(
+      'goodboy:inbox-kind-filter:workspace-1',
+      JSON.stringify({ kindFilter: 'all', providers: ['slack', 'linear'] }),
+    );
+
+    renderStudio();
+
+    expect(facet('Source', /Linear/).getAttribute('aria-current')).toBe('true');
+    expect(screen.getByText('Ship the inbox')).toBeDefined();
+    expect(screen.queryByText('ping the team')).toBeNull();
+  });
+
+  it('shows the with a session view', () => {
+    h.records = [linkedSentryError, sentryError, linearIssue];
+
+    renderStudio();
+
+    fireEvent.click(facet('View', /With a session/));
+
+    expect(screen.getByText('RangeError boom')).toBeDefined();
+    expect(screen.queryByText('TypeError boom')).toBeNull();
+  });
+
+  it('scopes the rows to the session it was opened for and names it in a token', () => {
     h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
 
     renderStudio({ initialSessionId: LINKED_SESSION_ID, initialRecordKey: linkedSentryError.key });
@@ -418,30 +509,10 @@ describe('InboxStudio', () => {
     expect(screen.getByText('Session: Fix the crash')).toBeDefined();
     expect(screen.getByText('RangeError boom')).toBeDefined();
     expect(screen.queryByText('TypeError boom')).toBeNull();
-    expect(screen.queryByText('Fix the flaky test')).toBeNull();
-    expect(screen.getByTestId('detail').textContent).toBe('GBY-2');
+    expect(detailText()).toBe('GBY-2');
   });
 
-  it('shows the empty state when the seeded selection falls outside the session scope', () => {
-    h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
-
-    renderStudio({ initialSessionId: LINKED_SESSION_ID, initialRecordKey: sentryError.key });
-
-    expect(screen.getByText('Session: Fix the crash')).toBeDefined();
-    expect(screen.getByTestId('detail').textContent).toBe('none');
-    expect(screen.getByText('RangeError boom')).toBeDefined();
-  });
-
-  it('keeps the session scope free of a forced selection', () => {
-    h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
-
-    renderStudio({ initialSessionId: LINKED_SESSION_ID });
-
-    expect(screen.getByTestId('detail').textContent).toBe('none');
-    expect(screen.getByText('RangeError boom')).toBeDefined();
-  });
-
-  it('drops the session scope when the chip is dismissed', () => {
+  it('drops the session scope when the token is dismissed', () => {
     h.records = [linkedSentryError, sentryError, linearIssue, githubIssue];
 
     renderStudio({ initialSessionId: LINKED_SESSION_ID });
@@ -452,17 +523,16 @@ describe('InboxStudio', () => {
 
     expect(screen.queryByText('Session: Fix the crash')).toBeNull();
     expect(screen.getByText('TypeError boom')).toBeDefined();
-    expect(screen.getByText('Fix the flaky test')).toBeDefined();
   });
 
-  it('preselects the kind filter, provider and record from the open event props', () => {
+  it('preselects the type, source and record from the open event props', () => {
     renderStudio({
       initialKind: 'error',
       initialProvider: 'sentry',
       initialRecordKey: sentryError.key,
     });
 
-    expect(screen.getByTestId('detail').textContent).toBe('GBY-1');
+    expect(detailText()).toBe('GBY-1');
     expect(screen.getByText('TypeError boom')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });

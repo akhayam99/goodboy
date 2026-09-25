@@ -40,7 +40,8 @@ describe('adaptJiraIssues', () => {
       state: 'active',
       updatedAt: '2026-08-01T10:00:00Z',
       url: 'https://goodboy.atlassian.net/browse/GBY-9',
-      meta: 'Task · In Progress',
+      stateLabel: 'In Progress',
+      context: 'Task',
       payload: { provider: 'jira', kind: 'issue', issue: issue(), sessionId },
     });
   });

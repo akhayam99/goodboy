@@ -15,9 +15,10 @@ export const adaptJiraIssues = ({ groups }: Params): InboxRecord[] =>
           : issue.statusCategory === 'indeterminate'
             ? 'active'
             : 'open',
+      stateLabel: issue.status,
       updatedAt: issue.updated,
       url: issue.url,
-      meta: `${issue.issueType} · ${issue.status}`,
+      context: issue.issueType,
       payload: { provider: 'jira', kind: 'issue', issue, sessionId },
     })),
   );

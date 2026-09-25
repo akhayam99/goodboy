@@ -50,7 +50,8 @@ const GITHUB_RECORD = {
   state: 'open',
   updatedAt: '2026-08-01T10:00:00Z',
   url: 'https://github.com/acme/repo/issues/42',
-  meta: 'GitHub',
+  stateLabel: 'Open',
+  context: 'GitHub',
   payload: {
     provider: 'github',
     kind: 'issue',
@@ -76,7 +77,8 @@ const BITBUCKET_WITHOUT_REPO = {
   state: 'open',
   updatedAt: '2026-08-01T10:00:00Z',
   url: '',
-  meta: 'Bitbucket',
+  stateLabel: 'Open',
+  context: 'Bitbucket',
   payload: {
     provider: 'bitbucket',
     kind: 'pr',
@@ -115,7 +117,8 @@ const LINKED_SENTRY_RECORD = {
   state: 'alert',
   updatedAt: '2026-08-01T10:00:00Z',
   url: '',
-  meta: 'Sentry',
+  stateLabel: 'Open',
+  context: 'Sentry',
   payload: {
     provider: 'sentry',
     kind: 'error',

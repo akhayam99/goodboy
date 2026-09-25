@@ -83,8 +83,9 @@ export type InboxRecord = {
   readonly identifier: string;
   readonly title: string;
   readonly state: InboxState;
+  readonly stateLabel: string;
   readonly updatedAt: string;
   readonly url: string;
-  readonly meta: string;
+  readonly context: string;
   readonly payload: Payload;
 };

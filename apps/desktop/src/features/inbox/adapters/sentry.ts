@@ -1,5 +1,6 @@
 import type { SentryIssueRow } from '../../integrations/sentry/SentryStudio/useSentryIssues';
 import type { InboxRecord } from '../types';
+import { stateWord } from '../stateWord';
 
 type RecordKeyParams = { readonly issueId: string };
 
@@ -14,8 +15,9 @@ export const adaptSentryIssues = ({ rows }: Params): InboxRecord[] =>
     identifier: issue.shortId ?? issue.id,
     title: issue.title,
     state: issue.status === 'resolved' || issue.status === 'ignored' ? 'done' : 'alert',
+    stateLabel: stateWord({ value: issue.status ?? 'unresolved' }),
     updatedAt: issue.lastSeen ?? issue.firstSeen ?? '',
     url: issue.permalink ?? '',
-    meta: issue.culprit ?? issue.level ?? 'Sentry',
+    context: issue.culprit ?? issue.level ?? 'Sentry',
     payload: { provider: 'sentry', kind: 'error', issue, sessionId },
   }));

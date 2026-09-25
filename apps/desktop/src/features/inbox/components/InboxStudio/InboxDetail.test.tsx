@@ -122,42 +122,20 @@ const baseErrors = {
 const onDeselect = vi.fn();
 const onRefresh = vi.fn();
 
-type RenderPaneParams = {
-  readonly record: InboxRecord | null;
-  readonly records?: ReadonlyArray<InboxRecord>;
-  readonly hasVisibleRecords?: boolean;
-  readonly errors?: Readonly<Record<InboxProvider, string | null>>;
-  readonly connected?: ReadonlyArray<InboxProvider>;
-};
-
-const renderPane = ({
-  record,
-  records,
-  hasVisibleRecords = false,
-  errors = baseErrors,
-  connected = [],
-}: RenderPaneParams) =>
+const renderDetail = (record: InboxRecord) =>
   render(
     <InboxDetail
       record={record}
-      records={records ?? (record == null ? [] : [record])}
-      hasVisibleRecords={hasVisibleRecords}
-      hasFiltersActive={false}
       workspaceId={workspaceId}
       rootPath="/repo"
       isLoading={false}
-      errors={errors}
-      connected={connected}
+      errors={baseErrors}
       onRefresh={onRefresh}
       onClose={vi.fn()}
       onDeselect={onDeselect}
       launchFocusRequest={0}
-      onClearFilters={vi.fn()}
-      onOpenIntegrations={vi.fn()}
     />,
   );
-
-const renderDetail = (record: InboxRecord | null) => renderPane({ record });
 
 const githubRecord: InboxRecord = {
   key: 'github:issue:1',
@@ -168,7 +146,8 @@ const githubRecord: InboxRecord = {
   state: 'open',
   updatedAt: '2026-08-01T10:00:00Z',
   url: '',
-  meta: 'GitHub',
+  stateLabel: 'Open',
+  context: 'GitHub',
   payload: {
     provider: 'github',
     kind: 'issue',
@@ -192,43 +171,6 @@ afterEach(() => {
 });
 
 describe('InboxDetail', () => {
-  it('summarises the inbox when nothing is selected', () => {
-    renderDetail(null);
-
-    expect(screen.getByText('Inbox is empty')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Connect tools' })).toBeDefined();
-    expect(screen.queryByTestId('panel')).toBeNull();
-  });
-
-  it('says a connected inbox is clear instead of asking to connect', () => {
-    renderPane({ record: null, connected: ['github'] });
-
-    expect(screen.getByText('Nothing assigned to you')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Connect tools' })).toBeNull();
-  });
-
-  it('names failed tools ahead of an empty inbox and draws their tiles as unknown', () => {
-    renderPane({
-      record: null,
-      connected: ['github', 'sentry'],
-      errors: { ...baseErrors, sentry: 'Sentry answered 401' },
-    });
-
-    expect(screen.getByText('Some tools did not load')).toBeDefined();
-    expect(screen.getByText(/Sentry did not answer/)).toBeDefined();
-    expect(screen.getByText('not loaded')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(onRefresh).toHaveBeenCalledOnce();
-  });
-
-  it('invites a pick when items are listed and none is selected', () => {
-    renderPane({ record: null, records: [], hasVisibleRecords: true });
-
-    expect(screen.getByText('Nothing selected')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Connect tools' })).toBeNull();
-    expect(screen.queryByTestId('panel')).toBeNull();
-  });
-
   it('renders the github issue panel', () => {
     renderDetail(githubRecord);
 
@@ -254,7 +196,8 @@ describe('InboxDetail', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'goodboy',
+      stateLabel: 'Open',
+      context: 'goodboy',
       payload: {
         provider: 'gitlab',
         kind: 'issue',
@@ -288,7 +231,8 @@ describe('InboxDetail', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'goodboy',
+      stateLabel: 'Open',
+      context: 'goodboy',
       payload: {
         provider: 'gitlab',
         kind: 'mr',
@@ -325,7 +269,8 @@ describe('InboxDetail', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'ENG',
+      stateLabel: 'Open',
+      context: 'ENG',
       payload: {
         provider: 'linear',
         kind: 'issue',
@@ -356,7 +301,8 @@ describe('InboxDetail', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'Task · To Do',
+      stateLabel: 'Open',
+      context: 'Task · To Do',
       payload: {
         provider: 'jira',
         kind: 'issue',
@@ -393,7 +339,8 @@ describe('InboxDetail', () => {
       state: 'alert',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'Sentry',
+      stateLabel: 'Open',
+      context: 'Sentry',
       payload: {
         provider: 'sentry',
         kind: 'error',
@@ -428,7 +375,8 @@ describe('InboxDetail', () => {
       state: 'active',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: '1 replies',
+      stateLabel: 'Open',
+      context: '1 replies',
       payload: {
         provider: 'slack',
         kind: 'thread',
@@ -463,7 +411,8 @@ describe('InboxDetail', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: 'goodboy/goodboy',
+      stateLabel: 'Open',
+      context: 'goodboy/goodboy',
       payload: {
         provider: 'bitbucket',
         kind: 'pr',

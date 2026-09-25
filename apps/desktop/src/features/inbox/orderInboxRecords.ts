@@ -1,21 +1,13 @@
-import type { InboxRecord, InboxState } from './types';
-
-const STATE_PRIORITY = {
-  alert: 0,
-  active: 1,
-  open: 2,
-  done: 3,
-} satisfies Record<InboxState, number>;
+import type { InboxRecord } from './types';
 
 type Params = {
   readonly records: ReadonlyArray<InboxRecord>;
 };
 
+const timeOf = (iso: string): number => {
+  const parsed = Date.parse(iso);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export const orderInboxRecords = ({ records }: Params): ReadonlyArray<InboxRecord> =>
-  [...records].sort((left, right) => {
-    const stateDifference = STATE_PRIORITY[left.state] - STATE_PRIORITY[right.state];
-    if (stateDifference !== 0) {
-      return stateDifference;
-    }
-    return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
-  });
+  [...records].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt));

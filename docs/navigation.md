@@ -397,8 +397,14 @@ one is open at a time.
   j and k or the arrow keys move, Enter runs the row's action and e dismisses.
   The rail rows (`shared/components/FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives; the inbox already groups its records with the same
-  day buckets.
+  are shared primitives. The inbox uses all three: its rail filters by view,
+  type and source (one pick per section, a tool that did not load says so in
+  its row), its one-line rows are grouped by the same days in time order, and
+  j and k move the selection while the record follows beside the list. Enter
+  launches or opens the session, o opens the record in its tool, r focuses the
+  reply box, / focuses the search, and Escape closes the record before the
+  studio. Below a 720px list column the rail folds into a Filters button in
+  the list header.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above

@@ -12,60 +12,32 @@ import { SlackThreadDetail } from '../../../integrations/slack/SlackThreadDetail
 import { PrDetailPanel } from '../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel';
 import type { InboxProvider, InboxRecord } from '../../types';
 import { RecordLaunchDock } from '../RecordLaunchDock';
-import { InboxEmptySummary } from './InboxEmptySummary';
 
 type Props = {
-  readonly record: InboxRecord | null;
-  readonly records: ReadonlyArray<InboxRecord>;
-  readonly hasVisibleRecords: boolean;
-  readonly hasFiltersActive: boolean;
+  readonly record: InboxRecord;
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
   readonly isLoading: boolean;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
-  readonly connected: ReadonlyArray<InboxProvider>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
   readonly onDeselect: () => void;
-  readonly onClearFilters: () => void;
-  readonly onOpenIntegrations: () => void;
   readonly launchFocusRequest: number;
 };
 
 export const InboxDetail = ({
   record,
-  records,
-  hasVisibleRecords,
-  hasFiltersActive,
   workspaceId,
   rootPath,
   isLoading,
   errors,
-  connected,
   onRefresh,
   onClose,
   onDeselect,
-  onClearFilters,
-  onOpenIntegrations,
   launchFocusRequest,
 }: Props) => {
-  const sentryIssueId = record?.payload.provider === 'sentry' ? record.payload.issue.id : null;
+  const sentryIssueId = record.payload.provider === 'sentry' ? record.payload.issue.id : null;
   const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
-
-  if (record == null) {
-    return (
-      <InboxEmptySummary
-        records={records}
-        hasVisibleRecords={hasVisibleRecords}
-        hasFiltersActive={hasFiltersActive}
-        errors={errors}
-        connected={connected}
-        onRetry={onRefresh}
-        onClearFilters={onClearFilters}
-        onOpenIntegrations={onOpenIntegrations}
-      />
-    );
-  }
 
   const payload = record.payload;
   const dock = (
@@ -77,12 +49,7 @@ export const InboxDetail = ({
     />
   );
   const deselectAction = (
-    <IconButton
-      icon={X}
-      label="Close the item"
-      tooltip="Back to the inbox summary"
-      onClick={onDeselect}
-    />
+    <IconButton icon={X} label="Close the item" tooltip="Close the item" onClick={onDeselect} />
   );
 
   switch (payload.provider) {

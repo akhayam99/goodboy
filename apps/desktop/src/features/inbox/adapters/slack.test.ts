@@ -35,7 +35,7 @@ describe('adaptSlackThreads', () => {
       { key: 'C1', label: '#eng-alerts', rows: [{ channel: channel(), head: head(), sessionId }] },
     ];
 
-    const [record] = adaptSlackThreads({ groups });
+    const [record] = adaptSlackThreads({ groups, now: new Date('2026-08-01T12:00:00Z') });
 
     expect(record).toEqual({
       key: 'slack:thread:C1:1723456789.000100',
@@ -44,9 +44,10 @@ describe('adaptSlackThreads', () => {
       identifier: '#eng-alerts',
       title: 'the billing webhook is failing',
       state: 'active',
+      stateLabel: 'Active',
       updatedAt: '2026-08-01T10:00:00Z',
       url: '',
-      meta: '3 replies',
+      context: '3 replies',
       payload: { provider: 'slack', kind: 'thread', channel: channel(), head: head(), sessionId },
     });
   });
@@ -66,9 +67,24 @@ describe('adaptSlackThreads', () => {
       },
     ];
 
-    const [record] = adaptSlackThreads({ groups });
+    const [record] = adaptSlackThreads({ groups, now: new Date('2026-08-01T12:00:00Z') });
 
     expect(record?.key).toBe('slack:thread:C1:1723456789.000100');
     expect(record?.updatedAt).toBe('2026-08-01T09:00:00Z');
+  });
+
+  it('calls a thread active only when its last reply landed today', () => {
+    const groups: ReadonlyArray<SlackThreadGroup> = [
+      {
+        key: 'C1',
+        label: '#eng-alerts',
+        rows: [{ channel: channel(), head: head(), sessionId: null }],
+      },
+    ];
+
+    const [stale] = adaptSlackThreads({ groups, now: new Date('2026-08-04T12:00:00Z') });
+
+    expect(stale?.state).toBe('open');
+    expect(stale?.stateLabel).toBe('Open');
   });
 });

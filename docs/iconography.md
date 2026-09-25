@@ -223,6 +223,9 @@ Script categories own their glyphs in `SCRIPT_CATEGORIES`
 `Rocket`, `clean` `Trash2`, `docs` `BookOpen`, `other` `Terminal`. Import that
 list, never restate it.
 
-Inbox row kinds set theirs in `InboxRow.tsx`: `issue` `CircleDot`, `pr` and
-`mr` `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. Each one is
-drawn at `ICON_SIZE.control` with the state tone.
+Inbox rows lead with the tool's brand glyph, never a kind icon. The kind icons
+live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
+requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
+column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`
+`CircleCheck`, `alert` `TriangleAlert`, each in the state tone, always next to
+the tool's own state word.

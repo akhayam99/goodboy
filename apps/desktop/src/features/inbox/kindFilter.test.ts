@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest';
+import type { SessionId } from '@goodboy/types';
 import type { InboxRecord } from './types';
 import {
   filterInboxRecords,
-  kindFilterCounts,
-  visibleKindFilters,
+  NO_INBOX_FILTERS,
+  activeFilterCount,
+  inboxFacetCounts,
   matchesKindFilter,
   matchesSearch,
+  visibleTypeFacets,
+  type InboxFilters,
 } from './kindFilter';
 
 const record = (overrides: Partial<InboxRecord> & Pick<InboxRecord, 'key'>): InboxRecord => ({
@@ -16,7 +20,8 @@ const record = (overrides: Partial<InboxRecord> & Pick<InboxRecord, 'key'>): Inb
   state: 'open',
   updatedAt: '2026-08-01T10:00:00Z',
   url: '',
-  meta: '',
+  stateLabel: 'Open',
+  context: '',
   payload: {
     provider: 'github',
     kind: 'issue',
@@ -55,10 +60,11 @@ describe('matchesSearch', () => {
     key: 'k1',
     title: 'Fix flaky test',
     identifier: '#41',
-    meta: 'goodboy/goodboy',
+    stateLabel: 'Open',
+    context: 'goodboy/goodboy',
   });
 
-  it('matches on title, identifier or meta case-insensitively', () => {
+  it('matches on title, identifier or context case-insensitively', () => {
     expect(matchesSearch({ record: item, query: 'FLAKY' })).toBe(true);
     expect(matchesSearch({ record: item, query: '41' })).toBe(true);
     expect(matchesSearch({ record: item, query: 'goodboy' })).toBe(true);
@@ -72,99 +78,101 @@ describe('matchesSearch', () => {
     expect(matchesSearch({ record: item, query: 'nope' })).toBe(false);
   });
 });
+const SESSION_ID = 'session-1' as SessionId;
+
+const github = record({ key: 'a', provider: 'github', kind: 'issue', title: 'github item' });
+const slack = record({
+  key: 'b',
+  provider: 'slack',
+  kind: 'thread',
+  state: 'active',
+  title: 'slack thread',
+});
+const sentry = record({
+  key: 'c',
+  provider: 'sentry',
+  kind: 'error',
+  state: 'alert',
+  title: 'sentry error',
+});
+const closed = record({ key: 'd', provider: 'github', state: 'done', title: 'closed item' });
+const linked = record({
+  key: 'e',
+  provider: 'github',
+  title: 'linked item',
+  payload: {
+    provider: 'github',
+    kind: 'issue',
+    issue: {
+      number: 5,
+      title: 'linked item',
+      body: '',
+      url: '',
+      state: 'OPEN',
+      labels: [],
+      updatedAt: '',
+    },
+    sessionId: SESSION_ID,
+  },
+});
+const records = [github, slack, sentry, closed, linked];
 
 describe('filterInboxRecords', () => {
-  const github = record({ key: 'a', provider: 'github', kind: 'issue', title: 'github item' });
-  const slack = record({
-    key: 'b',
-    provider: 'slack',
-    kind: 'thread',
-    title: 'slack item',
-    payload: {
-      provider: 'slack',
-      kind: 'thread',
-      channel: { id: 'C1', name: 'eng', isMember: true, topic: null, memberCount: 1 },
-      head: {
-        ts: '1',
-        threadTs: '1',
-        userId: null,
-        botId: null,
-        text: 'slack item',
-        subtype: null,
-        replyCount: 1,
-        replyUserCount: 1,
-        postedAt: null,
-        latestReplyAt: null,
-        reactions: [],
-      },
-      sessionId: null,
-    },
-  });
-  const records = [github, slack];
+  it('applies view, type, source and search together', () => {
+    const keys = (filters: InboxFilters, query = '') =>
+      filterInboxRecords({ records, query, filters }).map((item) => item.key);
 
-  it('applies kind, provider and search filters together', () => {
-    expect(
-      filterInboxRecords({ records, query: '', kindFilter: 'all', providers: new Set() }),
-    ).toEqual(records);
-    expect(
-      filterInboxRecords({ records, query: '', kindFilter: 'thread', providers: new Set() }),
-    ).toEqual([slack]);
-    expect(
-      filterInboxRecords({ records, query: '', kindFilter: 'all', providers: new Set(['github']) }),
-    ).toEqual([github]);
-    expect(
-      filterInboxRecords({ records, query: 'slack', kindFilter: 'all', providers: new Set() }),
-    ).toEqual([slack]);
+    expect(keys(NO_INBOX_FILTERS)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(keys({ ...NO_INBOX_FILTERS, view: 'in-progress' })).toEqual(['b']);
+    expect(keys({ ...NO_INBOX_FILTERS, view: 'with-session' })).toEqual(['e']);
+    expect(keys({ ...NO_INBOX_FILTERS, view: 'closed' })).toEqual(['d']);
+    expect(keys({ ...NO_INBOX_FILTERS, kind: 'error' })).toEqual(['c']);
+    expect(keys({ ...NO_INBOX_FILTERS, source: 'github' })).toEqual(['a', 'd', 'e']);
+    expect(keys({ ...NO_INBOX_FILTERS, source: 'github' }, 'linked')).toEqual(['e']);
   });
 });
 
-describe('kindFilterCounts', () => {
-  it('counts every kind filter bucket including all', () => {
-    const github = record({ key: 'a', kind: 'issue' });
-    const bitbucket = record({
-      key: 'b',
-      provider: 'bitbucket',
-      kind: 'pr',
-      payload: {
-        provider: 'bitbucket',
-        kind: 'pr',
-        pullRequest: {
-          id: 1,
-          title: 't',
-          description: '',
-          state: 'OPEN',
-          createdOn: '',
-          updatedOn: '',
-          sourceBranch: 'feat',
-          sourceCommit: null,
-          destinationBranch: 'main',
-          destinationCommit: null,
-          author: null,
-          reviewers: [],
-          participants: [],
-          closeSourceBranch: true,
-          mergeCommit: null,
-          commentCount: 0,
-          taskCount: 0,
-          webUrl: null,
-        },
-        repo: null,
-      },
+describe('inboxFacetCounts', () => {
+  it('counts each section against the other sections, never against itself', () => {
+    const counts = inboxFacetCounts({
+      records,
+      query: '',
+      filters: { ...NO_INBOX_FILTERS, source: 'github' },
     });
 
-    expect(kindFilterCounts({ records: [github, bitbucket] })).toEqual({
-      all: 2,
-      issue: 1,
-      'pr-mr': 1,
-      thread: 0,
-      error: 0,
-    });
+    expect(counts.view).toEqual({ all: 3, 'in-progress': 0, 'with-session': 1, closed: 1 });
+    expect(counts.kind).toEqual({ issue: 3, 'pr-mr': 0, thread: 0, error: 0 });
+    expect(counts.source.github).toBe(3);
+    expect(counts.source.slack).toBe(1);
+    expect(counts.source.sentry).toBe(1);
+  });
+
+  it('narrows every count by the search query', () => {
+    const counts = inboxFacetCounts({ records, query: 'slack', filters: NO_INBOX_FILTERS });
+
+    expect(counts.view.all).toBe(1);
+    expect(counts.source.slack).toBe(1);
+    expect(counts.source.github).toBe(0);
   });
 });
 
-describe('visibleKindFilters', () => {
-  it('hides the PRs and MRs filter when no connected provider feeds pull requests', () => {
-    expect(visibleKindFilters({ connected: ['github', 'linear'] })).not.toContain('pr-mr');
-    expect(visibleKindFilters({ connected: ['github', 'gitlab'] })).toContain('pr-mr');
+describe('visibleTypeFacets', () => {
+  it('shows only the types a connected tool can produce', () => {
+    expect(visibleTypeFacets({ connected: ['github'] })).toEqual(['issue']);
+    expect(visibleTypeFacets({ connected: ['gitlab', 'sentry'] })).toEqual([
+      'issue',
+      'pr-mr',
+      'error',
+    ]);
+    expect(visibleTypeFacets({ connected: [] })).toEqual([]);
+  });
+});
+
+describe('activeFilterCount', () => {
+  it('counts one per section away from its default', () => {
+    expect(activeFilterCount({ filters: NO_INBOX_FILTERS })).toBe(0);
+    expect(
+      activeFilterCount({ filters: { view: 'closed', kind: 'issue', source: 'github' } }),
+    ).toBe(3);
   });
 });

@@ -7,18 +7,12 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
-type WriteParams = Params & {
-  readonly kindFilter: InboxKindFilter;
+export type StoredInboxFilters = {
+  readonly kind: InboxKindFilter;
+  readonly source: InboxProvider | null;
 };
 
-type WriteProvidersParams = Params & {
-  readonly providers: ReadonlySet<InboxProvider>;
-};
-
-type StoredFilters = {
-  readonly kindFilter: InboxKindFilter;
-  readonly providers: ReadonlyArray<InboxProvider>;
-};
+type WriteParams = Params & StoredInboxFilters;
 
 const storageKey = ({ workspaceId }: Params): string =>
   `${STORAGE_PREFIXES.inboxKindFilter}${workspaceId}`;
@@ -29,11 +23,33 @@ const isInboxKindFilter = (value: unknown): value is InboxKindFilter =>
 const isInboxProvider = (value: unknown): value is InboxProvider =>
   typeof value === 'string' && INBOX_PROVIDERS.some((candidate) => candidate === value);
 
-const readStoredFilters = ({ workspaceId }: Params): StoredFilters | null => {
+type SourceParams = {
+  readonly source: unknown;
+  readonly providers: unknown;
+};
+
+const storedSource = ({ source, providers }: SourceParams): InboxProvider | null | undefined => {
+  if (source === null) {
+    return null;
+  }
+  if (isInboxProvider(source)) {
+    return source;
+  }
+  if (source !== undefined || !Array.isArray(providers)) {
+    return undefined;
+  }
+  const legacy: ReadonlyArray<unknown> = providers;
+  if (!legacy.every((provider) => isInboxProvider(provider))) {
+    return undefined;
+  }
+  return INBOX_PROVIDERS.find((provider) => legacy.includes(provider)) ?? null;
+};
+
+export const readInboxFilters = ({ workspaceId }: Params): StoredInboxFilters | null => {
   try {
     const raw = localStorage.getItem(storageKey({ workspaceId }));
     if (isInboxKindFilter(raw)) {
-      return { kindFilter: raw, providers: [] };
+      return { kind: raw, source: null };
     }
     if (raw == null) {
       return null;
@@ -42,53 +58,24 @@ const readStoredFilters = ({ workspaceId }: Params): StoredFilters | null => {
     if (typeof parsed !== 'object' || parsed == null || Array.isArray(parsed)) {
       return null;
     }
-    const source = parsed as Readonly<Record<string, unknown>>;
-    const kindFilter = source['kindFilter'];
-    const providers = source['providers'];
-    if (!isInboxKindFilter(kindFilter) || !Array.isArray(providers)) {
+    const kind: unknown = Reflect.get(parsed, 'kindFilter');
+    const source = storedSource({
+      source: Reflect.get(parsed, 'source'),
+      providers: Reflect.get(parsed, 'providers'),
+    });
+    if (!isInboxKindFilter(kind) || source === undefined) {
       return null;
     }
-    const stored: ReadonlyArray<unknown> = providers;
-    if (!stored.every((provider) => isInboxProvider(provider))) {
-      return null;
-    }
-    return {
-      kindFilter,
-      providers: INBOX_PROVIDERS.filter((provider) => stored.includes(provider)),
-    };
+    return { kind, source };
   } catch {
     return null;
   }
 };
 
-type PersistParams = Params & StoredFilters;
-
-const persistFilters = ({ workspaceId, kindFilter, providers }: PersistParams): void => {
+export const writeInboxFilters = ({ workspaceId, kind, source }: WriteParams): void => {
   try {
-    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify({ kindFilter, providers }));
+    localStorage.setItem(storageKey({ workspaceId }), JSON.stringify({ kindFilter: kind, source }));
   } catch {
     return;
   }
-};
-
-export const readInboxKindFilter = ({ workspaceId }: Params): InboxKindFilter | null => {
-  return readStoredFilters({ workspaceId })?.kindFilter ?? null;
-};
-
-export const writeInboxKindFilter = ({ workspaceId, kindFilter }: WriteParams): void => {
-  const stored = readStoredFilters({ workspaceId });
-  persistFilters({ workspaceId, kindFilter, providers: stored?.providers ?? [] });
-};
-
-export const readInboxProviders = ({ workspaceId }: Params): ReadonlyArray<InboxProvider> => {
-  return readStoredFilters({ workspaceId })?.providers ?? [];
-};
-
-export const writeInboxProviders = ({ workspaceId, providers }: WriteProvidersParams): void => {
-  const stored = readStoredFilters({ workspaceId });
-  persistFilters({
-    workspaceId,
-    kindFilter: stored?.kindFilter ?? 'all',
-    providers: INBOX_PROVIDERS.filter((provider) => providers.has(provider)),
-  });
 };

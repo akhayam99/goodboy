@@ -487,10 +487,15 @@ Merge and pull requests launch with their text as it is.
 
 The inbox is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
-record each. Records are grouped by age (today, yesterday, this week, older),
-with alerts first in each group, and you can filter them by kind. A record
-opens in full with the source's own actions. From it you start a session, or
-open the session already linked to it.
+record each, one line per record. Records are grouped by day (today,
+yesterday, this week, older) and ordered by time only, newest first. A facet
+rail filters them by view (all, in progress, with a session, closed), by type
+and by source, one pick per section, with counts; only the types a connected
+tool can produce show. A tool that did not load says so in its source row and
+in one notice above the list. The state column uses the tool's own word, the
+same one the record shows. A record opens beside the list with the source's
+own actions. From it you start a session, or open the session already linked
+to it.
 
 ## Providers and routing
 

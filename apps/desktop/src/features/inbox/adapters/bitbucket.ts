@@ -1,6 +1,7 @@
 import type { BitbucketPrGroup } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
 import type { BitbucketRepo } from '../../integrations/bitbucket/client';
 import type { InboxRecord } from '../types';
+import { stateWord } from '../stateWord';
 type Params = {
   readonly groups: ReadonlyArray<BitbucketPrGroup>;
   readonly repo: BitbucketRepo | null;
@@ -14,9 +15,10 @@ export const adaptBitbucketPrs = ({ groups, repo }: Params): InboxRecord[] =>
       identifier: `#${pullRequest.id}`,
       title: pullRequest.title,
       state: pullRequest.state === 'OPEN' ? 'open' : 'done',
+      stateLabel: stateWord({ value: pullRequest.state }),
       updatedAt: pullRequest.updatedOn,
       url: pullRequest.webUrl ?? '',
-      meta: repo == null ? group.label : `${repo.workspaceSlug}/${repo.repoSlug}`,
+      context: repo == null ? group.label : `${repo.workspaceSlug}/${repo.repoSlug}`,
       payload: { provider: 'bitbucket', kind: 'pr', pullRequest, repo },
     })),
   );

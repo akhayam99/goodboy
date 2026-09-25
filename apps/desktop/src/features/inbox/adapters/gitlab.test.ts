@@ -56,7 +56,8 @@ describe('adaptGitlab', () => {
         state: 'open',
         updatedAt: '2026-08-01T10:00:00Z',
         url: 'https://gitlab.com/goodboy/goodboy/-/issues/7',
-        meta: 'goodboy/goodboy',
+        stateLabel: 'Open',
+        context: 'goodboy/goodboy',
         payload: { provider: 'gitlab', kind: 'issue', issue: issue(), sessionId },
       },
     ]);
@@ -79,7 +80,8 @@ describe('adaptGitlab', () => {
         state: 'open',
         updatedAt: '2026-08-02T10:00:00Z',
         url: 'https://gitlab.com/goodboy/goodboy/-/merge_requests/12',
-        meta: 'goodboy/goodboy',
+        stateLabel: 'Open',
+        context: 'goodboy/goodboy',
         payload: { provider: 'gitlab', kind: 'mr', mr: mr(), host: 'gitlab.com' },
       },
     ]);
