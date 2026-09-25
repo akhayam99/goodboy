@@ -107,12 +107,12 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
             <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
             <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
             <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
             <SessionCostChip sessionId={sessionId} />
