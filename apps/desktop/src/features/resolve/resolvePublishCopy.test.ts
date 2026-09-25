@@ -74,7 +74,7 @@ const outcomeOf = (patch: Partial<PublicationOutcome>): PublicationOutcome => ({
 describe('publicationOutcomeSentence', () => {
   it('names the pushed commit, the replies and the resolved threads when all landed', () => {
     expect(publicationOutcomeSentence({ outcome: outcomeOf({}) })).toBe(
-      'Closed 4 on GitHub. 4f21c8b pushed, 4 replies posted, 4 threads resolved.',
+      'Closed 4 on GitHub. 4f21c8b pushed, 4 replies posted, 4 threads resolved on GitHub.',
     );
   });
 
@@ -90,7 +90,7 @@ describe('publicationOutcomeSentence', () => {
         }),
       }),
     ).toBe(
-      '4f21c8b pushed, 3 of 4 replies posted, 3 threads resolved. 1 failed: rate limited by GitHub.',
+      '4f21c8b pushed, 3 of 4 replies posted, 3 threads resolved on GitHub. 1 failed: rate limited by GitHub.',
     );
   });
 
@@ -108,6 +108,41 @@ describe('publicationOutcomeSentence', () => {
           leftOpen: 1,
         }),
       }),
-    ).toBe('Closed 2 on GitHub. 2 replies posted, 1 thread resolved, 1 left open.');
+    ).toBe('2 replies posted, 1 thread resolved on GitHub, 1 left open for the reviewer.');
+  });
+
+  it('never says closed when GitHub resolved none of the threads', () => {
+    const sentence = publicationOutcomeSentence({
+      outcome: outcomeOf({
+        pushed: false,
+        pushedHead: null,
+        total: 3,
+        replies: 3,
+        replied: 3,
+        closed: 3,
+        resolved: 0,
+        leftOpen: 3,
+      }),
+    });
+
+    expect(sentence).toBe('3 replies posted, 3 left open for the reviewer.');
+    expect(sentence).not.toContain('Closed');
+  });
+
+  it('does not call a reply-only publication closed', () => {
+    expect(
+      publicationOutcomeSentence({
+        outcome: outcomeOf({
+          pushed: false,
+          pushedHead: null,
+          total: 1,
+          replies: 1,
+          replied: 1,
+          closed: 0,
+          resolved: 0,
+          leftOpen: 0,
+        }),
+      }),
+    ).toBe('1 reply posted.');
   });
 });

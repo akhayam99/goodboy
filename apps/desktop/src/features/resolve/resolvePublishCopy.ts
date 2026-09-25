@@ -193,13 +193,16 @@ export const publicationOutcomeSentence = ({
         : `${outcome.replied} of ${plural({ count: outcome.replies, one: 'reply', many: 'replies' })} posted`,
     outcome.resolved === 0
       ? null
-      : `${plural({ count: outcome.resolved, one: 'thread', many: 'threads' })} resolved`,
-    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open`,
+      : `${plural({ count: outcome.resolved, one: 'thread', many: 'threads' })} resolved on GitHub`,
+    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer`,
   ].flatMap((part) => (part === null ? [] : [part]));
   const done = parts.length === 0 ? null : `${parts.join(', ')}.`;
   if (outcome.failed > 0) {
     const failure = `${outcome.failed} failed${outcome.error === null ? '' : `: ${outcome.error}`}.`;
     return done === null ? failure : `${done} ${failure}`;
+  }
+  if (outcome.total === 0 || outcome.resolved !== outcome.total) {
+    return done ?? '';
   }
   const lead = `Closed ${outcome.total} on GitHub.`;
   return done === null ? lead : `${lead} ${done}`;
