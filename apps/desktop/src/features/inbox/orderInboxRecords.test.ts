@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { groupByDay } from '../../shared/utils/groupByDay';
 import type { InboxRecord } from './types';
-import { groupRecordsByAge } from './ageSections';
+import { orderInboxRecords } from './orderInboxRecords';
 
 type RecordParams = {
   readonly key: string;
@@ -34,37 +35,9 @@ const record = ({ key, updatedAt, state = 'open' }: RecordParams): InboxRecord =
   },
 });
 
-describe('groupRecordsByAge', () => {
-  const now = new Date(2026, 8, 4, 12).getTime();
-
-  it('groups records by calendar age using the injected time', () => {
-    const sections = groupRecordsByAge({
-      now,
-      records: [
-        record({ key: 'today', updatedAt: new Date(2026, 8, 4, 8).toISOString() }),
-        record({ key: 'yesterday', updatedAt: new Date(2026, 8, 3, 8).toISOString() }),
-        record({ key: 'week', updatedAt: new Date(2026, 7, 31, 8).toISOString() }),
-        record({ key: 'older', updatedAt: new Date(2026, 7, 30, 8).toISOString() }),
-      ],
-    });
-
-    expect(sections.map((section) => section.label)).toEqual([
-      'Today',
-      'Yesterday',
-      'This week',
-      'Older',
-    ]);
-    expect(sections.map((section) => section.records[0]?.key)).toEqual([
-      'today',
-      'yesterday',
-      'week',
-      'older',
-    ]);
-  });
-
-  it('orders state priority before recency inside a section', () => {
-    const sections = groupRecordsByAge({
-      now,
+describe('orderInboxRecords', () => {
+  it('orders state priority before recency', () => {
+    const ordered = orderInboxRecords({
       records: [
         record({ key: 'done', state: 'done', updatedAt: new Date(2026, 8, 4, 11).toISOString() }),
         record({ key: 'open', state: 'open', updatedAt: new Date(2026, 8, 4, 10).toISOString() }),
@@ -86,7 +59,7 @@ describe('groupRecordsByAge', () => {
       ],
     });
 
-    expect(sections[0]?.records.map((item) => item.key)).toEqual([
+    expect(ordered.map((item) => item.key)).toEqual([
       'alert-new',
       'alert-old',
       'active',
@@ -95,12 +68,26 @@ describe('groupRecordsByAge', () => {
     ]);
   });
 
-  it('does not depend on the current clock when now is injected', () => {
-    const sections = groupRecordsByAge({
-      now,
-      records: [record({ key: 'fixed', updatedAt: new Date(2026, 8, 4, 1).toISOString() })],
+  it('keeps the state order inside each day once grouped', () => {
+    const days = groupByDay({
+      now: new Date(2026, 8, 4, 12),
+      timestampOf: (item) => item.updatedAt,
+      items: orderInboxRecords({
+        records: [
+          record({ key: 'old-open', updatedAt: new Date(2026, 7, 20, 8).toISOString() }),
+          record({ key: 'today-open', updatedAt: new Date(2026, 8, 4, 11).toISOString() }),
+          record({
+            key: 'today-alert',
+            state: 'alert',
+            updatedAt: new Date(2026, 8, 4, 8).toISOString(),
+          }),
+        ],
+      }),
     });
 
-    expect(sections[0]?.key).toBe('today');
+    expect(days.map((day) => [day.label, day.items.map((item) => item.key)])).toEqual([
+      ['Today', ['today-alert', 'today-open']],
+      ['Older', ['old-open']],
+    ]);
   });
 });

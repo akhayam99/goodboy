@@ -5,12 +5,9 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
 import { mapNotificationAction } from '../NotificationToastBridge';
-import {
-  NOTIFICATION_DAY_LABEL,
-  groupByDay,
-  notificationGroupKey,
-  sortNotificationGroupsNewestFirst,
-} from '../../grouping';
+import { useListKeys } from '../../../../shared/hooks/useListKeys';
+import { groupByDay } from '../../../../shared/utils/groupByDay';
+import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
 import {
   NO_NOTIFICATION_FILTERS,
   countNotificationFacets,
@@ -18,7 +15,6 @@ import {
   notificationMatches,
   type NotificationFilters,
 } from '../../facets';
-import { useNotificationListKeys } from '../../hooks/useNotificationListKeys';
 import { NotificationRow } from '../NotificationRow';
 import { NotificationFacetRail } from './NotificationFacetRail';
 import { NotificationsSkeleton } from './NotificationsSkeleton';
@@ -70,8 +66,12 @@ export const NotificationsStudio = ({ onClose }: Props) => {
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
   const visibleGroups = filterNotificationGroups({ groups, filters });
-  const days = groupByDay({ groups: visibleGroups, now: new Date() });
-  const orderedGroups = days.flatMap((entry) => entry.groups);
+  const days = groupByDay({
+    items: visibleGroups,
+    timestampOf: (group) => group[0]?.ts ?? '',
+    now: new Date(),
+  });
+  const orderedGroups = days.flatMap((entry) => entry.items);
   const visibleKeys = orderedGroups.map((group) => notificationGroupKey({ group }));
   const counts = countNotificationFacets({
     buckets,
@@ -118,7 +118,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
     });
   };
 
-  useNotificationListKeys({
+  useListKeys({
     keys: visibleKeys,
     selectedKey,
     onSelect: selectGroup,
@@ -222,17 +222,17 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                   {days.map((entry) => (
                     <section
                       key={entry.day}
-                      aria-label={NOTIFICATION_DAY_LABEL[entry.day]}
+                      aria-label={entry.label}
                       className="flex flex-col gap-0.5"
                     >
                       <div className="flex items-baseline gap-1.5 px-2.5 pb-1">
-                        <Eyebrow label={NOTIFICATION_DAY_LABEL[entry.day]} />
+                        <Eyebrow label={entry.label} />
                         <span className="text-2xs tabular-nums text-faint-foreground">
-                          {entry.groups.length}
+                          {entry.items.length}
                         </span>
                       </div>
                       <ul className="flex flex-col gap-0.5">
-                        {entry.groups.map((group) => {
+                        {entry.items.map((group) => {
                           const key = notificationGroupKey({ group });
                           return (
                             <NotificationRow

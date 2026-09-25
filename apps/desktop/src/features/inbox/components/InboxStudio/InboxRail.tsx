@@ -17,7 +17,8 @@ import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
-import { groupRecordsByAge } from '../../ageSections';
+import { groupByDay } from '../../../../shared/utils/groupByDay';
+import { orderInboxRecords } from '../../orderInboxRecords';
 import {
   filterInboxRecords,
   visibleKindFilters,
@@ -156,8 +157,12 @@ export const InboxRail = ({
     (provider) =>
       selectedProviders.has(provider) || allRecords.some((record) => record.provider === provider),
   );
-  const sections = groupRecordsByAge({ records });
-  const orderedRecords = sections.flatMap((section) => section.records);
+  const sections = groupByDay({
+    items: orderInboxRecords({ records }),
+    timestampOf: (record) => record.updatedAt,
+    now: new Date(),
+  });
+  const orderedRecords = sections.flatMap((section) => section.items);
   const totalCount = allRecords.length;
   const hasFiltersActive =
     query.trim() !== '' ||
@@ -309,11 +314,11 @@ export const InboxRail = ({
               }
             >
               {sections.map((section) => (
-                <Fragment key={section.key}>
+                <Fragment key={section.day}>
                   <li role="presentation" className="px-1 pb-0.5 pt-2.5 first:pt-0.5">
                     <Eyebrow label={section.label} muted />
                   </li>
-                  {section.records.map((record) => (
+                  {section.items.map((record) => (
                     <li key={record.key} role="presentation">
                       <InboxRow
                         record={record}

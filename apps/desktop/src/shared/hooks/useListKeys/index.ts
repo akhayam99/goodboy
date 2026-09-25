@@ -4,8 +4,9 @@ type Params = {
   readonly keys: ReadonlyArray<string>;
   readonly selectedKey: string | null;
   readonly onSelect: (key: string) => void;
-  readonly onDismiss: (key: string) => void;
   readonly onActivate: (key: string) => void;
+  readonly onDismiss?: (key: string) => void;
+  readonly extraKeys?: Readonly<Record<string, (selectedKey: string | null) => void>>;
 };
 
 type TypingTargetParams = {
@@ -24,15 +25,19 @@ const isTypingTarget = ({ target }: TypingTargetParams): boolean => {
   );
 };
 
-export const useNotificationListKeys = ({
+const NEXT_KEYS: ReadonlySet<string> = new Set(['j', 'ArrowDown']);
+const PREVIOUS_KEYS: ReadonlySet<string> = new Set(['k', 'ArrowUp']);
+
+export const useListKeys = ({
   keys,
   selectedKey,
   onSelect,
-  onDismiss,
   onActivate,
+  onDismiss,
+  extraKeys,
 }: Params): void => {
-  const latest = useRef({ keys, selectedKey, onSelect, onDismiss, onActivate });
-  latest.current = { keys, selectedKey, onSelect, onDismiss, onActivate };
+  const latest = useRef({ keys, selectedKey, onSelect, onActivate, onDismiss, extraKeys });
+  latest.current = { keys, selectedKey, onSelect, onActivate, onDismiss, extraKeys };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -44,11 +49,11 @@ export const useNotificationListKeys = ({
       }
       const current = latest.current;
       const index = current.selectedKey == null ? -1 : current.keys.indexOf(current.selectedKey);
-      if (event.key === 'j' || event.key === 'k') {
-        const next =
-          event.key === 'j'
-            ? current.keys[Math.min(index + 1, current.keys.length - 1)]
-            : current.keys[Math.max(index - 1, 0)];
+      const isNext = NEXT_KEYS.has(event.key);
+      if (isNext || PREVIOUS_KEYS.has(event.key)) {
+        const next = isNext
+          ? current.keys[Math.min(index + 1, current.keys.length - 1)]
+          : current.keys[Math.max(index - 1, 0)];
         if (next == null) {
           return;
         }
@@ -56,10 +61,16 @@ export const useNotificationListKeys = ({
         current.onSelect(next);
         return;
       }
+      const extra = current.extraKeys?.[event.key];
+      if (extra != null) {
+        event.preventDefault();
+        extra(index < 0 ? null : current.selectedKey);
+        return;
+      }
       if (current.selectedKey == null || index < 0) {
         return;
       }
-      if (event.key === 'e') {
+      if (event.key === 'e' && current.onDismiss != null) {
         event.preventDefault();
         current.onDismiss(current.selectedKey);
         return;

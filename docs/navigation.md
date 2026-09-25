@@ -351,7 +351,12 @@ one is open at a time.
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  In the studio, j and k move, Enter runs the row's action and e dismisses.
+  In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
+  j and k or the arrow keys move, Enter runs the row's action and e dismisses.
+  The rail rows (`shared/components/FacetRail`), the list keys
+  (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
+  are shared primitives; the inbox already groups its records with the same
+  day buckets.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above

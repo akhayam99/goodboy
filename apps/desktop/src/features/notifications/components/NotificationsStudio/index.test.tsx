@@ -109,7 +109,7 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const list = screen.getByRole('region', { name: 'Earlier' });
+    const list = screen.getByRole('region', { name: 'Older' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText('Latest failure')).toBeDefined();
     expect(screen.getByLabelText('2 notifications')).toBeDefined();

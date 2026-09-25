@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { PANE_RHYTHM, SelectableRow, cn, tintClasses, type Tone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
   readonly icon: LucideIcon;
@@ -11,14 +11,7 @@ type Props = {
   readonly onClick: () => void;
 };
 
-export const NotificationFacetRow = ({
-  icon: Icon,
-  tone,
-  label,
-  count,
-  isSelected,
-  onClick,
-}: Props) => {
+export const FacetRow = ({ icon: Icon, tone, label, count, isSelected, onClick }: Props) => {
   const isEmpty = count === 0 && !isSelected;
   return (
     <SelectableRow
