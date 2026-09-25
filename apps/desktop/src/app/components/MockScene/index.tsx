@@ -5,6 +5,7 @@ import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
 import { InboxScene } from './scenes/InboxScene';
+import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
@@ -75,6 +76,7 @@ export const MOCK_SCENES = {
   shell: ShellScene,
   'chat-shell': ChatShellScene,
   inbox: InboxScene,
+  conversation: ConversationScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,

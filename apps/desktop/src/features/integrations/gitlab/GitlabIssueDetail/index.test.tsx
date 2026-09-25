@@ -3,9 +3,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import {
   gitlabCreateIssueNote,
-  gitlabListIssueNotes,
+  gitlabListIssueDiscussions,
+  gitlabReplyToIssueDiscussion,
   gitlabUpdateIssueDescription,
   type GitlabIssue,
+  type GitlabMrNote,
 } from '../client';
 import { GitlabIssueDetail } from './index';
 
@@ -25,13 +27,29 @@ vi.mock('../../../../store', () => ({
 vi.mock('../client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../client')>()),
   gitlabUpdateIssueDescription: vi.fn(),
-  gitlabListIssueNotes: vi.fn(async () => []),
+  gitlabListIssueDiscussions: vi.fn(async () => []),
   gitlabCreateIssueNote: vi.fn(async () => 1),
+  gitlabReplyToIssueDiscussion: vi.fn(async () => 2),
 }));
 
 const updateDescription = vi.mocked(gitlabUpdateIssueDescription);
-const listIssueNotes = vi.mocked(gitlabListIssueNotes);
+const listDiscussions = vi.mocked(gitlabListIssueDiscussions);
 const createIssueNote = vi.mocked(gitlabCreateIssueNote);
+const replyToDiscussion = vi.mocked(gitlabReplyToIssueDiscussion);
+
+type NoteParams = Pick<GitlabMrNote, 'id' | 'body'> & Partial<GitlabMrNote>;
+
+const note = ({ id, body, ...rest }: NoteParams): GitlabMrNote => ({
+  id,
+  body,
+  system: false,
+  author: { username: 'bob', name: 'Bob', avatarUrl: null },
+  createdAt: '2026-07-22T10:00:00Z',
+  resolvable: false,
+  resolved: null,
+  position: null,
+  ...rest,
+});
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
 const ISSUE: GitlabIssue = {
@@ -50,10 +68,12 @@ const ISSUE: GitlabIssue = {
 
 beforeEach(() => {
   updateDescription.mockReset();
-  listIssueNotes.mockReset();
-  listIssueNotes.mockResolvedValue([]);
+  listDiscussions.mockReset();
+  listDiscussions.mockResolvedValue([]);
   createIssueNote.mockReset();
   createIssueNote.mockResolvedValue(1);
+  replyToDiscussion.mockReset();
+  replyToDiscussion.mockResolvedValue(2);
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],
   };
@@ -132,38 +152,73 @@ describe('GitlabIssueDetail', () => {
     expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
   });
 
-  it('renders the conversation notes without the system notes', async () => {
-    listIssueNotes.mockResolvedValue([
+  it('renders the conversation threads without the system notes', async () => {
+    listDiscussions.mockResolvedValue([
       {
-        id: 1,
-        body: 'This needs a repro',
-        system: false,
-        author: { username: 'bob', name: 'Bob', avatarUrl: null },
-        createdAt: '2026-07-22T10:00:00Z',
+        id: 'd-1',
+        individualNote: false,
+        notes: [
+          note({ id: 1, body: 'This needs a repro' }),
+          note({ id: 3, body: 'Repro attached', createdAt: '2026-07-22T10:05:00Z' }),
+        ],
       },
       {
-        id: 2,
-        body: 'changed the milestone to v1.4',
-        system: true,
-        author: null,
-        createdAt: '2026-07-22T10:01:00Z',
+        id: 'd-2',
+        individualNote: true,
+        notes: [
+          note({
+            id: 2,
+            body: 'changed the milestone to v1.4',
+            system: true,
+            author: null,
+            createdAt: '2026-07-22T10:01:00Z',
+          }),
+        ],
       },
     ]);
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
 
     await waitFor(() => expect(screen.getByText('This needs a repro')).toBeDefined());
+    expect(screen.getByText('Repro attached')).toBeDefined();
     expect(screen.queryByText('changed the milestone to v1.4')).toBeNull();
     expect(screen.getByText('1 system event hidden')).toBeDefined();
   });
 
-  it('posts a note through the GitLab client and reloads the conversation', async () => {
+  it('replies inside the thread Reply was clicked on', async () => {
+    listDiscussions.mockResolvedValue([
+      { id: 'd-1', individualNote: true, notes: [note({ id: 1, body: 'This needs a repro' })] },
+    ]);
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
-    await waitFor(() => expect(listIssueNotes).toHaveBeenCalledOnce());
+    await waitFor(() => expect(screen.getByText('This needs a repro')).toBeDefined());
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Write a note' }), {
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reply' })[0]!);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Write a reply' }), {
+      target: { value: 'Attached one' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await waitFor(() =>
+      expect(replyToDiscussion).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        host: 'https://gitlab.com',
+        projectPath: 'acme/web',
+        issueIid: 7,
+        discussionId: 'd-1',
+        body: `Attached one\n\n*Written by Goodboy*`,
+        projectId: undefined,
+      }),
+    );
+    expect(createIssueNote).not.toHaveBeenCalled();
+  });
+
+  it('starts a new thread through the GitLab client and reloads the conversation', async () => {
+    render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
+    await waitFor(() => expect(listDiscussions).toHaveBeenCalledOnce());
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Start a new thread' }), {
       target: { value: 'Reproduced on main' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(createIssueNote).toHaveBeenCalledWith({
@@ -175,6 +230,6 @@ describe('GitlabIssueDetail', () => {
         projectId: undefined,
       }),
     );
-    await waitFor(() => expect(listIssueNotes).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(listDiscussions).toHaveBeenCalledTimes(2));
   });
 });

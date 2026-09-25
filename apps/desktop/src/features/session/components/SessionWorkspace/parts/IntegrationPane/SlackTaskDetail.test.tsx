@@ -72,9 +72,9 @@ describe('SlackTaskDetail', () => {
   it('replies from the session lens to the thread the task points at', async () => {
     render(<SlackTaskDetail workspaceId={'workspace-1' as WorkspaceId} task={TASK} />);
 
-    expect(screen.getByText('Sent as plain text')).toBeDefined();
+    screen.getByText('Sent as plain text by the connected bot, not by you.');
     fireEvent.change(screen.getByLabelText('Reply in thread'), { target: { value: 'on it' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => {
       expect(h.reply).toHaveBeenCalledWith({

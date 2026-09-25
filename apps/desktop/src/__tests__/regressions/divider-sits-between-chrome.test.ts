@@ -79,14 +79,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrThreadCard.tsx':
-    { count: 1, reason: 'debt' },
   'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx': {
     count: 4,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/MrThreadCard.tsx': {
-    count: 1,
     reason: 'debt',
   },
   'apps/desktop/src/features/integrations/jira/AssigneePicker.tsx': { count: 3, reason: 'debt' },

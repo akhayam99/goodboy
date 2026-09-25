@@ -3,12 +3,15 @@ import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordH
 import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
+import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
 import type { LinearIssue } from '../client';
-import { LinearIssueComments } from '../LinearIssueComments';
+import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { LINEAR_CAPABILITIES, linearConversation } from '../linearConversation';
 import { useLinearIssueComments } from '../useLinearIssueComments';
 import { useLinearIssueDescription } from '../useLinearIssueDescription';
 
@@ -20,16 +23,36 @@ type Props = {
 };
 
 export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
-  const { comments, isLoading, error, post } = useLinearIssueComments({
+  const { comments, isLoading, error, reload, post } = useLinearIssueComments({
     workspaceId,
     issueId: issue.id,
     projectId,
   });
   const { description, save } = useLinearIssueDescription({ issue, workspaceId, projectId });
+  const source = useMemo<ConversationSource>(
+    () => ({
+      toolLabel: 'Linear',
+      threads: linearConversation({ comments }),
+      capabilities: LINEAR_CAPABILITIES,
+      isLoading,
+      error,
+      onRetry: reload,
+      onPost: post == null ? null : ({ body, threadId }) => post({ body, parentId: threadId }),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'This issue has no comments yet.',
+      footnote: null,
+      composerNote: null,
+      renderMessageFooter: null,
+    }),
+    [comments, isLoading, error, reload, post],
+  );
+  const conversation = useConversationPane({ source, resetKey: issue.id });
 
   return (
     <PaneShell
       scroll="body"
+      dock={conversation.composer}
       header={
         <RecordHeader
           provider="linear"
@@ -54,22 +77,7 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
             defaultOpen: true,
             content: <DescriptionSection text={description} onSave={save} />,
           },
-          {
-            key: 'conversation',
-            kind: 'conversation',
-            label: 'Conversation',
-            count: comments.length,
-            isCollapsible: false,
-            defaultOpen: true,
-            content: (
-              <LinearIssueComments
-                comments={comments}
-                isLoading={isLoading}
-                error={error}
-                onPost={post}
-              />
-            ),
-          },
+          conversation.section,
         ]}
       />
     </PaneShell>

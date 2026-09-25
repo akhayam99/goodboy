@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { mockIPC } from '@tauri-apps/api/mocks';
 import { IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -12,7 +13,10 @@ import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords'
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
-import type { LinearIssue } from '../../../../features/integrations/linear/client';
+import type {
+  LinearIssue,
+  LinearIssueComment,
+} from '../../../../features/integrations/linear/client';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { StudioFrame } from './StudioFrame';
 import { seedStudioChrome } from './shellChrome';
@@ -68,6 +72,72 @@ const SELECTED_ISSUE: LinearIssue = {
     ],
   },
   updatedAt: isoAgo(25 * MINUTE),
+};
+
+type CommentParams = {
+  readonly id: string;
+  readonly name: string;
+  readonly ago: number;
+  readonly body: string;
+  readonly parentId?: string;
+};
+
+const linearComment = ({ id, name, ago, body, parentId }: CommentParams): LinearIssueComment => ({
+  id,
+  body,
+  createdAt: isoAgo(ago),
+  parent: parentId == null ? null : { id: parentId },
+  user: { name, avatarUrl: null },
+});
+
+const SELECTED_COMMENTS: ReadonlyArray<LinearIssueComment> = [
+  linearComment({
+    id: 'cas-231-c1',
+    name: 'Robin Vale',
+    ago: 3 * HOUR,
+    body: 'Reproduced on staging with a gift card plus a card. The refund job only walks the first charge on the order.',
+  }),
+  linearComment({
+    id: 'cas-231-c2',
+    name: 'Jules Marin',
+    ago: 2 * HOUR,
+    body: 'Do we refund the gift card first or the card? Support has been doing the card first.',
+    parentId: 'cas-231-c1',
+  }),
+  linearComment({
+    id: 'cas-231-c3',
+    name: 'Robin Vale',
+    ago: 110 * MINUTE,
+    body: 'Card first, then the gift card balance. Same order as capture, reversed.',
+    parentId: 'cas-231-c1',
+  }),
+  linearComment({
+    id: 'cas-231-c4',
+    name: 'Priya Nand',
+    ago: 40 * MINUTE,
+    body: 'Finance wants a list of the 14 orders before we touch them. I will pull it from ledger-core.',
+  }),
+];
+
+const installIpc = (): void => {
+  let created = 0;
+  mockIPC((cmd, payload) => {
+    if (cmd === 'linear_fetch_issue_comments') {
+      return SELECTED_COMMENTS;
+    }
+    if (cmd === 'linear_create_comment') {
+      const args = (payload ?? {}) as { body?: string; parentId?: string | null };
+      created += 1;
+      return linearComment({
+        id: `cas-231-new-${created}`,
+        name: 'You',
+        ago: 0,
+        body: args.body ?? '',
+        parentId: args.parentId ?? undefined,
+      });
+    }
+    return null;
+  });
 };
 
 type RecordParams = {
@@ -207,6 +277,7 @@ export const InboxScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    installIpc();
     seedBoardScene();
     seedStudioChrome();
     setIsReady(true);

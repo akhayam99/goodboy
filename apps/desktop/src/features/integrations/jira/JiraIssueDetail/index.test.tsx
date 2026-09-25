@@ -158,7 +158,7 @@ describe('JiraIssueDetail', () => {
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(createComment).toHaveBeenCalledWith(
@@ -190,7 +190,7 @@ describe('JiraIssueDetail', () => {
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(createComment).toHaveBeenCalledWith(

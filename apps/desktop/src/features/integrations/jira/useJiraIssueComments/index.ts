@@ -35,6 +35,9 @@ export const useJiraIssueComments = ({ issue, workspaceId, projectId }: Params):
 
   useEffect(() => {
     setComments([]);
+  }, [workspaceId, projectId, siteUrl, email, issueKey]);
+
+  useEffect(() => {
     setError(null);
     if (siteUrl == null || email == null || issueKey == null) {
       setIsLoading(false);
