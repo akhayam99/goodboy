@@ -213,6 +213,14 @@ export { parseStreamJsonLine, type ParseContext } from './providers/claude/parse
 export { parseCodexRateLimits } from './providers/limits/parseCodexRateLimits';
 export { mergeProviderLimits } from './providers/limits/mergeProviderLimits';
 export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './providers/limits/constants';
+export {
+  PROVIDERS_REPORTING_LIMITS,
+  limitsChipOf,
+  selectLimitsChips,
+  worstLimitsChip,
+  type LimitsChip,
+  type LimitsChipState,
+} from './providers/limits/selectLimitsChips';
 
 export {
   PROVIDER_CAPABILITIES,

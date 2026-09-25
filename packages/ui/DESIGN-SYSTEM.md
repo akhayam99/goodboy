@@ -689,6 +689,9 @@ tooltip still opens. If a trigger needs its anchor shaped (because it is out of
 flow or stretches), pass `anchorClassName`. Do not hand-roll a wrapper, because
 a wrapper between `Tooltip` and the control hides the `disabled` the primitive
 checks. Keyboard focus still cannot reach the control while it is `disabled`.
+A tooltip that has to show a small table (the top bar Limits chips) passes
+`variant="card"`: a 260px elevated card that wraps, instead of the one-line
+label.
 That comes from the attribute itself. `icon-only-controls-carry-a-tooltip`
 enforces the rule.
 

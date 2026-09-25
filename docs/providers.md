@@ -180,6 +180,9 @@ pays for every turn.
 - **Browser sign-in stuck**: click **Show details**, then **Open the link again**.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
+- **How close am I to a limit?** The Limits chips in the top bar show a bar per
+  provider. Hover one for every window and its reset, click it for the provider
+  page. Claude updates its numbers only while a Claude agent runs
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the routing pool send the next turn to
   another provider. Session summaries count against the same limit

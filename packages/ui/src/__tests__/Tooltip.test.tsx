@@ -41,6 +41,32 @@ describe('Tooltip', () => {
     vi.useRealTimers();
   });
 
+  it('lays out rich content as a card that wraps', async () => {
+    vi.useFakeTimers();
+    render(
+      <Tooltip
+        variant="card"
+        content={
+          <span>
+            <span>Claude</span>
+            <span>82% used</span>
+          </span>
+        }
+      >
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    fireEvent.mouseEnter(screen.getByRole('button'));
+    await act(async () => {
+      vi.advanceTimersByTime(400);
+    });
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toBe('Claude82% used');
+    expect(tip.className).toContain('bg-elevated');
+    expect(tip.className).not.toContain('whitespace-nowrap');
+    vi.useRealTimers();
+  });
+
   it('hides tooltip on mouse leave', async () => {
     vi.useFakeTimers();
     render(

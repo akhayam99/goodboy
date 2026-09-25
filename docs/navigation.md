@@ -236,20 +236,35 @@ covered.
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row hands its run to
   the shell's script opener. Spend opens Impact; it is never merged with a
-  count. The bell opens the notification popover.
+  count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
+  Gemini, Cursor), in the provider order, with providers that report nothing
+  last. The order never follows state. At rest a chip is its glyph and a bar of
+  the provider's most used window; the number shows from 80%, `Out` with the
+  reset day at 100%, a clock marks data older than 30 minutes or a window that
+  reset since, and a dashed track means no data. The card tooltip always
+  carries every window, its percentage and its reset. A click opens Settings >
+  Providers & models on that provider, scrolled to Usage, and the chip stays
+  pressed while that page is open. The strip is a toolbar: arrow keys move
+  between chips. With no provider connected the strip is one `Connect a
+provider` chip. A bar in the chrome is always a provider window; money is
+  always a figure. The bell opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows and says only `Search`.
-2. Below `chrome-labels` it becomes an icon with ⌘K, and the signal words
-   (`need you`, `running`, `scripts`, `today`) drop. Counts, dots, glyphs and
-   the spend figure stay, and their tooltips carry the words.
+1. Below `chrome-wide` the command center narrows and says only `Search`, and
+   Limits keeps two chips instead of four.
+2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
+   (`need you`, `running`, `scripts`, `today`, `Limits`) drop and Limits keeps
+   one chip. Counts, dots, glyphs and the spend figure stay, and their
+   tooltips carry the words.
 
 The traffic lights, identity, the command center, the needs-you count, the
-spend figure and the bell never hide. No control ever moves into an overflow
-menu. `chrome-labels` sits below the 1024px minimum window, so words only drop
-under zoom.
+spend figure, the first Limits chip and the bell never hide. The Limits chips
+past the ones that fit are the only overflow: a `+N` chip takes the tone of
+the worst hidden provider and lists them. No other control moves into an
+overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
+only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
