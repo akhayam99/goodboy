@@ -162,7 +162,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
           detail={
             <PaneShell
               scroll="body"
-              measure="reading"
+              measure="pane"
               title={VIEW_TITLE[filters.view]}
               description={subtitle({ total: counts.total, unread: counts.unread })}
               actions={
@@ -226,16 +226,12 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                       aria-label={NOTIFICATION_DAY_LABEL[entry.day]}
                       className="flex flex-col gap-0.5"
                     >
-                      <Eyebrow
-                        muted
-                        className="px-2.5 pb-1"
-                        label={
-                          <>
-                            {NOTIFICATION_DAY_LABEL[entry.day]}{' '}
-                            <span className="font-medium tabular-nums">{entry.groups.length}</span>
-                          </>
-                        }
-                      />
+                      <div className="flex items-baseline gap-1.5 px-2.5 pb-1">
+                        <Eyebrow label={NOTIFICATION_DAY_LABEL[entry.day]} />
+                        <span className="text-2xs tabular-nums text-faint-foreground">
+                          {entry.groups.length}
+                        </span>
+                      </div>
                       <ul className="flex flex-col gap-0.5">
                         {entry.groups.map((group) => {
                           const key = notificationGroupKey({ group });

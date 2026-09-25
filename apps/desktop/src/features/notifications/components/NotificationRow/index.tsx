@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { FOCUS_RING, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -149,7 +149,7 @@ export const NotificationRow = ({
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_4rem_10rem] items-start gap-x-2.5 px-2.5 py-2">
+      <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-2.5 px-2.5 py-2">
         {overlay}
         <SeverityIcon
           size={ICON_SIZE.control}
@@ -158,7 +158,7 @@ export const NotificationRow = ({
         />
         <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2">
-            {isUnread && <StatusDot tone={severity.tone} size="sm" ariaLabel="Unread" />}
+            {isUnread && <span className="sr-only">Unread</span>}
             <h3
               className={cn(
                 'truncate text-xs',
@@ -170,7 +170,14 @@ export const NotificationRow = ({
             {count}
           </div>
           {hasBody && !isSelected && (
-            <p className="truncate text-xs text-muted-foreground">{latest.body}</p>
+            <p
+              className={cn(
+                'truncate text-xs',
+                isUnread ? 'text-muted-foreground' : 'text-faint-foreground',
+              )}
+            >
+              {latest.body}
+            </p>
           )}
           {context != null && (
             <span className="inline-flex min-w-0 items-center gap-1 text-3xs text-faint-foreground">
@@ -179,8 +186,7 @@ export const NotificationRow = ({
             </span>
           )}
         </div>
-        <span className="pt-0.5">{age}</span>
-        <div className="relative flex items-center justify-end gap-0.5">
+        <div className="relative flex h-4 items-center justify-end">
           {action != null && (
             <button
               type="button"
@@ -190,7 +196,22 @@ export const NotificationRow = ({
               {action.label}
             </button>
           )}
-          <span className="flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        </div>
+        <div className="relative flex h-4 items-center justify-end">
+          <span
+            className={cn(
+              'flex motion-safe:transition-opacity group-hover:opacity-0 group-focus-within:opacity-0',
+              isSelected && 'opacity-0',
+            )}
+          >
+            {age}
+          </span>
+          <span
+            className={cn(
+              'pointer-events-none absolute inset-y-0 right-0 flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
+              isSelected && 'pointer-events-auto opacity-100',
+            )}
+          >
             {isUnread && onMarkRead != null && (
               <Tooltip content="Mark read">
                 <button
