@@ -2,7 +2,7 @@ import { Chip, Tooltip, cn } from '@goodboy/ui';
 import type { SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
-const IDENTITY_SLOT = 'w-24 shrink-0';
+const IDENTITY_SLOT = 'max-w-24';
 
 type Props = {
   readonly mounts: ReadonlyArray<SessionProjectMount>;
@@ -22,7 +22,7 @@ export const ProjectMountChips = ({ mounts }: Props) => {
             size="xs"
             bordered={false}
             label={<span className="min-w-0 truncate">{first.mountName}</span>}
-            className="w-full"
+            className="min-w-0 max-w-full"
           />
         </span>
       </Tooltip>
