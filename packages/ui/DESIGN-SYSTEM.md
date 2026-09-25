@@ -18,14 +18,51 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
-## Elevation ramp
+## Surface ladder
 
-`background`, `subtle`, `muted` and `elevated` express distance from the canvas
-in both themes. Components step between those opaque surfaces instead of
-mixing one surface through opacity. `bg-hover` and `bg-selected` are
-interaction overlays painted as a background-image layer, so they stack on
-whatever fill the element rests on instead of replacing it, and `cn` keeps them
-beside a surface class. `scrim` is reserved for modal backdrops.
+Six opaque roles, from the back of the window to the eye. Components step
+between them instead of mixing one surface through opacity.
+
+| step | role     | class           | holds                                                   |
+| ---- | -------- | --------------- | ------------------------------------------------------- |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer                 |
+| 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
+| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
+| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`, `ActionTile`            |
+| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
+| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
+
+Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
+Light mode is ink on paper, read on two axes. On the elevation axis (what sits
+in front) chrome < content < raised = floating: nothing is brighter than white,
+so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
+(what sits inside) content > panel > inset: the deeper, the darker.
+
+Two tokens are relations, not steps. `fill` is one step inside whatever parent
+it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
+secondary button or a skeleton moves the right way on any surface. `idle` is
+the single grey for "not yet" and "off": pending and queued dots, an off switch
+track, inactive bars. States that share it differ by shape (filled, ring,
+dash), never by another opacity.
+
+Three borders, each with one job:
+
+| token           | job                                                              | floor                           |
+| --------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `border-soft`   | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
+| `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
+| `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
+
+A clickable card at rest carries two signals together (a fill one step above
+its parent plus the hairline). Its states clear 3:1: hover `border`, selection
+`bg-selected`, focus ring. `token-contrast-floor.test.ts` holds the ladder
+order and every floor on all six steps, and `no-token-bypass.test.ts` fails on
+any colour class with no `--color-*` token behind it.
+
+`bg-hover` and `bg-selected` are interaction overlays painted as a
+background-image layer, so they stack on whatever fill the element rests on
+instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is reserved for modal backdrops.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
@@ -142,8 +179,14 @@ Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
   Stage colors go through `STAGE_TONE`. No per-file tone maps.
 - The stage tones: attention `warning`, running `info`, in review `success`,
   done `merged`, building neutral.
-- Elevation is a four-step ramp: canvas < panel < rail/chip < floating. To lift
-  something, move one step up the ramp. Never invent a shade.
+- Surfaces follow the six-role ladder above. To lift something, move it to the
+  role it plays; to sink something inside a parent, use `fill`. Never invent a
+  shade.
+- Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
+  fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
+  `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
+  own wash), `border` (40%, decoration, never the only signal) and `bgSoft`
+  (5%, only for washing a whole card).
 
 ## Icon and tone vocabulary
 
@@ -584,8 +627,8 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 
 `SectionSurface` is `SectionHeader` on the one raised section surface. Use it
 for a reading surface whose sections would otherwise be separated by empty
-space alone. It sits one step above the canvas, so the cards inside it reach
-the top of the ramp and nothing stacks a fourth level. A metadata line is not a
+space alone. It sits on the panel step of the surface ladder, so the cards
+inside it take the raised step and nothing stacks another level. A metadata line is not a
 section and does not get a surface. Its optional `icon` goes to the heading,
 the same slot `SectionHeader` gives it, at the row icon size.
 

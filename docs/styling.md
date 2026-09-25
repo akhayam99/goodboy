@@ -83,6 +83,17 @@ Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.
 
+## Surfaces and borders: pick the role, never a shade
+
+A surface takes the role it plays on the six-step ladder (`chrome`,
+`background`, `subtle`, `muted`, `elevated`, `floating`), anything inside a
+parent takes `fill`, and a grey "not yet" mark takes `idle`. Borders pick one of
+three jobs: `border-soft` decorates, `border` delineates a control, and
+`border-strong` emphasises a control on hover. The roles, the light-mode axes
+and the contrast floors are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#surface-ladder). A colour
+class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
+
 ## The window grid
 
 Columns, resize handles and the footer are areas of **one** CSS grid. Their

@@ -7,18 +7,27 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', monospace;
 
   /* Dark palette (default), soft desaturated darks, lifted black base.
-     Surface elevation ramp (brighter L = more elevated):
-     background (canvas) < subtle (panels) < muted (rails, chips) < elevated (top cards). */
+     Surface ladder, six roles, each step brighter than the one below it:
+     chrome (top bar, sidebar, footer) < background (content column)
+     < subtle (panels, pushing drawer) < muted (opaque rails)
+     < elevated (cards) < floating (popovers, menus, dialogs, toasts).
+     fill is one step inside whatever parent it sits on: brighter here, darker in light.
+     idle is the single grey for pending, queued and off. */
+  --color-chrome: oklch(0.17 0.006 255);
   --color-background: oklch(0.205 0.006 255);
   --color-foreground: oklch(0.93 0.006 90);
-  --color-subtle: oklch(0.235 0.008 255);
-  --color-muted: oklch(0.265 0.01 255);
-  --color-elevated: oklch(0.3 0.011 255);
+  --color-subtle: oklch(0.228 0.008 255);
+  --color-muted: oklch(0.25 0.009 255);
+  --color-elevated: oklch(0.275 0.01 255);
+  --color-floating: oklch(0.3 0.011 255);
+  --color-fill: oklch(1 0 0 / 0.06);
+  --color-idle: oklch(0.58 0.01 255);
   --color-muted-foreground: oklch(0.77 0.015 255);
-  --color-faint-foreground: oklch(0.674 0.012 255);
-  --color-disabled-foreground: oklch(0.566 0.01 255);
-  --color-border: oklch(0.575 0.012 255);
-  --color-border-soft: oklch(0.36 0.012 255);
+  --color-faint-foreground: oklch(0.68 0.012 255);
+  --color-disabled-foreground: oklch(0.58 0.01 255);
+  --color-border-strong: oklch(0.7 0.012 255);
+  --color-border: oklch(0.6 0.012 255);
+  --color-border-soft: oklch(0.38 0.012 255);
   --color-overlay-hover: oklch(1 0 0 / 0.05);
   --color-overlay-selected: oklch(1 0 0 / 0.09);
   --color-scrim: oklch(0 0 0 / 0.6);
@@ -276,20 +285,26 @@
 }
 
 /* Light palette, applied when html[data-theme="light"].
-   Elevation reads as ink on paper: the canvas is paper, panels and rails recess
-   below it, cards sit on top at pure white.
-   muted (rails, chips) < subtle (panels) < background (canvas) < elevated (cards). */
+   Ink on paper, read on two axes.
+   Elevation (what sits in front): chrome < background < elevated = floating.
+   Nothing is brighter than white, so above elevated the lift is shadow-lg.
+   Nesting (what sits inside): background > subtle > muted > fill. */
 html[data-theme='light'] {
+  --color-chrome: oklch(0.952 0.005 250);
   --color-background: oklch(0.975 0.004 250);
   --color-foreground: oklch(0.21 0.005 250);
-  --color-subtle: oklch(0.955 0.004 250);
+  --color-subtle: oklch(0.958 0.004 250);
   --color-muted: oklch(0.94 0.005 250);
   --color-elevated: oklch(1 0 250);
+  --color-floating: oklch(1 0 250);
+  --color-fill: oklch(0 0 0 / 0.05);
+  --color-idle: oklch(0.6 0.005 250);
   --color-muted-foreground: oklch(0.43 0.006 250);
   --color-faint-foreground: oklch(0.52 0.006 250);
-  --color-disabled-foreground: oklch(0.624 0.005 250);
-  --color-border: oklch(0.62 0.006 250);
-  --color-border-soft: oklch(0.9 0.005 250);
+  --color-disabled-foreground: oklch(0.61 0.005 250);
+  --color-border-strong: oklch(0.48 0.006 250);
+  --color-border: oklch(0.59 0.006 250);
+  --color-border-soft: oklch(0.88 0.005 250);
   --color-overlay-hover: oklch(0 0 0 / 0.04);
   --color-overlay-selected: oklch(0 0 0 / 0.07);
   --color-scrim: oklch(0 0 0 / 0.35);

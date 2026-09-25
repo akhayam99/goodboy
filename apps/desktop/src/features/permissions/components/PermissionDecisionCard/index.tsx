@@ -32,7 +32,7 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
         <code className="font-mono text-foreground">{item.toolName}</code>
         <span className={cn('font-semibold', DECISION_TONE[item.decision])}>{item.decision}</span>
         {item.ruleId !== null && (
-          <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-2xs text-secondary-foreground">
+          <span className="rounded-md bg-fill px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
             {item.ruleId}
           </span>
         )}
