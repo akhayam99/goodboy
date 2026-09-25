@@ -22,9 +22,9 @@ import {
   worktreeWriterStatus,
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isSessionAttributionEnabled } from '../../sessionAttribution';
+import { sessionReplySettings } from '../../sessionReplySettings';
 import { selectActiveMount } from '../project-mounts/selectors';
-import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
+import { buildResolutionReplyBody, type ReplyContext } from '../github/buildResolutionReplyBody';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { mountTargetOf } from './mountTarget';
 import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publicationLock';
@@ -222,8 +222,17 @@ export const preparePublication = async ({
     reason: 'not_ready',
   }));
   const excluded = [...selection.excluded, ...invalidExclusions];
-  const isAttributed = isSessionAttributionEnabled({ get, sessionId });
+  const settings = sessionReplySettings({ state: get(), sessionId });
   const comments: ReadonlyArray<PrComment> = get().sessionGithub[sessionId]?.detail?.comments ?? [];
+  const contextOf = ({ row }: { readonly row: ResolveThread }): ReplyContext => {
+    const head = comments.find((comment) => comment.threadId === row.threadId);
+    return {
+      reviewer: head?.author ?? null,
+      file: head?.path ?? null,
+      line: head?.line ?? null,
+      fixupOfSha: row.fixupOfSha,
+    };
+  };
   const frozen: ReadonlyArray<FrozenReply> = await Promise.all(
     publishable.map(async (row) => {
       const isRefused = scope.refusedThreadIds.has(row.threadId);
@@ -234,7 +243,12 @@ export const preparePublication = async ({
         body:
           closure === null || isNote
             ? null
-            : buildResolutionReplyBody({ closure, prUrl: target.prUrl, isAttributed }),
+            : buildResolutionReplyBody({
+                closure,
+                prUrl: target.prUrl,
+                settings,
+                context: contextOf({ row }),
+              }),
         closes: !isRefused && threadOutcome({ row }) !== null,
         fingerprint: isNote ? null : await sourceFingerprint({ comments, threadId: row.threadId }),
       };

@@ -412,6 +412,20 @@ opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 
+- Goodboy reads what the commit is from git, not from the agent. A commit whose
+  subject is `fixup! <subject>` of a commit on the branch shows as
+  `Fixed in 9e8d7c6 · fixup of 3a1f9c2`. A revision that rewrote an earlier fix
+  shows `Fixed in 7c1e0aa · replaces 4f21c8b`
+- With the fixup commit style, Goodboy blames the commented line and asks the
+  agent for `git commit --fixup=<sha>` of the commit that introduced it. The
+  default is a new commit for every fix. Goodboy never squashes or force-pushes
+- Approving a fix fast-forwards the branch to it. When the branch moved on
+  since the fix started, the fix is cherry-picked onto the new head and that
+  commit becomes the sha on the branch. If it no longer applies, the pick is
+  aborted and the branch stays as it was. When an approval was interrupted
+  after the pick landed, approving again finds the same change on the branch
+  and records that commit instead of picking it twice
+
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
   suggestion. Each carries the thread ids and the marker contract. The click
@@ -429,6 +443,24 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 2. Pushes the branch once, if there is code to send
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
+
+How a reply reads is set in Settings, Workspace, **Review replies**:
+
+- **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
+  follows a style note you can edit. **Learn from my replies** reads your last
+  20 review replies in the workspace's repositories and writes that note. The
+  voice goes into the agent's prompt
+- **Templates**: When fixed and When not changing. Goodboy fills them in code,
+  the agent writes only `{reason}`. The other variables are `{commit}`,
+  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
+  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+- **Sign replies** is the attribution line switch, so one value signs
+  everything Goodboy posts
+- **Resolve the thread after replying** (on by default) and **Commits** (new
+  commit, or fixup of the commit that added the line)
+
+The drawer shows these under the reply in one line, with a link to the
+section.
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

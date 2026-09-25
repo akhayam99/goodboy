@@ -6,7 +6,12 @@ import type {
   WorkspaceProfile,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { overridesFromRow, type OverrideRow } from './override-row';
+import {
+  REPLY_SETTING_COLUMNS,
+  overridesFromRow,
+  replySettingValues,
+  type OverrideRow,
+} from './override-row';
 
 type WorkspaceRow = OverrideRow & {
   readonly id: string;
@@ -116,8 +121,9 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
        id, name, slug, default_provider_id, default_workflow_id,
        default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
-       deleted_at, disconnected_at, last_accessed_at, attribution_footer
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       deleted_at, disconnected_at, last_accessed_at, attribution_footer,
+       ${REPLY_SETTING_COLUMNS}
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
@@ -150,6 +156,7 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
         : workspace.overrides.attributionFooter
           ? 1
           : 0,
+      ...replySettingValues({ overrides: workspace.overrides }),
     ],
   );
   if (workspace.profile === undefined) {

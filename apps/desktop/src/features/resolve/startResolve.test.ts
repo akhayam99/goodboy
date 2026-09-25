@@ -1,8 +1,21 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { AgentId, PrComment, PullRequestState, SessionId } from '@goodboy/types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AgentId, BranchCommit, PrComment, PullRequestState, SessionId } from '@goodboy/types';
 import type { CommentThread } from '../github/comment-threads';
 import type { SpawnAgentFn } from '../review/startFixAttempt';
+import type { BlameLineParams } from '../worktree/worktree';
 import { resolveAgentCount, startResolve } from './startResolve';
+
+const { listBranchCommits, worktreeBlameLine } = vi.hoisted(() => ({
+  listBranchCommits: vi.fn<(path: string) => Promise<ReadonlyArray<BranchCommit>>>(),
+  worktreeBlameLine: vi.fn<(params: BlameLineParams) => Promise<string | null>>(),
+}));
+
+vi.mock('../worktree/worktree', () => ({ listBranchCommits, worktreeBlameLine }));
+
+beforeEach(() => {
+  listBranchCommits.mockReset();
+  worktreeBlameLine.mockReset();
+});
 
 const SESSION_ID = 'session-1' as SessionId;
 const PR = {
@@ -15,7 +28,7 @@ const PR = {
 const threadOf = (threadId: string, path = 'src/retry.ts'): CommentThread => ({
   head: {
     id: `comment-${threadId}`,
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body: `Please look at ${threadId}.`,
     createdAt: '2026-01-05T09:00:00.000Z',
@@ -63,6 +76,65 @@ describe('startResolve', () => {
       modelOverride: 'gpt-5.5',
       effort: 'high',
     });
+  });
+
+  it('asks for a fixup of the commit that introduced the commented line', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+    listBranchCommits.mockResolvedValue([
+      { sha: '3a1f9c2full', subject: 'Add retry policy' } as BranchCommit,
+    ]);
+    worktreeBlameLine.mockImplementation(async ({ path }) =>
+      path === 'src/retry.ts' ? '3a1f9c2full' : 'not-on-branch',
+    );
+
+    await startResolve({
+      sessionId: SESSION_ID,
+      threads: [threadOf('PRRT_1'), threadOf('PRRT_2', 'src/client.ts')],
+      pr: PR,
+      routing: { provider: 'codex', model: 'gpt-5.5', effort: 'high' },
+      style: {
+        commitStyle: 'fixup',
+        voice: 'friendly',
+        styleNote: null,
+        worktreePath: '/repos/notify-relay',
+      },
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    const prompt = spawnAgent.mock.calls[0]?.[1].initialPrompt ?? '';
+    expect(worktreeBlameLine).toHaveBeenCalledWith({
+      worktreePath: '/repos/notify-relay',
+      path: 'src/retry.ts',
+      line: 84,
+    });
+    expect(prompt).toContain(
+      '- PRRT_1: `git commit --fixup=3a1f9c2full`, so the subject reads `fixup! Add retry policy`',
+    );
+    expect(prompt).not.toContain('- PRRT_2: `git commit --fixup');
+    expect(prompt).toContain('Voice: friendly.');
+  });
+
+  it('never reads git for the default new commit style', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+
+    await startResolve({
+      sessionId: SESSION_ID,
+      threads: [threadOf('PRRT_1')],
+      pr: PR,
+      routing: { provider: 'codex', model: 'gpt-5.5', effort: 'high' },
+      style: {
+        commitStyle: 'new',
+        voice: 'terse',
+        styleNote: null,
+        worktreePath: '/repos/notify-relay',
+      },
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(worktreeBlameLine).not.toHaveBeenCalled();
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).not.toContain('How to commit');
   });
 
   it('counts one agent for a small selection', () => {

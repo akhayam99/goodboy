@@ -59,7 +59,21 @@ export type OverrideSettings = Readonly<{
   parallelAgents: boolean | null;
   providerPool: ReadonlyArray<ProviderId> | null;
   attributionFooter: boolean | null;
+  replyVoice: ReplyVoice | null;
+  replyStyleNote: string | null;
+  replyTemplateFixed: string | null;
+  replyTemplateNoChange: string | null;
+  resolveOnGithub: boolean | null;
+  resolveCommitStyle: ResolveCommitStyle | null;
 }>;
+
+export const REPLY_VOICES = ['terse', 'friendly', 'formal', 'mine'] as const;
+
+export type ReplyVoice = (typeof REPLY_VOICES)[number];
+
+export const RESOLVE_COMMIT_STYLES = ['new', 'fixup'] as const;
+
+export type ResolveCommitStyle = (typeof RESOLVE_COMMIT_STYLES)[number];
 
 export type ResolvedSettings = Readonly<{
   defaultProviderId: ProviderId;

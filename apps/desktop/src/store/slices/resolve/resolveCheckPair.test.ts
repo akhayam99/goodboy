@@ -196,6 +196,8 @@ const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread 
   disposition: 'fix',
   replyDraft: `Reply for ${threadId}`,
   commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

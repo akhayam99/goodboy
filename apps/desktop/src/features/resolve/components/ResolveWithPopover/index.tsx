@@ -14,6 +14,7 @@ import {
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
@@ -67,6 +68,9 @@ export const ResolveWithPopover = ({
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
+  const resolveStyle = useAppStore(
+    useShallow((state) => sessionResolveStyle({ state, sessionId })),
+  );
   const setResolveQueueView = useAppStore((state) => state.setResolveQueueView);
   const reportError = useAppStore((state) => state.reportError);
   const suggested = useSuggestedRouting({ sessionId, role: 'resolver' });
@@ -110,6 +114,7 @@ export const ResolveWithPopover = ({
         pr,
         routing,
         note: hint,
+        style: resolveStyle,
         spawnAgent,
         setAgentConfig,
       });

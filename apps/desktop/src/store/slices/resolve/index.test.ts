@@ -950,7 +950,7 @@ const githubWithThread = ({ threadId, prNumber, resolved = false }: RemoteThread
       comments: [
         {
           id: 'comment-1',
-          author: 'dhh',
+          author: 'harbor-reviewer',
           authorAvatarUrl: null,
           body: 'This retries forever on a 500.',
           createdAt: NOW,

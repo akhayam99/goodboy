@@ -10,10 +10,14 @@ const row = ({
   proposalKind = 'fix',
   failedStep = null,
   hasAttempt = true,
+  fixupOfSha = null,
+  replacesSha = null,
 }: {
   readonly status: ResolveUiState;
   readonly integratedSha?: string | null;
   readonly commitShas?: ReadonlyArray<string> | null;
+  readonly fixupOfSha?: string | null;
+  readonly replacesSha?: string | null;
   readonly proposalKind?: ResolveQueueRow['proposalKind'];
   readonly failedStep?: ResolveFailedStep | null;
   readonly hasAttempt?: boolean;
@@ -23,7 +27,7 @@ const row = ({
     proposalKind,
     rowState: { failedStep },
     item: { integratedSha },
-    thread: { commitShas, question: 'Counter or histogram?' },
+    thread: { commitShas, fixupOfSha, replacesSha, question: 'Counter or histogram?' },
     attempt: hasAttempt ? { id: 'attempt' } : null,
   }) as unknown as ResolveQueueRow;
 
@@ -37,6 +41,22 @@ describe('conversationAgentResult', () => {
     expect(
       conversationAgentResult({ row: row({ status: 'resolved', commitShas: ['4f21c8b'] }) }),
     ).toMatchObject({ sha: '4f21c8b', isPushed: true });
+  });
+
+  it('names the commit a fix is a fixup of, or the one it replaced', () => {
+    expect(
+      conversationAgentResult({
+        row: row({ status: 'ready', commitShas: ['9e8d7c6'], fixupOfSha: '3a1f9c2' }),
+      }).link,
+    ).toEqual({ label: 'fixup of', sha: '3a1f9c2' });
+    expect(
+      conversationAgentResult({
+        row: row({ status: 'ready', commitShas: ['7c1e0aa'], replacesSha: '4f21c8b' }),
+      }).link,
+    ).toEqual({ label: 'replaces', sha: '4f21c8b' });
+    expect(
+      conversationAgentResult({ row: row({ status: 'ready', commitShas: ['4f21c8b'] }) }).link,
+    ).toBeUndefined();
   });
 
   it('says reply only or no change when there is no commit', () => {

@@ -23,7 +23,7 @@ const pr: PullRequestState = {
 const threadOn = ({ id, path }: { readonly id: string; readonly path: string }): CommentThread => ({
   head: {
     id,
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body: 'rename it',
     createdAt: '2026-01-01T00:00:00Z',

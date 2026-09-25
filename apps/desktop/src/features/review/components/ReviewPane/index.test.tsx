@@ -159,7 +159,7 @@ const comment = ({
   readonly line: number;
 }): PrComment => ({
   id,
-  author: 'dhh',
+  author: 'harbor-reviewer',
   authorAvatarUrl: null,
   body: `comment on ${path}`,
   createdAt: '2026-01-01T00:00:00Z',

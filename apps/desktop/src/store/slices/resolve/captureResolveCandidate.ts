@@ -10,6 +10,7 @@ import { quarantineWorktreeCandidate } from '../../../features/worktree/worktree
 import { tauriDatabase } from '../../../shared/lib/db';
 import { withCandidateLock } from './candidateLock';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
+import { recordCommitLinks } from './recordCommitLinks';
 import type { CandidateCaptureParams, SliceParams } from './types';
 
 type Params = SliceParams & CandidateCaptureParams;
@@ -62,6 +63,13 @@ export const captureResolveCandidate = async ({
       },
     });
   }
+  await recordCommitLinks({
+    sessionId,
+    worktreePath: candidate.worktreePath,
+    baseSha: candidate.baseSha,
+    candidateSha: quarantined.sha,
+    threads: covered.map(({ thread }) => thread),
+  }).catch(() => undefined);
   await markOverlappingResolveCandidatesStale({ db, candidateId: candidate.id });
   const ready = await markResolveCandidateReady({
     db,

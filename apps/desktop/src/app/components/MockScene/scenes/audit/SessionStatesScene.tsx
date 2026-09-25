@@ -44,6 +44,12 @@ const OVERRIDES: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 const MANY_PROJECTS: ReadonlyArray<Project> = PROJECT_NAMES.map((name) => ({

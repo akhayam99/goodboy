@@ -21,6 +21,8 @@ type JoinedRow = ItemRow & {
   readonly disposition: ResolveThread['disposition'];
   readonly replyDraft: string | null;
   readonly commitShas: string | null;
+  readonly fixupOfSha: string | null;
+  readonly replacesSha: string | null;
   readonly question: string | null;
   readonly replyPostedAt: number | null;
   readonly replyId: string | null;
@@ -95,7 +97,8 @@ export const listResolveQueueItems = async ({
        r.id AS threadRowId, r.project_id AS projectId, r.pr_number AS prNumber,
        r.origin_kind AS originKind, r.state, r.stage, r.state_reason AS stateReason,
        r.revision, r.active_attempt_id AS activeAttemptId, r.disposition,
-       r.reply_draft AS replyDraft, r.commit_shas_json AS commitShas, r.question,
+       r.reply_draft AS replyDraft, r.commit_shas_json AS commitShas,
+       r.fixup_of_sha AS fixupOfSha, r.replaces_sha AS replacesSha, r.question,
        r.reply_posted_at AS replyPostedAt, r.reply_id AS replyId,
        r.github_resolved AS githubResolved, r.closed_at AS closedAt,
        r.closed_source AS closedSource, r.created_at AS threadCreatedAt,
@@ -139,6 +142,8 @@ export const listResolveQueueItems = async ({
       disposition: row.disposition,
       replyDraft: row.replyDraft,
       commitShas: row.commitShas === null ? null : resolveStringArray({ json: row.commitShas }),
+      fixupOfSha: row.fixupOfSha,
+      replacesSha: row.replacesSha,
       question: row.question,
       replyPostedAt: row.replyPostedAt,
       replyId: row.replyId,

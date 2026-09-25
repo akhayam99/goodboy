@@ -44,6 +44,8 @@ import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
 import { m183WorktreeRoots } from './m183-worktree-roots';
 import { m184TurnSpansBackfill } from './m184-turn-spans-backfill';
 import { m185AgentHandoffs } from './m185-agent-handoffs';
+import { m186ResolveCommitLinks } from './m186-resolve-commit-links';
+import { m187ResolveReplySettings } from './m187-resolve-reply-settings';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -375,4 +377,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 183, sql: m183WorktreeRoots },
   { version: 184, sql: m184TurnSpansBackfill },
   { version: 185, sql: m185AgentHandoffs },
+  { version: 186, sql: m186ResolveCommitLinks },
+  { version: 187, sql: m187ResolveReplySettings },
 ];

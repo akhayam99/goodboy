@@ -22,6 +22,12 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 export const mergeWorkspaceOverrides = ({
@@ -45,6 +51,12 @@ export const mergeWorkspaceOverrides = ({
     parallelAgents: pick('parallelAgents'),
     providerPool: pick('providerPool'),
     attributionFooter: pick('attributionFooter'),
+    replyVoice: pick('replyVoice'),
+    replyStyleNote: pick('replyStyleNote'),
+    replyTemplateFixed: pick('replyTemplateFixed'),
+    replyTemplateNoChange: pick('replyTemplateNoChange'),
+    resolveOnGithub: pick('resolveOnGithub'),
+    resolveCommitStyle: pick('resolveCommitStyle'),
   };
 };
 

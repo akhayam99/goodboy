@@ -86,7 +86,7 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
     commentThread: {
       head: {
         id: `comment-${threadId}`,
-        author: 'dhh',
+        author: 'harbor-reviewer',
         authorAvatarUrl: null,
         body,
         createdAt: '2026-01-05T09:00:00.000Z',
@@ -110,7 +110,7 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
     attempt: null,
     reviewerNote: {
       body,
-      author: 'dhh',
+      author: 'harbor-reviewer',
       createdAtMs: 1,
       location: 'src/retry.ts:84',
       path: 'src/retry.ts',
