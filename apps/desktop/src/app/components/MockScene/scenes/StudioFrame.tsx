@@ -23,7 +23,17 @@ export const StudioFrame = ({ target, main }: StudioFrameProps) => {
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: arrangement.leftSlot === 'rail',
+              onToggle: noop,
+            }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={undefined}

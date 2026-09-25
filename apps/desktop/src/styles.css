@@ -120,7 +120,7 @@
   --column-max: 960px;
   --column-frame: calc(var(--column-max) + 48px);
 
-  --container-chrome-word: 1000px;
+  --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;
 
   /* Density grade, name three opinionated triplets so siblings agree on

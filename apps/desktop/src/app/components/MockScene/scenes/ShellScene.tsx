@@ -245,13 +245,21 @@ export const ShellScene = () => {
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: arrangement.leftSlot === 'rail',
+              onToggle: noop,
+            }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar session={SESSION} onCollapse={noop} />
-          ) : undefined
+          arrangement.leftSlot === 'sessions' ? <SessionNavSidebar session={SESSION} /> : undefined
         }
         footer={
           <AppFooter

@@ -103,8 +103,9 @@ nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
-equal flexible outer columns around the brand. Page breadcrumbs stay in the
-content column of the pane that owns them and do not set the top bar's size.
+equal flexible outer columns around the command center. Page breadcrumbs stay
+in the content column of the pane that owns them and do not set the top bar's
+size.
 
 The right drawer is a grid column too: `rhandle` and `right` after `main`,
 `0px 0px` while closed, `6px` and the saved width while open. The same

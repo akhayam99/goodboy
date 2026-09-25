@@ -24,7 +24,7 @@ vi.mock('../../store/store', async () => {
 
 import { useAppStore } from '../../store/store';
 import { useProjectFilteredSessions, useTelemetryForSessions } from '../../store/selectors';
-import { useRunningScripts } from '../../features/scripts/components/RunningScriptsIndicator/useRunningScripts';
+import { useRunningScripts } from '../../features/scripts/hooks/useRunningScripts';
 
 const viewSession = { id: 'session-in-view' } as Session;
 const mount = { projectId: 'project-ledger' } as SessionProjectMount;

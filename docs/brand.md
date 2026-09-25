@@ -44,8 +44,8 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the app chrome the mark drops the tile. `BrandBadge.tsx` draws the bare
-glyph in `text-foreground`, so it is light on the dark theme and dark on the
+In the app chrome the mark drops the tile. The chrome draws the bare glyph in
+`text-foreground`, so it is light on the dark theme and dark on the
 light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.

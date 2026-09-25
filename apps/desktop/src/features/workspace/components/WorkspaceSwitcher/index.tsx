@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderGit2, Plus } from 'lucide-react';
+import { FolderGit2, Plus, SlidersHorizontal } from 'lucide-react';
 import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { useAppStore, useWorkspaces } from '../../../../store';
+import { useAppStore, useCurrentWorkspace, useWorkspaces } from '../../../../store';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -16,6 +16,7 @@ const actionClass =
 
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
+  const currentWorkspace = useCurrentWorkspace();
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +125,21 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         <FolderGit2 size={ICON_SIZE.row} aria-hidden />
         Manage projects
       </button>
+      {currentWorkspace != null ? (
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
+            );
+            onClose();
+          }}
+          className={actionClass}
+        >
+          <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
+          Workspace settings
+        </button>
+      ) : null}
     </>
   );
 };

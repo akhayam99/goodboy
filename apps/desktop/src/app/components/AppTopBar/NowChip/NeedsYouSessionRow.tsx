@@ -1,19 +1,20 @@
-import { cn, tintClasses, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { cn, tintClasses, InlineMarkdown, inlineMarkdownText, type Tone } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { useSessionStageInfo } from '../../../store';
-import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { useSessionStageInfo } from '../../../../store';
+import { ATTENTION_REASON_META } from '../../../../features/session/session-stage';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly session: Session;
   readonly onSelect: (params: SelectParams) => void;
+  readonly fallbackTone?: Tone;
 };
 
 type SelectParams = {
   readonly sessionId: SessionId;
 };
 
-export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
+export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral' }: Props) => {
   const { reason, attention } = useSessionStageInfo(session);
   const meta = attention == null ? null : ATTENTION_REASON_META[attention];
   const Icon = CONCEPT_ICONS[meta?.icon ?? 'sessions'];
@@ -29,7 +30,7 @@ export const NeedsYouSessionRow = ({ session, onSelect }: Props) => {
         <Icon
           size={ICON_SIZE.control}
           aria-hidden
-          className={cn('mt-px shrink-0', tintClasses(meta?.tone ?? 'neutral').icon)}
+          className={cn('mt-px shrink-0', tintClasses(meta?.tone ?? fallbackTone).icon)}
         />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <InlineMarkdown

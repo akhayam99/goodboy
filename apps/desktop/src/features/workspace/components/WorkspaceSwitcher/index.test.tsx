@@ -21,6 +21,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   useWorkspaces: () => state.workspaces,
+  useCurrentWorkspace: () => state.currentWorkspace,
   useWorkspaceHasUnread: () => false,
   useAppStore: (
     selector: (s: {
@@ -79,7 +80,25 @@ describe('WorkspaceSwitcher', () => {
     window.removeEventListener('goodboy:add-workspace', spy);
   });
 
-  it('does not duplicate workspace settings inside the selector', () => {
+  it('ends with workspace settings for the current workspace', () => {
+    const onClose = vi.fn();
+    const spy = vi.fn();
+    window.addEventListener('goodboy:open-settings', spy);
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    const buttons = screen.getAllByRole('button');
+    const settings = screen.getByRole('button', { name: 'Workspace settings' });
+    expect(buttons[buttons.length - 1]).toBe(settings);
+
+    fireEvent.click(settings);
+    expect(spy).toHaveBeenCalledOnce();
+    expect((spy.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ scope: 'workspace' });
+    expect(onClose).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-settings', spy);
+  });
+
+  it('offers no workspace settings row without a current workspace', () => {
+    state.currentWorkspace = null;
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
     expect(screen.queryByText('Workspace settings')).toBeNull();
   });

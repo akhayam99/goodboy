@@ -109,14 +109,24 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: arrangement.leftSlot === 'rail',
+              onToggle: noop,
+            }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar session={session} onCollapse={noop} />
+            <SessionNavSidebar session={session} />
           ) : (
-            <CollapsedRail onExpand={noop} />
+            <CollapsedRail />
           )
         }
         footer={

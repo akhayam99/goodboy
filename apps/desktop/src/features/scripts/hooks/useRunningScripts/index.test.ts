@@ -32,7 +32,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T>(selector: (state: StoreState) => T) => selector(store.state),
 }));
 
-import { useRunningScripts } from './useRunningScripts';
+import { useRunningScripts } from './index';
 
 const SESSION_A = 'session-a' as SessionId;
 const SESSION_B = 'session-b' as SessionId;

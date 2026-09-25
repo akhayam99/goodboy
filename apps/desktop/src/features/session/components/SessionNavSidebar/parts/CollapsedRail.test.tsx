@@ -26,12 +26,10 @@ afterEach(() => {
 import { CollapsedRail } from './CollapsedRail';
 
 describe('CollapsedRail', () => {
-  it('keeps expand, board and new session reachable without labels', () => {
-    const onExpand = vi.fn();
-    render(<CollapsedRail onExpand={onExpand} />);
+  it('keeps board and new session reachable without labels, leaving expand to the top bar', () => {
+    render(<CollapsedRail />);
 
-    fireEvent.click(screen.getByRole('button', { name: /show session sidebar/i }));
-    expect(onExpand).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /show session/i })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
     expect(state.setCurrentSession).toHaveBeenCalledWith(null);
@@ -44,13 +42,13 @@ describe('CollapsedRail', () => {
   });
 
   it('leaves the workspace switcher to the pinned top bar, holding no second copy', () => {
-    render(<CollapsedRail onExpand={vi.fn()} />);
+    render(<CollapsedRail />);
 
     expect(screen.queryByRole('button', { name: /switch workspace/i })).toBeNull();
   });
 
   it('answers no switcher shortcut of its own, so one popover owns the chord', () => {
-    render(<CollapsedRail onExpand={vi.fn()} />);
+    render(<CollapsedRail />);
 
     act(() => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
@@ -60,9 +58,9 @@ describe('CollapsedRail', () => {
   });
 
   it('offers no lens navigation, per the session-list-only sidebar', () => {
-    render(<CollapsedRail onExpand={vi.fn()} />);
+    render(<CollapsedRail />);
 
     expect(screen.queryByRole('navigation')).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(3);
+    expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 });

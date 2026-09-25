@@ -202,8 +202,8 @@ about its effect is a worse defect than one that reads badly.
 ## Color & theme
 
 - **Dark by default**, light fully supported, and Match system as a third
-  choice that follows the OS. The choice is saved. The top bar and palette
-  toggles set the opposite of what is showing.
+  choice that follows the OS. The choice is saved. Settings > App > General
+  holds the choice; the palette toggle sets the opposite of what is showing.
 - **The brand mark in the chrome is a bare glyph in `foreground`**: light on
   dark, dark on light, no tile. The black tile belongs to the dock icon, the
   favicon and the site ([docs/brand.md](docs/brand.md)).

@@ -56,34 +56,13 @@ describe('SessionNavSidebar', () => {
     expect(state.setCurrentSession).toHaveBeenCalledWith(null);
   });
 
-  it('labels the pinned header Sessions and leaves workspace identity to the top bar', () => {
-    const onCollapse = vi.fn();
-    render(<SessionNavSidebar session={session} onCollapse={onCollapse} />);
-
-    expect(screen.getByText('Sessions')).toBeTruthy();
-    expect(screen.queryByLabelText(/switch workspace/i)).toBeNull();
-    expect(screen.queryByLabelText('Preferences')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: /hide session sidebar/i }));
-    expect(onCollapse).toHaveBeenCalledOnce();
-  });
-
-  it('carries the same label and only the pin control in the peek header', () => {
-    const onPin = vi.fn();
-    render(<SessionNavSidebar session={session} onCollapse={onPin} collapseAction="pin" />);
-
-    expect(screen.getByText('Sessions')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /hide session sidebar/i })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: /pin session sidebar/i }));
-    expect(onPin).toHaveBeenCalledOnce();
-  });
-
-  it('drops the header entirely when nothing can collapse the column', () => {
+  it('opens on the board row, leaving the collapse control and identity to the top bar', () => {
     render(<SessionNavSidebar session={session} />);
 
     expect(screen.queryByText('Sessions')).toBeNull();
-    expect(screen.queryByRole('button', { name: /session sidebar/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /hide sessions|session sidebar/i })).toBeNull();
+    expect(screen.queryByLabelText(/switch workspace/i)).toBeNull();
+    expect(screen.queryByLabelText('Preferences')).toBeNull();
   });
 
   it('closes the peek once a session is picked', () => {

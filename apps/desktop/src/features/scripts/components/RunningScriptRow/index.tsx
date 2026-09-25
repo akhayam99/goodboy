@@ -1,6 +1,6 @@
 import { Square } from 'lucide-react';
 import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import type { RunningScript } from './useRunningScripts';
+import type { RunningScript } from '../../hooks/useRunningScripts';
 
 type Props = {
   readonly run: RunningScript;

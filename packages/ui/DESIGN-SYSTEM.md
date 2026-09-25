@@ -790,12 +790,12 @@ column has the only width cap and truncates first. Everything to its right is
 way. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
-**The chrome shares one left axis.** The collapsed rail is
+**The top bar's left edge belongs to the window.** The collapsed rail is
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar starts at `pl-1.5`, so the workspace avatar centers on the
-same 22px. Change one side and the other moves with it:
-`workspace-avatar-centers-on-collapsed-rail.test.ts` compares the two centers.
-Widening the rail to fix a padding is the wrong trade, because chrome pays rent.
+22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
+lights, so it no longer shares an axis with the rail:
+`collapsed-rail-width.test.ts` pins both. Widening the rail to fix a padding is
+the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
 The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)

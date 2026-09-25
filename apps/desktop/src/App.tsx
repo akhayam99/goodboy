@@ -22,6 +22,8 @@ import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { OnboardingCard } from './features/onboarding/OnboardingCard';
+import { openRunningScript } from './features/scripts/openRunningScript';
+import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
@@ -49,6 +51,10 @@ import { useCloseStaleDrawer } from './app/hooks/useCloseStaleDrawer';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 
 const KEEP_ALIVE_CAP = 5;
+
+const openScript = (run: RunningScript) => {
+  void openRunningScript({ run });
+};
 
 export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
@@ -206,7 +212,17 @@ export const App = () => {
       <SessionArchiveBridge />
       <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
-        topBar={<AppTopBar onOpenSpend={openSpend} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: sessionSidebar.isCollapsed,
+              onToggle: sessionSidebar.toggle,
+            }}
+            onOpenSpend={openSpend}
+            onOpenScript={openScript}
+          />
+        }
         footer={
           <AppFooter
             scope={arrangement.footer}
@@ -226,9 +242,9 @@ export const App = () => {
         leftSidebar={
           currentSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail onExpand={sessionSidebar.pin} />
+              <CollapsedRail />
             ) : (
-              <SessionNavSidebar session={currentSession} onCollapse={sessionSidebar.toggle} />
+              <SessionNavSidebar session={currentSession} />
             )
           ) : undefined
         }
@@ -246,12 +262,7 @@ export const App = () => {
               onHold={sessionSidebar.holdPeek}
               onRelease={sessionSidebar.releasePeek}
             >
-              <SessionNavSidebar
-                session={currentSession}
-                onCollapse={sessionSidebar.pin}
-                collapseAction="pin"
-                onNavigate={sessionSidebar.closePeek}
-              />
+              <SessionNavSidebar session={currentSession} onNavigate={sessionSidebar.closePeek} />
             </SidebarPeekOverlay>
           ) : undefined
         }

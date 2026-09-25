@@ -97,7 +97,8 @@ context, never navigation.** A session draws one full-width pane, and its
 navigation lives in that single left sidebar. The right drawer holds reference
 material beside the page and closes with the pane that opened it. The
 sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from one control or ⌘B. Peek
+session it follows a saved preference, toggled from one control in the top bar
+or ⌘B. Peek
 never touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
@@ -211,44 +212,56 @@ surface itself shows urgency, never a badge parked beside it.
 
 ## Top bar
 
-Workspace identity stays on the left. The Goodboy brand is centred on the
-window. Workspace-wide signals and set-once preferences stay on the right.
-The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
-and each zone is pinned to its own track (`col-start-1/2/3`), so an item that
-drops never lets another zone slide into its column. When the signals fit their
-share, the brand sits at the window midpoint. When they do not, the brand
-slides off the midpoint instead of being covered. The identity has a size limit
-and truncates, with the full name in its tooltip. No control ever moves into an
-overflow menu.
+The top bar says what is happening now. The footer takes you to places.
+Preferences live in Settings. Each item has one home; anything else that shows
+it is a signal that links there.
 
 On macOS the window has no native title bar: the traffic lights sit inside the
 top bar, which carries a 78px inset (12px in full screen and on other systems).
 The bar is a deep drag region: any spot that is not a control moves the window,
 and a double click zooms it. Controls never drag.
 
+The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
+with each zone pinned to its own track (`col-start-1/2/3`), so an item that
+drops never lets another zone slide into its column. When the right zone
+outgrows its half, the command center slides off the midpoint instead of being
+covered.
+
+- Left: the sidebar toggle, then workspace identity. On views without a
+  sidebar the toggle's slot stays reserved, so identity never moves. The
+  sidebar keeps no header and the collapsed rail no toggle of their own.
+  Identity has a 200px limit and truncates, with the full name in its tooltip.
+- Centre: the command center. It opens the palette and shows ⌘K. It never
+  takes typing itself.
+- Right: the Now chip (needs you, running, scripts, each only when above
+  zero), today's spend and the bell. Now opens one popover grouped by those
+  three, and a group with no rows is not drawn. A script row hands its run to
+  the shell's script opener. Spend opens Impact; it is never merged with a
+  count. The bell opens the notification popover.
+
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-word` the wordmark drops. The mascot glyph never drops.
-2. Below `chrome-labels` the signal words (`need you`, `running`, `today`)
-   drop. Counts, dots and the spend figure stay, and their tooltips carry the
-   words.
+1. Below `chrome-wide` the command center narrows and says only `Search`.
+2. Below `chrome-labels` it becomes an icon with ⌘K, and the signal words
+   (`need you`, `running`, `scripts`, `today`) drop. Counts, dots, glyphs and
+   the spend figure stay, and their tooltips carry the words.
 
-Identity, mascot, spend, report, notifications, theme and the setup chip never
-hide. `chrome-labels` sits below the 1024px minimum window, so words only drop
+The traffic lights, identity, the command center, the needs-you count, the
+spend figure and the bell never hide. No control ever moves into an overflow
+menu. `chrome-labels` sits below the 1024px minimum window, so words only drop
 under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. Workspace settings has its own control
-  next to identity. Buried inside the switcher, a common per-workspace
-  preference was easy to never find.
+  lists workspaces as rows of its own. Workspace settings is the popover's
+  last row for the current workspace, so the bar holds no second settings
+  control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- Theme is the one set-once preference kept here. People flip it often enough
-  to earn the slot. The guide and pair-device live in the settings studio and
-  the palette.
+- Theme is not in the bar. It lives in Settings > App > General and in the
+  palette, like the guide and pair-device.
 - **The report control is the one exception to "the top bar never edits".**
   Its popover drafts a bug report, which is not a record until it is filed. The
   draft survives closing the popover. The primary action opens the full form
