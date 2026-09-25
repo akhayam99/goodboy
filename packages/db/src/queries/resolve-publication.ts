@@ -115,17 +115,24 @@ type HolderParams = {
   readonly now: number;
 };
 
+type ClaimParams = HolderParams & {
+  readonly staleBefore: number;
+};
+
 export const claimResolvePublication = async ({
   db,
   id,
   holder,
   now,
-}: HolderParams): Promise<void> => {
-  await db.execute('UPDATE resolve_publications SET holder = ?, heartbeat_at = ? WHERE id = ?', [
-    holder,
-    now,
-    id,
-  ]);
+  staleBefore,
+}: ClaimParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE resolve_publications SET holder = ?, heartbeat_at = ?
+     WHERE id = ?
+       AND (holder IS NULL OR holder = ? OR COALESCE(heartbeat_at, confirmed_at, created_at) < ?)`,
+    [holder, now, id, holder, staleBefore],
+  );
+  return result.rowsAffected > 0;
 };
 
 export const beatResolvePublication = async ({

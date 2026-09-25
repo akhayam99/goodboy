@@ -41,7 +41,9 @@ file holds those explanations. Everything below has been "fixed" at least once a
   does not own them. `resolve_publications` and `resolve_publication_threads`
   track delivery, and that is what lets an interrupted publish resume.
   An active `resolve_publications` row is the publish lock. It carries a
-  `holder` (window and launch) and a `heartbeat_at` refreshed every 10s. On
+  `holder` (window and launch) and a `heartbeat_at` refreshed every 10s. A
+  window claims the row only when it has no holder, is its own, or went
+  silent for more than 60s; otherwise the publish returns `busy`. On
   session load and before every publish, an active row silent for more than
   60s is closed as failed with the error `The app stopped while publishing`:
   a reply caught in `sending` turns `uncertain`, and retry checks GitHub before

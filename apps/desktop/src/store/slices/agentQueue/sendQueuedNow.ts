@@ -39,6 +39,16 @@ export const sendQueuedNow = (set: SetFn, get: GetFn) => {
       void persistAgentQueue({ get, agentId });
       endHandoff({ agentId });
     }
-    await deliverQueuedTurn({ get, sessionId, turn: target, sentVia: 'interrupt' });
+    const delivery = await deliverQueuedTurn({
+      get,
+      sessionId,
+      turn: target,
+      sentVia: 'interrupt',
+    });
+    if (delivery === 'delivered') {
+      return;
+    }
+    writeAgentQueue({ set, agentId, queue: [target, ...readAgentQueue({ get, agentId })] });
+    await persistAgentQueue({ get, agentId });
   };
 };

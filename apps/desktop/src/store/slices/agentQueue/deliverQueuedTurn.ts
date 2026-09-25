@@ -1,7 +1,6 @@
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
 import { toAttachmentInput } from '../../../features/chat/components/ChatInput/lib';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
-import type { SendTurnResult } from '../turn/types';
 import type { AgentQueuedTurn, GetFn } from './types';
 
 type Params = Readonly<{
@@ -11,14 +10,16 @@ type Params = Readonly<{
   sentVia: UserTurnSentVia;
 }>;
 
+type QueuedTurnDelivery = 'delivered' | 'held';
+
 export const deliverQueuedTurn = async ({
   get,
   sessionId,
   turn,
   sentVia,
-}: Params): Promise<SendTurnResult | null> => {
+}: Params): Promise<QueuedTurnDelivery> => {
   try {
-    return await get().sendTurn({
+    const result = await get().sendTurn({
       sessionId,
       agentId: turn.agentId,
       content: turn.content,
@@ -29,14 +30,16 @@ export const deliverQueuedTurn = async ({
       ...(turn.override !== undefined && { override: turn.override }),
       sentVia,
     });
+    return result.blockedOverBudget || result.isWriterLeaseDenied === true ? 'held' : 'delivered';
   } catch (error) {
-    if (!isTranscriptOwnedTurnError({ error })) {
-      void get().reportError({
-        title: "Couldn't send the queued message",
-        error,
-        sessionId,
-      });
+    if (isTranscriptOwnedTurnError({ error })) {
+      return 'delivered';
     }
-    return null;
+    void get().reportError({
+      title: "Couldn't send the queued message",
+      error,
+      sessionId,
+    });
+    return 'held';
   }
 };

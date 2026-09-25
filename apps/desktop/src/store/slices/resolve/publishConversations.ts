@@ -163,7 +163,11 @@ const publishOnce = async ({
             return { kind: 'drifted', drift };
           }
         }
-        stopHeartbeat = await startPublicationHeartbeat({ publicationId });
+        const heartbeat = await startPublicationHeartbeat({ publicationId });
+        if (heartbeat === null) {
+          return { kind: 'busy' };
+        }
+        stopHeartbeat = heartbeat;
         await setResolvePublicationPhase({
           db: tauriDatabase,
           id: publicationId,

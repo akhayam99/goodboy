@@ -122,6 +122,52 @@ describe('agent queue', () => {
     expect(queue().map((item) => item.id)).toEqual(['b']);
   });
 
+  it.each([
+    [
+      'the writer lease is denied',
+      async () => ({ blockedOverBudget: false, isWriterLeaseDenied: true }),
+    ],
+    [
+      'the send fails',
+      async () => {
+        throw new Error('spawn failed');
+      },
+    ],
+  ])('keeps a queued message at the head when %s', async (_, sendTurn) => {
+    const { state, slice, queue } = harness();
+    await slice.enqueueAgentMessage({ turn: input('a') });
+    await slice.enqueueAgentMessage({ turn: input('b') });
+    state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
+    state.sendTurn = vi.fn(sendTurn);
+
+    await slice.drainAgentQueue({ sessionId: SESSION_ID, agentId: AGENT_ID });
+
+    expect(queue().map((item) => [item.id, item.status])).toEqual([
+      ['a', 'queued'],
+      ['b', 'queued'],
+    ]);
+  });
+
+  it('puts a Send now message back when it could not be sent', async () => {
+    const { state, slice, queue } = harness();
+    await slice.enqueueAgentMessage({ turn: input('a') });
+    await slice.enqueueAgentMessage({ turn: input('b') });
+    state.sendTurn = vi.fn(async () => ({ blockedOverBudget: true }));
+
+    await slice.sendQueuedNow({ sessionId: SESSION_ID, agentId: AGENT_ID, itemId: 'b' });
+
+    expect(queue().map((item) => [item.id, item.status])).toEqual([
+      ['b', 'queued'],
+      ['a', 'queued'],
+    ]);
+    expect(replaceAgentQueuedMessages).toHaveBeenLastCalledWith(
+      {},
+      expect.objectContaining({
+        messages: [expect.objectContaining({ id: 'b' }), expect.objectContaining({ id: 'a' })],
+      }),
+    );
+  });
+
   it('keeps the queue for an agent you stopped', async () => {
     const { state, slice, sent } = harness();
     await slice.enqueueAgentMessage({ turn: input('a') });

@@ -26,9 +26,19 @@ type StartParams = {
 
 export const startPublicationHeartbeat = async ({
   publicationId,
-}: StartParams): Promise<() => void> => {
+}: StartParams): Promise<(() => void) | null> => {
   const holder = publicationHolder();
-  await claimResolvePublication({ db: tauriDatabase, id: publicationId, holder, now: Date.now() });
+  const now = Date.now();
+  const isClaimed = await claimResolvePublication({
+    db: tauriDatabase,
+    id: publicationId,
+    holder,
+    now,
+    staleBefore: now - PUBLICATION_STALE_MS,
+  });
+  if (!isClaimed) {
+    return null;
+  }
   const timer = setInterval(() => {
     void beatResolvePublication({
       db: tauriDatabase,

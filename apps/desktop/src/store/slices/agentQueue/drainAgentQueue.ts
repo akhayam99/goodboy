@@ -30,8 +30,8 @@ export const drainAgentQueue = (set: SetFn, get: GetFn) => {
     }
     writeAgentQueue({ set, agentId, queue: rest });
     void persistAgentQueue({ get, agentId });
-    const result = await deliverQueuedTurn({ get, sessionId, turn: head, sentVia: 'queued' });
-    if (result?.blockedOverBudget !== true) {
+    const delivery = await deliverQueuedTurn({ get, sessionId, turn: head, sentVia: 'queued' });
+    if (delivery === 'delivered') {
       return;
     }
     writeAgentQueue({ set, agentId, queue: [head, ...readAgentQueue({ get, agentId })] });

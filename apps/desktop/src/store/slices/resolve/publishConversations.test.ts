@@ -650,6 +650,25 @@ describe('publishConversations over a real git repository', () => {
     expect(pushSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves a publication another window still holds and pushes nothing', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+    const github = await import('../../../features/github/github');
+    const pushSpy = vi.mocked(github.gitPush);
+    const db = await import('@goodboy/db');
+    vi.mocked(db.claimResolvePublication).mockResolvedValueOnce(false);
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toEqual({ kind: 'busy' });
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
   it('reports success when only the bookkeeping after the push fails', async () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions, get } = makeStore();

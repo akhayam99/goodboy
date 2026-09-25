@@ -125,12 +125,23 @@ export const createResolveQueryMocks = () => {
           publication.sessionId === sessionId && ACTIVE_PHASES.includes(publication.phase),
       ),
     ),
-    claimResolvePublication: vi.fn(async ({ id, holder, now }: HolderParams) => {
-      const publication = publications.get(id);
-      if (publication !== undefined) {
+    claimResolvePublication: vi.fn(
+      async ({ id, holder, now, staleBefore }: HolderParams & { readonly staleBefore: number }) => {
+        const publication = publications.get(id);
+        if (publication === undefined) {
+          return false;
+        }
+        const lastSign =
+          publication.heartbeatAt ?? publication.confirmedAt ?? publication.createdAt;
+        const isFree =
+          publication.holder === null || publication.holder === holder || lastSign < staleBefore;
+        if (!isFree) {
+          return false;
+        }
         publications.set(id, { ...publication, holder, heartbeatAt: now });
-      }
-    }),
+        return true;
+      },
+    ),
     beatResolvePublication: vi.fn(async ({ id, holder, now }: HolderParams) => {
       const publication = publications.get(id);
       if (publication !== undefined && publication.holder === holder) {
