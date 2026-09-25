@@ -14,6 +14,7 @@ import { migrate } from '../../migrations/runner';
 import {
   listResolveThreads,
   setResolveThreadCommitLinks,
+  setResolveThreadCommitShas,
   setResolveThreadState,
   upsertResolveThread,
 } from '../resolve-thread';
@@ -122,6 +123,18 @@ describe('durable resolve rows', () => {
       revision: 0,
       fixupOfSha: null,
       replacesSha: '4f21c8b',
+    });
+
+    await setResolveThreadCommitShas({
+      db,
+      sessionId: SESSION,
+      threadId: 'PRRT_1',
+      commitShas: ['9e8d7c6'],
+    });
+
+    expect((await listResolveThreads({ db, sessionId: SESSION }))[0]).toMatchObject({
+      revision: 0,
+      commitShas: ['9e8d7c6'],
     });
   });
 

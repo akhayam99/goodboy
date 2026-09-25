@@ -1,3 +1,5 @@
+import { isSameCommit } from './commitMapping';
+
 const FIXUP_PREFIX = 'fixup! ';
 
 type Commit = { readonly sha: string; readonly subject: string };
@@ -8,11 +10,8 @@ type Params = {
   readonly branch: ReadonlyArray<Commit>;
 };
 
-const sameCommit = ({ left, right }: { readonly left: string; readonly right: string }) =>
-  left !== '' && right !== '' && (left.startsWith(right) || right.startsWith(left));
-
 export const fixupTargetOf = ({ sha, range, branch }: Params): string | null => {
-  const index = range.findIndex((commit) => sameCommit({ left: commit.sha, right: sha }));
+  const index = range.findIndex((commit) => isSameCommit({ left: commit.sha, right: sha }));
   const commit = range[index];
   if (commit === undefined || !commit.subject.startsWith(FIXUP_PREFIX)) {
     return null;

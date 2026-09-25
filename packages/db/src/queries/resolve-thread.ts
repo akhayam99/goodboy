@@ -156,6 +156,23 @@ export const setResolveThreadCommitLinks = async ({
   );
 };
 
+type CommitShasParams = ListParams & {
+  readonly threadId: string;
+  readonly commitShas: ReadonlyArray<string>;
+};
+
+export const setResolveThreadCommitShas = async ({
+  db,
+  sessionId,
+  threadId,
+  commitShas,
+}: CommitShasParams): Promise<void> => {
+  await db.execute(
+    'UPDATE resolve_threads SET commit_shas_json = ? WHERE session_id = ? AND thread_id = ?',
+    [JSON.stringify(commitShas), sessionId, threadId],
+  );
+};
+
 export const setResolveThreadReplyDraft = async ({
   db,
   sessionId,
