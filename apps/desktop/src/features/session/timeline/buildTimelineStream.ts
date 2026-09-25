@@ -1,5 +1,5 @@
 import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
-import { isAgentSettled } from '@goodboy/core';
+import { isAgentSettled, isAgentStatusHalted } from '@goodboy/core';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isQuestionDelegate } from '../../context/questionDelegate';
@@ -647,8 +647,12 @@ const readyStepOf = ({
 
 const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
   for (const child of entry.children) {
-    if (child.kind === 'agent' && child.agent.status === 'failed' && child.agent.doneAt == null) {
-      return { stepLabel: child.stepLabel };
+    if (
+      child.kind === 'agent' &&
+      isAgentStatusHalted({ status: child.agent.status }) &&
+      child.agent.doneAt == null
+    ) {
+      return { stepLabel: child.stepLabel, isBlocked: child.agent.status === 'blocked' };
     }
   }
   return null;

@@ -980,6 +980,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       },
     });
     let receivedProviderError = false;
+    let receivedStreamError = false;
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
@@ -1229,6 +1230,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
         if (event.kind === 'error') {
           receivedProviderError = true;
+          receivedStreamError = true;
         }
         if (event.kind === 'tool_call_end' && event.isError === true) {
           const toolCallFailure = classifyToolCallFailure({ output: event.output });
@@ -1350,6 +1352,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionId,
           resolvedAgentId,
           assistantText,
+          didAgentDie: receivedStreamError || assistantText.trim().length === 0,
           resolveAttemptId,
           now,
         });
@@ -1841,7 +1844,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const name =
       (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId)?.name ?? 'agent';
     await invokeAgentUpdateStatus(agentId, {
-      status: 'failed',
+      status: 'blocked',
       completedAt: new Date().toISOString() as IsoDateTime,
     }).catch(() => undefined);
     const refreshed = await invokeAgentList(sessionId).catch(() => null);

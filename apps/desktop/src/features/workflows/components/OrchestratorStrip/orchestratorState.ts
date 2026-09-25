@@ -1,4 +1,4 @@
-import { isAgentStatusSettled } from '@goodboy/core';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { Agent, AgentId, WorkflowOrchestrationStopKind, WorkflowRun } from '@goodboy/types';
@@ -186,13 +186,14 @@ export const resolveOrchestratorState = ({
       sentence: 'Paused for your answer',
     };
   }
-  const failedIndex = ordered.findIndex((agent) => agent.status === 'failed');
-  if (failedIndex >= 0) {
+  const haltedIndex = ordered.findIndex((agent) => isAgentStatusHalted({ status: agent.status }));
+  if (haltedIndex >= 0) {
+    const isBlocked = ordered[haltedIndex]?.status === 'blocked';
     return {
       ...base,
       phase: 'step-failed',
       tone: 'neutral',
-      sentence: `Paused on failed step ${failedIndex + 1}`,
+      sentence: `Paused on ${isBlocked ? 'blocked' : 'failed'} step ${haltedIndex + 1}`,
     };
   }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');

@@ -47,6 +47,8 @@ export const ClusterChildRow = ({
       </span>
     ) : child.status === 'failed' ? (
       <StatusDot tone="danger" size="sm" />
+    ) : child.status === 'blocked' ? (
+      <StatusDot tone="warning" size="sm" />
     ) : (
       <Clock size={10} className="text-faint-foreground" aria-hidden />
     );

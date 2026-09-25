@@ -575,14 +575,14 @@ type AppActions = {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ): Promise<void>;
   finalizeWorkflowStep(
     sessionId: SessionId,
     agentId: AgentId,
     assistantText: string,
     planCapturedThisTurn: boolean,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ): Promise<{ readonly shouldAutoAdvance: boolean }>;
   advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
   skipStuckStepAndAdvance(

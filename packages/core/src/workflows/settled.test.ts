@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, IsoDateTime } from '@goodboy/types';
-import { isAgentSettled, isAgentStatusSettled } from './settled';
+import { isAgentSettled, isAgentStatusHalted, isAgentStatusSettled } from './settled';
 
 type MakeAgentParams = {
   readonly status: Agent['status'];
@@ -23,10 +23,24 @@ describe('isAgentStatusSettled', () => {
     ['completed', true],
     ['skipped', true],
     ['failed', false],
+    ['blocked', false],
     ['pending', false],
     ['running', false],
   ] as const)('treats %s as settled: %s', (status, expected) => {
     expect(isAgentStatusSettled({ status })).toBe(expected);
+  });
+});
+
+describe('isAgentStatusHalted', () => {
+  it.each([
+    ['failed', true],
+    ['blocked', true],
+    ['completed', false],
+    ['skipped', false],
+    ['pending', false],
+    ['running', false],
+  ] as const)('treats %s as halted: %s', (status, expected) => {
+    expect(isAgentStatusHalted({ status })).toBe(expected);
   });
 });
 

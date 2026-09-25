@@ -15,6 +15,7 @@ import {
   PROVIDER_CAPABILITIES,
   type PlannerOutput,
   clampEffortForModel,
+  isAgentStatusHalted,
   recommendedModelForRole,
   resolveRoleRouting,
   runsForWorkflowRun,
@@ -400,7 +401,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         }
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
         const complete = isWorkflowRunComplete({ run: r, workflow: template, agents });
-        const failed = agents.some((a) => a.status === 'failed');
+        const failed = agents.some((a) => isAgentStatusHalted({ status: a.status }));
         return complete || failed ? [] : [{ run: r, template, ordinal: r.ordinal }];
       })
       .sort((a, b) => a.ordinal - b.ordinal);

@@ -53,6 +53,7 @@ export {
   type PlanReadinessInput,
   type PlanReadinessResult,
 } from './extractors';
+export { extractProseQuestion } from './prose-question';
 export {
   autoPopulateContext,
   type AutoPopulateInput,

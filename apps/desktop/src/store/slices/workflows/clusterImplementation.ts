@@ -20,6 +20,7 @@ import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
+import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 
@@ -559,7 +560,7 @@ export const resumeClusterChildren = async ({
   });
   const clusters = plan?.clusters ?? [];
   if (!hasInstructions(clusters[index])) {
-    await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+    await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
     void get().refreshUnreadWorkspaces();
@@ -629,7 +630,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
@@ -652,6 +653,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     );
 
     if (!opts?.force && !extractClusterDone(assistantText)) {
+      if (await holdForUserQuestion({ set, get, sessionId, agent: child, assistantText })) {
+        return;
+      }
       await continueOrPause({
         set,
         get,
@@ -659,6 +663,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         agent: child,
         workflowRunId: child.workflowRunId,
         unit: 'cluster',
+        didAgentDie: opts?.didAgentDie === true,
         restart: () =>
           startChild({
             set,
@@ -716,7 +721,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const nextIndex = children.findIndex((c) => !isDone(c));
     const next = nextIndex >= 0 ? children[nextIndex] : undefined;
     if (!next) {
-      await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(containerId, { status: 'blocked', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
@@ -730,7 +735,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     if (!hasInstructions(clusters[nextIndex])) {
-      await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();

@@ -1522,7 +1522,10 @@ pub async fn agent_update_status(
     // When status transitions to a terminal state, also stamp `last_finished_at`
     // so the sidebar can show an unread indicator until the user views the
     // agent (which stamps `last_viewed_at` via `agent_mark_viewed`).
-    let is_terminal = matches!(input.status.as_str(), "completed" | "failed" | "skipped");
+    let is_terminal = matches!(
+        input.status.as_str(),
+        "completed" | "failed" | "blocked" | "skipped"
+    );
     conn.execute(
         "UPDATE agents SET
            status         = ?2,

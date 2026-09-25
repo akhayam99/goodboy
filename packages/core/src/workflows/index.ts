@@ -6,7 +6,7 @@ export {
   runsForWorkflowRun,
   type WorkflowChainState,
 } from './sequencer';
-export { isAgentSettled, isAgentStatusSettled } from './settled';
+export { isAgentSettled, isAgentStatusHalted, isAgentStatusSettled } from './settled';
 export {
   buildChainCarryForward,
   buildParallelCarryForward,

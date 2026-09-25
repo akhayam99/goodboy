@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
+import {
+  fallbackStepOutputSummary,
+  isAgentStatusHalted,
+  isAgentStatusSettled,
+  stripControlMarkers,
+} from '@goodboy/core';
 import { Markdown, SectionSurface, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
@@ -117,7 +122,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       ? ''
       : fallbackStepOutputSummary({ output: lastAssistantText });
   const isTerminal =
-    agent.status === 'completed' || agent.status === 'failed' || agent.status === 'skipped';
+    isAgentStatusSettled({ status: agent.status }) || isAgentStatusHalted({ status: agent.status });
   const now = agentNowState({ agent, turnState, transcript });
   const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 

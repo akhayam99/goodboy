@@ -126,6 +126,18 @@ describe('resolveNextAction', () => {
     });
   });
 
+  it('offers the same recovery for a blocked step and says it never asked anything', () => {
+    const action = resolve({ agents: stepAgents('completed', 'blocked', 'pending', 'pending') });
+
+    expect(action).toMatchObject({
+      kind: 'recover',
+      subjectAgentId: 'a-1',
+      step: { id: 's1' },
+      sentence:
+        'Implement stopped without finishing and without asking you anything. Tell it what to do next.',
+    });
+  });
+
   it('counts the waiting steps past the first two', () => {
     const wide = workflowWith({ count: 5 });
     const action = resolve({

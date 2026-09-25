@@ -38,6 +38,7 @@ describe('CONCEPT_ICONS', () => {
       CONCEPT_ICONS.runPending,
       CONCEPT_ICONS.runDone,
       CONCEPT_ICONS.runFailed,
+      CONCEPT_ICONS.runBlocked,
       CONCEPT_ICONS.runCancelled,
     ];
     expect(new Set(outcomes).size).toBe(outcomes.length);

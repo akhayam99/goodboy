@@ -7,30 +7,55 @@ const MAX_CONTINUE = 1;
 
 export type ContinueUnit = 'step' | 'cluster';
 
-export type ContinueOutcome = 'continued' | 'paused';
+export type ContinueOutcome = 'continued' | 'blocked' | 'failed';
 
-type PauseCopy = {
+type HaltCopy = {
   readonly title: string;
   readonly handsFree: string;
   readonly manual: string;
 };
 
-const PAUSE_COPY = {
+const BLOCKED_COPY = {
   step: {
-    title: 'Step paused',
+    title: 'Step blocked',
     handsFree:
-      'The agent stopped before emitting a step-done marker. Open the agent and continue manually.',
+      'The agent stopped twice without finishing this step and without asking you anything. Tell it what to do next in the agent chat, or skip the step.',
     manual:
-      'Autorun is off, so this step will not continue on its own. Open the agent and continue manually, or turn on autorun.',
+      'Autorun is off, so this step waits for you. Tell the agent what to do next in the agent chat, or turn on autorun.',
   },
   cluster: {
-    title: 'Subagent paused',
+    title: 'Subagent blocked',
     handsFree:
-      "The implementer stopped before completing this subagent's part. Open the agent and continue manually.",
+      "The implementer stopped twice without finishing this subagent's part and without asking you anything. Tell it what to do next in the agent chat.",
     manual:
-      'Autorun is off, so this subagent will not continue on its own. Open the agent and continue manually, or turn on autorun.',
+      'Autorun is off, so this subagent waits for you. Tell it what to do next in the agent chat, or turn on autorun.',
   },
-} as const satisfies Record<ContinueUnit, PauseCopy>;
+} as const satisfies Record<ContinueUnit, HaltCopy>;
+
+const FAILED_COPY = {
+  step: {
+    title: 'Step failed',
+    body: 'The agent stopped responding before it finished this step. Open the agent and run it again.',
+  },
+  cluster: {
+    title: 'Subagent failed',
+    body: "The implementer stopped responding before it finished this subagent's part. Open the agent and run it again.",
+  },
+} as const satisfies Record<ContinueUnit, Pick<HaltCopy, 'title'> & { readonly body: string }>;
+
+type HaltNoticeParams = {
+  readonly unit: ContinueUnit;
+  readonly didAgentDie: boolean;
+  readonly handsFree: boolean;
+};
+
+const haltNotice = ({ unit, didAgentDie, handsFree }: HaltNoticeParams) => {
+  if (didAgentDie) {
+    return FAILED_COPY[unit];
+  }
+  const copy = BLOCKED_COPY[unit];
+  return { title: copy.title, body: handsFree ? copy.handsFree : copy.manual };
+};
 
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
@@ -57,6 +82,7 @@ type Params = {
   readonly agent: Agent;
   readonly workflowRunId: WorkflowRunId | null | undefined;
   readonly unit: ContinueUnit;
+  readonly didAgentDie: boolean;
   readonly restart: () => void;
 };
 
@@ -67,6 +93,7 @@ export const continueOrPause = async ({
   agent,
   workflowRunId,
   unit,
+  didAgentDie,
   restart,
 }: Params): Promise<ContinueOutcome> => {
   const handsFree = isHandsFree(get, sessionId, workflowRunId);
@@ -79,17 +106,18 @@ export const continueOrPause = async ({
     return 'continued';
   }
   resetContinueAttempts({ set, get, agentId: agent.id });
-  await invokeAgentUpdateStatus(agent.id, { status: 'failed', completedAt: nowIso() });
+  const status = didAgentDie ? 'failed' : 'blocked';
+  await invokeAgentUpdateStatus(agent.id, { status, completedAt: nowIso() });
   const stalled = await invokeAgentList(sessionId);
   set((state) => ({ sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: stalled } }));
   void get().refreshUnreadWorkspaces();
-  const copy = PAUSE_COPY[unit];
+  const notice = haltNotice({ unit, didAgentDie, handsFree });
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: `${copy.title} on ${agent.name}`,
-    body: handsFree ? copy.handsFree : copy.manual,
+    title: `${notice.title} on ${agent.name}`,
+    body: notice.body,
     sessionId,
   });
-  return 'paused';
+  return status;
 };

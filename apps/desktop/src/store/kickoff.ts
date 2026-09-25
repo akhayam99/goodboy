@@ -37,8 +37,11 @@ type BoundaryParams = {
   readonly marker: string;
 };
 
+const QUESTION_PROTOCOL =
+  '**Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop.';
+
 export const composeUnitBoundary = ({ unit, marker }: BoundaryParams): string =>
-  `**Scope** this ${unit} only, never a later one. Emit \`${marker}\` on its own line once it is truly done.`;
+  `**Scope** this ${unit} only, never a later one. Emit \`${marker}\` on its own line once it is truly done.\n\n${QUESTION_PROTOCOL}`;
 
 const stepBoundaryMarker = (agentId: AgentId): string => `<<step-done id="${agentId}">>`;
 
