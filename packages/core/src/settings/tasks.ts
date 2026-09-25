@@ -13,7 +13,7 @@ export const TASKS: ReadonlyArray<{
   {
     id: 'plan_generation',
     label: 'Plan drafting',
-    description: 'Writes step plans in the workflow builder and Plan Studio',
+    description: 'Writes step plans in the workflow builder and the Workflow Studio',
   },
   {
     id: 'prose_polish',
