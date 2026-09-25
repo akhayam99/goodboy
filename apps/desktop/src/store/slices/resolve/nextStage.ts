@@ -20,8 +20,6 @@ export type ResolveStageEvent =
   | { readonly kind: 'github_resolved' }
   | { readonly kind: 'github_reopened'; readonly hasProposal: boolean };
 
-export type ResolveStageEventKind = ResolveStageEvent['kind'];
-
 type Params = {
   readonly stage: ResolveStage;
   readonly event: ResolveStageEvent;
