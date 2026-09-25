@@ -7,6 +7,54 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.6.0
+
+Resolving review comments now reads as one list with eight clear states, you can stop an agent and pick it up again, and Goodboy shows how close each provider is to its usage limit.
+
+This release updates the database, and the change is one way: to go back to 0.5.x you need to restore the backup of your data, and the older version tells you so if you open it.
+
+### [#1884] Projects you star, and a profile in parts
+
+Star the projects you work on most and give each one a short description. Agents and the planner see starred projects first, and pickers put them on top. Your profile is now split into your roles, your work, your working rules and topics you want explained in more detail, and each agent role reads only the parts it needs. The same form appears in settings and during onboarding.
+
+### [#1884] Usage limits for each provider
+
+The top bar shows a chip for each connected plan provider, with the share used from 80% on and the reset day once you run out. The provider page opens on a Usage section with each window, when it resets, and what you spent in Goodboy today, over the last 7 days and this month. When a provider reaches its limit, Auto picks another one and says which.
+
+### [#1884] Threaded replies on Linear and GitLab
+
+Comments on Linear and GitLab issues show replies under the comment they answer, and Reply posts into that thread. Every tool now shows its comments the same way, with one box to write in at the bottom of the drawer.
+
+### [#1884] Steps, estimates and questions that wait
+
+Built-in steps come with the app, and the steps you save have their own tab in Workflows. Time estimates now draw on your past runs, so they show up from your first day on this version. When an agent asks you something in plain text instead of through a question card, the step waits for your answer. Failed now only means the agent crashed or could not run; an agent that is still alive but stuck shows as Blocked.
+
+### [#1884] Plans, reports and wireframes
+
+The planner writes plans in a fixed shape, with each part listing how you know it is done and which files it touches. Any plan or report can open in its own reader window with Print and Copy. A wireframe can be exported as a folder with one page per screen, a stylesheet and its data.
+
+### [#1884] One view for every diff
+
+Reviewing changes, writing a review and opening a single file all use the same diff view, with syntax colors, sticky file headers, `T` to jump to a file and `[` `]` to move between files. Notes and draft comments sit inline and open in the side drawer. Code blocks in chat and documents use the same colors.
+
+### [#1884] Resolving review comments
+
+Every comment moves through one set of states you can read at a glance: New, Working, Needs you, Ready, Approved, Resolved, Failed and Later, each with one sentence and one action. Open comments are grouped by file, with the agent working on each one shown underneath. Select several and choose Approve or Later, then close them on GitHub in one go. If Goodboy quits while posting replies, it checks GitHub before trying again, so nothing is posted twice. Commits you asked the resolver for stay on the branch.
+
+### [#1884] Storage for worktree folders
+
+A Storage page lists every worktree folder on disk by repository, with its size and state, and removes the safe ones in bulk while skipping folders with unsaved work. You can keep a folder, see what was removed and set when Goodboy should speak up. Goodboy lets you know once when idle folders take up more than 10 GB, and sooner when the disk is nearly full.
+
+### [#1884] Talking to a running agent
+
+Stop an agent and it shows as stopped, not failed, with a Continue button. An agent still running when Goodboy quits comes back as stopped. While an agent works, Enter queues your message for when it finishes, and `⌘Enter` sends it now. You can edit, remove or send any queued message. The top of each chat shows what the agent was given when it started, with a way to view the exact text.
+
+### Fixes
+
+- Every task Goodboy runs on Auto, from titles to pull request drafts, skips a provider at its limit. [#1884]
+- Every step tells the agent where it can ask you questions. [#1884]
+- The agent summary leads with who started it and what it is doing now. [#1884]
+
 ## Goodboy v0.5.3
 
 Every screen now reads the same way: one column, one header, one main action, and details in a side drawer.
