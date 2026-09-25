@@ -126,6 +126,7 @@ import {
 import { applyHeuristicTitle } from './applyHeuristicTitle';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { resolveWorktreePath } from '../resolve/resolveWorktreePath';
+import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import {
   selectActiveMount,
@@ -934,6 +935,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             threadIds: resumableResolveThreadIds({
               rows: get().sessionResolveThreads[sessionId] ?? [],
               agent: agentRowEarly,
+            }),
+            candidateMode: resolveCandidateMode({
+              agents: get().sessionPhaseRuns[sessionId] ?? [],
+              resolverId: activeAgentId,
+              isOperatorTurn: origin === 'operator',
             }),
           })
         : undefined;

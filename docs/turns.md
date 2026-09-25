@@ -28,6 +28,16 @@ Owns the turn pipeline. The frontend drives it from
   lease queues it as a resolve attempt rather than running two writers in one
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
+- A resolver turn proposes only while another agent in the session is running.
+  Its work is then parked as a candidate: committed to a candidate ref, the
+  branch reset to where the turn started, and offered for acceptance on the
+  queued comments it answers. A message the user types in the resolver chat,
+  or any resolver turn once nothing else is running, applies: its commits stay
+  on the branch. Work no queued comment covers is never parked.
+- Recovery on load parks a leftover candidate only when its turn is not
+  running, no later attempt started on that worktree, and a writer is still
+  live or the resolver has not completed. Otherwise the candidate is dropped
+  and the branch is left as it is.
 - A turn in a folder project captures a recoverable file version before and
   after it runs.
 

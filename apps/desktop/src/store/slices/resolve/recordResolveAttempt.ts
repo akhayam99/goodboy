@@ -27,6 +27,7 @@ export const recordResolveAttempt = async ({
   phase,
   threadIds,
   mountTarget,
+  candidateMode = 'propose',
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -58,7 +59,7 @@ export const recordResolveAttempt = async ({
     createdAt: queued?.createdAt ?? now,
   };
   await insertResolveAttempt({ db, attempt });
-  if (phase === 'running') {
+  if (phase === 'running' && candidateMode === 'propose') {
     await beginResolveCandidate({
       set,
       get,

@@ -31,6 +31,14 @@ export const captureResolveCandidate = async ({
       item.approvalState !== 'accepted' &&
       thread.state !== 'closed',
   );
+  const discard = async (): Promise<null> => {
+    await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
+    await loadResolveCandidatesInto({ set, sessionId });
+    return null;
+  };
+  if (covered.length === 0) {
+    return discard();
+  }
   const quarantined = await withCandidateLock({
     worktreePath: candidate.worktreePath,
     holder: `candidate:${candidate.id}`,
@@ -41,10 +49,8 @@ export const captureResolveCandidate = async ({
         baseSha: candidate.baseSha,
       }),
   });
-  if (quarantined.sha === null || covered.length === 0) {
-    await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
-    await loadResolveCandidatesInto({ set, sessionId });
-    return null;
+  if (quarantined.sha === null) {
+    return discard();
   }
   for (const { item } of covered) {
     await insertResolveCandidateItem({
