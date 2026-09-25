@@ -300,13 +300,16 @@ one is open at a time.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Send to developers). The studio rail filters by view, severity
-  and source with counts that come from SQL (`countNotifications`), so they
-  stay true past the loaded page; Load older pages with a cursor. Both
-  surfaces default to this workspace: a row belongs to its own workspace, or
-  its session's, and a row with neither is app-wide and shows in every
-  workspace. Mark all read and Delete all act on that same scope. In the
-  studio, j and k move, Enter runs the row's action and e dismisses.
+  members and Send to developers). Unread reads as title weight in both, and
+  read rows recede, so no marker ever moves the title off its edge. In the
+  studio the time owns a fixed last column and Mark read and Dismiss swap in
+  over it on hover, so the row never changes width. The studio rail filters by
+  view, severity and source with counts that come from SQL
+  (`countNotifications`), so they stay true past the loaded page; Load older
+  pages with a cursor. Both surfaces default to this workspace: a row belongs to
+  its own workspace, or its session's, and a row with neither is app-wide and
+  shows in every workspace. Mark all read and Delete all act on that same scope.
+  In the studio, j and k move, Enter runs the row's action and e dismisses.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
