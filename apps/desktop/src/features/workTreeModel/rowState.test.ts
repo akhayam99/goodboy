@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, IsoDateTime, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
 import {
+  isRowNeedingYou,
   resolveAgentRowState,
   resolveRunRowState,
   type RowState,
@@ -321,5 +322,44 @@ describe('rowStateShortSentence', () => {
   it('has nothing to say when the full sentence has nothing to say', () => {
     expect(rowStateShortSentence({ state: { phase: 'done', reason: null, ask: null } })).toBeNull();
     expect(rowStateShortSentence({ state: waiting({ kind: 'discarded' }) })).toBeNull();
+  });
+});
+
+describe('stopped agents', () => {
+  it('reads a stopped agent as stopped by you with a Continue ask, never as failed', () => {
+    const state = agentState({ agent: { status: 'stopped', stoppedBy: 'you' } });
+
+    expect(read(state)).toEqual({
+      node: 'stopped',
+      sentence: 'Stopped by you',
+      tone: 'neutral',
+      ask: 'continue',
+    });
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('says Goodboy quit when the app stopped the agent', () => {
+    const state = agentState({ agent: { status: 'stopped', stoppedBy: 'app' } });
+
+    expect(rowStateSentence({ state })).toBe('Stopped when Goodboy quit');
+    expect(rowStateNode({ state }).label).toBe('Stopped when Goodboy quit');
+  });
+
+  it('names the stopped step on the run and asks to continue it', () => {
+    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
+    const state = runState({ stoppedStep: { agent, stepLabel: '4' } });
+
+    expect(read(state)).toEqual({
+      node: 'stopped',
+      sentence: 'Step 4 stopped by you',
+      tone: 'neutral',
+      ask: 'continue',
+    });
+    expect(rowStateShortSentence({ state })).toBe('Stopped');
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('still counts an open question as needing you', () => {
+    expect(isRowNeedingYou({ state: agentState({ isAsking: true }) })).toBe(true);
   });
 });

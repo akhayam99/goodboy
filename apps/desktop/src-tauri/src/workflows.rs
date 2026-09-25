@@ -216,6 +216,10 @@ pub struct SessionRow {
     pub routing_decision: Option<String>,
     #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
+    #[serde(rename = "stoppedAt")]
+    pub stopped_at: Option<String>,
+    #[serde(rename = "stoppedBy")]
+    pub stopped_by: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -308,6 +312,10 @@ pub struct PhaseRunUpdateInput {
     pub started_at: Option<String>,
     #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
+    #[serde(rename = "stoppedAt", default)]
+    pub stopped_at: Option<String>,
+    #[serde(rename = "stoppedBy", default)]
+    pub stopped_by: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -1162,7 +1170,7 @@ const AGENT_SESSION_COLS: &str =
      provider_session_id, provider_session_provider_id, last_finished_at, last_viewed_at, done_at, kind, verbosity, \
      effort, model_override, provider_override, \
      parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, \
-     source_kind, domains_json, routing_lock, routing_decision, task_profile";
+     source_kind, domains_json, routing_lock, routing_decision, task_profile, stopped_at, stopped_by";
 
 fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite::Error> {
     Ok(SessionRow {
@@ -1196,6 +1204,8 @@ fn session_row_from_row(row: &rusqlite::Row<'_>) -> Result<SessionRow, rusqlite:
         routing_lock: row.get(27)?,
         routing_decision: row.get(28)?,
         task_profile: row.get(29)?,
+        stopped_at: crate::util::optional_ms_to_iso(row.get(30)?),
+        stopped_by: row.get(31)?,
     })
 }
 
@@ -1295,6 +1305,8 @@ fn insert_agent_row(
         routing_lock: input.routing_lock,
         routing_decision: input.routing_decision,
         task_profile: input.task_profile,
+        stopped_at: None,
+        stopped_by: None,
     })
 }
 
@@ -1448,6 +1460,13 @@ pub async fn agent_update_status(
     input: PhaseRunUpdateInput,
 ) -> Result<SessionRow, PhaseError> {
     let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    write_agent_status(&conn, input)
+}
+
+fn write_agent_status(
+    conn: &rusqlite::Connection,
+    input: PhaseRunUpdateInput,
+) -> Result<SessionRow, PhaseError> {
     let started_at_ms = input.started_at.as_deref().and_then(crate::util::iso_to_ms);
     let completed_at_ms = input
         .completed_at
@@ -1458,6 +1477,14 @@ pub async fn agent_update_status(
     // so the sidebar can show an unread indicator until the user views the
     // agent (which stamps `last_viewed_at` via `agent_mark_viewed`).
     let is_terminal = matches!(input.status.as_str(), "completed" | "failed" | "skipped");
+    let is_stopped = input.status == "stopped";
+    let stopped_at_ms = input.stopped_at.as_deref().and_then(crate::util::iso_to_ms);
+    let stopped_by = is_stopped.then(|| {
+        input
+            .stopped_by
+            .clone()
+            .unwrap_or_else(|| "you".to_string())
+    });
     conn.execute(
         "UPDATE agents SET
            status         = ?2,
@@ -1466,7 +1493,9 @@ pub async fn agent_update_status(
            started_at      = COALESCE(?5, started_at),
            last_finished_at = CASE WHEN ?7 = 1
              THEN COALESCE(?6, last_finished_at, ?8)
-             ELSE last_finished_at END
+             ELSE last_finished_at END,
+           stopped_at     = CASE WHEN ?9 = 1 THEN COALESCE(?10, ?8) END,
+           stopped_by     = ?11
          WHERE id = ?1",
         rusqlite::params![
             input.id,
@@ -1477,6 +1506,9 @@ pub async fn agent_update_status(
             completed_at_ms,
             is_terminal as i32,
             crate::util::now_ms(),
+            is_stopped as i32,
+            stopped_at_ms,
+            stopped_by,
         ],
     )?;
 
@@ -1628,7 +1660,8 @@ mod tests {
                 kind TEXT, verbosity TEXT, effort TEXT, model_override TEXT, provider_override TEXT,
                 parent_agent_id TEXT, workflow_run_id TEXT, source_thread_id TEXT,
                 source_thread_ids TEXT, source_comment_url TEXT, source_kind TEXT, domains_json TEXT,
-                routing_lock TEXT, routing_decision TEXT, task_profile TEXT, deleted_at INTEGER
+                routing_lock TEXT, routing_decision TEXT, task_profile TEXT, deleted_at INTEGER,
+                stopped_at INTEGER, stopped_by TEXT
             );
             CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;",
         )
@@ -1750,6 +1783,44 @@ mod tests {
         assert!(row.task_profile.is_none());
         let serialized = serde_json::to_value(row).unwrap();
         assert_eq!(serialized["providerSessionProviderId"], "anthropic");
+    }
+
+    fn status_input(status: &str, stopped_by: Option<&str>) -> PhaseRunUpdateInput {
+        PhaseRunUpdateInput {
+            id: "a3".to_string(),
+            status: status.to_string(),
+            provider_run_id: None,
+            output_summary: None,
+            started_at: None,
+            completed_at: None,
+            stopped_at: Some("2026-09-25T12:04:00.000Z".to_string()),
+            stopped_by: stopped_by.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn agent_status_stamps_and_clears_the_stop() {
+        let conn = agents_table_conn();
+        conn.execute(
+            "INSERT INTO agents (id, session_id, ordinal, name, status)
+             VALUES ('a3', 's1', 0, 'implementer', 'running')",
+            [],
+        )
+        .unwrap();
+
+        let stopped = write_agent_status(&conn, status_input("stopped", Some("you"))).unwrap();
+        assert_eq!(stopped.status, "stopped");
+        assert_eq!(
+            stopped.stopped_at.as_deref(),
+            Some("2026-09-25T12:04:00.000Z")
+        );
+        assert_eq!(stopped.stopped_by.as_deref(), Some("you"));
+        assert!(stopped.last_finished_at.is_none());
+
+        let resumed = write_agent_status(&conn, status_input("running", None)).unwrap();
+        assert_eq!(resumed.status, "running");
+        assert!(resumed.stopped_at.is_none());
+        assert!(resumed.stopped_by.is_none());
     }
 
     #[test]

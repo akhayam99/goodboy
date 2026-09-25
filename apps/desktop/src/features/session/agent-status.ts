@@ -33,6 +33,12 @@ export const AGENT_STATUS_PRESENTATION = {
     tone: 'neutral',
     icon: CONCEPT_ICONS.runCancelled,
   },
+  stopped: {
+    label: 'Stopped',
+    reason: 'you stopped it, what it wrote is kept',
+    tone: 'neutral',
+    icon: CONCEPT_ICONS.runStopped,
+  },
 } satisfies Record<AgentStatus, StatePresentation>;
 
 type Params = {

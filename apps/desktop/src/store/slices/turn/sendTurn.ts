@@ -1590,10 +1590,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         at: now(),
       });
       if (resolvedAgentId) {
-        await invokeAgentUpdateStatus(resolvedAgentId, {
-          status: 'failed',
-          completedAt: now(),
-        });
+        const isStoppedByUser =
+          cancelledBeforeFailure &&
+          (get().sessionPhaseRuns[sessionId] ?? []).some(
+            (agent) => agent.id === resolvedAgentId && agent.status === 'stopped',
+          );
+        if (!isStoppedByUser) {
+          await invokeAgentUpdateStatus(resolvedAgentId, {
+            status: 'failed',
+            completedAt: now(),
+          });
+        }
         const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },

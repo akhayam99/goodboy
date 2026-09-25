@@ -460,6 +460,14 @@ hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
 closed. Only what the screen draws uses it: the lane of an agent's children in
 the activity rail and in the run tree of the workflow detail.
 
+An agent you stop (Interrupt, or Stop in the composer) is `stopped`, with
+`stopped_by = you`. An agent still running when Goodboy quits comes back as
+`stopped` with `stopped_by = app`. A stopped agent is neither settled nor
+failed: its row, the run and the agent header say it was stopped and offer
+Continue, which sends "Continue from where you stopped." as a normal message.
+Autorun never passes a stopped step (`stopped-step`), and a stopped step does
+not count as needing you. Any later status change clears the stop.
+
 A step has no Close. Closing an agent is for agents outside a workflow (see
 [concepts.md](concepts.md#agents)). A stuck step is unblocked with Skip step,
 which says what the run does next.

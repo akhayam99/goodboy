@@ -534,7 +534,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <Tooltip content="Cancel turn">
                 <button
                   type="button"
-                  onClick={() => void cancelCurrentTurn(session.id)}
+                  onClick={() =>
+                    void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
+                  }
                   aria-label="Cancel turn"
                   className={cn(
                     'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',

@@ -111,13 +111,14 @@ Never build a colored role word or an outlined kind chip by hand.
 
 ## Run states
 
-| State     | Concept        | Glyph          | Tone    | Used by                                              |
-| --------- | -------------- | -------------- | ------- | ---------------------------------------------------- |
-| pending   | `runPending`   | `CircleDashed` | neutral | `AgentStatusIcon`                                    |
-| running   | none           | pulsing dot    | info    | `StatusDot tone="info" pulsing`                      |
-| done      | `runDone`      | `CircleCheck`  | success | `AgentStatusIcon`, run status                        |
-| failed    | `runFailed`    | `CircleX`      | danger  | `AgentStatusIcon`                                    |
-| cancelled | `runCancelled` | `CircleSlash`  | neutral | `AgentStatusIcon` (skipped), discarded workflow runs |
+| State     | Concept        | Glyph          | Tone    | Used by                                               |
+| --------- | -------------- | -------------- | ------- | ----------------------------------------------------- |
+| pending   | `runPending`   | `CircleDashed` | neutral | `AgentStatusIcon`                                     |
+| running   | none           | pulsing dot    | info    | `StatusDot tone="info" pulsing`                       |
+| done      | `runDone`      | `CircleCheck`  | success | `AgentStatusIcon`, run status                         |
+| failed    | `runFailed`    | `CircleX`      | danger  | `AgentStatusIcon`                                     |
+| cancelled | `runCancelled` | `CircleSlash`  | neutral | `AgentStatusIcon` (skipped), discarded workflow runs  |
+| stopped   | `runStopped`   | `CirclePause`  | neutral | agent you stopped, stopped step, `AgentStoppedNotice` |
 
 ## Projects, mounts and git objects
 

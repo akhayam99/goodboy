@@ -32,7 +32,14 @@ export type AgentRole =
   | 'wireframe'
   | 'custom';
 
-export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'stopped';
+
+const AGENT_STOPPED_BY = ['you', 'app'] as const;
+
+export type AgentStoppedBy = (typeof AGENT_STOPPED_BY)[number];
+
+export const isAgentStoppedBy = (value: unknown): value is AgentStoppedBy =>
+  typeof value === 'string' && AGENT_STOPPED_BY.some((by) => by === value);
 
 export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment' | 'open_question';
 
@@ -119,6 +126,8 @@ export type Agent = Readonly<{
   lastFinishedAt?: IsoDateTime;
   lastViewedAt?: IsoDateTime;
   doneAt?: IsoDateTime;
+  stoppedAt?: IsoDateTime;
+  stoppedBy?: AgentStoppedBy;
   deletedAt?: IsoDateTime;
   verbosity?: VerbosityLevel;
   effort?: EffortLevel;

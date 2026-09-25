@@ -7,6 +7,7 @@ const TONE: Record<AgentStatus, Tone> = {
   completed: 'success',
   failed: 'danger',
   skipped: 'neutral',
+  stopped: 'neutral',
 };
 
 const LABEL: Record<AgentStatus, string> = {
@@ -15,6 +16,7 @@ const LABEL: Record<AgentStatus, string> = {
   completed: 'Done',
   failed: 'Failed',
   skipped: 'Skipped',
+  stopped: 'Stopped',
 };
 
 type Props = {

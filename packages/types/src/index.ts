@@ -210,13 +210,14 @@ export type {
   AgentRole,
   AgentSourceKind,
   AgentStatus,
+  AgentStoppedBy,
   Step,
   StepDef,
   StepSize,
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isStepSize, isWorkflowOrigin } from './workflow';
+export { WORKFLOW_ORIGINS, isAgentStoppedBy, isStepSize, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

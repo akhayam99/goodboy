@@ -258,6 +258,7 @@ import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
+import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
 import { createWorktreesSlice } from './slices/worktrees';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
 import type { OrphanRemoval } from './slices/worktrees/removeOrphanWorktrees';
@@ -631,7 +632,12 @@ type AppActions = {
     force?: boolean;
     origin?: 'operator' | 'workflow';
   }): Promise<SendTurnResult>;
-  cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
+  cancelCurrentTurn(
+    sessionId: SessionId,
+    agentId?: AgentId,
+    reason?: CancelTurnReason,
+  ): Promise<void>;
+  continueStoppedAgent(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
