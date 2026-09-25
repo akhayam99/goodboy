@@ -29,8 +29,13 @@ type Allowance = {
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
+    count: 2,
+    reason: 'chrome',
+  },
+  'apps/desktop/src/app/components/AppFooter/GoodboyChip/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 2, reason: 'chrome' },
-  'apps/desktop/src/app/components/AppTopBar/NeedsYouPopover.tsx': { count: 1, reason: 'debt' },
+  'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
     { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {
@@ -52,10 +57,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/features/budget/components/spend/ModelTable.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/budget/components/spend/TurnsTable.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/chat/components/ChatBreadcrumb/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/chat/components/ChatInput/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
@@ -167,10 +168,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/scripts/components/RunningScriptsIndicator/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/scripts/components/ScriptsPanel/NewScriptCard.tsx': {
     count: 3,
     reason: 'debt',
@@ -201,8 +198,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader.tsx':
-    { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
@@ -215,9 +210,9 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/settings/components/ReportIssuePopover/index.tsx': {
-    count: 2,
-    reason: 'debt',
+  'apps/desktop/src/features/settings/components/ReportIssueForm/index.tsx': {
+    count: 1,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/settings/components/ReportIssueStudio/index.tsx': {
     count: 1,
@@ -287,6 +282,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
+  'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/ArtifactScenes.tsx': {

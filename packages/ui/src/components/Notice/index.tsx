@@ -32,7 +32,7 @@ const PLACEMENT_SURFACE = {
   transcript: 'bg-transparent py-1.5 pl-3.5 pr-3',
   inline: 'rounded-lg border border-border-soft bg-subtle py-2.5 pl-3.5 pr-3',
   banner: 'rounded-lg border border-border-soft bg-subtle py-2.5 pl-3.5 pr-3',
-  floating: 'rounded-lg border border-border-soft bg-elevated py-3 pl-4 pr-3 shadow-lg',
+  floating: 'rounded-lg border border-border-soft bg-floating py-3 pl-4 pr-3 shadow-lg',
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_RAIL = {

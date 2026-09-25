@@ -44,8 +44,8 @@ never a new file.
 tile, then the word `Goodboy`. It has no tagline, no registered mark and no
 second line.
 
-In the app chrome the mark drops the tile. `BrandBadge.tsx` draws the bare
-glyph in `text-foreground`, so it is light on the dark theme and dark on the
+In the app chrome the mark drops the tile. The footer Goodboy chip draws the bare glyph in
+`text-foreground`, so it is light on the dark theme and dark on the
 light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
@@ -86,8 +86,8 @@ The generator refuses to run when those two disagree.
 
 **The app chrome never paints the tile.** A fixed black tile on the top bar
 disappeared on the dark theme (1.09:1 against `bg-background`) and read as a
-dark block on the light theme. Neither is the brand. So the top bar shows the
-bare glyph in the theme foreground, and `--color-brand` stays only to keep the
+dark block on the light theme. Neither is the brand. So the chrome (the
+footer Goodboy chip) shows the bare glyph in the theme foreground, and `--color-brand` stays only to keep the
 generator honest against the site. Do not bring the tile back into the chrome,
 and do not give it a border, a lighter dark-theme variant or a glow. On the
 site, the favicon and the dock the tile stands alone and does its job.

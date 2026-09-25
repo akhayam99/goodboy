@@ -112,17 +112,17 @@ describe('StudioDetailLayout', () => {
     expect(scrollAncestors({ node: banner })).toHaveLength(0);
   });
 
-  it('uses the shared pane measure for every header and a fill body', () => {
+  it('lands every header and a fill body on the content column', () => {
+    const COLUMN = 'max-w-[var(--column-max)]';
+    const hasColumn = (node: Element) =>
+      [...node.querySelectorAll('div')].some((element) => element.className.includes(COLUMN));
     const { unmount } = render(
       <StudioDetailLayout header={<span>Header slot</span>} fit="fill">
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
-    const fillHeaderMeasure = screen
-      .getByTestId('detail-header-band')
-      .querySelector(`.${PANE_RHYTHM.measure.pane}`);
-    expect(fillHeaderMeasure).not.toBeNull();
-    expect(screen.getByText('Main slot').closest(`.${PANE_RHYTHM.measure.pane}`)).not.toBeNull();
+    expect(hasColumn(screen.getByTestId('detail-header-band'))).toBe(true);
+    expect(screen.getByText('Main slot').parentElement?.className).toContain(COLUMN);
     unmount();
 
     render(
@@ -130,10 +130,7 @@ describe('StudioDetailLayout', () => {
         <span>Main slot</span>
       </StudioDetailLayout>,
     );
-    const bleedHeaderMeasure = screen
-      .getByTestId('detail-header-band')
-      .querySelector(`.${PANE_RHYTHM.measure.pane}`);
-    expect(bleedHeaderMeasure).not.toBeNull();
+    expect(hasColumn(screen.getByTestId('detail-header-band'))).toBe(true);
     expect(screen.getByText('Main slot').closest('[class*="max-w-"]')).toBeNull();
   });
 

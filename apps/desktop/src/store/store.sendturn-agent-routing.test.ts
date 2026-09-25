@@ -2125,7 +2125,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]?.model).toBe('gpt-5.6-sol');
   });
 
-  it('remaps a composer selection to the role-aware model on the fallback provider', async () => {
+  it('remaps a composer selection to the curated model on the fallback provider', async () => {
     setup(useAppStore);
     useAppStore.setState({
       sessions: [
@@ -2161,13 +2161,13 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     expect(runTurnSpy.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         provider: 'cursor',
-        model: 'gpt-5.6-terra-high',
-        cursorMaxMode: true,
+        model: 'composer-2.5',
       }),
     );
+    expect(runTurnSpy.mock.calls[0]?.[0]?.cursorMaxMode).not.toBe(true);
     expect(resolveModelArgsSpy).toHaveBeenLastCalledWith({
       provider: 'cursor',
-      selection: expect.objectContaining({ key: 'gpt-5.6-terra' }),
+      selection: expect.objectContaining({ key: 'composer-2.5' }),
     });
     expect(resolveModelArgsSpy).not.toHaveBeenCalledWith({
       provider: 'cursor',
@@ -2176,7 +2176,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     const userEvent = (useAppStore.getState().transcripts[AGENT_A] ?? []).find(
       (event) => event.kind === 'user_text',
     );
-    expect(userEvent?.model).toBe('gpt-5.6-terra-high');
+    expect(userEvent?.model).toBe('composer-2.5');
   });
 
   it('uses a composer override for both the transcript and spawn args', async () => {

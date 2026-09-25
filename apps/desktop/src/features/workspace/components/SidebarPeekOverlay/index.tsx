@@ -83,7 +83,7 @@ export const SidebarPeekOverlay = ({
             style={{ width: readWidth() }}
             className={cn(
               'pointer-events-auto absolute inset-y-0 left-0 flex min-h-0 flex-col overflow-hidden',
-              'bg-background shadow-xl',
+              'bg-floating shadow-lg',
               'motion-safe:transition-transform duration-200 ease-out',
               hasEntered ? 'translate-x-0' : '-translate-x-full',
             )}

@@ -5,6 +5,7 @@ import {
   ESTIMATE_WINDOW_MS,
   estimateDuration,
   estimateOrchestratedRun,
+  estimateProgress,
   sumEstimates,
   type DurationSample,
   type EstimateKey,
@@ -200,6 +201,30 @@ describe('estimateDuration', () => {
     );
 
     expect(stepEstimate({ samples })?.cost).toBeNull();
+  });
+});
+
+describe('estimateProgress', () => {
+  it('counts toward the tier closest to its minimum, the most specific one on a tie', () => {
+    const turns = [1, 2, 3].map((minutes) => sample({ minutes }));
+    const providerWide = [1, 2, 3, 4, 5, 6, 7].map((minutes) =>
+      sample({ minutes, model: 'claude-opus-5-5' }),
+    );
+
+    expect(
+      estimateProgress({ history: historyOf({ turns }), unit: 'turn', key: KEY, nowMs: NOW }),
+    ).toEqual({ tier: 'exact', have: 3, need: 5 });
+    expect(
+      estimateProgress({
+        history: historyOf({ steps: providerWide }),
+        unit: 'step',
+        key: KEY,
+        nowMs: NOW,
+      }),
+    ).toEqual({ tier: 'provider', have: 7, need: 8 });
+    expect(
+      estimateProgress({ history: historyOf({}), unit: 'step', key: KEY, nowMs: NOW }),
+    ).toEqual({ tier: 'exact', have: 0, need: 5 });
   });
 });
 

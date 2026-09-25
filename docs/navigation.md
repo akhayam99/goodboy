@@ -56,8 +56,7 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and the footer's beta pill takes its tint only on hover and
-  focus.
+  neutral at rest, and so is the footer's Goodboy chip.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -92,11 +91,13 @@ script in the project, or no match for the filter.
 them one sidebar plus main. **There is one app layout and every surface fills its
 slots.** The board, the session and the studios do not define their own frames.
 A surface that needs a different frame changes the shared one instead of forking
-a second. **Two flanking columns at once is not the IA.** A session draws one
-full-width pane, and its navigation lives in that single left sidebar. Nothing
-has to reach for a second column, and there is no second width to persist. The
+a second. **Two navigation columns at once is not the IA. The right drawer is
+context, never navigation.** A session draws one full-width pane, and its
+navigation lives in that single left sidebar. The right drawer holds reference
+material beside the page and closes with the pane that opened it. The
 sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from one control or ⌘B. Peek
+session it follows a saved preference, toggled from one control in the top bar
+or ⌘B. Peek
 never touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
@@ -158,9 +159,18 @@ surface itself shows urgency, never a badge parked beside it.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome.** It sits above the
-  session pane, never in the top bar. The top bar is workspace chrome, and a
-  session trail is page context.
+- **The trail belongs to the page, not to the chrome.** It sits in the content
+  column, directly above the title, never in the top bar and never as a
+  full-width strip. The top bar is workspace chrome, and a session trail is
+  page context. `SessionWorkspace` hands the trail down through
+  `PageCrumbContext`, and `PaneShell` draws it inside the same `PageColumn` as
+  the title and body, outside the mount animation, so it holds still while the
+  view under it changes. Whatever draws the trail clears the context for its
+  children, so a nested shell never draws a second one. Outside a session the
+  context is empty and the row does not exist.
+- **Under 720px of pane width the middle collapses.** Crumbs between the
+  destination switcher and the last crumb fold into a `…` menu that lists them,
+  the way VS Code and GitHub fold long paths.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.
@@ -201,43 +211,59 @@ surface itself shows urgency, never a badge parked beside it.
 
 ## Top bar
 
-Workspace identity stays on the left. The Goodboy brand is centred on the
-window. Workspace-wide signals and set-once preferences stay on the right.
+The top bar says what is happening now. The footer takes you to places.
+Preferences live in Settings. Each item has one home; anything else that shows
+it is a signal that links there.
+
+On macOS the window has no native title bar: the traffic lights sit inside the
+top bar, which carries a 78px inset (12px in full screen and on other systems).
+The bar is a deep drag region: any spot that is not a control moves the window,
+and a double click zooms it. Controls never drag.
+
 The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
-and each zone is pinned to its own track (`col-start-1/2/3`), so an item that
-drops never lets another zone slide into its column. When the signals fit their
-share, the brand sits at the window midpoint. When they do not, the brand
-slides off the midpoint instead of being covered. The identity has a size limit
-and truncates, with the full name in its tooltip. No control ever moves into an
-overflow menu.
+with each zone pinned to its own track (`col-start-1/2/3`), so an item that
+drops never lets another zone slide into its column. When the right zone
+outgrows its half, the command center slides off the midpoint instead of being
+covered.
+
+- Left: the sidebar toggle, then workspace identity. On views without a
+  sidebar the toggle's slot stays reserved, so identity never moves. The
+  sidebar keeps no header and the collapsed rail no toggle of their own.
+  Identity has a 200px limit and truncates, with the full name in its tooltip.
+- Centre: the command center. It opens the palette and shows ⌘K. It never
+  takes typing itself.
+- Right: the Now chip (needs you, running, scripts, each only when above
+  zero), today's spend and the bell. Now opens one popover grouped by those
+  three, and a group with no rows is not drawn. A script row hands its run to
+  the shell's script opener. Spend opens Impact; it is never merged with a
+  count. The bell opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-word` the wordmark drops. The mascot glyph never drops.
-2. Below `chrome-labels` the signal words (`need you`, `running`, `today`)
-   drop. Counts, dots and the spend figure stay, and their tooltips carry the
-   words.
+1. Below `chrome-wide` the command center narrows and says only `Search`.
+2. Below `chrome-labels` it becomes an icon with ⌘K, and the signal words
+   (`need you`, `running`, `scripts`, `today`) drop. Counts, dots, glyphs and
+   the spend figure stay, and their tooltips carry the words.
 
-Identity, mascot, spend, report, notifications, theme and the setup chip never
-hide. `chrome-labels` sits below the 1024px minimum window, so words only drop
+The traffic lights, identity, the command center, the needs-you count, the
+spend figure and the bell never hide. No control ever moves into an overflow
+menu. `chrome-labels` sits below the 1024px minimum window, so words only drop
 under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. Workspace settings has its own control
-  next to identity. Buried inside the switcher, a common per-workspace
-  preference was easy to never find.
+  lists workspaces as rows of its own. Workspace settings is the popover's
+  last row for the current workspace, so the bar holds no second settings
+  control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- Theme is the one set-once preference kept here. People flip it often enough
-  to earn the slot. The guide and pair-device live in the settings studio and
-  the palette.
-- **The report control is the one exception to "the top bar never edits".**
-  Its popover drafts a bug report, which is not a record until it is filed. The
-  draft survives closing the popover. The primary action opens the full form
-  instead of sending. Precedent: VS Code's top-level issue reporter.
+- Theme is not in the bar. It lives in Settings > App > General and in the
+  palette, like the guide and pair-device.
+- The top bar never edits. Reporting a bug, the setup checklist, the update
+  and the version are about Goodboy itself, so they live in the Goodboy chip in
+  the footer.
 
 ## Footer
 
@@ -254,15 +280,27 @@ flow.
   workspace into one backed by a git repository happens in the workspace link
   and convert flow, not in the footer.
 
-Centre: the beta pill and, while an update is pending, the update pip.
+Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
+the Apple menu or Linear's help menu does. Its label says one thing, in this
+order: an update is ready, setup is unfinished (with its progress), or
+"Goodboy beta". Its popover holds the version and release notes, the update,
+the setup checklist, Report a bug (the draft survives closing), What's new,
+keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
+form, and its primary action opens the full form instead of sending. The
+popover opens by itself once, when the first project is added; the checklist
+has no floating card.
 
-Right: the launchers reached by name and a `More` popover for the rest.
+Right: Inbox, Workflows and Settings. Settings opens on the current workspace
+when there is one. Providers & models is a Settings scope, reached from the
+Settings rail and the palette, so it has no footer launcher. Impact opens from
+the spend figure and the palette, Changelog from the Goodboy chip and the
+palette, so neither earns a footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
 drop together and the glyphs stay, with the name in the tooltip. The first
-link action keeps its label, since it is the only thing on the left. The beta
-pill and the update pip never hide. Past that the glyph strip scrolls.
+link action keeps its label, since it is the only thing on the left. The
+Goodboy chip never hides. Past that the glyph strip scrolls.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one
@@ -271,12 +309,12 @@ pill and the update pip never hide. Past that the glyph strip scrolls.
 - Exactly one integration control has the active fill. It sits on the open
   glyph, or on the link action when that integration is disconnected. Opening
   any studio closes the others.
-- **Before any workspace exists, the footer keeps its app half**: Providers,
-  Settings, the beta pill and the update pip. The integration strip, Inbox,
-  Workflows and More belong to a workspace and wait for one. Settings then
-  lists only App and Providers & models, and Providers opens on an account
-  instead of on the workspace defaults. Precedent: VS Code keeps its status bar
-  and Manage gear with no folder open.
+- **Before any workspace exists, the footer keeps its app half**: Settings and
+  the Goodboy chip. The integration strip, Inbox and Workflows belong to a
+  workspace and wait for one. Settings then opens on App and lists only App and
+  Providers & models, and Providers opens on an account instead of on the
+  workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
+  with no folder open.
 
 ## Shortcuts
 
@@ -341,7 +379,12 @@ one is open at a time.
   pages with a cursor. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  In the studio, j and k move, Enter runs the row's action and e dismisses.
+  In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
+  j and k or the arrow keys move, Enter runs the row's action and e dismisses.
+  The rail rows (`shared/components/FacetRail`), the list keys
+  (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
+  are shared primitives; the inbox already groups its records with the same
+  day buckets.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
@@ -388,9 +431,12 @@ one is open at a time.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
-- **A sibling detail is a split, not a rail.** It is a resizable column owned
-  by the pane it opens in, so it closes with that pane. There is one
-  implementation of that split. Reuse it instead of growing a rail.
+- **Reference beside the work opens in the right drawer, not a rail.** Popover
+  = pick one thing in ten seconds; drawer = reference next to the work; page =
+  the work. Slot and goal history and the Explore file preview open there.
+  Creating or configuring stays in a popover, navigating stays in the sidebar,
+  and an object you work on is a child page in the trail. See
+  [The right drawer](#the-right-drawer).
 - **Review is the pull request destination for GitHub, and it has no second
   copy.** The lens is Review, its list of review threads is Conversations
   (heading, back links and the overview action say so), and Resolve stays a
@@ -435,3 +481,23 @@ issue picker. The section hides when none of the allowed sources is connected.
 Creating a session picks no project either. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
+
+## The right drawer
+
+The drawer is a column of the window grid (`AppShell`, areas
+`left lhandle main rhandle right`), never a split nested inside a pane. It opens
+at 400px, resizes from 340 to 560px, and keeps one saved width
+(`goodboy:right-drawer-width:v1`, clamped on read). Closed, its tracks are
+`0px 0px` and it is `inert`. When the main area minus the drawer and the two
+gutters would leave the content column under 560px, it lies over the right of
+the main area with `shadow-xl` and no scrim, and the main stays interactive.
+It never touches the sidebar preference.
+
+One drawer at a time, per window. The `drawer` store slice holds
+`{ kind, sessionId, payload, lens }`: `openDrawer`, `closeDrawer` and
+`toggleDrawer` (pressing the trigger again closes it). It closes when the lens
+or the session changes, with Escape, and with its X; focus then returns to the
+trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
+one action, close), one divider, a `ScrollFade` body and an optional dock. A
+new kind adds a variant to `DrawerContent` and a case to the host.

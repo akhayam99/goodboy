@@ -53,9 +53,9 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   const leftSidebar =
     currentSession === null ||
     arrangement.leftSlot === 'none' ? undefined : arrangement.leftSlot === 'rail' ? (
-      <CollapsedRail onExpand={noop} />
+      <CollapsedRail />
     ) : (
-      <SessionNavSidebar session={currentSession} onCollapse={noop} />
+      <SessionNavSidebar session={currentSession} />
     );
 
   const main =
@@ -70,7 +70,17 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   return (
     <>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={overlays.openSpend} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: arrangement.leftSlot === 'rail',
+              onToggle: noop,
+            }}
+            onOpenSpend={overlays.openSpend}
+            onOpenScript={noop}
+          />
+        }
         footer={
           <AppFooter
             scope={arrangement.footer}
@@ -79,9 +89,8 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
             onOpenIntegration={overlays.openIntegration}
             onOpenInbox={overlays.openInbox}
             onOpenWorkflows={overlays.openWorkflows}
-            onOpenProviders={overlays.openProviders}
             onOpenSettings={overlays.openSettings}
-            onOpenImpact={overlays.openImpact}
+            onOpenShortcuts={overlays.openShortcutHelp}
             onOpenChangelog={overlays.openChangelog}
           />
         }

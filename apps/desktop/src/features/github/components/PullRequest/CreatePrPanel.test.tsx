@@ -309,8 +309,8 @@ describe('CreatePrPanel', () => {
     const args = h.store.spawnAgent.mock.calls[0]![1];
     expect(args).toMatchObject({
       provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
+      model: 'sonnet-5',
+      effort: 'medium',
     });
     expect(args.initialPrompt).toBe(
       [

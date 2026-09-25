@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_CAPABILITIES, ROLE_REGISTRY } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, ROLE_REGISTRY } from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
@@ -311,25 +311,36 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('scout / docs / generic → haiku, low effort', () => {
-    for (const kind of ['scout', 'docs', 'generic'] as AgentKind[]) {
-      expect(kindRouting({ kind }).effort).toBe('low');
-      expect(kindRouting({ kind }).model).toMatch(/haiku/i);
-    }
+  it('scout → haiku, docs → sonnet low, generic → sonnet medium', () => {
+    expect(kindRouting({ kind: 'scout' })).toMatchObject({ model: 'haiku-4.5', effort: 'low' });
+    expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'sonnet-5', effort: 'low' });
+    expect(kindRouting({ kind: 'generic' })).toMatchObject({ model: 'sonnet-5', effort: 'medium' });
   });
 
-  it('implementer / debugger / reviewer / pr-reviewer / tester / resolver → sonnet, medium effort', () => {
+  it('starts on the workspace default provider when one is given', () => {
+    expect(kindRouting({ kind: 'implementer', defaultProvider: 'codex' })).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'medium',
+    });
+  });
+
+  it('implementer / tester / resolver / report / wireframe → sonnet, medium effort', () => {
     for (const kind of [
       'implementer',
-      'debugger',
-      'reviewer',
-      'pr-reviewer',
       'tester',
       'resolver',
       'report',
       'wireframe',
     ] as AgentKind[]) {
       expect(kindRouting({ kind }).effort).toBe('medium');
+      expect(kindRouting({ kind }).model).toMatch(/sonnet/i);
+    }
+  });
+
+  it('debugger / reviewer / pr-reviewer → sonnet, high effort', () => {
+    for (const kind of ['debugger', 'reviewer', 'pr-reviewer'] as AgentKind[]) {
+      expect(kindRouting({ kind }).effort).toBe('high');
       expect(kindRouting({ kind }).model).toMatch(/sonnet/i);
     }
   });
@@ -384,10 +395,14 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('tracks ROLE_REGISTRY as the single source of truth for routing', () => {
-    expect(kindRouting({ kind: 'planner' }).model).toBe(ROLE_REGISTRY.planner.model);
-    expect(kindRouting({ kind: 'implementer' }).model).toBe(ROLE_REGISTRY.implementer.model);
-    expect(kindRouting({ kind: 'debugger' }).model).toBe(ROLE_REGISTRY.investigator.model);
+  it('tracks the curated Auto table as the single source of truth for routing', () => {
+    expect(kindRouting({ kind: 'planner' }).model).toBe(AUTO_DEFAULTS.anthropic.planner[0]?.key);
+    expect(kindRouting({ kind: 'implementer' }).model).toBe(
+      AUTO_DEFAULTS.anthropic.implementer[0]?.key,
+    );
+    expect(kindRouting({ kind: 'debugger' }).model).toBe(
+      AUTO_DEFAULTS.anthropic.investigator[0]?.key,
+    );
   });
 });
 
@@ -459,8 +474,8 @@ describe('kindRouting role overrides', () => {
       },
     });
 
-    expect(routing.model).toBe(ROLE_REGISTRY.reviewer.model);
-    expect(routing.effort).toBe(ROLE_REGISTRY.reviewer.effort);
+    expect(routing.model).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.key);
+    expect(routing.effort).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.effort);
   });
 });
 

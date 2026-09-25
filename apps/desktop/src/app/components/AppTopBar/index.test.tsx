@@ -5,8 +5,8 @@ import type { IsoDateTime, Session, SessionId, Workspace, WorkspaceId } from '@g
 const { currentWorkspace, hooks, store } = vi.hoisted(() => {
   const workspace = {
     id: 'ws-1' as WorkspaceId,
-    name: 'Test WS',
-    slug: 'test-ws',
+    name: 'Harborline',
+    slug: 'harborline',
     overrides: {
       defaultProviderId: null,
       defaultWorkflowId: null,
@@ -32,35 +32,29 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
         readonly sessions: ReadonlyArray<Session>;
       }>,
       rollup: { attentionCount: 0, runningCount: 0, todaySpend: 0 },
-      reasons: {} as Record<string, string>,
-      attention: {} as Record<string, string | null>,
     },
     store: {
       setCurrentSession: vi.fn(async () => undefined),
       setActiveLens: vi.fn(),
+      cancelScript: vi.fn(async () => undefined),
       currentWorkspaceId: workspace.id,
       projectScripts: {} as Record<string, ReadonlyArray<never>>,
       projects: [] as ReadonlyArray<never>,
       scriptRuns: {} as Record<string, never>,
       sessions: [] as ReadonlyArray<Session>,
-      updaterStatus: 'available',
-      updateVersion: '0.2.0',
-      installUpdate: vi.fn(async () => undefined),
+      archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
     },
   };
 });
 
 vi.mock('../../../store', () => ({
+  EMPTY_ARRAY: [],
   useCurrentWorkspace: () => currentWorkspace,
   useHasUnreadElsewhere: () => false,
   useSessions: () => hooks.sessions,
   useWorkspaceRollup: () => hooks.rollup,
   useStageGroupedSessions: () => hooks.groups,
-  useSessionStageInfo: (session: Session) => ({
-    stage: 'attention',
-    reason: hooks.reasons[session.id] ?? 'Needs attention',
-    attention: hooks.attention[session.id] ?? null,
-  }),
+  useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 
@@ -68,225 +62,179 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));
 
-vi.mock('../../../features/settings/components/ReportIssuePopover', () => ({
-  ReportIssuePopover: () => <span data-testid="report-issue-popover" />,
-}));
-
-vi.mock('../../../features/onboarding/OnboardingCard', () => ({
-  OnboardingChip: () => <span data-testid="onboarding-chip" />,
-}));
-
-vi.mock('../../../shared/components/DogMascot', () => ({
-  DogMascot: () => null,
-}));
-
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
   hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
-  hooks.reasons = {};
-  hooks.attention = {};
   store.setCurrentSession.mockClear();
-  store.setActiveLens.mockClear();
-  useThemeStore.setState({ theme: 'dark' });
 });
 
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
-import { useThemeStore } from '../../../shared/lib/theme';
+import type { TopBarSidebar } from './SidebarToggle';
+import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
+import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
-const ATTENTION_SESSION_ID = 'session-1' as SessionId;
 const ATTENTION_SESSION = {
-  id: ATTENTION_SESSION_ID,
+  id: 'session-1' as SessionId,
   goal: 'Review the failing checks',
 } as unknown as Session;
 
+const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open Impact';
+const BOARD: TopBarSidebar = { hasSidebar: false, isCollapsed: false, onToggle: () => undefined };
+
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
+  readonly sidebar?: TopBarSidebar;
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(<AppTopBar onOpenSpend={overrides.onOpenSpend ?? vi.fn()} />);
+  render(
+    <AppTopBar
+      sidebar={overrides.sidebar ?? BOARD}
+      onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
+      onOpenScript={vi.fn()}
+    />,
+  );
+
+const zones = (container: HTMLElement) =>
+  Array.from(container.querySelector('[data-tauri-drag-region]')?.children ?? []);
 
 describe('AppTopBar', () => {
-  it('mounts the onboarding reopen chip, which the card tooltip points at', () => {
-    renderBar({ onOpenSpend: vi.fn() });
-
-    expect(screen.getByTestId('onboarding-chip')).toBeDefined();
-  });
-
-  it('seats the report control ahead of notifications, leaving theme beside them', () => {
-    renderBar();
-
-    const report = screen.getByTestId('report-issue-popover');
-    const notifications = screen.getByTestId('notification-center');
-    const themeToggle = screen.getByRole('button', { name: /switch to (light|dark) mode/i });
-
-    expect(report.compareDocumentPosition(notifications)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(notifications.compareDocumentPosition(themeToggle)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-  });
-
-  it('keeps set-once preferences out of the bar, except theme', () => {
-    renderBar({ onOpenSpend: vi.fn() });
-
-    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).not.toBeNull();
-    expect(screen.queryByRole('button', { name: /pair your iphone/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /getting started/i })).toBeNull();
-  });
-
-  it('leaves settings and the update control to the footer, keeping workspace preferences', () => {
-    renderBar({ onOpenSpend: vi.fn() });
-
-    expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
-    expect(screen.queryByTestId('update-indicator')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Workspace settings' })).toBeDefined();
-  });
-
-  it('flips the real theme state from the top bar', () => {
-    useThemeStore.setState({ theme: 'dark' });
-    renderBar({ onOpenSpend: vi.fn() });
-
-    const toggle = screen.getByRole('button', { name: 'Switch to light mode' });
-    fireEvent.click(toggle);
-
-    expect(useThemeStore.getState().theme).toBe('light');
-    expect(screen.getByRole('button', { name: 'Switch to dark mode' })).toBeDefined();
-  });
-
-  it('names the brand once for assistive technology and never as a destination', () => {
-    renderBar();
-
-    const brand = screen.getByRole('img', { name: 'Goodboy' });
-    expect(brand.tagName).toBe('SPAN');
-    expect(brand.closest('button')).toBeNull();
-    expect(brand.closest('a')).toBeNull();
-  });
-
-  it('pins workspace identity at the left in every state, board or session', () => {
-    renderBar();
-
-    expect(screen.getByLabelText('Switch workspace: Test WS')).toBeDefined();
-  });
-
-  it('seats identity, brand and signals in one three column grid on the window', () => {
+  it('seats identity, command center and now in one three column grid that drags the window', () => {
     const { container } = renderBar();
     const bar = container.querySelector('[data-tauri-drag-region]');
-    const children = Array.from(bar?.children ?? []);
+    const children = zones(container);
 
+    expect(bar?.getAttribute('data-tauri-drag-region')).toBe('deep');
     expect(bar?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)]');
-    expect(children[2]?.className).not.toContain('min-w-0');
-    expect(children.length).toBe(3);
-    expect(children[0]?.contains(screen.getByLabelText('Switch workspace: Test WS'))).toBe(true);
-    expect(children[1]?.contains(screen.getByRole('img', { name: 'Goodboy' }))).toBe(true);
-    expect(children[2]?.contains(screen.getByTestId('onboarding-chip'))).toBe(true);
     expect(bar?.className).toContain('@container/topbar');
+    expect(bar?.className).toContain('pl-(--titlebar-inset)');
+    expect(bar?.className).toContain('bg-chrome');
+    expect(bar?.className).not.toContain('bg-background');
     expect(children.map((child) => child.className.split(' ')[0])).toEqual([
       'col-start-1',
       'col-start-2',
       'col-start-3',
     ]);
+    expect(children[0]?.contains(screen.getByLabelText('Switch workspace: Harborline'))).toBe(true);
+    expect(children[1]?.contains(screen.getByRole('button', { name: /^Search/ }))).toBe(true);
+    expect(children[2]?.className).not.toContain('min-w-0');
   });
 
-  it('leaves the column control to the sidebar', () => {
+  it('puts the command center where the logo was, opening the palette and teaching its chord', () => {
+    renderBar();
+    const spy = vi.fn();
+    window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, spy);
+
+    const center = screen.getByRole('button', {
+      name: `Search Harborline (${shortcutGlyphs('palette.open')})`,
+    });
+    fireEvent.click(center);
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(center.querySelector('input')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Goodboy' })).toBeNull();
+    window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, spy);
+  });
+
+  it('narrows the command center on its own width and keeps the chord at every width', () => {
     renderBar();
 
-    expect(screen.queryByRole('button', { name: /session sidebar/i })).toBeNull();
+    const center = screen.getByRole('button', { name: /^Search/ });
+    expect(center.className).toContain('@min-chrome-labels/topbar:w-50');
+    expect(center.className).toContain('@min-chrome-wide/topbar:w-70');
+    expect(center.querySelector('kbd')?.className).not.toContain('hidden');
   });
 
-  it('centres the brand with grid tracks, never a spacer or absolute positioning', () => {
+  it('reserves the sidebar toggle slot on the board so identity never moves', () => {
     const { container } = renderBar();
-    const bar = container.querySelector('[data-tauri-drag-region]');
-    const children = Array.from(bar?.children ?? []);
 
-    expect(children.some((child) => child.className.includes('flex-1'))).toBe(false);
-    expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
+    expect(screen.getByTestId('sidebar-toggle-slot')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /sessions \(/ })).toBeNull();
+    expect(zones(container)[0]?.firstElementChild).toBe(screen.getByTestId('sidebar-toggle-slot'));
   });
 
-  it('keeps the mascot at every width and drops only the wordmark and signal words', () => {
-    hooks.rollup = { attentionCount: 0, runningCount: 2, todaySpend: 1 };
+  it('toggles the session sidebar from the bar, right after the traffic lights', () => {
+    const onToggle = vi.fn();
+    const glyph = shortcutGlyphs('column.toggle');
+    const { rerender } = renderBar({
+      sidebar: { hasSidebar: true, isCollapsed: false, onToggle },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: `Hide sessions (${glyph})` }));
+    expect(onToggle).toHaveBeenCalledOnce();
+
+    rerender(
+      <AppTopBar
+        sidebar={{ hasSidebar: true, isCollapsed: true, onToggle }}
+        onOpenSpend={vi.fn()}
+        onOpenScript={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: `Show sessions (${glyph})` })).toBeDefined();
+  });
+
+  it('keeps theme, the brand and a workspace gear out of the bar', () => {
     renderBar();
 
-    const brand = screen.getByRole('img', { name: 'Goodboy' });
-    const wordmark = screen.getByText('Goodboy');
+    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Workspace settings' })).toBeNull();
+    expect(screen.queryByText('Goodboy')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
+    expect(screen.queryByTestId('update-indicator')).toBeNull();
+  });
 
-    expect(brand.className).not.toContain('hidden');
-    expect(wordmark.className).toContain('hidden');
-    expect(wordmark.className).toContain('@min-chrome-word/topbar:inline');
+  it('leaves the now chip out when nothing needs you, and keeps spend', () => {
+    renderBar();
+
+    expect(screen.queryByRole('button', { name: /need|running/ })).toBeNull();
+    expect(screen.getByRole('button', { name: SPEND_LABEL })).toBeDefined();
+  });
+
+  it('opens impact only from the spend figure, never from the now chip', () => {
+    hooks.groups = [
+      { key: 'attention', sessions: [ATTENTION_SESSION] },
+      { key: 'running', sessions: [ATTENTION_SESSION] },
+    ];
+    hooks.rollup = { attentionCount: 1, runningCount: 1, todaySpend: 5.04 };
+    const onOpenSpend = vi.fn();
+    renderBar({ onOpenSpend });
+
+    fireEvent.click(screen.getByRole('button', { name: '1 session needs you, 1 running' }));
+    expect(onOpenSpend).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Now' })).toBeDefined();
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    const spend = screen.getByRole('button', { name: SPEND_LABEL });
+    expect(spend.textContent).toContain('$5.04');
+    fireEvent.click(spend);
+    expect(onOpenSpend).toHaveBeenCalledOnce();
+  });
+
+  it('drops the signal words below chrome-labels, keeping counts and the spend figure', () => {
+    hooks.groups = [{ key: 'running', sessions: [ATTENTION_SESSION] }];
+    renderBar();
+
     expect(screen.getByText('running').className).toContain('@min-chrome-labels/topbar:inline');
     expect(screen.getByText('today').className).toContain('@min-chrome-labels/topbar:inline');
+    expect(screen.getByText('1').className).not.toContain('hidden');
+  });
+
+  it('closes the right zone with the bell, leaving report and setup to the Goodboy chip', () => {
+    const { container } = renderBar();
+    const right = zones(container)[2];
+    const bell = screen.getByTestId('notification-center');
+
+    expect(right?.lastElementChild).toBe(bell);
+    expect(right?.contains(screen.getByRole('button', { name: SPEND_LABEL }))).toBe(true);
+    expect(screen.queryByRole('button', { name: /report an issue/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /onboarding checklist/i })).toBeNull();
   });
 
   it('leaves session breadcrumbs to the page, not the drag strip', () => {
     renderBar();
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-  });
-
-  it('opens the impact studio only from the spend target and omits the beta chip', () => {
-    hooks.sessions = [ATTENTION_SESSION];
-    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
-    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 2.5 };
-    const onOpenSpend = vi.fn();
-    renderBar({ onOpenSpend });
-
-    fireEvent.click(screen.getByTitle("Today's spend across providers, open Impact"));
-    expect(onOpenSpend).toHaveBeenCalledOnce();
-
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
-    expect(onOpenSpend).toHaveBeenCalledOnce();
-    expect(screen.queryByText('Beta')).toBeNull();
-  });
-
-  it('lists attention sessions and navigates from the needs-you popover', () => {
-    hooks.sessions = [ATTENTION_SESSION];
-    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
-    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    renderBar({ onOpenSpend: vi.fn() });
-
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
-
-    expect(screen.getByText('Needs you')).toBeDefined();
-    expect(screen.getByRole('list', { name: 'Sessions needing attention' })).toBeDefined();
-    expect(screen.getByText('Review the failing checks')).toBeDefined();
-    expect(screen.getByText('PR #42: CI failed')).toBeDefined();
-
-    fireEvent.click(screen.getByTitle('Review the failing checks · PR #42: CI failed'));
-
-    expect(store.setCurrentSession).toHaveBeenCalledWith(ATTENTION_SESSION_ID);
-    expect(screen.queryByText('PR #42: CI failed')).toBeNull();
-  });
-
-  it('renders the open-question icon and tone instead of the sessions fallback', () => {
-    hooks.sessions = [ATTENTION_SESSION];
-    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
-    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    hooks.reasons = { [ATTENTION_SESSION_ID]: 'PR #42: CI failed' };
-    hooks.attention = { [ATTENTION_SESSION_ID]: 'open-question' };
-    renderBar();
-
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
-
-    const row = screen.getByTitle('Review the failing checks · PR #42: CI failed');
-    const icon = row.querySelector('svg');
-    expect(icon?.getAttribute('class')).toContain('text-warning');
-    expect(icon?.getAttribute('class')).toContain('lucide-circle-question-mark');
-    expect(icon?.getAttribute('class')).not.toContain('lucide-circle-play');
-  });
-
-  it('closes the needs-you dialog on Escape', () => {
-    hooks.sessions = [ATTENTION_SESSION];
-    hooks.groups = [{ key: 'attention', sessions: [ATTENTION_SESSION] }];
-    hooks.rollup = { attentionCount: 1, runningCount: 0, todaySpend: 0 };
-    renderBar({ onOpenSpend: vi.fn() });
-
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));
-    expect(screen.getByRole('dialog', { name: 'Sessions needing attention' })).toBeDefined();
-
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('dialog', { name: 'Sessions needing attention' })).toBeNull();
   });
 });

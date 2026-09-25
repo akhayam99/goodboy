@@ -24,13 +24,21 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
   });
   return (
     <AppShell
-      topBar={<AppTopBar onOpenSpend={noop} />}
+      topBar={
+        <AppTopBar
+          sidebar={{
+            hasSidebar: arrangement.leftSlot !== 'none',
+            isCollapsed: arrangement.leftSlot === 'rail',
+            onToggle: noop,
+          }}
+          onOpenSpend={noop}
+          onOpenScript={noop}
+        />
+      }
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={
-        arrangement.leftSlot === 'sessions' ? (
-          <SessionNavSidebar session={session} onCollapse={noop} />
-        ) : undefined
+        arrangement.leftSlot === 'sessions' ? <SessionNavSidebar session={session} /> : undefined
       }
       footer={
         <AppFooter
@@ -40,9 +48,8 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
           onOpenIntegration={noop}
           onOpenInbox={noop}
           onOpenWorkflows={noop}
-          onOpenProviders={noop}
           onOpenSettings={noop}
-          onOpenImpact={noop}
+          onOpenShortcuts={noop}
           onOpenChangelog={noop}
         />
       }

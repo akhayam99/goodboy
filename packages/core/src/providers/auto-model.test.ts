@@ -12,7 +12,7 @@ describe('autoModelForRole', () => {
     it('keeps the curated default for a high-tier role', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'opus-5',
+        model: 'opus-5.5',
       });
     });
 
@@ -23,10 +23,10 @@ describe('autoModelForRole', () => {
       });
     });
 
-    it('prefers the default provider even when other providers are enabled', () => {
+    it('treats the first provider as the default, even when Claude is also enabled', () => {
       expect(autoModelForRole({ role: 'planner', providers: ['gemini', 'anthropic'] })).toEqual({
-        provider: 'anthropic',
-        model: 'opus-5',
+        provider: 'gemini',
+        model: 'gemini-3.1-pro',
       });
     });
   });
@@ -73,38 +73,37 @@ describe('autoModelForRole', () => {
       expect(['gemini', 'codex']).toContain(result?.provider);
     });
 
-    it('cursor provider: picks a real cursor slug for a mid-tier role, not auto', () => {
+    it('cursor provider: picks the curated thinking slug for a review role, not auto', () => {
       const result = autoModelForRole({ role: 'reviewer', providers: ['cursor'] });
-      expect(result?.provider).toBe('cursor');
-      expect(result?.model).not.toBe('auto');
-      expect(CURSOR_MODELS.some((m) => m.id === result?.model)).toBe(true);
+      expect(result).toEqual({ provider: 'cursor', model: 'claude-4.6-sonnet-medium-thinking' });
+      expect(CURSOR_MODELS.some((m) => m.id === 'sonnet-4.6')).toBe(true);
     });
 
-    it('cursor provider: picks a real expensive slug for a high-tier role', () => {
+    it('cursor provider: plans on a model that needs no Max Mode', () => {
       const result = autoModelForRole({ role: 'planner', providers: ['cursor'] });
-      expect(result).toEqual({ provider: 'cursor', model: 'fable-5.1' });
+      expect(result).toEqual({ provider: 'cursor', model: 'claude-4.6-sonnet-medium-thinking' });
     });
 
-    it('substitutes a coding role with Opus, never with a thinker-only model', () => {
+    it('falls back from an unavailable pin to the curated default, never a thinker', () => {
       const prefs = {
         implementer: { providerId: 'cursor' as const, model: 'gpt-5.6', effort: 'high' as const },
       };
       expect(autoModelForRole({ role: 'implementer', providers: ['anthropic'], prefs })).toEqual({
         provider: 'anthropic',
-        model: 'opus-5.5',
+        model: 'sonnet-5',
       });
       expect(recommendedModelForRole({ role: 'implementer', provider: 'anthropic', prefs })).toBe(
-        'opus-5.5',
+        'sonnet-5',
       );
     });
 
-    it('still reaches for the thinker on a role that only thinks', () => {
+    it('keeps Fable a manual pick even for a role that only thinks', () => {
       const prefs = {
         planner: { providerId: 'cursor' as const, model: 'gpt-5.6', effort: 'high' as const },
       };
       expect(autoModelForRole({ role: 'planner', providers: ['anthropic'], prefs })).toEqual({
         provider: 'anthropic',
-        model: 'fable-5.1',
+        model: 'opus-5.5',
       });
     });
 

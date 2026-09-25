@@ -508,7 +508,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         }
       }}
     >
-      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-lg motion-safe:animate-studio-in">
+      <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in">
         <input
           ref={inputRef}
           type="text"

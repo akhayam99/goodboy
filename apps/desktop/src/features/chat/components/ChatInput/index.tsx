@@ -426,7 +426,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
   return (
     <div className="px-10 pb-4 pt-2">
-      <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}>
+      <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column)}>
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
             sessionPreference={session.providerPreference}

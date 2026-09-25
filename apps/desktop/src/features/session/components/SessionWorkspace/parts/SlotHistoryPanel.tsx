@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { EmptyState, Markdown, ScrollFade } from '@goodboy/ui';
+import { EmptyState, Markdown } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
-import { InspectorHeader } from './InspectorSplit/InspectorHeader';
 import { AuthorshipChip } from './AuthorshipChip';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -80,52 +78,37 @@ const HistoryEntry = ({
 };
 
 type Props = {
-  readonly label: string;
   readonly renderAsMarkdown: boolean;
   readonly entries: ReadonlyArray<ContextSlotHistoryEntry>;
   readonly onRestore: (entry: ContextSlotHistoryEntry) => void;
-  readonly onClose: () => void;
 };
 
-export const SlotHistoryPanel = ({
-  label,
-  renderAsMarkdown,
-  entries,
-  onRestore,
-  onClose,
-}: Props) => {
+export const SlotHistoryPanel = ({ renderAsMarkdown, entries, onRestore }: Props) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader
-        title={`History: ${label}`}
-        closeLabel="close history panel"
-        onClose={onClose}
+  if (entries.length === 0) {
+    return (
+      <EmptyState
+        icon={CONCEPT_ICONS.sessionSummary}
+        tone={CONCEPT_TONE.sessionSummary}
+        title="No history yet"
+        size="inline"
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
-        {entries.length === 0 ? (
-          <EmptyState
-            icon={CONCEPT_ICONS.sessionSummary}
-            tone={CONCEPT_TONE.sessionSummary}
-            title="No history yet"
-            size="inline"
-          />
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {entries.map((entry) => (
-              <HistoryEntry
-                key={entry.id}
-                entry={entry}
-                renderAsMarkdown={renderAsMarkdown}
-                expanded={expandedId === entry.id}
-                onToggle={() => setExpandedId((prev) => (prev === entry.id ? null : entry.id))}
-                onRestore={onRestore}
-              />
-            ))}
-          </ul>
-        )}
-      </ScrollFade>
-    </div>
+    );
+  }
+
+  return (
+    <ul className="flex flex-col gap-3">
+      {entries.map((entry) => (
+        <HistoryEntry
+          key={entry.id}
+          entry={entry}
+          renderAsMarkdown={renderAsMarkdown}
+          expanded={expandedId === entry.id}
+          onToggle={() => setExpandedId((prev) => (prev === entry.id ? null : entry.id))}
+          onRestore={onRestore}
+        />
+      ))}
+    </ul>
   );
 };

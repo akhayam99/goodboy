@@ -1,5 +1,5 @@
 import { EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { CoverageChip } from './CoverageChip';
 import type { ModelBreakdownEntry } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -46,7 +46,7 @@ export const ModelTable = ({
           >
             <td className="px-3 py-2">
               <span className="flex min-w-0 items-center gap-1.5">
-                <RoutingBadge provider={entry.provider} model={entry.model} />
+                <RoutingLabel provider={entry.provider} model={entry.model} />
                 <CoverageChip coverage={entry.coverage} />
               </span>
             </td>

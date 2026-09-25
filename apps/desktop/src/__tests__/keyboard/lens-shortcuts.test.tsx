@@ -93,7 +93,6 @@ vi.mock('../../features/permissions/components/DiffViewerDialog', () => ({
 }));
 vi.mock('../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
-vi.mock('../../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
 vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../../features/companion/components/CompanionStudio', () => ({
   CompanionStudio: () => null,

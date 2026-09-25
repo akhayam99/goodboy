@@ -78,7 +78,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.6-luna',
+      model: 'gpt-5.6-terra',
       effort: 'medium',
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid plan_generation model'));
@@ -99,7 +99,7 @@ describe('resolveTaskModel', () => {
     });
   });
 
-  it('uses the first turn-tier model for other rebase providers', () => {
+  it('rebases on the curated codex default', () => {
     expect(
       resolveTaskModel({
         task: 'rebase',
@@ -109,7 +109,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.6-sol',
+      model: 'gpt-5.6-terra',
     });
   });
 
@@ -173,7 +173,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'codex',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna', effort: 'medium' });
+    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna', effort: 'low' });
   });
 
   it('preserves an explicit codex model variant', () => {
@@ -228,5 +228,48 @@ describe('resolveTaskModel', () => {
       sessionDefaultProviderId: 'codex',
     });
     expect(draft.effort).toBeUndefined();
+  });
+
+  it('moves a task to the next connected provider when the default is disconnected', () => {
+    expect(
+      resolveTaskModel({
+        task: 'summarizer',
+        preferences: null,
+        workspaceDefaultProviderId: 'codex',
+        sessionDefaultProviderId: 'codex',
+        connectedProviders: ['anthropic'],
+      }),
+    ).toEqual({ providerId: 'anthropic', model: 'haiku-4.5' });
+  });
+
+  it('uses the pinned fallback when the pinned provider is disconnected', () => {
+    const preferences: TaskModelPreferences = {
+      plan_generation: {
+        providerId: 'codex',
+        model: 'gpt-5.6-sol',
+        effort: 'high',
+        fallback: { providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'high' },
+      },
+    };
+    expect(
+      resolveTaskModel({
+        task: 'plan_generation',
+        preferences,
+        workspaceDefaultProviderId: 'anthropic',
+        sessionDefaultProviderId: 'anthropic',
+        connectedProviders: ['anthropic', 'gemini'],
+      }),
+    ).toEqual({ providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'high' });
+  });
+
+  it('drafts plans on Sonnet 5 by default', () => {
+    expect(
+      resolveTaskModel({
+        task: 'plan_generation',
+        preferences: null,
+        workspaceDefaultProviderId: 'anthropic',
+        sessionDefaultProviderId: 'anthropic',
+      }),
+    ).toEqual({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' });
   });
 });

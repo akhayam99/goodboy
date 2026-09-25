@@ -80,6 +80,7 @@ export const WorkspaceLauncher = () => {
       className="h-full w-full"
       viewportClassName="relative flex items-center justify-center bg-background px-6 py-10"
     >
+      <div data-tauri-drag-region aria-hidden className="absolute inset-x-0 top-0 h-9" />
       <div
         data-tauri-drag-region="false"
         className="absolute right-4 top-3 flex items-center gap-2"

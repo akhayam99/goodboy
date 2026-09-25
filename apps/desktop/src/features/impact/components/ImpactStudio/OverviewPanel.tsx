@@ -49,11 +49,7 @@ export const OverviewPanel = ({
       ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
       : null;
   return (
-    <PaneShell
-      scroll="body"
-      title="Overview"
-      description="What orchestration shipped and how quickly work reached done"
-    >
+    <PaneShell scroll="body" title="Overview">
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
         label="pull request outcomes"

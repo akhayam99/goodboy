@@ -316,6 +316,32 @@ describe('AgentBrief type scale', () => {
     expect(line?.className).toContain('text-xs');
     expect(line?.className).not.toContain('text-sm');
   });
+
+  it('puts the time on the Now line and points at the transcript at twice the usual time', () => {
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ status: 'running' })}
+        time={{
+          label: '19m',
+          detail: 'Running 19m. Most finish within 9m.',
+          progress: 1,
+          headline: '19m · longer than usual',
+          note: 'Longer than usual',
+          isMuchLonger: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('agent-now-time').textContent).toBe('19m · longer than usual');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Check what it is doing in the transcript' }),
+    );
+    expect(reveal).toHaveBeenCalledTimes(1);
+    window.removeEventListener('goodboy:reveal-chat', reveal);
+  });
 });
 
 describe('AgentBrief delegated answers', () => {

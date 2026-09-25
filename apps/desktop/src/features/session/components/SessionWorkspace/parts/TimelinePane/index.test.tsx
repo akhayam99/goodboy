@@ -1150,7 +1150,7 @@ describe('TimelinePane row meta', () => {
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('fills the node of a running step toward its usual time', () => {
+    it('counts down a running step and fills its node toward its usual time', () => {
       const now = Date.now();
       storeState.sessionPhaseRuns = {
         'session-1': [PLANNER, { ...BUILDER, status: 'running' }],
@@ -1178,10 +1178,42 @@ describe('TimelinePane row meta', () => {
       render(<TimelinePane session={SESSION} actions={null} />);
 
       const row = rowOf('Build the fix');
-      expect(within(row).getByTestId('work-time').textContent).toBe('3m of ~10m');
+      expect(within(row).getByTestId('work-time').textContent).toBe('~5-7m left');
       const node = within(row).getByRole('img', { name: 'Running' });
       expect(node.querySelector('[data-node-arc="running"]')).not.toBeNull();
       expect(node.className).not.toContain('spin-border');
+    });
+
+    it('shows elapsed time and says a step runs longer than usual past its range', () => {
+      const now = Date.now();
+      storeState.sessionPhaseRuns = {
+        'session-1': [PLANNER, { ...BUILDER, status: 'running' }],
+      };
+      storeState.sessionTurnSpans = { 'session-1': [] };
+      storeState.agentTurnState = {
+        'agent-build': { kind: 'running', startedAt: new Date(now - 11 * MINUTE).toISOString() },
+      };
+      storeState.workspaceDurationHistory = {
+        'ws-1': {
+          steps: [6, 8, 9, 10, 12].map((minutes) => ({
+            role: 'implementer',
+            provider: 'anthropic',
+            model: 'claude-sonnet-4-5',
+            effort: 'medium',
+            activeMs: minutes * MINUTE,
+            costUsd: 0.3,
+            endedAtMs: now - MINUTE,
+          })),
+          turns: [],
+          everyWorkspace: { steps: [], turns: [] },
+          orchestratedRuns: [],
+        },
+      };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const row = rowOf('Build the fix');
+      expect(within(row).getByTestId('work-time').textContent).toBe('11m');
+      expect(within(row).getByTestId('timeline-row-state').textContent).toBe('Longer than usual');
     });
   });
 
@@ -1272,7 +1304,7 @@ describe('TimelinePane row meta', () => {
       .getByTestId('work-meta')
       .querySelector('[data-meta-column="cost"]');
 
-    expect(runCost?.className).toContain('@max-[520px]:hidden');
-    expect(stepCost?.className).toContain('@max-[520px]:hidden');
+    expect(runCost?.className).toContain('@max-[560px]:hidden');
+    expect(stepCost?.className).toContain('@max-[560px]:hidden');
   });
 });

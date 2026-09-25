@@ -11,7 +11,7 @@ import type {
 import { useAppStore } from '../../../../store/store';
 import { selectWorkflowNodeRouting } from '../../../../store/slices/workflowRouting/selectWorkflowNodeRouting';
 import { workflowNodeRoutingKey } from '../../../../store/slices/workflowRouting/workflowNodeRoutingKey';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
 import { lockableEffort } from './lockableEffort';
@@ -126,8 +126,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
         />
       ) : (
         <div className="flex min-w-0 items-center gap-2">
-          <RoutingBadge
-            variant="full"
+          <RoutingLabel
             provider={shown?.provider ?? null}
             model={shown?.model ?? null}
             effort={shown?.effort ?? null}

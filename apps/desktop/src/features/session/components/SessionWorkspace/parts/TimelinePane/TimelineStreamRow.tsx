@@ -32,6 +32,7 @@ type Props = {
   readonly worktrees?: ReadonlyArray<string>;
   readonly meta?: ReactNode;
   readonly progress?: number | null;
+  readonly stateNote?: string | null;
   readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
@@ -51,6 +52,7 @@ export const TimelineStreamRow = ({
   worktrees,
   meta = null,
   progress = null,
+  stateNote = null,
   menu = null,
   lanes = null,
   runLane = null,
@@ -89,6 +91,7 @@ export const TimelineStreamRow = ({
           diffStat={diffStat}
           isLaneLit={isLaneLit}
           worktrees={worktrees}
+          stateNote={stateNote}
         />
       </span>
       {openTarget == null ? null : (

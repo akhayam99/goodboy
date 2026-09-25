@@ -5,7 +5,16 @@ import { describe, expect, it } from 'vitest';
 
 const REPOSITORY_ROOT = join(__dirname, '..', '..', '..', '..', '..');
 const MASCOT_PNG = join(__dirname, '..', '..', 'assets', 'mascot.png');
-const BRAND_BADGE = join(__dirname, '..', '..', 'app', 'components', 'AppTopBar', 'BrandBadge.tsx');
+const CHROME_MARK = join(
+  __dirname,
+  '..',
+  '..',
+  'app',
+  'components',
+  'AppFooter',
+  'GoodboyChip',
+  'GoodboyChipLabel.tsx',
+);
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
 const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');
@@ -343,7 +352,7 @@ const buildPng = ({
 const fullScanlines = ({ width, height }: { width: number; height: number }): Buffer =>
   Buffer.alloc(height * (FILTER_BYTES_PER_ROW + width * RGBA_BYTES_PER_PIXEL));
 
-const BADGE_SOURCE = readFileSync(BRAND_BADGE, 'utf8');
+const CHROME_MARK_SOURCE = readFileSync(CHROME_MARK, 'utf8');
 const LOGO_SOURCE = readFileSync(SITE_LOGO, 'utf8');
 const FAVICON_SOURCE = readFileSync(FAVICON, 'utf8');
 const DESKTOP_TILE = cssValueOf({ path: DESKTOP_STYLES, variableName: '--color-brand' });
@@ -485,13 +494,12 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('shows the top bar mark as a bare glyph in the theme foreground, with no tile', () => {
-    expect(BADGE_SOURCE).toContain('items-center justify-center');
-    expect(BADGE_SOURCE).not.toContain('absolute');
-    expect(BADGE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
-    expect(BADGE_SOURCE).not.toContain('bg-brand');
-    expect(BADGE_SOURCE).not.toContain('text-white');
-    expect(BADGE_SOURCE).toMatch(/<DogMascot [^>]*className="text-foreground"/);
+  it('shows the chrome mark as a bare glyph in the theme foreground, with no tile', () => {
+    expect(CHROME_MARK_SOURCE).not.toContain('absolute');
+    expect(CHROME_MARK_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
+    expect(CHROME_MARK_SOURCE).not.toContain('bg-brand');
+    expect(CHROME_MARK_SOURCE).not.toContain('text-white');
+    expect(CHROME_MARK_SOURCE).toMatch(/<DogMascot [^>]*className="text-foreground"/);
   });
 
   it('centers the site mark with the box model and the shared tile ratios', () => {

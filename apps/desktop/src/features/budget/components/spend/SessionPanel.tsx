@@ -42,7 +42,7 @@ export const SessionPanel = ({
     <PaneShell
       scroll="body"
       title={goal}
-      description={isCurrent ? 'Current session' : 'Session spend'}
+      meta={isCurrent ? 'Current session' : 'Session spend'}
       actions={<OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />}
     >
       <ErrorStrip

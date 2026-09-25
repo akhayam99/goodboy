@@ -2,31 +2,17 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { PANE_RHYTHM } from '@goodboy/ui';
 import { FocusedPane } from './FocusedPane';
+import { PageCrumbContext } from './PageCrumbContext';
+import { PageCrumbRow } from './PageCrumbRow';
 import { PaneShell } from '.';
 
 afterEach(cleanup);
 
-const closestWith = ({
-  node,
-  pattern,
-}: {
-  readonly node: HTMLElement;
-  readonly pattern: RegExp;
-}) => {
-  let current: HTMLElement | null = node;
-  while (current != null) {
-    if (current.className.split(' ').some((entry) => pattern.test(entry))) {
-      return current;
-    }
-    current = current.parentElement;
-  }
-  return null;
-};
+const pageColumnOf = (node: HTMLElement) => node.closest('[data-page-column]');
 
 describe('PaneShell', () => {
-  it.each(['pane', 'body'] as const)('fills a flex row parent with scroll %s', (scroll) => {
+  it.each(['pane', 'body', 'self'] as const)('fills a flex row parent with scroll %s', (scroll) => {
     const { container } = render(
       <div className="flex">
         <PaneShell title="Notifications" scroll={scroll}>
@@ -36,58 +22,76 @@ describe('PaneShell', () => {
     );
 
     const root = container.firstElementChild?.firstElementChild;
-    expect(root?.className.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+    expect(root?.className.split(' ')).toEqual(
+      expect.arrayContaining(['min-w-0', 'flex-1', '@container']),
+    );
   });
 
-  it('renders the title, meta, description, actions, and children', () => {
+  it('renders the title, meta, actions, and children', () => {
     render(
-      <PaneShell
-        title="Linear"
-        description="External Linear issues linked to this session."
-        meta={3}
-        actions={<button type="button">Link issue</button>}
-      >
+      <PaneShell title="Linear" meta={3} actions={<button type="button">Link issue</button>}>
         <p>Body copy</p>
       </PaneShell>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
+    const heading = screen.getByRole('heading', { name: 'Linear' });
+    expect(heading.className).toContain('text-lg');
     expect(screen.getByText('3')).toBeDefined();
-    expect(screen.getByText('External Linear issues linked to this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();
   });
 
-  it('insets the pane body on the shared rhythm and centres the reading measure', () => {
+  it('puts the crumb, the header, and the body in the same page column', () => {
     render(
-      <PaneShell title="Linear" measure="reading">
-        <p>Body copy</p>
-      </PaneShell>,
+      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
+        <PaneShell title="Workflows">
+          <p>Body copy</p>
+        </PaneShell>
+      </PageCrumbContext.Provider>,
     );
 
-    const column = closestWith({
-      node: screen.getByText('Body copy'),
-      pattern: /^max-w-/,
-    }) as HTMLElement;
-    expect(column.className).toContain(PANE_RHYTHM.measure.reading);
-    expect(column.className).toContain(PANE_RHYTHM.column);
-
-    const viewport = closestWith({ node: column, pattern: /^p[xy]-/ }) as HTMLElement;
-    expect(viewport.className).toContain(PANE_RHYTHM.body);
+    const crumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const column = pageColumnOf(crumb);
+    expect(column).not.toBeNull();
+    expect(pageColumnOf(screen.getByRole('heading', { name: 'Workflows' }))).toBe(column);
+    expect(pageColumnOf(screen.getByText('Body copy'))).toBe(column);
+    expect(
+      crumb.compareDocumentPosition(screen.getByRole('heading')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
-  it('widens to every measure the rhythm defines', () => {
+  it('keeps the crumb out of the mount animation so it holds still between views', () => {
     render(
-      <PaneShell title="File versions" measure="full">
+      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
+        <PaneShell title="Workflows">
+          <p>Body copy</p>
+        </PaneShell>
+      </PageCrumbContext.Provider>,
+    );
+
+    expect(
+      screen
+        .getByRole('navigation', { name: 'Breadcrumb' })
+        .closest('.motion-safe\\:animate-studio-in'),
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole('heading', { name: 'Workflows' })
+        .closest('.motion-safe\\:animate-studio-in'),
+    ).not.toBeNull();
+    expect(
+      screen.getByText('Body copy').closest('.motion-safe\\:animate-studio-in'),
+    ).not.toBeNull();
+  });
+
+  it('draws no crumb row outside a session', () => {
+    const { container } = render(
+      <PaneShell title="Settings">
         <p>Body copy</p>
       </PaneShell>,
     );
 
-    const column = closestWith({
-      node: screen.getByText('Body copy'),
-      pattern: /^max-w-/,
-    }) as HTMLElement;
-    expect(column.className).toContain(PANE_RHYTHM.measure.full);
+    expect(container.querySelector('[data-slot="page-crumb"]')).toBeNull();
   });
 
   it('bounds the body in its own scroll region and keeps the header out of it', () => {
@@ -98,22 +102,21 @@ describe('PaneShell', () => {
     );
 
     const viewport = screen.getByText('Body copy').closest('.overflow-y-auto') as HTMLElement;
-    const region = viewport.parentElement as HTMLElement;
 
-    expect(region.className).toContain('min-h-0');
-    expect(region.className).toContain('flex-1');
     expect(viewport.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
     expect(viewport.contains(screen.getByRole('button', { name: 'Start run' }))).toBe(false);
-
-    const host = closestWith({ node: region, pattern: /^p[xy]-/ }) as HTMLElement;
-    expect(host.className).toContain(PANE_RHYTHM.body);
-
-    const headerBand = closestWith({
-      node: screen.getByRole('heading', { name: 'Resolve' }),
-      pattern: /^\[scrollbar-gutter:stable\]$/,
-    });
-    expect(headerBand).not.toBeNull();
     expect(viewport.className).toContain('[scrollbar-gutter:stable]');
+  });
+
+  it('draws no divider under the header', () => {
+    const { container } = render(
+      <PaneShell title="Resolve" scroll="body">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    expect(container.querySelector('[role="separator"]')).toBeNull();
+    expect(container.querySelector('hr')).toBeNull();
   });
 
   it('keeps one scroller for the whole pane by default', () => {
@@ -128,6 +131,36 @@ describe('PaneShell', () => {
     expect(viewport.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(true);
   });
 
+  it('lets the body own its scrolling with scroll self', () => {
+    render(
+      <PaneShell title="Transcript" scroll="self">
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    expect(screen.getByText('Body copy').closest('.overflow-y-auto')).toBeNull();
+    expect(pageColumnOf(screen.getByText('Body copy'))).toBeNull();
+  });
+
+  it('renders tabs under the title and a dock on the page column', () => {
+    render(
+      <PaneShell
+        title="Artifact"
+        tabs={<span>Artifact tabs</span>}
+        dock={<button type="button">Submit</button>}
+      >
+        <p>Body copy</p>
+      </PaneShell>,
+    );
+
+    const heading = screen.getByRole('heading', { name: 'Artifact' });
+    const tabs = screen.getByText('Artifact tabs');
+    expect(heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const dock = screen.getByRole('button', { name: 'Submit' });
+    expect(pageColumnOf(dock)).not.toBeNull();
+    expect(dock.closest('.overflow-y-auto')).toBeNull();
+  });
+
   it('renders a custom header in place of the title block when given one', () => {
     render(
       <PaneShell header={<h1>Custom header</h1>}>
@@ -137,46 +170,6 @@ describe('PaneShell', () => {
 
     expect(screen.getByRole('heading', { name: 'Custom header' })).toBeDefined();
     expect(screen.getAllByRole('heading')).toHaveLength(1);
-    expect(screen.getByText('Body copy')).toBeDefined();
-  });
-
-  it('renders the eyebrow above the title', () => {
-    render(
-      <PaneShell title="Workflows" eyebrow={<span>Ship the lens eyebrow</span>}>
-        <p>Body copy</p>
-      </PaneShell>,
-    );
-
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const title = screen.getByRole('heading', { name: 'Workflows' });
-    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('renders the eyebrow above a custom header', () => {
-    render(
-      <PaneShell header={<h1>Custom header</h1>} eyebrow={<span>Ship the lens eyebrow</span>}>
-        <p>Body copy</p>
-      </PaneShell>,
-    );
-
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const header = screen.getByRole('heading', { name: 'Custom header' });
-    expect(eyebrow.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('mounts with the studio-in animation by default', () => {
-    render(
-      <PaneShell title="Linear">
-        <p>Body copy</p>
-      </PaneShell>,
-    );
-
-    const column = closestWith({
-      node: screen.getByText('Body copy'),
-      pattern: /^max-w-/,
-    }) as HTMLElement;
-    expect(column.className).toContain('motion-safe:animate-studio-in');
-    expect(column.className).not.toContain('animate-fade-in');
   });
 
   it('lets a consumer override the mount animation without touching the default', () => {
@@ -186,53 +179,39 @@ describe('PaneShell', () => {
       </PaneShell>,
     );
 
-    const column = closestWith({
-      node: screen.getByText('Body copy'),
-      pattern: /^max-w-/,
-    }) as HTMLElement;
-    expect(column.className).toContain('animate-fade-in');
-    expect(column.className).not.toContain('motion-safe:animate-studio-in');
+    const body = screen.getByText('Body copy').parentElement as HTMLElement;
+    expect(body.className).toContain('animate-fade-in');
+    expect(body.className).not.toContain('motion-safe:animate-studio-in');
+  });
+});
+
+describe('PageCrumbRow', () => {
+  it('frames the crumb in its own page column for wrappers without a header', () => {
+    render(
+      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
+        <PageCrumbRow />
+      </PageCrumbContext.Provider>,
+    );
+
+    expect(pageColumnOf(screen.getByRole('navigation', { name: 'Breadcrumb' }))).not.toBeNull();
   });
 });
 
 describe('FocusedPane', () => {
-  it('renders the lens, the count, the actions, and the body', () => {
+  it('renders the crumb, the lens, the count, the actions, and the body', () => {
     render(
-      <FocusedPane lens="Workflows" count={2} actions={<button type="button">Close</button>}>
-        <p>Body copy</p>
-      </FocusedPane>,
+      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
+        <FocusedPane lens="Workflows" count={2} actions={<button type="button">Close</button>}>
+          <p>Body copy</p>
+        </FocusedPane>
+      </PageCrumbContext.Provider>,
     );
 
-    expect(screen.getByText('Workflows')).toBeDefined();
+    const crumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(pageColumnOf(crumb)).toBe(pageColumnOf(screen.getByText('Workflows')));
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.getByText('2')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Close' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();
-  });
-
-  it('renders the eyebrow above the lens label', () => {
-    render(
-      <FocusedPane lens="Workflows" eyebrow={<span>Ship the lens eyebrow</span>}>
-        <p>Body copy</p>
-      </FocusedPane>,
-    );
-
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const lens = screen.getByText('Workflows');
-    expect(eyebrow.compareDocumentPosition(lens) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('insets its header on the shared rhythm', () => {
-    render(
-      <FocusedPane lens="Workflows">
-        <p>Body copy</p>
-      </FocusedPane>,
-    );
-
-    const header = closestWith({
-      node: screen.getByText('Workflows'),
-      pattern: /^p[xy]-/,
-    }) as HTMLElement;
-    expect(header.className).toContain(PANE_RHYTHM.header);
   });
 });

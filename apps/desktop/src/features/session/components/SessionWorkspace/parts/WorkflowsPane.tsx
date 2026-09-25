@@ -21,10 +21,9 @@ const VISIBLE_FINISHED_COUNT = 30;
 
 type Props = {
   readonly session: Session;
-  readonly eyebrow?: ReactNode;
 };
 
-export const WorkflowsPane = ({ session, eyebrow }: Props) => {
+export const WorkflowsPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const makeWorkflowPreset = useAppStore((s) => s.makeWorkflowPreset);
@@ -84,7 +83,6 @@ export const WorkflowsPane = ({ session, eyebrow }: Props) => {
       <FocusedPane
         lens="Workflows"
         count={attachedRuns.length}
-        eyebrow={eyebrow}
         actions={
           <>
             {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
@@ -111,9 +109,7 @@ export const WorkflowsPane = ({ session, eyebrow }: Props) => {
   return (
     <PaneShell
       title="Workflows"
-      description="Sequences of agents this session runs toward its goal."
       meta={hasRuns ? attachedRuns.length : undefined}
-      eyebrow={eyebrow}
       actions={
         shouldShowHeaderAttach ? (
           <WorkflowAttachButton sessionId={sessionId} placement="header" />

@@ -50,11 +50,10 @@ export const ApiProviderDetail = ({ info }: Props) => {
   return (
     <PaneShell
       scroll="body"
-      measure="reading"
       animationClassName={SETTINGS_PANE_ENTRY}
       glyph={<Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0" style={{ color }} />}
       title={info.label}
-      description="Runs through the OpenCode runtime"
+      meta="Runs through the OpenCode runtime"
       actions={action}
     >
       <section className="flex flex-col gap-2">

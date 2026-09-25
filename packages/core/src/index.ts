@@ -266,9 +266,18 @@ export { resolveTaskModel } from './providers/task-models';
 
 export {
   resolveRoleRouting,
+  type PinnedUnavailable,
   type ResolvedRoleFallback,
   type ResolvedRoleRouting,
 } from './providers/role-models';
+export {
+  resolveAuto,
+  type AutoContext,
+  type AutoPick,
+  type AutoSlot,
+  type AutoStep,
+} from './providers/autoRouting/resolveAuto';
+export { AUTO_DEFAULTS, type CuratedProviderId } from './providers/autoRouting/defaults';
 export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';
@@ -476,6 +485,7 @@ export {
   buildDurationHistory,
   estimateDuration,
   estimateOrchestratedRun,
+  estimateProgress,
   sumEstimates,
   unionDurationMs,
   type CostRange,
@@ -484,6 +494,7 @@ export {
   type DurationSample,
   type DurationUnit,
   type EstimateKey,
+  type EstimateProgress,
   type EstimateTier,
   type EstimateTotal,
   type RunDurationSample,

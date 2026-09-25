@@ -4,7 +4,7 @@ import { recommendationSummary } from './recommendationSummary';
 describe('recommendationSummary', () => {
   it('names the recommended provider and its model', () => {
     expect(recommendationSummary({ provider: 'anthropic', model: 'claude-sonnet-4-6' })).toBe(
-      'Claude · Sonnet · 4.6',
+      'Claude · Sonnet 4.6',
     );
   });
 

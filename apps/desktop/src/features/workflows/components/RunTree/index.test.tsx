@@ -217,8 +217,14 @@ const renderTree = ({
 
 const rowOf = (id: string): HTMLElement => screen.getByTestId(`run-tree-row-${id}`);
 
-const metaOf = (id: string, column: 'model' | 'effort' | 'cost'): string | null =>
-  rowOf(id).querySelector(`[data-meta-column="${column}"]`)?.textContent ?? null;
+const META_SELECTOR = {
+  model: '[data-meta-column="routing"] [data-routing-part="name"]',
+  effort: '[data-meta-column="routing"] [data-routing-part="detail"]',
+  cost: '[data-meta-column="cost"]',
+} as const;
+
+const metaOf = (id: string, column: keyof typeof META_SELECTOR): string | null =>
+  rowOf(id).querySelector(META_SELECTOR[column])?.textContent ?? null;
 
 const rowIds = (): ReadonlyArray<string> =>
   screen
@@ -322,8 +328,8 @@ describe('RunTree', () => {
     renderTree();
 
     const ran = within(rowOf('agent-1')).getByTestId('routing-divergence');
-    expect(ran.textContent).toBe(metaOf('agent-1', 'model'));
-    expect(ran.textContent).not.toBe('Sonnet 4.5');
+    expect(ran.getAttribute('data-meta-column')).toBe('routing');
+    expect(metaOf('agent-1', 'model')).not.toBe('Sonnet 4.5');
     expect(metaOf('agent-1', 'cost')).toBe('$0.10');
   });
 

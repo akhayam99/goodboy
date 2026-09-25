@@ -26,6 +26,7 @@ type Props = {
   readonly diffStat?: MountDiffStat | null;
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
+  readonly stateNote?: string | null;
 };
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -140,10 +141,18 @@ export const TimelineRowLabel = ({
   diffStat = null,
   isLaneLit = false,
   worktrees = NO_WORKTREES,
+  stateNote = null,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} rowState={item.rowState} isLaneLit={isLaneLit} />;
+    return (
+      <TimelineRunLabel
+        entry={entry}
+        rowState={item.rowState}
+        isLaneLit={isLaneLit}
+        stateNote={stateNote}
+      />
+    );
   }
   const isStep = grade !== 'entry';
   const isQueued = item.rowState.phase === 'queued';
@@ -201,7 +210,7 @@ export const TimelineRowLabel = ({
       {secondary != null ? (
         <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
       ) : null}
-      {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} />}
+      {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} note={stateNote} />}
       {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
     </>
   );

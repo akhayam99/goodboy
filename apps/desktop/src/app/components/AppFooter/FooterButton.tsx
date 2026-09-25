@@ -9,7 +9,6 @@ type Props = {
   readonly label: string;
   readonly title?: string;
   readonly onClick: () => void;
-  readonly pulse?: boolean;
   readonly active?: boolean;
   readonly tone?: Tone;
   readonly showLabel?: boolean;
@@ -20,7 +19,6 @@ export const FooterButton = ({
   label,
   title,
   onClick,
-  pulse,
   active,
   tone = 'neutral',
   showLabel = true,
@@ -35,20 +33,10 @@ export const FooterButton = ({
         showLabel ? FOOTER_LABELED_PAD : 'px-1.5',
         active
           ? 'bg-muted text-foreground'
-          : pulse
-            ? cn('text-info', tintClasses('info').hoverBg)
-            : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
-      <span
-        className={cn(
-          'flex items-center',
-          active && tintClasses(tone).icon,
-          pulse && !active && 'motion-safe:animate-soft-pulse',
-        )}
-      >
-        {icon}
-      </span>
+      <span className={cn('flex items-center', active && tintClasses(tone).icon)}>{icon}</span>
       {showLabel ? <span className={FOOTER_LABEL}>{label}</span> : null}
     </button>
   </Tooltip>

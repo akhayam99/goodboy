@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   integrationLabel,
   type IntegrationGlyphProvider,
@@ -12,27 +12,24 @@ import {
   type Overlay,
 } from '../../hooks/useAppOverlays/overlayState';
 
-const { storeState } = vi.hoisted(() => ({
-  storeState: {
-    providers: [] as ReadonlyArray<{ readonly connection: string }>,
-    updaterStatus: 'idle' as 'idle' | 'available' | 'downloading',
-    updateVersion: '0.2.0' as string | null,
-    installUpdate: vi.fn(async () => undefined),
-    updateFailure: null,
-    updateProgress: null,
-    agentTurnState: {},
-    focusChangelogRelease: vi.fn(),
-  },
+vi.mock('./GoodboyChip', () => ({
+  GoodboyChip: ({
+    onOpenChangelog,
+    onOpenShortcuts,
+  }: {
+    readonly onOpenChangelog: () => void;
+    readonly onOpenShortcuts: () => void;
+  }) => (
+    <span data-testid="goodboy-chip">
+      <button type="button" onClick={onOpenChangelog}>
+        Chip changelog
+      </button>
+      <button type="button" onClick={onOpenShortcuts}>
+        Chip shortcuts
+      </button>
+    </span>
+  ),
 }));
-
-vi.mock('../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof storeState) => T) => selector(storeState),
-}));
-
-beforeEach(() => {
-  storeState.providers = [];
-  storeState.updaterStatus = 'idle';
-});
 
 afterEach(() => {
   cleanup();
@@ -43,14 +40,8 @@ import { AppFooter } from './index';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
-const REST_MORE_LABEL = 'More pages: impact and changelog';
 
-const footerRow = () => screen.getByTestId('beta-badge-trigger').closest('.grid');
-
-const openMore = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^More pages/ }));
-  return screen.getByRole('dialog', { name: 'More pages' });
-};
+const footerRow = () => screen.getByTestId('goodboy-chip').closest('.grid');
 
 type FooterProps = ComponentProps<typeof AppFooter>;
 
@@ -100,172 +91,83 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenIntegration: vi.fn(),
   onOpenInbox: vi.fn(),
   onOpenWorkflows: vi.fn(),
-  onOpenProviders: vi.fn(),
   onOpenSettings: vi.fn(),
-  onOpenImpact: vi.fn(),
   onOpenChangelog: vi.fn(),
+  onOpenShortcuts: vi.fn(),
   ...overrides,
 });
 
+const rightNames = () =>
+  Array.from(footerRow()?.children[2]?.querySelectorAll('button') ?? []).map(
+    (button) => button.getAttribute('aria-label') ?? button.textContent,
+  );
+
 describe('AppFooter', () => {
-  it('keeps inbox, workflows, providers and settings one click away on the right', () => {
+  it('keeps inbox, workflows and settings one click away on the right, in that order', () => {
     const onOpenInbox = vi.fn();
     const onOpenWorkflows = vi.fn();
-    const onOpenProviders = vi.fn();
     const onOpenSettings = vi.fn();
     render(
       <AppFooter
-        {...footerProps({
-          overrides: { onOpenInbox, onOpenWorkflows, onOpenProviders, onOpenSettings },
-        })}
+        {...footerProps({ overrides: { onOpenInbox, onOpenWorkflows, onOpenSettings } })}
       />,
     );
+
+    expect(rightNames()).toEqual([
+      'Open the inbox for this workspace',
+      'Open the workflow library for this workspace',
+      SETTINGS_LABEL,
+    ]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Open the inbox for this workspace' }));
     fireEvent.click(
       screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     );
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Connect and manage your provider accounts' }),
-    );
     fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
 
     expect(onOpenInbox).toHaveBeenCalledOnce();
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
-    expect(onOpenProviders).toHaveBeenCalledOnce();
     expect(onOpenSettings).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByRole('button', {
-        name: 'See how orchestration changed the way this workspace works, and what it spends',
-      }),
-    ).toBeNull();
-    expect(
-      screen.queryByRole('button', { name: 'See what changed, release by release' }),
-    ).toBeNull();
   });
 
-  it('routes impact and changelog through the more menu', () => {
-    const onOpenImpact = vi.fn();
+  it('carries no providers launcher and no more menu', () => {
+    render(<AppFooter {...footerProps()} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Connect and manage your provider accounts' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: /^More pages/ })).toBeNull();
+    expect(screen.queryByText('Providers')).toBeNull();
+    expect(screen.queryByText('More')).toBeNull();
+  });
+
+  it('seats the Goodboy chip in the centre and hands it changelog and shortcuts', () => {
     const onOpenChangelog = vi.fn();
-    const { rerender } = render(
-      <AppFooter {...footerProps({ overrides: { onOpenImpact, onOpenChangelog } })} />,
-    );
+    const onOpenShortcuts = vi.fn();
+    render(<AppFooter {...footerProps({ overrides: { onOpenChangelog, onOpenShortcuts } })} />);
 
-    const menu = openMore();
-    expect(within(menu).getAllByRole('button')).toHaveLength(2);
-    expect(within(menu).queryByRole('button', { name: /budget/i })).toBeNull();
-    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(footerRow()?.children[1]?.contains(screen.getByTestId('goodboy-chip'))).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Chip changelog' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chip shortcuts' }));
 
-    fireEvent.click(
-      within(openMore()).getByRole('button', {
-        name: 'See how orchestration changed the way this workspace works, and what it spends',
-      }),
-    );
-    expect(onOpenImpact).toHaveBeenCalledOnce();
-
-    fireEvent.click(
-      within(openMore()).getByRole('button', { name: 'See what changed, release by release' }),
-    );
     expect(onOpenChangelog).toHaveBeenCalledOnce();
-
-    rerender(
-      <AppFooter
-        {...footerProps({
-          overrides: { target: targetFor({ overlay: { kind: 'impact', scope: null } }) },
-        })}
-      />,
-    );
-    expect(screen.getByRole('button', { name: /^More pages/ }).className).toContain(
-      'bg-muted text-foreground',
-    );
+    expect(onOpenShortcuts).toHaveBeenCalledOnce();
   });
 
-  it('closes the more menu on escape', () => {
-    render(<AppFooter {...footerProps()} />);
-
-    openMore();
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('dialog', { name: 'More pages' })).toBeNull();
-  });
-
-  it('never dots the more control, release notes announce themselves elsewhere', () => {
-    render(<AppFooter {...footerProps()} />);
-
-    expect(screen.queryByTestId('more-studios-dot')).toBeNull();
-    expect(screen.getByRole('button', { name: REST_MORE_LABEL })).toBeDefined();
-  });
-
-  it('shows the update control only while an update is pending', () => {
-    const { rerender } = render(<AppFooter {...footerProps()} />);
-
-    expect(screen.queryByTestId('update-indicator')).toBeNull();
-
-    storeState.updaterStatus = 'available';
-    rerender(<AppFooter {...footerProps()} />);
-
-    expect(screen.getByTestId('update-indicator').textContent).toContain('Update to 0.2.0');
-  });
-
-  it('orders the right cluster as inbox, workflows, providers, settings, more', () => {
-    storeState.updaterStatus = 'available';
-    render(<AppFooter {...footerProps()} />);
-
-    const row = footerRow();
-    const cluster = row?.children[2];
-    const buttons = Array.from(cluster?.querySelectorAll('button') ?? []).filter(
-      (button) => button.closest('dialog') == null,
-    );
-    const names = buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent);
-
-    expect(names).toEqual([
-      'Open the inbox for this workspace',
-      'Open the workflow library for this workspace',
-      'Connect and manage your provider accounts',
-      SETTINGS_LABEL,
-      REST_MORE_LABEL,
-    ]);
-  });
-
-  it('keeps only providers, settings and the update control without a workspace', () => {
-    storeState.updaterStatus = 'available';
+  it('keeps only settings and the Goodboy chip without a workspace', () => {
     render(
       <AppFooter
         {...footerProps({ overrides: { scope: 'app', connected: connectedWith(['github']) } })}
       />,
     );
 
-    const row = footerRow();
-    const names = Array.from(row?.children[2]?.querySelectorAll('button') ?? []).map(
-      (button) => button.getAttribute('aria-label') ?? button.textContent,
-    );
-
-    expect(names).toEqual(['Connect and manage your provider accounts', SETTINGS_LABEL]);
+    expect(rightNames()).toEqual([SETTINGS_LABEL]);
     expect(screen.queryByRole('group', { name: 'Connected integrations' })).toBeNull();
-    expect(row?.children[1]?.contains(screen.getByTestId('update-indicator'))).toBe(true);
-    expect(row?.children[1]?.contains(screen.getByTestId('beta-badge-trigger'))).toBe(true);
+    expect(footerRow()?.children[1]?.contains(screen.getByTestId('goodboy-chip'))).toBe(true);
   });
 
-  it('parks the update call to action next to the beta pill', () => {
-    storeState.updaterStatus = 'available';
-    render(<AppFooter {...footerProps()} />);
-
-    const center = footerRow()?.children[1];
-
-    expect(center?.contains(screen.getByTestId('beta-badge-trigger'))).toBe(true);
-    expect(center?.contains(screen.getByTestId('update-indicator'))).toBe(true);
-  });
-
-  it('pulses the providers launcher icon until a provider connects, and never while its studio is open', () => {
-    const { rerender } = render(<AppFooter {...footerProps()} />);
-    const providers = () =>
-      screen.getByRole('button', { name: 'Connect and manage your provider accounts' });
-    const pulsing = () => providers().querySelector('.motion-safe\\:animate-soft-pulse');
-
-    expect(pulsing()).not.toBeNull();
-    expect(providers().className).not.toContain('animate-soft-pulse');
-
-    rerender(
+  it('lights settings while the providers scope is open', () => {
+    render(
       <AppFooter
         {...footerProps({
           overrides: {
@@ -274,22 +176,21 @@ describe('AppFooter', () => {
         })}
       />,
     );
-    expect(pulsing()).toBeNull();
 
-    storeState.providers = [{ connection: 'connected' }];
-    rerender(<AppFooter {...footerProps()} />);
-    expect(pulsing()).toBeNull();
+    expect(screen.getByRole('button', { name: SETTINGS_LABEL }).className).toContain(
+      'bg-muted text-foreground',
+    );
   });
 
-  it('lays the row out as three grid regions so the beta badge cannot overlap a cluster', () => {
+  it('lays the row out as three grid regions so the chip cannot overlap a cluster', () => {
     render(<AppFooter {...footerProps()} />);
 
-    const beta = screen.getByTestId('beta-badge-trigger');
     const row = footerRow();
 
     expect(row?.className).toContain('grid');
     expect(row?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
-    expect(beta.className).not.toContain('absolute');
+    expect(row?.className).toContain('bg-chrome');
+    expect(screen.getByTestId('goodboy-chip').className).not.toContain('absolute');
     expect(row?.children.length).toBe(3);
   });
 
@@ -477,7 +378,7 @@ describe('AppFooter', () => {
     );
 
     expect(container.querySelector('.\\@container\\/footer')).not.toBeNull();
-    ['Inbox', 'Workflows', 'Providers', 'Settings', 'More', 'Link integration'].forEach((word) => {
+    ['Inbox', 'Workflows', 'Settings', 'Link integration'].forEach((word) => {
       expect(screen.getByText(word).className).toContain('@min-chrome-labels/footer:inline');
     });
     unmount();

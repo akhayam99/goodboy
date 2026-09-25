@@ -8,10 +8,24 @@ import {
 
 type Props = {
   readonly state: RowState;
+  readonly note?: string | null;
 };
 
-export const TimelineRowStateLine = ({ state }: Props) => {
+export const TimelineRowStateLine = ({ state, note = null }: Props) => {
   const sentence = rowStateSentence({ state });
+  if (sentence == null && note !== null) {
+    return (
+      <span
+        data-testid="timeline-row-state"
+        className={cn(
+          'shrink-0 whitespace-nowrap text-2xs leading-4 text-faint-foreground',
+          WORK_ROW.state,
+        )}
+      >
+        {note}
+      </span>
+    );
+  }
   if (sentence == null) {
     return null;
   }

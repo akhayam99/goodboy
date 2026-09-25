@@ -55,7 +55,17 @@ const BoardShellSceneContent = () => {
 
   return (
     <AppShell
-      topBar={<AppTopBar onOpenSpend={noop} />}
+      topBar={
+        <AppTopBar
+          sidebar={{
+            hasSidebar: arrangement.leftSlot !== 'none',
+            isCollapsed: arrangement.leftSlot === 'rail',
+            onToggle: noop,
+          }}
+          onOpenSpend={noop}
+          onOpenScript={noop}
+        />
+      }
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={undefined}
@@ -75,9 +85,8 @@ const BoardShellSceneContent = () => {
           onOpenIntegration={noop}
           onOpenInbox={noop}
           onOpenWorkflows={noop}
-          onOpenProviders={noop}
           onOpenSettings={noop}
-          onOpenImpact={noop}
+          onOpenShortcuts={noop}
           onOpenChangelog={noop}
         />
       }

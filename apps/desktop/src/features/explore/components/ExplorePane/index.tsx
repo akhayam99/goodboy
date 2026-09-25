@@ -2,78 +2,25 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { ChevronDown, ChevronRight, ExternalLink, File, Folder, FolderSearch } from 'lucide-react';
 import { Button, cn, EmptyState, Skeleton, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import {
-  exploreList,
-  exploreOpen,
-  exploreRead,
-  type ExploreContent,
-  type ExploreEntry,
-} from '../../explore';
+import { exploreList, exploreOpen, type ExploreEntry } from '../../explore';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState, RefreshIconButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { InspectorSplit } from '../../../session/components/SessionWorkspace/parts/InspectorSplit';
-import { ExplorePreviewPanel } from './ExplorePreviewPanel';
+import { useAppStore } from '../../../../store';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ExploreSpawnPopover } from './ExploreSpawnPopover';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 
 const ROOT_PATH = '';
 const EMPTY_ENTRIES: ReadonlyArray<ExploreEntry> = Object.freeze([]);
-const KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS = new Set([
-  'doc',
-  'docx',
-  'key',
-  'numbers',
-  'ods',
-  'odt',
-  'pages',
-  'ppt',
-  'pptx',
-  'xls',
-  'xlsx',
-]);
-
 type Props = {
   readonly sessionId: SessionId;
   readonly sessionDir: string | null;
-  readonly eyebrow?: ReactNode;
 };
 
 type RenderEntriesParams = {
   readonly entries: ReadonlyArray<ExploreEntry>;
-};
-
-type PreviewState =
-  | {
-      readonly status: 'loading';
-    }
-  | {
-      readonly status: 'unsupported';
-    }
-  | {
-      readonly status: 'error';
-      readonly message: string;
-    }
-  | {
-      readonly status: 'ready';
-      readonly content: ExploreContent;
-    };
-
-const resolveAbsolutePath = ({
-  sessionDir,
-  relPath,
-}: {
-  readonly sessionDir: string;
-  readonly relPath: string;
-}): string => {
-  if (relPath === '') {
-    return sessionDir;
-  }
-  if (sessionDir.endsWith('/') || sessionDir.endsWith('\\')) {
-    return `${sessionDir}${relPath}`;
-  }
-  return `${sessionDir}/${relPath}`;
 };
 
 const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
@@ -83,23 +30,7 @@ const toErrorMessage = ({ error }: { readonly error: unknown }): string => {
   return 'Unknown error';
 };
 
-const extensionOf = ({ fileName }: { readonly fileName: string }): string => {
-  const dot = fileName.lastIndexOf('.');
-  if (dot < 0) {
-    return '';
-  }
-  return fileName.slice(dot + 1).toLowerCase();
-};
-
-const isKnownUnsupportedPreviewExtension = ({
-  fileName,
-}: {
-  readonly fileName: string;
-}): boolean => {
-  return KNOWN_UNSUPPORTED_PREVIEW_EXTENSIONS.has(extensionOf({ fileName }));
-};
-
-export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
+export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
   const [entriesByPath, setEntriesByPath] = useState<
     Readonly<Record<string, ReadonlyArray<ExploreEntry>>>
   >({});
@@ -109,8 +40,14 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
   const [actionErrorByPath, setActionErrorByPath] = useState<
     Readonly<Record<string, string | null>>
   >({});
-  const [previewByPath, setPreviewByPath] = useState<Readonly<Record<string, PreviewState>>>({});
-  const [selectedFile, setSelectedFile] = useState<ExploreEntry | null>(null);
+  const toggleDrawer = useAppStore((s) => s.toggleDrawer);
+  const selectedRelPath = useAppStore((s) => {
+    const drawer = selectOpenDrawer(s);
+    if (drawer === null || drawer.kind !== 'explore-file' || drawer.sessionId !== sessionId) {
+      return null;
+    }
+    return drawer.payload.entry.relPath;
+  });
 
   const loadDirectory = useCallback(
     async ({ relPath }: { readonly relPath: string }) => {
@@ -133,46 +70,12 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
     [sessionDir],
   );
 
-  const loadPreview = useCallback(
-    async ({ entry }: { readonly entry: ExploreEntry }) => {
-      if (sessionDir == null || sessionDir.trim() === '') {
-        return;
-      }
-      if (isKnownUnsupportedPreviewExtension({ fileName: entry.name })) {
-        setPreviewByPath((previous) => ({
-          ...previous,
-          [entry.relPath]: { status: 'unsupported' },
-        }));
-        return;
-      }
-      setPreviewByPath((previous) => ({ ...previous, [entry.relPath]: { status: 'loading' } }));
-      try {
-        const content = await exploreRead({ sessionDir, relPath: entry.relPath });
-        setPreviewByPath((previous) => ({
-          ...previous,
-          [entry.relPath]: { status: 'ready', content },
-        }));
-      } catch (error) {
-        setPreviewByPath((previous) => ({
-          ...previous,
-          [entry.relPath]: {
-            status: 'error',
-            message: toErrorMessage({ error }),
-          },
-        }));
-      }
-    },
-    [sessionDir],
-  );
-
   useEffect(() => {
     setEntriesByPath({});
     setExpandedByPath({});
     setLoadingByPath({});
     setErrorByPath({});
     setActionErrorByPath({});
-    setPreviewByPath({});
-    setSelectedFile(null);
     if (sessionDir == null || sessionDir.trim() === '') {
       setErrorByPath({ [ROOT_PATH]: 'Session folder is not available yet.' });
       return;
@@ -201,17 +104,12 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
 
   const selectFile = useCallback(
     ({ entry }: { readonly entry: ExploreEntry }) => {
-      if (entry.isDir) {
+      if (entry.isDir || sessionDir == null || sessionDir.trim() === '') {
         return;
       }
-      setSelectedFile(entry);
-      const cached = previewByPath[entry.relPath];
-      if (cached != null && cached.status !== 'error') {
-        return;
-      }
-      void loadPreview({ entry });
+      toggleDrawer({ kind: 'explore-file', sessionId, payload: { sessionDir, entry } });
     },
-    [loadPreview, previewByPath],
+    [sessionDir, sessionId, toggleDrawer],
   );
 
   const toggleDirectory = useCallback(
@@ -243,7 +141,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
         const isLoadingChildren = loadingByPath[entry.relPath] === true;
         const childError = errorByPath[entry.relPath] ?? null;
         const actionError = actionErrorByPath[entry.relPath] ?? null;
-        const isSelectedFile = selectedFile?.relPath === entry.relPath;
+        const isSelectedFile = selectedRelPath === entry.relPath;
         const age =
           entry.modifiedAt == null ? '' : formatRelativeAge({ fromIso: entry.modifiedAt });
         const ageLabel = age === '' ? 'unknown age' : age;
@@ -283,6 +181,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
                   type="button"
                   onClick={() => selectFile({ entry })}
                   aria-label={`Preview ${entry.name}`}
+                  aria-pressed={isSelectedFile}
                   className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left underline-offset-2 hover:underline"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
@@ -357,7 +256,7 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
       errorByPath,
       expandedByPath,
       loadingByPath,
-      selectedFile,
+      selectedRelPath,
       runOpenAction,
       selectFile,
       sessionId,
@@ -368,22 +267,6 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
   const rootEntries = useMemo(() => entriesByPath[ROOT_PATH] ?? EMPTY_ENTRIES, [entriesByPath]);
   const rootLoading = loadingByPath[ROOT_PATH] === true;
   const rootError = errorByPath[ROOT_PATH] ?? null;
-  const selectedPreview = useMemo<PreviewState | null>(() => {
-    if (selectedFile == null) {
-      return null;
-    }
-    return previewByPath[selectedFile.relPath] ?? { status: 'loading' };
-  }, [previewByPath, selectedFile]);
-  const selectedAbsolutePath = useMemo(() => {
-    if (selectedFile == null) {
-      return '';
-    }
-    if (sessionDir == null || sessionDir.trim() === '') {
-      return selectedFile.relPath;
-    }
-    return resolveAbsolutePath({ sessionDir, relPath: selectedFile.relPath });
-  }, [selectedFile, sessionDir]);
-
   const refreshTree = () => {
     void loadDirectory({ relPath: ROOT_PATH });
     for (const [relPath, isExpanded] of Object.entries(expandedByPath)) {
@@ -394,67 +277,50 @@ export const ExplorePane = ({ sessionId, sessionDir, eyebrow }: Props) => {
   };
 
   return (
-    <InspectorSplit
-      open={selectedFile != null}
-      panel={
-        selectedFile != null && selectedPreview != null ? (
-          <ExplorePreviewPanel
-            entry={selectedFile}
-            previewState={selectedPreview}
-            absolutePath={selectedAbsolutePath}
-            onClose={() => setSelectedFile(null)}
-            onOpenOutside={() => void runOpenAction({ entry: selectedFile, reveal: false })}
-          />
-        ) : null
+    <PaneShell
+      title="Explore"
+      actions={
+        <RefreshIconButton
+          label="Refresh the files"
+          isLoading={rootLoading}
+          onClick={refreshTree}
+        />
       }
     >
-      <PaneShell
-        title="Explore"
-        description="Browse the files for this session."
-        eyebrow={eyebrow}
-        actions={
-          <RefreshIconButton
-            label="Refresh the files"
-            isLoading={rootLoading}
-            onClick={refreshTree}
+      <div className="flex flex-col gap-3">
+        {rootLoading ? (
+          <>
+            <Skeleton className="h-6 w-full rounded-md" />
+            <Skeleton className="h-6 w-11/12 rounded-md" />
+            <Skeleton className="h-6 w-10/12 rounded-md" />
+          </>
+        ) : rootError != null ? (
+          <LensEmptyState
+            tone={CONCEPT_TONE.explore}
+            icon={CONCEPT_ICONS.explore}
+            title="Could not read this session folder"
+            description={rootError}
+            action={
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void loadDirectory({ relPath: ROOT_PATH })}
+              >
+                Retry
+              </Button>
+            }
           />
-        }
-      >
-        <div className="flex flex-col gap-3">
-          {rootLoading ? (
-            <>
-              <Skeleton className="h-6 w-full rounded-md" />
-              <Skeleton className="h-6 w-11/12 rounded-md" />
-              <Skeleton className="h-6 w-10/12 rounded-md" />
-            </>
-          ) : rootError != null ? (
-            <LensEmptyState
-              tone={CONCEPT_TONE.explore}
-              icon={CONCEPT_ICONS.explore}
-              title="Could not read this session folder"
-              description={rootError}
-              action={
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => void loadDirectory({ relPath: ROOT_PATH })}
-                >
-                  Retry
-                </Button>
-              }
-            />
-          ) : rootEntries.length === 0 ? (
-            <LensEmptyState
-              tone={CONCEPT_TONE.explore}
-              icon={CONCEPT_ICONS.explore}
-              title="This session folder is empty"
-              description="Files created while you work on this session appear here."
-            />
-          ) : (
-            <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>
-          )}
-        </div>
-      </PaneShell>
-    </InspectorSplit>
+        ) : rootEntries.length === 0 ? (
+          <LensEmptyState
+            tone={CONCEPT_TONE.explore}
+            icon={CONCEPT_ICONS.explore}
+            title="This session folder is empty"
+            description="Files created while you work on this session appear here."
+          />
+        ) : (
+          <div className="flex flex-col gap-0.5">{renderEntries({ entries: rootEntries })}</div>
+        )}
+      </div>
+    </PaneShell>
   );
 };

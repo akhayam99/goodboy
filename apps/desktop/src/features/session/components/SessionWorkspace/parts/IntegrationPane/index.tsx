@@ -35,7 +35,6 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
   readonly provider: Exclude<SessionExternalTaskProvider, 'github' | 'sentry'>;
-  readonly eyebrow?: ReactNode;
 };
 
 type ProviderMeta = Readonly<{
@@ -102,7 +101,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
   },
 };
 
-export const IntegrationPane = ({ sessionId, workspaceId, provider, eyebrow }: Props) => {
+export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => {
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isUnlinkArmed, setIsUnlinkArmed] = useState(false);
@@ -184,7 +183,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider, eyebrow }: P
       <FocusedPane
         lens={meta.label}
         count={tasks.length}
-        eyebrow={eyebrow}
         actions={
           isUnlinkArmed ? (
             <InlineConfirm
@@ -241,9 +239,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider, eyebrow }: P
   return (
     <PaneShell
       title={meta.label}
-      description={`External ${meta.label} ${meta.nounPlural} linked to this session.`}
       meta={hasTasks ? tasks.length : undefined}
-      eyebrow={eyebrow}
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (

@@ -11,7 +11,7 @@ import {
 
 export const TranscriptFeed = () => (
   <ul
-    className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
+    className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column)}
     aria-live="polite"
     aria-relevant="additions"
   >

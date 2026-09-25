@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import { classifyStep } from '../../../../features/session/agent-kind';
 import { resolveStepRouting } from '../../resolveStepRouting';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
 import { WORKFLOW_BLOCK_COPY } from '../../blockCopy';
 import { useStartAnywayConfirm } from '../../useStartAnywayConfirm';
@@ -147,7 +147,7 @@ export const WorkflowNextStepCta = ({
               <Play size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             )}
             <span className="truncate">Run next step: {next.name}</span>
-            <RoutingBadge
+            <RoutingLabel
               className="shrink-0 opacity-70"
               model={routing.model}
               effort={routing.effort}

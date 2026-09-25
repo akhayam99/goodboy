@@ -192,23 +192,48 @@ type EstimateParams = {
   readonly nowMs: number;
 };
 
-export const estimateDuration = ({ history, unit, key, nowMs }: EstimateParams) => {
+type TierPool = KeyTier & {
+  readonly samples: ReadonlyArray<DurationSample>;
+};
+
+const tierPools = ({ history, unit, key, nowMs }: EstimateParams): ReadonlyArray<TierPool> => {
   const workspace = inWindow({ samples: samplesOf({ samples: history, unit }), nowMs });
   const everyWorkspace = inWindow({
     samples: samplesOf({ samples: history.everyWorkspace, unit }),
     nowMs,
   });
-  for (const { tier, isEveryWorkspace, matches } of keyTiers({ key })) {
-    const estimate = estimateFrom({
-      samples: (isEveryWorkspace ? everyWorkspace : workspace).filter(matches),
-      tier,
-      size: key.size ?? null,
-    });
+  return keyTiers({ key }).map((tier) => ({
+    ...tier,
+    samples: (tier.isEveryWorkspace ? everyWorkspace : workspace).filter(tier.matches),
+  }));
+};
+
+export const estimateDuration = (params: EstimateParams) => {
+  for (const { tier, samples } of tierPools(params)) {
+    const estimate = estimateFrom({ samples, tier, size: params.key.size ?? null });
     if (estimate !== null) {
       return estimate;
     }
   }
   return null;
+};
+
+export type EstimateProgress = {
+  readonly tier: Exclude<EstimateTier, 'runs'>;
+  readonly have: number;
+  readonly need: number;
+};
+
+export const estimateProgress = (params: EstimateParams): EstimateProgress | null => {
+  let best: EstimateProgress | null = null;
+  for (const { tier, samples } of tierPools(params)) {
+    const need = ESTIMATE_MIN_SAMPLES[tier];
+    const have = Math.min(samples.length, need);
+    if (best === null || have / need > best.have / best.need) {
+      best = { tier, have, need };
+    }
+  }
+  return best;
 };
 
 type RunEstimateParams = {

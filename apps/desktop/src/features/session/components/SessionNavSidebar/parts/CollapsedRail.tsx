@@ -1,13 +1,9 @@
 import { useCallback } from 'react';
-import { Kanban, PanelLeft, Plus } from 'lucide-react';
+import { Kanban, Plus } from 'lucide-react';
 import { COLLAPSED_RAIL_WIDTH, Tooltip, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-
-type Props = {
-  readonly onExpand: () => void;
-};
 
 const RAIL_BUTTON = cn(
   'flex size-8 shrink-0 items-center justify-center rounded-md motion-safe:transition-colors',
@@ -15,7 +11,7 @@ const RAIL_BUTTON = cn(
   'text-muted-foreground hover:bg-hover hover:text-foreground',
 );
 
-export const CollapsedRail = ({ onExpand }: Props) => {
+export const CollapsedRail = () => {
   const setCurrentSession = useAppStore((s) => s.setCurrentSession);
 
   const onBoard = useCallback(() => {
@@ -27,16 +23,6 @@ export const CollapsedRail = ({ onExpand }: Props) => {
       className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
       style={{ width: COLLAPSED_RAIL_WIDTH }}
     >
-      <Tooltip content={`Show session sidebar (${shortcutGlyphs('column.toggle')})`} side="right">
-        <button
-          type="button"
-          onClick={onExpand}
-          aria-label={`Show session sidebar (${shortcutGlyphs('column.toggle')})`}
-          className={RAIL_BUTTON}
-        >
-          <PanelLeft size={ICON_SIZE.control} aria-hidden />
-        </button>
-      </Tooltip>
       <Tooltip content={`Back to board (${shortcutGlyphs('session.board')})`} side="right">
         <button
           type="button"

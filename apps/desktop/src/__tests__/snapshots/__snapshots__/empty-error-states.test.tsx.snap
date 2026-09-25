@@ -195,7 +195,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
 
 exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1`] = `
 <div
-  class="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
+  class="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg"
 >
   <div
     class="flex items-start gap-2.5 text-left px-3 py-2"
@@ -588,81 +588,85 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
 
 exports[`snapshot, error states > SessionOverviewLoading: retryable failure after the settle window 1`] = `
 <div
-  class="flex h-full items-center justify-center"
+  class="flex h-full flex-col"
 >
   <div
-    class="flex flex-col items-center gap-3 px-6 py-10 text-center"
+    class="flex min-h-0 flex-1 items-center justify-center"
   >
-    <span
-      class="flex size-12 items-center justify-center rounded-full bg-warning/10 text-warning"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-triangle-alert"
-        fill="none"
-        height="24"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-        />
-        <path
-          d="M12 9v4"
-        />
-        <path
-          d="M12 17h.01"
-        />
-      </svg>
-    </span>
     <div
-      class="flex flex-col gap-1"
+      class="flex flex-col items-center gap-3 px-6 py-10 text-center"
     >
       <span
-        class="text-sm font-medium text-foreground"
-      >
-        This session did not load
-      </span>
-      <span
-        class="max-w-xs text-xs leading-relaxed text-muted-foreground"
-      >
-        Retry, or reopen it from the board.
-      </span>
-    </div>
-    <div
-      class=""
-    >
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
-        type="button"
+        class="flex size-12 items-center justify-center rounded-full bg-warning/10 text-warning"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-rotate-ccw"
+          class="lucide lucide-triangle-alert"
           fill="none"
-          height="14"
+          height="24"
           stroke="currentColor"
           stroke-linecap="round"
           stroke-linejoin="round"
           stroke-width="2"
           viewBox="0 0 24 24"
-          width="14"
+          width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
           />
           <path
-            d="M3 3v5h5"
+            d="M12 9v4"
+          />
+          <path
+            d="M12 17h.01"
           />
         </svg>
-        Retry
-      </button>
+      </span>
+      <div
+        class="flex flex-col gap-1"
+      >
+        <span
+          class="text-sm font-medium text-foreground"
+        >
+          This session did not load
+        </span>
+        <span
+          class="max-w-xs text-xs leading-relaxed text-muted-foreground"
+        >
+          Retry, or reopen it from the board.
+        </span>
+      </div>
+      <div
+        class=""
+      >
+        <button
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-rotate-ccw"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="14"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+            />
+            <path
+              d="M3 3v5h5"
+            />
+          </svg>
+          Retry
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -670,178 +674,186 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
 
 exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before the settle window 1`] = `
 <div
-  class="relative min-h-0 h-full"
+  class="flex h-full min-h-0 flex-col"
 >
   <div
-    class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
+    class="min-h-0 flex-1"
   >
     <div
-      aria-label="Loading session overview"
-      class="mx-auto w-full flex flex-col gap-5 max-w-5xl"
-      role="status"
+      class="relative min-h-0 h-full"
     >
       <div
-        class="flex flex-col gap-4"
+        class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
       >
         <div
-          class="flex flex-col gap-2"
+          aria-label="Loading session overview"
+          class="mx-auto w-full max-w-[var(--column-max)] flex flex-col gap-5"
+          role="status"
         >
           <div
-            class="flex items-center justify-between gap-2"
+            class="flex flex-col gap-4"
           >
             <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
-            />
+              class="flex flex-col gap-2"
+            >
+              <div
+                class="flex items-center justify-between gap-2"
+              >
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse rounded-sm bg-muted h-7 w-3/5"
+                />
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
+                />
+              </div>
+              <div
+                class="flex flex-wrap items-center justify-between gap-2"
+              >
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <div
+                    aria-hidden="true"
+                    class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
+                  />
+                  <div
+                    aria-hidden="true"
+                    class="motion-safe:animate-pulse bg-muted h-6 w-20 rounded-md"
+                  />
+                </div>
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <div
+                    aria-hidden="true"
+                    class="motion-safe:animate-pulse bg-muted h-6 w-28 rounded-md"
+                  />
+                  <div
+                    aria-hidden="true"
+                    class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
             <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-6 w-16 rounded-md"
-            />
+              aria-label="Loading"
+              class="flex flex-col gap-2"
+              role="status"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-full"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-2/3"
+              />
+            </div>
+            <div
+              class="flex flex-col gap-1.5"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
+              />
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
+              />
+            </div>
           </div>
           <div
-            class="flex flex-wrap items-center justify-between gap-2"
+            class="flex flex-col gap-3"
           >
             <div
-              class="flex items-center gap-2"
+              class="flex items-center justify-between gap-2"
             >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted h-3 w-16 rounded-full"
+              />
               <div
                 aria-hidden="true"
                 class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
               />
-              <div
-                aria-hidden="true"
-                class="motion-safe:animate-pulse bg-muted h-6 w-20 rounded-md"
-              />
             </div>
             <div
-              class="flex items-center gap-2"
+              class="flex items-start gap-3"
             >
               <div
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-muted h-6 w-28 rounded-md"
+                class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
               />
               <div
+                class="flex min-w-0 flex-1 flex-col gap-1.5"
+              >
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+                />
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+                />
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-muted h-6 w-14 rounded-md"
+                class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
               />
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-1.5"
+              >
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+                />
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+                />
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
+                aria-hidden="true"
+                class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
+              />
+              <div
+                class="flex min-w-0 flex-1 flex-col gap-1.5"
+              >
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
+                />
+                <div
+                  aria-hidden="true"
+                  class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
+                />
+              </div>
             </div>
           </div>
         </div>
-        <div
-          aria-label="Loading"
-          class="flex flex-col gap-2"
-          role="status"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-full"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 rounded-sm w-2/3"
-          />
-        </div>
-        <div
-          class="flex flex-col gap-1.5"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-9 w-full rounded-md"
-          />
-        </div>
       </div>
       <div
-        class="flex flex-col gap-3"
-      >
-        <div
-          class="flex items-center justify-between gap-2"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-3 w-16 rounded-full"
-          />
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted h-6 w-24 rounded-md"
-          />
-        </div>
-        <div
-          class="flex items-start gap-3"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
-          />
-          <div
-            class="flex min-w-0 flex-1 flex-col gap-1.5"
-          >
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
-            />
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
-            />
-          </div>
-        </div>
-        <div
-          class="flex items-start gap-3"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
-          />
-          <div
-            class="flex min-w-0 flex-1 flex-col gap-1.5"
-          >
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
-            />
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
-            />
-          </div>
-        </div>
-        <div
-          class="flex items-start gap-3"
-        >
-          <div
-            aria-hidden="true"
-            class="motion-safe:animate-pulse bg-muted mt-1 size-2.5 shrink-0 rounded-full"
-          />
-          <div
-            class="flex min-w-0 flex-1 flex-col gap-1.5"
-          >
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse rounded-sm bg-muted h-4 w-2/5"
-            />
-            <div
-              aria-hidden="true"
-              class="motion-safe:animate-pulse bg-muted h-3 w-3/4 rounded-sm"
-            />
-          </div>
-        </div>
-      </div>
+        aria-hidden="true"
+        class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b from-background opacity-0"
+        style="height: 24px;"
+      />
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t from-background opacity-0"
+        style="height: 24px;"
+      />
     </div>
   </div>
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b from-background opacity-0"
-    style="height: 24px;"
-  />
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t from-background opacity-0"
-    style="height: 24px;"
-  />
 </div>
 `;
 

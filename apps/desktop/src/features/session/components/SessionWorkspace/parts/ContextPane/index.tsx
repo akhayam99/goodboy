@@ -8,7 +8,6 @@ import {
   useSessionOpenQuestions,
   useSessionSlots,
   useSessionSlotsLoad,
-  useSlotHistory,
   useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../../../store';
@@ -19,8 +18,6 @@ import {
   ICON_SIZE,
 } from '../../../../../../shared/components/conceptIcons';
 import type { ContextLens } from '../../../../lens-surface';
-import { InspectorSplit } from '../InspectorSplit';
-import { SlotHistoryPanel } from '../SlotHistoryPanel';
 import { ContextLoadFailure } from './ContextLoadFailure';
 import { ContextSection } from './ContextSection';
 import { DecisionsSection } from './DecisionsSection';
@@ -46,7 +43,6 @@ const REGION_CONCEPT = {
 type Props = {
   readonly session: Session;
   readonly initialRegion?: ContextLens;
-  readonly eyebrow?: ReactNode;
 };
 
 type ValueParams = {
@@ -57,7 +53,7 @@ type ValueParams = {
 const valueFor = ({ slots, slotKey }: ValueParams): string =>
   slots.find((slot) => slot.key === slotKey)?.value ?? '';
 
-export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
+export const ContextPane = ({ session, initialRegion }: Props) => {
   const sessionId = session.id as SessionId;
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
@@ -68,12 +64,11 @@ export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
   const loadSessionSlots = useAppStore((s) => s.loadSessionSlots);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
+  const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const summarizer = useSummarizerStatus(sessionId);
   const decisionsCount = useSlotHistoryCount(sessionId, 'decisions');
   const summaryCount = useSlotHistoryCount(sessionId, 'last_output_summary');
-  const [historyKey, setHistoryKey] = useState<ContextLens | null>(null);
   const [rawKey, setRawKey] = useState<ContextLens | null>(null);
-  const openHistory = useSlotHistory(sessionId, historyKey ?? '');
 
   const historyCounts: Record<ContextLens, number> = {
     decisions: decisionsCount,
@@ -121,114 +116,91 @@ export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
   }, [openQuestions, slots]);
 
   return (
-    <InspectorSplit
-      open={historyKey != null}
-      panel={
-        historyKey == null ? null : (
-          <SlotHistoryPanel
-            label={REGION_TITLE[historyKey]}
-            renderAsMarkdown
-            entries={openHistory}
-            onRestore={(entry) => {
-              void upsertSessionSlot(sessionId, historyKey, entry.value);
-              setHistoryKey(null);
-            }}
-            onClose={() => setHistoryKey(null)}
-          />
-        )
-      }
-    >
-      <PaneShell
-        title="Context"
-        icon={CONCEPT_ICONS.context}
-        tone={CONCEPT_TONE.context}
-        eyebrow={eyebrow}
-      >
-        {REGION_ORDER.map((slotKey) => {
-          const value = valueFor({ slots, slotKey });
-          const title = REGION_TITLE[slotKey];
-          const historyCount = historyCounts[slotKey];
-          const hasSlot = slots.some((slot) => slot.key === slotKey);
-          const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
-          const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
-          const isRawEditing = rawKey === slotKey;
-          const onWrite = (next: string) => {
-            void upsertSessionSlot(sessionId, slotKey, next);
-          };
+    <PaneShell title="Context" icon={CONCEPT_ICONS.context} tone={CONCEPT_TONE.context}>
+      {REGION_ORDER.map((slotKey) => {
+        const value = valueFor({ slots, slotKey });
+        const title = REGION_TITLE[slotKey];
+        const historyCount = historyCounts[slotKey];
+        const hasSlot = slots.some((slot) => slot.key === slotKey);
+        const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
+        const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
+        const isRawEditing = rawKey === slotKey;
+        const onWrite = (next: string) => {
+          void upsertSessionSlot(sessionId, slotKey, next);
+        };
 
-          return (
-            <ContextSection
-              key={slotKey}
-              concept={REGION_CONCEPT[slotKey]}
-              sectionId={`context-${slotKey}`}
-              title={title}
-              description={REGION_DESCRIPTION[slotKey]}
-              actions={
-                <div className="flex shrink-0 items-center gap-1">
+        return (
+          <ContextSection
+            key={slotKey}
+            concept={REGION_CONCEPT[slotKey]}
+            sectionId={`context-${slotKey}`}
+            title={title}
+            description={REGION_DESCRIPTION[slotKey]}
+            actions={
+              <div className="flex shrink-0 items-center gap-1">
+                <GhostActionButton
+                  icon={Code}
+                  label={isRawEditing ? 'Done' : 'Edit source'}
+                  pressed={isRawEditing}
+                  highlighted={isRawEditing}
+                  disabled={isLocked}
+                  onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                />
+                {historyCount > 0 ? (
                   <GhostActionButton
-                    icon={Code}
-                    label={isRawEditing ? 'Done' : 'Edit source'}
-                    pressed={isRawEditing}
-                    highlighted={isRawEditing}
-                    disabled={isLocked}
-                    onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                    icon={History}
+                    label={`${historyCount} ${historyCount === 1 ? 'version' : 'versions'}`}
+                    ariaLabel={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
+                    onClick={() => {
+                      void loadSlotHistory(sessionId, slotKey);
+                      toggleDrawer({ kind: 'slot-history', sessionId, payload: { slotKey } });
+                    }}
                   />
-                  {historyCount > 0 ? (
-                    <GhostActionButton
-                      icon={History}
-                      label={`${historyCount} ${historyCount === 1 ? 'version' : 'versions'}`}
-                      ariaLabel={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
-                      onClick={() => {
-                        void loadSlotHistory(sessionId, slotKey);
-                        setHistoryKey(slotKey);
-                      }}
-                    />
-                  ) : null}
-                  {value.length > 0 ? (
-                    <CopyButton
-                      presentation="icon"
-                      value={slotKey === 'last_output_summary' ? shareableSummary : value}
-                      label={
-                        slotKey === 'last_output_summary'
-                          ? 'copy shareable summary'
-                          : `copy ${title.toLowerCase()}`
-                      }
-                      size={ICON_SIZE.row}
-                    />
-                  ) : null}
-                </div>
-              }
-            >
-              {hasFailed ? (
-                <ContextLoadFailure
-                  title={title}
-                  onRetry={() => {
-                    void loadSessionSlots(sessionId);
-                  }}
-                />
-              ) : slotKey === 'last_output_summary' ? (
-                <SummarySection
-                  value={value}
-                  isLoading={isLoading}
-                  isLocked={isLocked}
-                  isRawEditing={isRawEditing}
-                  onWrite={onWrite}
-                  onCloseRawEditor={() => setRawKey(null)}
-                />
-              ) : (
-                <DecisionsSection
-                  value={value}
-                  isLoading={isLoading}
-                  isLocked={isLocked}
-                  isRawEditing={isRawEditing}
-                  onWrite={onWrite}
-                  onCloseRawEditor={() => setRawKey(null)}
-                />
-              )}
-            </ContextSection>
-          );
-        })}
-      </PaneShell>
-    </InspectorSplit>
+                ) : null}
+                {value.length > 0 ? (
+                  <CopyButton
+                    presentation="icon"
+                    value={slotKey === 'last_output_summary' ? shareableSummary : value}
+                    label={
+                      slotKey === 'last_output_summary'
+                        ? 'copy shareable summary'
+                        : `copy ${title.toLowerCase()}`
+                    }
+                    size={ICON_SIZE.row}
+                  />
+                ) : null}
+              </div>
+            }
+          >
+            {hasFailed ? (
+              <ContextLoadFailure
+                title={title}
+                onRetry={() => {
+                  void loadSessionSlots(sessionId);
+                }}
+              />
+            ) : slotKey === 'last_output_summary' ? (
+              <SummarySection
+                value={value}
+                isLoading={isLoading}
+                isLocked={isLocked}
+                isRawEditing={isRawEditing}
+                onWrite={onWrite}
+                onCloseRawEditor={() => setRawKey(null)}
+              />
+            ) : (
+              <DecisionsSection
+                value={value}
+                isLoading={isLoading}
+                isLocked={isLocked}
+                isRawEditing={isRawEditing}
+                onWrite={onWrite}
+                onCloseRawEditor={() => setRawKey(null)}
+              />
+            )}
+          </ContextSection>
+        );
+      })}
+    </PaneShell>
   );
 };

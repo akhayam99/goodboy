@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getCheapModel } from '@goodboy/core';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 
 type SavedTemplate = { readonly steps: ReadonlyArray<Record<string, unknown>> };
@@ -143,7 +142,7 @@ describe('startWorkflowGeneration', () => {
       expect.objectContaining({
         deps: expect.objectContaining({
           providerId: 'codex',
-          model: getCheapModel('codex'),
+          model: 'gpt-5.6-terra',
         }),
       }),
     );
@@ -192,7 +191,7 @@ describe('startWorkflowGeneration', () => {
       expect.objectContaining({
         deps: expect.objectContaining({
           providerId: 'anthropic',
-          model: getCheapModel('anthropic'),
+          model: 'sonnet-5',
         }),
       }),
     );
@@ -238,7 +237,7 @@ describe('startWorkflowGeneration', () => {
       expect.objectContaining({
         deps: expect.objectContaining({
           providerId: 'codex',
-          model: getCheapModel('codex'),
+          model: 'gpt-5.6-terra',
         }),
       }),
     );

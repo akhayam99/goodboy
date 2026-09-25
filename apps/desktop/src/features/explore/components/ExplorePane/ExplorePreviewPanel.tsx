@@ -1,43 +1,18 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import {
-  Button,
-  CopyButton,
-  Divider,
-  EmptyState,
-  Markdown,
-  ScrollFade,
-  Skeleton,
-} from '@goodboy/ui';
+import { Button, CopyButton, Divider, EmptyState, Markdown, Skeleton } from '@goodboy/ui';
 import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
-import { type ExploreContent, type ExploreEntry } from '../../explore';
+import { type ExploreEntry } from '../../explore';
+import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import { InspectorHeader } from '../../../session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
-
-type PreviewState =
-  | {
-      readonly status: 'loading';
-    }
-  | {
-      readonly status: 'unsupported';
-    }
-  | {
-      readonly status: 'error';
-      readonly message: string;
-    }
-  | {
-      readonly status: 'ready';
-      readonly content: ExploreContent;
-    };
 
 type Props = {
   readonly entry: ExploreEntry;
-  readonly previewState: PreviewState;
+  readonly previewState: ExplorePreviewState;
   readonly absolutePath: string;
-  readonly onClose: () => void;
+  readonly openError: string | null;
   readonly onOpenOutside: () => void;
 };
 
@@ -64,7 +39,7 @@ const previewKindOf = ({
   previewState,
 }: {
   readonly entry: ExploreEntry;
-  readonly previewState: PreviewState;
+  readonly previewState: ExplorePreviewState;
 }): 'markdown' | 'text' | 'image' | 'pdf' | 'unsupported' => {
   if (previewState.status !== 'ready') {
     return 'unsupported';
@@ -89,7 +64,7 @@ export const ExplorePreviewPanel = ({
   entry,
   previewState,
   absolutePath,
-  onClose,
+  openError,
   onOpenOutside,
 }: Props) => {
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
@@ -194,37 +169,29 @@ export const ExplorePreviewPanel = ({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <InspectorHeader
-        title={entry.name}
-        closeLabel={`close preview for ${entry.name}`}
-        onClose={onClose}
-      />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.rail.body}>
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-            <p className="truncate font-mono text-2xs">{entry.relPath}</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <span>{sizeLabel}</span>
-              <span>{modifiedLabel}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={onOpenOutside}>
-              <ExternalLink size={ICON_SIZE.row} aria-hidden />
-              Open outside
-            </Button>
-            <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
-          </div>
-          <Divider />
-          {renderPreviewBody()}
-          {previewKind === 'unsupported' ? (
-            <Button size="sm" variant="secondary" onClick={onOpenOutside}>
-              Open this file outside the app
-            </Button>
-          ) : null}
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+        <p className="truncate font-mono text-2xs">{entry.relPath}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span>{sizeLabel}</span>
+          <span>{modifiedLabel}</span>
         </div>
-      </ScrollFade>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant="secondary" onClick={onOpenOutside}>
+          <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          Open outside
+        </Button>
+        <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
+      </div>
+      {openError != null ? <p className="text-xs text-danger">{openError}</p> : null}
+      <Divider />
+      {renderPreviewBody()}
+      {previewKind === 'unsupported' ? (
+        <Button size="sm" variant="secondary" onClick={onOpenOutside}>
+          Open this file outside the app
+        </Button>
+      ) : null}
     </div>
   );
 };

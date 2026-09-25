@@ -21,7 +21,7 @@ export const CreatePrMode = ({
   onCreated,
   onCancel,
 }: Props) => (
-  <ModeShell label="New pull request" onBack={onBack} measure="full">
+  <ModeShell label="New pull request" onBack={onBack}>
     <CreatePrPanel
       sessionId={sessionId}
       defaultTitle={defaultTitle}

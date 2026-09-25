@@ -120,7 +120,11 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           override: args.kindOverride ?? null,
         });
         const roleModels = settings?.roleModels ?? null;
-        const routing = kindRouting({ kind: resolvedKind, roleModels });
+        const routing = kindRouting({
+          kind: resolvedKind,
+          roleModels,
+          defaultProvider: settings?.defaultProviderId ?? null,
+        });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({
           sessionId,

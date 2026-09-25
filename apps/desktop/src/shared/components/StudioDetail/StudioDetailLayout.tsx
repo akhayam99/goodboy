@@ -3,6 +3,8 @@ import { Divider, ScrollFade, cn } from '@goodboy/ui';
 import type { ResolvedDetailFields } from '../../detail-fields';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { DetailProperties } from './DetailProperties';
+import { PageCrumbRow } from '../PaneShell/PageCrumbRow';
+import { PageCrumbContext } from '../PaneShell/PageCrumbContext';
 
 type Fit = 'fill' | 'bleed' | 'flow';
 
@@ -27,13 +29,12 @@ export const StudioDetailLayout = ({
   properties,
   tabs,
   fit = 'fill',
-  children,
+  children: content,
 }: Props) => {
+  const children = <PageCrumbContext.Provider value={null}>{content}</PageCrumbContext.Provider>;
   const isFlow = fit === 'flow';
   const hasProperties = properties != null && properties.length > 0;
   const hasMeta = fit !== 'bleed' && (rail != null || hasProperties);
-  const headerMeasure = PANE_RHYTHM.measure.pane;
-  const bodyMeasure = fit === 'fill' ? PANE_RHYTHM.measure.pane : PANE_RHYTHM.measure.full;
 
   return (
     <div className={cn('flex flex-col', isFlow ? 'gap-4' : 'h-full min-h-0')}>
@@ -42,7 +43,8 @@ export const StudioDetailLayout = ({
         className={cn('flex shrink-0 flex-col', isFlow && 'sticky top-0 z-10 gap-4 bg-background')}
       >
         <div className={cn('flex flex-col', !isFlow && PANE_RHYTHM.body)}>
-          <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column, headerMeasure)}>
+          <div className={cn('flex flex-col gap-3', PANE_RHYTHM.column)}>
+            <PageCrumbRow isFramed={false} />
             {eyebrow != null ? (
               <div className="flex min-w-0 flex-col gap-1">
                 {eyebrow}
@@ -72,13 +74,13 @@ export const StudioDetailLayout = ({
         {fit === 'bleed' ? <div className="flex min-h-0 flex-1 flex-col">{children}</div> : null}
         {fit === 'fill' ? (
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, bodyMeasure)}>{children}</div>
+            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack)}>{children}</div>
           </ScrollFade>
         ) : null}
         {dock != null ? <Divider /> : null}
         {dock != null ? (
           <div data-testid="detail-dock" className={cn('flex shrink-0 flex-col', PANE_RHYTHM.dock)}>
-            <div className={cn('flex flex-col', PANE_RHYTHM.column, headerMeasure)}>{dock}</div>
+            <div className={cn('flex flex-col', PANE_RHYTHM.column)}>{dock}</div>
           </div>
         ) : null}
       </div>

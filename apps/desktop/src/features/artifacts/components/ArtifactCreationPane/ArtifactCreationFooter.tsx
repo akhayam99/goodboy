@@ -50,7 +50,6 @@ export const ArtifactCreationFooter = ({
         className={cn(
           'flex items-center justify-between gap-3',
           PANE_RHYTHM.column,
-          PANE_RHYTHM.measure.reading,
           PANE_RHYTHM.dock,
         )}
       >

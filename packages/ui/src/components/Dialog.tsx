@@ -13,6 +13,13 @@ import { ScrollFade } from './ScrollFade';
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
+export type DialogSurface = 'floating' | 'screen';
+
+const SURFACE: Record<DialogSurface, string> = {
+  floating: 'bg-floating',
+  screen: 'bg-background',
+};
+
 export type DialogProps = {
   open: boolean;
   onClose: () => void;
@@ -21,6 +28,7 @@ export type DialogProps = {
   children: ReactNode;
   footer?: ReactNode;
   size?: DialogSize;
+  surface?: DialogSurface;
   className?: string;
   showClose?: boolean;
   closeOnBackdrop?: boolean;
@@ -60,6 +68,7 @@ export const Dialog = ({
   children,
   footer,
   size = 'md',
+  surface = 'floating',
   className,
   showClose = true,
   closeOnBackdrop = true,
@@ -150,7 +159,8 @@ export const Dialog = ({
       aria-labelledby={titleId}
       aria-describedby={descId}
       className={cn(
-        'overflow-hidden rounded-lg border border-border bg-background p-0 text-foreground shadow-lg',
+        'overflow-hidden rounded-lg border border-border p-0 text-foreground shadow-lg',
+        SURFACE[surface],
         fullScreenOnSmall &&
           'max-md:m-0 max-md:h-screen max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0 max-md:shadow-none',
       )}

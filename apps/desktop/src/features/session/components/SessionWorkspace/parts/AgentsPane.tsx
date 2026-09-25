@@ -9,10 +9,9 @@ import { useAppStore } from '../../../../../store/store';
 type Props = {
   readonly session: Session;
   readonly meta: string | undefined;
-  readonly eyebrow?: ReactNode;
 };
 
-export const AgentsPane = ({ session, meta, eyebrow }: Props) => {
+export const AgentsPane = ({ session, meta }: Props) => {
   const sessionId = session.id as SessionId;
   const autoRun = useAppStore((s) => s.sessions.find((c) => c.id === sessionId)?.autoRun === true);
   const setSessionAutoRun = useAppStore((s) => s.setSessionAutoRun);
@@ -20,9 +19,7 @@ export const AgentsPane = ({ session, meta, eyebrow }: Props) => {
   return (
     <PaneShell
       title="Agents"
-      description="Agents you start by hand to work this session."
       meta={meta}
-      eyebrow={eyebrow}
       actions={
         <>
           <WorkflowAutorunToggle

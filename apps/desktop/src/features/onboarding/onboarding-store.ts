@@ -152,15 +152,6 @@ export const collapse = (): void => {
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 };
 
-export const reopen = (): void => {
-  if (!cache.collapsed) {
-    return;
-  }
-  cache.collapsed = false;
-  flushFlag(SETTING_COLLAPSED, false);
-  window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
-};
-
 export const isFinished = (): boolean => {
   return cache.finished;
 };

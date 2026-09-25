@@ -3,7 +3,13 @@ import { EMPTY_DURATION_HISTORY, type DurationHistory } from '@goodboy/core';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from './agentWorkTime';
 import { estimateBasis } from './estimateBasis';
-import { formatCostRange, formatEstimateRange, workTime, type WorkEstimate } from './workTime';
+import {
+  formatCostRange,
+  formatEstimateRange,
+  timeLeftLabel,
+  workTime,
+  type WorkEstimate,
+} from './workTime';
 import { familyActiveTime, type WorkTimeSource } from './workTimeSource';
 
 const MINUTE = 60_000;
@@ -17,18 +23,33 @@ const ESTIMATE: WorkEstimate = {
 };
 
 describe('workTime', () => {
-  it('fills toward the usual time while running and stays full past it', () => {
-    const running = workTime({
+  it('counts down while running: a range until the low end passes, then one number', () => {
+    const early = workTime({
       phase: 'running',
-      activeMs: 3 * MINUTE,
+      activeMs: 2 * MINUTE,
       hasStarted: true,
       estimate: ESTIMATE,
       unknownBasis: null,
     });
-    expect(running?.label).toBe('3m of ~9m');
-    expect(running?.progress).toBeCloseTo(1 / 3);
-    expect(running?.detail).toContain('Most finish within ~9m');
+    expect(early?.label).toBe('~3-7m left');
+    expect(early?.headline).toBe('2m · ~3-7m left');
+    expect(early?.progress).toBeCloseTo(2 / 9);
+    expect(early?.detail).toBe(
+      `Running 2m. Usually 5-9m. ${ESTIMATE.basis} Waiting on you is not counted.`,
+    );
+    expect(early?.note).toBeNull();
 
+    const late = workTime({
+      phase: 'running',
+      activeMs: 7 * MINUTE,
+      hasStarted: true,
+      estimate: ESTIMATE,
+      unknownBasis: null,
+    });
+    expect(late?.label).toBe('~2m left');
+  });
+
+  it('shows elapsed time and one word past the usual time, and flags twice the usual', () => {
     const over = workTime({
       phase: 'running',
       activeMs: 11 * MINUTE,
@@ -36,10 +57,26 @@ describe('workTime', () => {
       estimate: ESTIMATE,
       unknownBasis: null,
     });
-    expect(over).toMatchObject({ label: '11m, usually ~9m', progress: 1 });
+    expect(over).toMatchObject({
+      label: '11m',
+      progress: 1,
+      note: 'Longer than usual',
+      headline: '11m · longer than usual',
+      isMuchLonger: false,
+    });
+    expect(over?.detail).toContain('Most finish within 9m.');
+
+    const much = workTime({
+      phase: 'running',
+      activeMs: 18 * MINUTE,
+      hasStarted: true,
+      estimate: ESTIMATE,
+      unknownBasis: null,
+    });
+    expect(much?.isMuchLonger).toBe(true);
   });
 
-  it('freezes the arc while waiting on you and leaves the pause to the row state', () => {
+  it('freezes the time while waiting on you, with no time left', () => {
     const paused = workTime({
       phase: 'waiting',
       activeMs: 4 * MINUTE,
@@ -48,11 +85,12 @@ describe('workTime', () => {
       unknownBasis: null,
     });
 
-    expect(paused?.label).toBe('4m of ~9m');
+    expect(paused?.label).toBe('4m');
     expect(paused?.progress).toBeCloseTo(4 / 9);
+    expect(paused?.note).toBeNull();
   });
 
-  it('drops the arc on failure, leaves the failure to the row state, and shows only active time without an estimate', () => {
+  it('drops the arc on failure and shows only elapsed time without an estimate', () => {
     expect(
       workTime({
         phase: 'failed',
@@ -62,45 +100,56 @@ describe('workTime', () => {
         unknownBasis: null,
       }),
     ).toMatchObject({ label: '4m', progress: null });
-    expect(
-      workTime({
-        phase: 'running',
-        activeMs: 5 * MINUTE,
-        hasStarted: true,
-        estimate: null,
-        unknownBasis: 'Not enough finished tester steps yet to estimate.',
-      }),
-    ).toMatchObject({ label: '5m', progress: null });
+    const unknown = workTime({
+      phase: 'running',
+      activeMs: 5 * MINUTE,
+      hasStarted: true,
+      estimate: null,
+      unknownBasis: 'No estimate yet: 3 of 5 finished tester steps.',
+    });
+    expect(unknown).toMatchObject({ label: '5m', progress: null, note: null });
+    expect(unknown?.detail).toBe(
+      'Running 5m. No estimate yet: 3 of 5 finished tester steps. Waiting on you is not counted.',
+    );
   });
 
-  it('shows the usual range before a step starts and the exact active time once done', () => {
-    expect(
-      workTime({
-        phase: 'queued',
-        activeMs: 0,
-        hasStarted: false,
-        estimate: ESTIMATE,
-        unknownBasis: null,
-      })?.label,
-    ).toBe('5-9m');
-    expect(
-      workTime({
-        phase: 'queued',
-        activeMs: 0,
-        hasStarted: false,
-        estimate: { ...ESTIMATE, isFallback: true },
-        unknownBasis: null,
-      })?.label,
-    ).toBe('~5-9m');
-    expect(
+  it('marks every estimate with a tilde before a step starts', () => {
+    const queued = (estimate: WorkEstimate) =>
+      workTime({ phase: 'queued', activeMs: 0, hasStarted: false, estimate, unknownBasis: null })
+        ?.label;
+
+    expect(queued(ESTIMATE)).toBe('~5-9m');
+    expect(queued({ ...ESTIMATE, isFallback: true })).toBe('~5-9m');
+    expect(queued({ ...ESTIMATE, lowMs: 8 * MINUTE, midMs: 9 * MINUTE, highMs: 10 * MINUTE })).toBe(
+      '~9m',
+    );
+  });
+
+  it('shows the real duration once done, and says when it ran longer than usual', () => {
+    const done = (activeMs: number) =>
       workTime({
         phase: 'done',
-        activeMs: 8 * MINUTE + 12_000,
+        activeMs,
         hasStarted: true,
         estimate: ESTIMATE,
         unknownBasis: null,
-      })?.label,
-    ).toBe('8m 12s');
+      });
+
+    expect(done(8 * MINUTE + 12_000)).toMatchObject({ label: '8m 12s', note: null });
+    expect(done(11 * MINUTE + 40_000)).toMatchObject({
+      label: '11m 40s',
+      note: 'Longer than usual',
+      headline: '11m 40s · longer than usual',
+    });
+    expect(
+      workTime({
+        phase: 'closed',
+        activeMs: 11 * MINUTE,
+        hasStarted: true,
+        estimate: ESTIMATE,
+        unknownBasis: null,
+      })?.note,
+    ).toBeNull();
     expect(
       workTime({
         phase: 'done',
@@ -110,6 +159,14 @@ describe('workTime', () => {
         unknownBasis: null,
       }),
     ).toBeNull();
+  });
+});
+
+describe('timeLeftLabel', () => {
+  it('keeps a range while the low end is ahead and floors short work', () => {
+    expect(timeLeftLabel({ lowMs: 9 * MINUTE, highMs: 16 * MINUTE })).toBe('~9-16m left');
+    expect(timeLeftLabel({ lowMs: 0, highMs: 90_000 })).toBe('~2m left');
+    expect(timeLeftLabel({ lowMs: 30_000, highMs: 90_000 })).toBe('<2m left');
   });
 });
 
@@ -199,7 +256,7 @@ describe('agentWorkTime', () => {
       source: source({ history, spans: [span('step', 0, 5)] }),
     });
 
-    expect(time?.label).toBe('5m of ~10m');
+    expect(time?.label).toBe('~1-5m left');
     expect(time?.detail).toContain('Based on 5 finished implementer steps on Sonnet 5');
     expect(time?.detail).toContain('Machine time only.');
   });
@@ -238,11 +295,45 @@ describe('agentWorkTime', () => {
         }),
       });
 
-    expect(chat('running')?.label).toBe('2m of ~5m');
+    expect(chat('running')?.label).toBe('~1-3m left');
     expect(chat('running')?.detail).toContain(
       'Based on 5 finished implementer turns on Sonnet 5 across your workspaces',
     );
     expect(chat('waiting')).toMatchObject({ label: '20m', progress: null });
+  });
+
+  it('says how far a running step is from an estimate instead of guessing one', () => {
+    const history: DurationHistory = {
+      ...EMPTY_DURATION_HISTORY,
+      steps: [4, 6, 8].map((minutes) => ({
+        role: 'implementer',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: null,
+        activeMs: minutes * MINUTE,
+        costUsd: 1,
+        endedAtMs: 29 * MINUTE,
+      })),
+    };
+
+    const time = agentWorkTime({
+      agentId: 'step' as AgentId,
+      key: estimateKeyOf({
+        role: 'implementer',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: null,
+        size: null,
+      }),
+      unit: 'step',
+      phase: 'running',
+      source: source({ history, spans: [span('step', 0, 2)] }),
+    });
+
+    expect(time?.label).toBe('2m');
+    expect(time?.detail).toContain(
+      'No estimate yet: 3 of 5 finished implementer steps on Sonnet 5.',
+    );
   });
 
   it('says which history a fallback estimate leans on', () => {

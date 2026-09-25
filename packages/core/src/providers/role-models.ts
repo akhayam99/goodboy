@@ -1,20 +1,28 @@
 import type {
   AgentEffort,
+  AgentRole,
   ProviderId,
   RoleModelFallback,
+  RoleModelPreference,
   RoleModelPreferences,
 } from '@goodboy/types';
 import { devWarn } from '../dev-log';
 import { PROVIDER_CAPABILITIES } from './capabilities';
-import { defaultsForRole, normalizeAgentRole } from '../roles';
+import { normalizeAgentRole } from '../roles';
 import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
+import { resolveAuto, type AutoContext, type AutoStep } from './autoRouting/resolveAuto';
 
 export type ResolvedRoleFallback = Readonly<{
   provider: ProviderId;
   model: string;
   effort: AgentEffort;
+}>;
+
+export type PinnedUnavailable = Readonly<{
+  provider: ProviderId;
+  model: string;
 }>;
 
 export type ResolvedRoleRouting = Readonly<{
@@ -23,12 +31,19 @@ export type ResolvedRoleRouting = Readonly<{
   effort: AgentEffort;
   isOverride: boolean;
   fallback?: ResolvedRoleFallback;
+  autoStep?: AutoStep;
+  pinnedUnavailable?: PinnedUnavailable;
 }>;
 
 type Params = {
   readonly role: string;
   readonly prefs: RoleModelPreferences | null | undefined;
+  readonly auto?: AutoContext;
 };
+
+const AUTO_ROLE_EFFORT: AgentEffort = 'medium';
+
+const REFERENCE_CONTEXT: AutoContext = { defaultProvider: 'anthropic' };
 
 type FallbackParams = {
   readonly fallback: RoleModelFallback | undefined;
@@ -66,19 +81,34 @@ const resolveRoleFallback = ({ fallback, effort }: FallbackParams): ResolvedRole
   };
 };
 
-export const resolveRoleRouting = ({ role, prefs }: Params): ResolvedRoleRouting => {
-  const normalizedRole = normalizeAgentRole({ role });
-  const defaults = defaultsForRole(normalizedRole);
-  const compiled: ResolvedRoleRouting = {
-    provider: defaults.provider,
-    model: defaults.model,
-    effort: defaults.effort,
-    isOverride: false,
-  };
-  const preference = prefs?.[normalizedRole];
-  if (preference == null) {
-    return compiled;
+type AutoRoleParams = {
+  readonly role: AgentRole;
+  readonly auto: AutoContext;
+};
+
+const autoRoleRouting = ({ role, auto }: AutoRoleParams): ResolvedRoleRouting => {
+  const pick =
+    resolveAuto({ slot: { kind: 'role', id: role }, ...auto }) ??
+    resolveAuto({ slot: { kind: 'role', id: role }, ...REFERENCE_CONTEXT });
+  if (pick == null) {
+    throw new Error(`no curated default for role ${role}`);
   }
+  return {
+    provider: pick.provider,
+    model: pick.model,
+    effort: pick.effort ?? AUTO_ROLE_EFFORT,
+    isOverride: false,
+    autoStep: pick.step,
+  };
+};
+
+type PinnedParams = {
+  readonly role: string;
+  readonly preference: RoleModelPreference;
+  readonly compiled: ResolvedRoleRouting;
+};
+
+const pinnedRoleRouting = ({ role, preference, compiled }: PinnedParams): ResolvedRoleRouting => {
   const capabilities = PROVIDER_CAPABILITIES[preference.providerId];
   if (capabilities == null) {
     devWarn(
@@ -113,4 +143,30 @@ export const resolveRoleRouting = ({ role, prefs }: Params): ResolvedRoleRouting
     isOverride: true,
     ...(fallback != null && { fallback }),
   };
+};
+
+type UsableParams = {
+  readonly provider: ProviderId;
+  readonly auto: AutoContext | undefined;
+};
+
+const isUsable = ({ provider, auto }: UsableParams): boolean =>
+  auto?.connected == null || auto.connected.includes(provider);
+
+export const resolveRoleRouting = ({ role, prefs, auto }: Params): ResolvedRoleRouting => {
+  const normalizedRole = normalizeAgentRole({ role });
+  const compiled = autoRoleRouting({ role: normalizedRole, auto: auto ?? REFERENCE_CONTEXT });
+  const preference = prefs?.[normalizedRole];
+  if (preference == null) {
+    return compiled;
+  }
+  const pinned = pinnedRoleRouting({ role, preference, compiled });
+  if (!pinned.isOverride || isUsable({ provider: pinned.provider, auto })) {
+    return pinned;
+  }
+  const pinnedUnavailable = { provider: pinned.provider, model: pinned.model };
+  if (pinned.fallback != null && isUsable({ provider: pinned.fallback.provider, auto })) {
+    return { ...pinned.fallback, isOverride: true, pinnedUnavailable };
+  }
+  return { ...compiled, pinnedUnavailable };
 };

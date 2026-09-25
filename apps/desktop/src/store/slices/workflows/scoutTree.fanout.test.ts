@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import { ROLE_REGISTRY, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import { AUTO_DEFAULTS, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowTaskProfile,
@@ -694,8 +694,8 @@ describe('scout child routing lifecycle', () => {
 
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
-      expect(args.providerOverride).toBe(ROLE_REGISTRY.scout.provider);
-      expect(args.modelOverride).toBe(ROLE_REGISTRY.scout.model);
+      expect(args.providerOverride).toBe('anthropic');
+      expect(args.modelOverride).toBe(AUTO_DEFAULTS.anthropic.scout[0]?.key);
       expect(args.effort).toBeUndefined();
       expect((args.routingDecision as WorkflowRoutingDecision).source).toBe('kind_default');
     }

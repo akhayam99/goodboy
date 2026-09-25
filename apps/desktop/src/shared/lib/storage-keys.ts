@@ -6,7 +6,6 @@ export const STORAGE_KEYS = {
   diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
-  inspectorPanelWidth: `${PREFIX}inspector-panel-width`,
   reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,

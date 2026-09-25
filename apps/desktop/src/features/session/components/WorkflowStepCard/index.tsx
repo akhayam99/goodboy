@@ -5,7 +5,7 @@ import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodbo
 import { agentKindPalette, ROLE_LABEL, type AgentKind } from '../../agent-kind';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { AgentKindChip } from '../AgentKindChip';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { WORKFLOW_ROUTING_COPY } from '../../../workflows/workflowRoutingCopy';
 import { RoleSelect } from '../RoleSelect';
@@ -198,7 +198,7 @@ export const WorkflowStepCard = ({
               className="min-w-0 text-left"
             >
               {headerRow(
-                <RoutingBadge
+                <RoutingLabel
                   className="shrink-0"
                   glyphPlacement="trailing"
                   provider={provider}

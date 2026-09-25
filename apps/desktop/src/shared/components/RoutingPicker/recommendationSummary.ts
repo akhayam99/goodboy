@@ -1,9 +1,7 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
-import { ROUTING_PICKER_CONSTANTS } from './constants';
-import { resolveRouting } from './resolveRouting';
-import { routingSummary, routingTriggerLabel, type RoutingTriggerLabel } from './routingSummary';
+import { routingLabelParts, routingSummary, type RoutingTriggerLabel } from './routingSummary';
 
 type Params = {
   readonly provider: ProviderId;
@@ -24,20 +22,7 @@ export const recommendedRoutingOf = ({ provider, model, effort }: Params): Recom
   if (resolveStoredModelSelection({ provider, id: model }).report?.kind === 'unknown') {
     return providerOnly;
   }
-  const routing = resolveRouting({
-    providers: ROUTING_PICKER_CONSTANTS.providers,
-    provider,
-    model,
-    effort: effort ?? 'medium',
-  });
-  const label = routingTriggerLabel({
-    model: routing.catalog.find((candidate) => candidate.key === routing.model) ?? null,
-    modelId: routing.model,
-    selection: routing.selection,
-    effort: routing.effort,
-    showEffort: effort != null && !routing.isEffortFixed,
-  });
-  return { provider: routing.provider, label };
+  return { provider, label: routingLabelParts({ provider, model, effort: effort ?? null }) };
 };
 
 export const recommendationSummary = (params: Params): string => {

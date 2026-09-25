@@ -3,16 +3,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 
-type RoutingBadgeProps = {
+type RoutingLabelProps = {
   readonly provider?: string | null;
   readonly model?: string | null;
   readonly effort?: string | null;
 };
 
-const routingBadgeSpy = vi.hoisted(() => vi.fn(({}: RoutingBadgeProps) => null));
+const routingBadgeSpy = vi.hoisted(() => vi.fn(({}: RoutingLabelProps) => null));
 
-vi.mock('../../../../../shared/components/RoutingBadge', () => ({
-  RoutingBadge: routingBadgeSpy,
+vi.mock('../../../../../shared/components/RoutingLabel', () => ({
+  RoutingLabel: routingBadgeSpy,
 }));
 
 import { QueuedMessages } from './QueuedMessages';

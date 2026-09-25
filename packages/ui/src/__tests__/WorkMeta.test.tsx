@@ -18,7 +18,7 @@ describe('WorkMeta', () => {
   });
 
   it('keeps the cost column on a row with nothing spent yet', () => {
-    render(<WorkMeta routing={<span data-meta-column="model">Opus 5.5</span>} cost={null} />);
+    render(<WorkMeta routing={<span data-meta-column="routing">Opus 5.5</span>} cost={null} />);
 
     expect(columnOf('time')).toBeNull();
     expect(columnOf('cost')?.textContent).toBe('');
@@ -34,7 +34,7 @@ describe('WorkMeta', () => {
 
   it('drops the cost in a narrow row and leaves the column out when there is no cost', () => {
     const { rerender } = render(<WorkMeta cost="$0.10" />);
-    expect(columnOf('cost')?.className).toContain('@max-[520px]:hidden');
+    expect(columnOf('cost')?.className).toContain('@max-[560px]:hidden');
 
     rerender(<WorkMeta cost={null} />);
     expect(columnOf('cost')?.textContent).toBe('');

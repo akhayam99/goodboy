@@ -18,14 +18,51 @@ Text uses four opaque semantic steps. `foreground` is primary content,
 placeholders and trailing hints. `disabled-foreground` is reserved for disabled
 controls. Opacity modifiers do not create additional text steps.
 
-## Elevation ramp
+## Surface ladder
 
-`background`, `subtle`, `muted` and `elevated` express distance from the canvas
-in both themes. Components step between those opaque surfaces instead of
-mixing one surface through opacity. `bg-hover` and `bg-selected` are
-interaction overlays painted as a background-image layer, so they stack on
-whatever fill the element rests on instead of replacing it, and `cn` keeps them
-beside a surface class. `scrim` is reserved for modal backdrops.
+Six opaque roles, from the back of the window to the eye. Components step
+between them instead of mixing one surface through opacity.
+
+| step | role     | class           | holds                                                   |
+| ---- | -------- | --------------- | ------------------------------------------------------- |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer                 |
+| 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
+| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
+| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`, `ActionTile`            |
+| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
+| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
+
+Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
+Light mode is ink on paper, read on two axes. On the elevation axis (what sits
+in front) chrome < content < raised = floating: nothing is brighter than white,
+so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
+(what sits inside) content > panel > inset: the deeper, the darker.
+
+Two tokens are relations, not steps. `fill` is one step inside whatever parent
+it sits on (white 6% in dark, black 5% in light), so a neutral chip, a
+secondary button or a skeleton moves the right way on any surface. `idle` is
+the single grey for "not yet" and "off": pending and queued dots, an off switch
+track, inactive bars. States that share it differ by shape (filled, ring,
+dash), never by another opacity.
+
+Three borders, each with one job:
+
+| token           | job                                                              | floor                           |
+| --------------- | ---------------------------------------------------------------- | ------------------------------- |
+| `border-soft`   | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
+| `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
+| `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
+
+A clickable card at rest carries two signals together (a fill one step above
+its parent plus the hairline). Its states clear 3:1: hover `border`, selection
+`bg-selected`, focus ring. `token-contrast-floor.test.ts` holds the ladder
+order and every floor on all six steps, and `no-token-bypass.test.ts` fails on
+any colour class with no `--color-*` token behind it.
+
+`bg-hover` and `bg-selected` are interaction overlays painted as a
+background-image layer, so they stack on whatever fill the element rests on
+instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is reserved for modal backdrops.
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
@@ -71,7 +108,7 @@ Overview and a comfortable everything else.
 
 | role                                             | grade               | resolves to |
 | ------------------------------------------------ | ------------------- | ----------- |
-| pane title                                       | `text-xl`           | 20px        |
+| pane title                                       | `text-lg`           | 17px / 24px |
 | section label, and its `hint`                    | `text-2xs`          | 11px / 16px |
 | top-level row label                              | `text-sm leading-5` | 14px / 20px |
 | nested row label, a child of the row above it    | `text-xs leading-4` | 12px / 16px |
@@ -142,8 +179,14 @@ Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
   Stage colors go through `STAGE_TONE`. No per-file tone maps.
 - The stage tones: attention `warning`, running `info`, in review `success`,
   done `merged`, building neutral.
-- Elevation is a four-step ramp: canvas < panel < rail/chip < floating. To lift
-  something, move one step up the ramp. Never invent a shade.
+- Surfaces follow the six-role ladder above. To lift something, move it to the
+  role it plays; to sink something inside a parent, use `fill`. Never invent a
+  shade.
+- Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
+  fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
+  `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
+  own wash), `border` (40%, decoration, never the only signal) and `bgSoft`
+  (5%, only for washing a whole card).
 
 ## Icon and tone vocabulary
 
@@ -379,21 +422,20 @@ The right end of a work row is `WorkMeta` in
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
 `$12.40` never pushes the model of the row above out of line.
 
-| column     | width | holds                                                        | in a narrow row                              |
-| ---------- | ----- | ------------------------------------------------------------ | -------------------------------------------- |
-| model      | 96px  | provider glyph, then the model label                         | only the glyph under 640px, gone under 320px |
-| effort     | 52px  | the effort label, faint until the run reports its own        | under 760px it leaves the row                |
-| time       | 96px  | measured time or estimate ("5m of ~9m", "12-20m")            | 80px under 640px, gone under 400px           |
-| cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px it leaves the row                |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px it leaves the row                |
-| action     | 76px  | the one visible action, reserved even when empty             | never drops                                  |
-| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                  |
+| column     | width | holds                                                        | in a narrow row                                             |
+| ---------- | ----- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`)   | detail goes under 720px, name under 440px, gone under 360px |
+| time       | 96px  | measured time or estimate ("~3-7m left", "~6-9m", "14m")     | 80px under 640px, gone under 360px                          |
+| cost       | 56px  | what the row has spent, empty before anything is spent       | under 560px it leaves the row                               |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 560px it leaves the row                               |
+| action     | 76px  | the one visible action, reserved even when empty             | never drops                                                 |
+| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                                 |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing: its step progress sits in the model column and its
+run row has no routing: its step progress sits in the routing column and its
 time in the time column.
 
 The narrow rules are container queries, never window breakpoints, because
@@ -405,25 +447,30 @@ meta leaves: below 520px a role chip hugs its word and a run chip keeps only
 its glyph, and the row state after the title reads its short form ("Needs
 you", "Step 3 ready") under 880px, with the full sentence in its tooltip. The
 state never shrinks; the title truncates first, down to a 64px floor
-(`WORK_ROW.title`), and the meta leaves before the title reaches it: effort,
-then the model label, then cost, then time, then under 320px the glyph and
-the row state (the node and the action still say it). A list under 440px also
+(`WORK_ROW.title`), and the meta leaves before the title reaches it: the
+routing detail, then cost, then the model name, then under 360px the glyph and
+the time, then under 320px the row state (the node and the action still say
+it). The model outlives the cost because a narrow row, like the right drawer,
+still has to say who is working; the cost stays in the time tooltip. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. The "Open ↵" hint takes room only while a row of 640px or more is
-hovered or focused. What leaves the row stays in the model tooltip, which always
-reads the whole route ("Opus 5.5 High on Claude"). The model and effort
-columns come from `RoutingBadge variant="bare"`, the dense form of the one
-routing badge, with no fill and no chip. Planned routing (a step that has not
-started) is faint; routing that ran is muted. When the run picked something
-other than the plan, the model is underlined dotted and the tooltip names the
-plan. The effort is faint while it is only planned and takes the row tone
-once the run reports the effort it was started with; when that differs from
-the plan, the effort is underlined dotted and both its tooltip and the model
-tooltip say "Planned High, ran Medium". The activity feed, the workflow run
-tree and the Subagents tree of a Brief all end their rows with this meta, so a
-step and its sub-agents read the same wherever they appear. The inline form in headers and chips stays
-`RoutingBadge`'s compact variant.
+hovered or focused. What leaves the row stays in the routing tooltip, which
+always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
+is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
+`routingLabelParts`, the same function behind the model picker trigger, so a
+row, the trigger, the queue and a header say a route the same way: the Codex
+variant and the checkpoint belong to the name (`GPT 5.6 Sol`), the Cursor
+modes and the effort are details. Planned routing (a step that has not
+started) is faint; routing that ran is muted. The detail is faint while the
+effort is only planned and takes the row tone once the run reports the effort
+it was started with. When the run picked something other than the plan, in
+model, provider or observed effort, the whole cell is underlined dotted and
+its one tooltip names the plan ("Planned Opus 5 High, routing picked Sonnet 5
+Medium", "Planned High, ran Medium"). Nothing is struck through. The activity
+feed, the workflow run tree and the Subagents tree of a Brief all end their
+rows with this meta, so a step and its sub-agents read the same wherever they
+appear. Headers, cards, tables and the queue use the inline `RoutingLabel`.
 
 ### The plan in the workflow builder
 
@@ -494,7 +541,7 @@ surface stays neutral, the title is `foreground` and the body is
   (`Info`), `success` (`CircleCheck`).
 - **Placement** changes the surface and padding, never the anatomy.
   `transcript` is transparent with no border, `inline` and `banner` sit on
-  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-elevated` with
+  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-floating` with
   a shadow. The rail is 2px in the page and 4px when floating.
 - **Title names the action** that failed ("Couldn't load pull requests"). The
   body states the cause in plain words. Raw output (stderr, exit codes, paths,
@@ -523,40 +570,44 @@ detail.
 
 ## Pane anatomy
 
-The package ships the pane primitives `PANE_RHYTHM`, `ScrollFade`, and
-`Divider`, not a pane frame. `PaneShell` is a desktop component at
-`apps/desktop/src/shared/components/PaneShell/`, built from those primitives.
-It is a scroll region whose body is a centred column. It has one `h1` per
-surface. `meta` holds counts and totals in `tabular-nums`, never a control. The
-header row wraps, so actions drop under the title instead of squeezing it. The
-pane owns the gap below the header, and children add no top margins. The root
-is `min-w-0 flex-1` in both scroll modes, so inside a flex row such as
+The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
+and `Divider`, not a pane frame. `PaneShell` is a desktop component at
+`apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
+and it is the one wrapper every main pane uses. It is a scroll region whose
+crumb, header and body share one `PageColumn`. It has one `h1` per surface.
+`meta` holds counts and totals in `tabular-nums`, never a control. The header
+row wraps, so actions drop under the title instead of squeezing it. The pane
+owns the gap below the header, and children add no top margins. The root is
+`@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and the column centres in the full width.
 
-**One title grade.** Every lens pane and studio detail gets its title from
-`PaneShell`: an `h1` at `text-xl`, then an optional description, meta and
-actions. `icon` takes a concept glyph, `glyph` takes a brand mark. A detail
-that needs its own header row passes `HeaderBand` (also an `h1`) through the
-custom `header` slot. `scroll="body"` keeps the header fixed above a divider
-for studio details. Studio chrome (`OverlayHeader`) and the focused-pane lens
-label are window chrome, not headings. The header is named with `aria-label`,
-so the detail title is the only `h1` on the surface.
+**One title grade, one header height.** Every lens pane and studio detail gets
+its title from `PaneShell`: the crumb row (24px, only inside a session), then an
+`h1` at `text-lg` with `meta` inline and actions on the right (32px). Padding
+is 12px above and 16px below, 92px in all, 128px with the optional `tabs` row.
+There is no description line and no divider under the header: the text that
+teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
+`icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
+its own header row passes `HeaderBand` (also an `h1`) through the custom
+`header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
+`scroll="self"` hands the body a bounded region that scrolls itself (a
+transcript), and `dock` pins a row to the bottom of the same column. Studio
+chrome (`OverlayHeader`) and the focused-pane lens label are window chrome,
+not headings. The header is named with `aria-label`, so the detail title is
+the only `h1` on the surface.
 
-**The reading column caps at `max-w-5xl` and centres.** That is 1024px, which
-is also the window's minimum width. So the cap never applies at minimum size.
-There, the sidebar and the pane insets set the width. The cap is for wide
-monitors, where a paragraph with no cap runs past a comfortable line length.
-
-`wide` is the escape hatch for a workbench, not for a long document. It is
-applied only in one case: the workbench goes full width, but its empty state
-stays in the reading column. That way an empty pane never shows a 2000px-wide
-dashed box.
+**The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
+`--column-max` (960px of content, gutters excluded) and `PageColumn` adds the
+24px gutter, 16px when the pane is under 720px wide. No view picks its own
+width: the column changes only when the window changes or the right drawer
+opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
+[docs/styling.md](../../docs/styling.md) owns the column rules.
 
 ## Action zones
 
 Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
 
-- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and inspector headers use the same `actions` slot. The focused object's primary action uses it too.
+- The fixed chrome row has one flexible context region, followed by one action region that never shrinks away. It is pushed to the far end and stays outside the content scroller. `StudioShell` exposes it as `headerAccessory`, `HeaderBand` as `actions`, and `DrawerFrame` as its one `action`. The focused object's primary action uses it too.
 - A creation or edit flow's action row is the one the creation grammar below describes. It is never stretched across a shell or container that also holds unrelated content.
 - A blocked object's way out is one next action strip in the `banner` slot of the detail layout: under the header, above the tabs, outside every scroll region, so every tab sees the same copy. Its tone sits on the left rail only (danger for a failed step, warning for a question, info for a wait), with a sentence that names the object, a muted cause, the technical detail behind a disclosure, one primary action and at most two secondary ones. It never repeats at the bottom of a transcript.
 - A status row that describes the same block, like the orchestrator strip under a failed step or an open question, stays on a neutral rail, so only the next action strip carries the tone.
@@ -584,8 +635,8 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 
 `SectionSurface` is `SectionHeader` on the one raised section surface. Use it
 for a reading surface whose sections would otherwise be separated by empty
-space alone. It sits one step above the canvas, so the cards inside it reach
-the top of the ramp and nothing stacks a fourth level. A metadata line is not a
+space alone. It sits on the panel step of the surface ladder, so the cards
+inside it take the raised step and nothing stacks another level. A metadata line is not a
 section and does not get a surface. Its optional `icon` goes to the heading,
 the same slot `SectionHeader` gives it, at the row icon size.
 
@@ -707,8 +758,7 @@ never mounts and unmounts its panel by hand.
   cycles, then rest) on an element that now needs the user, never one that
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
-  a state that holds and is alive: the Providers launcher icon (never its
-  label) while no provider is connected, the centre dot of a running
+  a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
   progress arc (which then replaces the centre dot), a running tool icon or
   scout dot, and the boot splash status. On the rail it sits inside the
@@ -739,12 +789,12 @@ column has the only width cap and truncates first. Everything to its right is
 way. In the rail, the label truncates and the count is `shrink-0`, so a long
 label loses characters before a count disappears.
 
-**The chrome shares one left axis.** The collapsed rail is
+**The top bar's left edge belongs to the window.** The collapsed rail is
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
-22px. The top bar starts at `pl-1.5`, so the workspace avatar centers on the
-same 22px. Change one side and the other moves with it:
-`workspace-avatar-centers-on-collapsed-rail.test.ts` compares the two centers.
-Widening the rail to fix a padding is the wrong trade, because chrome pays rent.
+22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
+lights, so it no longer shares an axis with the rail:
+`collapsed-rail-width.test.ts` pins both. Widening the rail to fix a padding is
+the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**
 The anchor is a block `div`, so an `inline-flex` trigger (a `Chip`, a pill)

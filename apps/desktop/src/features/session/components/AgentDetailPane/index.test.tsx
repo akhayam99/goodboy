@@ -22,6 +22,23 @@ vi.mock('../../../../store', () => ({
   useExecutedAgentRouting: () => executedRouting.value,
 }));
 
+const detailTime = vi.hoisted(() => ({
+  value: undefined as
+    | {
+        label: string;
+        detail: string;
+        progress: number | null;
+        headline: string;
+        note: string | null;
+        isMuchLonger: boolean;
+      }
+    | undefined,
+}));
+
+vi.mock('../../hooks/useAgentDetailWorkTime', () => ({
+  useAgentDetailWorkTime: () => detailTime.value,
+}));
+
 vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
@@ -31,6 +48,7 @@ vi.mock('./AgentNextAction', () => ({
   AgentNextAction: () => <div>Next action strip</div>,
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentDetailPane } from './index';
 
 const sessionId = 'session-1' as SessionId;
@@ -57,6 +75,7 @@ beforeEach(() => {
     sessionOpenQuestions: {},
   });
   executedRouting.value = null;
+  detailTime.value = undefined;
 });
 
 describe('AgentDetailPane', () => {
@@ -178,7 +197,7 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTitle('Model: claude-haiku-4-5')).toBeDefined();
+    expect(document.querySelector('[data-model-id="claude-haiku-4-5"]')).not.toBeNull();
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 
@@ -190,9 +209,11 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
-    expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
-    expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
+    expect(document.querySelector('[data-model-id="gpt-5.1-codex"]')).not.toBeNull();
+    expect(document.querySelector('[data-model-id="claude-haiku-4-5"]')).toBeNull();
+    expect(tooltipTextOf({ element: screen.getByTestId('routing-divergence') })).toContain(
+      'Planned Haiku 4.5, routing picked',
+    );
   });
 
   it('shows the effort the run was started with and marks where it left the plan', () => {
@@ -203,8 +224,10 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTestId('effort-divergence').textContent).toBe('Medium');
+    const label = screen.getByTestId('routing-divergence');
+    expect(label.querySelector('[data-routing-part="detail"]')?.textContent).toBe('Medium');
     expect(screen.queryByText('High')).toBeNull();
+    expect(tooltipTextOf({ element: label })).toContain('Planned High, ran Medium');
   });
 
   it('reveals the transcript without changing the selected agent', () => {
@@ -216,5 +239,27 @@ describe('AgentDetailPane', () => {
 
     expect(screen.getByText('Transcript body')).toBeDefined();
     expect(screen.getByText('Implement chat')).toBeDefined();
+  });
+
+  it('shows elapsed time and time left next to the status while running', () => {
+    detailTime.value = {
+      label: '~3-7m left',
+      detail: 'Running 4m 12s. Usually 6-9m.',
+      progress: 0.4,
+      headline: '4m · ~3-7m left',
+      note: null,
+      isMuchLonger: false,
+    };
+
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('agent-header-time').textContent).toBe('4m · ~3-7m left');
   });
 });

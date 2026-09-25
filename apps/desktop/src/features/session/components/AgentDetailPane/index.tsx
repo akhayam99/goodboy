@@ -3,14 +3,16 @@ import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
 import { AgentHeaderActions } from '../AgentHeaderActions';
+import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { AgentBrief } from './AgentBrief';
+import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 
@@ -51,6 +53,13 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
   );
   const executed = useExecutedAgentRouting({ agent });
   const kind = classifyAgent({ agent, override: kindOverride });
+  const time = useAgentDetailWorkTime({
+    session,
+    agent,
+    kind,
+    status,
+    isWaitingOnYou: hasOpenQuestions,
+  });
 
   useEffect(() => {
     setTab(liveTab);
@@ -78,8 +87,9 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
           meta={
             <>
               <AgentStatusBadge status={status} />
+              {time == null ? null : <AgentHeaderTime time={time} />}
               <AgentKindChip kind={kind} />
-              <RoutingBadge
+              <RoutingLabel
                 provider={executed?.provider ?? providerOverride}
                 model={executed?.model ?? modelOverride}
                 effort={observedEffort ?? effortOverride}
@@ -104,9 +114,9 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
       }
     >
       {tab === 'transcript' ? (
-        <ChatView session={session} isActive={isChatActive} header={null} />
+        <ChatView session={session} isActive={isChatActive} />
       ) : (
-        <AgentBrief session={session} agent={agent} />
+        <AgentBrief session={session} agent={agent} time={time ?? null} />
       )}
     </StudioDetailLayout>
   );

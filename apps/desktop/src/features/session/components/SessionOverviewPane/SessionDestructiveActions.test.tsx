@@ -66,14 +66,14 @@ describe('SessionDestructiveActions', () => {
     expect(archiveMock).not.toHaveBeenCalled();
   });
 
-  it('takes two gestures to delete, arming a confirmation attached to the trigger', () => {
+  it('takes two gestures to delete, arming a confirmation on a floating popover', () => {
     render(<SessionDestructiveActions session={session()} />);
     expect(screen.queryByTestId('delete-confirm')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /delete session/i }));
 
-    const confirm = screen.getByTestId('delete-confirm');
-    expect(confirm.className).toContain('absolute');
+    const popover = screen.getByTestId('delete-confirm').closest('.z-popover');
+    expect(popover?.className).toContain('bg-floating');
     expect(
       screen.getByRole('button', { name: /delete session/i }).getAttribute('aria-expanded'),
     ).toBe('true');

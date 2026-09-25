@@ -3,7 +3,7 @@ import type { Agent, ProviderId, TelemetryRecord } from '@goodboy/types';
 import { getModelProvider } from '@goodboy/core';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 import { CostBadge } from '../../../providers/components/CostBadge';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { AgentLastUpdate } from '../../../../shared/components/AgentLastUpdate';
 import { contextUsageTone } from '../../contextUsageTone';
 import { formatTokens } from '../../agent-row-format';
@@ -76,7 +76,7 @@ export const AgentMetrics = ({
           )}
           items={[
             model != null || delegatedChildCount === 0 ? (
-              <RoutingBadge
+              <RoutingLabel
                 key="model"
                 provider={provider ?? null}
                 model={model ?? null}

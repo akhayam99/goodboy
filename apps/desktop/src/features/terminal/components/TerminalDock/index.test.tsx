@@ -42,6 +42,7 @@ vi.mock('../../terminal', () => ({
 
 vi.mock('../../closeTab', () => ({ disposeTerminalPty: vi.fn() }));
 
+import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
 import { TerminalDock } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -72,20 +73,17 @@ afterEach(() => {
   platform.current = 'darwin';
 });
 
-describe('TerminalDock eyebrow', () => {
-  it('renders the session eyebrow above the tab strip', () => {
+describe('TerminalDock crumb', () => {
+  it('renders the session crumb above the tab strip', () => {
     render(
-      <TerminalDock
-        sessionId={SESSION_ID}
-        isActive
-        cwd="/repo"
-        eyebrow={<span>Ship the lens eyebrow</span>}
-      />,
+      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
+        <TerminalDock sessionId={SESSION_ID} isActive cwd="/repo" />
+      </PageCrumbContext.Provider>,
     );
 
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const crumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const strip = screen.getByRole('tab');
-    expect(eyebrow.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(crumb.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

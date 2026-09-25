@@ -2,7 +2,7 @@ import { Bot, ChevronRight } from 'lucide-react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -42,7 +42,7 @@ export const QuestionClusterHeader = ({
       <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="truncate text-foreground">{label}</span>
       {ownerAgent != null && ownerAgent.modelOverride != null && (
-        <RoutingBadge
+        <RoutingLabel
           provider={ownerAgent.providerOverride ?? null}
           model={ownerAgent.modelOverride}
           effort={ownerAgent.effort ?? null}

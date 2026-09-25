@@ -151,11 +151,15 @@ uses its providers.
 - **Task models**: the provider and model for each small side job. Side jobs include
   summaries, planning, prose polish, agent titles, issue briefs, the workflow
   orchestrator, delegated answers, pull request drafts and rebases. Each one starts on **Auto**
-  on the default provider: the cheap model for most jobs, the mid model for the
-  workflow orchestrator and delegated answers, and for rebases Sonnet 5 on Claude
-  and the default turn model elsewhere
-- **Agent roles**: the provider, model and effort for each role. If you pin a model
-  on an agent or a workflow step, that pin beats the role
+- **Agent roles**: the provider, model and effort for each role. Each one starts on
+  **Auto**. If you pin a model on an agent or a workflow step, that pin beats the role
+- **Auto** picks the same way for roles and tasks: the model chosen for that job on
+  the default provider, then the next model in that list when your CLI is too old
+  for the first one, then the next provider in the routing pool when the default
+  is not connected. On Claude, the Planner runs on Opus 5.5 (Opus 5 on an older CLI),
+  the Debugger and the Reviewer on Sonnet 5 High, Docs on Sonnet 5 Low, Scout and
+  the small writing jobs on Haiku 4.5, and plan drafting, Custom, Report and the
+  other roles on Sonnet 5 Medium
 - **Fallback** on a role: the second choice Goodboy switches to when the first one
   fails during a turn. **Automatic** lets Goodboy choose
 
@@ -444,13 +448,34 @@ When a provider ships or retires a model, update three files under
 
 ### Defaults internals
 
+- **Auto** is one ladder for roles and tasks, `resolveAuto` in
+  `packages/core/src/providers/autoRouting/resolveAuto.ts`. The curated picks live in
+  `AUTO_DEFAULTS` (`autoRouting/defaults.ts`), one column per curated provider
+  (Claude, Codex, Gemini, Cursor) and one ordered list per role or task. The ladder
+  tries the default provider first, then the fallback order; within a column it
+  skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
+  needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
+  OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
+  provider. `AUTO_PROVIDER_GATES` is the list of provider checks (today: connected);
+  a new check, like a provider at its usage limit, is one more entry there. No
+  Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
+  the catalogs and snapshots the table
+- `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
+  the reference. `kindRouting` maps an agent kind to its role and reads the same
+  ladder; there is no separate cheap tier for Scout, Docs or Custom
 - **Task models** are saved in `workspaces.task_models` and read through
-  `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort. An Auto row,
-  or a pin without one, runs at `medium`, clamped to the model's ladder. Models
+  `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
+  A pin without an effort runs at `medium`, clamped to the model's ladder. Models
   without an effort axis get none. PR drafts and rebases preselect the agent's
-  model and carry no automatic effort. Task models never affect chat turns
+  model and carry no automatic effort. Task models never affect chat turns. Given
+  `connectedProviders`, a pin on a disconnected provider moves to its fallback, then
+  to Auto
 - **Agent roles** are the union `AgentRole` in `@goodboy/types`. They are saved in
-  `workspaces.role_models` and read through `resolveRoleRouting`
+  `workspaces.role_models` and read through `resolveRoleRouting`, which takes an
+  optional `auto` context (default provider, fallback order, connected providers,
+  CLI versions). Without one it answers for Claude. A pin on a provider the context
+  says is not connected moves to its fallback, then to Auto, and the result carries
+  `pinnedUnavailable` so the UI can say so
 - Role checks are forgiving. If an override names an unknown provider or an
   unregistered model, the whole override goes back to the built-in default
 - If an effort is not on the ladder, it becomes the role's default effort when that

@@ -10,7 +10,6 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
-  defaultsForRole,
   hintedRoutingOutcome,
   resolveRoleRouting,
   resolveWorkflowRouting,
@@ -92,13 +91,17 @@ export const resolveWorkflowChildRouting = ({
   const session = (state.sessions ?? []).find((candidate) => candidate.id === sessionId);
   const outcome = childProposalOutcome({ proposal, promptText });
   const profile = outcome.kind === 'valid' ? outcome.proposal.profile : outcome.profile;
-  const compiled = defaultsForRole(role);
   const defaultProvider =
     session === undefined
       ? null
       : ((session.providerOverride ??
           session.providerPreference?.defaultProvider ??
           null) as ProviderId | null);
+  const compiled = resolveRoleRouting({
+    role,
+    prefs: null,
+    ...(defaultProvider !== null && { auto: { defaultProvider } }),
+  });
   const resolution = resolveWorkflowRouting({
     agentLock: childLock,
     stepLock: null,

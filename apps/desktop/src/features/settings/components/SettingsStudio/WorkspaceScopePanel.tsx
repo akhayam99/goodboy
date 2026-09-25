@@ -28,9 +28,6 @@ import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 
-const WORKSPACE_PANE_HINT =
-  'How this workspace is named, what it works on and how its sessions start.';
-
 type DisconnectTitleParams = {
   readonly name: string;
   readonly runningCount: number;
@@ -163,13 +160,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .slice(0, 16);
 
   return (
-    <PaneShell
-      measure="reading"
-      animationClassName={SETTINGS_PANE_ENTRY}
-      title="Workspace"
-      meta={workspace?.name}
-      description={WORKSPACE_PANE_HINT}
-    >
+    <PaneShell animationClassName={SETTINGS_PANE_ENTRY} title="Workspace" meta={workspace?.name}>
       <div className="flex flex-col gap-4">
         {workspace == null ? null : (
           <>

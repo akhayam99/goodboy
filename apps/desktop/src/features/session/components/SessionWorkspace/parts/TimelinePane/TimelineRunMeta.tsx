@@ -8,19 +8,19 @@ type Props = {
   readonly costUsd: number;
 };
 
-export const TimelineRunMeta = ({ progress, time, costUsd }: Props) => (
-  <WorkMeta
-    routing={
-      time === undefined ? undefined : (
-        <>
-          <span data-meta-column="progress" className={WORK_META_COLUMN.model}>
-            <span className={WORK_META_COLUMN.modelLabel}>{progress}</span>
+export const TimelineRunMeta = ({ progress, time, costUsd }: Props) => {
+  const cost = costUsd > 0 ? formatUsd(costUsd) : null;
+  return (
+    <WorkMeta
+      routing={
+        time === undefined ? undefined : (
+          <span data-meta-column="progress" className={WORK_META_COLUMN.routing}>
+            <span className={WORK_META_COLUMN.routingName}>{progress}</span>
           </span>
-          <span aria-hidden className={WORK_META_COLUMN.effort} />
-        </>
-      )
-    }
-    time={time === undefined ? progress : <WorkTimeCell time={time} />}
-    cost={costUsd > 0 ? formatUsd(costUsd) : null}
-  />
-);
+        )
+      }
+      time={time === undefined ? progress : <WorkTimeCell time={time} cost={cost} />}
+      cost={cost}
+    />
+  );
+};

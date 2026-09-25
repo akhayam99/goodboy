@@ -83,6 +83,22 @@ Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.
 
+## Surfaces and borders: pick the role, never a shade
+
+A surface takes the role it plays on the six-step ladder (`chrome`,
+`background`, `subtle`, `muted`, `elevated`, `floating`), anything inside a
+parent takes `fill`, and a grey "not yet" mark takes `idle`. Borders pick one of
+three jobs: `border-soft` decorates, `border` delineates a control, and
+`border-strong` emphasises a control on hover. The roles, the light-mode axes
+and the contrast floors are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#surface-ladder). A colour
+class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
+
+`bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
+window and the sidebar column, and `AppTopBar` and `AppFooter` paint their
+bars with it. The main pane stays on `bg-background`, one step in front.
+`no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
+
 ## The window grid
 
 Columns, resize handles and the footer are areas of **one** CSS grid. Their
@@ -92,14 +108,51 @@ nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
-equal flexible outer columns around the brand. Page breadcrumbs stay in the
-pane that owns them and do not set the top bar's size.
+equal flexible outer columns around the command center. Page breadcrumbs stay
+in the content column of the pane that owns them and do not set the top bar's
+size.
+
+The right drawer is a grid column too: `rhandle` and `right` after `main`,
+`0px 0px` while closed, `6px` and the saved width while open. The same
+`grid-template-columns` transition moves the main area in 200ms, so the content
+column slides and stays centred. When pushing would leave the column under
+560px, the drawer moves onto the `main` area instead as an overlay.
+[navigation.md](navigation.md#the-right-drawer) owns what goes in it.
+
+The top bar's left padding is `--titlebar-inset`. It defaults to 12px in
+`styles.css`; on macOS `useTitlebarInset` raises it to 78px so the traffic
+lights, drawn inside the bar by the overlay title bar, never sit on a control,
+and drops it back to 12px in full screen. A window without a top bar (the
+workspace launcher) keeps a 36px drag strip at its top edge instead. The
+artifact print window keeps its native title bar.
 
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
 `pointer-events-none` at its root, then turns events back on for the panel
 itself. An overlay that must cover the work area spans main and everything to
 the right of it, never the session sidebar.
+
+## The content column
+
+Every main pane renders through `PaneShell`, and its crumb, header and body
+sit in one `PageColumn`. The column is `min(960px, pane - 2 * gutter)`:
+`--column-max` is 960px of content, the gutter is 24px a side, 16px once the
+pane is under 720px wide. The gutter switch is a container query on the pane
+(`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
+media query on the window, because the space that counts is the pane's.
+
+No view picks its own width. The column changes only when the window changes
+or the right drawer opens, never because you moved from Overview to Review to a
+chat. Anything that centres content uses `PageColumn` or `PANE_RHYTHM.column`;
+no other `max-w-*` layout width lives under `features/`.
+`shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
+`DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
+explicit allowlist, such as the image lightbox), and on a lens the session
+workspace mounts without `PaneShell`. Lenses still on `StudioDetailLayout` or a
+hand-built band render the crumb through `PageCrumbRow` until they move.
+
+Long markdown documents (report, plan, brief) keep a 72ch prose measure,
+aligned left inside the column. Tables and code take the whole column.
 
 ## Layout: fixed-height shell, scroll on content
 
@@ -143,7 +196,7 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 A `Divider` marks the boundary between app chrome and a pane's content, not a
 boundary inside content. Allowed: the top bar and footer, a studio or sidebar
 rail against the detail pane (vertical), a pane's fixed header against its
-scrolling body (`PaneShell scroll="body"`, `InspectorHeader`), and inside a
+scrolling body (a `PaneShell` dock, the `DrawerFrame` header), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
@@ -186,7 +239,11 @@ user decides. Its placements and trigger styling belong to
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
-prompt. Everything else is a popover or inline.
+prompt. Everything else is a popover or inline. A centred `Dialog` sits on
+`bg-floating`, like popovers, toasts and the command palette; the full-screen
+viewer passes `surface="screen"` to stay on the content surface. Any line that
+sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
+`bg-floating`, and `no-token-bypass.test.ts` holds that.
 
 ## z-index: a named scale, not a magic number per file
 

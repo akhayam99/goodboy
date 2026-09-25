@@ -15,11 +15,16 @@ export type WorkTime = {
   readonly label: string;
   readonly detail: string;
   readonly progress: number | null;
+  readonly headline: string;
+  readonly note: string | null;
+  readonly isMuchLonger: boolean;
 };
 
 const MINUTE_MS = 60_000;
 const NARROW_BAND = 1.3;
 const MACHINE_TIME_NOTE = 'Waiting on you is not counted.';
+const LONGER_THAN_USUAL = 'Longer than usual';
+const MUCH_LONGER_FACTOR = 2;
 
 type MsParams = {
   readonly ms: number;
@@ -124,6 +129,42 @@ export const estimateRangeLabel = ({ estimate }: LabelParams): string => {
   return estimate.isFallback && !range.startsWith('≈') ? `~${range}` : range;
 };
 
+type PlainParams = {
+  readonly label: string;
+  readonly detail: string;
+  readonly progress?: number | null;
+};
+
+export const plainWorkTime = ({ label, detail, progress = null }: PlainParams): WorkTime => ({
+  label,
+  detail,
+  progress,
+  headline: label,
+  note: null,
+  isMuchLonger: false,
+});
+
+const approxRangeLabel = ({ lowMs, midMs, highMs }: RangeParams): string => {
+  const range = formatEstimateRange({ lowMs, midMs, highMs });
+  if (range.startsWith('<')) {
+    return range;
+  }
+  return range.startsWith('≈ ') ? `~${range.slice(2)}` : `~${range}`;
+};
+
+export const usualRangeLabel = ({ lowMs, midMs, highMs }: RangeParams): string =>
+  approxRangeLabel({ lowMs, midMs, highMs }).replace(/^~/, '');
+
+type LeftParams = {
+  readonly lowMs: number;
+  readonly highMs: number;
+};
+
+export const timeLeftLabel = ({ lowMs, highMs }: LeftParams): string =>
+  lowMs > 0
+    ? `${approxRangeLabel({ lowMs, midMs: (lowMs + highMs) / 2, highMs })} left`
+    : `~${formatEstimateTime({ ms: highMs })} left`;
+
 type Params = {
   readonly phase: RowPhase;
   readonly activeMs: number;
@@ -132,29 +173,73 @@ type Params = {
   readonly unknownBasis: string | null;
 };
 
-const runningTime = ({
-  activeMs,
-  estimate,
-  unknownBasis,
-}: Omit<Params, 'phase' | 'hasStarted'>) => {
-  const active = formatActiveTime({ ms: activeMs });
-  const exact = `Active ${exactActiveTime({ ms: activeMs })}. ${MACHINE_TIME_NOTE}`;
+type ActiveParams = Omit<Params, 'phase' | 'hasStarted'>;
+
+type LongerParams = {
+  readonly lead: string;
+  readonly estimate: WorkEstimate;
+};
+
+const longerDetail = ({ lead, estimate }: LongerParams): string =>
+  `${lead} Most finish within ${formatEstimateTime({ ms: estimate.highMs })}. ${estimate.basis} ${MACHINE_TIME_NOTE}`;
+
+const runningTime = ({ activeMs, estimate, unknownBasis }: ActiveParams): WorkTime => {
+  const elapsed = formatActiveTime({ ms: activeMs });
+  const lead = `Running ${exactActiveTime({ ms: activeMs })}.`;
   if (estimate === null) {
+    return plainWorkTime({
+      label: elapsed,
+      detail:
+        unknownBasis === null
+          ? `${lead} ${MACHINE_TIME_NOTE}`
+          : `${lead} ${unknownBasis} ${MACHINE_TIME_NOTE}`,
+    });
+  }
+  if (activeMs > estimate.highMs) {
     return {
-      label: active,
-      detail: unknownBasis === null ? exact : `${exact} ${unknownBasis}`,
-      progress: null,
+      label: elapsed,
+      detail: longerDetail({ lead, estimate }),
+      progress: 1,
+      headline: `${elapsed} · ${LONGER_THAN_USUAL.toLowerCase()}`,
+      note: LONGER_THAN_USUAL,
+      isMuchLonger: activeMs >= MUCH_LONGER_FACTOR * estimate.highMs,
     };
   }
-  const usual = `~${formatEstimateTime({ ms: estimate.highMs })}`;
-  const detail = `${exact} Most finish within ${usual}. ${estimate.basis}`;
-  if (activeMs > estimate.highMs) {
-    return { label: `${active}, usually ${usual}`, detail, progress: 1 };
+  const left = timeLeftLabel({
+    lowMs: Math.max(0, estimate.lowMs - activeMs),
+    highMs: estimate.highMs - activeMs,
+  });
+  return {
+    label: left,
+    detail: `${lead} Usually ${usualRangeLabel(estimate)}. ${estimate.basis} ${MACHINE_TIME_NOTE}`,
+    progress: estimate.highMs === 0 ? 1 : activeMs / estimate.highMs,
+    headline: `${elapsed} · ${left}`,
+    note: null,
+    isMuchLonger: false,
+  };
+};
+
+const pausedTime = ({ activeMs, estimate }: Omit<ActiveParams, 'unknownBasis'>): WorkTime =>
+  plainWorkTime({
+    label: formatActiveTime({ ms: activeMs }),
+    detail: `Active ${exactActiveTime({ ms: activeMs })}. ${MACHINE_TIME_NOTE}`,
+    progress:
+      estimate === null || estimate.highMs === 0 ? null : Math.min(1, activeMs / estimate.highMs),
+  });
+
+const doneTime = ({ activeMs, estimate }: Omit<ActiveParams, 'unknownBasis'>): WorkTime => {
+  const duration = exactActiveTime({ ms: activeMs });
+  const lead = `Active ${duration}.`;
+  if (estimate === null || activeMs <= estimate.highMs) {
+    return plainWorkTime({ label: duration, detail: `${lead} ${MACHINE_TIME_NOTE}` });
   }
   return {
-    label: `${active} of ${usual}`,
-    detail,
-    progress: estimate.highMs === 0 ? 1 : activeMs / estimate.highMs,
+    label: duration,
+    detail: longerDetail({ lead, estimate }),
+    progress: null,
+    headline: `${duration} · ${LONGER_THAN_USUAL.toLowerCase()}`,
+    note: LONGER_THAN_USUAL,
+    isMuchLonger: false,
   };
 };
 
@@ -162,8 +247,11 @@ const queuedTime = ({ estimate }: { readonly estimate: WorkEstimate | null }): W
   if (estimate === null) {
     return null;
   }
-  const range = estimateRangeLabel({ estimate });
-  return { label: range, detail: `Usually ${range}. ${estimate.basis}`, progress: null };
+  const range = approxRangeLabel(estimate);
+  return plainWorkTime({
+    label: range,
+    detail: `Usually ${usualRangeLabel(estimate)}. ${estimate.basis}`,
+  });
 };
 
 export const workTime = ({
@@ -173,29 +261,19 @@ export const workTime = ({
   estimate,
   unknownBasis,
 }: Params): WorkTime | null => {
-  const exact = `Active ${exactActiveTime({ ms: activeMs })}. ${MACHINE_TIME_NOTE}`;
   switch (phase) {
     case 'queued':
       return queuedTime({ estimate });
     case 'running':
       return runningTime({ activeMs, estimate, unknownBasis });
     case 'waiting':
-      return hasStarted
-        ? runningTime({ activeMs, estimate, unknownBasis })
-        : queuedTime({ estimate });
+      return hasStarted ? pausedTime({ activeMs, estimate }) : queuedTime({ estimate });
     case 'failed':
-      return hasStarted
-        ? {
-            label: formatActiveTime({ ms: activeMs }),
-            detail: exact,
-            progress: null,
-          }
-        : null;
+      return hasStarted ? pausedTime({ activeMs, estimate: null }) : null;
     case 'done':
+      return hasStarted ? doneTime({ activeMs, estimate }) : null;
     case 'closed':
-      return hasStarted
-        ? { label: exactActiveTime({ ms: activeMs }), detail: exact, progress: null }
-        : null;
+      return hasStarted ? doneTime({ activeMs, estimate: null }) : null;
     case 'skipped':
       return null;
     default: {

@@ -69,6 +69,21 @@ const RULES = [
     why: 'global layers use the named z-index tokens',
   },
   {
+    pattern:
+      /^(?=.*\bz-(?:popover|toast|command-palette)(?![\w-]))(?=.*(?<![\w:-])bg-(?!(?:floating|hover|selected|transparent)(?![\w-])))/,
+    allow: NO_ALLOW,
+    why: 'floating layers sit on the floating surface',
+  },
+  {
+    pattern: /(?<![\w-])(?:bg|from|via|to)-chrome(?![\w-])/,
+    allow: [
+      'packages/ui/src/components/AppShell.tsx',
+      'apps/desktop/src/app/components/AppTopBar/index.tsx',
+      'apps/desktop/src/app/components/AppFooter/index.tsx',
+    ],
+    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar and the footer',
+  },
+  {
     pattern: /\bduration-\[/,
     allow: NO_ALLOW,
     why: 'durations use the numeric scale, never an arbitrary value',
@@ -112,7 +127,70 @@ const listSourceFiles = ({ dir, files = [] }: { dir: string; files?: string[] })
   return files;
 };
 
+const STYLES = join(REPO_ROOT, 'apps', 'desktop', 'src', 'styles.css');
+const COLOR_CLASS =
+  /(?<![\w\-,[])((?:[\w-]+:)*)(bg|text|border|ring|divide|fill|stroke)-(?:(?:[trblxyse])-)?([a-z][a-z0-9-]*)(?:\/[\w.[\]]+)?(?![\w-])/g;
+const BORDER_SIDE = /^[trblxyse](?:-\d+)?$/;
+const COLOR_KEYWORDS = new Set([
+  'current',
+  'transparent',
+  'inherit',
+  'white',
+  'black',
+  'none',
+  'image',
+  'gradient-to-t',
+  'gradient-to-r',
+  'gradient-to-b',
+  'gradient-to-l',
+  'xs',
+  'sm',
+  'base',
+  'lg',
+  'xl',
+  'left',
+  'center',
+  'right',
+  'ellipsis',
+  'dashed',
+  'dotted',
+  'solid',
+  'collapse',
+  'box',
+  'inset',
+]);
+
+const definedColorNames = (): ReadonlySet<string> => {
+  const css = readFileSync(STYLES, 'utf8');
+  const tokens = [...css.matchAll(/--color-([a-z0-9-]+):/g)].map((match) => String(match[1]));
+  const utilities = [...css.matchAll(/(?:@utility\s+|^\.)[a-z]+-([a-z0-9-]+)\s*\{/gm)].map(
+    (match) => String(match[1]),
+  );
+  return new Set([...tokens, ...utilities, ...COLOR_KEYWORDS]);
+};
+
 describe('token boundaries', () => {
+  it('resolves every colour class to a defined token', () => {
+    const defined = definedColorNames();
+    const offenders: string[] = [];
+    for (const root of SOURCE_ROOTS) {
+      for (const file of listSourceFiles({ dir: root })) {
+        const path = relative(REPO_ROOT, file).split(sep).join('/');
+        readFileSync(file, 'utf8')
+          .split('\n')
+          .forEach((line, index) => {
+            for (const match of line.matchAll(COLOR_CLASS)) {
+              const name = String(match[3]);
+              if (!defined.has(name) && !BORDER_SIDE.test(name)) {
+                offenders.push(`${path}:${index + 1} ${match[2]}-${name}`);
+              }
+            }
+          });
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
   it.each(RULES)('$why', ({ pattern, allow }) => {
     const offenders: string[] = [];
     for (const root of SOURCE_ROOTS) {

@@ -4,7 +4,6 @@ import {
   useAppStore,
   useSessionLoading,
   useSessionSlots,
-  useSlotHistory,
   useSlotHistoryCount,
   useSummarizerStatus,
 } from '../../../../store';
@@ -19,8 +18,6 @@ import { SessionKickoff } from '../SessionKickoff';
 import { IssueBriefProposal } from '../SessionKickoff/IssueBriefProposal';
 import { useIssueBriefProposal } from './useIssueBriefProposal';
 import { OverviewActions } from './OverviewActions';
-import { InspectorSplit } from '../SessionWorkspace/parts/InspectorSplit';
-import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { AttentionCallout } from './AttentionCallout';
 
@@ -33,12 +30,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
   const slots = useSessionSlots(sessionId);
   const slotLoading = useSessionLoading(sessionId);
-  const goalHistory = useSlotHistory(sessionId, 'goal');
   const goalHistoryCount = useSlotHistoryCount(sessionId, 'goal');
   const summarizer = useSummarizerStatus(sessionId);
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
-  const upsertSessionSlot = useAppStore((s) => s.upsertSessionSlot);
-  const [isGoalHistoryOpen, setIsGoalHistoryOpen] = useState(false);
+  const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const [isGoalEditing, setIsGoalEditing] = useState(false);
   const { proposal, pickIssue } = useIssueBriefProposal({ session });
   const goalSlot = slots.find((slot) => slot.key === 'goal');
@@ -54,79 +49,61 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   };
 
   return (
-    <InspectorSplit
-      open={isGoalHistoryOpen}
-      panel={
-        isGoalHistoryOpen ? (
-          <SlotHistoryPanel
-            label="Goal"
-            renderAsMarkdown={false}
-            entries={goalHistory}
-            onRestore={(entry) => {
-              void upsertSessionSlot(sessionId, 'goal', entry.value);
-              setIsGoalHistoryOpen(false);
-            }}
-            onClose={() => setIsGoalHistoryOpen(false)}
-          />
-        ) : null
-      }
-    >
-      <PaneShell
-        header={
-          <HeaderBand
-            session={session}
-            onSelectLens={onSelectLens}
-            titleAction={
-              presence === 'own' || isGoalEditing || isGoalLoading ? null : (
-                <GoalDetailAction
-                  presence={presence}
-                  disabled={summarizer.status === 'running'}
-                  onClick={() => setIsGoalEditing(true)}
-                />
-              )
-            }
-            goal={
-              <GoalOverviewRegion
-                sessionId={sessionId}
-                sessionTitle={session.goal}
-                value={goalSlot?.value ?? ''}
-                historyCount={goalHistoryCount}
-                isLoading={isGoalLoading}
-                isSummarizing={summarizer.status === 'running'}
-                isEditing={isGoalEditing}
-                onEditingChange={setIsGoalEditing}
-                onOpenHistory={() => {
-                  void loadSlotHistory(sessionId, 'goal');
-                  setIsGoalHistoryOpen(true);
-                }}
-              />
-            }
-          />
-        }
-        animationClassName="animate-fade-in"
-      >
-        <AttentionCallout session={session} onSelectLens={onSelectLens} />
-        {proposal !== null ? (
-          <IssueBriefProposal key={proposal.source.externalId} {...proposal} />
-        ) : null}
-        <TimelinePane
+    <PaneShell
+      header={
+        <HeaderBand
           session={session}
-          actions={
-            <ArchivedGate isArchived={isArchived}>
-              <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
-            </ArchivedGate>
-          }
-          kickoff={
-            <ArchivedGate isArchived={isArchived}>
-              <SessionKickoff
-                session={session}
-                onOpenWorkflowBuilder={openWorkflowBuilder}
-                onPickIssue={pickIssue}
+          onSelectLens={onSelectLens}
+          titleAction={
+            presence === 'own' || isGoalEditing || isGoalLoading ? null : (
+              <GoalDetailAction
+                presence={presence}
+                disabled={summarizer.status === 'running'}
+                onClick={() => setIsGoalEditing(true)}
               />
-            </ArchivedGate>
+            )
+          }
+          goal={
+            <GoalOverviewRegion
+              sessionId={sessionId}
+              sessionTitle={session.goal}
+              value={goalSlot?.value ?? ''}
+              historyCount={goalHistoryCount}
+              isLoading={isGoalLoading}
+              isSummarizing={summarizer.status === 'running'}
+              isEditing={isGoalEditing}
+              onEditingChange={setIsGoalEditing}
+              onOpenHistory={() => {
+                void loadSlotHistory(sessionId, 'goal');
+                toggleDrawer({ kind: 'slot-history', sessionId, payload: { slotKey: 'goal' } });
+              }}
+            />
           }
         />
-      </PaneShell>
-    </InspectorSplit>
+      }
+      animationClassName="animate-fade-in"
+    >
+      <AttentionCallout session={session} onSelectLens={onSelectLens} />
+      {proposal !== null ? (
+        <IssueBriefProposal key={proposal.source.externalId} {...proposal} />
+      ) : null}
+      <TimelinePane
+        session={session}
+        actions={
+          <ArchivedGate isArchived={isArchived}>
+            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+          </ArchivedGate>
+        }
+        kickoff={
+          <ArchivedGate isArchived={isArchived}>
+            <SessionKickoff
+              session={session}
+              onOpenWorkflowBuilder={openWorkflowBuilder}
+              onPickIssue={pickIssue}
+            />
+          </ArchivedGate>
+        }
+      />
+    </PaneShell>
   );
 };

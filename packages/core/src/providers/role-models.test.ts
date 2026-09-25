@@ -1,15 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { ROLE_REGISTRY } from '../roles';
+import { AUTO_DEFAULTS } from './autoRouting/defaults';
 import { resolveRoleRouting } from './role-models';
 
 describe('resolveRoleRouting', () => {
   it('resolves a role with no stored preference to its compiled default', () => {
     expect(resolveRoleRouting({ role: 'investigator', prefs: null })).toEqual({
-      provider: ROLE_REGISTRY.investigator.provider,
-      model: ROLE_REGISTRY.investigator.model,
-      effort: ROLE_REGISTRY.investigator.effort,
+      provider: 'anthropic',
+      model: AUTO_DEFAULTS.anthropic.investigator[0]?.key,
+      effort: AUTO_DEFAULTS.anthropic.investigator[0]?.effort,
       isOverride: false,
+      autoStep: 'curated',
     });
   });
 
@@ -32,7 +33,7 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.model).toBe(ROLE_REGISTRY.reviewer.model);
+    expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.key);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -42,8 +43,8 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.provider).toBe(ROLE_REGISTRY.reviewer.provider);
-    expect(resolved.model).toBe(ROLE_REGISTRY.reviewer.model);
+    expect(resolved.provider).toBe('anthropic');
+    expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.reviewer[0]?.key);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -86,16 +87,17 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'tester', prefs });
 
-    expect(resolved.model).toBe(ROLE_REGISTRY.tester.model);
+    expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.tester[0]?.key);
     expect(resolved.isOverride).toBe(false);
   });
 
   it('resolves the resolver role to its compiled default with no stored preference', () => {
     expect(resolveRoleRouting({ role: 'resolver', prefs: null })).toEqual({
-      provider: ROLE_REGISTRY.resolver.provider,
-      model: ROLE_REGISTRY.resolver.model,
-      effort: ROLE_REGISTRY.resolver.effort,
+      provider: 'anthropic',
+      model: AUTO_DEFAULTS.anthropic.resolver[0]?.key,
+      effort: AUTO_DEFAULTS.anthropic.resolver[0]?.effort,
       isOverride: false,
+      autoStep: 'curated',
     });
   });
 
@@ -123,7 +125,7 @@ describe('resolveRoleRouting', () => {
     };
     const resolved = resolveRoleRouting({ role: 'resolver', prefs });
 
-    expect(resolved.model).toBe(ROLE_REGISTRY.resolver.model);
+    expect(resolved.model).toBe(AUTO_DEFAULTS.anthropic.resolver[0]?.key);
     expect(resolved.isOverride).toBe(false);
   });
 
@@ -296,11 +298,63 @@ describe('resolveRoleRouting', () => {
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
     expect(resolved).toMatchObject({
-      provider: ROLE_REGISTRY.reviewer.provider,
-      model: ROLE_REGISTRY.reviewer.model,
+      provider: 'anthropic',
+      model: AUTO_DEFAULTS.anthropic.reviewer[0]?.key,
       isOverride: false,
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid reviewer model'));
     warn.mockRestore();
+  });
+
+  it('starts a role on the workspace default provider, not on Claude', () => {
+    expect(
+      resolveRoleRouting({ role: 'implementer', prefs: null, auto: { defaultProvider: 'codex' } }),
+    ).toMatchObject({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'medium' });
+  });
+
+  it('runs Custom and Report on Sonnet 5 Medium', () => {
+    for (const role of ['custom', 'report']) {
+      expect(resolveRoleRouting({ role, prefs: null })).toMatchObject({
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'medium',
+      });
+    }
+  });
+
+  it('names an unavailable pin and takes its fallback', () => {
+    const prefs: RoleModelPreferences = {
+      reviewer: {
+        providerId: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        fallback: { providerId: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      },
+    };
+    const resolved = resolveRoleRouting({
+      role: 'reviewer',
+      prefs,
+      auto: { defaultProvider: 'anthropic', connected: ['codex'] },
+    });
+    expect(resolved).toMatchObject({ provider: 'codex', model: 'gpt-5.6-sol', isOverride: true });
+    expect(resolved.pinnedUnavailable?.provider).toBe('anthropic');
+  });
+
+  it('names an unavailable pin with no fallback and uses Auto', () => {
+    const prefs: RoleModelPreferences = {
+      reviewer: { providerId: 'cursor', model: 'composer-2.5', effort: 'medium' },
+    };
+    const resolved = resolveRoleRouting({
+      role: 'reviewer',
+      prefs,
+      auto: { defaultProvider: 'anthropic', connected: ['anthropic'] },
+    });
+    expect(resolved).toMatchObject({
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'high',
+      isOverride: false,
+      pinnedUnavailable: { provider: 'cursor', model: 'composer-2.5' },
+    });
   });
 });

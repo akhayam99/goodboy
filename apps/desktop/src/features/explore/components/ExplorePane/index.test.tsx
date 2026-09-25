@@ -36,6 +36,7 @@ const h = vi.hoisted(() => ({
   selectAgent: vi.fn(async () => undefined),
   setCurrentSession: vi.fn(async () => undefined),
   setActiveLens: vi.fn(),
+  resetStore: (): void => undefined,
   showToast:
     vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
@@ -63,19 +64,33 @@ vi.mock('../../explore', () => ({
   exploreRead: h.exploreRead,
 }));
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Store) => T) =>
-    selector({
-      spawnAgent: h.spawnAgent,
-      selectAgent: h.selectAgent,
-      setCurrentSession: h.setCurrentSession,
-      setActiveLens: h.setActiveLens,
-      providers: h.providers,
-      cliRequirements: [],
-      sessions: h.sessions,
-      workspaceOverrides: {},
-    }),
-}));
+vi.mock('../../../../store', async () => {
+  const { create } = await vi.importActual<typeof import('zustand')>('zustand');
+  const { createDrawerSlice } = await vi.importActual<
+    typeof import('../../../../store/slices/drawer')
+  >('../../../../store/slices/drawer');
+  const store = create<Record<string, unknown>>()((set, get) => ({
+    spawnAgent: h.spawnAgent,
+    selectAgent: h.selectAgent,
+    setCurrentSession: h.setCurrentSession,
+    setActiveLens: h.setActiveLens,
+    get providers() {
+      return h.providers;
+    },
+    cliRequirements: [],
+    sessions: h.sessions,
+    workspaceOverrides: {},
+    currentSessionId: 'session-1',
+    activeLens: { 'session-1': 'explore' },
+    drawer: null,
+    ...createDrawerSlice(set as never, get as never),
+  }));
+  h.resetStore = () => store.setState({ drawer: null });
+  return {
+    useAppStore: <T,>(selector: (state: Store) => T) =>
+      store((state) => selector(state as unknown as Store)),
+  };
+});
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
@@ -95,8 +110,30 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 });
 
 import { ExplorePane } from '.';
+import { ExploreFileDrawer } from '../ExploreFileDrawer';
+import { useAppStore } from '../../../../store';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 
 const SESSION_ID = 'session-1' as SessionId;
+
+const PaneWithDrawer = () => {
+  const drawer = useAppStore((state) => selectOpenDrawer(state as never));
+  const closeDrawer = useAppStore(
+    (state) => (state as never as { closeDrawer: () => void }).closeDrawer,
+  );
+  return (
+    <>
+      <ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />
+      {drawer !== null && drawer.kind === 'explore-file' ? (
+        <ExploreFileDrawer
+          sessionDir={drawer.payload.sessionDir}
+          entry={drawer.payload.entry}
+          onClose={closeDrawer}
+        />
+      ) : null}
+    </>
+  );
+};
 
 beforeEach(() => {
   h.exploreList.mockReset();
@@ -107,6 +144,7 @@ beforeEach(() => {
   h.selectAgent.mockClear();
   h.showToast.mockClear();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
+  h.resetStore();
 });
 
 afterEach(cleanup);
@@ -139,7 +177,7 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() =>
       expect(h.exploreList).toHaveBeenCalledWith({
@@ -164,7 +202,7 @@ describe('ExplorePane', () => {
   it('shows listing errors instead of the empty state', async () => {
     h.exploreList.mockRejectedValueOnce(new Error('io error: permission denied'));
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() =>
       expect(screen.getByText('Could not read this session folder')).toBeDefined(),
@@ -208,7 +246,7 @@ describe('ExplorePane', () => {
       truncated: false,
     });
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('README.md')).toBeDefined());
 
@@ -253,7 +291,7 @@ describe('ExplorePane', () => {
       truncated: true,
     });
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('large.txt')).toBeDefined());
     fireEvent.click(screen.getByRole('button', { name: 'Preview large.txt' }));
@@ -271,7 +309,7 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('budget.xlsx')).toBeDefined());
     fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on budget.xlsx' }));
@@ -319,7 +357,7 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
     fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on notes.txt' }));
@@ -337,7 +375,7 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
     const revealButton = screen.getByRole('button', {
@@ -372,7 +410,7 @@ describe('ExplorePane', () => {
       },
     ]);
 
-    render(<ExplorePane sessionId={SESSION_ID} sessionDir="/workspace/sessions/session-1" />);
+    render(<PaneWithDrawer />);
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
     const row = screen.getByText('notes.txt').closest('[title]');

@@ -27,8 +27,6 @@ export const VISIBLE_LINES_STEP = 2000;
 
 export const DIFF_SCROLL_CONTENT_CLASS = 'sticky left-0 box-border w-[var(--diff-card-width)]';
 
-export const DIFF_CAPPED_COLUMN_CLASS = 'mx-auto w-full max-w-5xl' as const;
-
 export const TOOLBAR_ICON_BTN =
   'rounded-sm p-1 text-muted-foreground hover:bg-hover hover:text-foreground' as const;
 

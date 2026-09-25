@@ -103,7 +103,6 @@ function Detail({
   return (
     <PaneShell
       scroll="body"
-      measure="reading"
       animationClassName={SETTINGS_PANE_ENTRY}
       glyph={
         <Icon
@@ -114,7 +113,7 @@ function Detail({
         />
       }
       title={info.label}
-      description={subtitle}
+      meta={subtitle}
       actions={action}
     >
       {info.connection !== 'missing' && info.connection !== 'unknown' && (

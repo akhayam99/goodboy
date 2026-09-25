@@ -1,4 +1,4 @@
-import { getCheapModel, resolveRoleRouting } from '@goodboy/core';
+import { resolveRoleRouting } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type {
   AgentEffort,
@@ -91,16 +91,18 @@ export const resolveReportRouting = ({
   const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
   const overrides =
     session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
-  const role = resolveRoleRouting({ role: 'report', prefs: overrides?.roleModels });
-  if (role.isOverride) {
-    return { provider: role.provider, model: role.model, effort: role.effort };
-  }
   const usable = usableProviders({ state, sessionId });
-  const provider = usable.includes(role.provider) ? role.provider : usable[0];
-  if (provider === undefined) {
-    return { provider: role.provider, model: role.model, effort: role.effort };
-  }
-  return { provider, model: getCheapModel(provider), effort: 'low' };
+  const defaultProvider =
+    overrides?.defaultProviderId ??
+    session?.providerPreference?.defaultProvider ??
+    usable[0] ??
+    'anthropic';
+  const role = resolveRoleRouting({
+    role: 'report',
+    prefs: overrides?.roleModels,
+    auto: { defaultProvider, ...(usable.length > 0 && { connected: usable }) },
+  });
+  return { provider: role.provider, model: role.model, effort: role.effort };
 };
 
 const withScoutNote = ({

@@ -150,7 +150,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
           </li>
         ))}
       </ul>
-      {error !== null && <p className="text-2xs text-destructive">{error}</p>}
+      {error !== null && <p className="text-2xs text-danger">{error}</p>}
     </div>
   );
 };

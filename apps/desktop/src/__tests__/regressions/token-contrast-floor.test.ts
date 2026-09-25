@@ -7,7 +7,9 @@ const STYLES = join(__dirname, '..', '..', 'styles.css');
 const BODY_FLOOR = 4.5;
 const LARGE_FLOOR = 3;
 
-const SURFACES = ['background', 'subtle', 'muted', 'elevated'] as const;
+const SURFACES = ['chrome', 'background', 'subtle', 'muted', 'elevated', 'floating'] as const;
+const STEP_FLOOR = 1.04;
+const FILL_FLOOR = 1.1;
 const TONES = ['primary', 'info', 'success', 'warning', 'danger', 'merged', 'draft'] as const;
 // The diff viewer paints code on the canvas and on hunk rows, never on a card.
 const CODE_SURFACES = ['background', 'subtle', 'muted'] as const;
@@ -146,6 +148,30 @@ const readThemes = (): Readonly<Record<'dark' | 'light', Palette>> => {
   return { dark, light: { ...dark, ...readPalette(blocks.light) } };
 };
 
+type Translucent = Readonly<{ rgb: Rgb; alpha: number }>;
+
+const readTranslucent = ({ block, token }: { block: string; token: string }): Translucent => {
+  const pattern = new RegExp(
+    `--color-${token}:\\s*oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)\\s*/\\s*([\\d.]+)\\s*\\)\\s*;`,
+  );
+  const match = block.match(pattern);
+  if (match === null) {
+    throw new Error(`styles.css has no translucent oklch --color-${token}`);
+  }
+  return {
+    rgb: oklchToSrgb(Number(match[1]), Number(match[2]), Number(match[3])),
+    alpha: Number(match[4]),
+  };
+};
+
+const readShadow = ({ block, name }: { block: string; name: string }): string => {
+  const match = block.match(new RegExp(`--shadow-${name}:([^;]+);`));
+  if (match === null) {
+    throw new Error(`styles.css has no --shadow-${name}`);
+  }
+  return String(match[1]).trim();
+};
+
 describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
   it.each(SURFACES)('carries body and tone text at 4.5:1 on %s', (surface) => {
     const failures = ['foreground', 'muted-foreground', 'faint-foreground', ...TONES]
@@ -246,10 +272,23 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
-  it('separates the soft border from the elevated surface', () => {
+  it.each(SURFACES)('keeps the soft border visible on %s', (surface) => {
+    const floor = surface === 'elevated' || surface === 'floating' ? 1.3 : 1.2;
     expect(
-      contrast(swatch(palette, 'border-soft'), swatch(palette, 'elevated')),
-    ).toBeGreaterThanOrEqual(1.2);
+      contrast(swatch(palette, 'border-soft'), swatch(palette, surface)),
+    ).toBeGreaterThanOrEqual(floor);
+  });
+
+  it.each(SURFACES)('keeps the strong border at 4.5:1 on %s', (surface) => {
+    expect(
+      contrast(swatch(palette, 'border-strong'), swatch(palette, surface)),
+    ).toBeGreaterThanOrEqual(BODY_FLOOR);
+  });
+
+  it.each(SURFACES)('keeps idle marks at 3:1 on %s', (surface) => {
+    expect(contrast(swatch(palette, 'idle'), swatch(palette, surface))).toBeGreaterThanOrEqual(
+      LARGE_FLOOR,
+    );
   });
 
   it.each(SURFACES)('keeps the focus ring visible at 3:1 on %s', (surface) => {
@@ -305,4 +344,81 @@ describe.each(Object.entries(readLabThemes()))('%s oklab separation', (_theme, l
       .filter(({ distance }) => distance < IDENTITY_SEPARATION);
     expect(failures).toEqual([]);
   });
+});
+
+describe('surface ladder', () => {
+  const labs = readLabThemes();
+  const palettes = readThemes();
+  const blocks = themeBlocks();
+  const lightness = ({ theme, token }: { theme: 'dark' | 'light'; token: string }): number =>
+    lab({ labs: labs[theme], token })[0];
+  const step = ({
+    theme,
+    lower,
+    upper,
+  }: {
+    theme: 'dark' | 'light';
+    lower: string;
+    upper: string;
+  }): number => contrast(swatch(palettes[theme], lower), swatch(palettes[theme], upper));
+
+  it('orders the ladder by depth', () => {
+    const darkLevels = SURFACES.map((token) => lightness({ theme: 'dark', token }));
+    darkLevels.slice(1).forEach((level, index) => {
+      expect(level).toBeGreaterThan(Number(darkLevels[index]));
+    });
+    SURFACES.slice(1).forEach((upper, index) => {
+      expect(step({ theme: 'dark', lower: String(SURFACES[index]), upper })).toBeGreaterThanOrEqual(
+        STEP_FLOOR,
+      );
+    });
+
+    const light = (token: string): number => lightness({ theme: 'light', token });
+    expect(light('chrome')).toBeLessThan(light('background'));
+    expect(light('background')).toBeLessThan(light('elevated'));
+    expect(light('elevated')).toBeLessThanOrEqual(light('floating'));
+    expect(light('background')).toBeGreaterThan(light('subtle'));
+    expect(light('subtle')).toBeGreaterThan(light('muted'));
+    const lightPairs = [
+      ['chrome', 'background'],
+      ['background', 'elevated'],
+      ['background', 'subtle'],
+      ['subtle', 'muted'],
+    ] as const;
+    lightPairs.forEach(([lower, upper]) => {
+      expect(step({ theme: 'light', lower, upper })).toBeGreaterThanOrEqual(STEP_FLOOR);
+    });
+  });
+
+  it('keeps floating above raised', () => {
+    expect(lightness({ theme: 'dark', token: 'floating' })).toBeGreaterThanOrEqual(
+      lightness({ theme: 'dark', token: 'elevated' }),
+    );
+    expect(lightness({ theme: 'light', token: 'floating' })).toBeGreaterThanOrEqual(
+      lightness({ theme: 'light', token: 'elevated' }),
+    );
+    expect(readShadow({ block: blocks.light, name: 'lg' })).not.toEqual(
+      readShadow({ block: blocks.light, name: 'sm' }),
+    );
+  });
+
+  it.each([
+    { theme: 'dark', block: blocks.dark, direction: 1 },
+    { theme: 'light', block: blocks.light, direction: -1 },
+  ] as const)(
+    'steps fill one level inside every surface in $theme',
+    ({ theme, block, direction }) => {
+      const fill = readTranslucent({ block, token: 'fill' });
+      const failures = SURFACES.map((surface) => {
+        const parent = swatch(palettes[theme], surface);
+        const filled = composite({ foreground: fill.rgb, background: parent, alpha: fill.alpha });
+        return {
+          surface,
+          direction: Math.sign(relativeLuminance(filled) - relativeLuminance(parent)),
+          ratio: contrast(filled, parent),
+        };
+      }).filter((result) => result.direction !== direction || result.ratio < FILL_FLOOR);
+      expect(failures).toEqual([]);
+    },
+  );
 });

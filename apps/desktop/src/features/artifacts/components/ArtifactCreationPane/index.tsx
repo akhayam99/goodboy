@@ -255,12 +255,7 @@ export const ArtifactCreationPane = ({
         <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
           <div
             data-testid="artifact-creation-pane"
-            className={cn(
-              PANE_RHYTHM.column,
-              PANE_RHYTHM.measure.reading,
-              PANE_RHYTHM.stack,
-              'min-w-0',
-            )}
+            className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, 'min-w-0')}
           >
             {note === null ? null : (
               <span className="text-2xs text-muted-foreground" data-testid="artifact-creation-note">

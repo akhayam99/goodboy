@@ -1,7 +1,9 @@
 import { WebviewWindow, getAllWebviewWindows } from '@tauri-apps/api/webviewWindow';
-import { getCurrentWindow, primaryMonitor } from '@tauri-apps/api/window';
+import { getCurrentWindow, primaryMonitor, type WindowOptions } from '@tauri-apps/api/window';
+import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { WorkspaceId } from '@goodboy/types';
+import { currentPlatform } from '../../shared/platform';
 
 export const MAIN_WINDOW_LABEL = 'main';
 const WORKSPACE_HASH_KEY = 'ws';
@@ -56,6 +58,12 @@ function freshWindowLabel(): string {
   const raw = globalThis.crypto?.randomUUID?.() ?? `${performance.now()}`;
   return `win-${raw.replace(/[^a-z0-9]/gi, '').slice(0, 16)}`;
 }
+
+const MAC_TITLE_BAR = {
+  titleBarStyle: 'overlay',
+  hiddenTitle: true,
+  trafficLightPosition: new LogicalPosition(14, 22),
+} satisfies Pick<WindowOptions, 'titleBarStyle' | 'hiddenTitle' | 'trafficLightPosition'>;
 
 const WINDOW_WIDTH = 1280;
 const WINDOW_HEIGHT = 860;
@@ -132,6 +140,7 @@ export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Prom
     height: WINDOW_HEIGHT,
     minWidth: 1024,
     minHeight: 700,
+    ...(currentPlatform() === 'darwin' && MAC_TITLE_BAR),
     ...(placement != null && { x: placement.x, y: placement.y }),
   });
   await new Promise<void>((resolve, reject) => {

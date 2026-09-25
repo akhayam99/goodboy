@@ -64,7 +64,7 @@ export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => 
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
-      <div className={cn('flex flex-col gap-12', PANE_RHYTHM.column, PANE_RHYTHM.measure.reading)}>
+      <div className={cn('flex flex-col gap-12', PANE_RHYTHM.column)}>
         <div ref={anchor('overview')}>
           <OverviewSection onJump={onJump} />
         </div>

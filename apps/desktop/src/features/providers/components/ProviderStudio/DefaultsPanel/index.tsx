@@ -102,13 +102,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
   };
 
   return (
-    <PaneShell
-      scroll="body"
-      measure="reading"
-      animationClassName={SETTINGS_PANE_ENTRY}
-      title="Defaults"
-      description="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
-    >
+    <PaneShell scroll="body" animationClassName={SETTINGS_PANE_ENTRY} title="Defaults">
       <section className="flex flex-col gap-1">
         <SectionHeader
           label="Provider routing"

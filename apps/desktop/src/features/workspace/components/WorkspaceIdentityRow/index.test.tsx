@@ -74,15 +74,11 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.getByText('Add workspace')).toBeDefined();
   });
 
-  it('opens preferences from a control on the row, not from the switcher popover', () => {
+  it('keeps workspace settings inside the switcher, with no second control on the row', () => {
     render(<WorkspaceIdentityRow />);
-    const spy = vi.fn();
-    window.addEventListener('goodboy:open-settings', spy);
 
-    fireEvent.click(screen.getByLabelText('Workspace settings'));
-
-    expect(spy).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:open-settings', spy);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByLabelText('Workspace settings')).toBeNull();
   });
 
   it('renders nothing without a workspace', () => {

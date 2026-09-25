@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { TriggerSeparator } from './TriggerSeparator';
-import type { RoutingTriggerLabel } from './routingSummary';
+import { routingNameText, type RoutingTriggerLabel } from './routingSummary';
 
 type Props = {
   readonly provider: ProviderId;
@@ -15,7 +15,7 @@ export const TriggerLabel = ({ provider, label }: Props) => {
     <>
       <ProviderGlyph size={12} className="shrink-0 text-muted-foreground" aria-hidden />
       <span className="min-w-0 truncate font-mono font-medium text-foreground">
-        {label.name.join(' · ')}
+        {routingNameText(label)}
       </span>
       {label.detail.map((segment) => (
         <Fragment key={segment}>

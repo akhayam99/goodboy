@@ -34,7 +34,6 @@ import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
-import { ChatBreadcrumb } from '../ChatBreadcrumb';
 import { ChatInput } from '../ChatInput';
 import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
 import { worktreeDiff } from '../../../../features/worktree/worktree';
@@ -57,7 +56,6 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly session: Session;
   readonly isActive?: boolean;
-  readonly header?: ReactNode;
 };
 
 type RetrySource = {
@@ -109,7 +107,7 @@ const buildRetryOverride = ({
   };
 };
 
-export const ChatView = ({ session, isActive = true, header }: Props) => {
+export const ChatView = ({ session, isActive = true }: Props) => {
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[session.id] ?? null,
   ) as AgentId | null;
@@ -429,7 +427,6 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
 
   return (
     <div className="flex h-full flex-col">
-      {header !== undefined ? header : <ChatBreadcrumb session={session} />}
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
         <ScrollFade
           className="flex-1"
@@ -440,7 +437,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             <TranscriptSkeleton />
           ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (
             <div className="flex h-full items-center justify-center">
-              <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}>
+              <div className={cn(PANE_RHYTHM.column)}>
                 <AuthRequiredCallout
                   providerId={provider}
                   identity={providerIdentity}
@@ -459,7 +456,7 @@ export const ChatView = ({ session, isActive = true, header }: Props) => {
             </div>
           ) : (
             <ul
-              className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
+              className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column)}
               aria-live="polite"
               aria-relevant="additions"
             >

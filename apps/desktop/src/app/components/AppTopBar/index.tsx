@@ -1,66 +1,46 @@
-import { Moon, Sun } from 'lucide-react';
-import { Divider, Tooltip } from '@goodboy/ui';
+import { Divider } from '@goodboy/ui';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
-import { ReportIssuePopover } from '../../../features/settings/components/ReportIssuePopover';
-import { RunningScriptsIndicator } from '../../../features/scripts/components/RunningScriptsIndicator';
-import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
-import { BrandBadge } from './BrandBadge';
-import { WorkspaceRollupStrip } from './WorkspaceRollupStrip';
-import { useThemeStore } from '../../../shared/lib/theme';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
+import { CommandCenter } from './CommandCenter';
+import { NowChip } from './NowChip';
+import { SidebarToggle, type TopBarSidebar } from './SidebarToggle';
+import { SpendButton } from './SpendButton';
 
 type Props = {
-  onOpenSpend: () => void;
+  readonly sidebar: TopBarSidebar;
+  readonly onOpenSpend: () => void;
+  readonly onOpenScript: (run: RunningScript) => void;
 };
 
-export const AppTopBar = ({ onOpenSpend }: Props) => {
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const themeActionLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
-
-  return (
-    <>
-      <div
-        data-tauri-drag-region
-        className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background pl-1.5 pr-3"
-      >
-        <div className="col-start-1 flex min-w-0 max-w-56 items-center">
+export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript }: Props) => (
+  <>
+    <div
+      data-tauri-drag-region="deep"
+      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-chrome pl-(--titlebar-inset) pr-3"
+    >
+      <div className="col-start-1 flex min-w-0 items-center gap-1">
+        <SidebarToggle sidebar={sidebar} />
+        <div className="flex min-w-0 max-w-50 items-center">
           <WorkspaceIdentityRow />
         </div>
-
-        <div className="col-start-2 flex items-center">
-          <BrandBadge />
-        </div>
-
-        <div className="col-start-3 flex items-center justify-end gap-2">
-          <WorkspaceRollupStrip onOpenSpend={onOpenSpend} />
-
-          <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
-
-          <div className="flex shrink-0 items-center gap-0.5">
-            <RunningScriptsIndicator />
-            <ReportIssuePopover />
-            <NotificationCenter />
-            <Tooltip content={themeActionLabel}>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={themeActionLabel}
-                className="flex items-center justify-center rounded-sm p-1.5 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
-              >
-                {theme === 'dark' ? (
-                  <Moon size={ICON_SIZE.control} aria-hidden />
-                ) : (
-                  <Sun size={ICON_SIZE.control} aria-hidden />
-                )}
-              </button>
-            </Tooltip>
-            <OnboardingChip />
-          </div>
-        </div>
       </div>
-      <Divider />
-    </>
-  );
-};
+
+      <div className="col-start-2 flex min-w-0 items-center justify-center">
+        <CommandCenter />
+      </div>
+
+      <div className="col-start-3 flex items-center justify-end gap-2">
+        <div className="flex shrink-0 items-center gap-1">
+          <NowChip onOpenScript={onOpenScript} />
+          <SpendButton onOpenSpend={onOpenSpend} />
+        </div>
+
+        <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+
+        <NotificationCenter />
+      </div>
+    </div>
+    <Divider />
+  </>
+);

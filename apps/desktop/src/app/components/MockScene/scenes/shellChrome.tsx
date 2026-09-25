@@ -14,7 +14,8 @@ import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
-import { SessionCrumbBar } from '../../../../features/session/components/SessionCrumbBar';
+import { SessionCrumbs } from '../../../../features/session/components/SessionCrumbBar/SessionCrumbs';
+import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
@@ -108,14 +109,24 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
   return (
     <ToastProvider>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: arrangement.leftSlot === 'rail',
+              onToggle: noop,
+            }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar session={session} onCollapse={noop} />
+            <SessionNavSidebar session={session} />
           ) : (
-            <CollapsedRail onExpand={noop} />
+            <CollapsedRail />
           )
         }
         footer={
@@ -134,19 +145,17 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
             onOpenIntegration={noop}
             onOpenInbox={noop}
             onOpenWorkflows={noop}
-            onOpenProviders={noop}
             onOpenSettings={noop}
-            onOpenImpact={noop}
+            onOpenShortcuts={noop}
             onOpenChangelog={noop}
           />
         }
         main={
-          <div className="flex h-full w-full min-w-0 flex-col">
-            <div>
-              <SessionCrumbBar />
+          <PageCrumbContext.Provider value={<SessionCrumbs session={session} />}>
+            <div className="flex h-full w-full min-w-0 flex-col">
+              <div className="min-h-0 flex-1">{main}</div>
             </div>
-            <div className="min-h-0 flex-1">{main}</div>
-          </div>
+          </PageCrumbContext.Provider>
         }
       />
     </ToastProvider>

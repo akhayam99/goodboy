@@ -182,8 +182,9 @@ about its effect is a worse defect than one that reads badly.
   way to retry.
 - **Estimates come only from measured machine time.** A duration or cost
   estimate is allowed only when it is built from machine time observed in this
-  workspace (the turns an agent actually ran, never the wall clock between its
-  start and its end). It needs at least 5 comparable samples, reads with `~`
+  workspace, or for the same model and effort in your other workspaces (the
+  turns an agent actually ran, never the wall clock between its start and its
+  end). It needs at least 5 comparable samples, reads with `~`
   or as a range, and names its basis in the tooltip ("Based on 23 finished
   implementer steps on Sonnet 5 medium, last 90 days"). Progress toward an
   estimate moves only while the machine works, so a step that waits on you
@@ -201,8 +202,8 @@ about its effect is a worse defect than one that reads badly.
 ## Color & theme
 
 - **Dark by default**, light fully supported, and Match system as a third
-  choice that follows the OS. The choice is saved. The top bar and palette
-  toggles set the opposite of what is showing.
+  choice that follows the OS. The choice is saved. Settings > App > General
+  holds the choice; the palette toggle sets the opposite of what is showing.
 - **The brand mark in the chrome is a bare glyph in `foreground`**: light on
   dark, dark on light, no tile. The black tile belongs to the dock icon, the
   favicon and the site ([docs/brand.md](docs/brand.md)).

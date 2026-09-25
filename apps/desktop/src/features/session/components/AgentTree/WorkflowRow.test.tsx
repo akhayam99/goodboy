@@ -30,6 +30,7 @@ const storeMocks = vi.hoisted(() => ({
   sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
   closeWorkflowRun: vi.fn(async () => undefined),
+  workspaceDurationHistory: {} as Record<string, unknown>,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -46,6 +47,9 @@ vi.mock('../../../../store', () => ({
       sessionProjectMounts: storeMocks.sessionProjectMounts,
       sessionPhaseRuns: storeMocks.sessionPhaseRuns,
       closeWorkflowRun: storeMocks.closeWorkflowRun,
+      workspaceDurationHistory: storeMocks.workspaceDurationHistory,
+      sessionTurnSpans: { [SESSION_ID]: [] },
+      agentTurnState: {},
       providers: [],
       cliRequirements: [],
     }),
@@ -167,6 +171,7 @@ type RenderParams = {
     autoRun: boolean,
   ) => Promise<void>;
   readonly focusedWorkflowRunId?: WorkflowRunId | null;
+  readonly taskOverride?: Session;
 };
 
 const renderDetail = ({
@@ -181,12 +186,13 @@ const renderDetail = ({
   startWorkflowRun = vi.fn(async () => undefined),
   setWorkflowRunAutoRun = vi.fn(async () => undefined),
   focusedWorkflowRunId = null,
+  taskOverride = session,
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
       run={runOverride}
       workflow={workflowOverride}
-      task={session}
+      task={taskOverride}
       agentsByRunId={new Map([[RUN_ID, [...agentsOverride]]])}
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
@@ -226,6 +232,7 @@ afterEach(() => {
   cleanup();
   storeMocks.orchestratingWorkflowRuns = {};
   storeMocks.runSpendUsd = 0;
+  storeMocks.workspaceDurationHistory = {};
 });
 
 describe('WorkflowRow detail dashboard', () => {
@@ -375,6 +382,39 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(meta?.textContent).not.toContain('Plan');
     expect(screen.getByTitle('$0.2500 for this run')).toBeDefined();
+  });
+
+  it('gives the time the steps left usually take, and nothing without enough history', () => {
+    renderDetail({
+      taskOverride: { ...session, workspaceId: 'workspace-1' as WorkspaceId },
+    });
+    expect(screen.queryByTestId('run-time-left')).toBeNull();
+    cleanup();
+
+    storeMocks.workspaceDurationHistory = {
+      'workspace-1': {
+        steps: [4, 5, 6, 7, 8, 9, 10, 12].map((minutes) => ({
+          role: 'custom',
+          provider: 'anthropic',
+          model: 'claude-sonnet-5',
+          effort: null,
+          activeMs: minutes * 60_000,
+          costUsd: null,
+          endedAtMs: Date.now() - 60_000,
+        })),
+        turns: [],
+        everyWorkspace: { steps: [], turns: [] },
+        orchestratedRuns: [],
+      },
+    };
+    renderDetail({
+      taskOverride: { ...session, workspaceId: 'workspace-1' as WorkspaceId },
+    });
+
+    const meta = screen.getByText('Step 2 of 2').parentElement;
+    expect(within(meta as HTMLElement).getByTestId('run-time-left').textContent).toBe(
+      'usually 6-9m',
+    );
   });
 
   it('shows the run goal it was started with', () => {

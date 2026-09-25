@@ -72,10 +72,9 @@ type FooterProps = {
   readonly target: string | null;
   readonly connected: Readonly<Record<FooterProvider, boolean>>;
   readonly onOpenIntegration: (params: { readonly provider: FooterProvider }) => void;
-  readonly onOpenProviders: () => void;
   readonly onOpenSettings: () => void;
-  readonly onOpenImpact: () => void;
   readonly onOpenChangelog: () => void;
+  readonly onOpenShortcuts: () => void;
 };
 
 const FOOTER_LABELS: ReadonlyArray<readonly [FooterProvider, string, string]> = [
@@ -91,10 +90,9 @@ vi.mock('../app/components/AppFooter', () => ({
     target,
     connected,
     onOpenIntegration,
-    onOpenProviders,
     onOpenSettings,
-    onOpenImpact,
     onOpenChangelog,
+    onOpenShortcuts,
   }: FooterProps) => (
     <div data-testid="footer" data-scope={scope} data-target={target ?? ''}>
       {FOOTER_LABELS.map(([provider, openLabel, connectLabel]) => (
@@ -102,17 +100,14 @@ vi.mock('../app/components/AppFooter', () => ({
           {connected[provider] ? openLabel : connectLabel}
         </button>
       ))}
-      <button type="button" onClick={onOpenProviders}>
-        Open providers
-      </button>
       <button type="button" onClick={onOpenSettings}>
         Open settings
       </button>
-      <button type="button" onClick={onOpenImpact}>
-        Open impact
-      </button>
       <button type="button" onClick={onOpenChangelog}>
         Open changelog
+      </button>
+      <button type="button" onClick={onOpenShortcuts}>
+        Open shortcuts
       </button>
     </div>
   ),
@@ -212,7 +207,6 @@ vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
 }));
 vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
-vi.mock('../features/onboarding/OnboardingCard', () => ({ OnboardingCard: () => null }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../features/companion/components/CompanionStudio', () => ({
   CompanionStudio: () => null,
@@ -365,7 +359,7 @@ describe('Bitbucket studio reachability', () => {
 });
 
 describe('No workspace yet', () => {
-  it('keeps the app footer, so settings and providers stay one click away', () => {
+  it('keeps the app footer, so settings opens on the app scope', () => {
     state.workspaces = [];
     state.currentWorkspaceId = null;
     render(<App />);
@@ -374,36 +368,24 @@ describe('No workspace yet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
-
-  it('opens providers from the app footer', () => {
-    state.workspaces = [];
-    state.currentWorkspaceId = null;
-    render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
-  });
 });
 
-describe('Footer to settings and more-popover reachability', () => {
-  it('opens settings from the footer settings launcher', () => {
+describe('Footer to settings and Goodboy chip reachability', () => {
+  it('opens settings on the current workspace from the footer settings launcher', () => {
     render(<App />);
 
     expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
 
-    expect(screen.getByTestId('settings-studio')).toBeDefined();
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('workspace');
   });
 
-  it('opens impact from the footer more popover, with no scope forced', async () => {
+  it('opens the shortcuts list from the Goodboy chip', () => {
     render(<App />);
 
-    expect(screen.queryByTestId('impact-studio')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open impact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open shortcuts' }));
 
-    const studio = await screen.findByTestId('impact-studio');
-    expect(studio.textContent).toBe('Impact');
-    expect(studio.getAttribute('data-scope')).toBe('none');
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 
   it('lands the top bar spend chip on the impact studio overview', async () => {
@@ -417,7 +399,7 @@ describe('Footer to settings and more-popover reachability', () => {
     );
   });
 
-  it('opens changelog from the footer more popover', async () => {
+  it('opens changelog from the Goodboy chip', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('changelog-studio')).toBeNull();
@@ -472,13 +454,17 @@ describe('Footer highlight follows the open studio', () => {
     expect(litTarget()).toBe('github');
   });
 
-  it('lights providers while the providers scope is open', () => {
+  it('lights settings while the providers scope is open, since providers is a settings scope', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open providers' }));
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+      );
+    });
 
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('providers');
-    expect(litTarget()).toBe('providers');
+    expect(litTarget()).toBe('settings');
   });
 
   it('lights the link action while a disconnected glyph opens its tools form', () => {

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { Notification } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 import {
-  groupByDay,
   groupNotifications,
   notificationGroupKey,
   sortNotificationGroupsNewestFirst,
@@ -71,39 +70,5 @@ describe('notification grouping', () => {
 
     expect(notificationGroupKey({ group: [keyed] })).toBe('retry');
     expect(notificationGroupKey({ group: [loose] })).toBe('b');
-  });
-
-  it('splits groups into today, yesterday and earlier on local day boundaries', () => {
-    const now = new Date(2026, 8, 2, 9, 0, 0);
-    const today = buildNotification({
-      id: 'today',
-      ts: at({ value: new Date(2026, 8, 2, 0, 5).toISOString() }),
-    });
-    const yesterday = buildNotification({
-      id: 'yesterday',
-      ts: at({ value: new Date(2026, 8, 1, 23, 55).toISOString() }),
-    });
-    const earlier = buildNotification({
-      id: 'earlier',
-      ts: at({ value: new Date(2026, 7, 30, 12, 0).toISOString() }),
-    });
-
-    const days = groupByDay({ groups: [[today], [yesterday], [earlier]], now });
-
-    expect(days.map((entry) => [entry.day, entry.groups.map((group) => group[0]?.id)])).toEqual([
-      ['today', ['today']],
-      ['yesterday', ['yesterday']],
-      ['earlier', ['earlier']],
-    ]);
-  });
-
-  it('leaves out a day with nothing in it', () => {
-    const now = new Date(2026, 8, 2, 9, 0, 0);
-    const earlier = buildNotification({
-      id: 'earlier',
-      ts: at({ value: new Date(2026, 7, 1).toISOString() }),
-    });
-
-    expect(groupByDay({ groups: [[earlier]], now }).map((entry) => entry.day)).toEqual(['earlier']);
   });
 });

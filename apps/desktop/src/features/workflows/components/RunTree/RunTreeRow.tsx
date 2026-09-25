@@ -155,7 +155,7 @@ export const RunTreeRow = ({
                   {`answering for ${answersFor}`}
                 </span>
               )}
-              <TimelineRowStateLine state={item.rowState} />
+              <TimelineRowStateLine state={item.rowState} note={work.time?.note ?? null} />
             </span>
             <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (

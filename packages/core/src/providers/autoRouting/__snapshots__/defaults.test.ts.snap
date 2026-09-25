@@ -1,0 +1,474 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
+{
+  "anthropic": {
+    "agent_naming": [
+      {
+        "key": "haiku-4.5",
+      },
+    ],
+    "custom": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "docs": [
+      {
+        "effort": "low",
+        "key": "sonnet-5",
+      },
+    ],
+    "implementer": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "investigator": [
+      {
+        "effort": "high",
+        "key": "sonnet-5",
+      },
+    ],
+    "issue_brief": [
+      {
+        "key": "haiku-4.5",
+      },
+    ],
+    "plan_generation": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "planner": [
+      {
+        "effort": "high",
+        "key": "opus-5.5",
+      },
+      {
+        "effort": "high",
+        "key": "opus-5",
+      },
+    ],
+    "pr_draft": [
+      {
+        "key": "sonnet-5",
+      },
+    ],
+    "prose_polish": [
+      {
+        "key": "haiku-4.5",
+      },
+    ],
+    "question_delegate": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "rebase": [
+      {
+        "key": "sonnet-5",
+      },
+    ],
+    "report": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "resolver": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "reviewer": [
+      {
+        "effort": "high",
+        "key": "sonnet-5",
+      },
+    ],
+    "scout": [
+      {
+        "effort": "low",
+        "key": "haiku-4.5",
+      },
+    ],
+    "summarizer": [
+      {
+        "key": "haiku-4.5",
+      },
+    ],
+    "tester": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "wireframe": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+    "workflow_orchestrator": [
+      {
+        "effort": "medium",
+        "key": "sonnet-5",
+      },
+    ],
+  },
+  "codex": {
+    "agent_naming": [
+      {
+        "effort": "low",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "custom": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "docs": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "implementer": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-sol",
+      },
+    ],
+    "investigator": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-sol",
+      },
+    ],
+    "issue_brief": [
+      {
+        "effort": "low",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "plan_generation": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "planner": [
+      {
+        "effort": "high",
+        "key": "gpt-6",
+      },
+    ],
+    "pr_draft": [
+      {
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "prose_polish": [
+      {
+        "effort": "low",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "question_delegate": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "rebase": [
+      {
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "report": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "resolver": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "reviewer": [
+      {
+        "effort": "high",
+        "key": "gpt-5.6-sol",
+      },
+    ],
+    "scout": [
+      {
+        "effort": "low",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "summarizer": [
+      {
+        "effort": "low",
+        "key": "gpt-5.6-luna",
+      },
+    ],
+    "tester": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "wireframe": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+    "workflow_orchestrator": [
+      {
+        "effort": "medium",
+        "key": "gpt-5.6-terra",
+      },
+    ],
+  },
+  "cursor": {
+    "agent_naming": [
+      {
+        "key": "auto",
+      },
+    ],
+    "custom": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "docs": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "implementer": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "investigator": [
+      {
+        "effort": "medium",
+        "key": "sonnet-4.6",
+        "thinking": true,
+      },
+    ],
+    "issue_brief": [
+      {
+        "key": "auto",
+      },
+    ],
+    "plan_generation": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "planner": [
+      {
+        "effort": "medium",
+        "key": "sonnet-4.6",
+        "thinking": true,
+      },
+    ],
+    "pr_draft": [
+      {
+        "key": "auto",
+      },
+    ],
+    "prose_polish": [
+      {
+        "key": "auto",
+      },
+    ],
+    "question_delegate": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "rebase": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "report": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "resolver": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "reviewer": [
+      {
+        "effort": "medium",
+        "key": "sonnet-4.6",
+        "thinking": true,
+      },
+    ],
+    "scout": [
+      {
+        "key": "auto",
+      },
+    ],
+    "summarizer": [
+      {
+        "key": "auto",
+      },
+    ],
+    "tester": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "wireframe": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+    "workflow_orchestrator": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
+  },
+  "gemini": {
+    "agent_naming": [
+      {
+        "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "custom": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "docs": [
+      {
+        "effort": "medium",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "implementer": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "investigator": [
+      {
+        "effort": "high",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "issue_brief": [
+      {
+        "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "plan_generation": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "planner": [
+      {
+        "effort": "high",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "pr_draft": [
+      {
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "prose_polish": [
+      {
+        "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "question_delegate": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "rebase": [
+      {
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "report": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "resolver": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "reviewer": [
+      {
+        "effort": "high",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "scout": [
+      {
+        "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "summarizer": [
+      {
+        "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "tester": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "wireframe": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+    "workflow_orchestrator": [
+      {
+        "effort": "low",
+        "key": "gemini-3.1-pro",
+      },
+    ],
+  },
+}
+`;

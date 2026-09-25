@@ -1,7 +1,6 @@
 import type { ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES, getDefaultTurnModel } from './capabilities';
+import { getDefaultTurnModel } from './capabilities';
 import { resolveRoleRouting } from './role-models';
-import { strongestModelForTier, tierMatchScore } from './strongestModelForTier';
 
 export type AutoModelChoice = {
   readonly provider: ProviderId;
@@ -20,40 +19,24 @@ type Params = {
   readonly prefs?: RoleModelPreferences | null;
 };
 
-const THINKING_ROLES: ReadonlySet<string> = new Set(['planner', 'investigator', 'custom']);
-
 export const autoModelForRole = ({
   role,
   providers,
   prefs,
 }: AutoParams): AutoModelChoice | null => {
-  if (providers.length === 0) {
+  const [defaultProvider] = providers;
+  if (defaultProvider == null) {
     return null;
   }
-
-  const def = resolveRoleRouting({ role, prefs });
-  if (providers.includes(def.provider)) {
-    return { provider: def.provider, model: def.model };
-  }
-
-  const tier =
-    PROVIDER_CAPABILITIES[def.provider].models.find((m) => m.id === def.model)?.costTier ?? 'mid';
-  const wantsThinker = THINKING_ROLES.has(role);
-  let best: { provider: ProviderId; model: string; score: number } | null = null;
-  for (const provider of providers) {
-    const candidate = strongestModelForTier({ provider, tier, wantsThinker });
-    if (candidate === null) {
-      continue;
-    }
-    const score = tierMatchScore({ model: candidate, tier });
-    if (best === null || score > best.score) {
-      best = { provider, model: candidate.id, score };
-    }
-  }
-  if (best === null) {
+  const routing = resolveRoleRouting({
+    role,
+    prefs,
+    auto: { defaultProvider, fallbackOrder: providers, connected: providers },
+  });
+  if (!providers.includes(routing.provider)) {
     return null;
   }
-  return { provider: best.provider, model: best.model };
+  return { provider: routing.provider, model: routing.model };
 };
 
 export const recommendedModelForRole = ({ role, provider, prefs }: Params): string => {

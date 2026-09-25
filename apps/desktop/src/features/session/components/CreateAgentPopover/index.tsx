@@ -16,6 +16,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import {
   AGENT_KIND_META,
   visibleAgentKinds,
@@ -27,9 +28,11 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
+import { LaunchEstimateNote } from './LaunchEstimateNote';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -74,7 +77,15 @@ export const CreateAgentPopover = ({
   );
   const roleModels = useSessionRoleModels({ sessionId });
   const session = useAppStore((state) => state.sessions?.find((s) => s.id === sessionId) ?? null);
-  const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleModels, session });
+  const defaultProvider = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderId ?? null,
+  );
+  const spawnDefault = resolveSpawnRouting({
+    kind: selectedKind,
+    roleModels,
+    session,
+    defaultProvider,
+  });
   const effective: AgentKindRouting = routing ?? spawnDefault;
   const routingSummary = recommendationSummary({
     provider: effective.provider,
@@ -163,7 +174,17 @@ export const CreateAgentPopover = ({
               aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
               className="flex w-full items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
             >
-              <span className="min-w-0 flex-1 truncate">{routingSummary}</span>
+              <span className="flex min-w-0 flex-1">
+                {effective.model == null ? (
+                  <span className="truncate">{routingSummary}</span>
+                ) : (
+                  <RoutingLabel
+                    provider={effective.provider}
+                    model={effective.model}
+                    effort={effective.effort ?? null}
+                  />
+                )}
+              </span>
               <ChevronDown
                 size={11}
                 aria-hidden
@@ -210,7 +231,14 @@ export const CreateAgentPopover = ({
       </PopoverBody>
       <Divider />
       <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
-        {spawnError === null ? null : (
+        {spawnError === null ? (
+          <LaunchEstimateNote
+            workspaceId={session?.workspaceId ?? null}
+            kind={selectedKind}
+            routing={effective}
+            isShown={open && instructions.trim() !== ''}
+          />
+        ) : (
           <span role="alert" className="min-w-0 flex-1 text-2xs text-danger">
             {spawnError}
           </span>

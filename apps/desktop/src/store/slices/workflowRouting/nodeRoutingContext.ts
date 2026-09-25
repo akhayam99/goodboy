@@ -11,7 +11,6 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import {
-  defaultsForRole,
   resolveRoleRouting,
   type WorkflowRoutingAvailabilitySnapshot,
   type WorkflowRoutingProposalParseOutcome,
@@ -128,9 +127,10 @@ export const workflowNodeRoutingContext = ({
       : classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null });
   const role = step?.role ?? (agent === null ? null : KIND_TO_ROLE[kind]);
   const workspaceRoleModels = selectResolvedSettings({ state, sessionId })?.roleModels ?? null;
-  const compiled = role === null ? null : defaultsForRole(role);
   const defaultProvider = (session.providerOverride ??
     session.providerPreference.defaultProvider) as ProviderId;
+  const compiled =
+    role === null ? null : resolveRoleRouting({ role, prefs: null, auto: { defaultProvider } });
   const lock = agent?.routingLock ?? step?.routingLock ?? null;
   const decision = agent?.routingDecision ?? step?.routingDecision ?? null;
   const taskProfile = agent?.taskProfile ?? step?.taskProfile ?? null;

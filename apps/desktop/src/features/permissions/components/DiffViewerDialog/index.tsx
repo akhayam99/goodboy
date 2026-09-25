@@ -33,6 +33,7 @@ export const DiffViewerDialog = ({ open, ...rest }: DiffViewerDialogProps) => (
     open={open}
     onClose={rest.onClose}
     size="xl"
+    surface="screen"
     fixedHeightClass="h-[92vh] max-w-[1400px]"
     className="w-[92vw] max-w-[1400px]"
     showClose={false}

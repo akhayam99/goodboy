@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import type { Session } from '@goodboy/types';
-import { cn, IconButton, tintClasses } from '@goodboy/ui';
+import { AnchoredPopover, cn, IconButton, tintClasses, useDropdown } from '@goodboy/ui';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -10,24 +9,13 @@ type Props = {
   readonly session: Session;
 };
 
+const CONFIRM_WIDTH = 320;
+
 export const SessionDestructiveActions = ({ session }: Props) => {
   const { archive, restore } = useSessionArchive();
-  const [isDeleteArmed, setIsDeleteArmed] = useState(false);
+  const deleteConfirm = useDropdown({ align: 'end', width: 'w-80', expectedWidth: CONFIRM_WIDTH });
+  const isDeleteArmed = deleteConfirm.open;
   const isArchived = session.archivedAt != null;
-
-  useEffect(() => {
-    if (!isDeleteArmed) {
-      return;
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      setIsDeleteArmed(false);
-    };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
-  }, [isDeleteArmed]);
 
   const archiveLabel = isArchived ? 'Unarchive session' : 'Archive session';
   const archiveTooltip = withShortcutHint({
@@ -50,30 +38,32 @@ export const SessionDestructiveActions = ({ session }: Props) => {
         onClick={() => void (isArchived ? restore : archive)({ sessions: [session] })}
         className="size-6 shrink-0"
       />
-      <span className="relative flex shrink-0 items-center">
-        <IconButton
-          variant="ghost"
-          tone={isDeleteArmed ? 'danger' : 'neutral'}
-          icon={CONCEPT_ICONS.delete}
-          iconSize={ICON_SIZE.row}
-          label="Delete session"
-          tooltip={deleteTooltip}
-          aria-expanded={isDeleteArmed}
-          onClick={() => setIsDeleteArmed((armed) => !armed)}
-          className={cn(
-            'size-6 shrink-0',
-            tintClasses('danger').hoverText,
-            tintClasses('danger').hoverBgSoft,
-          )}
-        />
-        {isDeleteArmed ? (
-          <DeleteSessionConfirm
-            session={session}
-            onClose={() => setIsDeleteArmed(false)}
-            className="absolute right-0 top-full z-popover w-80 max-w-[calc(100vw-2rem)] bg-background shadow-lg"
+      <AnchoredPopover
+        dropdown={deleteConfirm}
+        role="dialog"
+        ariaLabel="Delete session?"
+        anchorClassName="flex shrink-0 items-center"
+        className="max-w-[calc(100vw-2rem)]"
+        trigger={
+          <IconButton
+            variant="ghost"
+            tone={isDeleteArmed ? 'danger' : 'neutral'}
+            icon={CONCEPT_ICONS.delete}
+            iconSize={ICON_SIZE.row}
+            label="Delete session"
+            tooltip={deleteTooltip}
+            aria-expanded={isDeleteArmed}
+            onClick={deleteConfirm.toggle}
+            className={cn(
+              'size-6 shrink-0',
+              tintClasses('danger').hoverText,
+              tintClasses('danger').hoverBgSoft,
+            )}
           />
-        ) : null}
-      </span>
+        }
+      >
+        <DeleteSessionConfirm session={session} onClose={deleteConfirm.close} surface="plain" />
+      </AnchoredPopover>
     </>
   );
 };

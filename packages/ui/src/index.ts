@@ -18,6 +18,8 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
+export { DrawerFrame } from './components/DrawerFrame';
+export type { DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export { Avatar } from './components/Avatar';
@@ -140,6 +142,7 @@ export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
+export { PageColumn, PAGE_COLUMN_CLASS } from './components/PageColumn';
 export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
 export { SegmentedTabs } from './components/SegmentedTabs';

@@ -21,7 +21,8 @@ import { useWindowPresence } from './features/workspace/hooks/useWindowPresence'
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
-import { OnboardingCard } from './features/onboarding/OnboardingCard';
+import { openRunningScript } from './features/scripts/openRunningScript';
+import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
 import { listenProjectMaterializeRequests } from './features/session/projectMaterializeBridge';
 import { listenMountCommands } from './features/session/mountQueryBridge';
@@ -29,6 +30,7 @@ import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWr
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
+import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import {
   useAppStore,
@@ -43,14 +45,23 @@ import { useConnectedIntegrations } from './features/integrations/hooks/useConne
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
+import { DrawerHost } from './app/components/DrawerHost';
+import { useCloseStaleDrawer } from './app/hooks/useCloseStaleDrawer';
+import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 
 const KEEP_ALIVE_CAP = 5;
+
+const openScript = (run: RunningScript) => {
+  void openRunningScript({ run });
+};
 
 export const App = () => {
   const hydrate = useAppStore((s) => s.hydrate);
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
+  const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
+  useCloseStaleDrawer();
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
@@ -79,11 +90,9 @@ export const App = () => {
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,
-    openImpact,
     openInbox,
     openIntegration,
     openPalette,
-    openProviders,
     openSettings,
     openShortcutHelp,
     openSpend,
@@ -112,6 +121,7 @@ export const App = () => {
   useUpdaterPolling();
   useWindowPresence();
   useWindowShortcuts();
+  useTitlebarInset();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
@@ -199,7 +209,17 @@ export const App = () => {
       <SessionArchiveBridge />
       <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
-        topBar={<AppTopBar onOpenSpend={openSpend} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              hasSidebar: arrangement.leftSlot !== 'none',
+              isCollapsed: sessionSidebar.isCollapsed,
+              onToggle: sessionSidebar.toggle,
+            }}
+            onOpenSpend={openSpend}
+            onOpenScript={openScript}
+          />
+        }
         footer={
           <AppFooter
             scope={arrangement.footer}
@@ -208,10 +228,9 @@ export const App = () => {
             onOpenIntegration={openIntegration}
             onOpenInbox={openInbox}
             onOpenWorkflows={openWorkflows}
-            onOpenProviders={openProviders}
             onOpenSettings={openSettings}
-            onOpenImpact={openImpact}
             onOpenChangelog={openChangelog}
+            onOpenShortcuts={openShortcutHelp}
           />
         }
         leftHidden={arrangement.leftHidden}
@@ -219,9 +238,9 @@ export const App = () => {
         leftSidebar={
           currentSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail onExpand={sessionSidebar.pin} />
+              <CollapsedRail />
             ) : (
-              <SessionNavSidebar session={currentSession} onCollapse={sessionSidebar.toggle} />
+              <SessionNavSidebar session={currentSession} />
             )
           ) : undefined
         }
@@ -239,15 +258,11 @@ export const App = () => {
               onHold={sessionSidebar.holdPeek}
               onRelease={sessionSidebar.releasePeek}
             >
-              <SessionNavSidebar
-                session={currentSession}
-                onCollapse={sessionSidebar.pin}
-                collapseAction="pin"
-                onNavigate={sessionSidebar.closePeek}
-              />
+              <SessionNavSidebar session={currentSession} onNavigate={sessionSidebar.closePeek} />
             </SidebarPeekOverlay>
           ) : undefined
         }
+        drawer={isDrawerOpen ? <DrawerHost /> : null}
         main={
           <div className="relative h-full w-full">
             {currentSession ? (
@@ -265,8 +280,6 @@ export const App = () => {
             ) : (
               <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
             )}
-
-            <OnboardingCard />
           </div>
         }
         studio={studio}

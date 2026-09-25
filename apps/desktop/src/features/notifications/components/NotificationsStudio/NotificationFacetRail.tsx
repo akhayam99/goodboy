@@ -1,6 +1,13 @@
 import { Inbox, Mail, Zap, type LucideIcon } from 'lucide-react';
-import { Eyebrow, PANE_RHYTHM, SegmentedTabs, cn, type SegmentedTabOption } from '@goodboy/ui';
+import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { FacetRail } from '../../../../shared/components/FacetRail';
+import {
+  FacetKeyHints,
+  type FacetKeyHint,
+} from '../../../../shared/components/FacetRail/FacetKeyHints';
+import { FacetRow } from '../../../../shared/components/FacetRail/FacetRow';
+import { FacetSection } from '../../../../shared/components/FacetRail/FacetSection';
 import type { NotificationScope } from '../../../../store/types';
 import {
   NOTIFICATION_SEVERITY_FACETS,
@@ -16,8 +23,6 @@ import {
   NOTIFICATION_SOURCE_LABEL,
   type NotificationSource,
 } from '../../source';
-import { NotificationFacetRow } from './NotificationFacetRow';
-import { NotificationKeyHints } from './NotificationKeyHints';
 
 type Props = {
   readonly filters: NotificationFilters;
@@ -49,6 +54,12 @@ const SOURCE_ICON = {
   system: CONCEPT_ICONS.settings,
 } satisfies Record<NotificationSource, LucideIcon>;
 
+const KEY_HINTS = [
+  { keys: ['j', 'k'], label: 'Next or previous' },
+  { keys: ['↵'], label: 'Run the action' },
+  { keys: ['e'], label: 'Dismiss' },
+] satisfies ReadonlyArray<FacetKeyHint>;
+
 export const NotificationFacetRail = ({
   filters,
   counts,
@@ -71,14 +82,10 @@ export const NotificationFacetRail = ({
   ];
 
   return (
-    <nav
-      aria-label="Filter notifications"
-      className={cn('flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto', PANE_RHYTHM.navRail.body)}
-    >
-      <section aria-label="View" className="flex flex-col gap-0.5">
-        <Eyebrow label="View" muted className="px-2 pb-1" />
+    <FacetRail ariaLabel="Filter notifications">
+      <FacetSection label="View">
         {NOTIFICATION_VIEWS.map((view) => (
-          <NotificationFacetRow
+          <FacetRow
             key={view}
             icon={VIEW_PRESENTATION[view].icon}
             label={VIEW_PRESENTATION[view].label}
@@ -87,11 +94,10 @@ export const NotificationFacetRail = ({
             onClick={() => onFiltersChange({ ...filters, view })}
           />
         ))}
-      </section>
-      <section aria-label="Severity" className="flex flex-col gap-0.5">
-        <Eyebrow label="Severity" muted className="px-2 pb-1" />
+      </FacetSection>
+      <FacetSection label="Severity">
         {NOTIFICATION_SEVERITY_FACETS.map((severity) => (
-          <NotificationFacetRow
+          <FacetRow
             key={severity}
             icon={NOTIFICATION_SEVERITY[severity].icon}
             tone={NOTIFICATION_SEVERITY[severity].tone}
@@ -106,11 +112,10 @@ export const NotificationFacetRail = ({
             }
           />
         ))}
-      </section>
-      <section aria-label="Source" className="flex flex-col gap-0.5">
-        <Eyebrow label="Source" muted className="px-2 pb-1" />
+      </FacetSection>
+      <FacetSection label="Source">
         {NOTIFICATION_SOURCES.map((source) => (
-          <NotificationFacetRow
+          <FacetRow
             key={source}
             icon={SOURCE_ICON[source]}
             label={NOTIFICATION_SOURCE_LABEL[source]}
@@ -121,7 +126,7 @@ export const NotificationFacetRail = ({
             }
           />
         ))}
-      </section>
+      </FacetSection>
       {workspaceName != null && (
         <section aria-label="Workspace" className="flex flex-col gap-1.5 px-2">
           <Eyebrow label="Workspace" muted />
@@ -135,7 +140,7 @@ export const NotificationFacetRail = ({
           />
         </section>
       )}
-      <NotificationKeyHints />
-    </nav>
+      <FacetKeyHints hints={KEY_HINTS} />
+    </FacetRail>
   );
 };

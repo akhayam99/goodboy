@@ -10,6 +10,7 @@ import {
   ScrollFade,
   Skeleton,
   Tooltip,
+  PANE_RHYTHM,
 } from '@goodboy/ui';
 import { getDefaultTurnModel, parseUnifiedDiff, clampEffortForModel } from '@goodboy/core';
 import type {
@@ -55,7 +56,7 @@ import {
 } from '../../../../features/worktree/worktree';
 import { DiffViewSelector } from '../DiffViewSelector';
 import { ResolveOverviewAction } from '../../../resolve/components/ResolveOverviewAction';
-import { DIFF_CAPPED_COLUMN_CLASS, TOOLBAR_ICON_BTN, type ReviewState } from './lib';
+import { TOOLBAR_ICON_BTN, type ReviewState } from './lib';
 import { FileRail } from './FileTree/FileRail';
 import { FileDiffCard } from './FileDiffCard';
 import { DiffToolbar } from './DiffToolbar';
@@ -793,7 +794,7 @@ export const DiffViewerContent = ({
           data-testid="diff-pane-header"
           className={cn(
             'flex shrink-0 flex-wrap items-start justify-between gap-3',
-            isContentEmpty && DIFF_CAPPED_COLUMN_CLASS,
+            isContentEmpty && PANE_RHYTHM.column,
           )}
         >
           <div className="flex min-w-0 flex-col gap-1">
@@ -1019,7 +1020,7 @@ export const DiffViewerContent = ({
           </div>
         ) : files.length === 0 ? (
           <ScrollFade className="min-h-0 min-w-0 flex-1">
-            <div className={cn(DIFF_CAPPED_COLUMN_CLASS, !isPane && 'px-6 py-5')}>
+            <div className={cn(PANE_RHYTHM.column, !isPane && 'px-6 py-5')}>
               <LensEmptyState
                 tone={CONCEPT_TONE.diff}
                 icon={CONCEPT_ICONS.diff}

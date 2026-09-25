@@ -113,7 +113,7 @@ export const CardRailsScene = () => {
 
   return (
     <main className="h-screen overflow-auto bg-background text-foreground">
-      <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.chat, PANE_RHYTHM.body, 'gap-6')}>
+      <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'gap-6')}>
         <Row label="question, blocking">
           <QuestionCard {...questionProps} question={OPEN_QUESTION} askedByName="implementer" />
         </Row>

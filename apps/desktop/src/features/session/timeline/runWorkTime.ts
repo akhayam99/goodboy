@@ -1,11 +1,9 @@
 import type { AgentId, EffortLevel, ProviderId, RoleModelPreferences } from '@goodboy/types';
-import { estimateKeyOf, workEstimateFor } from '../../workTreeModel/agentWorkTime';
 import type { RowPhase } from '../../workTreeModel/rowState';
 import { workTime, type WorkEstimate, type WorkTime } from '../../workTreeModel/workTime';
 import { familyActiveTime, type WorkTimeSource } from '../../workTreeModel/workTimeSource';
-import { KIND_TO_ROLE, kindForRole } from '../agent-kind';
-import { agentRowRouting } from './agentRowRouting';
 import type { TimelineAgentEntry, TimelineRunEntry } from './buildTimelineGroups';
+import { stepWorkEstimate } from './stepWorkEstimate';
 
 type Params = {
   readonly entry: TimelineRunEntry;
@@ -63,28 +61,14 @@ const runEstimate = ({
       bands.push({ lowMs: activeMs, midMs: activeMs, highMs: activeMs, isFallback: false });
       continue;
     }
-    const kind = child?.agentKind ?? kindForRole({ role: step.role ?? 'custom' });
-    const routing = agentRowRouting({
-      executed: null,
+    const estimate = stepWorkEstimate({
       step,
-      kind,
+      agent,
+      kind: child?.agentKind ?? null,
+      source,
       roleModels,
-      providerOverride: agent?.providerOverride ?? null,
-      modelOverride: agent?.modelOverride ?? null,
-      effortOverride: agent?.effort ?? null,
       sessionProvider,
       sessionEffort,
-    });
-    const estimate = workEstimateFor({
-      key: estimateKeyOf({
-        role: step.role ?? KIND_TO_ROLE[kind],
-        provider: routing.provider,
-        model: routing.model,
-        effort: routing.effort,
-        size: step.size ?? null,
-      }),
-      unit: 'step',
-      source,
     });
     if (estimate === null) {
       return null;
