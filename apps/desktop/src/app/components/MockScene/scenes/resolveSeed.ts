@@ -148,6 +148,8 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   disposition: seed.disposition,
   replyDraft: seed.replyDraft,
   commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
   question: seed.question,
   replyPostedAt: null,
   replyId: null,

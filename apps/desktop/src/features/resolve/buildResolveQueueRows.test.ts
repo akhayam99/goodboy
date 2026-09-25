@@ -60,6 +60,8 @@ const thread = ({
   disposition: null,
   replyDraft,
   commitShas,
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

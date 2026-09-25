@@ -41,6 +41,8 @@ const thread: ResolveThread = {
   disposition: 'reply',
   replyDraft: 'Reply',
   commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

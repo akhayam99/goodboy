@@ -36,7 +36,7 @@ export const listResolveThreads = async ({
   sessionId,
 }: ListParams): Promise<ReadonlyArray<ResolveThread>> => {
   const rows = await db.select<Row>(
-    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, state, stage, state_reason AS stateReason, revision, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
+    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, state, stage, state_reason AS stateReason, revision, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, fixup_of_sha AS fixupOfSha, replaces_sha AS replacesSha, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
     [sessionId],
   );
   return rows.map((row) => ({
@@ -52,8 +52,8 @@ export const upsertResolveThread = async ({
   expectedRevision,
 }: UpsertParams): Promise<boolean> => {
   const result = await db.execute(
-    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, state, stage, state_reason, revision, active_attempt_id, disposition, reply_draft, commit_shas_json, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, state, stage, state_reason, revision, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
        project_id = excluded.project_id,
        pr_number = excluded.pr_number,
@@ -65,6 +65,8 @@ export const upsertResolveThread = async ({
        disposition = excluded.disposition,
        reply_draft = excluded.reply_draft,
        commit_shas_json = excluded.commit_shas_json,
+       fixup_of_sha = excluded.fixup_of_sha,
+       replaces_sha = excluded.replaces_sha,
        question = excluded.question,
        reply_posted_at = excluded.reply_posted_at,
        reply_id = excluded.reply_id,
@@ -89,6 +91,8 @@ export const upsertResolveThread = async ({
       row.disposition,
       row.replyDraft,
       row.commitShas === null ? null : JSON.stringify(row.commitShas),
+      row.fixupOfSha,
+      row.replacesSha,
       row.question,
       row.replyPostedAt,
       row.replyId,

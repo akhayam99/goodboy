@@ -19,6 +19,8 @@ const thread: ResolveThread = {
   disposition: 'fix',
   replyDraft: 'Fixed',
   commitShas: ['abc'],
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

@@ -32,6 +32,8 @@ export type ResolveThread = Readonly<{
   disposition: 'fix' | 'reply' | 'no_change' | null;
   replyDraft: string | null;
   commitShas: ReadonlyArray<string> | null;
+  fixupOfSha: string | null;
+  replacesSha: string | null;
   question: string | null;
   replyPostedAt: number | null;
   replyId: string | null;

@@ -32,6 +32,8 @@ export const createResolveThread = ({
     disposition: null,
     replyDraft: null,
     commitShas: null,
+    fixupOfSha: null,
+    replacesSha: null,
     question: null,
     replyPostedAt: null,
     replyId: null,

@@ -92,6 +92,8 @@ const thread = (threadId: string): ResolveThread => ({
   disposition: 'fix',
   replyDraft: 'Fixed in 4f21c8b.',
   commitShas: ['4f21c8b'],
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

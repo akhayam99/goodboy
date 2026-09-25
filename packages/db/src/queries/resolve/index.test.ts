@@ -62,6 +62,8 @@ const row: ResolveThread = {
   disposition: 'fix',
   replyDraft: 'Fixed it',
   commitShas: ['abc1234'],
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,
