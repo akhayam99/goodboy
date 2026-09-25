@@ -48,10 +48,6 @@ export const RESOLVE_ITEM_LABEL = {
   costUnavailable: 'Cost unavailable',
   reopen: 'Reopen',
   commit: 'Commit',
-  fixingCommit: 'Fixing commit',
-  notRecorded: 'Not recorded',
-  candidate: 'Candidate',
-  recordedCommits: 'Recorded commits',
   noCapturedChange: 'No captured change',
 } as const;
 

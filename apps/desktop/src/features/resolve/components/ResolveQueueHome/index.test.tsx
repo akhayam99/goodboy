@@ -25,6 +25,7 @@ const h = vi.hoisted(() => {
     reviewTargets: {} as Record<string, unknown>,
     loadResolveSession: vi.fn(async () => undefined),
     deferResolveQueueItem: vi.fn(async () => undefined),
+    acceptResolveQueueItem: vi.fn(async () => undefined),
     takeUpResolveQueueItem: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
     setResolveQueueView: vi.fn(),
@@ -79,6 +80,7 @@ vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
   ),
 }));
 
+import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
 import { ResolveQueueHome } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -142,7 +144,7 @@ const entryOf = ({
 
 const commentOf = (threadId: string): PrComment => ({
   id: `comment-${threadId}`,
-  author: 'dhh',
+  author: 'northwind-dev',
   authorAvatarUrl: null,
   body: 'This retries forever on a 500.',
   createdAt: '2026-01-05T09:00:00.000Z',
@@ -629,7 +631,7 @@ describe('the shape of the queue surface', () => {
         entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
         entryOf({
           item: { id: 'item-2', threadId: 'PRRT_2' },
-          thread: { threadId: 'PRRT_2', state: 'working' },
+          thread: { threadId: 'PRRT_2', state: 'working', stage: 'working' },
         }),
       ],
     };
@@ -673,33 +675,86 @@ describe('the shape of the queue surface', () => {
     expect(screen.getByText('Publish dock')).toBeDefined();
   });
 
-  it('counts the retryable tab like its siblings once a run fails', () => {
+  it('groups every open comment under its file, with no filter tabs', () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const group = screen.getByRole('region', { name: 'src/retry.ts' });
+    expect(within(group).getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('tab')).toBeNull();
+  });
+
+  it('shows the agent under the comment with the one sha that lands on the branch', () => {
     twoRows();
     h.state.sessionResolveQueueItems = {
       [SESSION_ID]: [
-        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
         entryOf({
-          item: { id: 'item-2', threadId: 'PRRT_2' },
-          thread: { threadId: 'PRRT_2', activeAttemptId: 'attempt-1', stage: 'failed' },
+          item: {
+            id: 'item-1',
+            threadId: 'PRRT_1',
+            integratedSha: '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd',
+          },
+          thread: { threadId: 'PRRT_1', state: 'fixed', stage: 'proposed' },
         }),
       ],
     };
-    h.state.sessionResolveAttempts = {
-      [SESSION_ID]: [{ id: 'attempt-1', agentId: 'agent-1', phase: 'failed', createdAt: 1 }],
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByText('Fix ready')).toBeDefined();
+    expect(screen.getByText('Resolver')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: '4f21c8b' }));
+    expect(h.state.openResolveDiff).toHaveBeenCalledWith(
+      expect.objectContaining({ sha: '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd' }),
+    );
+  });
+
+  it('opens a comment in a drawer next to the list, which stays usable', () => {
+    twoRows();
+    h.state.resolveQueueView = {
+      [SESSION_ID]: { ...EMPTY_RESOLVE_QUEUE_VIEW, expandedThreadId: 'PRRT_1' },
     };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /^Retryable\s*1$/ })).toBeDefined();
+    const drawer = screen.getByRole('complementary', { name: 'Conversation' });
+    expect(within(drawer).getByTestId('resolve-item-thread').textContent).toBe('PRRT_1');
+    const list = screen.getByRole('group', { name: 'Open conversations' });
+    expect(list.closest('[inert]')).toBeNull();
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
   });
 
-  it('drops the count from every tab that has nothing, the third one included', () => {
+  it('approves every selected proposal in one press and counts the rest', async () => {
     twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({
+          item: { id: 'item-1', threadId: 'PRRT_1', candidateRevision: 3 },
+          thread: {
+            threadId: 'PRRT_1',
+            state: 'answered',
+            stage: 'proposed',
+            replyDraft: 'Kept on purpose.',
+          },
+        }),
+        entryOf({ item: { id: 'item-2', threadId: 'PRRT_2' }, thread: { threadId: 'PRRT_2' } }),
+      ],
+    };
     render(<ResolveQueueHome session={SESSION} />);
 
-    expect(screen.getByRole('tab', { name: /^Needs review\s*2$/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /^Active\s*2$/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Retryable' })).toBeDefined();
+    for (const checkbox of screen.getAllByRole('checkbox')) {
+      fireEvent.click(checkbox);
+    }
+    const bar = screen.getByRole('toolbar', { name: '2 selected' });
+    expect(within(bar).getByText('1 has nothing to approve')).toBeDefined();
+    fireEvent.click(within(bar).getByRole('button', { name: 'Approve 1' }));
+
+    await vi.waitFor(() =>
+      expect(h.state.acceptResolveQueueItem).toHaveBeenCalledWith({
+        sessionId: SESSION_ID,
+        itemId: 'item-1',
+        revision: 3,
+        reply: 'Kept on purpose.',
+      }),
+    );
+    expect(h.state.acceptResolveQueueItem).toHaveBeenCalledTimes(1);
   });
 });

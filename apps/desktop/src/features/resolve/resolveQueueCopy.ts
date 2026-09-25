@@ -1,4 +1,3 @@
-import type { ResolveQueueFilter } from '../../store/slices/session-view';
 import type { ResolveUiState } from './resolveRowState';
 
 export const RESOLVE_QUEUE_TITLE = 'Conversations';
@@ -38,6 +37,10 @@ export const resolveNewLabel = ({ count }: CountParams): string => `Resolve ${co
 
 export const resolveCountLabel = ({ count }: CountParams): string => `Resolve ${count}`;
 
+export const approveCountLabel = ({ count }: CountParams): string => `Approve ${count}`;
+
+export const nothingToApproveLabel = ({ count }: CountParams): string =>
+  `${count} ${count === 1 ? 'has' : 'have'} nothing to approve`;
 export const resolvePopoverHeading = ({ count }: CountParams): string =>
   `Resolve ${count} ${commentNoun({ count })}`;
 
@@ -69,7 +72,7 @@ export const RESOLVE_COMMENT_UNAVAILABLE = 'Comment unavailable';
 
 export const RESOLVE_HISTORY_LABEL = {
   later: 'later',
-  completed: 'completed',
+  resolved: 'resolved',
 } as const;
 
 export const RESOLVE_PUBLISH_REPLIES_LABEL = 'replies';
@@ -85,14 +88,6 @@ export const RESOLVE_REPLY_PLAN = {
   resolves: 'Resolves the thread on GitHub',
   leavesOpen: 'Leaves the thread open on GitHub',
 } as const;
-
-export const RESOLVE_QUEUE_FILTER_LABEL: Record<ResolveQueueFilter, string> = {
-  needs_review: 'Needs review',
-  everything: 'Active',
-  retryable: 'Retryable',
-};
-
-export const RESOLVE_QUEUE_RETRYABLE_EMPTY = 'Nothing to retry right now';
 
 export const sharedRunHeading = ({ count }: { readonly count: number }): string =>
   `Shared run · ${count} ${count === 1 ? 'comment' : 'comments'}`;

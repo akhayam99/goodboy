@@ -21,7 +21,7 @@ import type { ResolveDecisionMode } from '../../resolveItemDraft';
 import { DecisionBlock } from './DecisionBlock';
 import { SharedCandidateNote } from './SharedCandidateNote';
 import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
-import { ResolveCommitIdentity } from './ResolveCommitIdentity';
+import { ResolveCommitLine } from './ResolveCommitLine';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { ResolveAgentActivity } from '../ResolveAgentActivity';
 
@@ -151,6 +151,7 @@ export const ResolveItemView = ({
 }: Props) => {
   const note = runNote({ stateReason: row.thread.stateReason });
   const isDelivered = row.status === 'resolved';
+  const shownSha = row.item.integratedSha ?? candidateSha ?? row.thread.commitShas?.at(-1) ?? null;
   const isReplyBlank = reply.trim() === '';
   const question = row.thread.question;
   const isAnswering = row.status === 'needs_you';
@@ -221,16 +222,7 @@ export const ResolveItemView = ({
             aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
             className="flex min-w-0 max-w-[68ch] flex-col gap-5 xl:max-w-none xl:border-l xl:border-border-soft xl:pl-6"
           >
-            {(row.item.integratedSha !== null ||
-              candidateSha !== null ||
-              (row.thread.commitShas?.length ?? 0) > 0) && (
-              <ResolveCommitIdentity
-                integratedSha={row.item.integratedSha}
-                candidateSha={candidateSha}
-                recordedShas={row.thread.commitShas ?? []}
-                onOpenCommit={onOpenCommit}
-              />
-            )}
+            {shownSha !== null && <ResolveCommitLine sha={shownSha} onOpenCommit={onOpenCommit} />}
             {(candidateSha !== null || files.length > 0 || isDiffLoading || diffError !== null) && (
               <ChangeBlock
                 files={files}

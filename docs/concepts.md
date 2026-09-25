@@ -358,6 +358,14 @@ Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
 reads every page of threads GitHub returns. If the read fails, Conversations
 shows the error from `gh` instead of an empty list.
 
+Conversations is a work tree: every open comment is a row grouped under its
+file, and the agent that worked on it is a child row with its model, its time
+and the one sha that lands on the branch (`Fixed in 4f21c8b`). Each comment
+shows one of eight states (New, Working, Needs you, Ready to review,
+Approved, Resolved, Failed, Later) and at most one action. Selecting comments
+opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
+`Resolve N`; the publish bar says `Close N on GitHub`.
+
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 

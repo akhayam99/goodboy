@@ -1,21 +1,8 @@
-import { AlertTriangle, CheckCheck, Inbox, RotateCcw } from 'lucide-react';
+import { AlertTriangle, CheckCheck, Inbox } from 'lucide-react';
 import { Button, EmptyState, FilledEmptyState } from '@goodboy/ui';
-import { RESOLVE_QUEUE_RETRYABLE_EMPTY } from '../../resolveQueueCopy';
 
-type NothingWaitingProps = {
-  readonly hasOtherActiveWork: boolean;
-};
-
-export const NothingWaitingState = ({ hasOtherActiveWork }: NothingWaitingProps) => (
-  <FilledEmptyState
-    icon={CheckCheck}
-    tone="neutral"
-    title={hasOtherActiveWork ? 'No comments need review' : 'No open comments on GitHub'}
-  />
-);
-
-export const NothingToRetryState = () => (
-  <FilledEmptyState icon={RotateCcw} tone="neutral" title={RESOLVE_QUEUE_RETRYABLE_EMPTY} />
+export const NothingWaitingState = () => (
+  <FilledEmptyState icon={CheckCheck} tone="neutral" title="No open comments on GitHub" />
 );
 
 type NoPullRequestProps = {

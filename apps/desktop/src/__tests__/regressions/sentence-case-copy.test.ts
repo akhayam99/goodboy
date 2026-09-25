@@ -5,7 +5,6 @@ import { ARTIFACT_CTA_BLOCK_COPY } from '../../features/artifacts/artifactCtaSta
 import {
   RESOLVE_DELIVERY_SUPPORT,
   RESOLVE_QUEUE_ACTION_LABEL,
-  RESOLVE_QUEUE_FILTER_LABEL,
   RESOLVE_QUEUE_NEXT_STEP,
   RESOLVE_QUEUE_TITLE,
 } from '../../features/resolve/resolveQueueCopy';
@@ -37,7 +36,6 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   RESOLVE_ROW_ACTION_LABEL: Object.values(RESOLVE_ROW_ACTION_LABEL),
   RESOLVE_QUEUE_NEXT_STEP: Object.values(RESOLVE_QUEUE_NEXT_STEP),
   RESOLVE_QUEUE_ACTION_LABEL: Object.values(RESOLVE_QUEUE_ACTION_LABEL),
-  RESOLVE_QUEUE_FILTER_LABEL: Object.values(RESOLVE_QUEUE_FILTER_LABEL),
   RESOLVE_DELIVERY_SUPPORT: Object.values(RESOLVE_DELIVERY_SUPPORT),
   SCRIPT_RUN_PRESENTATION: Object.values(SCRIPT_RUN_PRESENTATION).map(
     (presentation) => presentation.statusLabel,
