@@ -59,7 +59,6 @@
     "packages/core/src/worktree/manager.ts": 3,
     "packages/ui/src/components/Dialog.tsx": 2,
     "packages/ui/src/components/Markdown/parseInline.ts": 1,
-    "packages/ui/src/components/Markdown/tokenizeCode.ts": 1,
     "packages/ui/src/components/Tooltip.tsx": 1
   },
   "unbraced-if": {

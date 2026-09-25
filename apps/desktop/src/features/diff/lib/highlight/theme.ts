@@ -1,42 +1,11 @@
 import type { ThemeRegistration } from 'shiki/core';
+import type { CodeLines, CodeToken, CodeTokenKind } from '@goodboy/ui';
 
-export type SyntaxKind =
-  | 'keyword'
-  | 'string'
-  | 'number'
-  | 'comment'
-  | 'function'
-  | 'type'
-  | 'constant'
-  | 'property'
-  | 'operator'
-  | 'punctuation'
-  | 'tag'
-  | 'regex'
-  | 'plain';
+export type SyntaxKind = CodeTokenKind;
 
-export type SyntaxToken = {
-  readonly text: string;
-  readonly kind: SyntaxKind;
-};
+export type SyntaxToken = CodeToken;
 
-export type SyntaxLines = ReadonlyArray<ReadonlyArray<SyntaxToken>>;
-
-export const SYNTAX_CLASS: Record<SyntaxKind, string> = {
-  keyword: 'text-syntax-keyword',
-  string: 'text-syntax-string',
-  number: 'text-syntax-number',
-  comment: 'text-syntax-comment italic',
-  function: 'text-syntax-function',
-  type: 'text-syntax-type',
-  constant: 'text-syntax-constant',
-  property: 'text-syntax-property',
-  operator: 'text-syntax-operator',
-  punctuation: 'text-syntax-punctuation',
-  tag: 'text-syntax-tag',
-  regex: 'text-syntax-regex',
-  plain: '',
-};
+export type SyntaxLines = CodeLines;
 
 const SENTINEL: Record<SyntaxKind, string> = {
   plain: '#000000',

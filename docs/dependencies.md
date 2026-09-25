@@ -40,7 +40,10 @@ This is the single source of truth for adding and checking dependencies. Every d
   It lives in `apps/desktop/src/features/diff/lib/highlight`, runs in a web
   worker, and loads each grammar as its own chunk. Its theme paints sentinel
   colours that map back to the `text-syntax-*` classes, so the app theme sets
-  the colours and no inline style is rendered.
+  the colours and no inline style is rendered. Markdown code blocks use the
+  same highlighter: `@goodboy/ui` stays free of it and reads it from
+  `CodeHighlighterContext`, which `main.tsx` provides. Without a provider a
+  code block renders plain.
 - Anything else needs a justification in the PR description.
 
 ## Rust crates audit
