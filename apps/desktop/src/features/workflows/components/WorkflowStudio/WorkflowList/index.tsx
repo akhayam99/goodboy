@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { MoreHorizontal, Plus, RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw } from 'lucide-react';
 import { Button, EmptyState, InlineConfirm, OverflowMenu } from '@goodboy/ui';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
 import type { Workflow } from '@goodboy/types';
@@ -61,7 +61,7 @@ export const WorkflowList = ({
         </Button>
         <OverflowMenu
           label="Workflow actions"
-          trigger={<MoreHorizontal size={ICON_SIZE.control} aria-hidden />}
+          trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
           items={[
             {
               kind: 'item',

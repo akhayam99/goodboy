@@ -1,6 +1,6 @@
-import { Check, ChevronRight, Copy, MoreHorizontal, Trash2, Undo2 } from 'lucide-react';
+import { Check, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
 import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import type { SaveStatus } from '../../WorkflowsPanel/useWorkflowEditor';
 
 type Props = {
@@ -85,7 +85,7 @@ export const EditorCrumb = ({
         label="Workflow actions"
         disabled={disabled}
         align="left"
-        trigger={<MoreHorizontal size={ICON_SIZE.control} aria-hidden />}
+        trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
         items={items}
       />
     </nav>

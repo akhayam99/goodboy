@@ -1,13 +1,6 @@
 import { normalizeAgentRole, clampEffortForModel } from '@goodboy/core';
 import type { PlannerOutput } from '@goodboy/core';
-import type {
-  ProviderId,
-  StepDef,
-  Workflow,
-  WorkflowId,
-  WorkspaceId,
-  EffortLevel,
-} from '@goodboy/types';
+import type { ProviderId, Workflow, WorkflowId, WorkspaceId, EffortLevel } from '@goodboy/types';
 import type { WorkflowUpsertArgs } from '../workflows';
 import type { StepDraft, WorkflowDraft, WorkflowDraftErrors } from './types';
 
@@ -41,23 +34,6 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
       verbosity: step.verbosity ?? 'normal',
       size: step.size ?? null,
     })),
-});
-
-type DraftFromStepDefParams = { readonly def: StepDef };
-
-export const draftFromStepDef = ({ def }: DraftFromStepDefParams): StepDraft => ({
-  key: nextKey(),
-  sourceStepId: null,
-  libraryStepId: def.id,
-  role: normalizeAgentRole({ role: def.role }),
-  name: def.name,
-  prompt: def.promptPrefix,
-  expectedOutput: '',
-  provider: def.providerDefault ?? '',
-  model: def.modelDefault ?? '',
-  effort: (def.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
-  verbosity: def.verbosityDefault ?? 'normal',
-  size: null,
 });
 
 type DraftFromPlannerStepsParams = { readonly steps: PlannerOutput['steps'] };
