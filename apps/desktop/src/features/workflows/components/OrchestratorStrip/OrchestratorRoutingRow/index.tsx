@@ -3,9 +3,9 @@ import {
   PROVIDER_CAPABILITIES,
   modelIdForSelection,
   resolveStoredModelSelection,
-  resolveTaskModel,
   clampEffortForModel,
 } from '@goodboy/core';
+import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
@@ -63,15 +63,12 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
     session?.providerPreference.defaultProvider ??
     'anthropic') as ProviderId;
   const limitContext = useAutoLimitContext();
-  const automatic = resolveTaskModel({
+  const automatic = resolveLimitedTaskModel({
+    limitContext,
     task: 'workflow_orchestrator',
     preferences: taskModels,
     workspaceDefaultProviderId,
     sessionDefaultProviderId: defaultProvider,
-    ...(limitContext !== null && {
-      connectedProviders: limitContext.connected,
-      atLimitProviders: limitContext.atLimit,
-    }),
   });
   const pinned =
     run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)
@@ -84,7 +81,8 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const routingFor = ({ provider }: ProviderRoutingParams) =>
     provider === automatic.providerId
       ? automatic
-      : resolveTaskModel({
+      : resolveLimitedTaskModel({
+          limitContext: null,
           task: 'workflow_orchestrator',
           preferences: null,
           workspaceDefaultProviderId: provider,

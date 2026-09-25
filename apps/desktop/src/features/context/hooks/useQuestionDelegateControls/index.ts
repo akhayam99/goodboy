@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
+import { clampEffortForModel } from '@goodboy/core';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
@@ -64,8 +66,11 @@ export const useQuestionDelegateControls = ({
   const sessionProvider: ProviderId =
     session?.providerPreference.defaultProvider ?? connectedProviders[0] ?? 'anthropic';
 
+  const limitContext = useAutoLimitContext();
+
   const defaultRouting = useMemo((): DelegateRouting => {
-    const resolved = resolveTaskModel({
+    const resolved = resolveLimitedTaskModel({
+      limitContext,
       task: 'question_delegate',
       preferences: taskModels,
       workspaceDefaultProviderId: null,
@@ -78,7 +83,7 @@ export const useQuestionDelegateControls = ({
       effort:
         clampEffortForModel({ model: resolved.model, effort: requestedEffort }) ?? requestedEffort,
     };
-  }, [sessionProvider, taskModels]);
+  }, [limitContext, sessionProvider, taskModels]);
 
   const asker =
     question.createdByAgentId == null

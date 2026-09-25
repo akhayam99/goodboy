@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, clampEffortForModel } from '@goodboy/core';
+import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
@@ -32,15 +33,12 @@ export const TaskModelRow = ({
   onChange,
 }: Props) => {
   const limitContext = useAutoLimitContext();
-  const automatic = resolveTaskModel({
+  const automatic = resolveLimitedTaskModel({
+    limitContext,
     task,
     preferences: null,
     workspaceDefaultProviderId: defaultProviderId,
     sessionDefaultProviderId: defaultProviderId,
-    ...(limitContext !== null && {
-      connectedProviders: limitContext.connected,
-      atLimitProviders: limitContext.atLimit,
-    }),
   });
   const preferredProviderId = preference?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState(preferredProviderId);
@@ -49,7 +47,8 @@ export const TaskModelRow = ({
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
-  const recommendedModel = resolveTaskModel({
+  const recommendedModel = resolveLimitedTaskModel({
+    limitContext: null,
     task,
     preferences: null,
     workspaceDefaultProviderId: providerId,
@@ -122,7 +121,8 @@ export const TaskModelRow = ({
               }
               setProviderId(next);
               pendingProvider.current = next;
-              pendingModel.current = resolveTaskModel({
+              pendingModel.current = resolveLimitedTaskModel({
+                limitContext: null,
                 task,
                 preferences: null,
                 workspaceDefaultProviderId: next,
@@ -132,7 +132,8 @@ export const TaskModelRow = ({
                 return;
               }
               onChange(
-                resolveTaskModel({
+                resolveLimitedTaskModel({
+                  limitContext: null,
                   task,
                   preferences: null,
                   workspaceDefaultProviderId: next,

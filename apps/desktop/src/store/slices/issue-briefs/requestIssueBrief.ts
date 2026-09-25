@@ -1,8 +1,6 @@
-import {
-  DEFAULT_SESSION_PROVIDER_PREFERENCE,
-  generateIssueBrief,
-  resolveTaskModel,
-} from '@goodboy/core';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE, generateIssueBrief } from '@goodboy/core';
 import { invoke } from '@tauri-apps/api/core';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
@@ -73,7 +71,8 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
       .filter((provider) => provider.connection === 'connected')
       .map((provider) => provider.id);
     const taskModel = routeTaskModel({
-      taskModel: resolveTaskModel({
+      taskModel: resolveLimitedTaskModel({
+        limitContext: autoLimitContext({ state: get() }),
         task: 'issue_brief',
         preferences: settings?.taskModels,
         workspaceDefaultProviderId: settings?.defaultProviderOverride,

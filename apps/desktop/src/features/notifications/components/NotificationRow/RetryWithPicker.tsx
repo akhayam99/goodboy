@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { NotificationAction } from '@goodboy/db';
-import { PROVIDER_CAPABILITIES, resolveTaskModel } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES } from '@goodboy/core';
+import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -36,7 +37,8 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
   if (providerId == null) {
     return null;
   }
-  const recommendedModel = resolveTaskModel({
+  const recommendedModel = resolveLimitedTaskModel({
+    limitContext: null,
     task: 'summarizer',
     preferences: null,
     workspaceDefaultProviderId: providerId,
@@ -45,7 +47,8 @@ export const RetryWithPicker = ({ action, onDone }: RetryWithPickerProps) => {
   const dispatch = () => {
     const taskModel =
       model === ''
-        ? resolveTaskModel({
+        ? resolveLimitedTaskModel({
+            limitContext: null,
             task: 'summarizer',
             preferences: null,
             workspaceDefaultProviderId: providerId,

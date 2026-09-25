@@ -479,8 +479,11 @@ When a provider ships or retires a model, update three files under
   at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
   observation says a window is out and has not reset). A pick that passed a
   provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
-  through `autoLimitContext` only while some provider is out, for agent spawns,
-  the summarizer and the workflow orchestrator; the Auto row of the Defaults
+  through `autoLimitContext` only while some provider is out, for agent spawns
+  and every task. The desktop resolves a task model only through
+  `resolveLimitedTaskModel` (a test fails on a direct `resolveTaskModel` call),
+  and a lookup for a provider the user picked passes `limitContext: null`. The
+  Auto row of the Defaults
   task pickers and the orchestrator picker then says which provider it left and
   why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against

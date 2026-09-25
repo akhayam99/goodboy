@@ -1,4 +1,5 @@
-import { resolveTaskModel } from '@goodboy/core';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { fallbackStepOutputSummary } from '@goodboy/core';
 import type { AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
@@ -38,7 +39,8 @@ export const retryStepSummary = (set: SetFn, get: GetFn) => {
     const taskModel =
       taskModelOverride ??
       routeTaskModel({
-        taskModel: resolveTaskModel({
+        taskModel: resolveLimitedTaskModel({
+          limitContext: autoLimitContext({ state: get() }),
           task: 'summarizer',
           preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
           workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
