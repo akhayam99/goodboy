@@ -197,7 +197,7 @@ describe('ProjectMountRows', () => {
     expect(screen.getByRole('listitem', { name: 'WEB on feat/three' })).toBeDefined();
   });
 
-  it('gives each project its own group, separated by rhythm and not by a box', () => {
+  it('gives each project its own group on shared columns, separated by rhythm and not by a box', () => {
     store.projects = [
       ...store.projects,
       { id: 'web', workspaceId: 'workspace-1', name: 'WEB', kind: 'repo', rootPath: '/repo/web' },
@@ -220,7 +220,12 @@ describe('ProjectMountRows', () => {
       expect((block as HTMLElement).className).not.toContain('border');
       expect(within(block as HTMLElement).getAllByTestId('project-mount-row')).toHaveLength(1);
     }
-    expect(blocks[0]?.parentElement?.className).toContain('gap-3');
+    expect(blocks[0]?.parentElement?.className).toContain('gap-y-3');
+    expect(blocks[0]?.parentElement).toBe(blocks[1]?.parentElement);
+    expect(blocks[0]?.parentElement?.className).toContain('grid-cols-[');
+    for (const block of blocks) {
+      expect(block?.className).toContain('grid-cols-subgrid');
+    }
   });
 
   it('renders one row per branch mount of the same project', () => {

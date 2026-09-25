@@ -61,8 +61,8 @@ export const ProjectMountGroup = ({
   );
 
   return (
-    <div className="@container flex min-w-0 flex-col gap-0.5">
-      <div className="flex min-h-8 w-full items-center gap-2 px-2">
+    <div className="col-span-full grid min-w-0 grid-cols-subgrid gap-y-0.5">
+      <div className="col-span-full flex min-h-8 min-w-0 items-center gap-2 px-2">
         <GlyphIcon
           size={ICON_SIZE.control}
           aria-hidden
@@ -101,7 +101,7 @@ export const ProjectMountGroup = ({
       </div>
       <ul
         aria-label={`${group.projectName} worktrees`}
-        className="grid grid-cols-[minmax(10rem,1fr)_repeat(6,auto)] gap-y-0.5 pl-2"
+        className="col-span-full grid grid-cols-subgrid gap-y-0.5 pl-2"
       >
         {group.rows.map(renderRow)}
         {isCompletedShown ? group.completedRows.map(renderRow) : null}

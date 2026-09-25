@@ -60,18 +60,20 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
         }
       />
       {groups.length === 0 ? null : (
-        <div className="flex flex-col gap-3">
-          {groups.map((group) => (
-            <ProjectMountGroup
-              key={group.projectId}
-              sessionId={session.id}
-              group={group}
-              diffStats={diffStats}
-              worktreeStatuses={worktreeStatuses}
-              pendingWorktrees={pendingWorktrees}
-              onSelectLens={onSelectLens}
-            />
-          ))}
+        <div className="@container min-w-0">
+          <div className="grid grid-cols-[minmax(10rem,1fr)_repeat(6,auto)] gap-y-3">
+            {groups.map((group) => (
+              <ProjectMountGroup
+                key={group.projectId}
+                sessionId={session.id}
+                group={group}
+                diffStats={diffStats}
+                worktreeStatuses={worktreeStatuses}
+                pendingWorktrees={pendingWorktrees}
+                onSelectLens={onSelectLens}
+              />
+            ))}
+          </div>
         </div>
       )}
       <MountCleanupProposals sessionId={session.id} />

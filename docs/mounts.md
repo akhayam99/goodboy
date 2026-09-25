@@ -185,9 +185,10 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 ## Mount row
 
-Rows of one project share a grid: branch, series part, sync, diff, state,
-action, menu. A column no row fills takes no width, and below a 36rem
-container the sync and diff cells empty out (the Changes lens still has the
+Every row of every project shares one grid (each project group and its list
+are subgrids of it), so the columns line up down the whole section: branch,
+series part, sync, diff, state, action, menu. A column no row fills takes no
+width, and below a 36rem container the sync and diff cells empty out (the Changes lens still has the
 diff). Every row action lives in the always visible row menu
 (`MountActionsMenu`): start new turns here (only with two or more mounts),
 terminal, scripts, editors, copy path, then close (unmount) or remove. A
