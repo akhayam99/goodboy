@@ -29,7 +29,8 @@ Open the workflow builder in a session. The builder is a preview of the run:
 the plan draws with the same tree, nodes and meta as the workflow detail, so
 what you see before the start is what you see after it. From the top:
 
-- **Name**: a large inline field. It stays empty and shows a name as its
+- **Name**: a large inline field that wraps a long name instead of cutting
+  it, and never takes a line break. It stays empty and shows a name as its
   placeholder. Once you leave the goal, Goodboy asks the naming model for a
   title from the goal and shows it there; **Tab** keeps it. The suggestion is
   never typed into the field for you. An empty field starts with the
