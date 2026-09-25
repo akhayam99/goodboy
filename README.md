@@ -55,8 +55,8 @@ Open a session and the **Overview** holds everything about that task.
 
 Below it, **Activity** draws the work as one tree: numbered steps growing from the bottom, with the agents they started, the plans, the questions and the pull requests on one timeline.
 
-- Every step shows its provider, model, effort, time and cost in the same columns
-- A running step fills a ring as it works, with the time left based on how long similar steps really took
+- Every step shows its provider, model and effort in the same columns, with its time and cost once it has them
+- Once Goodboy has timed enough similar steps, a running step fills a ring with the time it has left
 - A step waiting on you, a failed one and a queued one look different at a glance, and the next thing to do sits on top
 - Click the colored line to open a workflow, click a row to open that agent, question or artifact
 
@@ -74,7 +74,7 @@ A **workflow** splits a task into steps, for example explore, plan, implement, t
 - Each step has its own provider, model and effort: explore on a cheap model, plan on a strong one
 - Pick a ready workflow, build your own, or let the **orchestrator** choose the next step as the work goes
 
-The builder shows the plan as the tree it will become, with an estimate of how long it takes. **Orchestrated** comes first and adds agents one at a time. In a custom or preset plan you change each step's provider, model, effort, role and instructions in place. Autorun is one switch, and every run gets a generated title.
+The builder shows the plan as the tree it will become, with an estimate of how long it takes once your workspace has enough timed steps. **Orchestrated** comes first and adds agents one at a time. In a custom or preset plan you change each step's provider, model, effort, role and instructions in place. Autorun is one switch, and runs show a readable name instead of the raw goal.
 
 ![The workflow builder on Orchestrated: the goal, an example of the steps the orchestrator will pick, its model, optional guidance, and the start, autorun and spend cap controls](./docs/images/workflow-builder.png)
 
