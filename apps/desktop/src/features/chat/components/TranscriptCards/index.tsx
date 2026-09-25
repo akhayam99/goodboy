@@ -10,8 +10,6 @@ import { CliTooOldNotice } from '../CliTooOldNotice';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
-import { WorkflowKickoffCard } from '../WorkflowKickoffCard';
-import { ResolverKickoffCard } from '../ResolverKickoffCard';
 import { HandoffBlock } from '../HandoffBlock';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
@@ -118,10 +116,6 @@ const TranscriptCardImpl = ({
       return <PhaseTransitionCard item={item} />;
     case 'orchestrator_decision':
       return <OrchestratorDecisionCard item={item} />;
-    case 'workflow_kickoff':
-      return <WorkflowKickoffCard item={item} />;
-    case 'resolver_kickoff':
-      return <ResolverKickoffCard item={item} sessionId={sessionId} />;
     case 'oq_answer':
       return null;
     case 'done':

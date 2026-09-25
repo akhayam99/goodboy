@@ -1,7 +1,9 @@
-import { useCallback, useState } from 'react';
-import type { HandoffSectionKind } from '@goodboy/types';
+import { useCallback, useEffect, useState } from 'react';
+import type { AgentId, HandoffSectionKind } from '@goodboy/types';
+import { HANDOFF_OPEN_EVENT, takeHandoffOpenRequest } from '../handoffOpenRequest';
 
 type Params = {
+  readonly agentId: AgentId;
   readonly initiallyOpen: boolean;
 };
 
@@ -13,11 +15,35 @@ export type HandoffDisclosure = {
   readonly openSection: (kind: HandoffSectionKind) => void;
 };
 
-export const useHandoffDisclosure = ({ initiallyOpen }: Params): HandoffDisclosure => {
-  const [open, setOpen] = useState(initiallyOpen);
+type OpenRequestParams = {
+  readonly event: Event;
+  readonly agentId: AgentId;
+};
+
+const isOpenRequestFor = ({ event, agentId }: OpenRequestParams): boolean =>
+  event instanceof CustomEvent &&
+  typeof event.detail === 'object' &&
+  event.detail !== null &&
+  'agentId' in event.detail &&
+  event.detail.agentId === agentId;
+
+export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): HandoffDisclosure => {
+  const [open, setOpen] = useState(() => takeHandoffOpenRequest({ agentId }) || initiallyOpen);
   const [openSections, setOpenSections] = useState<ReadonlySet<HandoffSectionKind>>(
     () => new Set(),
   );
+
+  useEffect(() => {
+    const reveal = (event: Event) => {
+      if (!isOpenRequestFor({ event, agentId })) {
+        return;
+      }
+      takeHandoffOpenRequest({ agentId });
+      setOpen(true);
+    };
+    window.addEventListener(HANDOFF_OPEN_EVENT, reveal);
+    return () => window.removeEventListener(HANDOFF_OPEN_EVENT, reveal);
+  }, [agentId]);
 
   const toggle = useCallback(() => setOpen((value) => !value), []);
 

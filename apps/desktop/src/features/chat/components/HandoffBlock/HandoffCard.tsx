@@ -18,7 +18,7 @@ type Props = {
 };
 
 export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) => {
-  const disclosure = useHandoffDisclosure({ initiallyOpen });
+  const disclosure = useHandoffDisclosure({ agentId: handoff.agentId, initiallyOpen });
   const names = useHandoffNames({ sessionId, sender: handoff.sender });
   const Icon = HANDOFF_SENDER_ICON[handoff.sender.kind];
 

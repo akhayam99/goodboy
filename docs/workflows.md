@@ -164,9 +164,11 @@ node the run tree draws for that step, with the same number or check. Hovering
 a line lights its row in the tree, and hovering or selecting a step row lights
 its line. When the run has ended, its closing reason sits on top. The five
 newest lines show, and the rest sit behind a count. The tree rows carry no
-reasons of their own. An agent's Brief repeats its own step's reason under
-**Why this step**, below any open question it asks. Sub-agents show none,
-because the reason belongs to the step.
+reasons of their own. An agent's own step reason is the why of the handoff
+block at the top of its transcript, which is also where the step's expected
+output sits, as Done when. The Brief keeps only the state: one line naming who
+sent the agent (it opens that block), then Now, questions, the outcome, what
+it produced and the meta line.
 
 ### Hints
 

@@ -107,6 +107,12 @@ record a live turn already wrote wins.
   has no handoff row: its first message shows closed as "first message · older
   format", the original text clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes the `handoff` item and
   `TranscriptRows` counts it as the first user turn.
+- The transcript is the record and the Brief is the dashboard. What the agent
+  received lives only in the handoff block; the Brief shows one line, "Sent by
+  Orchestrator · step 4 · the ask", that switches to the Transcript tab with
+  the block open (`requestHandoffOpen`). The Brief no longer carries Why this
+  step or Expected output, and the old kickoff cards and their text parsers
+  are gone.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and

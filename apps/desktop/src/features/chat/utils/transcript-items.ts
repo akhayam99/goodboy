@@ -12,8 +12,6 @@ import type {
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
-import { isWorkflowKickoff, parseWorkflowKickoff } from './parse-workflow-kickoff';
-import { parseResolverKickoff, type ResolverKickoffThread } from './parse-resolver-kickoff';
 import { splitArtifactText } from './split-artifact-blocks';
 import { reduceTranscriptTrace } from './transcript-items-trace';
 
@@ -100,24 +98,6 @@ export type TranscriptItem =
       reason: string;
       stepName?: string;
       operatorNote?: string;
-      at: IsoDateTime;
-    }
-  | {
-      kind: 'workflow_kickoff';
-      key: string;
-      goal: string;
-      instructions: string;
-      marker: string;
-      raw: string;
-      parsed: boolean;
-      at: IsoDateTime;
-    }
-  | {
-      kind: 'resolver_kickoff';
-      key: string;
-      headline: string;
-      threads: ReadonlyArray<ResolverKickoffThread>;
-      raw: string;
       at: IsoDateTime;
     }
   | { kind: 'oq_answer'; key: string }
@@ -291,44 +271,10 @@ export const reduceTranscript = (
           items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
           break;
         }
-        if (event.handoffId !== undefined) {
+        if (event.handoffId !== undefined || !hasUserText) {
           hasUserText = true;
-          items.push(handoffItem({ event, index: i, handoffId: event.handoffId }));
+          items.push(handoffItem({ event, index: i, handoffId: event.handoffId ?? null }));
           break;
-        }
-        {
-          const isFirstUserText = !hasUserText;
-          hasUserText = true;
-          const resolverKickoff = parseResolverKickoff({ text: event.text });
-          if (resolverKickoff !== null) {
-            items.push({
-              kind: 'resolver_kickoff',
-              key: `resolver-kickoff-${i}`,
-              headline: resolverKickoff.headline,
-              threads: resolverKickoff.threads,
-              raw: event.text,
-              at: event.at,
-            });
-            break;
-          }
-          if (isWorkflowKickoff(event.text)) {
-            const parsed = parseWorkflowKickoff(event.text);
-            items.push({
-              kind: 'workflow_kickoff',
-              key: `kickoff-${i}`,
-              goal: parsed.goal,
-              instructions: parsed.instructions,
-              marker: parsed.marker,
-              raw: event.text,
-              parsed: parsed.parsed,
-              at: event.at,
-            });
-            break;
-          }
-          if (isFirstUserText) {
-            items.push(handoffItem({ event, index: i, handoffId: null }));
-            break;
-          }
         }
         items.push({
           kind: 'user_text',
