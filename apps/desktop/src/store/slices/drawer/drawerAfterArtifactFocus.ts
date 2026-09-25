@@ -8,8 +8,14 @@ type Params = {
 
 export const drawerAfterArtifactFocus = ({ drawer, artifactId }: Params): OpenDrawer | null => {
   const current = drawer ?? null;
-  if (current === null || current.kind !== 'artifact') {
-    return current;
+  if (current === null) {
+    return null;
   }
-  return current.payload.artifactId === artifactId ? current : null;
+  if (current.kind === 'artifact') {
+    return current.payload.artifactId === artifactId ? current : null;
+  }
+  if (current.kind === 'plan-part') {
+    return current.payload.planId === artifactId ? current : null;
+  }
+  return current;
 };

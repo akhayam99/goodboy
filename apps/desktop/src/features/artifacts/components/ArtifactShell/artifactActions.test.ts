@@ -13,7 +13,7 @@ const STATUSES: ReadonlyArray<ArtifactStatus> = ['active', 'consumed', 'supersed
 
 describe('artifactActions', () => {
   it('runs a ready plan as the one primary, with edit beside it and the rest in More', () => {
-    expect(actionsOf({ kind: 'plan', status: 'active' })).toEqual({
+    expect(actionsOf({ kind: 'plan', status: 'active', isRunning: false })).toEqual({
       primary: 'runPlan',
       secondary: 'edit',
       overflow: ['print', 'copySource', 'saveSource', 'discard'],
@@ -21,7 +21,7 @@ describe('artifactActions', () => {
   });
 
   it('offers run again as a secondary once the plan ran, and never a primary', () => {
-    expect(actionsOf({ kind: 'plan', status: 'consumed' })).toEqual({
+    expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: false })).toEqual({
       primary: null,
       secondary: 'runAgain',
       overflow: ['print', 'copySource', 'saveSource'],
@@ -29,13 +29,25 @@ describe('artifactActions', () => {
   });
 
   it('never lets a consumed plan be discarded', () => {
-    expect(everyAction({ kind: 'plan', status: 'consumed' })).not.toContain('discard');
+    expect(everyAction({ kind: 'plan', status: 'consumed', isRunning: false })).not.toContain(
+      'discard',
+    );
+  });
+
+  it('offers no run again while a part of the plan is still running', () => {
+    expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: true })).toEqual({
+      primary: null,
+      secondary: null,
+      overflow: ['print', 'copySource', 'saveSource'],
+    });
   });
 
   it('restores a discarded plan instead of running it', () => {
-    const set = actionsOf({ kind: 'plan', status: 'discarded' });
+    const set = actionsOf({ kind: 'plan', status: 'discarded', isRunning: false });
     expect(set.secondary).toBe('restore');
-    expect(everyAction({ kind: 'plan', status: 'discarded' })).not.toContain('runPlan');
+    expect(everyAction({ kind: 'plan', status: 'discarded', isRunning: false })).not.toContain(
+      'runPlan',
+    );
   });
 
   it('gives a report no primary, reading is the action', () => {
@@ -65,11 +77,11 @@ describe('artifactActions', () => {
 
   it('never shows more than one primary and one secondary for any plan status', () => {
     for (const status of STATUSES) {
-      const set = actionsOf({ kind: 'plan', status });
+      const set = actionsOf({ kind: 'plan', status, isRunning: false });
       const visible = [set.primary, set.secondary].filter((id) => id !== null);
       expect(visible.length).toBeLessThanOrEqual(2);
-      expect(new Set(everyAction({ kind: 'plan', status })).size).toBe(
-        everyAction({ kind: 'plan', status }).length,
+      expect(new Set(everyAction({ kind: 'plan', status, isRunning: false })).size).toBe(
+        everyAction({ kind: 'plan', status, isRunning: false }).length,
       );
     }
   });

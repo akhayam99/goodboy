@@ -17,6 +17,10 @@ export type DrawerContent =
   | {
       readonly kind: 'artifact';
       readonly payload: { readonly artifactId: ArtifactId; readonly tab: ArtifactDrawerTab };
+    }
+  | {
+      readonly kind: 'plan-part';
+      readonly payload: { readonly planId: ArtifactId; readonly index: number };
     };
 
 export type DrawerRequest = DrawerContent & {

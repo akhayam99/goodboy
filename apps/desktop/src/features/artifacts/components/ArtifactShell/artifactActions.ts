@@ -15,7 +15,7 @@ export type ArtifactActionId =
   | 'openAgent';
 
 export type ArtifactActionSubject =
-  | Readonly<{ kind: 'plan'; status: ArtifactStatus }>
+  | Readonly<{ kind: 'plan'; status: ArtifactStatus; isRunning: boolean }>
   | Readonly<{ kind: 'report'; status: ArtifactStatus }>
   | Readonly<{ kind: 'wireframe'; status: ArtifactStatus }>
   | Readonly<{ kind: 'generation'; canStop: boolean }>;
@@ -28,7 +28,16 @@ export type ArtifactActionSet = Readonly<{
 
 const DOCUMENT_EXPORTS: ReadonlyArray<ArtifactActionId> = ['print', 'copySource', 'saveSource'];
 
-const planActions = ({ status }: { readonly status: ArtifactStatus }): ArtifactActionSet => {
+const planActions = ({
+  status,
+  isRunning,
+}: {
+  readonly status: ArtifactStatus;
+  readonly isRunning: boolean;
+}): ArtifactActionSet => {
+  if (isRunning) {
+    return { primary: null, secondary: null, overflow: DOCUMENT_EXPORTS };
+  }
   switch (status) {
     case 'active':
       return { primary: 'runPlan', secondary: 'edit', overflow: [...DOCUMENT_EXPORTS, 'discard'] };
@@ -52,7 +61,7 @@ export const artifactActions = ({
 }): ArtifactActionSet => {
   switch (subject.kind) {
     case 'plan':
-      return planActions({ status: subject.status });
+      return planActions({ status: subject.status, isRunning: subject.isRunning });
     case 'report':
       return {
         primary: null,

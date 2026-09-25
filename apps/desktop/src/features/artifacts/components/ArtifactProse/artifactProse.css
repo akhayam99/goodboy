@@ -13,7 +13,7 @@
 .artifact-prose > div > :where([data-block='metrics'], [data-block='timeline']) {
   max-width: none;
 }
-.artifact-prose > div:first-child > p:first-child {
+.artifact-prose[data-lead='true'] > div:first-child > p:first-child {
   font-size: var(--text-lg);
   line-height: 28px;
 }

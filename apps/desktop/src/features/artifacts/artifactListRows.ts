@@ -15,6 +15,12 @@ import {
   type ArtifactGeneration,
 } from './artifactCollection';
 import { REPORT_TYPE_LABEL, asReportType } from '../reports/reportTypes';
+import {
+  planPartRows,
+  planPartsProgress,
+  planPartsSentence,
+  type PlanPartsProgress,
+} from '../plans/components/PlanParts/planPartRows';
 
 export type ArtifactRowTone = 'warning' | 'info' | 'danger' | 'neutral';
 
@@ -62,11 +68,40 @@ const partsLabel = ({ plan }: { readonly plan: PlanWithCount }): string | null =
 
 type PlanState = Pick<ArtifactListRow, 'node' | 'sentence' | 'sentenceTone'>;
 
+const PROGRESS_NODE = {
+  notRun: { node: 'done', sentenceTone: 'neutral' },
+  running: { node: 'running', sentenceTone: 'info' },
+  question: { node: 'question', sentenceTone: 'warning' },
+  failed: { node: 'failed', sentenceTone: 'danger' },
+  waiting: { node: 'queued', sentenceTone: 'neutral' },
+  done: { node: 'done', sentenceTone: 'neutral' },
+} as const satisfies Record<
+  PlanPartsProgress['kind'],
+  Pick<ArtifactListRow, 'node' | 'sentenceTone'>
+>;
+
+const ranState = ({
+  plan,
+  agents,
+}: {
+  readonly plan: PlanWithCount;
+  readonly agents: ReadonlyArray<Agent>;
+}): PlanState => {
+  const rows = planPartRows({ plan, agents, askingAgentIds: new Set() });
+  if (rows.length === 0) {
+    return { node: 'done', sentence: 'Ran', sentenceTone: 'neutral' };
+  }
+  const progress = planPartsProgress({ rows, hasRun: true });
+  return { ...PROGRESS_NODE[progress.kind], sentence: planPartsSentence({ progress }) };
+};
+
 const planState = ({
   plan,
+  agents,
   openQuestionCount,
 }: {
   readonly plan: PlanWithCount;
+  readonly agents: ReadonlyArray<Agent>;
   readonly openQuestionCount: number;
 }): PlanState => {
   switch (plan.status) {
@@ -82,7 +117,7 @@ const planState = ({
       };
     }
     case 'consumed':
-      return { node: 'done', sentence: 'Ran', sentenceTone: 'neutral' };
+      return ranState({ plan, agents });
     case 'superseded':
       return { node: 'skipped', sentence: 'Replaced by a newer revision', sentenceTone: 'neutral' };
     case 'discarded':
@@ -205,7 +240,7 @@ export const buildArtifactListRows = ({
     target: { kind: 'artifact', artifactId: plan.id },
     kind: 'plan',
     title: plan.title,
-    ...planState({ plan, openQuestionCount }),
+    ...planState({ plan, agents, openQuestionCount }),
     author: agentName(plan.agentId),
     revision: revisionOf(plan.id),
     at: plan.createdAt,

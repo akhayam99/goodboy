@@ -498,6 +498,87 @@ describe('ArtifactStudio shell', () => {
   });
 });
 
+describe('ArtifactStudio plan parts', () => {
+  const clusters = [
+    {
+      title: 'Add a dry run to the backfill job',
+      instructions: 'add a flag',
+      doneWhen: ['run pnpm test ledger-core'],
+      touches: ['ledger-core/src/backfill.ts', 'ledger-core/src/flags.ts'],
+    },
+    { title: 'Skip settled batches in retries', instructions: 'notify-relay' },
+  ];
+
+  it('lists the parts after the goal and says who split the plan', () => {
+    state.plans = [
+      {
+        ...plan,
+        bodyMd: '## Goal\nEvery settled batch matches its invoice.\n\n## Risks\nnone',
+        clusters,
+      },
+    ];
+    focus('plan-1');
+    renderStudio();
+    const parts = screen.getByTestId('plan-parts');
+    expect(
+      within(parts).getByText(
+        'Planner 2 split this plan into 2 parts. They run in order, each as its own subagent.',
+      ),
+    ).toBeDefined();
+    expect(within(parts).getByText('Done when: run pnpm test ledger-core')).toBeDefined();
+    expect(within(parts).getByText('2 files')).toBeDefined();
+    expect(within(parts).getAllByText('Auto')).toHaveLength(2);
+    const body = screen.getByTestId('plan-body');
+    expect(body.textContent?.indexOf('Every settled batch')).toBeLessThan(
+      body.textContent?.indexOf('Parts') ?? 0,
+    );
+    fireEvent.click(within(parts).getByRole('button', { name: /Part 2, Skip settled/ }));
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'plan-part',
+      sessionId: 'sess-1',
+      payload: { planId: 'plan-1', index: 1 },
+    });
+  });
+
+  it('gives each part the state of its subagent once the plan runs, and hides run again', () => {
+    state.plans = [
+      {
+        ...plan,
+        clusters,
+        status: 'consumed',
+        consumptionCount: 1,
+        lastConsumer: { agentId: 'agent-impl', name: 'Implementer 3' },
+      },
+    ];
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        { id: 'agent-planner', name: 'Planner 2', ordinal: 0 },
+        { id: 'agent-impl', name: 'Implementer 3', status: 'running', ordinal: 1 },
+        {
+          id: 'agent-part-1',
+          name: 'Add a dry run',
+          parentAgentId: 'agent-impl',
+          status: 'completed',
+          ordinal: 2,
+        },
+        {
+          id: 'agent-part-2',
+          name: 'Skip settled',
+          parentAgentId: 'agent-impl',
+          status: 'running',
+          ordinal: 3,
+        },
+      ],
+    };
+    focus('plan-1');
+    renderStudio();
+    expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Running part 2 of 2');
+    expect(screen.queryByTestId('artifact-action-runAgain')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Part 1, Add a dry run/ }));
+    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-part-1');
+  });
+});
+
 describe('ArtifactStudio generating run', () => {
   beforeEach(() => {
     state.sessionPhaseRuns = {

@@ -50,7 +50,10 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const setArtifactDraft = useAppStore((s) => s.setArtifactDraft);
   const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
-  const isArtifactDrawerOpen = useAppStore((s) => selectOpenDrawer(s)?.kind === 'artifact');
+  const isArtifactDrawerOpen = useAppStore((s) => {
+    const kind = selectOpenDrawer(s)?.kind ?? null;
+    return kind === 'artifact' || kind === 'plan-part';
+  });
   const turnKinds = useAppStore(
     useShallow((s) => agents.map((agent) => s.agentTurnState[agent.id]?.kind ?? null)),
   );

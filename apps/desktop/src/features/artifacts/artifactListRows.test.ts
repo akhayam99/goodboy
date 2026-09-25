@@ -129,6 +129,45 @@ describe('buildArtifactListRows', () => {
     });
   });
 
+  it('says how far a plan that ran got, from the subagents that carry its parts', () => {
+    const [row] = buildArtifactListRows({
+      plans: [
+        plan({
+          status: 'consumed',
+          consumptionCount: 1,
+          lastConsumer: { agentId: 'agent-impl' as AgentId, name: 'Implementer 3' },
+          clusters: [
+            { title: 'add a dry run', instructions: 'a' },
+            { title: 'backfill behind a flag', instructions: 'b' },
+          ],
+        }),
+      ],
+      artifacts: [],
+      generations: [],
+      agents: [
+        ...AGENTS,
+        { ...agent('agent-impl', 'Implementer 3'), status: 'running', ordinal: 3 } as Agent,
+        {
+          ...agent('agent-part-1', 'add a dry run'),
+          parentAgentId: 'agent-impl',
+          ordinal: 4,
+        } as unknown as Agent,
+        {
+          ...agent('agent-part-2', 'backfill behind a flag'),
+          parentAgentId: 'agent-impl',
+          status: 'running',
+          ordinal: 5,
+        } as unknown as Agent,
+      ],
+      openQuestionCount: 0,
+    });
+    expect(row).toMatchObject({
+      node: 'running',
+      sentence: 'Running part 2 of 2',
+      sentenceTone: 'info',
+    });
+  });
+
   it('gives a report at rest a neutral marker and its report type', () => {
     const [row] = buildArtifactListRows({
       plans: [],

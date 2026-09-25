@@ -9,14 +9,19 @@ import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedTo
 import { describeArtifactStatus } from '../../artifact-status';
 import { describePlanStatus } from '../../../plans/plan-status';
 import { parsePlanSource, planToSource } from '../../../plans/planSource';
+import {
+  planPartsProgress,
+  planSplitSentence,
+} from '../../../plans/components/PlanParts/planPartRows';
+import { planPartsPresentation } from '../../../plans/components/PlanParts/planPartsPresentation';
+import { usePlanPartRows } from '../../../plans/components/PlanParts/usePlanPartRows';
 import { useArtifactExport } from '../../hooks/useArtifactExport';
 import { useReportRegenerate } from '../../../reports/useReportRegenerate';
-import { dropLeadingTitleHeading } from '../../../reports/components/ArtifactPrintView/dropLeadingTitleHeading';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
 import { WireframeVariantAction } from '../../../wireframes/components/WireframeVariantAction';
-import { ArtifactProse } from '../ArtifactProse';
+import { ArtifactPlanBody } from './ArtifactPlanBody';
 import { artifactActions, type ArtifactActionSubject } from './artifactActions';
 import type { ArtifactDocumentSubject } from './artifactShellSubject';
 import { ArtifactDrawerToggles } from './ArtifactDrawerToggles';
@@ -56,10 +61,14 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const [isSpawning, setIsSpawning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const partRows = usePlanPartRows({ sessionId, plan, agents });
+  const hasRun = plan !== null && plan.consumptionCount > 0;
+  const progress = planPartsProgress({ rows: partRows, hasRun });
+  const isPlanRunning = progress.kind === 'running' || progress.kind === 'question';
 
   const actionSubject: ArtifactActionSubject =
     subject.kind === 'plan'
-      ? { kind: 'plan', status: subject.plan.status }
+      ? { kind: 'plan', status: subject.plan.status, isRunning: isPlanRunning }
       : { kind: subject.kind, status: artifact.status };
   const set = artifactActions({ subject: actionSubject });
   const copyLabel = artifact.sourceFormat === 'json' ? 'Copy JSON' : 'Copy markdown';
@@ -244,7 +253,8 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         presentation={
           plan === null
             ? describeArtifactStatus({ kind: artifact.kind, status: artifact.status })
-            : describePlanStatus({ status: plan.status, openQuestionCount })
+            : (planPartsPresentation({ progress }) ??
+              describePlanStatus({ status: plan.status, openQuestionCount }))
         }
       />
     );
@@ -301,11 +311,25 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           />
         ) : null}
         {draft === null && subject.kind === 'plan' ? (
-          <ArtifactProse
-            text={dropLeadingTitleHeading({
-              sourceText: subject.plan.bodyMd,
-              title: subject.plan.title,
+          <ArtifactPlanBody
+            plan={subject.plan}
+            rows={partRows}
+            hasRun={hasRun}
+            splitSentence={planSplitSentence({
+              count: partRows.length,
+              plannerName: creator?.name ?? null,
             })}
+            onOpenPart={(row) => {
+              if (hasRun && row.agentId !== null) {
+                void selectAgent(sessionId, row.agentId);
+                return;
+              }
+              openDrawer({
+                kind: 'plan-part',
+                sessionId,
+                payload: { planId: subject.plan.id, index: row.index },
+              });
+            }}
           />
         ) : null}
         {draft === null && subject.kind === 'report' ? (

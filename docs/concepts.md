@@ -299,6 +299,12 @@ list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
 for its details and for a chat with the agent that wrote it.
 
+The planner splits a plan into **parts** (the `clusters` of the plan). The plan
+page lists them after its goal, says who split them, and shows for each one its
+checks, the files it touches and its model (`Auto` when the planner proposed
+none). Once the plan runs, each part takes the state of the subagent that
+carries it, matched by order under the agent that ran the plan.
+
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
 
@@ -578,7 +584,7 @@ in Goodboy.
   | unmount             | Close worktree, and Reopen for a closed row       |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
   | handoff             | Suggested next: Implementer, the next brief       |
-  | cluster             | subagent                                          |
+  | cluster             | part (in a plan), subagent (once it runs)         |
   | lens                | tab                                               |
   | studio              | the page name alone: Workflows, Impact, Providers |
   | materialize         | add to this session                               |

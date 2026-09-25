@@ -143,6 +143,20 @@ describe('drawer slice', () => {
     expect(h.get().drawer).toBeNull();
   });
 
+  it('closes a plan part drawer when another artifact takes the focus', () => {
+    const plan = 'plan-1' as ArtifactId;
+    h.focusArtifact(SESSION_ID, plan);
+    h.slice.openDrawer({
+      kind: 'plan-part',
+      sessionId: SESSION_ID,
+      payload: { planId: plan, index: 1 },
+    });
+    h.focusArtifact(SESSION_ID, plan);
+    expect(h.get().drawer).not.toBeNull();
+    h.focusArtifact(SESSION_ID, 'artifact-report' as ArtifactId);
+    expect(h.get().drawer).toBeNull();
+  });
+
   it('closes on request', () => {
     h.slice.openDrawer(GOAL_HISTORY);
     h.slice.closeDrawer();
