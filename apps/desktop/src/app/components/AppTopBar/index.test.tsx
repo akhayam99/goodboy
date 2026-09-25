@@ -62,14 +62,6 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));
 
-vi.mock('../../../features/settings/components/ReportIssuePopover', () => ({
-  ReportIssuePopover: () => <span data-testid="report-issue-popover" />,
-}));
-
-vi.mock('../../../features/onboarding/OnboardingCard', () => ({
-  OnboardingChip: () => <span data-testid="onboarding-chip" />,
-}));
-
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
@@ -228,13 +220,15 @@ describe('AppTopBar', () => {
     expect(screen.getByText('1').className).not.toContain('hidden');
   });
 
-  it('closes the right zone with the bell', () => {
+  it('closes the right zone with the bell, leaving report and setup to the Goodboy chip', () => {
     const { container } = renderBar();
     const right = zones(container)[2];
     const bell = screen.getByTestId('notification-center');
 
-    expect(right?.contains(bell)).toBe(true);
+    expect(right?.lastElementChild).toBe(bell);
     expect(right?.contains(screen.getByRole('button', { name: SPEND_LABEL }))).toBe(true);
+    expect(screen.queryByRole('button', { name: /report an issue/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /onboarding checklist/i })).toBeNull();
   });
 
   it('leaves session breadcrumbs to the page, not the drag strip', () => {

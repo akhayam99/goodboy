@@ -3,7 +3,6 @@ import type { ImpactScope } from '../../../features/impact/lib';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
-import type { MoreStudioId } from '../../components/AppFooter/moreStudios';
 
 export type InboxStudioFocus = {
   readonly provider: InboxProvider | null;
@@ -52,9 +51,9 @@ export type FooterTarget =
   | 'link'
   | 'inbox'
   | 'workflows'
-  | 'providers'
   | 'settings'
-  | MoreStudioId
+  | 'impact'
+  | 'changelog'
   | null;
 
 type FooterTargetParams = {
@@ -73,9 +72,6 @@ type InboxTargetParams = {
 };
 
 const settingsTarget = ({ focus, connected }: SettingsTargetParams): FooterTarget => {
-  if (focus.scope === 'providers') {
-    return 'providers';
-  }
   if (focus.scope === 'tools' && focus.tool !== undefined && !connected[focus.tool]) {
     return 'link';
   }

@@ -56,8 +56,7 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and the footer's beta pill takes its tint only on hover and
-  focus.
+  neutral at rest, and so is the footer's Goodboy chip.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -262,10 +261,9 @@ under zoom.
   switcher is live, and ⌘O opens its single anchored popover.
 - Theme is not in the bar. It lives in Settings > App > General and in the
   palette, like the guide and pair-device.
-- **The report control is the one exception to "the top bar never edits".**
-  Its popover drafts a bug report, which is not a record until it is filed. The
-  draft survives closing the popover. The primary action opens the full form
-  instead of sending. Precedent: VS Code's top-level issue reporter.
+- The top bar never edits. Reporting a bug, the setup checklist, the update
+  and the version are about Goodboy itself, so they live in the Goodboy chip in
+  the footer.
 
 ## Footer
 
@@ -282,15 +280,27 @@ flow.
   workspace into one backed by a git repository happens in the workspace link
   and convert flow, not in the footer.
 
-Centre: the beta pill and, while an update is pending, the update pip.
+Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
+the Apple menu or Linear's help menu does. Its label says one thing, in this
+order: an update is ready, setup is unfinished (with its progress), or
+"Goodboy beta". Its popover holds the version and release notes, the update,
+the setup checklist, Report a bug (the draft survives closing), What's new,
+keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
+form, and its primary action opens the full form instead of sending. The
+popover opens by itself once, when the first project is added; the checklist
+has no floating card.
 
-Right: the launchers reached by name and a `More` popover for the rest.
+Right: Inbox, Workflows and Settings. Settings opens on the current workspace
+when there is one. Providers & models is a Settings scope, reached from the
+Settings rail and the palette, so it has no footer launcher. Impact opens from
+the spend figure and the palette, Changelog from the Goodboy chip and the
+palette, so neither earns a footer entry.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
 drop together and the glyphs stay, with the name in the tooltip. The first
-link action keeps its label, since it is the only thing on the left. The beta
-pill and the update pip never hide. Past that the glyph strip scrolls.
+link action keeps its label, since it is the only thing on the left. The
+Goodboy chip never hides. Past that the glyph strip scrolls.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one
@@ -299,12 +309,12 @@ pill and the update pip never hide. Past that the glyph strip scrolls.
 - Exactly one integration control has the active fill. It sits on the open
   glyph, or on the link action when that integration is disconnected. Opening
   any studio closes the others.
-- **Before any workspace exists, the footer keeps its app half**: Providers,
-  Settings, the beta pill and the update pip. The integration strip, Inbox,
-  Workflows and More belong to a workspace and wait for one. Settings then
-  lists only App and Providers & models, and Providers opens on an account
-  instead of on the workspace defaults. Precedent: VS Code keeps its status bar
-  and Manage gear with no folder open.
+- **Before any workspace exists, the footer keeps its app half**: Settings and
+  the Goodboy chip. The integration strip, Inbox and Workflows belong to a
+  workspace and wait for one. Settings then opens on App and lists only App and
+  Providers & models, and Providers opens on an account instead of on the
+  workspace defaults. Precedent: VS Code keeps its status bar and Manage gear
+  with no folder open.
 
 ## Shortcuts
 

@@ -1,18 +1,15 @@
 import { Divider } from '@goodboy/ui';
-import { useAppStore } from '../../../store';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
-import { UpdateIndicator } from '../../../features/updater/components/UpdateIndicator';
-import { BetaPill } from '../../../shared/components/BetaPill';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { FOOTER_INTEGRATIONS } from './categories';
 import { FooterButton } from './FooterButton';
+import { GoodboyChip } from './GoodboyChip';
 import { IntegrationAddPopover } from './IntegrationAddPopover';
 import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../features/integrations/components/IntegrationGlyph';
-import { MoreStudiosPopover } from './MoreStudiosPopover';
 import type { ConnectedIntegrations, FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 import type { ShellFooterScope } from '../../shellArrangement';
 
@@ -25,10 +22,9 @@ type Props = {
   readonly onOpenIntegration: (params: { readonly provider: IntegrationGlyphProvider }) => void;
   readonly onOpenInbox: () => void;
   readonly onOpenWorkflows: () => void;
-  readonly onOpenProviders: () => void;
   readonly onOpenSettings: () => void;
-  readonly onOpenImpact: () => void;
   readonly onOpenChangelog: () => void;
+  readonly onOpenShortcuts: () => void;
 };
 
 export const AppFooter = ({
@@ -38,14 +34,10 @@ export const AppFooter = ({
   onOpenIntegration,
   onOpenInbox,
   onOpenWorkflows,
-  onOpenProviders,
   onOpenSettings,
-  onOpenImpact,
   onOpenChangelog,
+  onOpenShortcuts,
 }: Props) => {
-  const noProviderConnected = useAppStore(
-    (s) => !s.providers.some((p) => p.connection === 'connected'),
-  );
   const connectedMembers = FOOTER_INTEGRATIONS.filter((member) => connected[member.provider]);
   const isWorkspace = scope === 'workspace';
 
@@ -90,9 +82,8 @@ export const AppFooter = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <BetaPill />
-          <UpdateIndicator variant="pip" onOpenChangelog={onOpenChangelog} />
+        <div className="flex items-center">
+          <GoodboyChip onOpenChangelog={onOpenChangelog} onOpenShortcuts={onOpenShortcuts} />
         </div>
 
         <div className="flex items-center gap-0.5">
@@ -117,15 +108,6 @@ export const AppFooter = ({
             </>
           )}
           <FooterButton
-            icon={<CONCEPT_ICONS.providers size={ICON_SIZE.control} aria-hidden />}
-            label="Providers"
-            tone={CONCEPT_TONE.providers}
-            title="Connect and manage your provider accounts"
-            onClick={onOpenProviders}
-            pulse={noProviderConnected && target !== 'providers'}
-            active={target === 'providers'}
-          />
-          <FooterButton
             icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} aria-hidden />}
             label="Settings"
             tone={CONCEPT_TONE.settings}
@@ -133,15 +115,6 @@ export const AppFooter = ({
             onClick={onOpenSettings}
             active={target === 'settings'}
           />
-          {isWorkspace && (
-            <MoreStudiosPopover
-              target={target}
-              openers={{
-                impact: onOpenImpact,
-                changelog: onOpenChangelog,
-              }}
-            />
-          )}
         </div>
       </div>
     </div>

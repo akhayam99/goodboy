@@ -21,7 +21,6 @@ import { useWindowPresence } from './features/workspace/hooks/useWindowPresence'
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
-import { OnboardingCard } from './features/onboarding/OnboardingCard';
 import { openRunningScript } from './features/scripts/openRunningScript';
 import type { RunningScript } from './features/scripts/hooks/useRunningScripts';
 import { listenBridgeCommands } from './features/companion/commandExecutor';
@@ -91,11 +90,9 @@ export const App = () => {
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,
-    openImpact,
     openInbox,
     openIntegration,
     openPalette,
-    openProviders,
     openSettings,
     openShortcutHelp,
     openSpend,
@@ -231,10 +228,9 @@ export const App = () => {
             onOpenIntegration={openIntegration}
             onOpenInbox={openInbox}
             onOpenWorkflows={openWorkflows}
-            onOpenProviders={openProviders}
             onOpenSettings={openSettings}
-            onOpenImpact={openImpact}
             onOpenChangelog={openChangelog}
+            onOpenShortcuts={openShortcutHelp}
           />
         }
         leftHidden={arrangement.leftHidden}
@@ -284,8 +280,6 @@ export const App = () => {
             ) : (
               <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
             )}
-
-            <OnboardingCard />
           </div>
         }
         studio={studio}

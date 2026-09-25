@@ -29,6 +29,11 @@ type Allowance = {
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
+    count: 2,
+    reason: 'chrome',
+  },
+  'apps/desktop/src/app/components/AppFooter/GoodboyChip/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 2, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
@@ -205,9 +210,9 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/settings/components/ReportIssuePopover/index.tsx': {
-    count: 2,
-    reason: 'debt',
+  'apps/desktop/src/features/settings/components/ReportIssueForm/index.tsx': {
+    count: 1,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/settings/components/ReportIssueStudio/index.tsx': {
     count: 1,

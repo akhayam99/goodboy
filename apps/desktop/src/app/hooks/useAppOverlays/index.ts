@@ -83,10 +83,13 @@ export const useAppOverlays = ({
 
   const openAddWorkspace = useCallback(() => open({ overlay: { kind: 'addWorkspace' } }), [open]);
 
+  const hasWorkspace = currentWorkspace !== null;
   const openSettings = useCallback(() => {
     clearCurrentSessionStudio();
-    open({ overlay: { kind: 'settings', focus: { scope: 'app' } } });
-  }, [open]);
+    open({
+      overlay: { kind: 'settings', focus: { scope: hasWorkspace ? 'workspace' : 'app' } },
+    });
+  }, [hasWorkspace, open]);
 
   const openSpend = useCallback(
     () => open({ overlay: { kind: 'impact', scope: { kind: 'overview' } } }),

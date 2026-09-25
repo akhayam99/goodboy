@@ -13,20 +13,16 @@ vi.mock('../../../../store', async () => {
   return { useAppStore };
 });
 
-import { ReportIssuePopover } from './index';
+import { ReportIssueForm } from './index';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
 import { useAppStore } from '../../../../store';
 import { initialBugReportDraftState } from '../../../../store/slices/bugReportDraft/state';
-
-const openPopover = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^Report an issue/ }));
-};
 
 const describeIssue = (description: string) => {
   fireEvent.change(screen.getByLabelText('Description'), { target: { value: description } });
 };
 
-const screenshot = (name: string, sizeBytes = 1024): File => {
+const screenshot = ({ name, sizeBytes = 1024 }: { name: string; sizeBytes?: number }): File => {
   const file = new File(['shot'], name, { type: 'image/png' });
   Object.defineProperty(file, 'size', { value: sizeBytes });
   return file;
@@ -42,43 +38,24 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ReportIssuePopover', () => {
-  it('keeps what was typed when the popover closes and opens again', () => {
-    render(<ReportIssuePopover />);
-
-    openPopover();
-    fireEvent.click(screen.getByRole('tab', { name: 'Idea' }));
-    describeIssue('The board keeps the archived session');
-    fireEvent.keyDown(window, { key: 'Escape' });
-
-    expect(screen.queryByRole('dialog', { name: 'Report an issue' })).toBeNull();
-
-    openPopover();
-
-    expect((screen.getByLabelText('Description') as HTMLTextAreaElement).value).toBe(
-      'The board keeps the archived session',
-    );
-    expect(screen.getByRole('tab', { name: 'Idea' }).getAttribute('aria-selected')).toBe('true');
-  });
-
+describe('ReportIssueForm', () => {
   it('holds the draft in the store, so a fresh mount still carries it', () => {
-    const first = render(<ReportIssuePopover />);
-    openPopover();
+    const first = render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Idea' }));
     describeIssue('Terminal loses focus on resize');
     first.unmount();
 
-    render(<ReportIssuePopover />);
-    openPopover();
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
     expect((screen.getByLabelText('Description') as HTMLTextAreaElement).value).toBe(
       'Terminal loses focus on resize',
     );
+    expect(screen.getByRole('tab', { name: 'Idea' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('empties the draft on a reset', () => {
-    render(<ReportIssuePopover />);
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
-    openPopover();
     describeIssue('Diff shows the wrong file');
     fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
@@ -88,26 +65,25 @@ describe('ReportIssuePopover', () => {
     );
   });
 
-  it('hands the draft to the full report form and closes', () => {
+  it('hands the draft to the full report form', () => {
     const onOpenStudio = vi.fn();
+    const onOpenFullForm = vi.fn();
     window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenStudio);
-    render(<ReportIssuePopover />);
+    render(<ReportIssueForm onOpenFullForm={onOpenFullForm} />);
 
-    openPopover();
     describeIssue('Session cost is stale');
     fireEvent.click(screen.getByRole('button', { name: 'Add details and send' }));
     window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, onOpenStudio);
 
     expect(onOpenStudio).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Report an issue' })).toBeNull();
+    expect(onOpenFullForm).toHaveBeenCalledOnce();
     expect(useAppStore.getState().bugReportDraft.description).toBe('Session cost is stale');
   });
 
   it('attaches a pasted screenshot and shows it as a thumbnail', async () => {
-    render(<ReportIssuePopover />);
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
-    openPopover();
-    pasteFiles([screenshot('board.png')]);
+    pasteFiles([screenshot({ name: 'board.png' })]);
 
     const thumbnail = (await screen.findByAltText('board.png')) as HTMLImageElement;
     expect(thumbnail.src.startsWith('data:image/png')).toBe(true);
@@ -115,10 +91,9 @@ describe('ReportIssuePopover', () => {
   });
 
   it('drops a pasted screenshot again from its remove button', async () => {
-    render(<ReportIssuePopover />);
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
-    openPopover();
-    pasteFiles([screenshot('board.png')]);
+    pasteFiles([screenshot({ name: 'board.png' })]);
     fireEvent.click(await screen.findByRole('button', { name: 'Remove board.png' }));
 
     expect(screen.queryByAltText('board.png')).toBeNull();
@@ -126,48 +101,22 @@ describe('ReportIssuePopover', () => {
   });
 
   it('refuses a screenshot over the size cap and says why', async () => {
-    render(<ReportIssuePopover />);
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
-    openPopover();
-    pasteFiles([screenshot('huge.png', 6 * 1024 * 1024)]);
+    pasteFiles([screenshot({ name: 'huge.png', sizeBytes: 6 * 1024 * 1024 })]);
 
     expect(await screen.findByText('huge.png is over 5MB.')).toBeDefined();
     expect(useAppStore.getState().bugReportDraft.images).toHaveLength(0);
   });
 
   it('keeps the attached screenshots across a fresh mount', async () => {
-    const first = render(<ReportIssuePopover />);
-    openPopover();
-    pasteFiles([screenshot('board.png')]);
+    const first = render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
+    pasteFiles([screenshot({ name: 'board.png' })]);
     await screen.findByAltText('board.png');
     first.unmount();
 
-    render(<ReportIssuePopover />);
-    openPopover();
+    render(<ReportIssueForm onOpenFullForm={vi.fn()} />);
 
     expect(screen.getByAltText('board.png')).toBeDefined();
-  });
-
-  it('shows a dot on the trigger while a draft is waiting, and hides it once reset', () => {
-    render(<ReportIssuePopover />);
-
-    expect(screen.queryByTestId('report-issue-draft-dot')).toBeNull();
-
-    openPopover();
-    describeIssue('Session cost is stale');
-
-    expect(screen.getByTestId('report-issue-draft-dot')).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
-
-    expect(screen.queryByTestId('report-issue-draft-dot')).toBeNull();
-  });
-
-  it('shows the draft dot when only the studio title is waiting', () => {
-    useAppStore.getState().setBugReportDraft({ title: 'Terminal loses focus' });
-
-    render(<ReportIssuePopover />);
-
-    expect(screen.getByTestId('report-issue-draft-dot')).toBeDefined();
   });
 });

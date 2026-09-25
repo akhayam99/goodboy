@@ -27,7 +27,7 @@ const CASES: ReadonlyArray<readonly [string, Overlay | null, FooterTarget]> = [
   ['nothing open', null, null],
   ['app settings', { kind: 'settings', focus: { scope: 'app' } }, 'settings'],
   ['workspace settings', { kind: 'settings', focus: { scope: 'workspace' } }, 'settings'],
-  ['providers settings', { kind: 'settings', focus: { scope: 'providers' } }, 'providers'],
+  ['providers settings', { kind: 'settings', focus: { scope: 'providers' } }, 'settings'],
   ['tools settings without a tool', { kind: 'settings', focus: { scope: 'tools' } }, 'settings'],
   [
     'tools settings on a disconnected tool',

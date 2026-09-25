@@ -1,7 +1,5 @@
 import { Divider } from '@goodboy/ui';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
-import { ReportIssuePopover } from '../../../features/settings/components/ReportIssuePopover';
-import { OnboardingChip } from '../../../features/onboarding/OnboardingCard';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { CommandCenter } from './CommandCenter';
@@ -40,11 +38,7 @@ export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript }: Props) => (
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 
-        <div className="flex shrink-0 items-center gap-0.5">
-          <ReportIssuePopover />
-          <NotificationCenter />
-          <OnboardingChip />
-        </div>
+        <NotificationCenter />
       </div>
     </div>
     <Divider />

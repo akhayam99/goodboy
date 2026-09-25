@@ -100,8 +100,9 @@ and update `APPLE_CERTIFICATE_PASSWORD`.
 
 On launch, packaged builds check
 `releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, an "Update to X" chip shows up in `AppFooter` and in
-`WorkspaceLauncher`. Clicking it opens an inline confirm anchored to the chip
+newer version exists, the footer's Goodboy chip says "Update ready" and its
+popover offers "Restart to update", and an "Update to X" chip shows up in
+`WorkspaceLauncher`. Clicking that chip opens an inline confirm anchored to it
 (no dialog). It says how many agents a restart stops, links "What's new" to
 that release in the changelog, and starts "Download and restart". While the
 update downloads, the chip reads "Downloading 42%" (or "Downloading" when the

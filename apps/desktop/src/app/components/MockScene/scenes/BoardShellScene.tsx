@@ -85,9 +85,8 @@ const BoardShellSceneContent = () => {
           onOpenIntegration={noop}
           onOpenInbox={noop}
           onOpenWorkflows={noop}
-          onOpenProviders={noop}
           onOpenSettings={noop}
-          onOpenImpact={noop}
+          onOpenShortcuts={noop}
           onOpenChangelog={noop}
         />
       }

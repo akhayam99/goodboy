@@ -758,8 +758,7 @@ never mounts and unmounts its panel by hand.
   cycles, then rest) on an element that now needs the user, never one that
   is working.
 - `soft-pulse`: the only animation in the app for a lasting state. It breathes
-  a state that holds and is alive: the Providers launcher icon (never its
-  label) while no provider is connected, the centre dot of a running
+  a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
   progress arc (which then replaces the centre dot), a running tool icon or
   scout dot, and the boot splash status. On the rail it sits inside the

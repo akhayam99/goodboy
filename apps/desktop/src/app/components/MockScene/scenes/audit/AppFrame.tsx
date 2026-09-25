@@ -89,9 +89,8 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
             onOpenIntegration={overlays.openIntegration}
             onOpenInbox={overlays.openInbox}
             onOpenWorkflows={overlays.openWorkflows}
-            onOpenProviders={overlays.openProviders}
             onOpenSettings={overlays.openSettings}
-            onOpenImpact={overlays.openImpact}
+            onOpenShortcuts={overlays.openShortcutHelp}
             onOpenChangelog={overlays.openChangelog}
           />
         }
