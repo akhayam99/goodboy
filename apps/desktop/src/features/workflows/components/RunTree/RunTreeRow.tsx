@@ -34,6 +34,7 @@ type Props = {
   readonly routing: RunTreeRouting;
   readonly costUsd: number;
   readonly isNested: boolean;
+  readonly hasActionColumn: boolean;
   readonly parentStepName: string | null;
   readonly isSelected: boolean;
   readonly isHighlighted: boolean;
@@ -46,7 +47,7 @@ type AskParams = {
   readonly ask: RowAsk | null;
 };
 
-const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
+export const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion | null } | null => {
   if (ask == null) {
     return null;
   }
@@ -71,6 +72,7 @@ export const RunTreeRow = ({
   routing,
   costUsd,
   isNested,
+  hasActionColumn,
   parentStepName,
   isSelected,
   isHighlighted,
@@ -131,7 +133,7 @@ export const RunTreeRow = ({
             <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
               {entry.stepLabel}
             </span>
-            <AgentKindChip kind={entry.agentKind} />
+            <AgentKindChip kind={entry.agentKind} className="@max-[720px]:w-18" />
             <span className="flex min-w-0 flex-1 items-center gap-2">
               <span
                 title={agent.name}
@@ -155,19 +157,21 @@ export const RunTreeRow = ({
               <TimelineRowStateLine state={item.rowState} />
             </span>
             <TimelineAgentMeta work={work} costUsd={costUsd} shouldKeepCost={!isNested} />
-            <span className={WORK_META_COLUMN.action}>
-              {answer === null ? null : (
-                <Button
-                  variant="warning"
-                  emphasis="outline"
-                  size="sm"
-                  className="h-6 shrink-0"
-                  onClick={() => onAnswer(answer.question)}
-                >
-                  Answer
-                </Button>
-              )}
-            </span>
+            {hasActionColumn ? (
+              <span className={WORK_META_COLUMN.action}>
+                {answer === null ? null : (
+                  <Button
+                    variant="warning"
+                    emphasis="outline"
+                    size="sm"
+                    className="h-6 shrink-0"
+                    onClick={() => onAnswer(answer.question)}
+                  >
+                    Answer
+                  </Button>
+                )}
+              </span>
+            ) : null}
           </InteractiveRow>
         </div>
       </div>

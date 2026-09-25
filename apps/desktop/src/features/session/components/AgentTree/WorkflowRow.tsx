@@ -232,7 +232,10 @@ export const WorkflowRow = ({
                     />
                   ) : (
                     <div className="group/name flex min-w-0 items-start gap-1.5">
-                      <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
+                      <h2
+                        title={name}
+                        className="line-clamp-2 min-w-0 break-words text-xl font-semibold leading-snug text-foreground"
+                      >
                         {name}
                       </h2>
                       <Tooltip content="Edit workflow name">
@@ -241,7 +244,7 @@ export const WorkflowRow = ({
                           onClick={rename.start}
                           aria-label="Edit workflow name"
                           className={cn(
-                            'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-faint-foreground',
+                            'mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
                             'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
                             'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                             'group-hover/name:opacity-100 motion-reduce:opacity-60',
@@ -352,93 +355,87 @@ export const WorkflowRow = ({
           fadeSize={24}
         >
           <WorkTimeProvider sessionId={task.id} workspaceId={task.workspaceId}>
-            <div
-              className={cn('flex flex-col gap-2', PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}
-            >
+            <div className={cn(PANE_RHYTHM.stack, PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
               {!isDiscarded && !isDynamic && (
-                <div className="pb-1">
-                  <WorkflowNextStepCta
-                    workflow={workflow}
-                    runs={wfAgents}
-                    roleModels={roleModels}
-                    agentModel={ctaRouting.agentModel}
-                    agentProvider={ctaRouting.agentProvider}
-                    agentEffort={ctaRouting.agentEffort}
-                    sessionProvider={sessionProvider}
-                    sessionEffort={sessionEffort}
-                    blockReason={wfBlockReason}
-                    onAdvance={({ step, isConfirmed }) => {
-                      const pending = wfAgents.find(
-                        (agent) => agent.stepId === step.id && agent.status === 'pending',
-                      );
-                      if (pending == null) {
-                        return;
-                      }
-                      void onStartStepAgent({ agent: pending, isConfirmed });
-                    }}
-                  />
-                </div>
+                <WorkflowNextStepCta
+                  workflow={workflow}
+                  runs={wfAgents}
+                  roleModels={roleModels}
+                  agentModel={ctaRouting.agentModel}
+                  agentProvider={ctaRouting.agentProvider}
+                  agentEffort={ctaRouting.agentEffort}
+                  sessionProvider={sessionProvider}
+                  sessionEffort={sessionEffort}
+                  blockReason={wfBlockReason}
+                  onAdvance={({ step, isConfirmed }) => {
+                    const pending = wfAgents.find(
+                      (agent) => agent.stepId === step.id && agent.status === 'pending',
+                    );
+                    if (pending == null) {
+                      return;
+                    }
+                    void onStartStepAgent({ agent: pending, isConfirmed });
+                  }}
+                />
               )}
               {!isDiscarded && isDynamic && (
-                <div className="pb-1">
-                  <OrchestratorStrip
-                    sessionId={task.id}
-                    run={run}
-                    agents={wfAgents}
-                    steps={workflow.steps}
-                    costUsd={costUsd}
-                    isOrchestrating={isOrchestrating}
-                  />
-                </div>
-              )}
-              {wfAgents.length > 0 ? (
-                <RunTree
+                <OrchestratorStrip
                   sessionId={task.id}
-                  runId={run.id}
+                  run={run}
+                  agents={wfAgents}
+                  steps={workflow.steps}
+                  costUsd={costUsd}
+                  isOrchestrating={isOrchestrating}
+                />
+              )}
+              <div className="flex min-w-0 flex-col gap-2">
+                {wfAgents.length > 0 ? (
+                  <RunTree
+                    sessionId={task.id}
+                    runId={run.id}
+                    tree={tree}
+                    routing={{
+                      stepById,
+                      roleModels,
+                      sessionProvider,
+                      sessionEffort,
+                    }}
+                    selectedAgentId={selectedAgentId}
+                    highlightedStepId={highlightedStepId}
+                    onHighlight={setHoveredStepId}
+                    onSelect={onPickAgent}
+                    onAnswer={onAnswerQuestion}
+                  />
+                ) : (
+                  <p className="pb-1 text-2xs text-faint-foreground">
+                    No agents yet for this workflow.
+                  </p>
+                )}
+                {!isDiscarded && !isCompleted && (
+                  <WorkflowAddStep
+                    sessionId={task.id}
+                    workspaceId={workflow.workspaceId}
+                    workflowRunId={run.id}
+                    stepCount={total}
+                  />
+                )}
+              </div>
+              <WorkflowRunSummary summary={run.orchestratorSummary} />
+              <div className="flex min-w-0 flex-col gap-2">
+                <WorkflowRunAsk
+                  goal={(run.goal ?? workflow.goal ?? '').trim()}
+                  processText={(workflow.processText ?? '').trim()}
+                />
+                <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+              </div>
+              {isDynamic && (
+                <WorkflowDecisions
+                  run={run}
+                  steps={workflow.steps}
                   tree={tree}
-                  routing={{
-                    stepById,
-                    roleModels,
-                    sessionProvider,
-                    sessionEffort,
-                  }}
-                  selectedAgentId={selectedAgentId}
                   highlightedStepId={highlightedStepId}
                   onHighlight={setHoveredStepId}
-                  onSelect={onPickAgent}
-                  onAnswer={onAnswerQuestion}
                 />
-              ) : (
-                <p className="pb-1 text-2xs text-faint-foreground">
-                  No agents yet for this workflow.
-                </p>
-              )}
-              {!isDiscarded && !isCompleted && (
-                <WorkflowAddStep
-                  sessionId={task.id}
-                  workspaceId={workflow.workspaceId}
-                  workflowRunId={run.id}
-                  stepCount={total}
-                />
-              )}
-              <WorkflowRunSummary summary={run.orchestratorSummary} />
-              {expanded && (
-                <div className="flex flex-col gap-2">
-                  <WorkflowRunAsk
-                    goal={(run.goal ?? workflow.goal ?? '').trim()}
-                    processText={(workflow.processText ?? '').trim()}
-                  />
-                  <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
-                  {isDynamic && (
-                    <WorkflowDecisions
-                      run={run}
-                      steps={workflow.steps}
-                      tree={tree}
-                      highlightedStepId={highlightedStepId}
-                      onHighlight={setHoveredStepId}
-                    />
-                  )}
-                </div>
               )}
               {isCompleted && (
                 <div className="flex shrink-0 flex-wrap items-center gap-1">

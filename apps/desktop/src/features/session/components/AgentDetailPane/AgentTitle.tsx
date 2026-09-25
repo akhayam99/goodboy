@@ -36,8 +36,12 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
   }
 
   return (
-    <span className="group/title flex min-w-0 items-center gap-1.5">
-      <span className="truncate" onDoubleClick={rename.start} title={agent.name}>
+    <span className="group/title flex min-w-0 items-start gap-1.5">
+      <span
+        className="line-clamp-2 min-w-0 break-words"
+        onDoubleClick={rename.start}
+        title={agent.name}
+      >
         {agent.name}
       </span>
       <Tooltip content="Rename agent" side="top">
@@ -46,7 +50,7 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
           onClick={rename.start}
           aria-label="Rename agent"
           className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
+            'mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
             'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
             'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             'group-hover/title:opacity-100 motion-reduce:opacity-60',

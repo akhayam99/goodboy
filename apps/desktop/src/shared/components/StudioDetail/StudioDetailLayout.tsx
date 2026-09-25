@@ -62,7 +62,7 @@ export const StudioDetailLayout = ({
                 {banner}
               </div>
             )}
-            {tabs}
+            {tabs != null ? <div className="flex min-w-0">{tabs}</div> : null}
           </div>
         </div>
         <Divider />

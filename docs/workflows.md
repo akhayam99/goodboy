@@ -215,7 +215,9 @@ running one, and NOW closes the tree at the top. The run lane starts on the
 first step, so the tree has no session spine and no time column. Sub-agents
 sit one column right, on the run's colour. The view scrolls to the row that is
 running or waiting on you when it opens. The run header and the Next action
-strip stay pinned while the tree scrolls.
+strip stay pinned while the tree scrolls. A long run name wraps to a second
+line in the header before it truncates, and so does a long agent name in the
+agent header.
 
 The run tree shows which agent is waiting on you. The agent that asked, even a
 sub-agent under a step, gets the question mark on its node and an **Answer**
@@ -224,6 +226,9 @@ that answers a question for a step never shows it, in the tree or in the
 activity feed, because the question belongs to that step. Every row ends with
 the same meta as the activity feed: the model, the effort and what the row has
 spent, with a dotted model name when routing picked another one than the plan.
+The Answer column exists only while a row in the tree has an Answer, so a tree
+with nothing to answer gives that width to the titles. In a narrow pane the
+kind chip narrows and the effort column hides, so the title keeps its room.
 Clicking a row opens that agent.
 
 An agent's Brief draws its sub-agents with the same tree, under **Subagents**

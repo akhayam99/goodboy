@@ -4,7 +4,7 @@ import type { TimelineAgentEntry } from '../../../session/timeline/buildTimeline
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
 import { TimelineNowRule } from '../../../session/components/SessionWorkspace/parts/TimelinePane/TimelineNowRule';
 import { useAgentSpendById } from '../../hooks/useAgentSpendById';
-import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
+import { RunTreeRow, answerOf, type RunTreeRouting } from './RunTreeRow';
 import type { RunTreeModel } from './useRunTree';
 
 type Props = {
@@ -62,6 +62,9 @@ export const RunTreeRows = ({
     }
   }, [activeRowId, scrollKey]);
 
+  const hasActionColumn = stream.items.some(
+    (item) => item.kind === 'row' && answerOf({ ask: item.rowState.ask }) !== null,
+  );
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
     if (item.kind === 'row' && isAgentRow(item)) {
@@ -114,6 +117,7 @@ export const RunTreeRows = ({
               routing={routing}
               costUsd={spendByAgentId.get(item.entry.agent.id) ?? 0}
               isNested={isNested}
+              hasActionColumn={hasActionColumn}
               parentStepName={parentNameOf({ entry: item.entry })}
               isSelected={item.entry.agent.id === selectedAgentId}
               isHighlighted={stepId !== null && stepId === highlightedStepId}
