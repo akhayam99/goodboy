@@ -419,13 +419,15 @@ its own lane segment over its own height, so an expanded row lengthens its
 segment and needs no second lane engine. Step 1 sits at the bottom, just
 above the launch bar, and **Add step** is the top node, because the future is
 up. The list keeps run order in the DOM and reverses it with
-`flex-col-reverse`. The meta columns are `WorkMeta` with no `@container`
-above them: the form column is narrower than 720px and still shows the
-effort, since choosing it is the point of the form. A row opens in place as
+`flex-col-reverse`. The form sits on the pane measure, the same column as the
+workflow detail, so the plan keeps its width when the run starts. The meta
+columns are `WorkMeta` with no `@container` above them, so the effort shows at
+every width, since choosing it is the point of the form. The row's trailing
+column is `WORK_META_COLUMN.menu`, sized to the reorder grip it holds. A row opens in place as
 one group (the rule in `docs/styling.md`), and its model axes are the
 `RoutingPicker` body mounted inline, not a copy of it. Once the workspace has
-enough measured steps, each row's time column holds its usual range and its
-cost column a cost range, in the same faint as the planned routing, and the
+enough measured steps and at least one step in the plan has an estimate, each
+row's time column holds its usual range and its cost column a cost range, in the same faint as the planned routing, and the
 name row carries the plan's total in a muted chip. Nothing in the form draws a
 percentage or an arc: nothing has run yet.
 

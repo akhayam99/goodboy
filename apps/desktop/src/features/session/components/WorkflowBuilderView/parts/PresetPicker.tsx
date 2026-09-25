@@ -17,7 +17,7 @@ type Props = {
 const SEARCH_THRESHOLD = 5;
 
 export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete }: Props) => {
-  const dropdown = useDropdown({ disabled, align: 'end', width: 'w-80', expectedHeight: 320 });
+  const dropdown = useDropdown({ disabled, align: 'end', width: 'w-96', expectedHeight: 320 });
   const { open, close, toggle } = dropdown;
   const [query, setQuery] = useState('');
   const [confirmingId, setConfirmingId] = useState<WorkflowId | null>(null);

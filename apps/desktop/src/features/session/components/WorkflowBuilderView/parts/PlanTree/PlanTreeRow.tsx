@@ -129,7 +129,7 @@ export const PlanTreeRow = ({
             }
             cost={estimate?.cost ?? null}
           />
-          <span className={WORK_META_COLUMN.action}>
+          <span className={WORK_META_COLUMN.menu}>
             <Tooltip content="Drag or use the arrow keys to reorder">
               <button
                 type="button"

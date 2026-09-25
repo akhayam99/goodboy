@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Button,
   Chip,
   EmptyState,
   Notice,
@@ -888,17 +889,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         />
       ) : null
     ) : mode === 'custom' ? (
-      <Chip
-        as="button"
-        tone={isPlannerOpen ? 'primary' : 'neutral'}
-        size="control"
-        shape="badge"
-        icon={<CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />}
-        label="Draft with planner"
-        ariaPressed={isPlannerOpen}
+      <Button
+        size="sm"
+        variant={isPlannerOpen ? 'primary' : 'secondary'}
+        emphasis="outline"
+        aria-pressed={isPlannerOpen}
         disabled={blocked}
         onClick={() => setIsPlannerOpen((open) => !open)}
-      />
+      >
+        <CONCEPT_ICONS.enhance size={ICON_SIZE.control} aria-hidden />
+        Draft with planner
+      </Button>
     ) : orchestratorProviders.length > 0 ? (
       <ProviderPoolChip
         providers={orchestratorProviders}
@@ -921,7 +922,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     isOrchestrated: mode === 'dynamic',
     isReviewed: !autoRun && steps.length > 1,
   });
-  const hasStepEstimates = estimates !== null && mode !== 'dynamic';
+  const hasStepEstimates =
+    estimates !== null &&
+    mode !== 'dynamic' &&
+    [...estimates.steps.values()].some((estimate) => estimate.note !== null);
 
   const renderPlanTree = () => (
     <PlanTree
@@ -1111,100 +1115,106 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         <ScrollFade className="min-h-0 w-full flex-1">
           <div
             className={cn(
-              PANE_RHYTHM.measure.reading,
+              PANE_RHYTHM.measure.pane,
               PANE_RHYTHM.column,
-              PANE_RHYTHM.stack,
               PANE_RHYTHM.body,
+              'flex flex-col gap-8',
             )}
           >
-            <BuilderTitleField
-              value={title}
-              placeholder={defaultTitle}
-              suggestion={activeSuggestion}
-              disabled={blocked}
-              onChange={setTitle}
-              onAcceptSuggestion={() => {
-                if (activeSuggestion !== null) {
-                  setTitle(activeSuggestion);
-                }
-              }}
-              origin={
-                isPresetEdited && basePreset !== null ? (
-                  <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
-                    {`Edited from ${basePreset.name}`}
-                  </span>
-                ) : null
-              }
-              estimate={
-                estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
-              }
-            />
-            <GoalField
-              value={goalText}
-              hasSessionGoal={sessionGoal.length > 0}
-              isSessionGoal={goalText === sessionGoal}
-              canUndo={goalHistory.length > 0}
-              isPolishing={polishing}
-              isDragging={isDraggingFiles}
-              disabled={busy}
-              composerRef={composerRef}
-              fileInputRef={fileInputRef}
-              attachments={attachments.map((a) => (
-                <AttachmentChip
-                  key={a.id}
-                  {...pendingAttachmentProps(a)}
-                  onRemove={() => removeAttachment(a.id)}
-                />
-              ))}
-              onChange={onGoalChange}
-              onBlur={() => requestTitleSuggestion(goalText)}
-              onFiles={onFileInputChange}
-              onUseSessionGoal={onUseSessionGoal}
-              onUndo={onUndoGoal}
-              onPolish={() => void onPolishGoal()}
-            />
-            <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
-            {mode === 'custom' && isPlannerOpen ? (
-              <PlannerDraftRow
-                process={processText}
-                hasPlan={plan !== null}
-                isPlanning={planning}
+            <div className="flex flex-col gap-3">
+              <BuilderTitleField
+                value={title}
+                placeholder={defaultTitle}
+                suggestion={activeSuggestion}
                 disabled={blocked}
-                connectedProviders={connectedProviders}
-                providerOverride={plannerProviderOverride}
-                modelOverride={plannerModelOverride}
-                effort={plannerEffort}
-                recommendedProvider={resolvedPlanTaskModel.providerId}
-                recommendedModel={plannerRecommendedModel}
-                onProcess={setProcessText}
-                onProvider={(next) => {
-                  setPlannerProviderOverride(next);
-                  setPlannerModelOverride('');
+                onChange={setTitle}
+                onAcceptSuggestion={() => {
+                  if (activeSuggestion !== null) {
+                    setTitle(activeSuggestion);
+                  }
                 }}
-                onModel={setPlannerModelOverride}
-                onEffort={setPlannerEffortOverride}
-                onPlan={() => void onPlan()}
+                origin={
+                  isPresetEdited && basePreset !== null ? (
+                    <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
+                      {`Edited from ${basePreset.name}`}
+                    </span>
+                  ) : null
+                }
+                estimate={
+                  estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
+                }
               />
-            ) : null}
-            {renderPlan()}
-            {error === null ? null : (
-              <Notice
-                tone="danger"
-                placement="inline"
-                role="alert"
-                title={error.title}
-                body={error.message}
+              <GoalField
+                value={goalText}
+                hasSessionGoal={sessionGoal.length > 0}
+                isSessionGoal={goalText === sessionGoal}
+                canUndo={goalHistory.length > 0}
+                isPolishing={polishing}
+                isDragging={isDraggingFiles}
+                disabled={busy}
+                composerRef={composerRef}
+                fileInputRef={fileInputRef}
+                attachments={attachments.map((a) => (
+                  <AttachmentChip
+                    key={a.id}
+                    {...pendingAttachmentProps(a)}
+                    onRemove={() => removeAttachment(a.id)}
+                  />
+                ))}
+                onChange={onGoalChange}
+                onBlur={() => requestTitleSuggestion(goalText)}
+                onFiles={onFileInputChange}
+                onUseSessionGoal={onUseSessionGoal}
+                onUndo={onUndoGoal}
+                onPolish={() => void onPolishGoal()}
               />
-            )}
-            <LaunchBar
-              controls={launchControls}
-              reason={startGate.reason}
-              isStartDisabled={startGate.isDisabled}
-              isStarting={busy}
-              canDiscard={!draftEmpty}
-              onDiscard={resetDraft}
-              onStart={() => void onStart()}
-            />
+            </div>
+            <div className="flex flex-col gap-4">
+              <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
+              {mode === 'custom' && isPlannerOpen ? (
+                <PlannerDraftRow
+                  process={processText}
+                  hasPlan={plan !== null}
+                  isPlanning={planning}
+                  disabled={blocked}
+                  connectedProviders={connectedProviders}
+                  providerOverride={plannerProviderOverride}
+                  modelOverride={plannerModelOverride}
+                  effort={plannerEffort}
+                  recommendedProvider={resolvedPlanTaskModel.providerId}
+                  recommendedModel={plannerRecommendedModel}
+                  onProcess={setProcessText}
+                  onProvider={(next) => {
+                    setPlannerProviderOverride(next);
+                    setPlannerModelOverride('');
+                  }}
+                  onModel={setPlannerModelOverride}
+                  onEffort={setPlannerEffortOverride}
+                  onPlan={() => void onPlan()}
+                />
+              ) : null}
+              {renderPlan()}
+            </div>
+            <div className="flex flex-col gap-3">
+              {error === null ? null : (
+                <Notice
+                  tone="danger"
+                  placement="inline"
+                  role="alert"
+                  title={error.title}
+                  body={error.message}
+                />
+              )}
+              <LaunchBar
+                controls={launchControls}
+                reason={startGate.reason}
+                isStartDisabled={startGate.isDisabled}
+                isStarting={busy}
+                canDiscard={!draftEmpty}
+                onDiscard={resetDraft}
+                onStart={() => void onStart()}
+              />
+            </div>
             <DragGhost ghost={ghost} />
           </div>
         </ScrollFade>

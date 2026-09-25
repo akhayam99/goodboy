@@ -63,7 +63,8 @@ long steps like it usually take and what they usually cost, as a range
 ("12-20m", "$0.90-1.60"), and the name row carries the plan's total
 ("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
 this exact model and effort, a dash means there is not enough history for that
-step, and the tooltip always names the basis. With **Autorun** off the total
+step, and the tooltip always names the basis. When no step in the plan has an
+estimate yet, the rows show no time or cost columns at all. With **Autorun** off the total
 adds "+ your reviews", because your time between steps is not estimated. An
 orchestrated run shows a total only once the workspace has 5 finished
 orchestrated runs. The open editor repeats the step's estimate in its footer.
