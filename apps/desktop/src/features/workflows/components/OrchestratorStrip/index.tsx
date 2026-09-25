@@ -206,36 +206,38 @@ export const OrchestratorStrip = ({
           RAIL[state.tone] ?? 'border-l-border',
         )}
       >
-        <span className="flex h-4 shrink-0 items-center" aria-hidden={!isPulsing}>
-          {isPulsing ? (
-            <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
-          ) : (
-            <CONCEPT_ICONS.orchestrator
-              size={ICON_SIZE.row}
-              aria-hidden
-              className={
-                state.tone === 'neutral' ? 'text-muted-foreground' : tintClasses(state.tone).icon
-              }
-            />
-          )}
-        </span>
-        <p className="flex min-w-0 flex-1 basis-80 items-baseline gap-2">
-          <span
-            data-testid="orchestrator-state"
-            className="min-w-0 truncate text-xs font-medium text-foreground"
-            title={state.sentence}
-          >
-            {state.sentence}
+        <div className="flex min-w-0 max-w-full flex-auto items-center gap-2.5">
+          <span className="flex h-4 shrink-0 items-center" aria-hidden={!isPulsing}>
+            {isPulsing ? (
+              <StatusDot tone={pulseTone} size="sm" pulsing ariaLabel={state.sentence} />
+            ) : (
+              <CONCEPT_ICONS.orchestrator
+                size={ICON_SIZE.row}
+                aria-hidden
+                className={
+                  state.tone === 'neutral' ? 'text-muted-foreground' : tintClasses(state.tone).icon
+                }
+              />
+            )}
           </span>
-          {elapsed == null ? null : (
+          <p className="flex min-w-0 flex-1 items-baseline gap-2">
             <span
-              data-testid="orchestrator-elapsed"
-              className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+              data-testid="orchestrator-state"
+              className="min-w-0 truncate text-xs font-medium text-foreground"
+              title={state.sentence}
             >
-              {elapsed}
+              {state.sentence}
             </span>
-          )}
-        </p>
+            {elapsed == null ? null : (
+              <span
+                data-testid="orchestrator-elapsed"
+                className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+              >
+                {elapsed}
+              </span>
+            )}
+          </p>
+        </div>
         <div
           data-testid="orchestrator-controls"
           className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5"
