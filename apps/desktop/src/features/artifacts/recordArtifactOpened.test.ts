@@ -8,17 +8,12 @@ const { markArtifactOpened } = vi.hoisted(() => ({
 vi.mock('@goodboy/db', () => ({ markArtifactOpened }));
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import {
-  ARTIFACT_OPENED_DEBOUNCE_MS,
-  recordArtifactOpened,
-  resetArtifactOpenedDebounce,
-} from './recordArtifactOpened';
+import { ARTIFACT_OPENED_DEBOUNCE_MS, recordArtifactOpened } from './recordArtifactOpened';
 
 const artifactId = 'report-1' as ArtifactId;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetArtifactOpenedDebounce();
 });
 
 describe('recordArtifactOpened', () => {

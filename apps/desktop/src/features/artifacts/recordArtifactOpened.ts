@@ -23,5 +23,3 @@ export const recordArtifactOpened = async ({
   await markArtifactOpened({ db: tauriDatabase, artifactId, openedAt: now });
   return true;
 };
-
-export const resetArtifactOpenedDebounce = (): void => lastWrites.clear();
