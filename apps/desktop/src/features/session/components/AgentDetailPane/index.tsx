@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { HeaderBand, PageColumn, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
@@ -21,7 +21,7 @@ type Props = {
   readonly agent: Agent;
   readonly isChatActive: boolean;
   readonly onBack: () => void;
-  readonly eyebrow?: ReactNode;
+  readonly context?: ReactNode;
 };
 
 type Tab = 'brief' | 'transcript';
@@ -31,7 +31,7 @@ const TABS = [
   { value: 'transcript', label: 'Transcript' },
 ] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
 
-export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow }: Props) => {
+export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const hasOpenQuestions = useAppStore((state) =>
     (state.sessionOpenQuestions[session.id] ?? []).some(
@@ -76,11 +76,17 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
       ? { provider: providerOverride, model: modelOverride, effort: effortOverride }
       : null;
   const observedEffort = executed?.effort ?? null;
+  const isTranscript = tab === 'transcript';
+  const lead = (
+    <>
+      {context}
+      <AgentNextAction session={session} agent={agent} />
+    </>
+  );
 
   return (
-    <StudioDetailLayout
-      fit={tab === 'transcript' ? 'bleed' : 'fill'}
-      eyebrow={eyebrow}
+    <PaneShell
+      scroll={isTranscript ? 'self' : 'body'}
       header={
         <HeaderBand
           title={<AgentTitle agent={agent} sessionId={session.id} />}
@@ -108,16 +114,21 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
           }
         />
       }
-      banner={<AgentNextAction session={session} agent={agent} />}
       tabs={
         <StudioDetailTabs ariaLabel="Agent sections" options={TABS} value={tab} onChange={setTab} />
       }
     >
-      {tab === 'transcript' ? (
-        <ChatView session={session} isActive={isChatActive} />
+      {isTranscript ? (
+        <>
+          <PageColumn className="flex shrink-0 flex-col gap-3 pb-3 empty:hidden">{lead}</PageColumn>
+          <ChatView session={session} isActive={isChatActive} />
+        </>
       ) : (
-        <AgentBrief session={session} agent={agent} time={time ?? null} />
+        <>
+          {lead}
+          <AgentBrief session={session} agent={agent} time={time ?? null} />
+        </>
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

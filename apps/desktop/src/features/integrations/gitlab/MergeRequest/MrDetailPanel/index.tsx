@@ -1,13 +1,14 @@
 import {
   RecordDetailEmptyState,
   RecordDetailHeader,
-  StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button, ConfirmPopover, Markdown, Notice } from '@goodboy/ui';
 import { FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
-import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
+import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
 import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
 import { BranchPair } from '@goodboy/ui';
 import { RefreshIconButton } from '@goodboy/ui';
@@ -236,7 +237,8 @@ export const MrDetailPanel = ({
       (sessionId == null && projectPath == null);
 
     return (
-      <StudioDetailLayout
+      <PaneShell
+        scroll="body"
         header={
           <>
             <RecordDetailHeader
@@ -324,16 +326,16 @@ export const MrDetailPanel = ({
             onChange={setSection}
           />
         }
-        rail={
-          <MrApprovalRail
-            approval={approvals.approval}
-            isLoading={approvals.isLoading}
-            error={approvals.error}
-          />
-        }
-        properties={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
         dock={dock}
       >
+        <DetailProperties
+          entries={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
+        />
+        <MrApprovalRail
+          approval={approvals.approval}
+          isLoading={approvals.isLoading}
+          error={approvals.error}
+        />
         {mr.hasConflicts ? (
           <Notice
             tone="warning"
@@ -363,29 +365,25 @@ export const MrDetailPanel = ({
             resolveError={discussions.resolveError}
           />
         )}
-      </StudioDetailLayout>
+      </PaneShell>
     );
   }
 
   return (
-    <StudioDetailLayout
-      header={
-        <HeaderBand
-          title="New merge request"
-          meta={
-            <span className="inline-flex items-center gap-1.5 font-mono text-2xs text-muted-foreground">
-              <GitBranch size={11} aria-hidden />
-              {branch ?? 'no branch'}
-            </span>
-          }
-          actions={refreshButton}
-        />
+    <PaneShell
+      scroll="self"
+      title="New merge request"
+      meta={
+        <span className="inline-flex items-center gap-1.5 font-mono">
+          <GitBranch size={11} aria-hidden />
+          {branch ?? 'no branch'}
+        </span>
       }
-      fit="bleed"
+      actions={refreshButton}
     >
       {sessionId != null && (
         <CreateMrForm sessionId={sessionId} branch={branch} error={error} onClose={onClose} />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

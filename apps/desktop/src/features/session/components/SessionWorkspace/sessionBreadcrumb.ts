@@ -12,6 +12,7 @@ export type SessionBreadcrumbHandlers = {
   toPlansList: () => void;
   toParentAgent: () => void;
   toRootAgent: () => void;
+  toReviewHome: () => void;
 };
 
 export type SessionBreadcrumbInput = {
@@ -26,6 +27,7 @@ export type SessionBreadcrumbInput = {
   selectedParentLabel: string | null;
   selectedRootLabel: string | null;
   selectedQuestionLabel: string | null;
+  reviewModeLabel: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -50,6 +52,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedParentLabel,
     selectedRootLabel,
     selectedQuestionLabel,
+    reviewModeLabel,
     lensLabel,
     handlers,
   } = input;
@@ -169,6 +172,19 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (lens === 'plans' && focusedPlanTitle != null) {
     return sealLast([overview, plansList, { id: 'plan', label: focusedPlanTitle }]);
+  }
+
+  if (lens === 'review' && reviewModeLabel != null) {
+    return sealLast([
+      overview,
+      {
+        id: 'lens-review',
+        label: lensLabel('review'),
+        icon: LENS_ICON.review,
+        onClick: handlers.toReviewHome,
+      },
+      { id: 'review-mode', label: reviewModeLabel },
+    ]);
   }
 
   if (lens != null) {

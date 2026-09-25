@@ -1,4 +1,6 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useState, type ReactNode } from 'react';
 import { EmptyState, Skeleton, StatCard, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, LayoutList, ListTree } from 'lucide-react';
@@ -14,7 +16,6 @@ import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
 
 type IssueSection = 'overview' | 'stack' | 'breadcrumbs';
-type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly identifier: string;
@@ -35,7 +36,6 @@ type Props = {
   readonly onRetrySummary?: () => void;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
-  readonly fit?: Fit;
 };
 
 export const SentryIssueDetail = ({
@@ -57,7 +57,6 @@ export const SentryIssueDetail = ({
   onRetrySummary,
   headerActions,
   dock,
-  fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const view = sentryIssueView({
@@ -111,8 +110,8 @@ export const SentryIssueDetail = ({
   ];
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       header={
         <RecordDetailHeader
           provider="sentry"
@@ -135,9 +134,11 @@ export const SentryIssueDetail = ({
           options={options}
         />
       }
-      properties={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
       dock={dock}
     >
+      <DetailProperties
+        entries={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
+      />
       {summaryIsLoading ? (
         <div
           role="status"
@@ -181,6 +182,6 @@ export const SentryIssueDetail = ({
           <SentryBreadcrumbs breadcrumbs={view.breadcrumbs} isLoading={isLoading} error={error} />
         </StudioWidget>
       ) : null}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

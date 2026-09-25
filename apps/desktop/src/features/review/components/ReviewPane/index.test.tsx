@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
   PrComment,
   ResolvePublicationPreview,
@@ -62,19 +62,37 @@ const h = vi.hoisted(() => {
     openDiffLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
+    reviewModes: {} as Record<string, string>,
+    setReviewMode: vi.fn(({ sessionId, mode }: { sessionId: string; mode: string }) => {
+      state.reviewModes = { ...state.reviewModes, [sessionId]: mode };
+      for (const listener of listeners) {
+        listener();
+      }
+    }),
   };
-  const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
-    getState: () => state,
-  });
-  return { state, useAppStore, showToast: vi.fn() };
+  const listeners = new Set<() => void>();
+  return { state, listeners, showToast: vi.fn() };
 });
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: h.useAppStore,
-  useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
-  useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
-}));
+vi.mock('../../../../store', async () => {
+  const { useEffect, useReducer } = await import('react');
+  const useAppStore = <T,>(selector: (s: typeof h.state) => T) => {
+    const [, bump] = useReducer((count: number) => count + 1, 0);
+    useEffect(() => {
+      h.listeners.add(bump);
+      return () => {
+        h.listeners.delete(bump);
+      };
+    }, []);
+    return selector(h.state);
+  };
+  return {
+    EMPTY_ARRAY: Object.freeze([]),
+    useAppStore: Object.assign(useAppStore, { getState: () => h.state }),
+    useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
+    useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
+  };
+});
 vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({
   selectActiveProjectPrs: () => h.state.branchPrs,
 }));
@@ -242,6 +260,7 @@ const seed = () => {
   h.state.sessionExternalTasks = {};
   h.state.branchPrs = [];
   h.state.prWriteClaims = {};
+  h.state.reviewModes = {};
 };
 
 const patchPr = (patch: Record<string, unknown>) => {
@@ -271,14 +290,45 @@ describe('ReviewPane', () => {
     expect(screen.queryByRole('listbox', { name: 'Review conversations' })).toBeNull();
   });
 
-  it('reaches PR details from the dock and comes back to the queue', () => {
+  it('reaches PR details from the dock and comes back to the queue through the crumb', () => {
     render(<ReviewPane session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
     expect(screen.queryByTestId('resolve-queue')).toBeNull();
+    expect(h.state.reviewModes[SESSION_ID]).toBe('pr_details');
+    expect(screen.getByRole('region', { name: 'PR details' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Back to conversations' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
+    act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
+  });
+
+  it('puts the mode body in the same page column as the pull request header', () => {
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR activity' }));
+
+    const title = screen.getByRole('heading', {
+      level: 1,
+      name: 'Retry failed requests before opening the connection',
+    });
+    const body = screen.getByRole('region', { name: 'PR activity' });
+    const widthOf = (node: HTMLElement) =>
+      (node.closest('[data-page-column]')?.className ?? '')
+        .split(' ')
+        .filter((entry) => entry === 'mx-auto' || entry.startsWith('max-w-'))
+        .join(' ');
+    expect(widthOf(title)).toContain('mx-auto');
+    expect(widthOf(body)).toBe(widthOf(title));
+  });
+
+  it('drops back to the queue when the pane unmounts', () => {
+    const { unmount } = render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
+    unmount();
+
+    expect(h.state.reviewModes[SESSION_ID]).toBe('queue');
   });
 
   it('leaves a thread target for the queue to consume', () => {
@@ -580,7 +630,7 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit review (1)' }));
     await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to conversations' }));
+    act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));
     expect(screen.getByTestId('resolve-queue')).toBeDefined();
   });
 

@@ -450,7 +450,11 @@ one is open at a time.
   verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
   review. They are detail modes of that one surface, switched from its dock,
-  and each mode swaps in for the conversation list like any other detail. There
+  and each mode swaps in for the conversation list like any other detail. An
+  open mode is a child crumb (`Overview > Review > PR details`), and the Review
+  crumb is the way back to the conversations: there is no second back bar. The
+  mode lives in the store per session and drops back to the conversations when
+  the lens closes. There
   is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
   session lands on Review. The code-host lens still serves GitLab and
   Bitbucket, which open their own studios. Everything the lens shows comes from

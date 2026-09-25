@@ -11,6 +11,7 @@ const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toPlansList: vi.fn(),
   toParentAgent: vi.fn(),
   toRootAgent: vi.fn(),
+  toReviewHome: vi.fn(),
 });
 
 const lensLabel = (lens: LensKind) => lens;
@@ -30,6 +31,7 @@ const base = (
   selectedParentLabel: null,
   selectedRootLabel: null,
   selectedQuestionLabel: null,
+  reviewModeLabel: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -54,6 +56,23 @@ describe('buildSessionBreadcrumb', () => {
     crumbs[0]!.onClick!();
     expect(h.toOverview).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('names the open review mode as a child of Review, which leads back home', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base({ lens: 'review', reviewModeLabel: 'PR details' }, h),
+    );
+    expect(labels(crumbs)).toEqual(['Overview', 'review', 'PR details']);
+    crumbs[1]!.onClick!();
+    expect(h.toReviewHome).toHaveBeenCalledOnce();
+    expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('keeps Review a leaf when the queue is showing', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(base({ lens: 'review' }, h));
+    expect(labels(crumbs)).toEqual(['Overview', 'review']);
   });
 
   it('extends the trail without dropping an ancestor when a child opens', () => {

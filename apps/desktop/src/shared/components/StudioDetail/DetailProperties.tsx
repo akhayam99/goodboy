@@ -6,6 +6,9 @@ type Props = {
 };
 
 export const DetailProperties = ({ entries }: Props) => {
+  if (entries.length === 0) {
+    return null;
+  }
   return (
     <dl
       data-testid="detail-properties"

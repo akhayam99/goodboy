@@ -21,6 +21,7 @@ import { openLens } from '../../openLens';
 import { resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
+import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
 
 type Params = {
   readonly session: Session;
@@ -46,6 +47,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
+  const setReviewMode = useAppStore((s) => s.setReviewMode);
+  const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -126,6 +130,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedParentLabel,
         selectedRootLabel,
         selectedQuestionLabel,
+        reviewModeLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -157,6 +162,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             }
             void selectAgent(sessionId, rootAgentId);
           },
+          toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
         },
       }),
     [
@@ -172,6 +178,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedParentLabel,
       selectedRootLabel,
       selectedQuestionLabel,
+      reviewModeLabel,
       parentAgentId,
       rootAgentId,
       isBranchless,
@@ -179,6 +186,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       setFocusedWorkflowRun,
       setFocusedPlanId,
       selectAgent,
+      setReviewMode,
     ],
   );
 };

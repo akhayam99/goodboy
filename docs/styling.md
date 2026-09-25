@@ -148,8 +148,15 @@ no other `max-w-*` layout width lives under `features/`.
 `shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
 explicit allowlist, such as the image lightbox), and on a lens the session
-workspace mounts without `PaneShell`. Lenses still on `StudioDetailLayout` or a
-hand-built band render the crumb through `PageCrumbRow` until they move.
+workspace mounts without `PaneShell`. The few views still on a hand-built band
+render the crumb through `PageCrumbRow` until they move.
+
+Detail views (an agent, a pull request, an issue from any tracker, a Review
+mode) use `PaneShell` like every other pane. A detail keeps its own header
+through the `header` slot, its sections go in `tabs`, and what used to sit
+under the header (properties, a banner, an approval rail, the agent's next
+action) is the first block of the body. A body that owns its scroll, such as a
+transcript or a diff, asks for `scroll="self"`.
 
 Long markdown documents (report, plan, brief) keep a 72ch prose measure,
 aligned left inside the column. Tables and code take the whole column.

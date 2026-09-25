@@ -12,25 +12,16 @@ import { LinkIssueToPrPopover } from '../../../../github/components/LinkIssueToP
 import { PrOverview } from '../../../../github/components/PullRequest/PrOverview';
 import { PrReviewers } from '../../../../github/components/PullRequest/PrReviewers';
 import { LinkedIssuesSection } from './LinkedIssuesSection';
-import { ModeShell } from './ModeShell';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
-  readonly onBack: (() => void) | null;
   readonly onSelectLens: (lens: LensKind) => void;
   readonly onMutated: () => void;
 };
 
-export const PrDetailsMode = ({
-  sessionId,
-  pr,
-  detail,
-  onBack,
-  onSelectLens,
-  onMutated,
-}: Props) => {
+export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }: Props) => {
   const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
   const linkedIssues = useAppStore((s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
@@ -78,7 +69,7 @@ export const PrDetailsMode = ({
   };
 
   return (
-    <ModeShell label="PR details" onBack={onBack}>
+    <section aria-label="PR details" className="flex flex-col gap-6">
       <PrOverview pr={pr} sessionId={sessionId} onMutated={onMutated} />
       <LinkedIssuesSection
         issues={linkedIssues}
@@ -107,6 +98,6 @@ export const PrDetailsMode = ({
         onAddReviewers={onAddReviewers}
       />
       <DetailProperties entries={properties} />
-    </ModeShell>
+    </section>
   );
 };

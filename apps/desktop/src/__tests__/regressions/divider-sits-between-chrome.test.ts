@@ -164,10 +164,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/review/components/ReviewPane/modes/ModeShell.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/scripts/components/ScriptsPanel/NewScriptCard.tsx': {
     count: 3,
     reason: 'debt',
@@ -274,10 +270,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/shared/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx': {
     count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/shared/components/StudioDetail/StudioDetailLayout.tsx': {
-    count: 2,
     reason: 'chrome',
   },
   'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },

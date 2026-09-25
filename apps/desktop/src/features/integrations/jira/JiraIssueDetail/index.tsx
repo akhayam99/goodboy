@@ -1,4 +1,6 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
@@ -15,7 +17,6 @@ import { AssigneePicker } from '../AssigneePicker';
 import { TransitionMenu } from '../TransitionMenu';
 import { IssueConversation } from '../IssueConversation';
 
-type Fit = 'fill' | 'bleed' | 'flow';
 type IssueSection = 'overview' | 'conversation';
 
 type Props = {
@@ -24,7 +25,6 @@ type Props = {
   readonly projectId?: ProjectId;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
-  readonly fit?: Fit;
   readonly onIssueWritten?: (() => void) | null;
 };
 
@@ -39,7 +39,6 @@ export const JiraIssueDetail = ({
   projectId,
   headerActions,
   dock,
-  fit = 'fill',
   onIssueWritten,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
@@ -48,8 +47,8 @@ export const JiraIssueDetail = ({
   const conversation = useJiraIssueComments({ issue: live, workspaceId, projectId });
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       dock={dock}
       header={
         <RecordDetailHeader
@@ -92,8 +91,10 @@ export const JiraIssueDetail = ({
           onChange={setSection}
         />
       }
-      properties={resolveDetailFields({ registry: jiraIssueFields, entity: live })}
     >
+      <DetailProperties
+        entries={resolveDetailFields({ registry: jiraIssueFields, entity: live })}
+      />
       {section === 'overview' ? (
         <DescriptionSection text={live.description} onSave={actions.saveDescription} />
       ) : (
@@ -105,6 +106,6 @@ export const JiraIssueDetail = ({
           onPost={conversation.post}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

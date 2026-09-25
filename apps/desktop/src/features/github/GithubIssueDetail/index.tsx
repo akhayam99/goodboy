@@ -1,4 +1,6 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../shared/components/PaneShell';
 import { useMemo, useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
@@ -14,26 +16,16 @@ import {
   type GithubIssueEditContext,
 } from '../useGithubIssueDescription';
 
-type Fit = 'fill' | 'bleed' | 'flow';
 type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: GithubIssue;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
-  readonly fit?: Fit;
   readonly editContext?: GithubIssueEditContext | null;
-  readonly eyebrow?: ReactNode;
 };
 
-export const GithubIssueDetail = ({
-  issue,
-  headerActions,
-  dock,
-  fit = 'fill',
-  editContext,
-  eyebrow,
-}: Props) => {
+export const GithubIssueDetail = ({ issue, headerActions, dock, editContext }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGithubIssueDescription({ issue, editContext });
   const { comments, isLoading, error, post } = useGithubIssueComments({
@@ -61,9 +53,8 @@ export const GithubIssueDetail = ({
   ];
 
   return (
-    <StudioDetailLayout
-      fit={fit}
-      eyebrow={eyebrow}
+    <PaneShell
+      scroll="body"
       header={
         <RecordDetailHeader
           provider="github"
@@ -83,8 +74,8 @@ export const GithubIssueDetail = ({
         />
       }
       dock={dock}
-      properties={properties}
     >
+      <DetailProperties entries={properties} />
       {section === 'overview' ? (
         <DescriptionSection text={description} onSave={save} />
       ) : (
@@ -95,6 +86,6 @@ export const GithubIssueDetail = ({
           onPost={post}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

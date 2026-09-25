@@ -34,6 +34,8 @@ type Store = {
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
+  reviewModes: Record<string, string>;
+  setReviewMode: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
@@ -45,7 +47,8 @@ type Store = {
 };
 
 type PaneShellMockProps = {
-  readonly title: string;
+  readonly title?: string;
+  readonly header?: React.ReactNode;
   readonly meta?: React.ReactNode;
   readonly children: React.ReactNode;
 };
@@ -82,6 +85,8 @@ const { store, hooks } = vi.hoisted(() => ({
     agentKindOverride: {},
     sessionLoading: {},
     resolveAgentReturn: {},
+    reviewModes: {},
+    setReviewMode: vi.fn(),
     selectAgent: vi.fn(),
     setActiveLens: vi.fn(),
     returnFromResolveAgent: vi.fn(),
@@ -251,15 +256,23 @@ vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../shared/components/PaneShell', () => ({
-  PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
-    <div>
-      <h1>{title}</h1>
-      {meta ? <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span> : null}
-      {children}
-    </div>
-  ),
-}));
+vi.mock('../../../../shared/components/PaneShell', async () => {
+  const { PageCrumbRow } = await vi.importActual<
+    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
+  >('../../../../shared/components/PaneShell/PageCrumbRow');
+  return {
+    PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
+      <div>
+        <PageCrumbRow />
+        {header ?? <h1>{title}</h1>}
+        {meta != null && title != null ? (
+          <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
+        ) : null}
+        {children}
+      </div>
+    ),
+  };
+});
 vi.mock('../../hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));

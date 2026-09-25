@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactElement,
   type ReactNode,
   type UIEvent,
 } from 'react';
@@ -23,7 +24,6 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
 import { groupThreads } from '../../../github/comment-threads';
 import { kindRouting } from '../../../session/agent-kind';
 import { startFixAttempt } from '../../../review/startFixAttempt';
@@ -69,9 +69,14 @@ import {
 
 type Props = {
   readonly session: Session;
-  readonly header?: ReactNode;
-  readonly eyebrow?: ReactNode;
+  readonly header?: ReactElement | null;
   readonly dock?: ReactNode;
+};
+
+type QueuePaneParams = {
+  readonly children: ReactNode;
+  readonly meta?: ReactNode;
+  readonly actions?: ReactNode;
 };
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
@@ -116,7 +121,7 @@ const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   return null;
 };
 
-export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null }: Props) => {
+export const ResolveQueueHome = ({ session, header = null, dock = null }: Props) => {
   const sessionId = session.id as SessionId;
   const listRef = useRef<HTMLDivElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -568,18 +573,41 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
     ],
   );
 
-  const inPane = (children: ReactNode): ReactNode => (
-    <StudioDetailLayout header={header} eyebrow={eyebrow} dock={dock} fit="bleed">
-      {children}
-    </StudioDetailLayout>
-  );
+  const queuePane = ({ children, meta, actions }: QueuePaneParams): ReactElement => {
+    if (header === null) {
+      return (
+        <PaneShell
+          title={RESOLVE_QUEUE_TITLE}
+          scroll="body"
+          dock={dock}
+          {...(meta != null && { meta })}
+          {...(actions != null && { actions })}
+        >
+          {children}
+        </PaneShell>
+      );
+    }
+    return (
+      <PaneShell header={header} scroll="body" dock={dock}>
+        <SectionHeader
+          size="page"
+          label={RESOLVE_QUEUE_TITLE}
+          meta={
+            meta != null ? (
+              <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">{meta}</span>
+            ) : undefined
+          }
+          action={actions ?? undefined}
+        />
+        {children}
+      </PaneShell>
+    );
+  };
 
   if (github?.pr == null) {
-    return inPane(
-      <PaneShell title={RESOLVE_QUEUE_TITLE}>
-        <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />
-      </PaneShell>,
-    );
+    return queuePane({
+      children: <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />,
+    });
   }
 
   const refreshError = github.detailError ?? null;
@@ -589,14 +617,14 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   });
 
   if (errorPlacement === 'whole_surface' && refreshError !== null) {
-    return inPane(
-      <PaneShell title={RESOLVE_QUEUE_TITLE}>
+    return queuePane({
+      children: (
         <ResolveQueueErrorState
           message={refreshError}
           onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
         />
-      </PaneShell>,
-    );
+      ),
+    });
   }
 
   const isLoading = github.detail === null && github.detailLoading;
@@ -616,23 +644,19 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
         aria-hidden={selectedRow !== null}
         {...(selectedRow !== null && { inert: true })}
       >
-        <StudioDetailLayout header={header} eyebrow={eyebrow} dock={dock} fit="bleed">
-          <PaneShell
-            title={RESOLVE_QUEUE_TITLE}
-            scroll="body"
-            {...(counter !== null && { meta: counter })}
-            actions={
-              newThreads.length === 0 ? null : (
-                <ResolveWithPopover
-                  sessionId={sessionId}
-                  threads={newThreads}
-                  label={resolveNewLabel({ count: newThreads.length })}
-                  isDisabled={isRunLive}
-                  disabledReason={RESOLVE_RUN_IN_PROGRESS}
-                />
-              )
-            }
-          >
+        {queuePane({
+          meta: counter,
+          actions:
+            newThreads.length === 0 ? null : (
+              <ResolveWithPopover
+                sessionId={sessionId}
+                threads={newThreads}
+                label={resolveNewLabel({ count: newThreads.length })}
+                isDisabled={isRunLive}
+                disabledReason={RESOLVE_RUN_IN_PROGRESS}
+              />
+            ),
+          children: (
             <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
               {checkedThreads.length > 0 && (
                 <ResolveSelectionBar
@@ -720,8 +744,8 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
                 }
               />
             </div>
-          </PaneShell>
-        </StudioDetailLayout>
+          ),
+        })}
       </div>
       {selectedRow !== null && (
         <div className="pointer-events-none col-start-1 row-start-1 z-10 min-h-0 min-w-0 bg-background">

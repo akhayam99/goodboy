@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
 import { slackGetPermalink, type SlackMessage } from '../client';
 import { buildThreadProperties } from '../buildThreadProperties';
@@ -10,8 +12,6 @@ import { ThreadConversation } from '../ThreadConversation';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
 
-type Fit = 'fill' | 'bleed' | 'flow';
-
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly channelId: string;
@@ -19,7 +19,6 @@ type Props = {
   readonly fallbackChannelName: string;
   readonly fallbackMessage: SlackMessage | null;
   readonly fallbackUrl?: string | null;
-  readonly fit?: Fit;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
 };
@@ -31,7 +30,6 @@ export const SlackThreadDetail = ({
   fallbackChannelName,
   fallbackMessage,
   fallbackUrl = null,
-  fit = 'fill',
   headerActions,
   dock,
 }: Props) => {
@@ -75,8 +73,8 @@ export const SlackThreadDetail = ({
   const title = slackThreadTitle({ text: rootText });
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       dock={dock}
       header={
         <RecordDetailHeader
@@ -92,8 +90,8 @@ export const SlackThreadDetail = ({
           }
         />
       }
-      properties={properties}
     >
+      <DetailProperties entries={properties} />
       <ThreadConversation
         messages={messages}
         users={users}
@@ -103,6 +101,6 @@ export const SlackThreadDetail = ({
         onRetry={thread.refetch}
         actions={actions}
       />
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

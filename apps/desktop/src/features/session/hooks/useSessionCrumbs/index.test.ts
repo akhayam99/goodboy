@@ -26,6 +26,7 @@ const { store, actions } = vi.hoisted(() => {
     setFocusedWorkflowRun: vi.fn(),
     setFocusedPlanId: vi.fn(),
     selectAgent: vi.fn(),
+    setReviewMode: vi.fn(),
   };
   return { store, actions };
 });
@@ -136,6 +137,7 @@ beforeEach(() => {
     sessionWorkflows: {},
     sessionBranches: { [SESSION_ID]: 'feature/one' },
     workspaces: [{ id: 'workspace-1', kind: 'repo' }],
+    reviewModes: {},
     ...actions,
   };
   store.openQuestions = [];

@@ -1,6 +1,5 @@
 import type { SessionId } from '@goodboy/types';
 import { CreatePrPanel } from '../../../../github/components/PullRequest/CreatePrPanel';
-import { ModeShell } from './ModeShell';
 
 type ClosedPr = { readonly number: number; readonly url: string };
 
@@ -8,20 +7,12 @@ type Props = {
   readonly sessionId: SessionId;
   readonly defaultTitle: string;
   readonly closedPr: ClosedPr | null;
-  readonly onBack: (() => void) | null;
   readonly onCreated: () => void;
   readonly onCancel: () => void;
 };
 
-export const CreatePrMode = ({
-  sessionId,
-  defaultTitle,
-  closedPr,
-  onBack,
-  onCreated,
-  onCancel,
-}: Props) => (
-  <ModeShell label="New pull request" onBack={onBack}>
+export const CreatePrMode = ({ sessionId, defaultTitle, closedPr, onCreated, onCancel }: Props) => (
+  <section aria-label="New pull request" className="flex flex-col gap-6">
     <CreatePrPanel
       sessionId={sessionId}
       defaultTitle={defaultTitle}
@@ -29,5 +20,5 @@ export const CreatePrMode = ({
       onCreated={onCreated}
       onCancel={onCancel}
     />
-  </ModeShell>
+  </section>
 );

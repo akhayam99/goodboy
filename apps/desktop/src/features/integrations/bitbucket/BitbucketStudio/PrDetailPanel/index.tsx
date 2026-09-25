@@ -1,8 +1,9 @@
 import {
   RecordDetailEmptyState,
   RecordDetailHeader,
-  StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Markdown } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
@@ -101,7 +102,8 @@ export const PrDetailPanel = ({
   const identifier = bitbucketPrIdentifier({ repo, pullRequest });
 
   return (
-    <StudioDetailLayout
+    <PaneShell
+      scroll="body"
       header={
         <>
           <RecordDetailHeader
@@ -156,22 +158,22 @@ export const PrDetailPanel = ({
           onChange={setSection}
         />
       }
-      properties={resolveDetailFields({
-        registry: bitbucketPullRequestFields,
-        entity: pullRequest,
-      })}
       dock={dock}
     >
+      <DetailProperties
+        entries={resolveDetailFields({
+          registry: bitbucketPullRequestFields,
+          entity: pullRequest,
+        })}
+      />
       {section === 'overview' && (
-        <>
-          <StudioWidget presentation="section" label="description" variant="frameless">
-            {pullRequest.description !== '' ? (
-              <Markdown text={pullRequest.description} className="text-sm leading-relaxed" />
-            ) : (
-              <p className="text-sm italic text-faint-foreground">No description.</p>
-            )}
-          </StudioWidget>
-        </>
+        <StudioWidget presentation="section" label="description" variant="frameless">
+          {pullRequest.description !== '' ? (
+            <Markdown text={pullRequest.description} className="text-sm leading-relaxed" />
+          ) : (
+            <p className="text-sm italic text-faint-foreground">No description.</p>
+          )}
+        </StudioWidget>
       )}
       {section === 'changes' && (
         <PrChanges
@@ -200,6 +202,6 @@ export const PrDetailPanel = ({
           onReply={actions.reply}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

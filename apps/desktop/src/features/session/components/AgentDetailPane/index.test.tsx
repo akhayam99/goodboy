@@ -79,21 +79,31 @@ beforeEach(() => {
 });
 
 describe('AgentDetailPane', () => {
-  it('pins the next action in the fixed header, above the tabs, on both tabs', () => {
-    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+  it('opens the body with the next action, below the tabs, on both tabs', () => {
+    const { container } = render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />,
+    );
 
-    const band = screen.getByTestId('detail-header-band');
-    const strip = within(band).getByText('Next action strip');
-    const tabs = within(band).getByRole('tab', { name: 'Brief' });
-    expect(strip.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const header = container.querySelector('[data-slot="pane-header"]') as HTMLElement;
+    const strip = screen.getByText('Next action strip');
+    const tabs = within(header).getByRole('tab', { name: 'Brief' });
+    expect(header.contains(strip)).toBe(false);
+    expect(tabs.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      strip.compareDocumentPosition(screen.getByText('Brief body')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    const transcriptStrip = screen.getByText('Next action strip');
+    expect(header.contains(transcriptStrip)).toBe(false);
     expect(
-      within(screen.getByTestId('detail-header-band')).getByText('Next action strip'),
-    ).toBeDefined();
+      transcriptStrip.compareDocumentPosition(screen.getByText('Transcript body')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
-  it('places the title at the shared detail inset above agent metadata', () => {
+  it('puts the title in the pane header above agent metadata', () => {
     render(
       <AgentDetailPane
         session={session}
@@ -106,8 +116,7 @@ describe('AgentDetailPane', () => {
     const title = screen.getByRole('heading', { level: 1, name: 'Implement chat' });
     const status = screen.getByText('Running');
 
-    expect(title.className).toContain('text-xl');
-    expect(title.closest('.px-6')?.className).toContain('py-5');
+    expect(title.closest('[data-slot="pane-header"]')).not.toBeNull();
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -174,20 +183,24 @@ describe('AgentDetailPane', () => {
     expect(screen.getByRole('tab', { name: 'Brief' })).toBeDefined();
   });
 
-  it('renders the session eyebrow above the agent title', () => {
+  it('renders the origin context as the first body block, below the agent title', () => {
     render(
       <AgentDetailPane
         session={session}
         agent={agent}
         isChatActive
         onBack={() => undefined}
-        eyebrow={<span>Ship the lens eyebrow</span>}
+        context={<span>Resolving thread 3</span>}
       />,
     );
 
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const context = screen.getByText('Resolving thread 3');
     const title = screen.getByRole('heading', { level: 1 });
-    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(title.compareDocumentPosition(context) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      context.compareDocumentPosition(screen.getByText('Next action strip')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('shows the planned model in the header while the agent has not run', () => {

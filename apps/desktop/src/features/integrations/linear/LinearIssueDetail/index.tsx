@@ -1,4 +1,6 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
@@ -12,7 +14,6 @@ import { useLinearIssueComments } from '../useLinearIssueComments';
 import { useLinearIssueDescription } from '../useLinearIssueDescription';
 
 type IssueSection = 'overview' | 'conversation';
-type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly issue: LinearIssue;
@@ -20,7 +21,6 @@ type Props = {
   readonly projectId?: ProjectId;
   readonly dock?: ReactNode;
   readonly headerActions?: ReactNode;
-  readonly fit?: Fit;
 };
 
 export const LinearIssueDetail = ({
@@ -29,7 +29,6 @@ export const LinearIssueDetail = ({
   projectId,
   dock,
   headerActions,
-  fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { comments, isLoading, error, post } = useLinearIssueComments({
@@ -40,8 +39,8 @@ export const LinearIssueDetail = ({
   const { description, save } = useLinearIssueDescription({ issue, workspaceId, projectId });
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       header={
         <RecordDetailHeader
           provider="linear"
@@ -69,8 +68,10 @@ export const LinearIssueDetail = ({
         />
       }
       dock={dock}
-      properties={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
     >
+      <DetailProperties
+        entries={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
+      />
       {section === 'overview' ? (
         <DescriptionSection text={description} onSave={save} />
       ) : (
@@ -81,6 +82,6 @@ export const LinearIssueDetail = ({
           onPost={post}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

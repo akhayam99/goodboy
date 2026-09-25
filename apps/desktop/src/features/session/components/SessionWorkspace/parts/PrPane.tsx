@@ -1,5 +1,5 @@
-import { StudioDetailLayout } from '../../../../../shared/components/StudioDetail';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { useEffect, useMemo, useState } from 'react';
 import { GitBranch, GitFork, GitMerge, GitPullRequest } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import { pullRequestMeta } from '../../../../github/components/PullRequestChip';
@@ -34,7 +34,6 @@ const PROVIDER_TAB_OPTIONS: ReadonlyArray<{
 
 type Props = {
   readonly session: Session;
-  readonly eyebrow?: ReactNode;
 };
 
 type HostTitleParams = {
@@ -69,7 +68,7 @@ const SessionBranchTag = ({ branch }: { readonly branch: string | null }) =>
 
 type SessionStudioOpenEvent = 'goodboy:open-gitlab-mr' | 'goodboy:open-bitbucket-pr';
 
-export const PrPane = ({ session, eyebrow }: Props) => {
+export const PrPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
   const remoteKind = useRemoteHostKind({ sessionId });
   const sessionBranch = useSessionRepo({ sessionId })?.branch ?? null;
@@ -139,9 +138,8 @@ export const PrPane = ({ session, eyebrow }: Props) => {
 
   if (activeProvider === 'bitbucket') {
     return (
-      <StudioDetailLayout
-        fit="fill"
-        eyebrow={eyebrow}
+      <PaneShell
+        scroll="body"
         header={
           <HeaderBand
             title={bitbucketPr?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -169,15 +167,14 @@ export const PrPane = ({ session, eyebrow }: Props) => {
           sessionId={sessionId}
           onOpenStudio={() => openStudio('goodboy:open-bitbucket-pr')}
         />
-      </StudioDetailLayout>
+      </PaneShell>
     );
   }
 
   if (activeProvider === 'gitlab') {
     return (
-      <StudioDetailLayout
-        fit="fill"
-        eyebrow={eyebrow}
+      <PaneShell
+        scroll="body"
         header={
           <HeaderBand
             title={mergeRequest?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -205,14 +202,13 @@ export const PrPane = ({ session, eyebrow }: Props) => {
           sessionId={sessionId}
           onOpenStudio={() => openStudio('goodboy:open-gitlab-mr')}
         />
-      </StudioDetailLayout>
+      </PaneShell>
     );
   }
 
   return (
-    <StudioDetailLayout
-      fit="fill"
-      eyebrow={eyebrow}
+    <PaneShell
+      scroll="body"
       header={
         <HeaderBand
           title={pullRequest?.title ?? hostTitle({ remoteKind, providerCount, activeProvider })}
@@ -252,6 +248,6 @@ export const PrPane = ({ session, eyebrow }: Props) => {
           onConnected={() => void githubConnection.refresh()}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

@@ -1,4 +1,6 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useState, type ReactNode } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
@@ -12,7 +14,6 @@ import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
 import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
 import { IssueConversation } from '../IssueConversation';
 
-type Fit = 'fill' | 'bleed' | 'flow';
 type IssueSection = 'overview' | 'conversation';
 
 type Props = {
@@ -21,7 +22,6 @@ type Props = {
   readonly projectId?: ProjectId;
   readonly headerActions?: ReactNode;
   readonly dock?: ReactNode;
-  readonly fit?: Fit;
 };
 
 const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
@@ -35,15 +35,14 @@ export const GitlabIssueDetail = ({
   projectId,
   headerActions,
   dock,
-  fit = 'fill',
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGitlabIssueDescription({ issue, workspaceId, projectId });
   const notes = useGitlabIssueNotes({ issue, workspaceId, projectId });
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       header={
         <RecordDetailHeader
           provider="gitlab"
@@ -62,9 +61,11 @@ export const GitlabIssueDetail = ({
           onChange={setSection}
         />
       }
-      properties={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
       dock={dock}
     >
+      <DetailProperties
+        entries={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}
+      />
       {section === 'overview' ? (
         <DescriptionSection text={description} onSave={save} />
       ) : (
@@ -76,6 +77,6 @@ export const GitlabIssueDetail = ({
           onPost={notes.post}
         />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };
