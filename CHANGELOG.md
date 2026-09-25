@@ -7,6 +7,42 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.5.1
+
+Resolve does what it says on GitHub, and removing a leftover folder never takes work with it.
+
+### [#1878] Resolve closes threads on GitHub
+
+After Goodboy replies to a review comment, it resolves the thread on GitHub when your account is allowed to. The result says how many replies went out, how many threads GitHub resolved and how many stayed open for the reviewer. Confirming twice publishes once, and a failure halfway keeps what already reached GitHub.
+
+### [#1878] Every review comment in the list
+
+Conversations reads every open review thread on the pull request, not only the first page. When reading from GitHub fails, the error shows with a retry, instead of an empty list.
+
+### [#1878] Start a resolve from a selection
+
+Tick the comments you want and press Resolve, or resolve every new comment from the header. Both open one popover that lists every connected provider and model.
+
+### [#1878] Leftover worktree folders stay safe
+
+Removing a leftover worktree folder keeps any folder with uncommitted changes or commits that were never pushed, and says why. You can still remove it after an inline confirm.
+
+### [#1878] Older builds leave a newer database alone
+
+If you open an older Goodboy after a newer one upgraded your data, it stops and offers the backup taken before the upgrade, instead of opening data it doesn't understand.
+
+### [#1878] Done and Archived fold into the board dock
+
+Done and Archived collapse into two icons with a count at the side of the board. Hover to preview, click to open.
+
+### Fixes
+
+- `$` in the composer lists the scripts from each mounted project's `package.json` and `composer.json`, next to your saved scripts. [#1878]
+- Time estimates now count chat turns and use the same model and effort from your other workspaces, so they show up sooner. [#1878]
+- Editing a built-in workflow step saves one copy instead of a new one each time you leave the field. [#1878]
+- The restore confirm names the workspace it resets. [#1878]
+- Merge and Close on GitLab ask before acting, like Bitbucket. [#1878]
+
 ## Goodboy v0.5.0
 
 Every piece of work now reads as one tree, from the overview to the workflow run to an agent's brief.
