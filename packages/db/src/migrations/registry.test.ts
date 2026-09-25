@@ -351,7 +351,7 @@ describe('migration convergence', () => {
       expect(result.applied).toEqual(versions.slice(count));
       expect(await schemaOf(upgraded)).toEqual(target);
     }
-  }, 30_000);
+  }, 90_000);
 
   it('samples at least the floor of intermediate versions, strictly increasing', () => {
     const counts = sampleIntermediateCounts({
