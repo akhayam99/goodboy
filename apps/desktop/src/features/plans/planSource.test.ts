@@ -19,6 +19,22 @@ describe('planSource', () => {
     });
   });
 
+  it('trims whitespace only lines off both edges of the body and keeps inner indentation', () => {
+    expect(parsePlanSource({ source: '# Round once\n  \n\t\n## Goal\n  match\n \n\t \n' })).toEqual(
+      {
+        title: 'Round once',
+        bodyMd: '## Goal\n  match',
+      },
+    );
+  });
+
+  it('returns an empty body when only whitespace follows the title', () => {
+    expect(parsePlanSource({ source: '# Round once\n  \n\t' })).toEqual({
+      title: 'Round once',
+      bodyMd: '',
+    });
+  });
+
   it('returns an empty title for an empty source', () => {
     expect(parsePlanSource({ source: '  \n\n' })).toEqual({ title: '', bodyMd: '' });
   });

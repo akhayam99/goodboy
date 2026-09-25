@@ -21,11 +21,11 @@ export const parsePlanSource = ({ source }: { readonly source: string }): PlanTe
     .replace(/^#+\s*/, '')
     .trim();
   const rest = lines.slice(firstIndex + 1);
-  const start = rest.findIndex((line) => line !== '');
+  const start = rest.findIndex((line) => !isBlank(line));
   if (start === -1) {
     return { title, bodyMd: '' };
   }
-  const endFromTail = [...rest].reverse().findIndex((line) => line !== '');
+  const endFromTail = [...rest].reverse().findIndex((line) => !isBlank(line));
   const bodyMd = rest.slice(start, rest.length - endFromTail).join('\n');
   return { title, bodyMd };
 };
