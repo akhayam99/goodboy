@@ -1525,8 +1525,6 @@ const WORKTREE_PARENT: [&str; 2] = [".goodboy", "worktrees"];
 pub struct OrphanWorktree {
     pub path: String,
     pub name: String,
-    #[serde(rename = "sizeBytes")]
-    pub size_bytes: u64,
     #[serde(rename = "isRegistered")]
     pub is_registered: bool,
 }
@@ -1690,7 +1688,6 @@ pub(crate) fn collect_orphans(
                 .file_name()
                 .map(|name| name.to_string_lossy().into_owned())
                 .unwrap_or_default(),
-            size_bytes: directory_size(&path).0.unwrap_or(0),
             is_registered: registered_keys.contains(&canonical_key(&path)),
             path: path.to_string_lossy().into_owned(),
         })
@@ -1780,10 +1777,22 @@ fn unpushed_folder_kept_with(
     })
 }
 
+#[cfg(test)]
 pub(crate) fn remove_worktree_folder_with(
     repo_path: &Path,
     target: &Path,
     mode: WorktreeRemovalMode,
+    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    is_lease_live: &mut dyn FnMut(&Path) -> bool,
+) -> Result<WorktreeRemovalResult, WorktreeError> {
+    remove_worktree_folder_allowing(repo_path, target, mode, false, run_git, is_lease_live)
+}
+
+pub(crate) fn remove_worktree_folder_allowing(
+    repo_path: &Path,
+    target: &Path,
+    mode: WorktreeRemovalMode,
+    allow_local_commits: bool,
     run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
@@ -1830,7 +1839,7 @@ pub(crate) fn remove_worktree_folder_with(
     }
     match inspect_worktree_with(repo_path, &folder, run_git) {
         WorktreeInspection::Registered { .. } => {
-            if mode == WorktreeRemovalMode::Safe {
+            if mode == WorktreeRemovalMode::Safe && !allow_local_commits {
                 if let Some(kept) =
                     unpushed_folder_kept_with(repo_path, &folder, run_git, is_lease_live)
                 {
@@ -1877,14 +1886,16 @@ pub async fn worktree_folder_remove(
     repo_path: String,
     path: String,
     mode: Option<WorktreeRemovalMode>,
+    allow_local_commits: Option<bool>,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     let registry = leases.0.clone();
     let selected = mode.unwrap_or(WorktreeRemovalMode::Safe);
     tauri::async_runtime::spawn_blocking(move || {
-        remove_worktree_folder_with(
+        remove_worktree_folder_allowing(
             Path::new(&repo_path),
             Path::new(&path),
             selected,
+            allow_local_commits.unwrap_or(false),
             &mut |cwd, args| git(cwd, args),
             &mut |target| {
                 crate::worktree_writer::is_lease_live(&registry, target.to_string_lossy().as_ref())
@@ -5205,7 +5216,7 @@ mod teardown_tests {
     }
 
     #[test]
-    fn a_folder_git_forgot_and_no_session_claims_is_reported_with_its_size() {
+    fn a_folder_git_forgot_and_no_session_claims_is_reported() {
         let root = temp_root("orphan-scan");
         let parent = root.join(".goodboy").join("worktrees");
         std::fs::create_dir_all(&parent).unwrap();
@@ -5223,7 +5234,6 @@ mod teardown_tests {
             found.iter().map(|o| o.name.as_str()).collect::<Vec<_>>(),
             vec!["gb-ghost", "gb-live"]
         );
-        assert!(found[0].size_bytes >= 4096);
         assert!(!found[0].is_registered);
         assert!(found[1].is_registered);
         assert!(orphan.exists());
@@ -5402,6 +5412,57 @@ mod teardown_tests {
             "{confirmed:?}"
         );
         assert!(!target.exists());
+    }
+
+    #[test]
+    fn folder_removal_allowing_local_commits_removes_a_clean_folder_and_keeps_its_branch() {
+        let root = init_repo("folder-unpushed-allowed");
+        let target = add_goodboy_worktree(&root, "gb-allowed");
+        commit_in(&target, "local.txt");
+
+        let result = super::remove_worktree_folder_allowing(
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+            true,
+            &mut |cwd, args| super::git(cwd, args),
+            &mut |_| false,
+        )
+        .unwrap();
+
+        assert!(
+            matches!(result, WorktreeRemovalResult::Removed { .. }),
+            "{result:?}"
+        );
+        assert!(!target.exists());
+        assert_eq!(
+            git_ok(&root, &["rev-parse", "--verify", "goodboy/gb-allowed"]).len(),
+            40
+        );
+    }
+
+    #[test]
+    fn folder_removal_allowing_local_commits_still_keeps_uncommitted_work() {
+        let root = init_repo("folder-unpushed-allowed-dirty");
+        let target = add_goodboy_worktree(&root, "gb-allowed-dirty");
+        commit_in(&target, "local.txt");
+        std::fs::write(target.join("draft.txt"), "draft\n").unwrap();
+
+        let result = super::remove_worktree_folder_allowing(
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+            true,
+            &mut |cwd, args| super::git(cwd, args),
+            &mut |_| false,
+        )
+        .unwrap();
+
+        assert_eq!(
+            kept_reasons(result),
+            vec![WorktreeRemovalReason::UntrackedFiles]
+        );
+        assert!(target.exists());
     }
 
     #[test]

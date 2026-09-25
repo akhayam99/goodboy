@@ -300,7 +300,6 @@ export const tidyRepoGoodboyDir = async ({ repoPath }: TidyRepoGoodboyDirParams)
 export type OrphanWorktree = {
   readonly path: string;
   readonly name: string;
-  readonly sizeBytes: number;
   readonly isRegistered: boolean;
 };
 
@@ -320,14 +319,21 @@ type RemoveWorktreeFolderParams = {
   readonly repoPath: string;
   readonly path: string;
   readonly mode: WorktreeRemovalMode;
+  readonly allowLocalCommits?: boolean;
 };
 
 export const removeWorktreeFolder = async ({
   repoPath,
   path,
   mode,
+  allowLocalCommits = false,
 }: RemoveWorktreeFolderParams): Promise<WorktreeRemovalResult> => {
-  return invoke<WorktreeRemovalResult>('worktree_folder_remove', { repoPath, path, mode });
+  return invoke<WorktreeRemovalResult>('worktree_folder_remove', {
+    repoPath,
+    path,
+    mode,
+    allowLocalCommits,
+  });
 };
 
 export type WorktreeFolderFacts = {

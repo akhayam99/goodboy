@@ -59,7 +59,7 @@ export const syncOrphanLedger = async ({
       branch: branches.get(orphan.path) ?? '',
       workspaceId: owner.workspaceId,
       projectId: owner.projectId,
-      sizeBytes: orphan.sizeBytes,
+      sizeBytes: null,
     })),
   }).catch(() => undefined);
 };

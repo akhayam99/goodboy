@@ -246,6 +246,12 @@ export {
   type OrphanLedgerInput,
 } from './queries/worktree-ledger';
 export {
+  listStorageMounts,
+  listStorageSessionRefs,
+  type StorageMountRow,
+  type StorageSessionRef,
+} from './queries/storage-folders';
+export {
   listWorktreeRoots,
   markWorktreeRootScanned,
   registerWorktreeRoot,

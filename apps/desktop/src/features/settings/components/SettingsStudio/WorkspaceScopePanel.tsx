@@ -15,7 +15,7 @@ import { GitBranch, Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
-import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
+import { WorkspaceStorageNotice } from '../../../../features/storage/components/WorkspaceStorageNotice';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -304,9 +304,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           </div>
         ) : null}
 
-        <div ref={anchor({ id: 'orphans' })}>
-          <OrphanWorktreesSection workspaceId={workspaceId} />
-        </div>
+        <WorkspaceStorageNotice workspaceId={workspaceId} />
 
         <section
           id="danger"

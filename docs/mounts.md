@@ -140,7 +140,9 @@ Removing an orphan only touches a direct child of `<repo>/.goodboy/worktrees/`.
 A symlink, a nested path, a folder in any other worktree root and a clone of
 another repository are refused. A folder git still registers goes through the
 same checked removal as an unmount, so uncommitted work keeps it. So do
-commits that no remote branch and no default branch contain. A folder git
+commits that no remote branch and no default branch contain, unless the caller
+passes `allowLocalCommits`: the Storage page does, because the branch keeps
+those commits, and its confirm says how many folders have them. A folder git
 no longer tracks cannot be checked for changes, so the bulk action keeps it
 too. Either one is removed only after the user confirms that folder on its own.
 

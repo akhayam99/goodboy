@@ -141,6 +141,14 @@ screen calls it **Close worktree**, and a closed row offers **Reopen**.
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
+**Storage** (Settings > App > Storage) shows every worktree folder Goodboy made
+in three groups. **In use** belongs to a session that is still open and is never
+touched from there. **To review** belongs to an archived or deleted session, or
+to no session at all. **Kept** is what you chose to keep, for good or for 30
+days. A clean folder idle longer than "Suggest cleanup after" (30 days by
+default) can go in one bulk step. Its branch stays, even with commits that were
+never pushed.
+
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
 

@@ -1,24 +1,57 @@
-import type { MountId, RetainedWorktreeReason, SessionId } from '@goodboy/types';
+import type {
+  MountId,
+  SessionId,
+  WorkspaceId,
+  WorktreeRemovalMode,
+  WorktreeRemovalReason,
+} from '@goodboy/types';
+import type { WorktreeFolderFacts } from '../../../features/worktree/worktree';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type ArchivedWorktreeTarget = {
-  readonly sessionId: SessionId;
-  readonly mountId: MountId;
-  readonly repoPath: string;
-  readonly worktreePath: string;
+export type StorageFolderOrigin = 'in-use' | 'archived' | 'ledger';
+
+export type StorageFolderWhy =
+  'active-session' | 'archived-session' | 'deleted-session' | 'no-session' | 'kept-by-goodboy';
+
+export type StorageFolderStatus =
+  | 'in-use'
+  | 'checking'
+  | 'safe'
+  | 'dirty'
+  | 'writing'
+  | 'operation'
+  | 'not-tracked'
+  | 'unavailable';
+
+export type StorageBucket = 'review' | 'in-use' | 'kept';
+
+export type StorageFolder = {
+  readonly path: string;
+  readonly repoRoot: string;
   readonly branch: string;
-  readonly revision: number;
+  readonly origin: StorageFolderOrigin;
+  readonly why: StorageFolderWhy;
+  readonly sessionId: SessionId | null;
+  readonly sessionGoal: string | null;
+  readonly mountId: MountId | null;
+  readonly revision: number | null;
+  readonly ledgerId: string | null;
+  readonly workspaceId: WorkspaceId | null;
+  readonly sessionActivityAt: number | null;
   readonly sizeBytes: number | null;
+  readonly sizedAt: number | null;
+  readonly facts: WorktreeFolderFacts | null;
+  readonly keptAt: number | null;
+  readonly keptUntil: number | null;
 };
 
-export type RetainedWorktreeTarget = {
-  readonly id: string;
+export type StorageRoot = {
   readonly repoRoot: string;
-  readonly worktreePath: string;
-  readonly branch: string;
-  readonly reason: RetainedWorktreeReason;
-  readonly sizeBytes: number | null;
+  readonly projectName: string;
+  readonly workspaceId: WorkspaceId | null;
+  readonly workspaceName: string | null;
+  readonly isDisconnected: boolean;
 };
 
 export type StorageStats = {
@@ -26,11 +59,47 @@ export type StorageStats = {
   readonly archivedSessionCount: number;
   readonly archivedTranscriptRows: number;
   readonly archivedTranscriptBytes: number;
-  readonly archivedWorktrees: ReadonlyArray<ArchivedWorktreeTarget>;
-  readonly retainedWorktrees: ReadonlyArray<RetainedWorktreeTarget>;
+  readonly snapshotBytes: number;
+  readonly snapshotCount: number;
+  readonly appDataFolder: string | null;
+  readonly diskFreeBytes: number | null;
+  readonly checkedAt: number;
 };
 
-export type WorktreeCleanupTally = {
-  readonly removed: number;
-  readonly failed: number;
+export type StorageFilter = 'review' | 'in-use' | 'kept';
+
+export type StorageFocus = {
+  readonly filter: StorageFilter;
+  readonly workspaceId: WorkspaceId | null;
 };
+
+export type StorageRemoval =
+  | { readonly kind: 'removed'; readonly path: string; readonly sizeBytes: number }
+  | {
+      readonly kind: 'kept';
+      readonly path: string;
+      readonly reasons: ReadonlyArray<WorktreeRemovalReason>;
+      readonly message: string | null;
+    }
+  | { readonly kind: 'failed'; readonly path: string; readonly message: string };
+
+export type StorageRemovalSummary = {
+  readonly removed: number;
+  readonly freedBytes: number;
+  readonly kept: ReadonlyArray<StorageRemoval>;
+};
+
+export type RemoveStorageFoldersParams = {
+  readonly paths: ReadonlyArray<string>;
+  readonly mode: WorktreeRemovalMode;
+};
+
+export type KeepStorageFolderParams = {
+  readonly path: string;
+  readonly days: number | null;
+  readonly isStopping?: boolean;
+};
+
+export type StorageSizeCache = Readonly<
+  Record<string, { readonly sizeBytes: number; readonly sizedAt: number }>
+>;

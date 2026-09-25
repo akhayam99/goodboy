@@ -64,7 +64,6 @@ const {
       {
         path: '/repo/.goodboy/worktrees/gb-ghost',
         name: 'gb-ghost',
-        sizeBytes: 4096,
         isRegistered: false,
       },
     ],
@@ -156,7 +155,6 @@ describe('reconciling the worktrees folder', () => {
         {
           path: '/repo/.goodboy/worktrees/gb-ghost',
           name: 'gb-ghost',
-          sizeBytes: 4096,
           isRegistered: false,
         },
       ],
@@ -324,7 +322,7 @@ describe('reconciling the worktrees folder', () => {
         branch: 'goodboy/ghost',
         workspaceId: 'ws-1',
         projectId: 'project-1',
-        sizeBytes: 4096,
+        sizeBytes: null,
       },
     ]);
     expect(markWorktreeRootScanned).toHaveBeenCalledWith(

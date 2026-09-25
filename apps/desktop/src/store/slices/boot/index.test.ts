@@ -493,7 +493,6 @@ describe('store contract', () => {
         {
           path: '/repo/.goodboy/worktrees/gb-ghost',
           name: 'gb-ghost',
-          sizeBytes: 2048,
           isRegistered: false,
         },
       ]);

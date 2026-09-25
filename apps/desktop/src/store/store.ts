@@ -260,7 +260,6 @@ import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
-import type { OrphanRemoval } from './slices/worktrees/removeOrphanWorktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -638,9 +637,6 @@ type AppActions = {
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
-  loadStorageStats(): Promise<void>;
-  pruneArchivedTranscripts(): Promise<number>;
-  removeArchivedWorktrees(): Promise<{ removed: number; failed: number }>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
@@ -1018,11 +1014,6 @@ type AppActions = {
   setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
   closeSessionTerminals(sessionId: SessionId): Promise<void>;
   reconcileOrphanWorktrees(): Promise<void>;
-  removeOrphanWorktrees(params: {
-    workspaceId: WorkspaceId;
-    paths: ReadonlyArray<string>;
-    mode: WorktreeRemovalMode;
-  }): Promise<ReadonlyArray<OrphanRemoval>>;
 };
 
 export type AppStore = AppState &
@@ -1032,7 +1023,8 @@ export type AppStore = AppState &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
-  ReturnType<typeof createDurationEstimatesSlice>;
+  ReturnType<typeof createDurationEstimatesSlice> &
+  ReturnType<typeof createStorageSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1107,6 +1099,13 @@ export const initialState: AppState = {
   summarizerStatus: {},
   storageStats: null,
   storageStatsLoading: false,
+  storageFolders: [],
+  storageRoots: [],
+  storageSizeCache: {},
+  storageMeasuringPath: null,
+  storageRemovingPaths: {},
+  storageOutcome: null,
+  storageFocus: null,
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],

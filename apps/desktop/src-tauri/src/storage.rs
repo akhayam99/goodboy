@@ -266,9 +266,93 @@ pub async fn disk_free(path: String) -> Result<DiskFree, WorktreeError> {
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct AppDataUsage {
+    pub folder: String,
+    #[serde(rename = "databaseBytes")]
+    pub database_bytes: u64,
+    #[serde(rename = "snapshotBytes")]
+    pub snapshot_bytes: u64,
+    #[serde(rename = "snapshotCount")]
+    pub snapshot_count: u32,
+}
+
+fn file_bytes(path: &Path) -> u64 {
+    std::fs::metadata(path)
+        .map(|meta| crate::worktree::allocated_bytes(&meta))
+        .unwrap_or(0)
+}
+
+pub(crate) fn app_data_usage_blocking(db_path: &Path) -> AppDataUsage {
+    let folder = db_path
+        .parent()
+        .map(|parent| parent.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let database_bytes = ["", "-wal", "-shm"]
+        .iter()
+        .map(|suffix| {
+            let mut name = db_path.as_os_str().to_os_string();
+            name.push(suffix);
+            file_bytes(Path::new(&name))
+        })
+        .sum();
+    let snapshots =
+        crate::db::db_list_migration_snapshots_blocking(db_path.to_path_buf()).unwrap_or_default();
+    AppDataUsage {
+        folder,
+        database_bytes,
+        snapshot_bytes: snapshots
+            .iter()
+            .map(|snapshot| file_bytes(Path::new(snapshot)))
+            .sum(),
+        snapshot_count: u32::try_from(snapshots.len()).unwrap_or(u32::MAX),
+    }
+}
+
+#[tauri::command]
+pub async fn app_data_usage(
+    state: tauri::State<'_, crate::db::Db>,
+) -> Result<AppDataUsage, WorktreeError> {
+    let db_path = state.1.clone();
+    tauri::async_runtime::spawn_blocking(move || app_data_usage_blocking(&db_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))
+}
+
+fn reveal_blocking(path: &Path) -> Result<(), WorktreeError> {
+    if !path.exists() {
+        return Err(WorktreeError::RepoNotFound(
+            path.to_string_lossy().into_owned(),
+        ));
+    }
+    #[cfg(target_os = "macos")]
+    let result = std::process::Command::new("open")
+        .arg("-R")
+        .arg(path)
+        .spawn();
+    #[cfg(target_os = "linux")]
+    let result = std::process::Command::new("xdg-open")
+        .arg(path.parent().unwrap_or(path))
+        .spawn();
+    #[cfg(target_os = "windows")]
+    let result = std::process::Command::new("explorer")
+        .arg(format!("/select,{}", path.to_string_lossy()))
+        .spawn();
+    result.map(|_| ()).map_err(WorktreeError::Io)
+}
+
+#[tauri::command]
+pub async fn reveal_in_file_manager(path: String) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || reveal_blocking(Path::new(&path)))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{disk_free_blocking, folder_facts_with, registered_worktrees};
+    use super::{
+        app_data_usage_blocking, disk_free_blocking, folder_facts_with, registered_worktrees,
+    };
     use crate::worktree::{git, WorktreeRemovalReason};
     use std::path::{Path, PathBuf};
 
@@ -407,6 +491,23 @@ mod tests {
 
         assert!(!found.exists);
         assert!(found.reasons.is_empty());
+    }
+
+    #[test]
+    fn app_data_usage_counts_the_database_and_its_safety_copies() {
+        let root = temp_root("app-data");
+        let db = root.join("goodboy.db");
+        std::fs::write(&db, vec![1u8; 5000]).unwrap();
+        std::fs::write(root.join("goodboy.db-wal"), vec![1u8; 100]).unwrap();
+        std::fs::write(root.join("goodboy.db.pre-m182-1.bak"), vec![1u8; 3000]).unwrap();
+        std::fs::write(root.join("other.bak"), vec![1u8; 3000]).unwrap();
+
+        let usage = app_data_usage_blocking(&db);
+
+        assert_eq!(usage.folder, root.to_string_lossy());
+        assert!(usage.database_bytes >= 5100);
+        assert!(usage.snapshot_bytes >= 3000);
+        assert_eq!(usage.snapshot_count, 1);
     }
 
     #[cfg(unix)]

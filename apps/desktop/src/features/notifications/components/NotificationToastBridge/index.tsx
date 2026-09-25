@@ -8,6 +8,7 @@ import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';
 import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
+import { openStorage } from '../../../storage/openStorage';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -131,16 +132,8 @@ export const mapNotificationAction = (
   if (action.kind === 'open-orphan-worktrees') {
     const { workspaceId } = action;
     return {
-      label: 'Review folders',
-      onClick: () => {
-        void store.setCurrentWorkspace(workspaceId).then(() => {
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-settings', {
-              detail: { scope: 'workspace', section: 'orphans' },
-            }),
-          );
-        });
-      },
+      label: 'Review storage',
+      onClick: () => openStorage({ workspaceId }),
     };
   }
   if (action.kind === 'retry-update') {

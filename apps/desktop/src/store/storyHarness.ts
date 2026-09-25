@@ -123,7 +123,6 @@ export const storySpies = {
       [] as ReadonlyArray<{
         path: string;
         name: string;
-        sizeBytes: number;
         isRegistered: boolean;
       }>,
   ),

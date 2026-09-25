@@ -397,6 +397,15 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
+- **Storage is the one place for disk space.** App > Storage lists every
+  worktree folder Goodboy made, grouped by repository, disconnected projects
+  and removed workspaces included, under three filters: To review, In use and
+  Kept. It is app scope because the disk belongs to the machine. The workspace
+  page only shows a Notice that points to Storage filtered on that workspace,
+  and the `open-orphan-worktrees` notification action opens Storage too
+  (`openStorage`). The only bulk action removes clean folders idle past "Suggest
+  cleanup after"; a folder with changes, an operation in progress, a writer
+  lease or no git registration never joins it and says why on its row.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
   doing: warning on Providers & models when a connected CLI is too old for a

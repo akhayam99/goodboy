@@ -219,6 +219,8 @@ pub fn run() {
             worktree::worktree_folder_remove,
             storage::worktree_folder_facts,
             storage::disk_free,
+            storage::app_data_usage,
+            storage::reveal_in_file_manager,
             worktree::worktree_list,
             worktree::worktree_remote_url,
             worktree::worktree_diff,
