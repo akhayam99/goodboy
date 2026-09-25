@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import {
   AnchoredPopover,
   IconButton,
@@ -67,7 +67,7 @@ export const RecordOverflowMenu = ({
       trigger={
         <IconButton
           variant="ghost"
-          icon={MoreHorizontal}
+          icon={Ellipsis}
           iconSize={ICON_SIZE.control}
           label={label}
           aria-haspopup="menu"

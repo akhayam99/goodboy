@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Ellipsis } from 'lucide-react';
 import { Button, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import type { ArtifactActionId, ArtifactActionSet } from './artifactActions';
 import { ARTIFACT_ACTION_PRESENTATION } from './artifactActionPresentation';
@@ -96,7 +96,7 @@ export const ArtifactShellActions = ({ set, handles, renderSecondary }: Props) =
           items={overflow}
           label="More"
           tooltip="More actions"
-          trigger={<MoreHorizontal size={ICON_SIZE.control} aria-hidden />}
+          trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
           triggerClassName="p-1.5"
         />
       )}

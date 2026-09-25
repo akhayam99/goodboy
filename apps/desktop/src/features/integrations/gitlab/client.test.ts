@@ -5,7 +5,6 @@ import {
   gitlabFetchIssue,
   gitlabResolveMrDiscussion,
   gitlabUpdateIssueDescription,
-  humanizeMergeStatus,
   issueIdentifier,
   type GitlabIssue,
   type GitlabMrDiscussion,
@@ -138,28 +137,5 @@ describe('gitlabResolveMrDiscussion', () => {
     });
 
     expect(mockInvoke.mock.calls[0]?.[1]).toMatchObject({ resolved: false });
-  });
-});
-
-describe('humanizeMergeStatus', () => {
-  it('maps a mergeable status to a success "Can merge" badge', () => {
-    expect(humanizeMergeStatus('can_be_merged')).toEqual({ label: 'Can merge', tone: 'success' });
-  });
-
-  it('maps a blocked status to a danger "Blocked" badge', () => {
-    expect(humanizeMergeStatus('cannot_be_merged')).toEqual({ label: 'Blocked', tone: 'danger' });
-  });
-
-  it('maps pending statuses to a muted "Checking" badge', () => {
-    expect(humanizeMergeStatus('checking')).toEqual({ label: 'Checking', tone: 'muted' });
-    expect(humanizeMergeStatus('unchecked')).toEqual({ label: 'Checking', tone: 'muted' });
-    expect(humanizeMergeStatus('cannot_be_merged_recheck')).toEqual({
-      label: 'Checking',
-      tone: 'muted',
-    });
-  });
-
-  it('returns null when the status is unknown', () => {
-    expect(humanizeMergeStatus(null)).toBeNull();
   });
 });

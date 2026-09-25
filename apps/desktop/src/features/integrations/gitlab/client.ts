@@ -138,25 +138,6 @@ export const gitlabFetchAssignedMrs = async (
   });
 };
 
-export type GitlabMergeStatusTone = 'success' | 'danger' | 'muted';
-
-export const humanizeMergeStatus = (
-  status: GitlabMergeStatus,
-): { label: string; tone: GitlabMergeStatusTone } | null => {
-  switch (status) {
-    case 'can_be_merged':
-      return { label: 'Can merge', tone: 'success' };
-    case 'cannot_be_merged':
-      return { label: 'Blocked', tone: 'danger' };
-    case 'checking':
-    case 'unchecked':
-    case 'cannot_be_merged_recheck':
-      return { label: 'Checking', tone: 'muted' };
-    default:
-      return null;
-  }
-};
-
 export const gitlabMrForBranch = async (
   workspaceId: WorkspaceId,
   host: string,

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import {
-  hasLiveWireframeScout,
-  wireframeScoutLine,
-  wireframeScoutProgress,
-} from './wireframeScoutProgress';
+import { hasLiveWireframeScout, wireframeScoutProgress } from './wireframeScoutProgress';
 import { WIREFRAME_SCOUT_DEADLINE_REASON } from './wireframeScoutReports';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -68,58 +64,6 @@ describe('wireframeScoutProgress', () => {
       verifications: {},
     });
     expect(rows).toEqual([]);
-  });
-});
-
-describe('wireframeScoutLine', () => {
-  it('reads as one calm line per child', () => {
-    expect(
-      wireframeScoutLine({
-        scout: {
-          agentId: 'c1' as AgentId,
-          name: 'screens and routes',
-          state: 'running',
-          detail: null,
-          claims: null,
-        },
-      }),
-    ).toBe('screens and routes · running');
-    expect(
-      wireframeScoutLine({
-        scout: {
-          agentId: 'c2' as AgentId,
-          name: 'screens and routes',
-          state: 'done',
-          detail: '14s',
-          claims: null,
-        },
-      }),
-    ).toBe('screens and routes · done · 14s');
-    expect(
-      wireframeScoutLine({
-        scout: {
-          agentId: 'c3' as AgentId,
-          name: 'data and contracts',
-          state: 'skipped',
-          detail: 'deadline',
-          claims: null,
-        },
-      }),
-    ).toBe('data and contracts · skipped: deadline');
-  });
-
-  it('appends the verified claim count once it is known', () => {
-    expect(
-      wireframeScoutLine({
-        scout: {
-          agentId: 'c4' as AgentId,
-          name: 'data and contracts',
-          state: 'done',
-          detail: '9s',
-          claims: '8 of 11 claims verified',
-        },
-      }),
-    ).toBe('data and contracts · done · 9s · 8 of 11 claims verified');
   });
 });
 
