@@ -228,7 +228,8 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' });
-    expect(row.querySelector('svg')).toBeNull();
+    expect(row.querySelectorAll('svg')).toHaveLength(1);
+    expect(row.textContent).toBe('RecommendedSonnet · 4.6');
     fireEvent.click(row);
     expect(onProvider).toHaveBeenCalledWith('');
   });

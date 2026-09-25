@@ -3,7 +3,7 @@ import { resolveStoredModelSelection } from '@goodboy/core';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { resolveRouting } from './resolveRouting';
-import { routingSummary, routingTriggerLabel } from './routingSummary';
+import { routingSummary, routingTriggerLabel, type RoutingTriggerLabel } from './routingSummary';
 
 type Params = {
   readonly provider: ProviderId;
@@ -11,12 +11,18 @@ type Params = {
   readonly effort?: EffortLevel | null;
 };
 
-export const recommendationSummary = ({ provider, model, effort }: Params): string => {
+export type RecommendedRouting = {
+  readonly provider: ProviderId;
+  readonly label: RoutingTriggerLabel | null;
+};
+
+export const recommendedRoutingOf = ({ provider, model, effort }: Params): RecommendedRouting => {
+  const providerOnly = { provider, label: null };
   if (model == null) {
-    return PROVIDER_LABEL[provider];
+    return providerOnly;
   }
   if (resolveStoredModelSelection({ provider, id: model }).report?.kind === 'unknown') {
-    return PROVIDER_LABEL[provider];
+    return providerOnly;
   }
   const routing = resolveRouting({
     providers: ROUTING_PICKER_CONSTANTS.providers,
@@ -31,5 +37,10 @@ export const recommendationSummary = ({ provider, model, effort }: Params): stri
     effort: routing.effort,
     showEffort: effort != null && !routing.isEffortFixed,
   });
-  return routingSummary({ provider: routing.provider, label });
+  return { provider: routing.provider, label };
+};
+
+export const recommendationSummary = (params: Params): string => {
+  const { provider, label } = recommendedRoutingOf(params);
+  return label === null ? PROVIDER_LABEL[provider] : routingSummary({ provider, label });
 };

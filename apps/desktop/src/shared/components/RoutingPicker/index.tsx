@@ -35,7 +35,7 @@ import { ProviderGrid } from './ProviderGrid';
 import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
-import { recommendationSummary } from './recommendationSummary';
+import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
@@ -305,6 +305,11 @@ export const RoutingPicker = ({
       {recommendedProvider != null && (
         <>
           <RecommendationRow
+            routing={recommendedRoutingOf({
+              provider: recommendedProvider,
+              model: recommendedModel,
+              effort: recommendedEffort,
+            })}
             summary={recommendationSummary({
               provider: recommendedProvider,
               model: recommendedModel,

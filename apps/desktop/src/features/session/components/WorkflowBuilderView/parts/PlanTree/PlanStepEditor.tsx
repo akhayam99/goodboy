@@ -156,7 +156,7 @@ export const PlanStepEditor = ({
           </div>
         </div>
         <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 px-2.5">
             <Eyebrow label="Model" muted />
             {isRoutingOverridden ? (
               <button
