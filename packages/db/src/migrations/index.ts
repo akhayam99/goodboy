@@ -35,6 +35,8 @@ import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-m
 import { m176ProviderLimits } from './m176-provider-limits';
 import { m177ProjectFocus } from './m177-project-focus';
 import { m178WorkspaceProfileFields } from './m178-workspace-profile-fields';
+import { m180StepLibraryBuiltinsInCode } from './m180-step-library-builtins-in-code';
+import { m181StepLibraryExpectedOutput } from './m181-step-library-expected-output';
 import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
 import { m183WorktreeRoots } from './m183-worktree-roots';
 import { m184TurnSpansBackfill } from './m184-turn-spans-backfill';
@@ -361,6 +363,8 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 176, sql: m176ProviderLimits },
   { version: 177, sql: m177ProjectFocus },
   { version: 178, sql: m178WorkspaceProfileFields },
+  { version: 180, sql: m180StepLibraryBuiltinsInCode },
+  { version: 181, sql: m181StepLibraryExpectedOutput },
   { version: 182, sql: m182RetainedWorktreeLedger },
   { version: 183, sql: m183WorktreeRoots },
   { version: 184, sql: m184TurnSpansBackfill },

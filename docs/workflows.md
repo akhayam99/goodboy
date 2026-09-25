@@ -104,6 +104,15 @@ tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
 **Redraft steps**, asks first, and offers an undo once the new steps land.
 
+**Add step**, in the Studio and in the builder, opens a menu: a search field,
+**Blank step**, then the built-in steps and the steps saved in this workspace.
+The pick lands at the tip of the tree with its editor open. **Save as step** in
+a step's editor saves it to the workspace. The **Saved steps** tab next to
+**Workflows** is where you manage them. Built-in steps, one per role that works
+in the repo, cannot be edited or removed: **Save a copy** makes a workspace copy
+that says what it is based on. A saved step saves once, when you press **Done**
+or move to another row, never on every field.
+
 ### When a run starts
 
 The **Starts** chip in the launch bar picks one:
@@ -376,6 +385,8 @@ Everything below is the code behind the sections above.
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`
 - `packages/core/src/workflows/library.ts`: `WORKFLOW_LIBRARY`, the presets that come with the app
+- `packages/core/src/workflows/builtinSteps.ts`: `BUILTIN_STEPS`, the built-in saved steps. They live in code, not in `step_library`
+- `apps/desktop/src/features/workflows/savedSteps.ts`: one shape for built-in and workspace steps. `AddStepMenu` and `WorkflowStudio/SavedStepsList` read it through `useSavedSteps`
 - `packages/core/src/roles.ts`: `ROLE_REGISTRY`, the roles a step can take
 
 ### `phaseTemplate*` means workflow
@@ -396,7 +407,7 @@ The schema is in `packages/db/src/migrations/`. A few things it does not tell yo
 - Every per-run flag lives on `session_workflows`. The agents of a run carry the same id
 - A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state. A question blocks a run when it carries that run's id, or, for old rows with no run id, that run's workflow id (`workflowRunHasOpenQuestions`). A question with neither blocks only the agent that asked it, never a run
 - `is_preset = 0` marks a one-off run. It does not show up in the preset picker
-- A `step_library` row with a `NULL` `workspace_id` is a built-in step for every workspace
+- `step_library` holds only workspace steps. The rows with a `NULL` `workspace_id` are soft-deleted anchors (`m180`): they keep the `seed_*` ids that `steps.library_step_id` points at valid. `step_def_list` never returns them, and `step_def_upsert` and `step_def_delete` refuse them. A new built-in step needs an anchor row in a migration, or a workflow step that links to it fails the foreign key
 
 Adding a workflow creates every agent of the run at once, each one `pending`.
 Each step's settings are worked out per agent. When a step sets nothing, the
@@ -539,9 +550,9 @@ The restart marks, the hints being read, the set of runs that are deciding and
 the queued requests live in memory, keyed by run and removed with it. Everything a restart needs
 (outcome, stop, summary, hints) is on the run's row.
 
-Expected output belongs to a workflow's own steps. Step library entries do not
-carry it. Rows written before the field existed have none, except the seeded
-example steps that the backfill filled in.
+Expected output belongs to a workflow's own steps and to saved steps
+(`step_library.expected_output`, `m181`). Rows written before the field existed
+have none, except the seeded example steps that the backfill filled in.
 
 ### The post-step summarizer
 

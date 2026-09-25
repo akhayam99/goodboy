@@ -25,6 +25,10 @@ const { invokeMock, state } = vi.hoisted(() => ({
     clearWorkflowStudioDraft: vi.fn(),
     startWorkflowGeneration: vi.fn(async (_input: unknown) => true),
     consumeWorkflowGeneration: vi.fn(),
+    saveStepDef: vi.fn(
+      async (_args: unknown, _workspaceId: unknown): Promise<unknown> => undefined,
+    ),
+    deleteStepDef: vi.fn(async (_id: unknown, _workspaceId: unknown) => undefined),
   },
 }));
 
@@ -69,6 +73,15 @@ beforeEach(() => {
   state.clearWorkflowStudioDraft = vi.fn();
   state.startWorkflowGeneration = vi.fn(async (_input: unknown) => true);
   state.consumeWorkflowGeneration = vi.fn();
+  state.saveStepDef = vi.fn(async (args: unknown, _workspaceId: unknown): Promise<unknown> => ({
+    workspaceId: 'ws-1',
+    promptPrefix: '',
+    createdAt: '2026-09-25T12:00:00.000Z',
+    updatedAt: '2026-09-25T12:00:00.000Z',
+    id: 'lib-new',
+    ...(args as Record<string, unknown>),
+  }));
+  state.deleteStepDef = vi.fn(async (_id: unknown, _workspaceId: unknown) => undefined);
   invokeMock.mockReset();
   invokeMock.mockResolvedValue(undefined);
 });
@@ -266,6 +279,7 @@ describe('WorkflowsPanel editor', () => {
     openWorkflow('Plan and build');
 
     fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+    fireEvent.click(screen.getByRole('option', { name: /Blank step/ }));
 
     expect(screen.getByRole('button', { name: 'Step 2: Custom' })).toBeDefined();
     expect(screen.getByLabelText('Title')).toBeDefined();
@@ -526,5 +540,139 @@ describe('WorkflowsPanel import', () => {
 
     const northwind = await within(dialog).findByRole('region', { name: 'Northwind' });
     await waitFor(() => expect(northwind.textContent).toContain('source database unavailable'));
+  });
+});
+
+const savedStep = (overrides: Record<string, unknown> = {}) => ({
+  id: 'lib-replay',
+  workspaceId: 'ws-1',
+  role: 'tester',
+  name: 'Dry run replay',
+  promptPrefix: 'Replay settled batches with the dry run flag on.',
+  baseStepId: 'seed_tester',
+  createdAt: '2026-09-25T12:00:00.000Z',
+  updatedAt: '2026-09-25T12:00:00.000Z',
+  ...overrides,
+});
+
+const openSavedSteps = () => {
+  fireEvent.click(screen.getByRole('tab', { name: /Saved steps/ }));
+};
+
+describe('WorkflowsPanel saved steps', () => {
+  it('lists the built-in steps and the steps this workspace saved', () => {
+    state.stepLibrary = { 'ws-1': [savedStep()] };
+    renderPanel();
+    openSavedSteps();
+
+    const builtin = screen.getByRole('region', { name: 'Built in' });
+    expect(within(builtin).getAllByRole('button')).toHaveLength(8);
+    const workspace = screen.getByRole('region', { name: 'This workspace' });
+    expect(within(workspace).getByText(/Based on Test/)).toBeDefined();
+  });
+
+  it('keeps a built-in step read only and saves a copy based on it', async () => {
+    renderPanel();
+    openSavedSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
+    expect((screen.getByLabelText('Title') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save a copy' }));
+
+    await waitFor(() => expect(state.saveStepDef).toHaveBeenCalledOnce());
+    expect(state.saveStepDef.mock.calls[0]).toEqual([
+      expect.objectContaining({
+        workspaceId: 'ws-1',
+        baseStepId: 'seed_scout',
+        name: 'Scout copy',
+        role: 'scout',
+      }),
+      'ws-1',
+    ]);
+    expect(state.saveStepDef.mock.calls[0]?.[0]).not.toHaveProperty('id');
+  });
+
+  it('updates a saved step in place once, however many fields change', async () => {
+    state.stepLibrary = { 'ws-1': [savedStep()] };
+    renderPanel();
+    openSavedSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Dry run replay' }));
+    const title = screen.getByLabelText('Title');
+    fireEvent.change(title, { target: { value: 'Replay' } });
+    fireEvent.blur(title);
+    fireEvent.change(title, { target: { value: 'Replay batches' } });
+    fireEvent.blur(title);
+    expect(state.saveStepDef).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    await waitFor(() => expect(state.saveStepDef).toHaveBeenCalledOnce());
+    expect(state.saveStepDef.mock.calls[0]?.[0]).toMatchObject({
+      id: 'lib-replay',
+      name: 'Replay batches',
+      baseStepId: 'seed_tester',
+    });
+  });
+
+  it('does not save a saved step nobody changed', async () => {
+    state.stepLibrary = { 'ws-1': [savedStep()] };
+    renderPanel();
+    openSavedSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Dry run replay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Close Dry run replay' })).toBeNull(),
+    );
+    expect(state.saveStepDef).not.toHaveBeenCalled();
+  });
+
+  it('removes a saved step after an inline confirm', async () => {
+    state.stepLibrary = { 'ws-1': [savedStep()] };
+    renderPanel();
+    openSavedSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Dry run replay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove step' }));
+
+    await waitFor(() => expect(state.deleteStepDef).toHaveBeenCalledWith('lib-replay', 'ws-1'));
+  });
+
+  it('asks for a name before it saves a new step', async () => {
+    renderPanel();
+    openSavedSteps();
+
+    fireEvent.click(screen.getByRole('button', { name: 'New step' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save step' }));
+    expect(screen.getByRole('alert').textContent).toBe('Name the step first.');
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Changelog entry' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save step' }));
+
+    await waitFor(() => expect(state.saveStepDef).toHaveBeenCalledOnce());
+    expect(state.saveStepDef.mock.calls[0]?.[0]).toMatchObject({
+      workspaceId: 'ws-1',
+      name: 'Changelog entry',
+      role: 'custom',
+    });
+    expect(state.saveStepDef.mock.calls[0]?.[0]).not.toHaveProperty('id');
+  });
+
+  it('inserts a saved step from the add step menu in the editor', () => {
+    state.stepLibrary = { 'ws-1': [savedStep()] };
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+    const menu = screen.getByRole('listbox', { name: 'Steps' });
+    expect(within(menu).getByText('This workspace')).toBeDefined();
+    fireEvent.click(within(menu).getByRole('option', { name: /Dry run replay/ }));
+
+    expect(screen.getByRole('button', { name: 'Step 2: Dry run replay' })).toBeDefined();
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('Dry run replay');
   });
 });

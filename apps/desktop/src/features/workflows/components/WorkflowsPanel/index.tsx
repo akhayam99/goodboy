@@ -5,7 +5,10 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
 import { ImportPopover } from '../WorkflowStudio/ImportPopover';
+import { SavedStepsList } from '../WorkflowStudio/SavedStepsList';
+import { StudioHomeTabs, type StudioHomeView } from '../WorkflowStudio/StudioHomeTabs';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
+import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
 type Props = { readonly workspaceId: WorkspaceId };
@@ -23,6 +26,8 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const loadStepLibrary = useAppStore((state) => state.loadStepLibrary);
   const resetWorkflows = useAppStore((state) => state.resetWorkflows);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [view, setView] = useState<StudioHomeView>('workflows');
+  const savedSteps = useSavedSteps({ workspaceId });
 
   const connectedProviders = useMemo<ReadonlyArray<ProviderId>>(
     () =>
@@ -59,20 +64,37 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     }
   };
 
+  const tabs = (
+    <StudioHomeTabs
+      value={view}
+      workflowCount={presets.length}
+      stepCount={savedSteps.builtin.length + savedSteps.workspace.length}
+      onChange={setView}
+    />
+  );
+
   return (
     <ScrollFade className="min-h-0 w-full flex-1">
       <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col')}>
-        {editor.editing === null ? (
+        {editor.editing !== null ? null : view === 'steps' ? (
+          <SavedStepsList
+            workspaceId={workspaceId}
+            connectedProviders={connectedProviders}
+            tabs={tabs}
+          />
+        ) : (
           <WorkflowList
             workflows={presets}
             workspaceName={workspaceName}
             isRestoring={isRestoring}
+            tabs={tabs}
             importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
             onOpen={editor.open}
             onNew={editor.openNew}
             onRestore={restore}
           />
-        ) : (
+        )}
+        {editor.editing === null ? null : (
           <WorkflowEditor
             workspaceId={workspaceId}
             workingDir={workingDir}

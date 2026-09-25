@@ -151,30 +151,28 @@ type AddStepParams = {
   readonly atIndex?: number;
 };
 
+export const blankStepDraft = (): StepDraft => ({
+  key: nextKey(),
+  sourceStepId: null,
+  libraryStepId: null,
+  role: 'custom',
+  name: '',
+  prompt: '',
+  expectedOutput: '',
+  provider: '',
+  model: '',
+  effort: DEFAULT_EFFORT,
+  verbosity: 'normal',
+  size: null,
+});
+
 export const addStep = ({
   steps,
   step,
   atIndex = steps.length,
 }: AddStepParams): ReadonlyArray<StepDraft> => {
   const next = [...steps];
-  next.splice(
-    Math.max(0, Math.min(atIndex, next.length)),
-    0,
-    step ?? {
-      key: nextKey(),
-      sourceStepId: null,
-      libraryStepId: null,
-      role: 'custom',
-      name: '',
-      prompt: '',
-      expectedOutput: '',
-      provider: '',
-      model: '',
-      effort: DEFAULT_EFFORT,
-      verbosity: 'normal',
-      size: null,
-    },
-  );
+  next.splice(Math.max(0, Math.min(atIndex, next.length)), 0, step ?? blankStepDraft());
   return next;
 };
 

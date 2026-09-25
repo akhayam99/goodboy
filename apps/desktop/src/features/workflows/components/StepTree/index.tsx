@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Eyebrow, cn } from '@goodboy/ui';
 import type { StepDraft } from '../../engine';
+import type { SavedStep, SavedStepGroups } from '../../savedSteps';
 import { AddStepRow } from './AddStepRow';
 import { StepDropZone } from './StepDropZone';
 import { StepTreeSkeleton } from './StepTreeSkeleton';
@@ -22,8 +23,9 @@ type Props = {
   readonly disabled: boolean;
   readonly banner?: ReactNode;
   readonly action?: ReactNode;
+  readonly savedSteps: SavedStepGroups;
   readonly renderStep: (slot: StepSlot) => ReactNode;
-  readonly onAddStep: () => void;
+  readonly onAddStep: (step: SavedStep | null) => void;
 };
 
 const stepSpanOf = ({ index }: { readonly index: number }): StepLaneSpan =>
@@ -42,6 +44,7 @@ export const StepTree = ({
   disabled,
   banner = null,
   action = null,
+  savedSteps,
   renderStep,
   onAddStep,
 }: Props) => {
@@ -96,6 +99,7 @@ export const StepTree = ({
             span={addSpanOf({ count })}
             identityIndex={identityIndex}
             disabled={disabled}
+            savedSteps={savedSteps}
             onAdd={onAddStep}
           />
         </ol>
