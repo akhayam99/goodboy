@@ -1222,7 +1222,7 @@ describe('TimelinePane row meta', () => {
       storeState.sessionTurnSpans = {};
     });
 
-    it('names every worktree the step changed once the session has two', () => {
+    it('counts the worktrees the step changed once the session has two, naming them on hover', () => {
       storeState.sessionProjectMounts = { 'session-1': [WEB, API] };
       storeState.sessionTurnSpans = {
         'session-1': [touchedSpan(['mount-api']), touchedSpan(['mount-web'])],
@@ -1230,7 +1230,7 @@ describe('TimelinePane row meta', () => {
       render(<TimelinePane session={SESSION} actions={null} />);
 
       const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
-      expect(worktrees.textContent).toBe('acme-web, acme-api');
+      expect(worktrees.textContent).toBe('2');
       expect(worktrees.getAttribute('title')).toBe('Changed files in acme-web and acme-api');
       expect(within(rowOf('Build the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
     });
@@ -1241,6 +1241,16 @@ describe('TimelinePane row meta', () => {
       render(<TimelinePane session={SESSION} actions={null} />);
 
       expect(within(rowOf('Plan the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
+    });
+
+    it('names the one worktree a step changed on hover in a session with two', () => {
+      storeState.sessionProjectMounts = { 'session-1': [WEB, API] };
+      storeState.sessionTurnSpans = { 'session-1': [touchedSpan(['mount-api'])] };
+      render(<TimelinePane session={SESSION} actions={null} />);
+
+      const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
+      expect(worktrees.textContent).toBe('1');
+      expect(worktrees.getAttribute('title')).toBe('Changed files in acme-api');
     });
   });
 
