@@ -447,7 +447,7 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the session kickoff, or opening the launch dock on an
+Picking an issue in the session kickoff, or opening Launch session on an
 inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
@@ -456,7 +456,7 @@ brief is only a proposal. In the overview you pick Use brief, Edit, Use issue
 text or Dismiss, and a failure stays inline in the card with Retry. The brief
 renames the session only when you have not renamed it yourself, and the goal it
 writes lands in the goal history, so the previous goal can be restored. In the
-launch dock the brief fills the goal only while you have not edited it, and
+Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.

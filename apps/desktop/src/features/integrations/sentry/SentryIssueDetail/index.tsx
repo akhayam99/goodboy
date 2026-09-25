@@ -1,7 +1,8 @@
-import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { EmptyState, Skeleton, StatCard, type SegmentedTabOption } from '@goodboy/ui';
 import { Footprints, LayoutList, ListTree } from 'lucide-react';
 import type { SentryIssueDetail as Detail } from '../client';
@@ -34,8 +35,7 @@ type Props = {
   readonly summaryIsLoading?: boolean;
   readonly summaryError?: string | null;
   readonly onRetrySummary?: () => void;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
 export const SentryIssueDetail = ({
@@ -55,8 +55,7 @@ export const SentryIssueDetail = ({
   summaryIsLoading = false,
   summaryError = null,
   onRetrySummary,
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const view = sentryIssueView({
@@ -113,12 +112,12 @@ export const SentryIssueDetail = ({
     <PaneShell
       scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="sentry"
           identifier={view.identifier}
           title={view.title}
-          badge={<SentryLevelBadge level={view.level} />}
-          actions={headerActions}
+          state={<SentryLevelBadge level={view.level} />}
+          frame={frame}
           externalRef={
             view.permalink != null && view.permalink !== ''
               ? { url: view.permalink, label: 'issue' }
@@ -134,7 +133,6 @@ export const SentryIssueDetail = ({
           options={options}
         />
       }
-      dock={dock}
     >
       <DetailProperties
         entries={resolveDetailFields({ registry: sentryIssueFields, entity: view })}

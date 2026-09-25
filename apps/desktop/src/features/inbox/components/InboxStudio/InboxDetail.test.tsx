@@ -2,67 +2,63 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import type { InboxProvider, InboxRecord } from '../../types';
+import type { InboxRecord } from '../../types';
+
+type TestFrame = { readonly primary: ReactNode; readonly onClose: (() => void) | null };
 
 vi.mock('../../../github/GithubIssueDetail', () => ({
-  GithubIssueDetail: ({
-    issue,
-    dock,
-    headerActions,
-  }: {
-    issue: { title: string };
-    dock: ReactNode;
-    headerActions: ReactNode;
-  }) => (
+  GithubIssueDetail: ({ issue, frame }: { issue: { title: string }; frame: TestFrame }) => (
     <div data-testid="panel">
       github-issue:{issue.title}
-      {headerActions}
-      {dock}
+      <button type="button" onClick={frame.onClose ?? undefined}>
+        Close the item
+      </button>
+      {frame.primary}
     </div>
   ),
 }));
 
 vi.mock('../../../integrations/gitlab/GitlabIssueDetail', () => ({
-  GitlabIssueDetail: ({ issue, dock }: { issue: { title: string }; dock: ReactNode }) => (
+  GitlabIssueDetail: ({ issue, frame }: { issue: { title: string }; frame: TestFrame }) => (
     <div data-testid="panel">
       gitlab-issue:{issue.title}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
 
 vi.mock('../../../integrations/gitlab/MergeRequest/MrDetailPanel', () => ({
-  MrDetailPanel: ({ mr, dock }: { mr: { title: string } | null; dock: ReactNode }) => (
+  MrDetailPanel: ({ mr, frame }: { mr: { title: string } | null; frame: TestFrame }) => (
     <div data-testid="panel">
       gitlab-mr:{mr?.title}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
 
 vi.mock('../../../integrations/linear/LinearIssueDetail', () => ({
-  LinearIssueDetail: ({ issue, dock }: { issue: { title: string }; dock: ReactNode }) => (
+  LinearIssueDetail: ({ issue, frame }: { issue: { title: string }; frame: TestFrame }) => (
     <div data-testid="panel">
       linear-issue:{issue.title}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
 
 vi.mock('../../../integrations/jira/JiraIssueDetail', () => ({
-  JiraIssueDetail: ({ issue, dock }: { issue: { summary: string }; dock: ReactNode }) => (
+  JiraIssueDetail: ({ issue, frame }: { issue: { summary: string }; frame: TestFrame }) => (
     <div data-testid="panel">
       jira-issue:{issue.summary}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
 
 vi.mock('../../../integrations/sentry/SentryIssueDetail', () => ({
-  SentryIssueDetail: ({ title, dock }: { title: string; dock: ReactNode }) => (
+  SentryIssueDetail: ({ title, frame }: { title: string; frame: TestFrame }) => (
     <div data-testid="panel">
       sentry-error:{title}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
@@ -70,14 +66,14 @@ vi.mock('../../../integrations/sentry/SentryIssueDetail', () => ({
 vi.mock('../../../integrations/slack/SlackThreadDetail', () => ({
   SlackThreadDetail: ({
     fallbackMessage,
-    dock,
+    frame,
   }: {
     fallbackMessage: { text: string };
-    dock: ReactNode;
+    frame: TestFrame;
   }) => (
     <div data-testid="panel">
       slack-thread:{fallbackMessage.text}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
@@ -85,14 +81,14 @@ vi.mock('../../../integrations/slack/SlackThreadDetail', () => ({
 vi.mock('../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel', () => ({
   PrDetailPanel: ({
     pullRequest,
-    dock,
+    frame,
   }: {
     pullRequest: { title: string } | null;
-    dock: ReactNode;
+    frame: TestFrame;
   }) => (
     <div data-testid="panel">
       bitbucket-pr:{pullRequest?.title}
-      {dock}
+      {frame.primary}
     </div>
   ),
 }));
@@ -101,8 +97,13 @@ vi.mock('../../../integrations/sentry/useSentryIssueDetail', () => ({
   useSentryIssueDetail: () => ({ detail: null, isLoading: false, error: null }),
 }));
 
-vi.mock('../RecordLaunchDock', () => ({
-  RecordLaunchDock: () => <div data-testid="dock">launch</div>,
+vi.mock('../../hooks/useRecordFrame', () => ({
+  useRecordFrame: ({ onClose }: { onClose: () => void }) => ({
+    primary: <div data-testid="dock">launch</div>,
+    sessionVerbs: [],
+    onRefresh: null,
+    onClose,
+  }),
 }));
 
 const { InboxDetail } = await import('./InboxDetail');
@@ -128,7 +129,6 @@ const renderDetail = (record: InboxRecord) =>
       record={record}
       workspaceId={workspaceId}
       rootPath="/repo"
-      isLoading={false}
       errors={baseErrors}
       onRefresh={onRefresh}
       onClose={vi.fn()}

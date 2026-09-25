@@ -1,5 +1,3 @@
-import { IconButton } from '@goodboy/ui';
-import { X } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
@@ -11,13 +9,12 @@ import { useSentryIssueDetail } from '../../../integrations/sentry/useSentryIssu
 import { SlackThreadDetail } from '../../../integrations/slack/SlackThreadDetail';
 import { PrDetailPanel } from '../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel';
 import type { InboxProvider, InboxRecord } from '../../types';
-import { RecordLaunchDock } from '../RecordLaunchDock';
+import { useRecordFrame } from '../../hooks/useRecordFrame';
 
 type Props = {
   readonly record: InboxRecord;
   readonly workspaceId: WorkspaceId;
   readonly rootPath: string;
-  readonly isLoading: boolean;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
@@ -29,7 +26,6 @@ export const InboxDetail = ({
   record,
   workspaceId,
   rootPath,
-  isLoading,
   errors,
   onRefresh,
   onClose,
@@ -39,18 +35,15 @@ export const InboxDetail = ({
   const sentryIssueId = record.payload.provider === 'sentry' ? record.payload.issue.id : null;
   const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
 
+  const frame = useRecordFrame({
+    record,
+    workspaceId,
+    launchRequest: launchFocusRequest,
+    onLaunched: onClose,
+    onRefresh,
+    onClose: onDeselect,
+  });
   const payload = record.payload;
-  const dock = (
-    <RecordLaunchDock
-      record={record}
-      workspaceId={workspaceId}
-      onClose={onClose}
-      focusRequest={launchFocusRequest}
-    />
-  );
-  const deselectAction = (
-    <IconButton icon={X} label="Close the item" tooltip="Close the item" onClick={onDeselect} />
-  );
 
   switch (payload.provider) {
     case 'github':
@@ -58,20 +51,14 @@ export const InboxDetail = ({
         <GithubIssueDetail
           issue={payload.issue}
           editContext={{ workspaceId, rootPath }}
-          headerActions={deselectAction}
-          dock={dock}
+          frame={frame}
         />
       );
     case 'gitlab':
       switch (payload.kind) {
         case 'issue':
           return (
-            <GitlabIssueDetail
-              issue={payload.issue}
-              workspaceId={workspaceId}
-              headerActions={deselectAction}
-              dock={dock}
-            />
+            <GitlabIssueDetail issue={payload.issue} workspaceId={workspaceId} frame={frame} />
           );
         case 'mr':
           return (
@@ -81,8 +68,7 @@ export const InboxDetail = ({
               host={payload.host}
               onRefresh={onRefresh}
               onClose={onClose}
-              headerActions={deselectAction}
-              dock={dock}
+              frame={frame}
             />
           );
         default: {
@@ -91,22 +77,14 @@ export const InboxDetail = ({
         }
       }
     case 'linear':
-      return (
-        <LinearIssueDetail
-          issue={payload.issue}
-          workspaceId={workspaceId}
-          headerActions={deselectAction}
-          dock={dock}
-        />
-      );
+      return <LinearIssueDetail issue={payload.issue} workspaceId={workspaceId} frame={frame} />;
     case 'jira':
       return (
         <JiraIssueDetail
           issue={payload.issue}
           workspaceId={workspaceId}
           onIssueWritten={onRefresh}
-          headerActions={deselectAction}
-          dock={dock}
+          frame={frame}
         />
       );
     case 'sentry':
@@ -125,8 +103,7 @@ export const InboxDetail = ({
           detail={sentryDetail.detail?.issueId === payload.issue.id ? sentryDetail.detail : null}
           isLoading={sentryDetail.isLoading}
           error={sentryDetail.error}
-          headerActions={deselectAction}
-          dock={dock}
+          frame={frame}
         />
       );
     case 'slack':
@@ -138,8 +115,7 @@ export const InboxDetail = ({
           fallbackChannelName={payload.channel.name}
           fallbackMessage={payload.head}
           fallbackUrl={record.url}
-          headerActions={deselectAction}
-          dock={dock}
+          frame={frame}
         />
       );
     case 'bitbucket':
@@ -149,12 +125,10 @@ export const InboxDetail = ({
           repo={payload.repo}
           sessionId={null}
           workspaceId={workspaceId}
-          isLoading={isLoading}
           error={errors.bitbucket}
           onRefresh={onRefresh}
           onClose={onClose}
-          headerActions={deselectAction}
-          dock={dock}
+          frame={frame}
         />
       );
     default: {

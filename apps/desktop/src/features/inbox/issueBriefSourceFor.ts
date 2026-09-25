@@ -1,4 +1,4 @@
-import type { IssueBriefSource } from '../../../../store/slices/issue-briefs/types';
+import type { IssueBriefSource } from '../../store/slices/issue-briefs/types';
 
 type Params = {
   readonly task: Omit<IssueBriefSource, 'body' | 'noun'>;

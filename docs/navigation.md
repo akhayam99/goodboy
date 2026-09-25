@@ -442,10 +442,23 @@ one is open at a time.
   `gh auth logout`. The control depends on credential state alone, not on the
   git remote. So a leftover scoped personal API key on a non-GitHub workspace
   can still be cleared.
-- **A code-host studio mounted outside a session is browse-and-launch only.**
-  The write verbs (approve, request changes, comment, merge, decline) belong to
-  a session and stay disabled. The mount reads through the workspace's first
-  repo project, so a workspace with no repo project stops at an empty state.
+- **A code-host record keeps its verbs outside a session.** A GitLab merge
+  request opened from the inbox approves, merges, closes and reopens through
+  the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
+  blocked with the reason until Goodboy has resolved it for a session. Merge
+  always asks first, and so does every destructive verb. The mount reads
+  through the workspace's first repo project, so a workspace with no repo
+  project stops at an empty state.
+- **Every record header has the same four places.** `RecordHeader` puts the
+  tool glyph, the identifier and the state on the identity line, with Open in
+  the tool, the `⋯` menu and, in the inbox, close at its end. Under the title
+  sits one action row: one primary (Launch session, or Open session once one is
+  linked) and at most two tool verbs picked by state. Everything else lives in
+  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
+  then destructive verbs after a separator. Editable properties change from the
+  control that shows them (the Jira state opens its transitions). Launch
+  session opens a popover with the goal and the brief; Enter from the inbox list
+  opens it, or opens the linked session.
 
 ## Lens surfaces
 

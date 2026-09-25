@@ -1,11 +1,10 @@
-import {
-  RecordDetailEmptyState,
-  RecordDetailHeader,
-} from '../../../../../shared/components/StudioDetail';
+import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { useMemo, useState, type ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
+import { useMemo, useState } from 'react';
+import { Markdown, Notice } from '@goodboy/ui';
 import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
 import type { BitbucketIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
@@ -14,7 +13,6 @@ import {
   resolveDetailFields,
 } from '../../../../../shared/detail-fields';
 import { BranchPair } from '@goodboy/ui';
-import { RefreshIconButton } from '@goodboy/ui';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../../github/components/PullRequest/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
@@ -22,7 +20,9 @@ import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { BitbucketStateChip } from '../../BitbucketStateChip';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
-import { PrActionBar } from '../PrActionBar';
+import { usePrVerbs } from '../usePrVerbs';
+import { voteSummary } from '../usePrVerbs/voteSummary';
+import { bitbucketPrVote } from '../usePrVerbs/bitbucketPrVote';
 import { PrChanges } from './PrChanges';
 import { PrConversation } from './PrConversation';
 import { useBitbucketPrDetail } from './useBitbucketPrDetail';
@@ -36,12 +36,10 @@ type Props = {
   readonly repo: BitbucketRepo | null;
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId;
-  readonly isLoading: boolean;
   readonly error: string | null;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
 const SECTION_OPTIONS = [
@@ -59,11 +57,9 @@ export const PrDetailPanel = ({
   repo,
   sessionId,
   workspaceId,
-  isLoading,
   error,
   onRefresh,
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
   const [section, setSection] = useState<PrSection>('overview');
   const target = useMemo(
@@ -87,6 +83,19 @@ export const PrDetailPanel = ({
       onRefresh();
     },
   });
+  const verbs = usePrVerbs({
+    pullRequest,
+    accountId: config?.accountId ?? null,
+    displayName: config?.displayName ?? null,
+    busy: actions.busy,
+    canAct: actions.canAct,
+    onApprove: actions.approve,
+    onUnapprove: actions.unapprove,
+    onRequestChanges: actions.requestChanges,
+    onWithdrawChanges: actions.withdrawChanges,
+    onMerge: actions.merge,
+    onDecline: actions.decline,
+  });
 
   if (pullRequest == null || repo == null) {
     return (
@@ -105,50 +114,37 @@ export const PrDetailPanel = ({
     <PaneShell
       scroll="body"
       header={
-        <>
-          <RecordDetailHeader
-            provider="bitbucket"
-            identifier={identifier}
-            title={pullRequest.title}
-            badge={<BitbucketStateChip state={pullRequest.state} />}
-            subtitle={
+        <RecordHeader
+          provider="bitbucket"
+          identifier={identifier}
+          title={pullRequest.title}
+          state={<BitbucketStateChip state={pullRequest.state} />}
+          facts={
+            <div className="flex flex-col gap-1">
               <BranchPair
                 headBranch={pullRequest.sourceBranch}
                 baseBranch={pullRequest.destinationBranch}
               />
-            }
-            actions={
-              <>
-                <RefreshIconButton
-                  label="refresh pull request"
-                  iconSize={12}
-                  isLoading={isLoading}
-                  error={error}
-                  onClick={() => {
-                    detail.reload();
-                    onRefresh();
-                  }}
-                />
-                {headerActions}
-              </>
-            }
-            externalRef={{ url: webUrl, label: 'pull request' }}
-          />
-          <PrActionBar
-            key={identifier}
-            pullRequest={pullRequest}
-            accountId={config?.accountId ?? null}
-            displayName={config?.displayName ?? null}
-            busy={actions.busy}
-            canAct={actions.canAct}
-            onApprove={actions.approve}
-            onUnapprove={actions.unapprove}
-            onRequestChanges={actions.requestChanges}
-            onWithdrawChanges={actions.withdrawChanges}
-            onMerge={actions.merge}
-            onDecline={actions.decline}
-          />
-        </>
+              <p className="text-2xs text-muted-foreground">
+                {voteSummary({
+                  participants: pullRequest.participants,
+                  vote: bitbucketPrVote({
+                    participants: pullRequest.participants,
+                    accountId: config?.accountId ?? null,
+                    displayName: config?.displayName ?? null,
+                  }),
+                })}
+              </p>
+            </div>
+          }
+          externalRef={{ url: webUrl, label: 'pull request' }}
+          verbs={verbs}
+          frame={frame}
+          onRefresh={() => {
+            detail.reload();
+            onRefresh();
+          }}
+        />
       }
       tabs={
         <StudioDetailTabs
@@ -158,8 +154,15 @@ export const PrDetailPanel = ({
           onChange={setSection}
         />
       }
-      dock={dock}
     >
+      {error != null ? (
+        <Notice
+          tone="warning"
+          placement="inline"
+          title="Couldn't refresh the pull requests"
+          body={error}
+        />
+      ) : null}
       <DetailProperties
         entries={resolveDetailFields({
           registry: bitbucketPullRequestFields,

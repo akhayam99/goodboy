@@ -276,7 +276,6 @@ export const InboxScene = () => {
                     record={SELECTED_RECORD}
                     workspaceId={WORKSPACE_ID}
                     rootPath={ROOT_PATH}
-                    isLoading={false}
                     errors={NO_ERRORS}
                     onRefresh={noop}
                     onClose={noop}

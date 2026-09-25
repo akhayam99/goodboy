@@ -1,7 +1,8 @@
-import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
@@ -9,6 +10,7 @@ import { StudioDetailTabs } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { gitlabIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
+import { stateWord } from '../../../inbox/stateWord';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
 import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
@@ -20,8 +22,7 @@ type Props = {
   readonly issue: GitlabIssue;
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
 const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
@@ -29,13 +30,7 @@ const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
   { value: 'conversation', label: 'Conversation', icon: MessageSquare },
 ];
 
-export const GitlabIssueDetail = ({
-  issue,
-  workspaceId,
-  projectId,
-  headerActions,
-  dock,
-}: Props) => {
+export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGitlabIssueDescription({ issue, workspaceId, projectId });
   const notes = useGitlabIssueNotes({ issue, workspaceId, projectId });
@@ -44,13 +39,13 @@ export const GitlabIssueDetail = ({
     <PaneShell
       scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="gitlab"
           identifier={issueIdentifier(issue)}
           title={issue.title}
-          badge={<StateBadge>{issue.state}</StateBadge>}
-          actions={headerActions}
+          state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
           externalRef={{ url: issue.webUrl, label: 'issue' }}
+          frame={frame}
         />
       }
       tabs={
@@ -61,7 +56,6 @@ export const GitlabIssueDetail = ({
           onChange={setSection}
         />
       }
-      dock={dock}
     >
       <DetailProperties
         entries={resolveDetailFields({ registry: gitlabIssueFields, entity: issue })}

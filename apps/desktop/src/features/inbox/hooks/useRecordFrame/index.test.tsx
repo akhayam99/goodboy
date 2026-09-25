@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   setCurrentSession: vi.fn(async () => undefined),
   setActiveLens: vi.fn(),
   requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
+  reportError: vi.fn(async () => undefined),
 }));
 
 type StoreState = {
@@ -18,6 +19,7 @@ type StoreState = {
   readonly setCurrentSession: typeof h.setCurrentSession;
   readonly setActiveLens: typeof h.setActiveLens;
   readonly requestIssueBrief: typeof h.requestIssueBrief;
+  readonly reportError: typeof h.reportError;
   readonly issueBriefs: Readonly<Record<string, never>>;
 };
 
@@ -29,6 +31,7 @@ vi.mock('../../../../store', () => ({
       setCurrentSession: h.setCurrentSession,
       setActiveLens: h.setActiveLens,
       requestIssueBrief: h.requestIssueBrief,
+      reportError: h.reportError,
       issueBriefs: {},
     }),
 }));
@@ -37,9 +40,41 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 
-const { RecordLaunchDock } = await import('./index');
+const { useRecordFrame } = await import('./index');
+const { RecordHeader } = await import('../../../../shared/components/StudioDetail/RecordHeader');
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+
+type HarnessProps = {
+  readonly record: InboxRecord;
+  readonly launchRequest?: number;
+  readonly onLaunched?: () => void;
+  readonly onClose?: () => void;
+};
+
+const Harness = ({
+  record,
+  launchRequest = 0,
+  onLaunched = vi.fn(),
+  onClose = vi.fn(),
+}: HarnessProps) => {
+  const frame = useRecordFrame({
+    record,
+    workspaceId: WORKSPACE_ID,
+    launchRequest,
+    onLaunched,
+    onRefresh: vi.fn(),
+    onClose,
+  });
+  return (
+    <RecordHeader
+      provider={record.provider}
+      identifier={record.identifier}
+      title={record.title}
+      frame={frame}
+    />
+  );
+};
 
 const GITHUB_RECORD = {
   key: 'github:issue:42',
@@ -144,13 +179,18 @@ afterEach(() => {
   cleanup();
   h.createSession.mockClear();
   h.unlinkSessionExternalTask.mockClear();
+  h.setCurrentSession.mockClear();
 });
 
-describe('RecordLaunchDock', () => {
-  it('builds the provider goal and creates a session with the external task', async () => {
-    render(
-      <RecordLaunchDock record={GITHUB_RECORD} workspaceId={WORKSPACE_ID} onClose={vi.fn()} />,
-    );
+describe('useRecordFrame', () => {
+  it('puts Launch session first and launches from its popover with the provider goal', async () => {
+    render(<Harness record={GITHUB_RECORD} />);
+
+    const primary = screen.getByRole('button', { name: /Launch session/ });
+    const actions = primary.closest('[data-slot="record-actions"]');
+    expect(actions?.firstElementChild?.contains(primary)).toBe(true);
+
+    fireEvent.click(primary);
 
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Session goal' }).value).toBe(
       'GitHub issue #42: Fix launch\n\nKeep one dock.',
@@ -165,7 +205,8 @@ describe('RecordLaunchDock', () => {
       workspaceId: WORKSPACE_ID,
       sessionId: null,
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Launch session' }));
+    const [, launch] = screen.getAllByRole('button', { name: /Launch session/ });
+    fireEvent.click(launch as HTMLElement);
 
     await waitFor(() =>
       expect(h.createSession).toHaveBeenCalledWith({
@@ -184,17 +225,33 @@ describe('RecordLaunchDock', () => {
     );
   });
 
-  it('keeps the linked notice and unlinks a sentry issue from its session', async () => {
-    render(
-      <RecordLaunchDock
-        record={LINKED_SENTRY_RECORD}
-        workspaceId={WORKSPACE_ID}
-        onClose={vi.fn()}
-      />,
-    );
+  it('opens the launch popover on a launch request from the list', () => {
+    const { rerender } = render(<Harness record={GITHUB_RECORD} />);
+    expect(screen.queryByRole('textbox', { name: 'Session goal' })).toBeNull();
 
-    expect(screen.getByText('Session already launched')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink from session' }));
+    rerender(<Harness record={GITHUB_RECORD} launchRequest={1} />);
+
+    expect(screen.getByRole('textbox', { name: 'Session goal' })).toBeDefined();
+  });
+
+  it('makes Open session the primary once a session is linked, and opens it on request', async () => {
+    const onLaunched = vi.fn();
+    const { rerender } = render(<Harness record={LINKED_SENTRY_RECORD} onLaunched={onLaunched} />);
+
+    expect(screen.getByRole('button', { name: 'Open session' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
+
+    rerender(<Harness record={LINKED_SENTRY_RECORD} onLaunched={onLaunched} launchRequest={1} />);
+
+    await waitFor(() => expect(h.setCurrentSession).toHaveBeenCalledWith(SENTRY_SESSION_ID));
+    await waitFor(() => expect(onLaunched).toHaveBeenCalledOnce());
+  });
+
+  it('keeps Unlink session in the overflow menu of a linked sentry issue', async () => {
+    render(<Harness record={LINKED_SENTRY_RECORD} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for GBY-5' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Unlink session' }));
 
     await waitFor(() =>
       expect(h.unlinkSessionExternalTask).toHaveBeenCalledWith(
@@ -205,15 +262,19 @@ describe('RecordLaunchDock', () => {
     );
   });
 
-  it('stays hidden when the record cannot resolve a launch target', () => {
-    const view = render(
-      <RecordLaunchDock
-        record={BITBUCKET_WITHOUT_REPO}
-        workspaceId={WORKSPACE_ID}
-        onClose={vi.fn()}
-      />,
-    );
+  it('leaves the primary slot empty when the record cannot resolve a launch target', () => {
+    render(<Harness record={BITBUCKET_WITHOUT_REPO} />);
 
-    expect(view.container.childElementCount).toBe(0);
+    expect(screen.queryByRole('button', { name: /Launch session/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open session' })).toBeNull();
+  });
+
+  it('closes the record from the identity line', () => {
+    const onClose = vi.fn();
+    render(<Harness record={GITHUB_RECORD} onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close the item' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

@@ -1,7 +1,8 @@
-import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
@@ -23,8 +24,7 @@ type Props = {
   readonly issue: JiraIssue;
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
   readonly onIssueWritten?: (() => void) | null;
 };
 
@@ -37,8 +37,7 @@ export const JiraIssueDetail = ({
   issue,
   workspaceId,
   projectId,
-  headerActions,
-  dock,
+  frame = null,
   onIssueWritten,
 }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
@@ -49,38 +48,42 @@ export const JiraIssueDetail = ({
   return (
     <PaneShell
       scroll="body"
-      dock={dock}
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="jira"
           identifier={live.key}
           title={live.summary}
-          badge={
-            <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
-              {live.status}
-            </StateBadge>
+          state={
+            actions.transition != null ? (
+              <TransitionMenu
+                issueKey={live.key}
+                workspaceId={workspaceId}
+                onTransition={actions.transition}
+                state={{
+                  label: live.status,
+                  tone: statusCategoryTone({ statusCategory: live.statusCategory }),
+                }}
+              />
+            ) : (
+              <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
+                {live.status}
+              </StateBadge>
+            )
           }
-          actions={
-            <>
-              {actions.assign != null && (
+          facts={
+            actions.assign != null ? (
+              <div className="flex flex-wrap items-center gap-1.5">
                 <AssigneePicker
                   issueKey={live.key}
                   workspaceId={workspaceId}
                   assignee={live.assignee}
                   onAssign={actions.assign}
                 />
-              )}
-              {actions.transition != null && (
-                <TransitionMenu
-                  issueKey={live.key}
-                  workspaceId={workspaceId}
-                  onTransition={actions.transition}
-                />
-              )}
-              {headerActions}
-            </>
+              </div>
+            ) : undefined
           }
           externalRef={{ url: live.url, label: 'issue' }}
+          frame={frame}
         />
       }
       tabs={

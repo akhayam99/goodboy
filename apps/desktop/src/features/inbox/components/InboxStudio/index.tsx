@@ -308,7 +308,6 @@ export const InboxStudio = ({
                   record={selectedRecord}
                   workspaceId={workspaceId}
                   rootPath={rootPath}
-                  isLoading={isLoading}
                   errors={errors}
                   onRefresh={refetch}
                   onClose={requestClose}

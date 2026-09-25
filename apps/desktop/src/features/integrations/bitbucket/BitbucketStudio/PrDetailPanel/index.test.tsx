@@ -131,7 +131,6 @@ const panel = (pullRequest: BitbucketPullRequest) => (
     repo={REPO}
     sessionId={'sess-1' as SessionId}
     workspaceId={'ws-1' as WorkspaceId}
-    isLoading={false}
     error={null}
     onRefresh={() => undefined}
     onClose={() => undefined}

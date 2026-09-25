@@ -1,7 +1,8 @@
-import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StudioDetailTabs } from '@goodboy/ui';
@@ -19,17 +20,10 @@ type Props = {
   readonly issue: LinearIssue;
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
-  readonly dock?: ReactNode;
-  readonly headerActions?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
-export const LinearIssueDetail = ({
-  issue,
-  workspaceId,
-  projectId,
-  dock,
-  headerActions,
-}: Props) => {
+export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { comments, isLoading, error, post } = useLinearIssueComments({
     workspaceId,
@@ -42,13 +36,13 @@ export const LinearIssueDetail = ({
     <PaneShell
       scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="linear"
           identifier={issue.identifier}
           title={issue.title}
-          badge={<StateBadge>{issue.state.name}</StateBadge>}
-          actions={headerActions}
+          state={<StateBadge>{issue.state.name}</StateBadge>}
           externalRef={{ url: issue.url, label: 'issue' }}
+          frame={frame}
         />
       }
       tabs={
@@ -67,7 +61,6 @@ export const LinearIssueDetail = ({
           ]}
         />
       }
-      dock={dock}
     >
       <DetailProperties
         entries={resolveDetailFields({ registry: linearIssueFields, entity: issue })}

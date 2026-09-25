@@ -1,13 +1,15 @@
-import { RecordDetailHeader } from '../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../shared/components/PaneShell';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { FileText, MessageSquare } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
 import type { SegmentedTabOption } from '@goodboy/ui';
 import { StudioDetailTabs } from '@goodboy/ui';
 import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
+import { stateWord } from '../../inbox/stateWord';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
 import { GithubIssueComments } from '../GithubIssueComments';
 import { useGithubIssueComments } from '../useGithubIssueComments';
@@ -20,12 +22,11 @@ type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: GithubIssue;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
   readonly editContext?: GithubIssueEditContext | null;
 };
 
-export const GithubIssueDetail = ({ issue, headerActions, dock, editContext }: Props) => {
+export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) => {
   const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGithubIssueDescription({ issue, editContext });
   const { comments, isLoading, error, post } = useGithubIssueComments({
@@ -56,13 +57,13 @@ export const GithubIssueDetail = ({ issue, headerActions, dock, editContext }: P
     <PaneShell
       scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="github"
           identifier={`#${issue.number}`}
           title={issue.title}
-          badge={<StateBadge>{issue.state.toLowerCase()}</StateBadge>}
-          actions={headerActions}
+          state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
           externalRef={{ url: issue.url, label: 'issue' }}
+          frame={frame}
         />
       }
       tabs={
@@ -73,7 +74,6 @@ export const GithubIssueDetail = ({ issue, headerActions, dock, editContext }: P
           options={tabOptions}
         />
       }
-      dock={dock}
     >
       <DetailProperties entries={properties} />
       {section === 'overview' ? (

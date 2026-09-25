@@ -87,10 +87,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrActionBar/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrChanges.tsx': {
     count: 1,
     reason: 'debt',

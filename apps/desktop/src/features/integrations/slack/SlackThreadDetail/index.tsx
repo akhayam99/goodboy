@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { RecordDetailHeader } from '../../../../shared/components/StudioDetail';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
@@ -19,8 +20,7 @@ type Props = {
   readonly fallbackChannelName: string;
   readonly fallbackMessage: SlackMessage | null;
   readonly fallbackUrl?: string | null;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
 export const SlackThreadDetail = ({
@@ -30,8 +30,7 @@ export const SlackThreadDetail = ({
   fallbackChannelName,
   fallbackMessage,
   fallbackUrl = null,
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
   const [permalink, setPermalink] = useState<string | null>(fallbackUrl);
   const isEnabled = channelId !== '' && threadTs !== '';
@@ -75,16 +74,12 @@ export const SlackThreadDetail = ({
   return (
     <PaneShell
       scroll="body"
-      dock={dock}
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="slack"
           identifier={`#${channelName}`}
           title={title !== '' ? title : `#${channelName}`}
-          subtitle={
-            <span className="font-mono text-2xs text-muted-foreground">#{channelName}</span>
-          }
-          actions={headerActions}
+          frame={frame}
           externalRef={
             permalink != null && permalink !== '' ? { url: permalink, label: 'thread' } : null
           }

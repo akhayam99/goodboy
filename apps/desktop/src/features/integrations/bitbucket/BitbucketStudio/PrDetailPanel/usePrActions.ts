@@ -4,7 +4,9 @@ import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
 import type { BitbucketPrWriteParams } from '../../../../../store/slices/bitbucket-pr';
 import type { BitbucketRepo } from '../../client';
-import type { BitbucketPrActionBusy } from '../PrActionBar';
+
+export type BitbucketPrActionBusy =
+  'approve' | 'unapprove' | 'request-changes' | 'withdraw-changes' | 'merge' | 'decline' | null;
 
 type Params = {
   readonly sessionId: SessionId | null;

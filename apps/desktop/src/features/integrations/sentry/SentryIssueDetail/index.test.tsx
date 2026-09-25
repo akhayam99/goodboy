@@ -60,9 +60,7 @@ describe('SentryIssueDetail', () => {
 
     expect(screen.getByRole('heading', { name: 'TypeError: request failed' })).toBeDefined();
     expect(screen.getByText('api/items')).toBeDefined();
-    expect(screen.getByRole('link', { name: /Open in Sentry/ }).getAttribute('href')).toBe(
-      'https://sentry.io/issues/42',
-    );
+    expect(screen.getByRole('button', { name: 'Open in Sentry' })).toBeDefined();
     expect(screen.getByText(/desktop@1.2.3/)).toBeDefined();
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();

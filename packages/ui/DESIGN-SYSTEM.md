@@ -621,6 +621,17 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
 
+**Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
+
+| Place     | What goes there                                                                               | Shape                                              |
+| --------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                                            | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state                          | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh, Copy link, Unlink session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                                                  | icon buttons at the end of the identity line       |
+
+A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
+
 `InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
 
 - **Row swap**: a trigger inside a row with width (a `FieldRow`, a section footer) is replaced in the same slot by the `card` surface.

@@ -158,6 +158,8 @@ const switchToAgentMode = () => {
 
 afterEach(cleanup);
 
+const openMenu = () => fireEvent.click(screen.getByRole('button', { name: 'More actions for !4' }));
+
 describe('MrDetailPanel', () => {
   it('creates an MR from the form footer', async () => {
     render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
@@ -303,7 +305,7 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Merge request' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     expect(screen.getByText('Merge !4?')).toBeDefined();
     expect(h.gitlabMergeMr).not.toHaveBeenCalled();
 
@@ -322,8 +324,8 @@ describe('MrDetailPanel', () => {
   });
 
   it.each([
-    ['Merge request', 'Merge !4?'],
-    ['Close', 'Close !4?'],
+    ['Merge', 'Merge !4?'],
+    ['Close merge request…', 'Close !4?'],
   ] as const)('backing out of the %s confirmation writes nothing', (label, question) => {
     render(
       <MrDetailPanel
@@ -334,7 +336,12 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: label }));
+    if (label === 'Merge') {
+      fireEvent.click(screen.getByRole('button', { name: label }));
+    } else {
+      openMenu();
+      fireEvent.click(screen.getByRole('menuitem', { name: label }));
+    }
     expect(screen.getByText(question)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
@@ -369,9 +376,9 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    expect(
-      (screen.getByRole('button', { name: 'Merge request' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Merge' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 
   it('renders the discussion threads without the system notes', async () => {
@@ -432,7 +439,8 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Convert to draft' }));
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Convert to draft' }));
 
     await waitFor(() =>
       expect(h.gitlabUpdateMrState).toHaveBeenCalledWith({
@@ -443,7 +451,9 @@ describe('MrDetailPanel', () => {
         title: 'Draft: Add merge request dashboard',
       }),
     );
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Mark ready' })).toBeDefined());
+    await waitFor(() => expect(h.gitlabUpdateMrState).toHaveBeenCalledOnce());
+    openMenu();
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Mark ready' })).toBeDefined());
   });
 
   it('closes the merge request through the state command', async () => {
@@ -457,7 +467,8 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    openMenu();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Close merge request…' }));
     expect(screen.getByText('Close !4?')).toBeDefined();
     expect(h.gitlabUpdateMrState).not.toHaveBeenCalled();
 
@@ -496,8 +507,8 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    expect(
-      (screen.getByRole('button', { name: 'Merge request' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(screen.getByRole('button', { name: 'Merge' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
   });
 });
