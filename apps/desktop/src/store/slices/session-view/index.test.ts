@@ -238,16 +238,16 @@ describe('store contract', () => {
       expect(readPersistedLens(SESSION_ID)).toBeNull();
     });
 
-    it('opening artifact creation clears the studio, the selected agent and the focused plan', async () => {
+    it('opening artifact creation clears the studio, the selected agent and the focused artifact', async () => {
       const store = useAppStore;
       store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
-      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
       store.getState().openArtifactCreation({ sessionId: SESSION_ID, kind: 'report' });
       expect(store.getState().artifactCreation[SESSION_ID]).toEqual({ kind: 'report', note: null });
       expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
       expect(store.getState().sessionStudio[SESSION_ID]).toBeNull();
       expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
       store.getState().closeArtifactCreation({ sessionId: SESSION_ID });
       expect(store.getState().artifactCreation[SESSION_ID]).toBeNull();
     });
@@ -411,31 +411,26 @@ describe('store contract', () => {
       expect(store.getState().workflowExpand[SESSION_ID]?.['run-a']).toBe(true);
     });
 
-    it('setFocusedPlanId and setSessionStudio update per-session state', async () => {
+    it('setFocusedArtifactId and setSessionStudio update per-session state', async () => {
       const store = useAppStore;
-      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
+      store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
       store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBe(PLAN_ID);
       expect(store.getState().sessionStudio[SESSION_ID]).toEqual({ kind: 'workflow' });
     });
 
-    it('focuses one artifact at a time and clears the other focus on the round trip', async () => {
+    it('focuses a plan and a report through the same artifact focus', async () => {
       const store = useAppStore;
       const artifactId = 'artifact-report' as ArtifactId;
 
       store.getState().setFocusedArtifactId(SESSION_ID, artifactId);
       expect(store.getState().focusedArtifactId[SESSION_ID]).toBe(artifactId);
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
 
-      store.getState().setFocusedPlanId(SESSION_ID, null);
-      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
-
-      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
-      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
+      store.getState().setFocusedArtifactId(SESSION_ID, PLAN_ID);
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBe(PLAN_ID);
 
       store.getState().setFocusedArtifactId(SESSION_ID, null);
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
+      expect(store.getState().focusedArtifactId[SESSION_ID]).toBeNull();
     });
 
     it('focusedArtifactId survives the switch to the plans lens and dies on any other', async () => {
@@ -474,15 +469,6 @@ describe('store contract', () => {
       });
       store.getState().setActiveLens(SESSION_ID, 'agents');
       expect(store.getState().diffFocus[SESSION_ID]).toBeNull();
-    });
-
-    it('focusedPlanId survives the switch to the plans lens and dies on any other', async () => {
-      const store = useAppStore;
-      store.getState().setFocusedPlanId(SESSION_ID, PLAN_ID);
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBe(PLAN_ID);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      expect(store.getState().focusedPlanId[SESSION_ID]).toBeNull();
     });
 
     it('focusedGithubIssueNumber survives the switch to the github_issue lens and dies on any other', async () => {

@@ -9,7 +9,7 @@ export type SessionBreadcrumbHandlers = {
   toLens: (lens: LensKind) => void;
   toWorkflowsList: () => void;
   toWorkflowRun: () => void;
-  toPlansList: () => void;
+  toArtifactsList: () => void;
   toParentAgent: () => void;
   toRootAgent: () => void;
   toReviewHome: () => void;
@@ -20,7 +20,7 @@ export type SessionBreadcrumbInput = {
   studio: SessionStudio | null;
   focusedWorkflowName: string | null;
   selectedChildWorkflowName: string | null;
-  focusedPlanTitle: string | null;
+  focusedArtifactTitle: string | null;
   artifactCreationLabel: string | null;
   selectedChildLabel: string | null;
   selectedChildHome: AgentHomeLens | null;
@@ -45,7 +45,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     studio,
     focusedWorkflowName,
     selectedChildWorkflowName,
-    focusedPlanTitle,
+    focusedArtifactTitle,
     artifactCreationLabel,
     selectedChildLabel,
     selectedChildHome,
@@ -73,7 +73,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     id: 'plans',
     label: 'Artifacts',
     icon: LENS_ICON.plans,
-    onClick: handlers.toPlansList,
+    onClick: handlers.toArtifactsList,
   };
 
   if (studio != null) {
@@ -170,8 +170,8 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     return sealLast([overview, plansList, { id: 'artifact-create', label: artifactCreationLabel }]);
   }
 
-  if (lens === 'plans' && focusedPlanTitle != null) {
-    return sealLast([overview, plansList, { id: 'plan', label: focusedPlanTitle }]);
+  if (lens === 'plans' && focusedArtifactTitle != null) {
+    return sealLast([overview, plansList, { id: 'artifact', label: focusedArtifactTitle }]);
   }
 
   if (lens === 'review' && reviewModeLabel != null) {

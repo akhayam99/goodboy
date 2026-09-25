@@ -1073,7 +1073,6 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
     sessionOpenQuestions: { [SESSION_ID]: [] },
     sessionAnsweredQuestions: { [SESSION_ID]: [] },
     planConsumptions: {},
-    focusedPlanId: { [SESSION_ID]: null },
     focusedArtifactId: { [SESSION_ID]: focusedArtifactId },
     sessionWorkflows: { [SESSION_ID]: [] },
     phaseTemplates: { [WORKSPACE_ID]: [] },
@@ -1100,6 +1099,5 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
     setActiveLens: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     selectAgent: async () => undefined,
-    setFocusedPlanId: () => undefined,
   });
 };

@@ -44,7 +44,6 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId }: Props) => {
     sessionId === null ? EMPTY_ARRAY : (s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY),
   );
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
-  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
 
   const resolved = item.complete
     ? resolveArtifactForBlock({
@@ -58,11 +57,7 @@ export const ArtifactBlockCard = ({ item, sessionId, agentId }: Props) => {
 
   if (resolved !== null && sessionId !== null) {
     const onClick = () => {
-      if (resolved.kind === 'plan') {
-        setFocusedPlanId(sessionId, resolved.id);
-      } else {
-        setFocusedArtifactId(sessionId, resolved.id);
-      }
+      setFocusedArtifactId(sessionId, resolved.id);
       openLens({ sessionId, lens: 'plans' });
     };
 

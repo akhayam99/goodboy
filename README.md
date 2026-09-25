@@ -102,7 +102,7 @@ Agents work in their own copy of the code, not in yours.
 When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves it as an artifact with its own page.
 
 - The next agent reads it instead of scrolling a chat
-- An **active** plan waits for the next agent, a **consumed** one folds away under **Show finished**
+- A plan waits for you to run it, and says so, then stays in the list with the agent that ran it
 - Filter by plans, reports or wireframes, and reopen or print any of them whenever you want
 
 ![The Artifacts tab of a session filtered to plans: one active plan ready for the next agent and two consumed plans below it](./docs/images/artifacts-lens-shell.png)

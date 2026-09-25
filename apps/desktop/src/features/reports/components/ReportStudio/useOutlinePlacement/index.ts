@@ -2,7 +2,7 @@ import { useEffect, useState, type RefObject } from 'react';
 
 export type OutlinePlacement = 'aside' | 'inline';
 
-export const OUTLINE_ASIDE_MIN_WIDTH = 680;
+export const OUTLINE_ASIDE_MIN_WIDTH = 900;
 
 export const useOutlinePlacement = ({
   containerRef,

@@ -294,7 +294,10 @@ An artifact has a status:
 ### Open questions
 
 Planner agents write plans. Other agents use them, and Goodboy remembers who
-used which plan. The plans studio shows each plan as a tree.
+used which plan. The Artifacts page lists plans, reports and wireframes as one
+list, newest first, and opens each of them in the same page: a small header
+with at most one main action, the document at reading size, and a right panel
+for its details and for a chat with the agent that wrote it.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.

@@ -353,7 +353,6 @@ const seedLensSwitcherScene = (): void => {
     sessionDismissedQuestions: { [SESSION_ID]: [] },
     sessionArtifacts: { [SESSION_ID]: ARTIFACTS },
     sessionPlans: { [SESSION_ID]: PLANS },
-    focusedPlanId: { [SESSION_ID]: null },
     focusedArtifactId: { [SESSION_ID]: null },
     projectScripts: { [WORKSPACE_ID]: USER_SCRIPTS },
     scriptRuns: { [SESSION_ID]: SCRIPT_RUNS },

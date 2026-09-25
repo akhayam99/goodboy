@@ -40,7 +40,6 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const storedActiveLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
   const isBranchless = useIsBranchlessSession({ session });
   const activeLens = supportedLens({ lens: storedActiveLens, isBranchless });
-  const setFocusedPlanId = useAppStore((state) => state.setFocusedPlanId);
   const setFocusedArtifactId = useAppStore((state) => state.setFocusedArtifactId);
   const setFocusedWorkflowRun = useAppStore((state) => state.setFocusedWorkflowRun);
   const phaseRuns = useAppStore(
@@ -224,7 +223,6 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                   isBranchless={isBranchless}
                   onNavigate={crumb.onClick}
                   onSelect={(lens) => {
-                    setFocusedPlanId(sessionId, null);
                     setFocusedArtifactId(sessionId, null);
                     setFocusedWorkflowRun(sessionId, null);
                     openLens({ sessionId, lens });

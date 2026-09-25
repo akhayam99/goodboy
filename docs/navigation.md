@@ -554,7 +554,15 @@ or the session changes, with Escape, and with its X; focus then returns to the
 trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
-new kind adds a variant to `DrawerContent` and a case to the host.
+body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
+frame instead. A new kind adds a variant to `DrawerContent` and a case to the
+host.
+
+The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
+or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;
+the drawer header switches between the two. It also closes when the focused
+artifact changes. While it is open, Escape closes the drawer before it takes the
+artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. The inbox
 studio keeps the same contract inside itself (`InboxStudioLayout`): the record

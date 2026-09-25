@@ -13,7 +13,7 @@ vi.mock('../../../store', async () => {
     readonly activeLens: Readonly<Record<string, string | null>>;
     readonly selectedAgentId: Readonly<Record<string, string | null>>;
     readonly setSessionStudio: () => void;
-    readonly setFocusedPlanId: () => void;
+    readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
     readonly setCurrentWorkspace: (id: string) => Promise<void>;
     readonly setCurrentSession: (id: string | null) => Promise<void>;
@@ -26,7 +26,7 @@ vi.mock('../../../store', async () => {
     activeLens: {},
     selectedAgentId: {},
     setSessionStudio: () => undefined,
-    setFocusedPlanId: () => undefined,
+    setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
     setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id }),
     setCurrentSession: async (id) => set({ currentSessionId: id }),

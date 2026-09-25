@@ -65,16 +65,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   ArtifactStudio: {
     kind: 'dispatch',
     files: [
-      'features/artifacts/components/ArtifactStudio/ArtifactCollection.tsx',
+      'features/artifacts/components/ArtifactList/index.tsx',
       'features/artifacts/components/ArtifactCreationPane/index.tsx',
-      'features/plans/components/PlanStudio/index.tsx',
-    ],
-  },
-  ArtifactStudioDetails: {
-    kind: 'legacy',
-    files: [
-      'features/artifacts/components/ArtifactStudio/ArtifactDetail.tsx',
-      'features/artifacts/components/ArtifactStudio/ArtifactRunDetail.tsx',
+      'features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx',
+      'features/artifacts/components/ArtifactShell/ArtifactGenerationShell.tsx',
     ],
   },
   AgentOverlay: {

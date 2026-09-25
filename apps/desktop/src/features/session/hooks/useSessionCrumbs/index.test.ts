@@ -24,7 +24,7 @@ const { store, actions } = vi.hoisted(() => {
     setActiveLens: vi.fn(),
     setScriptsLensScope: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
-    setFocusedPlanId: vi.fn(),
+    setFocusedArtifactId: vi.fn(),
     selectAgent: vi.fn(),
     setReviewMode: vi.fn(),
   };
@@ -126,7 +126,8 @@ beforeEach(() => {
     activeLens: {},
     sessionStudio: {},
     focusedWorkflowRunId: {},
-    focusedPlanId: {},
+    focusedArtifactId: {},
+    sessionArtifacts: {},
     artifactCreation: {},
     selectedAgentId: {},
     sessionPhaseRuns: {

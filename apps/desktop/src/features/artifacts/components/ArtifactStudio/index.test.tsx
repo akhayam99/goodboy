@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 const { notify, state, showToast, subscribers } = vi.hoisted(() => {
   const listeners = new Set<() => void>();
@@ -14,29 +14,31 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
     },
     showToast: vi.fn(),
     state: {
+      currentSessionId: 'sess-1',
+      activeLens: { 'sess-1': 'plans' } as Record<string, string | null>,
+      drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
       planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
       agentTurnState: {} as Record<string, { readonly kind: string }>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       loadSessionArtifacts: vi.fn(async () => undefined),
       loadConsumptionsForPlan: vi.fn(async () => undefined),
       updatePlanBody: vi.fn(async () => undefined),
+      updateArtifactSource: vi.fn(async () => undefined),
       deletePlan: vi.fn(async () => undefined),
       restorePlan: vi.fn(async () => undefined),
       runPlan: vi.fn(async () => 'agent-impl'),
+      spawnReportAgent: vi.fn(async () => 'agent-report-3'),
+      spawnWireframeAgent: vi.fn(async () => 'agent-wireframe-3'),
       selectAgent: vi.fn(async () => undefined),
       setCurrentSession: vi.fn(async () => undefined),
       setActiveLens: vi.fn(),
-      focusedPlanId: {} as Record<string, string | null>,
-      setFocusedPlanId: vi.fn((sessionId: string, planId: string | null) => {
-        state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: planId };
-        state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: null };
-        notify();
-      }),
+      openDrawer: vi.fn(),
+      toggleDrawer: vi.fn(),
       focusedArtifactId: {} as Record<string, string | null>,
       setFocusedArtifactId: vi.fn((sessionId: string, artifactId: string | null) => {
         state.focusedArtifactId = { ...state.focusedArtifactId, [sessionId]: artifactId };
-        state.focusedPlanId = { ...state.focusedPlanId, [sessionId]: null };
         notify();
       }),
       artifactFilter: {} as Record<string, string>,
@@ -51,11 +53,8 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       openArtifactCreation: vi.fn(),
       closeArtifactCreation: vi.fn(),
       setArtifactDraft: vi.fn(),
-      cancelCurrentTurn: vi.fn(async () => undefined),
       stopArtifactGeneration: vi.fn(async () => undefined),
       wireframeScoutVerification: {},
-      lensHistory: {} as Record<string, { readonly index: number }>,
-      lensGo: vi.fn(),
       plans: [] as ReadonlyArray<unknown>,
       openQuestions: [] as ReadonlyArray<unknown>,
     },
@@ -87,19 +86,20 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 
+vi.mock('../../useArtifactScoutRoster', () => ({
+  useArtifactScoutRoster: () => ({ rows: [], isLoaded: true }),
+}));
+
 vi.mock('../ArtifactCreationPane', () => ({
   ArtifactCreationPane: ({
     kind,
-    note,
     onStarted,
   }: {
     readonly kind: string;
-    readonly note: string | null;
     readonly onStarted: (agentId: string) => void;
   }) => (
     <div data-testid="artifact-creation-pane-stub">
       {kind}
-      {note}
       <button type="button" onClick={() => onStarted('agent-report-2')}>
         stub generate
       </button>
@@ -118,31 +118,31 @@ const report = {
   workflowRunId: null,
   kind: 'report',
   schemaVersion: 1,
-  title: 'Session report',
+  title: 'Rounding drift in ledger-core postings',
   sourceFormat: 'markdown',
-  sourceText: '## Outcome\nshipped it',
+  sourceText: '## What was wrong\nEach posting rounded its own share.',
   metadata: { reportType: 'session-summary' },
   status: 'active',
   revision: 2,
   sourceTurnId: 'run-1',
-  createdAt: '2026-01-02T03:04:05.000Z',
-  updatedAt: '2026-01-02T03:04:05.000Z',
+  createdAt: '2026-09-14T18:27:00.000Z',
+  updatedAt: '2026-09-14T18:27:00.000Z',
 };
 
 const wireframeDocument = {
   version: 1,
-  initialScreenId: 'welcome',
+  initialScreenId: 'batches',
   theme: { name: 'generic' },
   screens: [
     {
-      id: 'welcome',
-      title: 'Welcome',
+      id: 'batches',
+      title: 'Settlement batches',
       viewport: 'desktop',
       root: {
-        id: 'welcome-root',
+        id: 'batches-root',
         kind: 'stack',
         direction: 'column',
-        children: [{ id: 'welcome-title', kind: 'text', text: 'Welcome', variant: 'title' }],
+        children: [{ id: 'batches-title', kind: 'text', text: 'Batches', variant: 'title' }],
       },
     },
   ],
@@ -153,191 +153,129 @@ const wireframe = {
   ...report,
   id: 'artifact-wireframe',
   kind: 'wireframe',
-  title: 'Onboarding flow',
+  title: 'Settlement review flow',
   sourceFormat: 'json',
   sourceText: JSON.stringify(wireframeDocument),
   metadata: { fidelity: 'low', designProfile: {} },
   revision: 1,
+  createdAt: '2026-09-14T18:34:00.000Z',
 };
 
 const plan = {
   id: 'plan-1',
-  agentId: 'agent-1',
+  agentId: 'agent-planner',
   sessionId: 'sess-1',
-  title: 'Ship the thing',
-  bodyMd: 'step one',
+  title: 'Backfill the settled batches',
+  bodyMd: '## Goal\nEvery settled batch matches its invoice.',
   status: 'active',
-  createdAt: '2026-01-02T03:04:05.000Z',
+  createdAt: '2026-09-14T19:34:00.000Z',
+  updatedAt: '2026-09-14T19:34:00.000Z',
   consumptionCount: 0,
 };
 
 const reportAgent = {
   id: 'agent-report-2',
-  name: 'Session summary',
+  name: 'Report 2',
   kind: 'report',
   status: 'completed',
-  startedAt: '2026-01-02T03:00:00.000Z',
-  lastFinishedAt: '2026-01-02T03:04:00.000Z',
-};
-
-const wireframeAgent = {
-  ...reportAgent,
-  id: 'agent-wireframe-2',
-  name: 'Low fidelity',
-  kind: 'wireframe',
+  startedAt: '2026-09-14T18:00:00.000Z',
+  lastFinishedAt: '2026-09-14T18:04:00.000Z',
 };
 
 beforeEach(() => {
-  state.sessionPhaseRuns = { 'sess-1': [{ id: 'agent-1', name: 'reporter' }] };
+  state.sessionPhaseRuns = {
+    'sess-1': [
+      { id: 'agent-1', name: 'Report 1' },
+      { id: 'agent-planner', name: 'Planner 2' },
+    ],
+  };
   state.sessionArtifacts = {};
   state.planConsumptions = {};
   state.agentTurnState = {};
+  state.transcripts = {};
+  state.drawer = null;
   state.plans = [];
-  state.focusedPlanId = {};
+  state.openQuestions = [];
   state.focusedArtifactId = {};
   state.artifactFilter = {};
   state.sessions = [{ id: 'sess-1', goal: 'fix the rounding drift' }];
   state.selectedAgentId = {};
   state.sessionStudio = {};
   state.artifactCreation = {};
-  state.loadSessionArtifacts.mockClear();
-  state.openArtifactCreation.mockClear();
-  state.closeArtifactCreation.mockClear();
-  state.setArtifactDraft.mockClear();
-  state.cancelCurrentTurn.mockClear();
-  state.stopArtifactGeneration.mockClear();
-  state.setFocusedPlanId.mockClear();
-  state.setFocusedArtifactId.mockClear();
-  state.setArtifactFilter.mockClear();
-  state.selectAgent.mockClear();
+  vi.clearAllMocks();
 });
 afterEach(cleanup);
 
 import { ArtifactStudio } from './index';
 
-describe('ArtifactStudio', () => {
+const renderStudio = () => render(<ArtifactStudio sessionId={'sess-1' as never} />);
+
+const openRow = (name: RegExp) => fireEvent.click(screen.getByRole('button', { name }));
+
+const focus = (artifactId: string) => {
+  state.focusedArtifactId = { 'sess-1': artifactId };
+};
+
+describe('ArtifactStudio list', () => {
   it('loads the session artifacts on mount', () => {
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    renderStudio();
     expect(state.loadSessionArtifacts).toHaveBeenCalledWith('sess-1');
   });
 
-  it('shows the artifact collection with an empty state when the session has nothing', () => {
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+  it('says there is nothing yet when the session has no artifact', () => {
+    renderStudio();
     expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
     expect(screen.getByText('No artifacts yet')).toBeDefined();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Reports' })).toBeNull();
   });
 
-  it('groups plans, reports and wireframes in one collection', () => {
+  it('lists plans, reports and wireframes as one list of rows, newest first, with no group eyebrows', () => {
     state.plans = [plan];
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByRole('heading', { level: 2, name: 'Plans' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Wireframes' })).toBeDefined();
-    expect(screen.getByText('Ship the thing')).toBeDefined();
-    expect(screen.getByText('Session report')).toBeDefined();
-    expect(screen.getByText('Onboarding flow')).toBeDefined();
+    renderStudio();
+    const list = screen.getByTestId('artifact-list');
+    const titles = within(list)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label'));
+    expect(titles).toEqual([
+      'Plan Backfill the settled batches, Ready to run',
+      'Wireframe Settlement review flow, 1 screen',
+      'Report Rounding drift in ledger-core postings, Session summary',
+    ]);
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+    expect(screen.queryByText(/Show finished/)).toBeNull();
   });
 
-  it('records the picked filter for the session', () => {
+  it('records the picked filter and shows only that kind', () => {
+    state.plans = [plan];
     state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByRole('tab', { name: /reports/i }));
-    expect(state.setArtifactFilter).toHaveBeenCalledWith({
+    state.artifactFilter = { 'sess-1': 'report' };
+    renderStudio();
+    expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
+    expect(screen.queryByText('Settlement review flow')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: /plans/i }));
+    expect(state.setArtifactFilter).toHaveBeenCalledWith({ sessionId: 'sess-1', filter: 'plan' });
+  });
+
+  it('starts a report or a wireframe from one New menu', () => {
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-new'));
+    const menu = screen.getByRole('menu', { name: 'New artifact' });
+    fireEvent.click(within(menu).getByRole('menuitem', { name: /Wireframe/ }));
+    expect(state.openArtifactCreation).toHaveBeenCalledWith({
       sessionId: 'sess-1',
-      filter: 'report',
+      kind: 'wireframe',
+      workflowRunId: null,
     });
+    expect(screen.queryByTestId('create-report-cta')).toBeNull();
   });
 
-  it('shows only the picked kind once the filter is set', () => {
-    state.plans = [plan];
-    state.artifactFilter = { 'sess-1': 'report' };
-    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('Session report')).toBeDefined();
-    expect(screen.queryByText('Onboarding flow')).toBeNull();
-    expect(screen.queryByText('Ship the thing')).toBeNull();
-  });
-
-  it('says a report kind is empty instead of showing the other kinds', () => {
-    state.sessionArtifacts = { 'sess-1': [wireframe] };
-    state.artifactFilter = { 'sess-1': 'report' };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('No reports yet')).toBeDefined();
-    expect(screen.queryByText('Onboarding flow')).toBeNull();
-  });
-
-  it('keeps the filter applied when coming back from an artifact', () => {
-    state.artifactFilter = { 'sess-1': 'report' };
-    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
-    expect(screen.queryByText('Onboarding flow')).toBeNull();
-  });
-
-  it('lists a report agent that is still generating', () => {
+  it('shows a generation as a running row with a stop control', () => {
     state.sessionPhaseRuns = {
       'sess-1': [{ ...reportAgent, status: 'running', lastFinishedAt: undefined }],
     };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
-    expect(screen.getByText('Session summary')).toBeDefined();
-    expect(screen.getByText('Generating')).toBeDefined();
-  });
-
-  it('counts a live turn as generating even while the agent row still reads pending', () => {
-    state.sessionPhaseRuns = { 'sess-1': [{ ...reportAgent, status: 'pending' }] };
     state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('Generating')).toBeDefined();
-  });
-
-  it('says no report was produced when the turn finished without one', () => {
-    state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('No report')).toBeDefined();
-  });
-
-  it('says a wireframe could not be read when the turn finished without one', () => {
-    state.sessionPhaseRuns = { 'sess-1': [wireframeAgent] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByRole('heading', { level: 2, name: 'Wireframes' })).toBeDefined();
-    expect(screen.getByText("Couldn't read wireframe")).toBeDefined();
-  });
-
-  it('drops the generation row once that agent produced its artifact', () => {
-    state.sessionPhaseRuns = { 'sess-1': [{ ...reportAgent, id: 'agent-1' }] };
-    state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.queryByText('no report produced')).toBeNull();
-    expect(screen.getByText('Session report')).toBeDefined();
-  });
-
-  it('renders the creation pane over the collection when creation is open', () => {
-    state.artifactCreation = { 'sess-1': { kind: 'wireframe', note: null } };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByTestId('artifact-creation-pane-stub').textContent).toContain('wireframe');
-    expect(screen.queryByRole('heading', { level: 2, name: 'Reports' })).toBeNull();
-  });
-
-  it('shows the model and a stop control on a running generation', () => {
-    state.sessionPhaseRuns = {
-      'sess-1': [
-        {
-          ...reportAgent,
-          status: 'running',
-          lastFinishedAt: undefined,
-          providerOverride: 'anthropic',
-          modelOverride: 'claude-sonnet-5',
-        },
-      ],
-    };
-    state.agentTurnState = { 'agent-report-2': { kind: 'running' } };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText(/Claude/)).toBeDefined();
+    renderStudio();
+    expect(screen.getByText('Writing')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
       sessionId: 'sess-1',
@@ -347,7 +285,8 @@ describe('ArtifactStudio', () => {
 
   it('offers try again on a generation that produced nothing', async () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
+    renderStudio();
+    expect(screen.getByText('No report')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
       expect(state.openArtifactCreation).toHaveBeenCalledWith({
@@ -357,268 +296,243 @@ describe('ArtifactStudio', () => {
         note: 'the brief of this generation was not recorded',
       });
     });
-    expect(state.setArtifactDraft).toHaveBeenCalled();
-  });
-
-  it('opens the reader when the awaited artifact arrives on the collection', () => {
-    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
-    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('stub generate'));
-    state.artifactCreation = {};
-    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
-    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
-  });
-
-  it('records completion without stealing focus once the user opened something else', () => {
-    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
-    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('stub generate'));
-    state.artifactCreation = {};
-    state.selectedAgentId = { 'sess-1': 'agent-report-2' };
-    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
-    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.queryByTestId('artifact-export-slot')).toBeNull();
-    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
   });
 
   it('opens the agent behind a generation that produced nothing', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session summary'));
+    renderStudio();
+    openRow(/Report 2/);
     expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-report-2');
   });
 
-  it('opens a report with its status and export slot, metadata behind the toggle', () => {
+  it('renders the creation pane over the list when creation is open', () => {
+    state.artifactCreation = { 'sess-1': { kind: 'wireframe', note: null } };
+    renderStudio();
+    expect(screen.getByTestId('artifact-creation-pane-stub').textContent).toContain('wireframe');
+    expect(screen.queryByTestId('artifact-list')).toBeNull();
+  });
+
+  it('opens the reader when the awaited artifact arrives', () => {
+    state.artifactCreation = { 'sess-1': { kind: 'report', note: null } };
+    const { rerender } = renderStudio();
+    fireEvent.click(screen.getByText('stub generate'));
+    state.artifactCreation = {};
+    state.sessionArtifacts = { 'sess-1': [{ ...report, agentId: 'agent-report-2' }] };
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-report');
+  });
+
+  it('opens a plan and a report through the same artifact focus', () => {
+    state.plans = [plan];
     state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    const detail = screen.getByTestId('artifact-detail');
-    expect(screen.getByRole('heading', { level: 2, name: 'Session report' })).toBeDefined();
-    expect(within(detail).queryByText('reporter')).toBeNull();
-    expect(within(detail).queryByText('rev 2')).toBeNull();
-    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
-    expect(within(detail).getByTestId('artifact-creator').textContent).toBe('reporter');
-    expect(within(detail).getByText('rev 2')).toBeDefined();
-    expect(within(detail).queryByText('active')).toBeNull();
-    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
-    expect(screen.getByText('shipped it')).toBeDefined();
+    renderStudio();
+    openRow(/Backfill the settled batches/);
+    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'plan-1');
+    expect(screen.getByTestId('artifact-shell').getAttribute('data-artifact-kind')).toBe('plan');
   });
+});
 
-  it('swaps the list for the artifact it opened and returns on Back or Escape', () => {
-    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    expect(screen.queryByText('Onboarding flow')).toBeNull();
-    expect(screen.queryByRole('complementary', { name: 'Artifacts' })).toBeNull();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', null);
-  });
-
-  it('keeps the plan lifecycle vocabulary off reports and wireframes', () => {
-    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.queryByText('active')).toBeNull();
-    expect(screen.queryByText('consumed')).toBeNull();
-  });
-
-  it('still surfaces superseded on a report because a newer revision replaced it', () => {
-    state.sessionArtifacts = { 'sess-1': [{ ...report, status: 'superseded' }] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('Superseded')).toBeDefined();
-  });
-
-  it('offers markdown export on a report and json export on a wireframe, both printable', () => {
-    state.sessionArtifacts = { 'sess-1': [report, wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    expect(screen.getByTestId('artifact-save-source').getAttribute('aria-label')).toBe(
-      'Save markdown',
+describe('ArtifactStudio shell', () => {
+  it('opens a report in the shared shell: title once, meta line, Edit and More, no tabs', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    focus('artifact-report');
+    renderStudio();
+    const header = screen.getByTestId('artifact-shell-header');
+    expect(within(header).getByRole('heading', { level: 1 }).textContent).toBe(
+      'Rounding drift in ledger-core postings',
     );
-    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
-    fireEvent.click(screen.getByText('Onboarding flow'));
-    expect(screen.getByTestId('artifact-save-source').getAttribute('aria-label')).toBe('Save JSON');
-    expect(screen.getByTestId('artifact-save-pdf').hasAttribute('disabled')).toBe(false);
+    expect(within(header).getByTestId('artifact-creator').textContent).toBe('Report 1');
+    expect(within(header).getByText('rev 2')).toBeDefined();
+    expect(within(header).getByTestId('artifact-action-edit')).toBeDefined();
+    expect(within(header).queryByTestId('artifact-action-runPlan')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Conversation' })).toBeNull();
+    expect(screen.getByText('Each posting rounded its own share.')).toBeDefined();
   });
 
-  it('opens a wireframe in the native renderer instead of the markdown reader', () => {
-    state.sessionArtifacts = { 'sess-1': [wireframe] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Onboarding flow'));
-    expect(screen.getByTestId('wireframe-studio')).toBeDefined();
-    expect(screen.getByTestId('wireframe-screen').getAttribute('data-screen-id')).toBe('welcome');
-    expect(screen.queryByTestId('artifact-json-source')).toBeNull();
-  });
-
-  it('falls back to the json source when the wireframe does not match the schema', () => {
-    state.sessionArtifacts = {
-      'sess-1': [{ ...wireframe, sourceText: '{"screens":[]}' }],
-    };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Onboarding flow'));
-    expect(screen.getByTestId('wireframe-issues')).toBeDefined();
-    expect(screen.getByTestId('artifact-json-source').textContent).toContain('"screens"');
-  });
-
-  it('returns to the collection from an artifact', () => {
+  it('keeps every export behind More, with a label on each row', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    fireEvent.click(screen.getByRole('button', { name: /all artifacts/i }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Artifacts' })).toBeDefined();
-    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
+    focus('artifact-report');
+    renderStudio();
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const menu = screen.getByRole('menu', { name: 'More' });
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining('Print'),
+      expect.stringContaining('Regenerate'),
+      'Copy markdown',
+      'Save markdown to…',
+    ]);
   });
 
-  it('focuses a plan picked from the collection', () => {
-    state.plans = [plan];
+  it('edits a report in place and saves the source on Save', async () => {
     state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Ship the thing'));
-    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
-  });
-
-  it('opens a cited report in place of the one being read', () => {
-    const earlier = {
-      ...report,
-      id: 'artifact-report-2',
-      title: 'Earlier report',
-      sourceText: 'this supersedes artifact-report',
-    };
-    state.sessionArtifacts = { 'sess-1': [report, earlier] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Earlier report'));
-    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
-    fireEvent.click(screen.getByTestId('report-source-chip'));
-    expect(screen.getByText('shipped it')).toBeDefined();
-    expect(state.setFocusedArtifactId).toHaveBeenCalledWith('sess-1', 'artifact-report');
-    expect(state.focusedPlanId['sess-1']).toBeNull();
-  });
-
-  it('focuses a cited plan as a plan and leaves the artifact detail', () => {
-    const cited = { ...plan, sourceText: 'step one', kind: 'plan', schemaVersion: 1 };
-    state.sessionArtifacts = {
-      'sess-1': [{ ...report, sourceText: 'built from plan-1' }, cited],
-    };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    fireEvent.click(screen.getByTestId('artifact-details-toggle'));
-    fireEvent.click(screen.getByTestId('report-source-chip'));
-    expect(state.setFocusedPlanId).toHaveBeenCalledWith('sess-1', 'plan-1');
-    expect(state.focusedArtifactId['sess-1']).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Plans' })).toBeDefined();
-  });
-
-  it('keeps the plan-only controls on a focused plan', () => {
-    state.plans = [plan];
-    state.focusedPlanId = { 'sess-1': 'plan-1' };
-    state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByText('Plans')).toBeDefined();
-    expect(screen.getByRole('button', { name: /start/i })).toBeDefined();
-    expect(screen.getByLabelText('Delete plan')).toBeDefined();
-    expect(screen.getByRole('tab', { name: /edit/i })).toBeDefined();
-  });
-
-  it('returns to the collection when the crumb clears the plan focus', () => {
-    state.sessionArtifacts = { 'sess-1': [report] };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('Session report'));
-    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
-
-    act(() => {
-      state.setFocusedPlanId('sess-1', null);
+    focus('artifact-report');
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-action-edit'));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '## Rewritten' } });
+    fireEvent.click(screen.getByTestId('artifact-save'));
+    await waitFor(() => {
+      expect(state.updateArtifactSource).toHaveBeenCalledWith({
+        sessionId: 'sess-1',
+        artifactId: 'artifact-report',
+        title: 'Rounding drift in ledger-core postings',
+        sourceFormat: 'markdown',
+        sourceText: '## Rewritten',
+        metadata: { reportType: 'session-summary' },
+      });
     });
-
-    expect(screen.queryByTestId('artifact-export-slot')).toBeNull();
-    expect(screen.getByRole('heading', { level: 2, name: 'Reports' })).toBeDefined();
   });
 
-  it('opens the artifact another surface focused in the store', () => {
+  it('drops an edit on Cancel without saving', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
-    state.focusedArtifactId = { 'sess-1': 'artifact-report' };
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    expect(screen.getByTestId('artifact-export-slot')).toBeDefined();
-    expect(screen.getByRole('button', { name: /all artifacts/i })).toBeDefined();
+    focus('artifact-report');
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-action-edit'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(state.updateArtifactSource).not.toHaveBeenCalled();
+  });
+
+  it('runs a ready plan from its one primary', async () => {
+    state.plans = [plan];
+    focus('plan-1');
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-action-runPlan'));
+    await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
+  });
+
+  it('saves a plan edit as title and body', async () => {
+    state.plans = [plan];
+    focus('plan-1');
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-action-edit'));
+    const textbox = screen.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textbox.value).toBe(
+      '# Backfill the settled batches\n\n## Goal\nEvery settled batch matches its invoice.',
+    );
+    fireEvent.change(textbox, { target: { value: '# Backfill once\n\n## Goal\nmatch' } });
+    fireEvent.click(screen.getByTestId('artifact-save'));
+    await waitFor(() =>
+      expect(state.updatePlanBody).toHaveBeenCalledWith(
+        'sess-1',
+        'plan-1',
+        'Backfill once',
+        '## Goal\nmatch',
+      ),
+    );
+  });
+
+  it('never offers discard on a plan that already ran, and asks before running it again', async () => {
+    state.plans = [{ ...plan, status: 'consumed', consumptionCount: 1 }];
+    focus('plan-1');
+    renderStudio();
+    expect(screen.queryByTestId('artifact-action-runPlan')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const menu = screen.getByRole('menu', { name: 'More' });
+    expect(within(menu).queryByRole('menuitem', { name: /Discard/ })).toBeNull();
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('artifact-action-runAgain'));
+    expect(state.runPlan).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Run again' }));
+    await waitFor(() => expect(state.runPlan).toHaveBeenCalledWith('sess-1', 'plan-1'));
+  });
+
+  it('opens Details and Chat in the right drawer instead of inline tabs', () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    focus('artifact-report');
+    renderStudio();
+    fireEvent.click(screen.getByTestId('artifact-drawer-details'));
+    expect(state.toggleDrawer).toHaveBeenCalledWith({
+      kind: 'artifact',
+      sessionId: 'sess-1',
+      payload: { artifactId: 'artifact-report', tab: 'details' },
+    });
+    fireEvent.click(screen.getByTestId('artifact-built-from-link'));
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'artifact',
+      sessionId: 'sess-1',
+      payload: { artifactId: 'artifact-report', tab: 'details' },
+    });
+  });
+
+  it('goes back to the list on Escape, but leaves Escape to the drawer while it is open', async () => {
+    state.sessionArtifacts = { 'sess-1': [report] };
+    focus('artifact-report');
+    state.drawer = {
+      kind: 'artifact',
+      sessionId: 'sess-1',
+      lens: 'plans',
+      payload: { artifactId: 'artifact-report', tab: 'details' },
+    };
+    const { rerender } = renderStudio();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
+    state.drawer = null;
+    rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() =>
+      expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', null),
+    );
+  });
+
+  it('opens a wireframe in the native renderer with its variant action', () => {
+    state.sessionArtifacts = { 'sess-1': [wireframe] };
+    focus('artifact-wireframe');
+    renderStudio();
+    expect(screen.getByTestId('wireframe-studio')).toBeDefined();
+    expect(screen.getByTestId('wireframe-convert-fidelity')).toBeDefined();
+  });
+
+  it('opens a plan another surface focused, as a plan', () => {
+    state.plans = [plan];
+    focus('plan-1');
+    renderStudio();
+    expect(screen.getByTestId('artifact-shell').getAttribute('data-artifact-kind')).toBe('plan');
+    expect(screen.getByText('Every settled batch matches its invoice.')).toBeDefined();
   });
 });
 
 describe('ArtifactStudio generating run', () => {
-  const container = {
-    id: 'agent-wireframe-live',
-    name: 'High fidelity',
-    kind: 'wireframe',
-    status: 'running',
-    startedAt: '2026-01-02T03:00:00.000Z',
-  };
-  const scoutDone = {
-    id: 'agent-scout-screens',
-    parentAgentId: 'agent-wireframe-live',
-    ordinal: 1,
-    name: 'screens and routes',
-    kind: 'scout',
-    status: 'completed',
-    startedAt: '2026-01-02T03:00:00.000Z',
-    completedAt: '2026-01-02T03:00:14.000Z',
-  };
-  const scoutRunning = {
-    id: 'agent-scout-data',
-    parentAgentId: 'agent-wireframe-live',
-    ordinal: 2,
-    name: 'data and contracts',
-    kind: 'scout',
-    status: 'running',
-    startedAt: '2026-01-02T03:00:00.000Z',
-  };
-
   beforeEach(() => {
-    state.sessionPhaseRuns = { 'sess-1': [container, scoutDone, scoutRunning] };
-    state.agentTurnState = {
-      'agent-wireframe-live': { kind: 'running' },
-      'agent-scout-data': { kind: 'running' },
+    state.sessionPhaseRuns = {
+      'sess-1': [
+        {
+          ...reportAgent,
+          id: 'agent-wireframe-live',
+          name: 'High fidelity',
+          kind: 'wireframe',
+          status: 'running',
+          lastFinishedAt: undefined,
+        },
+      ],
     };
-    state.wireframeScoutVerification = { 'agent-scout-screens': { verified: 8, cited: 11 } };
+    state.agentTurnState = { 'agent-wireframe-live': { kind: 'running' } };
   });
 
-  it('opens the run in the detail column, with the agents it spawned listed live', () => {
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('High fidelity'));
-    const detail = screen.getByTestId('artifact-run-detail');
-    const rows = within(detail).getAllByTestId('artifact-scout-row');
-    expect(rows).toHaveLength(2);
-    expect(rows[0]?.textContent).toContain('screens and routes');
-    expect(rows[0]?.textContent).toContain('8 of 11 claims verified');
-    expect(rows[1]?.textContent).toContain('data and contracts');
-    expect(rows[1]?.textContent).toContain('running');
-    expect(state.selectAgent).not.toHaveBeenCalled();
-  });
-
-  it('opens the run as a view of its own, like every lens detail', () => {
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('High fidelity'));
+  it('opens the run in the same shell, with Stop as its secondary and the agent under More', () => {
+    renderStudio();
+    openRow(/High fidelity/);
     expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
-    expect(screen.queryByRole('complementary', { name: 'Artifacts' })).toBeNull();
-  });
-
-  it('stops the run from the band and hands the agent over when asked', () => {
-    render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('High fidelity'));
-    fireEvent.click(screen.getByTestId('artifact-run-stop'));
+    fireEvent.click(screen.getByTestId('artifact-action-stop'));
     expect(state.stopArtifactGeneration).toHaveBeenCalledWith({
       sessionId: 'sess-1',
       agentId: 'agent-wireframe-live',
     });
-    fireEvent.click(screen.getByTestId('artifact-run-agent'));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open agent/ }));
     expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-wireframe-live');
   });
 
-  it('follows the run to the artifact it produced instead of leaving a dead column', () => {
-    const { rerender } = render(<ArtifactStudio sessionId={'sess-1' as never} />);
-    fireEvent.click(screen.getByText('High fidelity'));
-    expect(screen.getByTestId('artifact-run-detail')).toBeDefined();
-    state.sessionArtifacts = {
-      'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }],
-    };
+  it('follows the run to the artifact it produced', () => {
+    const { rerender } = renderStudio();
+    openRow(/High fidelity/);
+    state.sessionArtifacts = { 'sess-1': [{ ...wireframe, agentId: 'agent-wireframe-live' }] };
     rerender(<ArtifactStudio sessionId={'sess-1' as never} />);
     expect(state.setFocusedArtifactId).toHaveBeenLastCalledWith('sess-1', 'artifact-wireframe');
   });

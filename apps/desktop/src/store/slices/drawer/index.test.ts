@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { ArtifactId, SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
-import { setActiveLens } from '../session-view/workSurface';
+import { setActiveLens, setFocusedArtifactId } from '../session-view/workSurface';
 import { createDrawerSlice } from './index';
 import { selectOpenDrawer } from './selectOpenDrawer';
 import type { DrawerRequest } from './state';
@@ -37,6 +37,7 @@ type Harness = {
   readonly set: (patch: Partial<AppState>) => void;
   readonly slice: ReturnType<typeof createDrawerSlice>;
   readonly setLens: ReturnType<typeof setActiveLens>;
+  readonly focusArtifact: ReturnType<typeof setFocusedArtifactId>;
 };
 
 const harness = (): Harness => {
@@ -51,7 +52,6 @@ const harness = (): Harness => {
     diffFocus: {},
     diffMountPath: {},
     terminalMountPath: {},
-    focusedPlanId: {},
     focusedArtifactId: {},
     focusedGithubIssueNumber: {},
     focusedExternalTask: {},
@@ -62,7 +62,13 @@ const harness = (): Harness => {
   const get = () => state;
   const slice = createDrawerSlice(set as never, get as never);
   state = { ...state, ...slice };
-  return { get, set, slice, setLens: setActiveLens(set as never) };
+  return {
+    get,
+    set,
+    slice,
+    setLens: setActiveLens(set as never),
+    focusArtifact: setFocusedArtifactId(set as never),
+  };
 };
 
 describe('drawer slice', () => {
@@ -115,6 +121,26 @@ describe('drawer slice', () => {
     h.set({ currentSessionId: OTHER_SESSION_ID });
 
     expect(selectOpenDrawer(h.get())).toBeNull();
+  });
+
+  it('keeps the artifact drawer with its artifact and closes it when another one opens', () => {
+    const report = 'artifact-report' as ArtifactId;
+    h.focusArtifact(SESSION_ID, report);
+    h.slice.openDrawer({
+      kind: 'artifact',
+      sessionId: SESSION_ID,
+      payload: { artifactId: report, tab: 'details' },
+    });
+    h.slice.toggleDrawer({
+      kind: 'artifact',
+      sessionId: SESSION_ID,
+      payload: { artifactId: report, tab: 'chat' },
+    });
+    expect(selectOpenDrawer(h.get())).toMatchObject({ payload: { tab: 'chat' } });
+    h.focusArtifact(SESSION_ID, report);
+    expect(h.get().drawer).not.toBeNull();
+    h.focusArtifact(SESSION_ID, null);
+    expect(h.get().drawer).toBeNull();
   });
 
   it('closes on request', () => {

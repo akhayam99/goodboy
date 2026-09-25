@@ -1,23 +1,19 @@
 import { Chip } from '@goodboy/ui';
-import type { ArtifactKind, ArtifactStatus } from '@goodboy/types';
-import { describeArtifactStatus } from '../../artifact-status';
-import { stateDescription } from '../../../../shared/utils/statePresentation';
+import {
+  stateDescription,
+  type StatePresentation,
+} from '../../../../shared/utils/statePresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
-  readonly kind: ArtifactKind;
-  readonly status: ArtifactStatus;
+  readonly presentation: StatePresentation | null;
 };
 
-export const ArtifactStatusChip = ({ kind, status }: Props) => {
-  const presentation = describeArtifactStatus({ kind, status });
-
+export const ArtifactStateChip = ({ presentation }: Props) => {
   if (presentation === null) {
     return null;
   }
-
   const Icon = presentation.icon;
-
   return (
     <Chip
       tone={presentation.tone}
@@ -27,6 +23,7 @@ export const ArtifactStatusChip = ({ kind, status }: Props) => {
       label={presentation.label}
       title={stateDescription({ presentation })}
       className="shrink-0"
+      testId="artifact-state-chip"
     />
   );
 };

@@ -6,6 +6,8 @@ export const drawerKey = (content: DrawerContent): string => {
       return `slot-history:${content.payload.slotKey}`;
     case 'explore-file':
       return `explore-file:${content.payload.entry.relPath}`;
+    case 'artifact':
+      return `artifact:${content.payload.artifactId}:${content.payload.tab}`;
     default: {
       const exhaustive: never = content;
       return String(exhaustive);

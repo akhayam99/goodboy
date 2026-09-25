@@ -16,6 +16,7 @@ export type DrawerFrameProps = {
   readonly closeLabel?: string;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
+  readonly scroll?: 'frame' | 'self';
   readonly children: ReactNode;
 };
 
@@ -39,6 +40,7 @@ export const DrawerFrame = ({
   closeLabel = 'Close panel',
   onClose,
   dock,
+  scroll = 'frame',
   children,
 }: DrawerFrameProps) => {
   const triggerRef = useRef<HTMLElement | null>(focusableTrigger());
@@ -84,9 +86,13 @@ export const DrawerFrame = ({
         </div>
       </header>
       <Divider />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
-        {children}
-      </ScrollFade>
+      {scroll === 'self' ? (
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+      ) : (
+        <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>
+          {children}
+        </ScrollFade>
+      )}
       {dock != null ? <div className="shrink-0 px-4 py-3">{dock}</div> : null}
     </section>
   );

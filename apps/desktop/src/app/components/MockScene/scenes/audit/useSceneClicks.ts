@@ -42,7 +42,9 @@ export const useSceneClicks = ({ isReady, labels, selector, match, intervalMs }:
         return;
       }
       const target = [...window.document.querySelectorAll(selector)].find((candidate) =>
-        matchesLabel({ text: candidate.textContent ?? '', label, match }),
+        [candidate.textContent ?? '', candidate.getAttribute('aria-label') ?? ''].some((text) =>
+          matchesLabel({ text, label, match }),
+        ),
       );
       if (!(target instanceof HTMLElement)) {
         return;

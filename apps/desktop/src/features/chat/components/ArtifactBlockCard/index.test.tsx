@@ -8,7 +8,6 @@ const { state } = vi.hoisted(() => ({
   state: {
     sessionArtifacts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     setFocusedArtifactId: vi.fn(),
-    setFocusedPlanId: vi.fn(),
     setActiveLens: vi.fn(),
     setScriptsLensScope: vi.fn(),
   },
@@ -39,7 +38,6 @@ const artifactOf = (overrides: Record<string, unknown>) => ({
 beforeEach(() => {
   state.sessionArtifacts = {};
   state.setFocusedArtifactId = vi.fn();
-  state.setFocusedPlanId = vi.fn();
   state.setActiveLens = vi.fn();
   state.setScriptsLensScope = vi.fn();
 });
@@ -114,8 +112,7 @@ describe('ArtifactBlockCard', () => {
     );
 
     fireEvent.click(screen.getByTestId('artifact-block-chip'));
-    expect(state.setFocusedPlanId).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
-    expect(state.setFocusedArtifactId).not.toHaveBeenCalled();
+    expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
     expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
   });
 

@@ -211,9 +211,9 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
       <WireframeAdjustments adjustments={adjustments} />
       <Divider />
       <div className={cn('flex min-w-0 flex-col gap-2')}>
-        <h3>
+        <h2>
           <Eyebrow label="Flow" />
-        </h3>
+        </h2>
         <WireframeFlowOverview
           document={document}
           index={index}

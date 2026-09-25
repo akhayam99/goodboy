@@ -8,7 +8,7 @@ const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toLens: vi.fn(),
   toWorkflowsList: vi.fn(),
   toWorkflowRun: vi.fn(),
-  toPlansList: vi.fn(),
+  toArtifactsList: vi.fn(),
   toParentAgent: vi.fn(),
   toRootAgent: vi.fn(),
   toReviewHome: vi.fn(),
@@ -24,7 +24,7 @@ const base = (
   studio: null,
   focusedWorkflowName: null,
   selectedChildWorkflowName: null,
-  focusedPlanTitle: null,
+  focusedArtifactTitle: null,
   artifactCreationLabel: null,
   selectedChildLabel: null,
   selectedChildHome: null,
@@ -297,7 +297,7 @@ describe('buildSessionBreadcrumb', () => {
       base(
         {
           lens: 'plans',
-          focusedPlanTitle: 'migration plan',
+          focusedArtifactTitle: 'migration plan',
           selectedChildHome: 'agents',
           selectedChildLabel: 'scout one',
         },
@@ -361,11 +361,11 @@ describe('buildSessionBreadcrumb', () => {
   it('renders Overview > Artifacts > {title} for a focused plan', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'plans', focusedPlanTitle: 'migration plan' }, h),
+      base({ lens: 'plans', focusedArtifactTitle: 'migration plan' }, h),
     );
     expect(labels(crumbs)).toEqual(['Overview', 'Artifacts', 'migration plan']);
     crumbs[1]!.onClick!();
-    expect(h.toPlansList).toHaveBeenCalledOnce();
+    expect(h.toArtifactsList).toHaveBeenCalledOnce();
   });
 
   it('lets the studio trail win over the active workflow detail', () => {
@@ -450,7 +450,11 @@ describe('buildSessionBreadcrumb', () => {
     const handlers = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
       base(
-        { lens: 'plans', artifactCreationLabel: 'Create report', focusedPlanTitle: 'Round once' },
+        {
+          lens: 'plans',
+          artifactCreationLabel: 'Create report',
+          focusedArtifactTitle: 'Round once',
+        },
         handlers,
       ),
     );

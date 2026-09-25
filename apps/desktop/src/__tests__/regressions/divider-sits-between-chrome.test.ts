@@ -42,14 +42,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactDetail.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactRunDetail.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/budget/components/spend/SessionBudgetContent.tsx': {
     count: 1,
@@ -135,11 +127,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/plans/components/PlanStudio/PlanProvenance.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/plans/components/PlanStudio/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {
     count: 1,
     reason: 'debt',
@@ -269,10 +256,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
-  'apps/desktop/src/app/components/MockScene/scenes/ArtifactScenes.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,
     reason: 'debt',

@@ -63,4 +63,16 @@ describe('DrawerFrame', () => {
     expect(screen.queryByRole('region', { name: 'Drafts' })).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });
+
+  it('lets a body that scrolls itself fill the frame instead of nesting a scroller', () => {
+    render(
+      <DrawerFrame title="Chat" scroll="self" onClose={vi.fn()}>
+        <p data-testid="chat-body">hello</p>
+      </DrawerFrame>,
+    );
+
+    const body = screen.getByTestId('chat-body').parentElement;
+    expect(body?.className).toContain('flex-1');
+    expect(body?.className).toContain('min-h-0');
+  });
 });
