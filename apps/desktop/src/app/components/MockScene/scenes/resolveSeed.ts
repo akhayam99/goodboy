@@ -560,6 +560,8 @@ const PUBLICATION: ResolvePublication = {
   pushedHead: 'sha-local-head-001',
   confirmedAt: msAgo({ minutes: 200 }),
   completedAt: msAgo({ minutes: 195 }),
+  holder: null,
+  heartbeatAt: null,
   error: null,
   createdAt: msAgo({ minutes: 205 }),
 };

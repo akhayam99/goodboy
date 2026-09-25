@@ -371,6 +371,7 @@ export {
 export {
   listResolveThreads,
   setResolveThreadReplyDraft,
+  setResolveThreadState,
   upsertResolveThread,
 } from './queries/resolve-thread';
 export {
@@ -412,6 +413,9 @@ export {
   insertResolvePublication,
   setResolvePublicationPhase,
   listActiveResolvePublications,
+  listActiveResolvePublicationsForSession,
+  claimResolvePublication,
+  beatResolvePublication,
   listResolvePublicationsForSession,
   upsertResolvePublicationThread,
   listResolvePublicationThreads,

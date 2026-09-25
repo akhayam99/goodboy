@@ -1,5 +1,7 @@
 import { listActiveResolvePublications } from '@goodboy/db';
+import type { ResolvePublication } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { reconcileInterruptedPublications } from './reconcileInterruptedPublications';
 
 type Held = { readonly promise: Promise<unknown>; readonly scopeId: string | null };
 
@@ -27,6 +29,19 @@ const isHeldByOthers = ({ repo, prNumber, scopeId }: TargetParams): boolean => {
   return scopeId === undefined || held.scopeId !== scopeId;
 };
 
+const liveActivePublications = async ({
+  repo,
+  prNumber,
+}: TargetParams): Promise<ReadonlyArray<ResolvePublication>> =>
+  reconcileInterruptedPublications({
+    publications: await listActiveResolvePublications({
+      db: tauriDatabase,
+      repo: publicationRepoKey({ repo }),
+      prNumber,
+    }),
+    now: Date.now(),
+  });
+
 export const isPublicationTargetBusy = async ({
   repo,
   prNumber,
@@ -36,11 +51,7 @@ export const isPublicationTargetBusy = async ({
   if (isHeldByOthers({ repo, prNumber, scopeId })) {
     return true;
   }
-  const active = await listActiveResolvePublications({
-    db: tauriDatabase,
-    repo: publicationRepoKey({ repo }),
-    prNumber,
-  });
+  const active = await liveActivePublications({ repo, prNumber });
   return active.some((publication) => publication.id !== exceptPublicationId);
 };
 
@@ -72,11 +83,7 @@ export const withPublicationLock = async <T>({
   });
   inFlight.set(key, { promise: reservation, scopeId: scopeId ?? null });
   try {
-    const active = await listActiveResolvePublications({
-      db: tauriDatabase,
-      repo: publicationRepoKey({ repo }),
-      prNumber,
-    });
+    const active = await liveActivePublications({ repo, prNumber });
     if (active.some((publication) => publication.id !== exceptPublicationId)) {
       return onBusy();
     }

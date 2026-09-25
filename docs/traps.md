@@ -35,6 +35,12 @@ file holds those explanations. Everything below has been "fixed" at least once a
   rebuilt by replaying assistant messages. Marker parsing writes rows, but it
   does not own them. `resolve_publications` and `resolve_publication_threads`
   track delivery, and that is what lets an interrupted publish resume.
+  An active `resolve_publications` row is the publish lock. It carries a
+  `holder` (window and launch) and a `heartbeat_at` refreshed every 10s. On
+  session load and before every publish, an active row silent for more than
+  60s is closed as failed with the error `The app stopped while publishing`:
+  a reply caught in `sending` turns `uncertain`, and retry checks GitHub before
+  posting again. The in-memory map in `publicationLock.ts` is only a fast lane.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

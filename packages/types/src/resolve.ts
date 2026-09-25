@@ -160,6 +160,8 @@ export type ResolvePublication = Readonly<{
   pushedHead: string | null;
   confirmedAt: number | null;
   completedAt: number | null;
+  holder: string | null;
+  heartbeatAt: number | null;
   error: string | null;
   createdAt: number;
 }>;

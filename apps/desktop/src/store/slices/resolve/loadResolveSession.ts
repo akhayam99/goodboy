@@ -1,4 +1,5 @@
 import {
+  listActiveResolvePublicationsForSession,
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
@@ -6,6 +7,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { drainResolveQueue } from './drainResolveQueue';
+import { reconcileInterruptedPublications } from './reconcileInterruptedPublications';
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { importLegacyResolve } from './importLegacyResolve';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
@@ -17,6 +19,9 @@ import type { SessionParams, SliceParams } from './types';
 type Params = SliceParams & SessionParams;
 
 export const loadResolveSession = async ({ set, get, sessionId }: Params): Promise<void> => {
+  await listActiveResolvePublicationsForSession({ db: tauriDatabase, sessionId })
+    .then((publications) => reconcileInterruptedPublications({ publications, now: Date.now() }))
+    .catch(() => null);
   await recoverUncapturedResolveWork({ set, get, sessionId }).catch(() => null);
   await importLegacyResolve({ set, get, sessionId });
   await reconcileResolveAttempts({
