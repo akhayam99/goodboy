@@ -22,7 +22,7 @@ fn destination(message: &str) -> ArtifactExportError {
     ArtifactExportError::Destination(message.to_string())
 }
 
-fn is_safe_segment(segment: &str) -> bool {
+pub(crate) fn is_safe_segment(segment: &str) -> bool {
     !segment.is_empty()
         && segment.len() <= MAX_SEGMENT_LENGTH
         && !segment.starts_with('.')

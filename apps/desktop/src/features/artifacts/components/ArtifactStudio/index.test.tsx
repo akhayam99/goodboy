@@ -44,6 +44,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       artifactFilter: {} as Record<string, string>,
       setArtifactFilter: vi.fn(),
       sessions: [] as ReadonlyArray<Record<string, unknown>>,
+      workspaces: [] as ReadonlyArray<Record<string, unknown>>,
       selectedAgentId: {} as Record<string, string | null>,
       sessionStudio: {} as Record<string, unknown>,
       artifactCreation: {} as Record<
@@ -365,6 +366,7 @@ describe('ArtifactStudio shell', () => {
       expect.stringContaining('Regenerate'),
       'Copy markdown',
       'Save markdown to…',
+      expect.stringContaining('Show in Finder'),
     ]);
   });
 

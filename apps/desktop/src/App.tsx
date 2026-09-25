@@ -32,6 +32,7 @@ import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFo
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
+import { useArtifactMirror } from './features/artifacts/hooks/useArtifactMirror';
 import {
   useAppStore,
   useCurrentSession,
@@ -122,6 +123,7 @@ export const App = () => {
   useUpdaterPolling();
   useWindowPresence();
   useWindowShortcuts();
+  useArtifactMirror({ isReady: hydrated });
   useTitlebarInset();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
