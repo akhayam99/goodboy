@@ -269,11 +269,16 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       void get().drainResolveQueue({ sessionId });
     }
   } else if (kickoff.length > 0) {
+    const handedPlan = planSection === '' ? null : planForKickoff;
     void get().sendTurn({
       sessionId,
       agentId: inserted.id,
       content: kickoff,
       ...(args.mountId !== undefined && { mountId: args.mountId }),
+      handoff: {
+        instruction: baseKickoff,
+        plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
+      },
     });
   }
 

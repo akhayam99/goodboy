@@ -164,6 +164,7 @@ export {
   listTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
+export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,

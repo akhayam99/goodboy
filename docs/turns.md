@@ -66,6 +66,33 @@ record a live turn already wrote wins.
   reads.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
+- `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
+  message out it adds the context slots, the child routing menu, the cluster
+  boundary, the goal attachments, the prior turns and the verbosity line, then
+  places the guards and the kind prompt per provider. The text it returns is
+  byte for byte what the CLI received before it existed;
+  `store.handoff-sent-text.test.ts` pins it for Claude and Codex.
+
+## What each agent is handed
+
+- An agent's first turn stores one `agent_handoffs` row (m185), written once
+  and never updated: who sent it (`HandoffSender`), the ask in one line, the
+  why, `doneWhen`, one-line sections (ask, goal, earlier steps, plan, files,
+  threads, scope and rules, about you, role instructions) and the exact text
+  sent (`sent_system` only for Claude, `sent_message` for every provider). It
+  lives only in the local database and includes the workspace profile.
+- A first turn is one with no run yet in `agentRunHistory`, an agent that never
+  started, and no fallback retry. Its `user_text` event carries
+  `handoffId`, the agent id, so the transcript can draw the handoff there.
+- A composer that knows more than the message passes a `HandoffDraft` to
+  `sendTurn`: the workflow step passes its instruction, goal and plan, a
+  cluster child its cluster and the parent it came from, a scout tree child its
+  area. Everything else comes from the agent row (`deriveHandoffSender`): a
+  resolver is sent by Resolve, a question delegate by its question, a child of
+  another agent by that agent or as its follow-up, a workflow step by the
+  orchestrator on a dynamic run and by the workflow otherwise, and anything
+  else by you. The visible `user_text` keeps the full composed text, because
+  the prior turns block replays it for Codex, Cursor and Antigravity.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and

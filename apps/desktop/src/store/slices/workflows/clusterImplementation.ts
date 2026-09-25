@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  HandoffDraft,
   ImplementationCluster,
   IsoDateTime,
   PlanWithCount,
@@ -79,6 +80,31 @@ function composeClusterKickoff(
   );
 }
 
+type ClusterHandoffParams = {
+  readonly containerId: AgentId;
+  readonly goalTitle: string;
+  readonly clusters: ReadonlyArray<ImplementationCluster>;
+  readonly index: number;
+};
+
+const clusterHandoff = ({
+  containerId,
+  goalTitle,
+  clusters,
+  index,
+}: ClusterHandoffParams): HandoffDraft => {
+  const cluster = clusters[index];
+  return {
+    sender: {
+      kind: 'parent',
+      parentAgentId: containerId,
+      label: `cluster ${index + 1} of ${clusters.length}`,
+    },
+    instruction: composeKickoff(cluster?.title ?? '', cluster?.instructions ?? ''),
+    goal: goalTitle,
+  };
+};
+
 const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
   (cluster?.instructions ?? '').trim().length > 0;
 
@@ -99,6 +125,7 @@ type StartChildParams = {
   readonly containerId: AgentId;
   readonly childId: AgentId;
   readonly content: string;
+  readonly handoff?: HandoffDraft;
   readonly attempt?: number;
 };
 
@@ -141,6 +168,7 @@ const handleChildStartFailure = async ({
   containerId,
   childId,
   content,
+  handoff,
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
   const message = error instanceof Error ? error.message : String(error);
@@ -189,7 +217,16 @@ const handleChildStartFailure = async ({
     if (turn?.kind === 'running' || turn?.kind === 'starting') {
       return;
     }
-    startChild({ set, get, sessionId, containerId, childId, content, attempt: failures + 1 });
+    startChild({
+      set,
+      get,
+      sessionId,
+      containerId,
+      childId,
+      content,
+      ...(handoff !== undefined && { handoff }),
+      attempt: failures + 1,
+    });
   }, delayMs);
 };
 
@@ -200,6 +237,7 @@ function startChild({
   containerId,
   childId,
   content,
+  handoff,
   attempt = get().clusterStartAttempts[childId] ?? 1,
 }: StartChildParams): void {
   set((s) => ({
@@ -210,7 +248,13 @@ function startChild({
     clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
   }));
   void get()
-    .sendTurn({ sessionId, agentId: childId, content, origin: 'workflow' })
+    .sendTurn({
+      sessionId,
+      agentId: childId,
+      content,
+      origin: 'workflow',
+      ...(handoff !== undefined && { handoff }),
+    })
     .catch((error: unknown) => {
       void handleChildStartFailure({
         set,
@@ -219,6 +263,7 @@ function startChild({
         containerId,
         childId,
         content,
+        ...(handoff !== undefined && { handoff }),
         error,
       });
     });
@@ -343,6 +388,7 @@ export const fanOutClusters = async (
       containerId: container.id,
       childId: first,
       content: composeClusterKickoff(first, goalTitle, clusters, 0),
+      handoff: clusterHandoff({ containerId: container.id, goalTitle, clusters, index: 0 }),
     });
   }
 };
@@ -554,6 +600,12 @@ export const resumeClusterChildren = async ({
     containerId: container.id,
     childId: next.id,
     content: composeClusterKickoff(next.id, plan?.title ?? 'the plan', clusters, index),
+    handoff: clusterHandoff({
+      containerId: container.id,
+      goalTitle: plan?.title ?? 'the plan',
+      clusters,
+      index,
+    }),
   });
   return true;
 };
@@ -719,6 +771,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       containerId,
       childId: next.id,
       content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
+      handoff: clusterHandoff({ containerId, goalTitle, clusters, index: nextIndex }),
     });
   };
 };

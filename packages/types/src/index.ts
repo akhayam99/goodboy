@@ -125,6 +125,15 @@ export type {
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
 export type { ProviderUsage, TurnEvent } from './adapter';
+export type {
+  AgentHandoff,
+  HandoffDraft,
+  HandoffRef,
+  HandoffSection,
+  HandoffSectionKind,
+  HandoffSender,
+} from './handoff';
+export { HANDOFF_SECTION_KINDS } from './handoff';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
   AgentTurnSpan,
