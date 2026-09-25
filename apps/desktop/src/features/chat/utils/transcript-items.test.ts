@@ -200,12 +200,14 @@ const generatedEvents = ({ count, seed }: GeneratedParams): ReadonlyArray<TurnEv
 describe('reduceTranscript sent via', () => {
   it('keeps how a queued or interrupting message was sent', () => {
     const items = reduceTranscript([
+      userText({ text: 'move rounding into settle_batch' }),
       { kind: 'user_text', runId: RUN, text: 'keep the flag', sentVia: 'queued', at: AT },
       { kind: 'user_text', runId: RUN, text: 'use decimals', sentVia: 'interrupt', at: AT },
       userText({ text: 'plain' }),
     ]);
 
     expect(items.map((item) => (item.kind === 'user_text' ? item.sentVia : null))).toEqual([
+      null,
       'queued',
       'interrupt',
       undefined,
