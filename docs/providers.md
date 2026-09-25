@@ -490,6 +490,31 @@ When a provider ships or retires a model, update three files under
   provider, or the same pair that failed on this turn. There is one fallback entry,
   then the heuristic
 
+### Usage limits
+
+Goodboy reads the usage limits a provider reports on its own. It never makes a
+network call for them and never reads a sign-in token or the keychain.
+
+- **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
+  stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
+  of the transcript. Each event names one window (`five_hour`, `seven_day`,
+  `seven_day_opus`, `seven_day_sonnet`) and a status (`allowed`,
+  `allowed_warning`, `rejected`). Only `allowed_warning` carries `utilization`, so a
+  plain `allowed` window has no percentage. Claude reports only the window that
+  limits you right now, so `mergeProviderLimits` keeps the other windows it saw
+  until their reset. The numbers change only while a Claude agent runs
+- **Codex**: the `token_count` lines of the rollout files under
+  `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
+  `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
+  `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
+  also sees Codex use outside Goodboy. The desktop asks for it at boot and after
+  every Codex usage event
+- **Antigravity and Cursor** report nothing Goodboy can read
+- The last observation per provider lives in `provider_limits` (m176) and in the
+  `providerLimits` store slice. A write never replaces a newer observation.
+  Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
+  80%, old data after 30 minutes
+
 ### Source map
 
 - `packages/core/src/providers/provider-connect.ts`: connect tiers and `loginEnv`

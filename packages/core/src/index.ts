@@ -210,6 +210,9 @@ export { CLI_CREDENTIAL } from './providers/provider-credential';
 export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
 export { TASKS } from './settings/tasks';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
+export { parseCodexRateLimits } from './providers/limits/parseCodexRateLimits';
+export { mergeProviderLimits } from './providers/limits/mergeProviderLimits';
+export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './providers/limits/constants';
 
 export {
   PROVIDER_CAPABILITIES,

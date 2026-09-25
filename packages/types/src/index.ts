@@ -205,6 +205,12 @@ export type {
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
+  ProviderLimitStatus,
+  ProviderLimitWindow,
+  ProviderLimitWindowKind,
+  ProviderLimits,
+} from './provider-limits';
+export type {
   Agent,
   AgentEffort,
   AgentRole,
