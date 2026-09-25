@@ -1,15 +1,18 @@
 import {
   insertResolveCandidateItem,
+  listResolveAttempts,
   listResolveCandidates,
   listResolveQueueItems,
   markOverlappingResolveCandidatesStale,
   markResolveCandidateReady,
   setResolveCandidateState,
 } from '@goodboy/db';
-import type { ResolveCandidate, ResolveUncapturedWork } from '@goodboy/types';
+import type { Agent, ResolveCandidate, ResolveUncapturedWork } from '@goodboy/types';
+import { invokeAgentList } from '../../../features/workflows/workflows';
 import { quarantineWorktreeCandidate, worktreeStatus } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { withCandidateLock } from './candidateLock';
+import { hasOtherLiveWriter } from './resolveCandidateMode';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams & SessionParams;
@@ -28,6 +31,7 @@ const messageOf = ({ error }: { readonly error: unknown }): string | null =>
 
 export const recoverUncapturedResolveWork = async ({
   set,
+  get,
   sessionId,
 }: Params): Promise<ResolveUncapturedWork | null> => {
   const db = tauriDatabase;
@@ -102,7 +106,35 @@ export const recoverUncapturedResolveWork = async ({
     });
     return null;
   };
+  const attempts = await listResolveAttempts({ db, sessionId });
+  let agents: ReadonlyArray<Agent> | null = get().sessionPhaseRuns[sessionId] ?? null;
+  const agentsOf = async (): Promise<ReadonlyArray<Agent>> => {
+    agents ??= await invokeAgentList(sessionId).catch(() => []);
+    return agents;
+  };
   for (const candidate of building) {
+    const attempt = attempts.find((item) => item.id === candidate.id);
+    if (attempt !== undefined) {
+      if (get().agentTurnState?.[attempt.agentId]?.kind === 'running') {
+        continue;
+      }
+      const isSuperseded = attempts.some(
+        (other) =>
+          other.id !== attempt.id &&
+          other.createdAt > attempt.createdAt &&
+          (other.agentId === attempt.agentId ||
+            other.mountTarget?.worktreePath === candidate.worktreePath),
+      );
+      const known = await agentsOf();
+      const resolver = known.find((agent) => agent.id === attempt.agentId);
+      const isSettled =
+        resolver?.status === 'completed' &&
+        !hasOtherLiveWriter({ agents: known, resolverId: attempt.agentId });
+      if (isSuperseded || isSettled) {
+        await setResolveCandidateState({ db, candidateId: candidate.id, state: 'discarded' });
+        continue;
+      }
+    }
     const head = await headOf({ worktreePath: candidate.worktreePath });
     if (head === '') {
       return remember({
