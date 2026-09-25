@@ -1,6 +1,6 @@
 import { Button, Textarea, cn } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 
 type Props = {
   readonly process: string;

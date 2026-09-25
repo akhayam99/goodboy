@@ -1,10 +1,10 @@
 import { Chip, Eyebrow, WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
+import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { ExampleSteps } from './ExampleSteps';
 import { GuidanceDisclosure } from './GuidanceDisclosure';
-import { PlanTreeGutter } from './PlanTreeGutter';
+import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
 
 type Props = {
   readonly identityIndex: number;
@@ -45,7 +45,7 @@ export const OrchestratorRow = ({
     <Eyebrow label="Plan" muted />
     <ExampleSteps identityIndex={identityIndex}>
       <li className="flex min-w-0 gap-1.5">
-        <PlanTreeGutter
+        <StepTreeGutter
           span="origin"
           identityIndex={identityIndex}
           node={

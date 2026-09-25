@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Textarea } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
-import { PlanTreeGutter } from './PlanTreeGutter';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
 
 type Props = {
   readonly identityIndex: number;
@@ -19,7 +19,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
 
   return (
     <div className="flex min-w-0 gap-1.5">
-      <PlanTreeGutter span="none" identityIndex={identityIndex} />
+      <StepTreeGutter span="none" identityIndex={identityIndex} />
       {isOpen ? (
         <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
           <label htmlFor={GUIDANCE_ID} className="text-2xs text-muted-foreground">

@@ -1,10 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { AgentRole } from '@goodboy/types';
 import { WorkNode, cn } from '@goodboy/ui';
-import { ROLE_LABEL, type AgentKind } from '../../../../agent-kind';
-import { AgentKindChip } from '../../../AgentKindChip';
-import { PlanTreeGutter } from './PlanTreeGutter';
-import type { PlanLaneSpan } from './PlanTreeLane';
+import { ROLE_LABEL, type AgentKind } from '../../../agent-kind';
+import { AgentKindChip } from '../../AgentKindChip';
+import { StepTreeGutter } from '../../../../workflows/components/StepTree/StepTreeGutter';
+import type { StepLaneSpan } from '../../../../workflows/components/StepTree/StepTreeLane';
 
 type Props = {
   readonly identityIndex: number;
@@ -39,7 +39,7 @@ type SpanParams = {
   readonly index: number;
 };
 
-const spanOf = ({ index }: SpanParams): PlanLaneSpan =>
+const spanOf = ({ index }: SpanParams): StepLaneSpan =>
   index === EXAMPLE_STEPS.length - 1 ? 'tip' : 'through';
 
 export const ExampleSteps = ({ identityIndex, children }: Props) => (
@@ -48,7 +48,7 @@ export const ExampleSteps = ({ identityIndex, children }: Props) => (
       className={cn('flex min-w-0 gap-1.5', ENTRY_CLASS)}
       style={entryDelay({ order: EXAMPLE_STEPS.length + 1 })}
     >
-      <PlanTreeGutter span="none" identityIndex={identityIndex} />
+      <StepTreeGutter span="none" identityIndex={identityIndex} />
       <p className="pb-1 pl-2 text-2xs leading-4 text-faint-foreground">
         Example. Real steps are picked one at a time as the run goes.
       </p>
@@ -63,7 +63,7 @@ export const ExampleSteps = ({ identityIndex, children }: Props) => (
           className={cn('flex min-w-0 gap-1.5 opacity-70', ENTRY_CLASS)}
           style={entryDelay({ order: index + 1 })}
         >
-          <PlanTreeGutter
+          <StepTreeGutter
             span={spanOf({ index })}
             identityIndex={identityIndex}
             node={

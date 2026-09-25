@@ -349,7 +349,8 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
-- `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. `parts/PlanTree/` draws the plan with `WorkNode` and `WorkMeta`, and the step editor mounts `RoutingPicker` with `presentation="inline"`
+- `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
+- `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
 - `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows

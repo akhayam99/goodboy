@@ -1,9 +1,9 @@
-import { runIdentityStroke } from '../../../../timeline/runIdentity';
+import { runIdentityStroke } from '../../../session/timeline/runIdentity';
 
-export type PlanLaneSpan = 'through' | 'origin' | 'tip' | 'none';
+export type StepLaneSpan = 'through' | 'origin' | 'tip' | 'none';
 
 type Props = {
-  readonly span: PlanLaneSpan;
+  readonly span: StepLaneSpan;
   readonly identityIndex: number;
 };
 
@@ -12,7 +12,7 @@ const NODE_CENTER_Y = 16;
 const LANE_WIDTH = 2;
 const DASH_PATTERN = '3 3';
 
-const endsOf = ({ span }: { readonly span: Exclude<PlanLaneSpan, 'none'> }) => {
+const endsOf = ({ span }: { readonly span: Exclude<StepLaneSpan, 'none'> }) => {
   switch (span) {
     case 'through':
       return { from: '0', to: '100%' };
@@ -27,7 +27,7 @@ const endsOf = ({ span }: { readonly span: Exclude<PlanLaneSpan, 'none'> }) => {
   }
 };
 
-export const PlanTreeLane = ({ span, identityIndex }: Props) => {
+export const StepTreeLane = ({ span, identityIndex }: Props) => {
   if (span === 'none') {
     return null;
   }

@@ -80,11 +80,11 @@ import { PlanDraftingBanner } from './parts/PlanDraftingBanner';
 import { PresetPicker } from './parts/PresetPicker';
 import { SpendCapChip } from './parts/SpendCapChip';
 import { StartsChip, type ChainRun, type StartChoice } from './parts/StartsChip';
-import { PlanTree } from './parts/PlanTree';
-import { OrchestratorRow } from './parts/PlanTree/OrchestratorRow';
-import { PlannerDraftRow } from './parts/PlanTree/PlannerDraftRow';
-import { PlanStepEditor } from './parts/PlanTree/PlanStepEditor';
-import { PlanTreeRow } from './parts/PlanTree/PlanTreeRow';
+import { StepTree } from '../../../workflows/components/StepTree';
+import { StepEditor } from '../../../workflows/components/StepTree/StepEditor';
+import { StepRow } from '../../../workflows/components/StepTree/StepRow';
+import { OrchestratorRow } from './parts/OrchestratorRow';
+import { PlannerDraftRow } from './parts/PlannerDraftRow';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 
@@ -927,7 +927,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     [...estimates.steps.values()].some((estimate) => estimate.note !== null);
 
   const renderPlanTree = () => (
-    <PlanTree
+    <StepTree
       steps={steps}
       editedCount={editedKeys.size}
       identityIndex={identityIndex}
@@ -940,7 +940,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       renderStep={({ step, index, span }) => {
         const effort = step.effort ?? roleEffort(step.role);
         return (
-          <PlanTreeRow
+          <StepRow
             key={step.key}
             step={step}
             ordinal={index + 1}
@@ -962,7 +962,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
             onMoveUp={() => moveStep(step.key, 1)}
             onMoveDown={() => moveStep(step.key, -1)}
             editor={
-              <PlanStepEditor
+              <StepEditor
                 step={step}
                 ordinal={index + 1}
                 stepCount={steps.length}
@@ -973,7 +973,10 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 connectedProviders={connectedProviders}
                 isRoutingOverridden={step.provider !== '' || step.model !== ''}
                 disabled={blocked}
-                polishing={polishingKey === step.key}
+                polish={{
+                  isPolishing: polishingKey === step.key,
+                  onPolish: () => void onPolishStep(step.key),
+                }}
                 onName={(name) => patchStep(step.key, { name })}
                 onRole={(role) => patchStep(step.key, { role })}
                 onPrompt={(prompt) => patchStep(step.key, { prompt })}
@@ -993,7 +996,6 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 onEffort={(next) => patchStep(step.key, { effort: next })}
                 onVerbosity={(verbosity) => patchStep(step.key, { verbosity })}
                 onRoutingReset={() => patchStep(step.key, { provider: '', model: '' })}
-                onPolish={() => void onPolishStep(step.key)}
                 onMoveUp={() => moveStep(step.key, 1)}
                 onMoveDown={() => moveStep(step.key, -1)}
                 onDuplicate={() =>

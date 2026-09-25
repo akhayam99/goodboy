@@ -1,6 +1,6 @@
 import { Skeleton, WorkNode } from '@goodboy/ui';
-import { PlanTreeGutter } from './PlanTreeGutter';
-import type { PlanLaneSpan } from './PlanTreeLane';
+import { StepTreeGutter } from './StepTreeGutter';
+import type { StepLaneSpan } from './StepTreeLane';
 
 type Props = {
   readonly identityIndex: number;
@@ -8,18 +8,18 @@ type Props = {
 
 const SKELETON_ROWS = 3;
 
-const spanOf = ({ index }: { readonly index: number }): PlanLaneSpan => {
+const spanOf = ({ index }: { readonly index: number }): StepLaneSpan => {
   if (index === 0) {
     return 'origin';
   }
   return index === SKELETON_ROWS - 1 ? 'tip' : 'through';
 };
 
-export const PlanSkeleton = ({ identityIndex }: Props) => (
+export const StepTreeSkeleton = ({ identityIndex }: Props) => (
   <ol role="status" aria-label="Drafting plan" className="flex flex-col-reverse">
     {Array.from({ length: SKELETON_ROWS }).map((_, index) => (
       <li key={index} className="flex min-w-0 gap-1.5">
-        <PlanTreeGutter
+        <StepTreeGutter
           span={spanOf({ index })}
           identityIndex={identityIndex}
           node={

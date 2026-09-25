@@ -1,10 +1,10 @@
 import { Plus } from 'lucide-react';
 import { WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
-import { PlanTreeGutter } from './PlanTreeGutter';
-import type { PlanLaneSpan } from './PlanTreeLane';
+import { StepTreeGutter } from './StepTreeGutter';
+import type { StepLaneSpan } from './StepTreeLane';
 
 type Props = {
-  readonly span: PlanLaneSpan;
+  readonly span: StepLaneSpan;
   readonly identityIndex: number;
   readonly disabled: boolean;
   readonly onAdd: () => void;
@@ -12,7 +12,7 @@ type Props = {
 
 export const AddStepRow = ({ span, identityIndex, disabled, onAdd }: Props) => (
   <li className="flex min-w-0 gap-1.5">
-    <PlanTreeGutter
+    <StepTreeGutter
       span={span}
       identityIndex={identityIndex}
       node={

@@ -2,24 +2,29 @@ import { useState, type KeyboardEvent } from 'react';
 import { ArrowDown, ArrowUp, Copy, Trash2 } from 'lucide-react';
 import { Button, Eyebrow, IconButton, InlineConfirm, Input, Textarea, cn } from '@goodboy/ui';
 import type { AgentRole, EffortLevel, ProviderId, VerbosityLevel } from '@goodboy/types';
-import type { StepDraft } from '../../../../../workflows/engine';
-import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
-import { WORKFLOW_ROUTING_COPY } from '../../../../../workflows/workflowRoutingCopy';
-import { RoleSelect } from '../../../RoleSelect';
+import type { StepDraft } from '../../engine';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
+import { RoleSelect } from '../../../session/components/RoleSelect';
+
+type StepPolish = {
+  readonly isPolishing: boolean;
+  readonly onPolish: () => void;
+};
 
 type Props = {
   readonly step: StepDraft;
   readonly ordinal: number;
   readonly stepCount: number;
   readonly effort: EffortLevel;
-  readonly estimateNote: string | null;
+  readonly estimateNote?: string | null;
   readonly recommendedProvider: ProviderId;
   readonly recommendedModel: string;
   readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly isRoutingOverridden: boolean;
   readonly disabled: boolean;
-  readonly polishing: boolean;
+  readonly polish?: StepPolish;
   readonly onName: (name: string) => void;
   readonly onRole: (role: AgentRole) => void;
   readonly onPrompt: (prompt: string) => void;
@@ -29,7 +34,6 @@ type Props = {
   readonly onEffort: (effort: EffortLevel) => void;
   readonly onVerbosity: (verbosity: VerbosityLevel) => void;
   readonly onRoutingReset: () => void;
-  readonly onPolish: () => void;
   readonly onMoveUp: () => void;
   readonly onMoveDown: () => void;
   readonly onDuplicate: () => void;
@@ -39,18 +43,18 @@ type Props = {
 
 const FIELD_ID_PREFIX = 'plan-step';
 
-export const PlanStepEditor = ({
+export const StepEditor = ({
   step,
   ordinal,
   stepCount,
   effort,
-  estimateNote,
+  estimateNote = null,
   recommendedProvider,
   recommendedModel,
   connectedProviders,
   isRoutingOverridden,
   disabled,
-  polishing,
+  polish,
   onName,
   onRole,
   onPrompt,
@@ -60,7 +64,6 @@ export const PlanStepEditor = ({
   onEffort,
   onVerbosity,
   onRoutingReset,
-  onPolish,
   onMoveUp,
   onMoveDown,
   onDuplicate,
@@ -111,19 +114,21 @@ export const PlanStepEditor = ({
               <label htmlFor={idOf('instruction')} className="text-2xs text-muted-foreground">
                 Instruction
               </label>
-              <button
-                type="button"
-                onClick={onPolish}
-                disabled={disabled || polishing || step.prompt.trim().length === 0}
-                aria-label="Polish step instruction"
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-sm px-1 text-2xs text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                  polishing && 'animate-border-pulse',
-                )}
-              >
-                <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
-                Polish
-              </button>
+              {polish === undefined ? null : (
+                <button
+                  type="button"
+                  onClick={polish.onPolish}
+                  disabled={disabled || polish.isPolishing || step.prompt.trim().length === 0}
+                  aria-label="Polish step instruction"
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-sm px-1 text-2xs text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
+                    polish.isPolishing && 'animate-border-pulse',
+                  )}
+                >
+                  <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
+                  Polish
+                </button>
+              )}
             </div>
             <Textarea
               id={idOf('instruction')}

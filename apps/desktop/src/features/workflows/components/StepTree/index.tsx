@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 import { Eyebrow, cn } from '@goodboy/ui';
-import type { StepDraft } from '../../../../../workflows/engine';
+import type { StepDraft } from '../../engine';
 import { AddStepRow } from './AddStepRow';
-import { PlanDropZone } from './PlanDropZone';
-import { PlanSkeleton } from './PlanSkeleton';
-import type { PlanLaneSpan } from './PlanTreeLane';
+import { StepDropZone } from './StepDropZone';
+import { StepTreeSkeleton } from './StepTreeSkeleton';
+import type { StepLaneSpan } from './StepTreeLane';
 
-export type PlanStepSlot = {
+export type StepSlot = {
   readonly step: StepDraft;
   readonly index: number;
-  readonly span: PlanLaneSpan;
+  readonly span: StepLaneSpan;
 };
 
 type Props = {
@@ -21,17 +21,17 @@ type Props = {
   readonly dropIndex: number | null;
   readonly disabled: boolean;
   readonly banner?: ReactNode;
-  readonly renderStep: (slot: PlanStepSlot) => ReactNode;
+  readonly renderStep: (slot: StepSlot) => ReactNode;
   readonly onAddStep: () => void;
 };
 
-const stepSpanOf = ({ index }: { readonly index: number }): PlanLaneSpan =>
+const stepSpanOf = ({ index }: { readonly index: number }): StepLaneSpan =>
   index === 0 ? 'origin' : 'through';
 
-const addSpanOf = ({ count }: { readonly count: number }): PlanLaneSpan =>
+const addSpanOf = ({ count }: { readonly count: number }): StepLaneSpan =>
   count === 0 ? 'none' : 'tip';
 
-export const PlanTree = ({
+export const StepTree = ({
   steps,
   editedCount,
   identityIndex,
@@ -58,7 +58,7 @@ export const PlanTree = ({
       </div>
       {banner}
       {isDrafting ? (
-        <PlanSkeleton identityIndex={identityIndex} />
+        <StepTreeSkeleton identityIndex={identityIndex} />
       ) : (
         <ol
           aria-label="Workflow steps"
@@ -69,7 +69,7 @@ export const PlanTree = ({
         >
           {steps.flatMap((step, index) => [
             isDragging ? (
-              <PlanDropZone
+              <StepDropZone
                 key={`drop-${index}`}
                 index={index}
                 isActive={dropIndex === index}
@@ -79,7 +79,7 @@ export const PlanTree = ({
             renderStep({ step, index, span: stepSpanOf({ index }) }),
           ])}
           {isDragging ? (
-            <PlanDropZone
+            <StepDropZone
               key={`drop-${count}`}
               index={count}
               isActive={dropIndex === count}

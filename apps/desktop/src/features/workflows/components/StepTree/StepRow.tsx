@@ -2,15 +2,15 @@ import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { GripVertical } from 'lucide-react';
 import { Tooltip, WORK_META_COLUMN, WorkMeta, WorkNode, cn } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import type { StepDraft } from '../../../../../workflows/engine';
-import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCell';
-import type { PlanStepEstimate } from '../../planEstimates';
-import { ROLE_LABEL, type AgentKind } from '../../../../agent-kind';
-import { AgentKindChip } from '../../../AgentKindChip';
-import { RoutingLabel } from '../../../../../../shared/components/RoutingLabel';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
-import { PlanTreeGutter } from './PlanTreeGutter';
-import type { PlanLaneSpan } from './PlanTreeLane';
+import type { StepDraft } from '../../engine';
+import { WorkTimeCell } from '../../../workTreeModel/components/WorkTimeCell';
+import type { PlanStepEstimate } from '../../../session/components/WorkflowBuilderView/planEstimates';
+import { ROLE_LABEL, type AgentKind } from '../../../session/agent-kind';
+import { AgentKindChip } from '../../../session/components/AgentKindChip';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { StepTreeGutter } from './StepTreeGutter';
+import type { StepLaneSpan } from './StepTreeLane';
 
 type Props = {
   readonly step: StepDraft;
@@ -20,7 +20,7 @@ type Props = {
   readonly model: string;
   readonly effort: EffortLevel;
   readonly estimate: PlanStepEstimate | null | undefined;
-  readonly span: PlanLaneSpan;
+  readonly span: StepLaneSpan;
   readonly identityIndex: number;
   readonly isExpanded: boolean;
   readonly isEdited: boolean;
@@ -33,7 +33,7 @@ type Props = {
   readonly onMoveDown: () => void;
 };
 
-export const PlanTreeRow = ({
+export const StepRow = ({
   step,
   ordinal,
   kind,
@@ -72,7 +72,7 @@ export const PlanTreeRow = ({
       className={cn('flex min-w-0 gap-1.5', isDragging && 'opacity-40')}
       data-plan-step={step.key}
     >
-      <PlanTreeGutter
+      <StepTreeGutter
         span={span}
         identityIndex={identityIndex}
         node={

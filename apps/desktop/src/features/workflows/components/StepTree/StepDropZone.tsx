@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import { PlanTreeGutter } from './PlanTreeGutter';
+import { StepTreeGutter } from './StepTreeGutter';
 
 type Props = {
   readonly index: number;
@@ -7,9 +7,9 @@ type Props = {
   readonly identityIndex: number;
 };
 
-export const PlanDropZone = ({ index, isActive, identityIndex }: Props) => (
+export const StepDropZone = ({ index, isActive, identityIndex }: Props) => (
   <li aria-hidden data-dropindex={index} className="flex h-3 min-w-0 gap-1.5">
-    <PlanTreeGutter span="through" identityIndex={identityIndex} />
+    <StepTreeGutter span="through" identityIndex={identityIndex} />
     <span className="flex min-w-0 flex-1 items-center pl-2">
       <span
         className={cn(
