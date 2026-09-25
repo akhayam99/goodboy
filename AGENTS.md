@@ -85,7 +85,9 @@ into the owning doc, never only into an agent's private memory.
 Rules for branches, commits, PRs, hooks, CI, and the repository language live
 in [CONVENTIONS.md](./CONVENTIONS.md). Release requests follow
 [docs/release-command.md](./docs/release-command.md). Its technical runbook and
-who can sign are in [docs/release.md](./docs/release.md). Autonomous release
+who can sign are in [docs/release.md](./docs/release.md). Which number a
+release gets (patch, or minor for a one-way door like a migration) is in
+[docs/versioning.md](./docs/versioning.md). Autonomous release
 cycles must also meet a safety floor kept in the private `goodboy-atlas`
 repository. The forbidden patterns below apply either way and need nothing from
 it.
