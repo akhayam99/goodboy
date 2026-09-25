@@ -27,7 +27,7 @@ const { state, toastMock } = vi.hoisted(() => ({
       string,
       ReadonlyArray<{ path: string; name: string; sizeBytes: number }>
     >,
-    removeOrphanWorktrees: vi.fn(async () => undefined),
+    removeOrphanWorktrees: vi.fn(async () => [] as ReadonlyArray<unknown>),
     currentWorkspaceId: null as string | null,
     sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
   },
@@ -99,7 +99,7 @@ beforeEach(() => {
   state.workspaceIntegrations = {};
   state.providers = [];
   state.orphanWorktrees = {};
-  state.removeOrphanWorktrees = vi.fn(async () => undefined);
+  state.removeOrphanWorktrees = vi.fn(async () => [] as ReadonlyArray<unknown>);
   state.currentWorkspaceId = null;
   state.sessions = [];
   toastMock.mockReset();
@@ -288,20 +288,21 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.queryByText(/session folders left on disk/i)).toBeNull();
   });
 
-  it('asks twice before deleting the folders it found', () => {
+  it('asks twice before removing the folders it found in safe mode', () => {
     state.orphanWorktrees = {
       'ws-1': [{ path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost', sizeBytes: 2048 }],
     };
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
     expect(screen.getByText('gb-ghost')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /delete 1 folder \(2\.0 kb\)/i }));
+    fireEvent.click(screen.getByRole('button', { name: /remove 1 folder \(2\.0 kb\)/i }));
 
     expect(state.removeOrphanWorktrees).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }));
     expect(state.removeOrphanWorktrees).toHaveBeenCalledWith({
       workspaceId: 'ws-1',
       paths: ['/repo/.goodboy/worktrees/gb-ghost'],
+      mode: 'safe',
     });
   });
 });

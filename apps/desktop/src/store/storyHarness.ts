@@ -127,7 +127,10 @@ export const storySpies = {
         isRegistered: boolean;
       }>,
   ),
-  removeOrphanWorktree: vi.fn(async () => undefined),
+  removeWorktreeFolder: vi.fn(async ({ path }: { readonly path: string }) => ({
+    kind: 'removed' as const,
+    path,
+  })),
   listPlansForSession: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
   upsertPlan: vi.fn(),
   setPlanStatus: vi.fn(async () => undefined),
@@ -610,7 +613,7 @@ export const worktreeModuleMock = () => ({
   inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
   scanOrphanWorktrees: storySpies.scanOrphanWorktrees,
-  removeOrphanWorktree: storySpies.removeOrphanWorktree,
+  removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: vi.fn(async () => []),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),

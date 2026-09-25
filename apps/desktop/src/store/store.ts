@@ -53,6 +53,7 @@ import type {
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
+  WorktreeRemovalMode,
   IntegrationBinding,
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
@@ -259,6 +260,7 @@ import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
+import type { OrphanRemoval } from './slices/worktrees/removeOrphanWorktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -1014,7 +1016,8 @@ type AppActions = {
   removeOrphanWorktrees(params: {
     workspaceId: WorkspaceId;
     paths: ReadonlyArray<string>;
-  }): Promise<void>;
+    mode: WorktreeRemovalMode;
+  }): Promise<ReadonlyArray<OrphanRemoval>>;
 };
 
 export type AppStore = AppState &

@@ -3,9 +3,9 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
-mod codex_rollout;
 mod bridge;
 mod budget;
+mod codex_rollout;
 mod config_export;
 mod cursor_config;
 mod db;
@@ -215,7 +215,7 @@ pub fn run() {
             worktree::worktree_directory_size,
             worktree::worktree_tidy_goodboy,
             worktree::worktree_orphans,
-            worktree::worktree_orphan_remove,
+            worktree::worktree_folder_remove,
             worktree::worktree_list,
             worktree::worktree_remote_url,
             worktree::worktree_diff,

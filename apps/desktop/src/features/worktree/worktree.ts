@@ -315,16 +315,18 @@ export const scanOrphanWorktrees = async ({
   return invoke<ReadonlyArray<OrphanWorktree>>('worktree_orphans', { repoPath, knownPaths });
 };
 
-type RemoveOrphanWorktreeParams = {
+type RemoveWorktreeFolderParams = {
   readonly repoPath: string;
   readonly path: string;
+  readonly mode: WorktreeRemovalMode;
 };
 
-export const removeOrphanWorktree = async ({
+export const removeWorktreeFolder = async ({
   repoPath,
   path,
-}: RemoveOrphanWorktreeParams): Promise<void> => {
-  await invoke('worktree_orphan_remove', { repoPath, path });
+  mode,
+}: RemoveWorktreeFolderParams): Promise<WorktreeRemovalResult> => {
+  return invoke<WorktreeRemovalResult>('worktree_folder_remove', { repoPath, path, mode });
 };
 
 export type WorktreeEntry = {
