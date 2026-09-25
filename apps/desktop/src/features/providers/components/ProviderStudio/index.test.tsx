@@ -10,6 +10,7 @@ const { state } = vi.hoisted(() => ({
     cliRequirements: [] as ReadonlyArray<never>,
     refreshProviders: vi.fn(async () => undefined),
     providerConnect: {} as Record<string, { phase: string }>,
+    providerLimits: {},
   },
 }));
 

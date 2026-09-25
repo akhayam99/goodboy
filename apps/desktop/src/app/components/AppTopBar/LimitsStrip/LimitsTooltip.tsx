@@ -9,7 +9,7 @@ import {
   sortLimitWindows,
 } from '../../../../features/providers/limits/limitWindowLabel';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { windowTone } from '../../../../features/providers/limits/windowTone';
+import { WINDOW_TONE_TEXT, windowTone } from '../../../../features/providers/limits/windowTone';
 
 type Props = {
   readonly chip: LimitsChip;
@@ -36,7 +36,7 @@ export const LimitsTooltip = ({ chip, nowMs }: Props) => {
               <span className="text-muted-foreground">
                 {limitWindowLabel({ window, siblings: windows })}
               </span>
-              <span className={cn('text-right', windowTone({ window }))}>
+              <span className={cn('text-right', WINDOW_TONE_TEXT[windowTone({ window })])}>
                 {window.usedFraction === null
                   ? 'within limits'
                   : `${formatUsedPercent({ usedFraction: window.usedFraction })} used`}

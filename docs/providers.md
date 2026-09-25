@@ -163,6 +163,22 @@ uses its providers.
 - **Fallback** on a role: the second choice Goodboy switches to when the first one
   fails during a turn. **Automatic** lets Goodboy choose
 
+## Usage and spend
+
+Each provider page in **Settings > Providers & models** opens on **Usage**:
+
+- **Usage limits**: one row per window the provider reported (5 hours, the
+  week, a model's week), with the share used and the reset. A notice says when
+  the provider is about to run out or is out. Cursor and Gemini report nothing
+  Goodboy can read, and an API key provider is billed per token, so neither
+  shows windows
+- **Spend in Goodboy**: today, the last 7 days and this month for the current
+  workspace, counted by Goodboy at API prices, and the provider's budget when
+  you set one in Impact. On a plan this is what the same tokens would cost on
+  the API, not what you pay
+- The provider's row in the rail turns warning from 80% of a window and danger
+  when the provider is out, with the reason under its name
+
 ## Switching accounts
 
 Each provider uses one account at a time, and the card shows which one. That account

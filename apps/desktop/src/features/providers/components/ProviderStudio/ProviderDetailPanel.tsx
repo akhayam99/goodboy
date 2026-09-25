@@ -1,5 +1,5 @@
 import { PROVIDER_CONNECT_CAPABILITIES, isApiProvider } from '@goodboy/core';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -20,6 +20,8 @@ import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
 import { CliUpdateNotice } from './CliUpdateNotice';
+import { UsageSection } from './UsageSection';
+import { USAGE_SECTION_ID } from './UsageSection/usageSectionId';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
@@ -28,9 +30,21 @@ type Props = {
   readonly info: ProviderDisplayInfo | null;
   readonly autoConnect: boolean;
   readonly autoUpdate: boolean;
+  readonly isUsageFocused?: boolean;
 };
 
-export const ProviderDetailPanel = ({ info, autoConnect, autoUpdate }: Props) => {
+export const ProviderDetailPanel = ({
+  info,
+  autoConnect,
+  autoUpdate,
+  isUsageFocused = false,
+}: Props) => {
+  useEffect(() => {
+    if (!isUsageFocused || info === null) {
+      return;
+    }
+    document.getElementById(USAGE_SECTION_ID)?.scrollIntoView?.({ block: 'start' });
+  }, [info, isUsageFocused]);
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -119,6 +133,7 @@ function Detail({
       {info.connection !== 'missing' && info.connection !== 'unknown' && (
         <CliUpdateNotice providerId={id} autoStart={autoUpdate} />
       )}
+      {info.connection === 'connected' ? <UsageSection providerId={id} billing="plan" /> : null}
       <section className="flex flex-col gap-2">
         <SectionHeader label="Account" />
         {info.connection === 'error' && settled ? (
