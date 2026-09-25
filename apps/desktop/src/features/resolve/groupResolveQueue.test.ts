@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
-import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveUiState } from './resolveRowState';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from './groupResolveQueue';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
@@ -32,6 +32,7 @@ const baseThread: ResolveThread = {
   threadId: 'thread',
   originKind: 'review_comment',
   state: 'open',
+  stage: 'new',
   stateReason: null,
   revision: 1,
   activeAttemptId: null,
@@ -58,7 +59,7 @@ const row = ({
   deliveredAt = null,
 }: {
   readonly threadId: string;
-  readonly status: ResolveQueueStatus;
+  readonly status: ResolveUiState;
   readonly reviewerCreatedAtMs: number;
   readonly integratedSha?: string | null;
   readonly activeAttemptId?: string | null;
@@ -77,6 +78,7 @@ const row = ({
   thread: { ...baseThread, id: `row-${threadId}`, threadId, activeAttemptId },
   commentThread: null,
   status,
+  rowState: { state: status, node: 'queued', sentence: null, action: null, failedStep: null },
   attempt: null,
   reviewerNote: {
     body: `body-${threadId}`,
@@ -94,18 +96,18 @@ const row = ({
 
 describe('the retryable bucket', () => {
   const rows = [
-    row({ threadId: 'failed', status: 'run_failed', reviewerCreatedAtMs: 1 }),
-    row({ threadId: 'stopped', status: 'run_stopped', reviewerCreatedAtMs: 2 }),
-    row({ threadId: 'undelivered', status: 'delivery_failed', reviewerCreatedAtMs: 3 }),
-    row({ threadId: 'waiting', status: 'fix_ready', reviewerCreatedAtMs: 4 }),
-    row({ threadId: 'unsure', status: 'confirm_delivery', reviewerCreatedAtMs: 5 }),
+    row({ threadId: 'failed', status: 'failed', reviewerCreatedAtMs: 1 }),
+    row({ threadId: 'stopped', status: 'new', reviewerCreatedAtMs: 2 }),
+    row({ threadId: 'undelivered', status: 'failed', reviewerCreatedAtMs: 3 }),
+    row({ threadId: 'waiting', status: 'ready', reviewerCreatedAtMs: 4 }),
+    row({ threadId: 'unsure', status: 'failed', reviewerCreatedAtMs: 5 }),
   ];
 
   it('holds only what a second attempt can move', () => {
     expect(groupResolveQueue({ rows }).retryable.map((entry) => entry.thread.threadId)).toEqual([
       'failed',
-      'stopped',
       'undelivered',
+      'unsure',
     ]);
   });
 
@@ -114,7 +116,7 @@ describe('the retryable bucket', () => {
 
     expect(
       rowsForResolveFilter({ groups, filter: 'retryable' }).map((entry) => entry.thread.threadId),
-    ).toEqual(['failed', 'stopped', 'undelivered']);
+    ).toEqual(['failed', 'undelivered', 'unsure']);
     expect(rowsForResolveFilter({ groups, filter: 'needs_review' })).toEqual(groups.needsReview);
     expect(rowsForResolveFilter({ groups, filter: 'everything' })).toEqual(groups.active);
   });
@@ -122,22 +124,22 @@ describe('the retryable bucket', () => {
 
 describe('the approved bucket', () => {
   const rows = [
-    row({ threadId: 'waiting', status: 'fix_ready', reviewerCreatedAtMs: 1 }),
+    row({ threadId: 'waiting', status: 'ready', reviewerCreatedAtMs: 1 }),
     row({
       threadId: 'approved',
-      status: 'ready_to_push',
+      status: 'approved',
       reviewerCreatedAtMs: 2,
       approvalState: 'accepted',
     }),
     row({
       threadId: 'refused',
-      status: 'wont_fix',
+      status: 'approved',
       reviewerCreatedAtMs: 3,
       approvalState: 'wont_fix',
     }),
     row({
       threadId: 'sent',
-      status: 'pushed',
+      status: 'resolved',
       reviewerCreatedAtMs: 4,
       approvalState: 'accepted',
       deliveredAt: 9,
@@ -166,11 +168,11 @@ describe('the approved bucket', () => {
 describe('groupResolveQueue', () => {
   it('buckets fix_ready, agent_asked and changed_since_accepted together, ordered oldest first', () => {
     const rows = [
-      row({ threadId: 'newest', status: 'fix_ready', reviewerCreatedAtMs: 300 }),
-      row({ threadId: 'oldest', status: 'agent_asked', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'newest', status: 'ready', reviewerCreatedAtMs: 300 }),
+      row({ threadId: 'oldest', status: 'needs_you', reviewerCreatedAtMs: 100 }),
       row({
         threadId: 'middle',
-        status: 'changed_since_accepted',
+        status: 'ready',
         reviewerCreatedAtMs: 200,
         integratedSha: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678',
       }),
@@ -185,9 +187,9 @@ describe('groupResolveQueue', () => {
 
   it('leads with the question the run is parked on, however late it arrived', () => {
     const rows = [
-      row({ threadId: 'first', status: 'fix_ready', reviewerCreatedAtMs: 100 }),
-      row({ threadId: 'second', status: 'reply_ready', reviewerCreatedAtMs: 200 }),
-      row({ threadId: 'asked', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
+      row({ threadId: 'first', status: 'ready', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'second', status: 'ready', reviewerCreatedAtMs: 200 }),
+      row({ threadId: 'asked', status: 'needs_you', reviewerCreatedAtMs: 900 }),
     ];
 
     expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
@@ -199,9 +201,9 @@ describe('groupResolveQueue', () => {
 
   it('keeps two parked questions among themselves in the order they arrived', () => {
     const rows = [
-      row({ threadId: 'late', status: 'agent_asked', reviewerCreatedAtMs: 900 }),
-      row({ threadId: 'early', status: 'agent_asked', reviewerCreatedAtMs: 100 }),
-      row({ threadId: 'fix', status: 'fix_ready', reviewerCreatedAtMs: 50 }),
+      row({ threadId: 'late', status: 'needs_you', reviewerCreatedAtMs: 900 }),
+      row({ threadId: 'early', status: 'needs_you', reviewerCreatedAtMs: 100 }),
+      row({ threadId: 'fix', status: 'ready', reviewerCreatedAtMs: 50 }),
     ];
 
     expect(groupResolveQueue({ rows }).needsReview.map((entry) => entry.thread.threadId)).toEqual([
@@ -213,8 +215,8 @@ describe('groupResolveQueue', () => {
 
   it('keeps failed and uncertain delivery in the needs-review bucket', () => {
     const rows = [
-      row({ threadId: 'f', status: 'delivery_failed', reviewerCreatedAtMs: 1 }),
-      row({ threadId: 'u', status: 'confirm_delivery', reviewerCreatedAtMs: 2 }),
+      row({ threadId: 'f', status: 'failed', reviewerCreatedAtMs: 1 }),
+      row({ threadId: 'u', status: 'failed', reviewerCreatedAtMs: 2 }),
     ];
     const groups = groupResolveQueue({ rows });
     expect(groups.needsReview.map((entry) => entry.thread.threadId)).toEqual(['f', 'u']);
@@ -226,13 +228,13 @@ describe('groupResolveQueue', () => {
       row({ threadId: 'w', status: 'working', reviewerCreatedAtMs: 1 }),
       row({
         threadId: 'r',
-        status: 'ready_to_push',
+        status: 'approved',
         reviewerCreatedAtMs: 2,
         integratedSha: 'b2c3d4e5f60718293a4b5c6d7e8f90123456789a',
       }),
       row({
         threadId: 'p',
-        status: 'pushed',
+        status: 'resolved',
         reviewerCreatedAtMs: 3,
         integratedSha: 'c3d4e5f60718293a4b5c6d7e8f90123456789ab2',
       }),
@@ -256,9 +258,9 @@ describe('groupResolveQueue', () => {
 describe('groupSharedRuns', () => {
   it('gathers the members of one attempt under a single named group, keeping list order', () => {
     const rows = [
-      row({ threadId: 'a', status: 'fix_ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
-      row({ threadId: 'b', status: 'fix_ready', reviewerCreatedAtMs: 2 }),
-      row({ threadId: 'c', status: 'fix_ready', reviewerCreatedAtMs: 3, activeAttemptId: 'run-1' }),
+      row({ threadId: 'a', status: 'ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
+      row({ threadId: 'b', status: 'ready', reviewerCreatedAtMs: 2 }),
+      row({ threadId: 'c', status: 'ready', reviewerCreatedAtMs: 3, activeAttemptId: 'run-1' }),
     ];
     const groups = groupSharedRuns({ rows });
     expect(groups.map((group) => group.attemptId)).toEqual(['run-1', null]);
@@ -268,7 +270,7 @@ describe('groupSharedRuns', () => {
 
   it('gives a lone member of an attempt no shared-run heading', () => {
     const rows = [
-      row({ threadId: 'a', status: 'fix_ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
+      row({ threadId: 'a', status: 'ready', reviewerCreatedAtMs: 1, activeAttemptId: 'run-1' }),
     ];
     expect(groupSharedRuns({ rows }).map((group) => group.attemptId)).toEqual([null]);
   });

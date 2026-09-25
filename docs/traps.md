@@ -30,7 +30,12 @@ file holds those explanations. Everything below has been "fixed" at least once a
   requests do not need a `RemoteHostKind` member to work.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
-  reads a separate queue any more, and a row's state is the answer. Verdicts in
+  reads a separate queue any more. What the user sees comes from one column,
+  `resolve_threads.stage` (nine stages shown as eight states through
+  `resolveRowState`). Only `nextStage` computes it: thread writes go through
+  `saveResolveThread`, queue decisions through `advanceResolveStage`. A write
+  that calls `upsertResolveThread` directly skips the stage and leaves the row
+  lying. Verdicts in
   memory are derived from the row through `threadOutcome`. They are never
   rebuilt by replaying assistant messages. Marker parsing writes rows, but it
   does not own them. `resolve_publications` and `resolve_publication_threads`

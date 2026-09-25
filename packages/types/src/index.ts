@@ -361,6 +361,7 @@ export type {
 export type {
   ResolveThread,
   ResolveThreadState,
+  ResolveStage,
   ResolveAttempt,
   ResolveAttemptPhase,
   ResolveQueueApprovalState,

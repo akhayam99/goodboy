@@ -15,7 +15,7 @@ const rowOf = ({ body }: { readonly body: string }): QueueRow =>
   ({
     item: { id: 'item-1', approvalState: 'none', integratedSha: null },
     thread: { threadId: 't-retry', activeAttemptId: null },
-    status: 'fix_ready',
+    status: 'ready',
     attempt: null,
     reviewerNote: {
       body,

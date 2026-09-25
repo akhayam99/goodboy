@@ -7,7 +7,8 @@ import {
 } from '@goodboy/db';
 import type { ResolvePublication, ResolvePublicationThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { isDeliveryComplete } from './deriveResolveQueueStatus';
+import { isDeliveryComplete } from './deliveryReceipts';
+import { nextStage } from './nextStage';
 import { isPublicationStale } from './publicationHeartbeat';
 
 export const PUBLICATION_INTERRUPTED = 'The app stopped while publishing';
@@ -59,6 +60,7 @@ const recoverPublication = async ({
       threadId: row.threadId,
       revision: row.revision,
       state: restored,
+      stage: nextStage({ stage: row.stage, event: { kind: 'interrupted' } }),
       stateReason: `publication_failed:${JSON.stringify({
         error: recovered.error,
         reason: row.stateReason,

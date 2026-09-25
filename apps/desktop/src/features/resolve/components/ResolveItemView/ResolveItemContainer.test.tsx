@@ -99,7 +99,14 @@ const rowOf = ({ threadId, body }: { readonly threadId: string; readonly body: s
       },
       replies: [],
     },
-    status: 'fix_ready',
+    status: 'ready',
+    rowState: {
+      state: 'ready',
+      node: 'ready',
+      sentence: 'Fix ready',
+      action: 'review',
+      failedStep: null,
+    },
     attempt: null,
     reviewerNote: {
       body,
@@ -155,7 +162,7 @@ describe('an asynchronous resolve decision', () => {
   it('carries a rewritten reply into the publication of a comment already settled', async () => {
     const settled = {
       ...RETRY,
-      status: 'ready_to_push',
+      status: 'approved',
       item: { ...RETRY.item, approvalState: 'accepted' },
       thread: { ...RETRY.thread, replyDraft: 'The reply the agent wrote.' },
     } as unknown as ResolveQueueRow;
@@ -177,7 +184,7 @@ describe('an asynchronous resolve decision', () => {
   it('leaves a settled comment alone when its reply was not touched', async () => {
     const settled = {
       ...PARSER,
-      status: 'ready_to_push',
+      status: 'approved',
       item: { ...PARSER.item, approvalState: 'accepted' },
       thread: { ...PARSER.thread, replyDraft: 'Added the early return.' },
     } as unknown as ResolveQueueRow;

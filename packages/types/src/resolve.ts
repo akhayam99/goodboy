@@ -5,6 +5,16 @@ import type { BranchCommit } from './worktree';
 
 export type ResolveThreadState =
   'open' | 'working' | 'needs_answer' | 'fixed' | 'answered' | 'failed' | 'publishing' | 'closed';
+export type ResolveStage =
+  | 'new'
+  | 'working'
+  | 'asking'
+  | 'proposed'
+  | 'approved'
+  | 'publishing'
+  | 'failed'
+  | 'parked'
+  | 'resolved';
 export type ResolveAttemptPhase =
   'queued' | 'running' | 'waiting' | 'finished' | 'failed' | 'cancelled';
 export type ResolveThread = Readonly<{
@@ -15,6 +25,7 @@ export type ResolveThread = Readonly<{
   threadId: string;
   originKind: AgentSourceKind;
   state: ResolveThreadState;
+  stage: ResolveStage;
   stateReason: string | null;
   revision: number;
   activeAttemptId: string | null;

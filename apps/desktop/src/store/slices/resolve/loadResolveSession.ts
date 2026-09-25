@@ -3,8 +3,8 @@ import {
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
-  upsertResolveThread,
 } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { drainResolveQueue } from './drainResolveQueue';
 import { reconcileInterruptedPublications } from './reconcileInterruptedPublications';
@@ -42,7 +42,7 @@ export const loadResolveSession = async ({ set, get, sessionId }: Params): Promi
     ) {
       continue;
     }
-    await upsertResolveThread({
+    await saveResolveThread({
       db: tauriDatabase,
       row: {
         ...row,

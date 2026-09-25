@@ -199,8 +199,8 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       pinned: view.order,
     });
     return [
-      ...ordered.filter((row) => row.status === 'agent_asked'),
-      ...ordered.filter((row) => row.status !== 'agent_asked'),
+      ...ordered.filter((row) => row.status === 'needs_you'),
+      ...ordered.filter((row) => row.status !== 'needs_you'),
     ];
   }, [groups, view.filter, view.order]);
   const listGroups = useMemo(() => groupSharedRuns({ rows: listed }), [listed]);
@@ -243,7 +243,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
           expandedThreadId: threadId,
           order: listed.map((row) => row.thread.threadId),
           ...(target?.status === 'later' && { isDeferredShown: true }),
-          ...((target?.status === 'pushed' || target?.status === 'wont_fix_sent') && {
+          ...(target?.status === 'resolved' && {
             isCompletedShown: true,
           }),
         },

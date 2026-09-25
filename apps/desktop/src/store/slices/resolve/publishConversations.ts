@@ -17,7 +17,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { liveMountTarget } from './mountTarget';
 import { deliverPublicationThread } from './deliverPublicationThread';
-import { isDeliveryComplete } from './deriveResolveQueueStatus';
+import { isDeliveryComplete } from './deliveryReceipts';
 import { preparePublication } from './preparePublication';
 import { publicationOutcome, type PublicationOutcome } from './publicationOutcome';
 import { RESOLVE_ON_GITHUB_DEFAULT, resolveStepPlan } from './resolveStepPlan';

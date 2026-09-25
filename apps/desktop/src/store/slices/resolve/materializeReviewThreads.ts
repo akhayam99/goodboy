@@ -3,8 +3,8 @@ import {
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
-  upsertResolveThread,
 } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveThread } from './createResolveThread';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -42,10 +42,7 @@ export const materializeReviewThreads = async ({
       continue;
     }
     const row = previous ?? createResolveThread({ sessionId, threadId, projectId, prNumber });
-    if (
-      previous === undefined &&
-      !(await upsertResolveThread({ db, row, expectedRevision: null }))
-    ) {
+    if (previous === undefined && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
       continue;
     }
     await insertResolveQueueItem({

@@ -1,7 +1,7 @@
-import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
 import type { ResolveQueueFilter } from '../../store/slices/session-view';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 import { isDecidedUnpublished } from './publishCounts';
+import type { ResolveUiState } from './resolveRowState';
 
 export type ResolveQueueGroups = {
   readonly needsReview: ReadonlyArray<ResolveQueueRow>;
@@ -18,31 +18,18 @@ export type ResolveQueueListGroup = {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
 };
 
-const NEEDS_REVIEW_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
-  'fix_ready',
-  'reply_ready',
-  'no_change',
-  'agent_asked',
-  'changed_since_accepted',
-  'delivery_failed',
-  'confirm_delivery',
-  'run_failed',
-  'run_stopped',
+const NEEDS_REVIEW_STATUSES: ReadonlySet<ResolveUiState> = new Set([
+  'new',
+  'ready',
+  'needs_you',
+  'failed',
 ]);
 
-const RETRYABLE_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
-  'run_failed',
-  'run_stopped',
-  'delivery_failed',
-]);
+const RETRYABLE_STATUSES: ReadonlySet<ResolveUiState> = new Set(['failed']);
 
-const HISTORY_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set([
-  'later',
-  'pushed',
-  'wont_fix_sent',
-]);
+const HISTORY_STATUSES: ReadonlySet<ResolveUiState> = new Set(['later', 'resolved']);
 
-const DECIDED_STATUSES: ReadonlySet<ResolveQueueStatus> = new Set(['ready_to_push', 'wont_fix']);
+const DECIDED_STATUSES: ReadonlySet<ResolveUiState> = new Set(['approved']);
 
 const reviewerTimeOf = ({ row }: { readonly row: ResolveQueueRow }): number =>
   row.reviewerNote?.createdAtMs ?? row.thread.createdAt;
@@ -54,7 +41,7 @@ type RankParams = {
   readonly row: ResolveQueueRow;
 };
 
-const askedRank = ({ row }: RankParams): number => (row.status === 'agent_asked' ? 0 : 1);
+const askedRank = ({ row }: RankParams): number => (row.status === 'needs_you' ? 0 : 1);
 
 const byAgentQuestionThenTime = (a: ResolveQueueRow, b: ResolveQueueRow): number => {
   const rank = askedRank({ row: a }) - askedRank({ row: b });
@@ -83,7 +70,7 @@ export const groupResolveQueue = ({
     .slice()
     .sort(byReviewerTime),
   completed: rows
-    .filter((row) => row.status === 'pushed' || row.status === 'wont_fix_sent')
+    .filter((row) => row.status === 'resolved')
     .slice()
     .sort(byReviewerTime),
   later: rows

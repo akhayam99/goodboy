@@ -150,10 +150,10 @@ export const ResolveItemView = ({
   onOpenUrl,
 }: Props) => {
   const note = runNote({ stateReason: row.thread.stateReason });
-  const isDelivered = row.status === 'pushed' || row.status === 'wont_fix_sent';
+  const isDelivered = row.status === 'resolved';
   const isReplyBlank = reply.trim() === '';
   const question = row.thread.question;
-  const isAnswering = row.status === 'agent_asked';
+  const isAnswering = row.status === 'needs_you';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
   const isEditing = mode !== 'read';

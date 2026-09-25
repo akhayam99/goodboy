@@ -128,6 +128,8 @@ describe('HeaderBand', () => {
             id: 'resolve-thread-1',
             threadId: 'thread-1',
             state: 'open',
+            stage: 'proposed',
+            stateReason: null,
             revision: 1,
             activeAttemptId: null,
             replyDraft: null,

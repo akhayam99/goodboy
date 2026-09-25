@@ -9,15 +9,19 @@ import type {
 import { groupThreads, type CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import {
-  deriveResolveQueueStatus,
   isDeliveryComplete,
   resolveDeliveryReceiptsFor,
-  type ResolveQueueStatus,
-} from '../../store/slices/resolve/deriveResolveQueueStatus';
+} from '../../store/slices/resolve/deliveryReceipts';
 import {
   resolveProposalKind,
   type ResolveProposalKind,
 } from '../../store/slices/resolve/resolveProposalKind';
+import {
+  resolveRowState,
+  type ResolveFailedStep,
+  type ResolveRowState,
+  type ResolveUiState,
+} from './resolveRowState';
 
 export type ResolveQueueReviewerNote = {
   readonly body: string;
@@ -41,7 +45,8 @@ export type ResolveQueueRow = {
   readonly item: ResolveQueueItem;
   readonly thread: ResolveThread;
   readonly commentThread: CommentThread | null;
-  readonly status: ResolveQueueStatus;
+  readonly status: ResolveUiState;
+  readonly rowState: ResolveRowState;
   readonly attempt: ResolveAttempt | null;
   readonly reviewerNote: ResolveQueueReviewerNote | null;
   readonly proposal: string | null;
@@ -139,6 +144,50 @@ const deliveryFor = ({
   };
 };
 
+const PUBLICATION_FAILED = 'publication_failed:';
+
+const publicationErrorOf = ({ thread }: { readonly thread: ResolveThread }): string | null => {
+  const reason = thread.stateReason;
+  if (reason === null || !reason.startsWith(PUBLICATION_FAILED)) {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(reason.slice(PUBLICATION_FAILED.length));
+    if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
+      return typeof parsed.error === 'string' ? parsed.error : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const failedStepOf = ({
+  receipts,
+  thread,
+}: {
+  readonly receipts: ReadonlyArray<ResolvePublicationThread>;
+  readonly thread: ResolveThread;
+}): ResolveFailedStep => {
+  const broken = receipts.filter(
+    (receipt) =>
+      receipt.error !== null ||
+      receipt.replyPhase === 'uncertain' ||
+      receipt.resolvePhase === 'uncertain',
+  );
+  const latest = broken.at(-1);
+  if (latest !== undefined) {
+    if (latest.replyPhase === 'uncertain' || latest.resolvePhase === 'uncertain') {
+      return 'uncertain';
+    }
+    if (latest.replyPhase !== 'posted' && latest.replyPhase !== 'skipped') {
+      return 'reply';
+    }
+    return 'resolve';
+  }
+  return publicationErrorOf({ thread }) === null ? 'run' : 'push';
+};
+
 export const buildResolveQueueRows = ({
   entries,
   attempts,
@@ -152,23 +201,29 @@ export const buildResolveQueueRows = ({
       thread.activeAttemptId === null
         ? null
         : (attempts.find((candidate) => candidate.id === thread.activeAttemptId) ?? null);
-    const status = deriveResolveQueueStatus({
-      item,
-      thread,
-      activeAttempt: attempt,
-      deliveryReceipts,
+    const proposalKind = resolveProposalKind({ item, thread });
+    const delivery = deliveryFor({ item, thread, deliveryReceipts });
+    const receipts = resolveDeliveryReceiptsFor({ item, thread, deliveryReceipts });
+    const rowState = resolveRowState({
+      stage: thread.stage,
+      proposalKind,
+      failedStep: thread.stage === 'failed' ? failedStepOf({ receipts, thread }) : null,
+      isLeftOpen: delivery !== null && !delivery.isThreadResolved,
+      pushedSha: item.integratedSha ?? thread.commitShas?.at(-1) ?? null,
+      pushError: publicationErrorOf({ thread }),
     });
     return {
       item,
       thread,
       commentThread,
-      status,
+      status: rowState.state,
+      rowState,
       attempt,
       reviewerNote: reviewerNoteOf({ thread: commentThread }),
       proposal: thread.replyDraft,
-      proposalKind: resolveProposalKind({ item, thread }),
+      proposalKind,
       coveredThreadIds: coveredThreadIdsFor({ thread, entries }),
-      delivery: deliveryFor({ item, thread, deliveryReceipts }),
+      delivery,
     };
   });
 };

@@ -55,6 +55,7 @@ const row: ResolveThread = {
   threadId: 'PRRT_1',
   originKind: 'review_comment',
   state: 'fixed',
+  stage: 'new',
   stateReason: null,
   revision: 0,
   activeAttemptId: null,
@@ -229,6 +230,7 @@ describe('durable resolve rows', () => {
         threadId: row.threadId,
         revision: 0,
         state: 'working',
+        stage: 'new',
         stateReason: null,
       }),
     ).toBe(false);
@@ -244,6 +246,7 @@ describe('durable resolve rows', () => {
         threadId: row.threadId,
         revision: 1,
         state: 'publishing',
+        stage: 'new',
         stateReason: null,
       }),
     ).toBe(true);

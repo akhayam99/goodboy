@@ -8,6 +8,7 @@ import {
 import type { ResolveQueueItemWithThread } from '@goodboy/types';
 import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { advanceResolveStage } from './advanceResolveStage';
 import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
@@ -82,6 +83,15 @@ const acceptDecidedItem = async ({
     if (!accepted) {
       throw new Error(STALE_APPROVAL);
     }
+    const approved = (await listResolveQueueItems({ db, sessionId })).find(
+      (entry) => entry.item.id === itemId,
+    );
+    await advanceResolveStage({
+      set,
+      sessionId,
+      threadIds: approved === undefined ? [] : [approved.thread.threadId],
+      event: () => ({ kind: 'user_approved' }),
+    });
     await loadResolveQueueItemsInto({ set, sessionId });
     return;
   }
@@ -139,6 +149,12 @@ const acceptDecidedItem = async ({
     candidateId: candidate.id,
     integratedSha,
     approvals,
+  });
+  await advanceResolveStage({
+    set,
+    sessionId,
+    threadIds: covered.flatMap(({ entry }) => (entry === undefined ? [] : [entry.thread.threadId])),
+    event: () => ({ kind: 'user_approved' }),
   });
   await loadResolveQueueItemsInto({ set, sessionId });
   await loadResolveCandidatesInto({ set, sessionId });

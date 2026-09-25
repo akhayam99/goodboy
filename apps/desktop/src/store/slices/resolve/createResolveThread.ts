@@ -25,6 +25,7 @@ export const createResolveThread = ({
     prNumber: numberFromUrl === undefined ? (prNumber ?? 0) : Number(numberFromUrl),
     originKind: agent?.sourceKind ?? 'review_comment',
     state: 'open',
+    stage: 'new',
     stateReason: null,
     revision: 0,
     activeAttemptId: null,

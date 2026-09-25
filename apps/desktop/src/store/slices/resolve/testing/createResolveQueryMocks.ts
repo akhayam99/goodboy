@@ -30,7 +30,12 @@ type StateParams = SessionParams & {
   readonly threadId: string;
   readonly revision: number;
   readonly state: ResolveThread['state'];
+  readonly stage: ResolveThread['stage'];
   readonly stateReason: string | null;
+};
+type StageParams = SessionParams & {
+  readonly threadId: string;
+  readonly stage: ResolveThread['stage'];
 };
 type QueueItemParams = { readonly item: ResolveQueueItem };
 type QueueItemIdParams = SessionParams & { readonly itemId: string };
@@ -133,15 +138,21 @@ export const createResolveQueryMocks = () => {
       }
     }),
     setResolveThreadState: vi.fn(
-      async ({ threadId, revision, state, stateReason }: StateParams) => {
+      async ({ threadId, revision, state, stage, stateReason }: StateParams) => {
         const row = threads.get(threadId);
         if (row === undefined || row.revision !== revision) {
           return false;
         }
-        threads.set(threadId, { ...row, state, stateReason, revision: row.revision + 1 });
+        threads.set(threadId, { ...row, state, stage, stateReason, revision: row.revision + 1 });
         return true;
       },
     ),
+    setResolveThreadStage: vi.fn(async ({ threadId, stage }: StageParams) => {
+      const row = threads.get(threadId);
+      if (row !== undefined) {
+        threads.set(threadId, { ...row, stage });
+      }
+    }),
     listResolvePublicationsForSession: vi.fn(async ({ sessionId }: SessionParams) =>
       [...publications.values()].filter((publication) => publication.sessionId === sessionId),
     ),

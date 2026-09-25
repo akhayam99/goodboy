@@ -1,6 +1,7 @@
 import { listResolveQueueItems, refuseResolveQueueItem as refuseItem } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { STALE_APPROVAL } from './acceptResolveQueueItem';
+import { advanceResolveStage } from './advanceResolveStage';
 import { hashResolveReply } from './hashResolveReply';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -43,6 +44,12 @@ export const refuseResolveQueueItem = async ({
       revision,
       reply,
       decide,
+    });
+    await advanceResolveStage({
+      set,
+      sessionId,
+      threadIds: [target.thread.threadId],
+      event: () => ({ kind: 'user_approved' }),
     });
   }
   await loadResolveQueueItemsInto({ set, sessionId });

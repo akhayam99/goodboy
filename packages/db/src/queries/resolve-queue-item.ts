@@ -14,6 +14,7 @@ type JoinedRow = ItemRow & {
   readonly prNumber: number;
   readonly originKind: ResolveThread['originKind'];
   readonly state: ResolveThread['state'];
+  readonly stage: ResolveThread['stage'];
   readonly stateReason: string | null;
   readonly revision: number;
   readonly activeAttemptId: string | null;
@@ -92,7 +93,7 @@ export const listResolveQueueItems = async ({
        q.delivered_at AS deliveredAt, q.superseded_at AS supersededAt,
        q.created_at AS createdAt, q.updated_at AS updatedAt,
        r.id AS threadRowId, r.project_id AS projectId, r.pr_number AS prNumber,
-       r.origin_kind AS originKind, r.state, r.state_reason AS stateReason,
+       r.origin_kind AS originKind, r.state, r.stage, r.state_reason AS stateReason,
        r.revision, r.active_attempt_id AS activeAttemptId, r.disposition,
        r.reply_draft AS replyDraft, r.commit_shas_json AS commitShas, r.question,
        r.reply_posted_at AS replyPostedAt, r.reply_id AS replyId,
@@ -131,6 +132,7 @@ export const listResolveQueueItems = async ({
       threadId: row.threadId,
       originKind: row.originKind,
       state: row.state,
+      stage: row.stage,
       stateReason: row.stateReason,
       revision: row.revision,
       activeAttemptId: row.activeAttemptId,

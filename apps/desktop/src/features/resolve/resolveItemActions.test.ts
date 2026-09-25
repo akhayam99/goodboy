@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveUiState } from './resolveRowState';
 import { resolveItemActions, type ResolveItemActionId } from './resolveItemActions';
 
 const DECISIONS: ReadonlySet<ResolveItemActionId> = new Set([
@@ -9,27 +9,22 @@ const DECISIONS: ReadonlySet<ResolveItemActionId> = new Set([
   'resolve',
 ]);
 
-const EXPECTED: Record<ResolveQueueStatus, ResolveItemActionId | null> = {
-  fix_ready: 'resolve',
-  reply_ready: 'resolve',
-  no_change: 'fix_it',
-  agent_asked: 'fix_it',
+const EXPECTED: Record<ResolveUiState, ResolveItemActionId | null> = {
+  new: 'fix_it',
+  ready: 'resolve',
+  needs_you: 'fix_it',
   working: 'view_agent',
-  ready_to_push: 'resolve',
-  pushed: 'open_github',
+  approved: 'resolve',
+  resolved: 'open_github',
   later: 'resume_comment',
-  changed_since_accepted: 'review_changed',
-  delivery_failed: 'resolve',
-  confirm_delivery: 'open_github',
-  run_failed: 'fix_it',
-  run_stopped: 'fix_it',
-  wont_fix: 'resolve',
-  wont_fix_sent: 'open_github',
+  failed: 'fix_it',
 };
 
 const build = (patch: Partial<Parameters<typeof resolveItemActions>[0]> = {}) =>
   resolveItemActions({
-    status: 'fix_ready',
+    status: 'ready',
+    proposalKind: 'fix',
+    failedStep: null,
     sharedApprovalCount: 1,
     resolveBlockedReason: null,
     closeBlockedReason: null,
@@ -44,7 +39,7 @@ const build = (patch: Partial<Parameters<typeof resolveItemActions>[0]> = {}) =>
 
 describe('the actions a comment offers', () => {
   for (const [status, primary] of Object.entries(EXPECTED) as ReadonlyArray<
-    [ResolveQueueStatus, ResolveItemActionId | null]
+    [ResolveUiState, ResolveItemActionId | null]
   >) {
     it(`offers one primary on ${status}`, () => {
       const result = build({ status });
@@ -55,7 +50,7 @@ describe('the actions a comment offers', () => {
   }
 
   it('speaks only the four verbs plus the ways out', () => {
-    for (const status of Object.keys(EXPECTED) as ReadonlyArray<ResolveQueueStatus>) {
+    for (const status of Object.keys(EXPECTED) as ReadonlyArray<ResolveUiState>) {
       const result = build({ status });
       const ids = [result.primary, result.secondary, ...result.overflow].flatMap((entry) =>
         entry === null ? [] : [entry.id],
@@ -66,12 +61,18 @@ describe('the actions a comment offers', () => {
     }
   });
 
+  it('retries the step that failed, and sends an unsure reply to GitHub first', () => {
+    expect(build({ status: 'failed', failedStep: 'reply' }).primary?.id).toBe('resolve');
+    expect(build({ status: 'failed', failedStep: 'uncertain' }).primary?.id).toBe('open_github');
+    expect(build({ status: 'ready', proposalKind: 'none' }).primary?.id).toBe('fix_it');
+  });
+
   it('names the whole group when one decision settles several comments', () => {
     expect(build({ sharedApprovalCount: 3 }).primary?.label).toBe('Resolve 3 comments');
   });
 
   it('asks the agent to answer its own question first', () => {
-    const result = build({ status: 'agent_asked', hasQuestion: true });
+    const result = build({ status: 'needs_you', hasQuestion: true });
 
     expect(result.primary?.label).toBe('Answer the agent');
   });

@@ -7,9 +7,12 @@ import {
   RESOLVE_QUEUE_ACTION_LABEL,
   RESOLVE_QUEUE_FILTER_LABEL,
   RESOLVE_QUEUE_NEXT_STEP,
-  RESOLVE_QUEUE_STATUS_LABEL,
   RESOLVE_QUEUE_TITLE,
 } from '../../features/resolve/resolveQueueCopy';
+import {
+  RESOLVE_ROW_ACTION_LABEL,
+  RESOLVE_UI_STATE_LABEL,
+} from '../../features/resolve/resolveRowState';
 import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/scriptRunPresentation';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import {
@@ -30,7 +33,8 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   ),
   ARTIFACT_CTA_BLOCK_COPY: Object.values(ARTIFACT_CTA_BLOCK_COPY),
   RESOLVE_QUEUE_TITLE: [RESOLVE_QUEUE_TITLE],
-  RESOLVE_QUEUE_STATUS_LABEL: Object.values(RESOLVE_QUEUE_STATUS_LABEL),
+  RESOLVE_UI_STATE_LABEL: Object.values(RESOLVE_UI_STATE_LABEL),
+  RESOLVE_ROW_ACTION_LABEL: Object.values(RESOLVE_ROW_ACTION_LABEL),
   RESOLVE_QUEUE_NEXT_STEP: Object.values(RESOLVE_QUEUE_NEXT_STEP),
   RESOLVE_QUEUE_ACTION_LABEL: Object.values(RESOLVE_QUEUE_ACTION_LABEL),
   RESOLVE_QUEUE_FILTER_LABEL: Object.values(RESOLVE_QUEUE_FILTER_LABEL),

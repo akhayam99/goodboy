@@ -92,6 +92,7 @@ const threadOf = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   threadId: 'PRRT_1',
   originKind: 'review_comment',
   state: 'open',
+  stage: 'new',
   stateReason: null,
   revision: 1,
   activeAttemptId: null,
@@ -498,7 +499,7 @@ describe('walking the queue from the keyboard', () => {
         entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
         entryOf({
           item: { id: 'item-2', threadId: 'PRRT_2', approvalState: 'deferred', deferredAt: 3 },
-          thread: { threadId: 'PRRT_2' },
+          thread: { threadId: 'PRRT_2', stage: 'parked' },
         }),
       ],
     };
@@ -679,7 +680,7 @@ describe('the shape of the queue surface', () => {
         entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
         entryOf({
           item: { id: 'item-2', threadId: 'PRRT_2' },
-          thread: { threadId: 'PRRT_2', activeAttemptId: 'attempt-1' },
+          thread: { threadId: 'PRRT_2', activeAttemptId: 'attempt-1', stage: 'failed' },
         }),
       ],
     };
