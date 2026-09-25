@@ -83,7 +83,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
   return (
     <SectionSurface
       label="Session folders left on disk"
-      hint="No session and no retained record claims these. A folder with changes not committed stays until you remove it on its own. Branches stay."
+      hint="No session and no retained record claims these. A folder with changes not committed or commits not pushed stays until you remove it on its own. Branches stay."
       icon={<CONCEPT_ICONS.worktree size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
@@ -141,7 +141,7 @@ export const OrphanWorktreesSection = ({ workspaceId }: Props) => {
           role="danger"
           icon={<FolderX size={ICON_SIZE.row} aria-hidden />}
           title={`Remove ${bulkLabel}?`}
-          description={`${bulkSize} will be removed from disk. Folders with changes not committed, or that git doesn't track, are kept. Branches stay.`}
+          description={`${bulkSize} will be removed from disk. Folders with changes not committed, commits not pushed, or that git doesn't track are kept. Branches stay.`}
           confirmLabel="Remove"
           onConfirm={() => run({ paths: removable.map((orphan) => orphan.path), mode: 'safe' })}
           onCancel={() => setArmed(null)}

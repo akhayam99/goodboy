@@ -9,6 +9,7 @@ const CHANGE_REASONS: ReadonlyArray<WorktreeRemovalReason> = [
 const FORCEABLE_REASONS: ReadonlyArray<WorktreeRemovalReason> = [
   ...CHANGE_REASONS,
   'not-registered',
+  'unpushed-commits',
 ];
 
 const REASON_COPY: ReadonlyArray<readonly [WorktreeRemovalReason, string]> = [
@@ -18,6 +19,7 @@ const REASON_COPY: ReadonlyArray<readonly [WorktreeRemovalReason, string]> = [
   ['staged-changes', 'Has changes not committed'],
   ['unstaged-changes', 'Has changes not committed'],
   ['untracked-files', 'Has changes not committed'],
+  ['unpushed-commits', 'Has commits not pushed'],
   ['not-registered', "Git doesn't track this folder"],
   ['locked', 'Locked by git'],
   ['outside-worktree-folder', 'Outside the Goodboy worktrees folder'],
@@ -47,6 +49,9 @@ export const canForceRemoval = ({ reasons }: ReasonsParams): boolean =>
 export const forceRemovalWarning = ({ reasons, size }: WarningParams): string => {
   if (reasons.some((reason) => CHANGE_REASONS.includes(reason))) {
     return `Changes not committed in this folder will be lost, ${size} in all. The branch stays.`;
+  }
+  if (reasons.includes('unpushed-commits')) {
+    return `Its commits not pushed stay on the branch. ${size} will be removed from disk.`;
   }
   return `Goodboy can't check this folder for changes. ${size} will be removed from disk.`;
 };

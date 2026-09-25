@@ -77,7 +77,8 @@ export type WorktreeRemovalReason =
   | 'operation-in-progress'
   | 'writer-lease-held'
   | 'not-registered'
-  | 'outside-worktree-folder';
+  | 'outside-worktree-folder'
+  | 'unpushed-commits';
 
 export type WorktreeRemovalResult =
   | { readonly kind: 'removed'; readonly path: string }

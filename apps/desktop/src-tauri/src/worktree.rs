@@ -110,6 +110,7 @@ pub enum WorktreeRemovalReason {
     WriterLeaseHeld,
     NotRegistered,
     OutsideWorktreeFolder,
+    UnpushedCommits,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -1727,6 +1728,47 @@ fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
     parent.starts_with(&repo).then_some(parent)
 }
 
+fn unpushed_commit_count_with(
+    repo_path: &Path,
+    worktree_path: &Path,
+    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+) -> Option<u32> {
+    let default_branch = run_git(repo_path, &["symbolic-ref", "--quiet", "HEAD"])
+        .ok()
+        .map(|raw| raw.trim().to_string())
+        .filter(|name| !name.is_empty());
+    let mut args = vec!["rev-list", "--count", "HEAD", "--not", "--remotes"];
+    if let Some(name) = default_branch.as_deref() {
+        args.push(name);
+    }
+    run_git(worktree_path, &args)
+        .ok()
+        .and_then(|raw| raw.trim().parse::<u32>().ok())
+}
+
+fn unpushed_folder_kept_with(
+    repo_path: &Path,
+    folder: &Path,
+    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    is_lease_live: &mut dyn FnMut(&Path) -> bool,
+) -> Option<WorktreeRemovalResult> {
+    let unpushed = match unpushed_commit_count_with(repo_path, folder, run_git) {
+        Some(0) => return None,
+        Some(_) => WorktreeRemovalReason::UnpushedCommits,
+        None => WorktreeRemovalReason::StatusUnavailable,
+    };
+    let mut reasons = Vec::new();
+    if is_lease_live(folder) {
+        reasons.push(WorktreeRemovalReason::WriterLeaseHeld);
+    }
+    reasons.extend(status_removal_reasons_with(folder, run_git));
+    reasons.push(unpushed);
+    Some(WorktreeRemovalResult::Kept {
+        path: folder.to_string_lossy().into_owned(),
+        reasons,
+    })
+}
+
 pub(crate) fn remove_worktree_folder_with(
     repo_path: &Path,
     target: &Path,
@@ -1777,6 +1819,13 @@ pub(crate) fn remove_worktree_folder_with(
     }
     match inspect_worktree_with(repo_path, &folder, run_git) {
         WorktreeInspection::Registered { .. } => {
+            if mode == WorktreeRemovalMode::Safe {
+                if let Some(kept) =
+                    unpushed_folder_kept_with(repo_path, &folder, run_git, is_lease_live)
+                {
+                    return Ok(kept);
+                }
+            }
             return remove_worktree_checked_with(repo_path, &folder, mode, run_git, is_lease_live);
         }
         WorktreeInspection::Missing { path } => {
@@ -5291,6 +5340,86 @@ mod teardown_tests {
         assert_eq!(
             git_ok(&root, &["branch", "--list", "goodboy/gb-clean"]),
             "goodboy/gb-clean"
+        );
+    }
+
+    fn commit_in(worktree: &Path, name: &str) {
+        std::fs::write(worktree.join(name), "work\n").unwrap();
+        git_ok(worktree, &["add", name]);
+        git_ok(worktree, &["commit", "-m", name]);
+    }
+
+    #[test]
+    fn folder_removal_keeps_a_clean_worktree_with_unpushed_commits_until_confirmed() {
+        let root = init_repo("folder-unpushed");
+        let target = add_goodboy_worktree(&root, "gb-unpushed");
+        commit_in(&target, "local.txt");
+
+        let safe = remove_folder(&root, &target, WorktreeRemovalMode::Safe);
+        assert_eq!(
+            kept_reasons(safe),
+            vec![WorktreeRemovalReason::UnpushedCommits]
+        );
+        assert!(target.join("local.txt").exists());
+
+        let confirmed = remove_folder(&root, &target, WorktreeRemovalMode::Confirmed);
+        assert!(
+            matches!(confirmed, WorktreeRemovalResult::Removed { .. }),
+            "{confirmed:?}"
+        );
+        assert!(!target.exists());
+    }
+
+    #[test]
+    fn folder_removal_keeps_a_pushed_branch_with_newer_local_commits() {
+        let root = init_repo("folder-unpushed-remote");
+        publish_repo(&root);
+        let target = add_goodboy_worktree(&root, "gb-ahead");
+        commit_in(&target, "pushed.txt");
+        git_ok(&target, &["push", "-u", "origin", "goodboy/gb-ahead"]);
+        commit_in(&target, "local.txt");
+
+        let result = remove_folder(&root, &target, WorktreeRemovalMode::Safe);
+
+        assert_eq!(
+            kept_reasons(result),
+            vec![WorktreeRemovalReason::UnpushedCommits]
+        );
+        assert!(target.exists());
+    }
+
+    #[test]
+    fn folder_removal_removes_a_clean_worktree_whose_branch_is_pushed() {
+        let root = init_repo("folder-pushed");
+        publish_repo(&root);
+        let target = add_goodboy_worktree(&root, "gb-pushed");
+        commit_in(&target, "pushed.txt");
+        git_ok(&target, &["push", "-u", "origin", "goodboy/gb-pushed"]);
+
+        let result = remove_folder(&root, &target, WorktreeRemovalMode::Safe);
+
+        assert!(
+            matches!(result, WorktreeRemovalResult::Removed { .. }),
+            "{result:?}"
+        );
+        assert!(!target.exists());
+    }
+
+    #[test]
+    fn folder_removal_reports_changes_and_unpushed_commits_together() {
+        let root = init_repo("folder-unpushed-dirty");
+        let target = add_goodboy_worktree(&root, "gb-both");
+        commit_in(&target, "local.txt");
+        std::fs::write(target.join("draft.md"), "unsaved\n").unwrap();
+
+        let result = remove_folder(&root, &target, WorktreeRemovalMode::Safe);
+
+        assert_eq!(
+            kept_reasons(result),
+            vec![
+                WorktreeRemovalReason::UntrackedFiles,
+                WorktreeRemovalReason::UnpushedCommits
+            ]
         );
     }
 

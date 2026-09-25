@@ -134,6 +134,21 @@ describe('OrphanWorktreesSection safe removal', () => {
     );
   });
 
+  it('keeps a folder with commits not pushed and names them before a force', async () => {
+    state.orphanWorktrees = { [WORKSPACE_ID]: [clean] };
+    state.removeOrphanWorktrees.mockResolvedValueOnce([
+      { kind: 'kept', path: clean.path, reasons: ['unpushed-commits'] },
+    ]);
+    render(<OrphanWorktreesSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /remove 1 folder/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }));
+
+    expect(await screen.findByText('Has commits not pushed')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /^remove anyway$/i }));
+    expect(screen.getByText(/Its commits not pushed stay on the branch/)).toBeDefined();
+  });
+
   it('routes a folder that failed outright to the error report', async () => {
     state.orphanWorktrees = { [WORKSPACE_ID]: [clean] };
     state.removeOrphanWorktrees.mockResolvedValueOnce([
