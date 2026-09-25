@@ -60,7 +60,7 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
         </ul>
       )}
       {hasActions && (
-        <div className="flex items-center gap-1">
+        <div className="-ml-1.5 flex items-center gap-1">
           {retryAction != null && (
             <button
               type="button"
