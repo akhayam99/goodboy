@@ -5,55 +5,58 @@ import { RESOLVE_HISTORY_LABEL } from '../../resolveQueueCopy';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 
 type Props = {
-  readonly completed: ReadonlyArray<ResolveQueueRow>;
+  readonly resolved: ReadonlyArray<ResolveQueueRow>;
   readonly later: ReadonlyArray<ResolveQueueRow>;
-  readonly renderRow: (params: { readonly row: ResolveQueueRow }) => ReactNode;
+  readonly renderRows: (params: {
+    readonly rows: ReadonlyArray<ResolveQueueRow>;
+    readonly label: string;
+  }) => ReactNode;
   readonly isDeferredShown: boolean;
-  readonly isCompletedShown: boolean;
+  readonly isResolvedShown: boolean;
   readonly onDeferredShownChange: (isShown: boolean) => void;
-  readonly onCompletedShownChange: (isShown: boolean) => void;
+  readonly onResolvedShownChange: (isShown: boolean) => void;
 };
 
 export const ResolveQueueFooter = ({
-  completed,
+  resolved,
   later,
-  renderRow,
+  renderRows,
   isDeferredShown,
-  isCompletedShown,
+  isResolvedShown,
   onDeferredShownChange,
-  onCompletedShownChange,
+  onResolvedShownChange,
 }: Props) => {
-  if (completed.length === 0 && later.length === 0) {
+  if (resolved.length === 0 && later.length === 0) {
     return null;
   }
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex items-center gap-4">
-        <CountToggle
-          label={RESOLVE_HISTORY_LABEL.later}
-          count={later.length}
-          isShown={isDeferredShown}
-          icon={CalendarClock}
-          onChange={onDeferredShownChange}
-        />
-        <CountToggle
-          label={RESOLVE_HISTORY_LABEL.completed}
-          count={completed.length}
-          isShown={isCompletedShown}
-          icon={CheckCheck}
-          onChange={onCompletedShownChange}
-        />
+        {resolved.length > 0 && (
+          <CountToggle
+            label={RESOLVE_HISTORY_LABEL.resolved}
+            count={resolved.length}
+            isShown={isResolvedShown}
+            icon={CheckCheck}
+            onChange={onResolvedShownChange}
+          />
+        )}
+        {later.length > 0 && (
+          <CountToggle
+            label={RESOLVE_HISTORY_LABEL.later}
+            count={later.length}
+            isShown={isDeferredShown}
+            icon={CalendarClock}
+            onChange={onDeferredShownChange}
+          />
+        )}
       </div>
-      {isDeferredShown && later.length > 0 && (
-        <ol aria-label={RESOLVE_HISTORY_LABEL.later} className="flex flex-col gap-2">
-          {later.map((row) => renderRow({ row }))}
-        </ol>
-      )}
-      {isCompletedShown && completed.length > 0 && (
-        <ol aria-label={RESOLVE_HISTORY_LABEL.completed} className="flex flex-col gap-2">
-          {completed.map((row) => renderRow({ row }))}
-        </ol>
-      )}
+      {isResolvedShown &&
+        resolved.length > 0 &&
+        renderRows({ rows: resolved, label: RESOLVE_HISTORY_LABEL.resolved })}
+      {isDeferredShown &&
+        later.length > 0 &&
+        renderRows({ rows: later, label: RESOLVE_HISTORY_LABEL.later })}
     </div>
   );
 };

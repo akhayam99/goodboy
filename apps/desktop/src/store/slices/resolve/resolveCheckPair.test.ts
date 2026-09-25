@@ -189,6 +189,7 @@ const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread 
   threadId,
   originKind: 'review_comment',
   state: 'fixed',
+  stage: 'new',
   stateReason: null,
   revision: 0,
   activeAttemptId: null,

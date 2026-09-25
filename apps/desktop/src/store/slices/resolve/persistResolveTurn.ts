@@ -6,8 +6,8 @@ import {
   listResolveThreads,
   insertResolveQueueItem,
   setResolveAttemptPhase,
-  upsertResolveThread,
 } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { ResolveThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
@@ -114,7 +114,7 @@ export const persistResolveTurn = async ({
       next.state = 'working';
       next.stateReason = `candidate:${patch.stateReason ?? patch.state ?? ''}`;
     }
-    await upsertResolveThread({ db, row: next, expectedRevision: previous?.revision ?? null });
+    await saveResolveThread({ db, row: next, expectedRevision: previous?.revision ?? null });
   }
   if (!isCandidate && attempt !== undefined) {
     const waiting = (await listResolveThreads({ db, sessionId })).some(

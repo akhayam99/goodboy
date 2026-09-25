@@ -3,8 +3,8 @@ import {
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
-  upsertResolveThread,
 } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { PrComment } from '@goodboy/types';
 import { groupThreads } from '../../../features/github/comment-threads';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -78,7 +78,7 @@ export const ensureReviewThread = async ({
       projectId: get().sessionActiveProject[sessionId] ?? null,
       prNumber,
     });
-  if (previous === null && !(await upsertResolveThread({ db, row, expectedRevision: null }))) {
+  if (previous === null && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
     return 'missing';
   }
   await insertResolveQueueItem({

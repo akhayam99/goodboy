@@ -542,7 +542,9 @@ one is open at a time.
 
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
-  way back. No lens keeps a rail beside its detail. A studio pairs a rail with
+  way back. No lens keeps a rail beside its detail. Conversations is the one
+  exception, because its work happens in bulk: a comment opens in a drawer
+  column to the right and the list stays visible and selectable. A studio pairs a rail with
   a detail and has no back link. Completed and discarded groups sit behind
   header toggles that hide themselves at zero. So a session whose runs are all
   done shows an empty state, instead of opening the last completed run.

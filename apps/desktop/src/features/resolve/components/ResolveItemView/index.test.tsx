@@ -66,7 +66,7 @@ const rowOf = ({
     item: { id: `item-${threadId}`, integratedSha },
     thread: { threadId, revision: 1, stateReason: null, commitShas: null, question: null },
     commentThread: commentThreadOf({ threadId, note }),
-    status: 'fix_ready',
+    status: 'ready',
     attempt: null,
     reviewerNote: note,
     proposal,
@@ -131,8 +131,10 @@ const renderView = (
   const legacy = overrides as Record<string, unknown>;
   const actions = resolveItemActions({
     status: row.status,
+    proposalKind: row.proposalKind ?? proposalKind,
+    failedStep: null,
     sharedApprovalCount: (overrides.sharedMembers?.length ?? 0) + 1,
-    hasQuestion: row.status === 'agent_asked',
+    hasQuestion: row.status === 'needs_you',
     resolveBlockedReason: (legacy.approveBlockedReason as string | null) ?? null,
     closeBlockedReason: (legacy.refuseBlockedReason as string | null) ?? null,
     hasAgent: row.attempt !== null,
@@ -417,7 +419,7 @@ describe('the resolve item view', () => {
 
   it('refuses to answer the agent with nothing', () => {
     renderView({
-      row: { ...LEAD, status: 'agent_asked' } as typeof LEAD,
+      row: { ...LEAD, status: 'needs_you' } as typeof LEAD,
       mode: 'fix',
       instruction: '   ',
     });
@@ -472,7 +474,7 @@ describe('the resolve item view', () => {
 
   it('says what is missing instead of offering the approval of nothing', () => {
     renderView({
-      row: { ...LEAD, status: 'no_change' } as typeof LEAD,
+      row: { ...LEAD, status: 'ready' } as typeof LEAD,
       proposalKind: 'none',
       canApprove: false,
       approveBlockedReason: 'No fix and no reply to approve yet',
@@ -485,7 +487,7 @@ describe('the resolve item view', () => {
 
   it('names the primary for the reply alone once one is typed on a comment with no fix', () => {
     renderView({
-      row: { ...LEAD, status: 'reply_ready' } as typeof LEAD,
+      row: { ...LEAD, status: 'ready', proposalKind: 'reply_only' } as typeof LEAD,
       proposalKind: 'none',
       reply: 'We answered this in the thread.',
     });
@@ -565,7 +567,7 @@ describe('the resolve item view', () => {
 
   it('names what the primary approves, a reply when there is no code change', () => {
     renderView({
-      row: { ...LEAD, status: 'reply_ready' } as typeof LEAD,
+      row: { ...LEAD, status: 'ready' } as typeof LEAD,
       proposalKind: 'reply_only',
     });
 
@@ -576,7 +578,7 @@ describe('the resolve item view', () => {
 
   it('leads with the answer while the agent is waiting on one', () => {
     const onStartRevise = vi.fn();
-    renderView({ row: { ...LEAD, status: 'agent_asked' } as typeof LEAD, onStartRevise });
+    renderView({ row: { ...LEAD, status: 'needs_you' } as typeof LEAD, onStartRevise });
 
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Answer the agent' }));
@@ -586,7 +588,7 @@ describe('the resolve item view', () => {
 
   it('names the agent answer field for what it answers', () => {
     renderView({
-      row: { ...LEAD, status: 'agent_asked' } as typeof LEAD,
+      row: { ...LEAD, status: 'needs_you' } as typeof LEAD,
       mode: 'fix',
       instruction: 'Cap the attempts at three.',
     });
@@ -601,7 +603,7 @@ describe('the resolve item view', () => {
     renderView({
       row: {
         ...LEAD,
-        status: 'wont_fix_sent',
+        status: 'resolved',
         delivery: {
           isReplyPosted: true,
           replyPostedAt: 10,

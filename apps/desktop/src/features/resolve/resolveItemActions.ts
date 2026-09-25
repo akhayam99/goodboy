@@ -1,4 +1,5 @@
-import type { ResolveQueueStatus } from '../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
+import type { ResolveFailedStep, ResolveUiState } from './resolveRowState';
 
 export type ResolveItemActionId =
   | 'fix_it'
@@ -27,7 +28,9 @@ export type ResolveItemActionSet = {
 };
 
 type Params = {
-  readonly status: ResolveQueueStatus;
+  readonly status: ResolveUiState;
+  readonly proposalKind: ResolveProposalKind;
+  readonly failedStep: ResolveFailedStep | null;
   readonly sharedApprovalCount: number;
   readonly resolveBlockedReason: string | null;
   readonly closeBlockedReason: string | null;
@@ -56,6 +59,8 @@ const empty = (): ResolveItemActionSet => ({ primary: null, secondary: null, ove
 
 export const resolveItemActions = ({
   status,
+  proposalKind,
+  failedStep,
   sharedApprovalCount,
   resolveBlockedReason,
   closeBlockedReason,
@@ -87,16 +92,21 @@ export const resolveItemActions = ({
   );
   const settleOverflow = closeBlockedReason === null ? [discuss, close] : [discuss];
   switch (status) {
-    case 'fix_ready':
-    case 'reply_ready':
-      return { primary: resolve, secondary: fixIt, overflow: settleOverflow };
-    case 'no_change':
+    case 'ready':
+      return proposalKind === 'none'
+        ? {
+            primary: fixIt,
+            secondary: discuss,
+            overflow: closeBlockedReason === null ? [close] : [],
+          }
+        : { primary: resolve, secondary: fixIt, overflow: settleOverflow };
+    case 'new':
       return {
         primary: fixIt,
         secondary: discuss,
         overflow: closeBlockedReason === null ? [close] : [],
       };
-    case 'agent_asked':
+    case 'needs_you':
       return { primary: fixIt, secondary: null, overflow: settleOverflow };
     case 'working':
       return {
@@ -104,9 +114,13 @@ export const resolveItemActions = ({
         secondary: null,
         overflow: canStopRun ? [make('stop_run', 'Stop run')] : [],
       };
-    case 'ready_to_push':
-      return { primary: resolve, secondary: null, overflow: [] };
-    case 'pushed':
+    case 'approved':
+      return {
+        primary: resolve,
+        secondary: make('change_decision', 'Change decision'),
+        overflow: [],
+      };
+    case 'resolved':
       return {
         primary: openGithub,
         secondary: null,
@@ -114,35 +128,18 @@ export const resolveItemActions = ({
       };
     case 'later':
       return { primary: make('resume_comment', 'Resume comment'), secondary: null, overflow: [] };
-    case 'changed_since_accepted':
-      return {
-        primary: make('review_changed', 'Review changed comment'),
-        secondary: null,
-        overflow: [],
-      };
-    case 'delivery_failed':
+    case 'failed':
+      if (failedStep === 'uncertain') {
+        return {
+          primary: openGithub,
+          secondary: make('check_publication', 'Check publication'),
+          overflow: [],
+        };
+      }
+      if (failedStep === 'run' || failedStep === null) {
+        return { primary: fixIt, secondary: viewAgent, overflow: settleOverflow };
+      }
       return { primary: resolve, secondary: openGithub, overflow: [] };
-    case 'confirm_delivery':
-      return {
-        primary: openGithub,
-        secondary: make('check_publication', 'Check publication'),
-        overflow: [],
-      };
-    case 'run_failed':
-    case 'run_stopped':
-      return { primary: fixIt, secondary: viewAgent, overflow: settleOverflow };
-    case 'wont_fix':
-      return {
-        primary: resolve,
-        secondary: make('change_decision', 'Change decision'),
-        overflow: [],
-      };
-    case 'wont_fix_sent':
-      return {
-        primary: openGithub,
-        secondary: null,
-        overflow: [make('reopen_locally', 'Reopen locally')],
-      };
     default: {
       const exhaustive: never = status;
       return exhaustive;

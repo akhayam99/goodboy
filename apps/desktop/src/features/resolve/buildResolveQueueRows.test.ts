@@ -53,6 +53,7 @@ const thread = ({
   threadId,
   originKind: 'review_comment',
   state: 'open',
+  stage: 'new',
   stateReason: null,
   revision: 1,
   activeAttemptId,
@@ -122,7 +123,7 @@ describe('buildResolveQueueRows', () => {
       ],
     });
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.status).toBe('no_change');
+    expect(rows[0]?.status).toBe('new');
     expect(rows[0]?.attempt).toBeNull();
     expect(rows[0]?.reviewerNote).toMatchObject({
       body: 'Fix this',

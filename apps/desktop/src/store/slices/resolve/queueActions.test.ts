@@ -9,7 +9,7 @@ import {
   type Database,
 } from '@goodboy/db';
 import { approvedPublicationScope } from './approvedPublicationScope';
-import { deriveResolveQueueStatus } from './deriveResolveQueueStatus';
+import { saveResolveThread } from './saveResolveThread';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
@@ -34,6 +34,7 @@ const thread: ResolveThread = {
   threadId: 'thread',
   originKind: 'review_comment',
   state: 'fixed',
+  stage: 'new',
   stateReason: null,
   revision: 2,
   activeAttemptId: null,
@@ -124,13 +125,29 @@ describe('resolve queue actions', () => {
     expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe(
       'deferred',
     );
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.thread.stage).toBe('parked');
   });
 
-  it('takes up a deferred item', async () => {
+  it('takes up a deferred item back into review when it carries a proposal', async () => {
     const live = createHarness();
     await live.actions.deferResolveQueueItem({ sessionId, itemId: item.id });
     await live.actions.takeUpResolveQueueItem({ sessionId, itemId: item.id });
-    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
+    const [entry] = await listResolveQueueItems({ db, sessionId });
+    expect(entry?.item.approvalState).toBe('none');
+    expect(entry?.thread.stage).toBe('proposed');
+  });
+
+  it('writes the stage without moving the revision an approval is pinned to', async () => {
+    const live = createHarness();
+    await live.actions.refuseResolveQueueItem({
+      sessionId,
+      itemId: item.id,
+      revision: 2,
+      reply: 'Reply',
+    });
+    const [entry] = await listResolveQueueItems({ db, sessionId });
+    expect(entry?.thread.stage).toBe('approved');
+    expect(entry?.thread.revision).toBe(entry?.item.approvedRevision);
   });
 
   it('refuses a comment only with a reply the reviewer can read', async () => {
@@ -240,7 +257,7 @@ describe('resolve queue actions', () => {
     expect([...(await approvedPublicationScope({ sessionId })).refusedThreadIds]).toEqual([
       'thread',
     ]);
-    await upsertResolveThread({
+    await saveResolveThread({
       db,
       row: { ...thread, replyDraft: 'Rewritten' },
       expectedRevision: 2,
@@ -249,14 +266,7 @@ describe('resolve queue actions', () => {
     expect([...scope.refusedThreadIds]).toEqual([]);
     expect([...scope.threadIds]).toEqual([]);
     const entry = (await listResolveQueueItems({ db, sessionId }))[0];
-    expect(
-      deriveResolveQueueStatus({
-        item: entry?.item ?? item,
-        thread: entry?.thread ?? thread,
-        activeAttempt: null,
-        deliveryReceipts: [],
-      }),
-    ).toBe('changed_since_accepted');
+    expect(entry?.thread.stage).toBe('proposed');
   });
 
   it('takes up a refused item back into undecided', async () => {

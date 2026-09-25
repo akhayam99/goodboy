@@ -16,6 +16,7 @@ import type {
   ResolveQueueItemWithThread,
   ResolveThread,
   ResolveThreadState,
+  ResolveStage,
   AgentId,
   MountId,
   MountTargetSnapshot,
@@ -123,6 +124,7 @@ const PROPOSAL_RETRY =
 type ThreadSeed = {
   readonly threadId: string;
   readonly state: ResolveThreadState;
+  readonly stage: ResolveStage;
   readonly revision: number;
   readonly activeAttemptId: string | null;
   readonly disposition: 'fix' | 'reply' | 'no_change' | null;
@@ -139,6 +141,7 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   threadId: seed.threadId,
   originKind: 'review_comment',
   state: seed.state,
+  stage: seed.stage,
   stateReason: null,
   revision: seed.revision,
   activeAttemptId: seed.activeAttemptId,
@@ -188,6 +191,7 @@ const buildItem = (seed: ItemSeed): ResolveQueueItem => ({
 const THREAD_RETRY_BACKOFF = buildThread({
   threadId: T1,
   state: 'fixed',
+  stage: 'proposed',
   revision: 1,
   activeAttemptId: ATTEMPT_RETRY_ID,
   disposition: 'fix',
@@ -198,6 +202,7 @@ const THREAD_RETRY_BACKOFF = buildThread({
 const THREAD_RETRY_METRICS = buildThread({
   threadId: T2,
   state: 'fixed',
+  stage: 'proposed',
   revision: 1,
   activeAttemptId: ATTEMPT_RETRY_ID,
   disposition: 'fix',
@@ -208,6 +213,7 @@ const THREAD_RETRY_METRICS = buildThread({
 const THREAD_ERROR_SHAPE = buildThread({
   threadId: T3,
   state: 'needs_answer',
+  stage: 'asking',
   revision: 1,
   activeAttemptId: null,
   disposition: null,
@@ -218,6 +224,7 @@ const THREAD_ERROR_SHAPE = buildThread({
 const THREAD_IDEMPOTENCY = buildThread({
   threadId: T4,
   state: 'working',
+  stage: 'working',
   revision: 1,
   activeAttemptId: ATTEMPT_IDEMPOTENCY_ID,
   disposition: null,
@@ -228,6 +235,7 @@ const THREAD_IDEMPOTENCY = buildThread({
 const THREAD_LOG_REDACT = buildThread({
   threadId: T5,
   state: 'fixed',
+  stage: 'approved',
   revision: 1,
   activeAttemptId: null,
   disposition: 'fix',
@@ -238,6 +246,7 @@ const THREAD_LOG_REDACT = buildThread({
 const THREAD_TIMEOUT_CONFIG = buildThread({
   threadId: T6,
   state: 'closed',
+  stage: 'resolved',
   revision: 1,
   activeAttemptId: null,
   disposition: 'fix',
@@ -248,6 +257,7 @@ const THREAD_TIMEOUT_CONFIG = buildThread({
 const THREAD_FLAKY_TEST = buildThread({
   threadId: T7,
   state: 'open',
+  stage: 'parked',
   revision: 1,
   activeAttemptId: null,
   disposition: null,
@@ -258,6 +268,7 @@ const THREAD_FLAKY_TEST = buildThread({
 const THREAD_TYPO = buildThread({
   threadId: T8,
   state: 'open',
+  stage: 'proposed',
   revision: 2,
   activeAttemptId: null,
   disposition: 'fix',
@@ -560,6 +571,8 @@ const PUBLICATION: ResolvePublication = {
   pushedHead: 'sha-local-head-001',
   confirmedAt: msAgo({ minutes: 200 }),
   completedAt: msAgo({ minutes: 195 }),
+  holder: null,
+  heartbeatAt: null,
   error: null,
   createdAt: msAgo({ minutes: 205 }),
 };

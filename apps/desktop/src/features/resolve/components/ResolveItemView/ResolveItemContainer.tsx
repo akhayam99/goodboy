@@ -64,18 +64,15 @@ type ResolveBlockerParams = {
   readonly sharedBlocker: 'deferred' | 'wont_fix' | null;
 };
 
-const SETTLED_STATUSES: ReadonlySet<string> = new Set([
-  'ready_to_push',
-  'wont_fix',
-  'delivery_failed',
-]);
+const isSettled = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
+  row.status === 'approved' || (row.status === 'failed' && row.rowState.failedStep !== 'run');
 
 const resolveBlockedReasonFor = ({
   row,
   isApprovable,
   sharedBlocker,
 }: ResolveBlockerParams): string | null => {
-  if (SETTLED_STATUSES.has(row.status)) {
+  if (isSettled({ row })) {
     return null;
   }
   if (sharedBlocker === 'deferred') {
@@ -87,7 +84,7 @@ const resolveBlockedReasonFor = ({
   if (!isApprovable) {
     return 'There is no fix or reply to send';
   }
-  return row.status === 'fix_ready' || row.status === 'reply_ready'
+  return row.status === 'ready' && row.proposalKind !== 'none'
     ? null
     : 'This comment is not ready to resolve';
 };
@@ -325,8 +322,10 @@ export const ResolveItemContainer = ({
 
   const actions = resolveItemActions({
     status: row.status,
+    proposalKind: row.proposalKind,
+    failedStep: row.rowState.failedStep,
     sharedApprovalCount: sharedMembers.length + 1,
-    hasQuestion: row.status === 'agent_asked',
+    hasQuestion: row.status === 'needs_you',
     resolveBlockedReason: hasSiblingDraft
       ? 'Finish or revert the edited reply on every shared comment before resolving'
       : resolveBlockedReasonFor({ row, isApprovable, sharedBlocker }),

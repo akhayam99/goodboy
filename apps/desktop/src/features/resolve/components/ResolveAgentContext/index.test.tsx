@@ -69,12 +69,12 @@ describe('the strip that says which comment sent you to this agent', () => {
   it('carries the comment status once the queue knows it', () => {
     withOrigin();
     h.rows = [
-      { thread: { threadId: 't-parser' }, status: 'fix_ready', coveredThreadIds: ['t-client'] },
+      { thread: { threadId: 't-parser' }, status: 'ready', coveredThreadIds: ['t-client'] },
     ];
 
     render(<ResolveAgentContext sessionId={SESSION_ID} agentId={AGENT_ID} />);
 
-    expect(screen.getByText(/Fix ready, on your machine/)).toBeTruthy();
+    expect(screen.getByText(/Ready to review/)).toBeTruthy();
     expect(screen.getByText(/Shared run · 2 comments/)).toBeTruthy();
   });
 });

@@ -163,7 +163,7 @@ describe('ResolvePublishStrip', () => {
     };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Push fix and resolve threads' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Close \d+ on GitHub$/ }));
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
     expect(screen.queryByRole('group', { name: 'Resolve threads without the fix' })).toBeNull();
@@ -177,7 +177,7 @@ describe('ResolvePublishStrip', () => {
     };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Post replies' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Send \d+ repl/ }));
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
   });

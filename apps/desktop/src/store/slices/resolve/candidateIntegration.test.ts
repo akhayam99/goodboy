@@ -24,7 +24,6 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { acceptResolveQueueItem } from './acceptResolveQueueItem';
-import { deriveResolveQueueStatus } from './deriveResolveQueueStatus';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
@@ -229,6 +228,7 @@ const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread 
   threadId,
   originKind: 'review_comment',
   state: 'fixed',
+  stage: 'new',
   stateReason: null,
   revision: 0,
   activeAttemptId: null,
@@ -726,14 +726,7 @@ describe('resolve candidates keep the branch tip approved', () => {
     );
     expect(entry).toBeDefined();
     expect(entry!.thread.revision).toBeGreaterThan(entry!.item.approvedRevision ?? -1);
-    expect(
-      deriveResolveQueueStatus({
-        item: entry!.item,
-        thread: entry!.thread,
-        activeAttempt: null,
-        deliveryReceipts: [],
-      }),
-    ).toBe('changed_since_accepted');
+    expect(entry!.thread.stage).toBe('proposed');
 
     await expect(
       live.actions.acceptResolveQueueItem({
@@ -943,14 +936,7 @@ describe('resolve candidates keep the branch tip approved', () => {
     const entry = (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
       (row) => row.item.id === itemA,
     );
-    expect(
-      deriveResolveQueueStatus({
-        item: entry!.item,
-        thread: entry!.thread,
-        activeAttempt: null,
-        deliveryReceipts: [],
-      }),
-    ).toBe('changed_since_accepted');
+    expect(entry!.thread.stage).toBe('proposed');
     await expectNoAncestryLeak();
   });
 });

@@ -25,6 +25,8 @@ import {
   listResolveCandidates,
 } from '../resolve-candidate';
 import {
+  beatResolvePublication,
+  claimResolvePublication,
   insertResolvePublication,
   listActiveResolvePublications,
   listResolvePublicationThreads,
@@ -53,6 +55,7 @@ const row: ResolveThread = {
   threadId: 'PRRT_1',
   originKind: 'review_comment',
   state: 'fixed',
+  stage: 'new',
   stateReason: null,
   revision: 0,
   activeAttemptId: null,
@@ -227,6 +230,7 @@ describe('durable resolve rows', () => {
         threadId: row.threadId,
         revision: 0,
         state: 'working',
+        stage: 'new',
         stateReason: null,
       }),
     ).toBe(false);
@@ -242,6 +246,7 @@ describe('durable resolve rows', () => {
         threadId: row.threadId,
         revision: 1,
         state: 'publishing',
+        stage: 'new',
         stateReason: null,
       }),
     ).toBe(true);
@@ -335,6 +340,8 @@ describe('resolve publications', () => {
     pushedHead: null,
     confirmedAt: null,
     completedAt: null,
+    holder: null,
+    heartbeatAt: null,
     error: null,
     createdAt: 10,
   };
@@ -434,6 +441,23 @@ describe('resolve publications', () => {
     expect(done?.completedAt).not.toBeNull();
   });
 
+  it('keeps the heartbeat only for the holder that claimed the publication', async () => {
+    const db = await seed();
+    await migrate(db);
+    await insertResolvePublication({ db, publication });
+    await claimResolvePublication({ db, id: 'pub-1', holder: 'main:boot-a', now: 100 });
+    await beatResolvePublication({ db, id: 'pub-1', holder: 'main:boot-b', now: 200 });
+    expect((await listResolvePublicationsForSession({ db, sessionId: SESSION }))[0]).toMatchObject({
+      holder: 'main:boot-a',
+      heartbeatAt: 100,
+    });
+    await beatResolvePublication({ db, id: 'pub-1', holder: 'main:boot-a', now: 300 });
+    expect((await listResolvePublicationsForSession({ db, sessionId: SESSION }))[0]).toMatchObject({
+      holder: 'main:boot-a',
+      heartbeatAt: 300,
+    });
+  });
+
   it('drops publications and their receipts when the session is deleted', async () => {
     const db = await seed();
     await migrate(db);
@@ -486,6 +510,8 @@ describe('resolve mount target', () => {
     pushedHead: null,
     confirmedAt: null,
     completedAt: null,
+    holder: null,
+    heartbeatAt: null,
     error: null,
     createdAt: 10,
   };

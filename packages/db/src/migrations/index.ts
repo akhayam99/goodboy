@@ -37,6 +37,7 @@ import { m175AgentQueuedMessages } from './m175-agent-queued-messages';
 import { m176ProviderLimits } from './m176-provider-limits';
 import { m177ProjectFocus } from './m177-project-focus';
 import { m178WorkspaceProfileFields } from './m178-workspace-profile-fields';
+import { m179ResolveStage } from './m179-resolve-stage';
 import { m180StepLibraryBuiltinsInCode } from './m180-step-library-builtins-in-code';
 import { m181StepLibraryExpectedOutput } from './m181-step-library-expected-output';
 import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
@@ -367,6 +368,7 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 176, sql: m176ProviderLimits },
   { version: 177, sql: m177ProjectFocus },
   { version: 178, sql: m178WorkspaceProfileFields },
+  { version: 179, sql: m179ResolveStage },
   { version: 180, sql: m180StepLibraryBuiltinsInCode },
   { version: 181, sql: m181StepLibraryExpectedOutput },
   { version: 182, sql: m182RetainedWorktreeLedger },

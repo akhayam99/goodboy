@@ -16,7 +16,7 @@ import { isPublishIntentGuarded, publishIntent } from '../../publishIntent';
 import {
   CHECK_AND_RETRY,
   CLOSE_WITHOUT_FIX_CONFIRM,
-  PUBLISH_INTENT_LABEL,
+  publishIntentLabel,
   REVIEW_PUBLICATION,
   UPDATE_AND_REVIEW,
   blockerCopy,
@@ -233,9 +233,9 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     ? CHECK_AND_RETRY
     : needsRenewal
       ? UPDATE_AND_REVIEW
-      : intent === null
+      : intent === null || preview === null
         ? REVIEW_PUBLICATION
-        : PUBLISH_INTENT_LABEL[intent];
+        : publishIntentLabel({ intent, preview });
   const isConfirmNeeded = !isStuck && !needsRenewal && preview !== null && isGuarded;
   const onPress = isStuck
     ? onCheckAndRetry
