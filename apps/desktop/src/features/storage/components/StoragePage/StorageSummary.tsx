@@ -12,6 +12,7 @@ const LOW_DISK_BYTES = 10 * 1024 ** 3;
 export const StorageSummary = () => {
   const stats = useAppStore((state) => state.storageStats);
   const isLoading = useAppStore((state) => state.storageStatsLoading);
+  const artifacts = useAppStore((state) => state.storageArtifacts);
   const { summary } = useStorageSummary();
 
   if (stats === null) {
@@ -19,6 +20,7 @@ export const StorageSummary = () => {
   }
 
   const appDataBytes = stats.databaseBytes + stats.snapshotBytes;
+  const artifactBytes = artifacts.reduce((sum, artifact) => sum + (artifact.sizeBytes ?? 0), 0);
   const segments: ReadonlyArray<StorageSegment> = [
     {
       key: 'in-use',
@@ -59,6 +61,14 @@ export const StorageSummary = () => {
       detail: `${stats.archivedSessionCount} archived`,
       swatch: 'bg-muted-foreground',
       target: 'storage-history',
+    },
+    {
+      key: 'artifacts',
+      label: 'Artifact copies',
+      bytes: artifactBytes,
+      detail: artifacts.length === 1 ? '1 copy' : `${artifacts.length} copies`,
+      swatch: 'bg-info',
+      target: 'storage-artifacts',
     },
   ];
   const total = segments.reduce((sum, segment) => sum + segment.bytes, 0);

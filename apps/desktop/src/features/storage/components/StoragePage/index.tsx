@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
+import { ArtifactSection } from './ArtifactSection';
 import { StorageCleanupSettings } from './StorageCleanupSettings';
 import { StorageHistory } from './StorageHistory';
 import { StorageSummary } from './StorageSummary';
@@ -19,6 +20,7 @@ export const StoragePage = () => {
     <div className="flex flex-col gap-8">
       <StorageSummary />
       <WorktreeSection />
+      <ArtifactSection />
       <StorageHistory />
       <StorageCleanupSettings />
     </div>

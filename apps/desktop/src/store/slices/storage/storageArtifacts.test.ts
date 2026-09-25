@@ -14,7 +14,7 @@ const {
   setArtifactKeep: vi.fn(async () => undefined),
   purgeOrphanArtifact: vi.fn(async () => undefined),
   measureArtifactMirrors: vi.fn(),
-  removeArtifactMirror: vi.fn(async () => true),
+  removeArtifactMirror: vi.fn(async (_params: { readonly folder: string }) => true),
 }));
 
 vi.mock('@goodboy/db', () => ({ listOrphanArtifacts, setArtifactKeep, purgeOrphanArtifact }));

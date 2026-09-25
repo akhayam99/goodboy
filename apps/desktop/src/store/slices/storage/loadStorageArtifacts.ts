@@ -36,19 +36,18 @@ export const loadStorageArtifacts = (set: SetFn, _get: GetFn) => {
   return async (): Promise<void> => {
     const rows = await listOrphanArtifacts({ db: tauriDatabase });
     const artifacts = rows.map(toStorageArtifact);
-    set({ storageArtifacts: artifacts });
-    if (artifacts.length === 0) {
-      return;
-    }
-    const sizes = await measureArtifactMirrors({
-      entries: artifacts.map(({ workspaceSlug, folder }) => ({ workspaceSlug, folder })),
-    }).catch((): ReadonlyArray<ArtifactMirrorSize> => []);
+    const sizes =
+      artifacts.length === 0
+        ? []
+        : await measureArtifactMirrors({
+            entries: artifacts.map(({ workspaceSlug, folder }) => ({ workspaceSlug, folder })),
+          }).catch((): ReadonlyArray<ArtifactMirrorSize> => []);
     const byKey = new Map(sizes.map((size) => [sizeKey(size), size.sizeBytes]));
-    set((state) => ({
-      storageArtifacts: state.storageArtifacts.map((artifact) => ({
+    set({
+      storageArtifacts: artifacts.map((artifact) => ({
         ...artifact,
-        sizeBytes: byKey.get(sizeKey(artifact)) ?? artifact.sizeBytes,
+        sizeBytes: byKey.get(sizeKey(artifact)) ?? null,
       })),
-    }));
+    });
   };
 };
