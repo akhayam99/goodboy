@@ -43,7 +43,7 @@ export const TimelineRunChip = ({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium ring-1 motion-safe:transition-colors',
+        'inline-flex shrink-0 items-center justify-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium leading-none ring-1 ring-inset motion-safe:transition-colors',
         WORK_ROW.chipBox,
         lit ? identity.litChip : muted ? identity.mutedChip : identity.chip,
       )}

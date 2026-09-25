@@ -6,15 +6,13 @@ import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 type Props = {
   readonly work: AgentRowWork;
   readonly costUsd: number;
-  readonly shouldKeepCost: boolean;
 };
 
-export const TimelineAgentMeta = ({ work, costUsd, shouldKeepCost }: Props) => {
+export const TimelineAgentMeta = ({ work, costUsd }: Props) => {
   const { routing, time } = work;
   return (
     <WorkMeta
       isPlanned={routing.isPlanned}
-      shouldKeepCost={shouldKeepCost}
       routing={
         <RoutingBadge
           variant="bare"

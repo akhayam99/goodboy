@@ -165,7 +165,8 @@ export const TimelineRowLabel = ({
       <span
         title={titleOf({ entry, segments })}
         className={cn(
-          'flex min-w-0 items-center overflow-hidden',
+          'flex items-center overflow-hidden',
+          entry.kind === 'agent' ? WORK_ROW.title : 'min-w-0',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
           emphasis === 'muted' || isQueued
             ? 'text-muted-foreground'

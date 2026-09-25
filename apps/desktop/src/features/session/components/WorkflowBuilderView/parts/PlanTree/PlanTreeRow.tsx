@@ -127,7 +127,7 @@ export const PlanTreeRow = ({
             time={
               estimate === undefined ? undefined : <WorkTimeCell time={estimate?.time ?? null} />
             }
-            cost={estimate?.cost ?? null}
+            cost={estimate === undefined ? undefined : (estimate?.cost ?? null)}
           />
           <span className={WORK_META_COLUMN.menu}>
             <Tooltip content="Drag or use the arrow keys to reorder">

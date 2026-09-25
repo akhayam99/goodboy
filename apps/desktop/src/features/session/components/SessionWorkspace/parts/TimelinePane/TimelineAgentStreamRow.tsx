@@ -71,9 +71,7 @@ export const TimelineAgentStreamRow = ({
       action={action}
       diffStat={diffStat}
       worktrees={worktrees}
-      meta={
-        <TimelineAgentMeta work={work} costUsd={costUsd} shouldKeepCost={item.grade === 'entry'} />
-      }
+      meta={<TimelineAgentMeta work={work} costUsd={costUsd} />}
       progress={work.time?.progress ?? null}
       lanes={lanes}
       runLane={runLane}

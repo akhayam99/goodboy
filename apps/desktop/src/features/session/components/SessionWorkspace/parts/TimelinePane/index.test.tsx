@@ -1254,7 +1254,7 @@ describe('TimelinePane row meta', () => {
     });
   });
 
-  it('keeps the cost of the run when the pane narrows, and lets a step cost go', () => {
+  it('lets every cost go before the title when the row narrows, run and step alike', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     const runCost = within(rowOf('Ship the checkout fix'))
       .getByTestId('work-meta')
@@ -1263,7 +1263,7 @@ describe('TimelinePane row meta', () => {
       .getByTestId('work-meta')
       .querySelector('[data-meta-column="cost"]');
 
-    expect(runCost?.className).not.toContain('@max-[520px]:hidden');
+    expect(runCost?.className).toContain('@max-[520px]:hidden');
     expect(stepCost?.className).toContain('@max-[520px]:hidden');
   });
 });

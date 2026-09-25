@@ -23,7 +23,7 @@ export const TIMELINE_RHYTHM = {
   grade: GRADE,
   gap: GAP,
   day: { height: 48, ruleY: 24 },
-  now: { height: 48, ruleY: 12 },
+  now: { height: 24, ruleY: 12 },
 } as const;
 
 type BoxParams = {

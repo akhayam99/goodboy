@@ -18,7 +18,7 @@ describe('WorkMeta', () => {
   });
 
   it('keeps the cost column on a row with nothing spent yet', () => {
-    render(<WorkMeta routing={<span data-meta-column="model">Opus 5.5</span>} />);
+    render(<WorkMeta routing={<span data-meta-column="model">Opus 5.5</span>} cost={null} />);
 
     expect(columnOf('time')).toBeNull();
     expect(columnOf('cost')?.textContent).toBe('');
@@ -32,11 +32,14 @@ describe('WorkMeta', () => {
     expect(screen.getByTestId('work-meta').className).toContain('text-muted-foreground');
   });
 
-  it('lets a step drop its cost in a narrow pane and keeps it when asked', () => {
+  it('drops the cost in a narrow row and leaves the column out when there is no cost', () => {
     const { rerender } = render(<WorkMeta cost="$0.10" />);
     expect(columnOf('cost')?.className).toContain('@max-[520px]:hidden');
 
-    rerender(<WorkMeta cost="$0.10" shouldKeepCost />);
-    expect(columnOf('cost')?.className).not.toContain('@max-[520px]:hidden');
+    rerender(<WorkMeta cost={null} />);
+    expect(columnOf('cost')?.textContent).toBe('');
+
+    rerender(<WorkMeta />);
+    expect(columnOf('cost')).toBeNull();
   });
 });

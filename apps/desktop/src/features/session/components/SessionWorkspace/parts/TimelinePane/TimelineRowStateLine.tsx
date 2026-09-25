@@ -23,6 +23,7 @@ export const TimelineRowStateLine = ({ state }: Props) => {
       title={sentence}
       className={cn(
         'shrink-0 whitespace-nowrap text-2xs leading-4',
+        WORK_ROW.state,
         tone === 'neutral' ? 'text-muted-foreground' : tintClasses(tone).text,
       )}
     >

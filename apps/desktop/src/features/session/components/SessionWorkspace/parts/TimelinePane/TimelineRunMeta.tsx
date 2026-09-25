@@ -10,7 +10,6 @@ type Props = {
 
 export const TimelineRunMeta = ({ progress, time, costUsd }: Props) => (
   <WorkMeta
-    shouldKeepCost
     routing={
       time === undefined ? undefined : (
         <>

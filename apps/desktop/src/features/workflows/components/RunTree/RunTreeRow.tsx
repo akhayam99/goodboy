@@ -156,7 +156,7 @@ export const RunTreeRow = ({
               )}
               <TimelineRowStateLine state={item.rowState} />
             </span>
-            <TimelineAgentMeta work={work} costUsd={costUsd} shouldKeepCost={!isNested} />
+            <TimelineAgentMeta work={work} costUsd={costUsd} />
             {hasActionColumn ? (
               <span className={WORK_META_COLUMN.action}>
                 {answer === null ? null : (

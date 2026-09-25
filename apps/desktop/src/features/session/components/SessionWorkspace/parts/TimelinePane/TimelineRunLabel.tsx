@@ -1,4 +1,4 @@
-import { cn } from '@goodboy/ui';
+import { WORK_ROW, cn } from '@goodboy/ui';
 import type { RowState } from '../../../../../workTreeModel/rowState';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
@@ -26,7 +26,8 @@ export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) 
       <span
         title={title}
         className={cn(
-          'min-w-12 truncate text-sm leading-5',
+          'truncate text-sm leading-5',
+          WORK_ROW.title,
           isDiscarded ? 'text-muted-foreground' : 'text-foreground',
         )}
       >

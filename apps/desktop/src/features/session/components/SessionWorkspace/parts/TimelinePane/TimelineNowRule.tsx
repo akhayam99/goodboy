@@ -1,7 +1,7 @@
 import { cn } from '@goodboy/ui';
 import type { TimelineNowItem } from '../../../../timeline/buildTimelineStream';
 import { RAIL_SPINE_X, type RailRow } from '../../../../../workTreeModel/railGeometry';
-import { TIMELINE_GUTTER } from './timelineLayout';
+import { TIMELINE_GUTTER, TIMELINE_GUTTER_FALLBACK } from './timelineLayout';
 import { TimelineRail, type TimelineLaneControl } from './TimelineRail';
 
 type Props = {
@@ -40,11 +40,12 @@ export const TimelineNowRule = ({
       />
     </span>
     <span className="relative min-w-0 flex-1">
-      {hasGutter ? null : (
-        <span className={cn(LABEL_CLASS, 'left-2')} style={{ top: item.ruleY }}>
-          Now
-        </span>
-      )}
+      <span
+        className={cn(LABEL_CLASS, 'left-2', hasGutter && TIMELINE_GUTTER_FALLBACK)}
+        style={{ top: item.ruleY }}
+      >
+        Now
+      </span>
     </span>
   </div>
 );
