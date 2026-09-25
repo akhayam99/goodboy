@@ -79,7 +79,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
                     : selectedKind === 'reviewer'
                       ? 'review the current diff'
                       : selectedKind === 'resolver'
-                        ? 'spawned by the resolve flow'
+                        ? 'started from a review comment'
                         : null;
         return {
           eyebrow: `${meta.label.toLowerCase()} agent`,
@@ -98,7 +98,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         return {
           eyebrow: `${phaseRuns.length === 1 ? 'agent' : 'agents'} in session`,
           title: 'Pick an agent',
-          body: 'Agents share the session context. Pick one or spawn another.',
+          body: 'Agents share the session context. Pick one or start another.',
           hints: [
             <span key="select">select to open its transcript</span>,
             <span key="spawn">context travels to new agents</span>,
@@ -118,7 +118,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
         return {
           eyebrow: 'fresh session',
           title: 'Populate the context',
-          body: 'What you type becomes the shared brief every spawned agent starts from.',
+          body: 'What you type becomes the shared brief every new agent starts from.',
           hints: [
             <span key="what">what to build</span>,
             <span key="limits">constraints and non-goals</span>,

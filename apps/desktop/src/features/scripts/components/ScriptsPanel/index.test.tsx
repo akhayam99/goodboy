@@ -639,7 +639,7 @@ describe('ScriptsPanel', () => {
     });
   });
 
-  it('explains a project that is not mounted in this session', () => {
+  it('explains a project that is not in this session', () => {
     withTwoProjects();
     state.sessionProjectMounts = {
       'session-1': [{ projectId: 'project-1', worktreePath: '/tmp/api' }],
@@ -649,9 +649,9 @@ describe('ScriptsPanel', () => {
     renderPanel();
     fireEvent.click(within(rail()).getByRole('button', { name: /Web/ }));
 
-    expect(screen.getByText('This project is not mounted in this session.')).toBeDefined();
+    expect(screen.getByText('This project is not in this session.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Expand deploy web' }));
-    expect(screen.getByText('Web is not mounted in this session')).toBeDefined();
+    expect(screen.getByText('Web is not in this session')).toBeDefined();
     expect((screen.getByRole('button', { name: 'Run script' }) as HTMLButtonElement).disabled).toBe(
       true,
     );

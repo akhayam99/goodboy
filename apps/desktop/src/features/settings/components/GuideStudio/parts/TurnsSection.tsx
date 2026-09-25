@@ -1,7 +1,6 @@
-import { Lightbulb, MessagesSquare } from 'lucide-react';
-import { SectionHeader } from '@goodboy/ui';
+import { MessagesSquare } from 'lucide-react';
+import { Notice, SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
-import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
@@ -35,10 +34,11 @@ export const TurnsSection = ({}: Props) => (
       />
     </Block>
 
-    <Callout tone="info" icon={<Lightbulb size={ICON_SIZE.row} />}>
-      Providers bill per token across the whole conversation, not per turn. But from a builder
-      angle, "I've sent 14 turns and we still don't have a working build" is a useful drift signal:
-      time to start a new session.
-    </Callout>
+    <Notice
+      tone="info"
+      placement="inline"
+      title="Turn count is a drift signal"
+      body={`Providers bill per token across the whole conversation, not per turn. But "I've sent 14 turns and we still don't have a working build" tells you it is time to start a new session.`}
+    />
   </div>
 );

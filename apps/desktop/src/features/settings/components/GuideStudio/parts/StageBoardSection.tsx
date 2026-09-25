@@ -1,9 +1,8 @@
 import { LayoutDashboard } from 'lucide-react';
-import { SectionHeader } from '@goodboy/ui';
+import { Notice, SectionHeader } from '@goodboy/ui';
 import { Block } from './Block';
-import { Callout } from './Callout';
 import { DefinitionList } from './DefinitionList';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { StageGlyph } from './StageGlyph';
 
 type Props = Record<never, never>;
@@ -56,15 +55,17 @@ export const StageBoardSection = ({}: Props) => (
 
     <Block title="Opening a session">
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Click any card to enter that session. It opens on its overview, and from there the lens
-        switcher takes you to the diff, terminal, IDE, or a studio. The board stays one keystroke
-        away, so you can fan out across several sessions and come back to triage.
+        Click any card to enter that session. It opens on its overview, and from there its tabs take
+        you to the diff, terminal, IDE, or a full-screen page. The board stays one keystroke away,
+        so you can fan out across several sessions and come back to triage.
       </p>
     </Block>
 
-    <Callout tone="info" icon={<CONCEPT_ICONS.suggestion size={ICON_SIZE.row} />}>
-      The board is per workspace. Spend for the whole workspace stays glanceable in the top bar, so
-      you never have to open a session to see what it is costing you.
-    </Callout>
+    <Notice
+      tone="info"
+      placement="inline"
+      title="The board is per workspace"
+      body="Spend for the whole workspace stays glanceable in the top bar, so you never have to open a session to see what it is costing you."
+    />
   </div>
 );

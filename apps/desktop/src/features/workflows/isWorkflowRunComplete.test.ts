@@ -14,6 +14,7 @@ import type {
 } from '@goodboy/types';
 import { isWorkflowRunComplete } from './isWorkflowRunComplete';
 import { splitWorkflowRuns } from './activeWorkflowRuns';
+import { isWorkflowRunClosable } from './isWorkflowRunClosable';
 
 const NOW = '2026-08-23T00:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'session-1' as SessionId;
@@ -143,6 +144,33 @@ describe('isWorkflowRunComplete', () => {
     ).toBe(false);
   });
 
+  it('never completes a run because the user closed an unfinished agent', () => {
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [stepAgent('completed'), { ...clusterChild(1, 'failed'), doneAt: NOW }],
+      }),
+    ).toBe(false);
+    expect(
+      isWorkflowRunComplete({
+        run: run(),
+        workflow,
+        agents: [{ ...stepAgent('pending'), doneAt: NOW }],
+      }),
+    ).toBe(false);
+  });
+
+  it('ends a run the user closed, even with a failed step left behind', () => {
+    const closed = run({
+      orchestrationOutcome: 'done',
+      orchestrationStop: { kind: 'closed', message: 'Closed by you' },
+    });
+    expect(isWorkflowRunComplete({ run: closed, workflow, agents: [stepAgent('failed')] })).toBe(
+      true,
+    );
+  });
+
   it('leaves a static run unsettled while a step agent is pending', () => {
     expect(isWorkflowRunComplete({ run: run(), workflow, agents: [stepAgent('pending')] })).toBe(
       false,
@@ -187,5 +215,51 @@ describe('splitWorkflowRuns', () => {
 
     expect(result.agentsByRunId.get(RUN_ID)?.map((agent) => agent.id)).toEqual([CONTAINER_ID]);
     expect(result.completed).toHaveLength(1);
+  });
+});
+
+describe('isWorkflowRunClosable', () => {
+  const closedStop = { kind: 'closed', message: 'Closed by you' } as const;
+
+  it('offers Close on a started run that has not ended', () => {
+    expect(isWorkflowRunClosable({ run: run(), workflow, agents: [stepAgent('failed')] })).toBe(
+      true,
+    );
+    expect(
+      isWorkflowRunClosable({
+        run: run({ executionMode: 'dynamic' }),
+        workflow,
+        agents: [stepAgent('completed')],
+      }),
+    ).toBe(true);
+  });
+
+  it('offers Close on an orchestrated run still choosing its first step', () => {
+    expect(
+      isWorkflowRunClosable({ run: run({ executionMode: 'dynamic' }), workflow, agents: [] }),
+    ).toBe(true);
+  });
+
+  it('hides Close on a queued, finished, closed or discarded run', () => {
+    expect(
+      isWorkflowRunClosable({ run: run({ triggerMode: 'manual' }), workflow, agents: [] }),
+    ).toBe(false);
+    expect(isWorkflowRunClosable({ run: run(), workflow, agents: [stepAgent('completed')] })).toBe(
+      false,
+    );
+    expect(
+      isWorkflowRunClosable({
+        run: run({ orchestrationStop: closedStop }),
+        workflow,
+        agents: [stepAgent('failed')],
+      }),
+    ).toBe(false);
+    expect(
+      isWorkflowRunClosable({
+        run: run({ discardedAt: NOW }),
+        workflow,
+        agents: [stepAgent('failed')],
+      }),
+    ).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
-import { TurnErrorCallout } from '../TurnErrorCallout';
+import { Button, Notice } from '@goodboy/ui';
+import { formatErrorForHumans } from '../../formatErrorForHumans';
 
 type Props = {
   readonly message: string;
@@ -6,18 +7,30 @@ type Props = {
   readonly isRetrying?: boolean;
 };
 
-export const TranscriptErrorRow = ({ message, onRetry, isRetrying = false }: Props) => (
-  <TurnErrorCallout
-    message={message}
-    iconTestId="transcript-error-icon"
-    retryAction={
-      onRetry != null
-        ? {
-            label: isRetrying ? 'retrying' : 'retry',
-            onClick: onRetry,
-            disabled: isRetrying === true,
-          }
-        : undefined
-    }
-  />
-);
+export const TranscriptErrorRow = ({ message, onRetry, isRetrying = false }: Props) => {
+  const { body, detail } = formatErrorForHumans({ message });
+
+  return (
+    <Notice
+      tone="danger"
+      placement="transcript"
+      title="The turn stopped"
+      body={body}
+      detail={detail}
+      iconTestId="transcript-error-icon"
+      actions={
+        onRetry !== undefined && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onRetry}
+            isBusy={isRetrying}
+            busyLabel="Retrying"
+          >
+            Retry
+          </Button>
+        )
+      }
+    />
+  );
+};

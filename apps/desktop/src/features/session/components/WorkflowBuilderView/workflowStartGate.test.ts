@@ -6,8 +6,7 @@ const ready = {
   isStarting: false,
   isPlanning: false,
   hasGoal: true,
-  hasApproach: true,
-  hasName: true,
+  hasSteps: true,
   isSpendLimitValid: true,
 } as const;
 
@@ -21,8 +20,7 @@ describe('workflowStartGate', () => {
       { ...ready, isStarting: true },
       { ...ready, isPlanning: true },
       { ...ready, hasGoal: false },
-      { ...ready, hasApproach: false },
-      { ...ready, hasName: false },
+      { ...ready, hasSteps: false },
       { ...ready, isSpendLimitValid: false },
     ];
 
@@ -33,16 +31,20 @@ describe('workflowStartGate', () => {
     }
   });
 
-  it('speaks the approach language of the selected mode', () => {
-    expect(workflowStartGate({ ...ready, mode: 'preset', hasApproach: false }).reason).toBe(
+  it('speaks the steps language of the selected mode', () => {
+    expect(workflowStartGate({ ...ready, mode: 'preset', hasSteps: false }).reason).toBe(
       'Select a preset to start',
     );
-    expect(workflowStartGate({ ...ready, mode: 'custom', hasApproach: false }).reason).toBe(
+    expect(workflowStartGate({ ...ready, mode: 'custom', hasSteps: false }).reason).toBe(
       'Add a step or generate a plan to start',
     );
-    expect(workflowStartGate({ ...ready, mode: 'dynamic', hasApproach: false }).reason).toBe(
-      'Describe the intent and constraints to start',
-    );
+  });
+
+  it('starts an orchestrated run from the goal alone', () => {
+    expect(workflowStartGate({ ...ready, mode: 'dynamic', hasSteps: false })).toEqual({
+      isDisabled: false,
+      reason: null,
+    });
   });
 
   it('keeps an invalid spend limit from starting a run in silence', () => {

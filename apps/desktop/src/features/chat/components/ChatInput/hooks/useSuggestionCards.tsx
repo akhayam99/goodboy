@@ -59,7 +59,7 @@ export const useSuggestionCards = ({
         <SuggestionRow
           suggestion={planReady}
           size="card"
-          actionLabel="Spawn implementer"
+          actionLabel="Start implementer"
           onAction={() => void acceptSessionNudgeHandoff(session.id)}
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />
@@ -87,13 +87,13 @@ export const useSuggestionCards = ({
           }
           body={
             <>
-              Spawn a{' '}
+              Start a{' '}
               {AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()} agent,
               or keep this agent.
             </>
           }
           primary={{
-            label: `Spawn ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
+            label: `Start ${AGENT_KIND_META[scopePending.mismatch.suggestedAgentKind].label.toLowerCase()}`,
             onClick: () => void onScopeSpawn(),
             testId: 'scope-mismatch-spawn',
           }}

@@ -55,8 +55,8 @@ const renderRows = (
         onOpenDiff={() => undefined}
         isThinking={false}
         thinkingContext="think"
-        onRetryError={retryErrorSpy}
-        retryingErrorRunId={null}
+        onRetryRun={retryErrorSpy}
+        retryingRunId={null}
         mountSuggestionsByRun={mountSuggestionsByRun}
       />
     </ul>,

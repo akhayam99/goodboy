@@ -61,7 +61,7 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
         </span>
         {candidates.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Link the issue to the session first, from the integrations lens.
+            Link the issue to the session first, from its tracker tab.
           </p>
         ) : (
           <div className="flex flex-col gap-1">

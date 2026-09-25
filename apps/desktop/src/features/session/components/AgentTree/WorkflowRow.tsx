@@ -1,23 +1,24 @@
-import { Fragment, type Dispatch, type SetStateAction } from 'react';
+import { useState } from 'react';
+import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core';
 import {
   cn,
-  Collapsible,
-  Divider,
   formatUsdPrecise,
   Input,
   MetaRow,
-  StatusDot,
+  PANE_RHYTHM,
+  ScrollFade,
   TERMINAL_DIM,
   Tooltip,
   tintClasses,
 } from '@goodboy/ui';
-import { ChevronDown, ChevronRight, ChevronUp, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import type {
   Agent,
   AgentId,
+  EffortLevel,
+  OpenQuestion,
   ProviderId,
   Session,
-  TelemetryRecord,
   Workflow,
   WorkflowRun,
   WorkflowRunId,
@@ -25,21 +26,24 @@ import type {
 import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../store';
 import type { AppStore } from '../../../../store/store';
 import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
-import { classifyAgent, type AgentKind } from '../../agent-kind';
+import type { AgentKind } from '../../agent-kind';
 import { agentRoutingOverrides } from '../../../workflows/agentRoutingOverrides';
-import { resolveStepRouting } from '../../../workflows/resolveStepRouting';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import type { AgentAggregate } from '../AgentMetrics';
 import { WorkflowNextStepCta } from '../../../workflows/components/WorkflowNextStepCta';
-import { OrchestratorPanel } from '../../../workflows/components/OrchestratorPanel';
+import { NextActionStrip } from '../../../workflows/components/NextActionStrip';
+import { OrchestratorStrip } from '../../../workflows/components/OrchestratorStrip';
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
 import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
 import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
-import { useWorkflowTitleRename } from '../../../workflows/hooks/useWorkflowTitleRename';
-import { WorkflowStepGraph } from '../../../workflows/components/WorkflowStepGraph';
+import { useWorkflowRunTitleRename } from '../../../workflows/hooks/useWorkflowRunTitleRename';
+import { RunTree } from '../../../workflows/components/RunTree';
+import { WorkTimeProvider } from '../../../workTreeModel/components/WorkTimeProvider';
+import { useRunTree } from '../../../workflows/components/RunTree/useRunTree';
+import { WorkflowDecisions } from '../../../workflows/components/WorkflowDecisions';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { WriteDestinationControl } from '../../../chat/components/WriteDestinationControl';
 import { CostBadge } from '../../../providers/components/CostBadge';
@@ -50,61 +54,40 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import type { StartStepAgentParams } from './useAgentsSection';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
-import type { ProviderContextUsage } from './ContextWindowBar';
 import { WorkflowRunAsk } from './WorkflowRunAsk';
 import { WorkflowRunStartButton } from './WorkflowRunStartButton';
-import { WorkflowStepRow } from './WorkflowStepRow';
-import { ScoutSubtree } from './ScoutSubtree';
-import { ClusterChildRow } from './ClusterChildRow';
-import { WorkflowKillButton } from './WorkflowKillButton';
-import { WorkflowRunMenu } from './WorkflowRunMenu';
+import { WorkflowCloseButton } from '../../../workflows/components/WorkflowCloseButton';
+import { WorkflowRunMenu } from '../../../workflows/components/WorkflowRunMenu';
+import { isWorkflowRunClosable } from '../../../workflows/isWorkflowRunClosable';
+import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { WorkflowRunStatus } from './WorkflowRunStatus';
 
 type Props = {
   readonly run: WorkflowRun;
   readonly workflow: Workflow;
-  readonly index: number;
   readonly task: Session;
-  readonly attachedRuns: ReadonlyArray<{ run: WorkflowRun; workflow: Workflow }>;
   readonly agentsByRunId: ReadonlyMap<string, Agent[]>;
   readonly actionableStepIdByRunId: ReadonlyMap<string, string | null>;
   readonly blockReasonByRunId: ReadonlyMap<string, WorkflowBlockReason | null>;
-  readonly countUnread: (agents: ReadonlyArray<Agent>) => number;
   readonly focusedWorkflowRunId: string | null;
   readonly workflowExpand: Readonly<Record<string, boolean>> | undefined;
   readonly workflowNameByRunId: ReadonlyMap<string, string>;
-  readonly forceExpanded: boolean;
-  readonly variant?: 'sidebar' | 'detail';
   readonly toggleWorkflowExpand: AppStore['toggleWorkflowExpand'];
   readonly startWorkflowRun: AppStore['startWorkflowRun'];
   readonly setWorkflowRunAutoRun: AppStore['setWorkflowRunAutoRun'];
-  readonly onReorderWorkflow: (runId: WorkflowRunId, direction: 'up' | 'down') => Promise<void>;
   readonly onDiscardWorkflow: (runId: WorkflowRunId) => Promise<void>;
   readonly onDeleteWorkflow: (runId: WorkflowRunId) => Promise<void>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
+  readonly agentEffortOverride: Readonly<Record<string, EffortLevel>>;
   readonly childrenByParentId: ReadonlyMap<string, Agent[]>;
-  readonly clusterExpand: ReadonlyMap<string, boolean>;
   readonly selectedAgentId: AgentId | null;
-  readonly isTaskActive: boolean;
-  readonly editingId: AgentId | null;
-  readonly latestTelemetryByAgentId: ReadonlyMap<string, TelemetryRecord>;
   readonly aggregatesByAgentId: ReadonlyMap<string, AgentAggregate>;
-  readonly providerUsageByAgentId: ReadonlyMap<string, ReadonlyArray<ProviderContextUsage>>;
-  readonly turnsByAgentId: ReadonlyMap<string, number>;
-  readonly isTranscriptLoading: boolean;
   readonly onStartStepAgent: (params: StartStepAgentParams) => Promise<void>;
   readonly onPickAgent: (id: AgentId) => void;
-  readonly setEditingId: Dispatch<SetStateAction<AgentId | null>>;
-  readonly onRenameCommit: (id: AgentId, name: string) => Promise<void>;
-  readonly onResolveFirstForRun: (run: WorkflowRun) => void;
-  readonly toggleClusterExpand: (id: string) => void;
-  readonly skipStuckStepAndAdvance: AppStore['skipStuckStepAndAdvance'];
-  readonly recoverStuckStep: AppStore['recoverStuckStep'];
+  readonly onAnswerQuestion: (question: OpenQuestion | null) => void;
 };
-
-const isRunning = (agent: Agent): boolean => agent.status === 'running';
 
 type TreeCountParams = {
   readonly agent: Agent;
@@ -120,83 +103,69 @@ const countAgentTree = ({ agent, childrenByParentId }: TreeCountParams): number 
 export const WorkflowRow = ({
   run,
   workflow,
-  index,
   task,
-  attachedRuns,
   agentsByRunId,
   actionableStepIdByRunId,
   blockReasonByRunId,
-  countUnread,
   focusedWorkflowRunId,
   workflowExpand,
   workflowNameByRunId,
-  forceExpanded,
-  variant = 'sidebar',
   toggleWorkflowExpand,
   startWorkflowRun,
   setWorkflowRunAutoRun,
-  onReorderWorkflow,
   onDiscardWorkflow,
   onDeleteWorkflow,
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
+  agentEffortOverride,
   childrenByParentId,
-  clusterExpand,
   selectedAgentId,
-  isTaskActive,
-  editingId,
-  latestTelemetryByAgentId,
   aggregatesByAgentId,
-  providerUsageByAgentId,
-  turnsByAgentId,
-  isTranscriptLoading,
   onStartStepAgent,
   onPickAgent,
-  setEditingId,
-  onRenameCommit,
-  onResolveFirstForRun,
-  toggleClusterExpand,
-  skipStuckStepAndAdvance,
-  recoverStuckStep,
+  onAnswerQuestion,
 }: Props) => {
   const roleModels = useSessionRoleModels({ sessionId: task.id });
   const sessionProvider = task.providerPreference?.defaultProvider ?? null;
   const sessionEffort = task.effort ?? null;
   const isOrchestrating = useAppStore((s) => s.orchestratingWorkflowRuns?.[run.id] ?? false);
   const restoreWorkflow = useAppStore((s) => s.restoreWorkflow);
+  const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
+  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[task.id] ?? EMPTY_ARRAY);
   const writableMountCount = useAppStore(
     (state) => selectWritableMounts({ state, sessionId: task.id }).length,
   );
-  const workflowRun = run;
   const isDiscarded = run.discardedAt != null;
   const wfAgents = agentsByRunId.get(run.id) ?? EMPTY_ARRAY;
   const actionableStepId = actionableStepIdByRunId.get(run.id) ?? null;
   const wfBlockReason = blockReasonByRunId.get(run.id) ?? null;
-  const canMoveUp = index > 0;
-  const canMoveDown = index < attachedRuns.length - 1;
-  const name = workflowKindName(workflow);
-  const rename = useWorkflowTitleRename({
-    workspaceId: workflow.workspaceId,
-    workflowId: workflow.id,
-    currentTitle: workflow.name,
+  const name = run.title ?? workflowKindName(workflow);
+  const rename = useWorkflowRunTitleRename({
+    sessionId: task.id,
+    workflowRunId: run.id,
+    currentTitle: run.title ?? workflow.name,
   });
   const total = workflow.steps.length;
-  const done = wfAgents.filter((a) => a.status === 'completed' || a.status === 'skipped').length;
+  const done = wfAgents.filter((a) => isAgentStatusSettled({ status: a.status })).length;
   const isDynamic = run.executionMode === 'dynamic';
+  const isClosed = isWorkflowRunClosedByUser({ run });
   const isCompleted =
-    !isDiscarded && (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total);
-  const unreadCount = countUnread(wfAgents);
+    !isDiscarded &&
+    (isClosed || (isDynamic ? run.orchestrationOutcome === 'done' : total > 0 && done >= total));
+  const isClosable = isWorkflowRunClosable({
+    run,
+    workflow,
+    agents: runsForWorkflowRun(sessionAgents, run.id),
+  });
   const agentCount = wfAgents.reduce(
     (sum, agent) => sum + countAgentTree({ agent, childrenByParentId }),
     0,
   );
-  const isDetail = variant === 'detail';
-  const defaultExpanded = isDetail || (!isDiscarded && (!isCompleted || unreadCount > 0));
   const expanded =
     focusedWorkflowRunId != null
       ? run.id === focusedWorkflowRunId
-      : (workflowExpand?.[run.id] ?? defaultExpanded);
+      : (workflowExpand?.[run.id] ?? true);
   const hasStarted = wfAgents.length > 0;
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
@@ -209,292 +178,208 @@ export const WorkflowRow = ({
   const runSpendUsd = useRunSpendUsd(task.id, run.id);
   const costUsd = isDynamic ? runSpendUsd : runCostUsd;
   const stepById = new Map(workflow.steps.map((step) => [step.id, step]));
+  const tree = useRunTree({ session: task, run, workflow, agentKindOverride });
+  const [hoveredStepId, setHoveredStepId] = useState<string | null>(null);
+  const selectedStepId =
+    wfAgents.find((agent) => agent.id === selectedAgentId && agent.parentAgentId == null)?.stepId ??
+    null;
+  const highlightedStepId = hoveredStepId ?? selectedStepId;
   const hasOrchestratorStrip = isDynamic && !isDiscarded && expanded;
   const ctaAgent =
     wfAgents.find((agent) => agent.stepId === actionableStepId && agent.status === 'pending') ??
     null;
-  const ctaEffortOverride = useAppStore((s) =>
-    ctaAgent != null ? (s.agentEffortOverride[ctaAgent.id] ?? null) : null,
-  );
   const ctaRouting = agentRoutingOverrides({
     agent: ctaAgent,
     modelOverride: ctaAgent != null ? (agentModelOverride[ctaAgent.id] ?? null) : null,
     providerOverride: ctaAgent != null ? (agentProviderOverride[ctaAgent.id] ?? null) : null,
-    effortOverride: ctaEffortOverride,
+    effortOverride: ctaAgent != null ? (agentEffortOverride[ctaAgent.id] ?? null) : null,
   });
   return (
     <div
       className={cn(
-        'grid grid-cols-[minmax(0,1fr)_auto]',
-        isDetail && expanded && 'grid-rows-[auto_1fr] gap-y-4',
-        isDetail && !expanded && 'grid-rows-[auto]',
-        !isDetail && expanded && 'grid-rows-[auto_auto] gap-y-1.5',
-        !isDetail && !expanded && 'grid-rows-[auto]',
+        'flex h-full min-h-0 min-w-0 flex-col motion-safe:animate-studio-in',
         isDiscarded && TERMINAL_DIM,
       )}
     >
-      <div className="col-span-2 row-start-1 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
-        {isDetail ? (
-          <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
-            <span
-              className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                tintClasses('primary').bg,
-              )}
-            >
-              <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-primary" />
-            </span>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
-                {rename.editing ? (
-                  <Input
-                    autoFocus
-                    value={rename.draft}
-                    maxLength={rename.maxLength}
-                    onChange={(event) => rename.setDraft(event.target.value)}
-                    onBlur={() => void rename.commit()}
-                    onKeyDown={rename.onKeyDown}
-                    aria-label="Workflow name"
-                    className="text-xl font-semibold"
-                  />
-                ) : (
-                  <div className="group/name flex min-w-0 items-start gap-1.5">
-                    <h2 className="truncate text-xl font-semibold leading-snug text-foreground">
-                      {name}
-                    </h2>
-                    <Tooltip content="Edit workflow name">
-                      <button
-                        type="button"
-                        onClick={rename.start}
-                        aria-label="Edit workflow name"
-                        className={cn(
-                          'mt-1 inline-flex size-6 shrink-0 items-center justify-center rounded-md text-faint-foreground',
-                          'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
-                          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                          'group-hover/name:opacity-100 motion-reduce:opacity-60',
-                        )}
-                      >
-                        <CONCEPT_ICONS.rename size={ICON_SIZE.row} aria-hidden />
-                      </button>
-                    </Tooltip>
-                  </div>
-                )}
-                <WorkflowRunStatus
-                  run={run}
-                  workflow={workflow}
-                  agents={wfAgents}
-                  predecessorName={predecessorName}
-                  isOrchestrating={isOrchestrating}
-                  hasOrchestratorStrip={hasOrchestratorStrip}
-                  blockReason={wfBlockReason}
-                />
-              </div>
-              {rename.editing && workflow.isPreset !== false ? (
-                <p className="text-2xs leading-relaxed text-faint-foreground">
-                  This preset is shared: the new name shows on every run and every future attach.
-                </p>
-              ) : null}
-              <MetaRow
-                items={[
-                  total > 0 ? (
-                    <span className="tabular-nums">
-                      {isDynamic
-                        ? `${total} ${total === 1 ? 'step' : 'steps'}`
-                        : `Step ${Math.min(done + 1, total)} of ${total}`}
-                    </span>
-                  ) : null,
-                  total > 0 && agentCount !== total ? (
-                    <span className="tabular-nums">
-                      {`${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`}
-                    </span>
-                  ) : null,
-                  <CostBadge value={costUsd} title={`${formatUsdPrecise(costUsd)} for this run`} />,
-                  isDynamic && !isDiscarded ? (
-                    <RunSpendLimitPopover sessionId={task.id} run={run} variant="meta" />
-                  ) : null,
-                ]}
-              />
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-            title={workflow.name || name}
-            aria-expanded={expanded}
-            aria-label={`${name} workflow`}
-            className="col-start-1 row-start-1 flex min-w-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-left transition-colors hover:bg-hover"
-          >
-            {forceExpanded ? (
-              <CONCEPT_ICONS.workflows
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="shrink-0 text-primary"
-              />
-            ) : null}
-            <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-              {name}
-            </span>
-            {unreadCount > 0 ? (
+      <div className={cn('shrink-0', PANE_RHYTHM.header)}>
+        <div className={cn('flex flex-col gap-4', PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
+            <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
               <span
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1 rounded-md',
-                  tintClasses('warning').bg,
-                  'px-1.5 py-0.5 text-2xs font-medium text-warning',
+                  'flex size-9 shrink-0 items-center justify-center rounded-lg',
+                  tintClasses('primary').bg,
                 )}
-                title={`${unreadCount} agent ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
               >
-                <StatusDot tone="warning" size="sm" />
-                {unreadCount}
+                <CONCEPT_ICONS.workflows
+                  size={ICON_SIZE.hero}
+                  aria-hidden
+                  className="text-primary"
+                />
               </span>
-            ) : null}
-            <WorkflowRunStatus
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  {rename.editing ? (
+                    <Input
+                      autoFocus
+                      value={rename.draft}
+                      maxLength={rename.maxLength}
+                      onChange={(event) => rename.setDraft(event.target.value)}
+                      onBlur={() => void rename.commit()}
+                      onKeyDown={rename.onKeyDown}
+                      aria-label="Workflow name"
+                      className="text-xl font-semibold"
+                    />
+                  ) : (
+                    <div className="group/name flex min-w-0 items-start gap-1.5">
+                      <h2
+                        title={name}
+                        className="line-clamp-2 min-w-0 break-words text-xl font-semibold leading-snug text-foreground"
+                      >
+                        {name}
+                      </h2>
+                      <Tooltip content="Edit workflow name">
+                        <button
+                          type="button"
+                          onClick={rename.start}
+                          aria-label="Edit workflow name"
+                          className={cn(
+                            'mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-faint-foreground',
+                            'opacity-0 transition-[opacity,color,background-color] hover:bg-hover hover:text-foreground',
+                            'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                            'group-hover/name:opacity-100 motion-reduce:opacity-60',
+                          )}
+                        >
+                          <CONCEPT_ICONS.rename size={ICON_SIZE.row} aria-hidden />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  )}
+                  <WorkflowRunStatus
+                    run={run}
+                    workflow={workflow}
+                    agents={wfAgents}
+                    predecessorName={predecessorName}
+                    isOrchestrating={isOrchestrating}
+                    hasOrchestratorStrip={hasOrchestratorStrip}
+                    blockReason={wfBlockReason}
+                  />
+                </div>
+                <MetaRow
+                  items={[
+                    total > 0 ? (
+                      <span className="tabular-nums">
+                        {isDynamic
+                          ? `${total} ${total === 1 ? 'step' : 'steps'}`
+                          : `Step ${Math.min(done + 1, total)} of ${total}`}
+                      </span>
+                    ) : null,
+                    total > 0 && agentCount !== total ? (
+                      <span className="tabular-nums">
+                        {`${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`}
+                      </span>
+                    ) : null,
+                    <CostBadge
+                      value={costUsd}
+                      title={`${formatUsdPrecise(costUsd)} for this run`}
+                    />,
+                    isDynamic && !isDiscarded ? (
+                      <RunSpendLimitPopover sessionId={task.id} run={run} variant="meta" />
+                    ) : null,
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
+              <CardActionSlot label="Workflow navigation actions">
+                <CardAction
+                  icon={expanded ? ChevronDown : ChevronRight}
+                  label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
+                  expanded={expanded}
+                  onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
+                />
+              </CardActionSlot>
+              <CardActionSlot label="Workflow lifecycle actions" className="gap-4">
+                <div className="flex items-center gap-2">
+                  {isQueuedManual ? (
+                    <WorkflowRunStartButton
+                      variant="detail"
+                      blockReason={wfBlockReason}
+                      onStart={() => startWorkflowRun(task.id, run.id)}
+                    />
+                  ) : null}
+                  {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
+                    <WorkflowAutorunToggle
+                      isOn={run.autoRun}
+                      onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isClosable ? (
+                    <WorkflowCloseButton onConfirm={() => void closeWorkflowRun(task.id, run.id)} />
+                  ) : null}
+                  {isDiscarded ? (
+                    <GhostActionButton
+                      icon={Undo2}
+                      label="Restore"
+                      onClick={() => void restoreWorkflow(task.id, run.id)}
+                    />
+                  ) : null}
+                  <WorkflowRunMenu
+                    workflowName={name}
+                    onDiscard={isDiscarded ? null : () => void onDiscardWorkflow(run.id)}
+                    onDelete={() => void onDeleteWorkflow(run.id)}
+                  />
+                </div>
+              </CardActionSlot>
+            </div>
+          </div>
+          {expanded && !isDiscarded && writableMountCount > 1 && (
+            <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
+          )}
+          {expanded && !isDiscarded && (
+            <NextActionStrip
+              sessionId={task.id}
               run={run}
               workflow={workflow}
-              agents={wfAgents}
-              predecessorName={predecessorName}
-              isOrchestrating={isOrchestrating}
-              hasOrchestratorStrip={hasOrchestratorStrip}
-              blockReason={wfBlockReason}
+              subjectAgentId={null}
             />
-            {total > 0 ? (
-              <span className="shrink-0 font-mono text-2xs text-faint-foreground">
-                {isDynamic ? `${total} ${total === 1 ? 'step' : 'steps'}` : `${done}/${total}`}
-              </span>
-            ) : null}
-          </button>
-        )}
-        {isDetail ? (
-          <div className="col-start-2 row-start-1 flex items-start gap-2 self-start">
-            <CardActionSlot label="Workflow navigation actions">
-              <CardAction
-                icon={expanded ? ChevronDown : ChevronRight}
-                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
-                expanded={expanded}
-                onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-              />
-            </CardActionSlot>
-            <CardActionSlot label="Workflow lifecycle actions" className="gap-2">
-              {isQueuedManual ? (
-                <WorkflowRunStartButton
-                  variant="detail"
-                  blockReason={wfBlockReason}
-                  onStart={() => startWorkflowRun(task.id, run.id)}
-                />
-              ) : null}
-              {!isDiscarded && !isCompleted && !hasOrchestratorStrip ? (
-                <WorkflowAutorunToggle
-                  variant="detail"
-                  isOn={run.autoRun}
-                  onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                />
-              ) : null}
-              <Divider orientation="vertical" className="h-5 self-center" />
-              {isDiscarded ? (
-                <GhostActionButton
-                  icon={Undo2}
-                  label="Restore"
-                  onClick={() => void restoreWorkflow(task.id, run.id)}
-                />
-              ) : (
-                <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-              )}
-              <WorkflowRunMenu workflowName={name} onDelete={() => void onDeleteWorkflow(run.id)} />
-            </CardActionSlot>
-          </div>
-        ) : (
-          <div className="col-start-2 row-start-1 flex items-start gap-1">
-            {!isDiscarded ? (
-              <CardActionSlot label="Workflow lifecycle actions">
-                {isQueuedManual ? (
-                  <WorkflowRunStartButton
-                    variant="sidebar"
-                    blockReason={wfBlockReason}
-                    onStart={() => startWorkflowRun(task.id, run.id)}
-                  />
-                ) : null}
-                {!isCompleted && !hasOrchestratorStrip ? (
-                  <WorkflowAutorunToggle
-                    variant="sidebar"
-                    isOn={run.autoRun}
-                    onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                  />
-                ) : null}
-                <WorkflowKillButton onConfirm={() => void onDiscardWorkflow(run.id)} />
-              </CardActionSlot>
-            ) : null}
-            <CardActionSlot label="Workflow navigation actions">
-              <CardAction
-                icon={expanded ? ChevronDown : ChevronRight}
-                label={`${expanded ? 'Collapse' : 'Expand'} ${name} workflow`}
-                expanded={expanded}
-                onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
-              />
-              {!isDiscarded && !isCompleted && attachedRuns.length > 1 ? (
-                <>
-                  <CardAction
-                    icon={ChevronUp}
-                    label="Move workflow up"
-                    disabled={!canMoveUp}
-                    onClick={() => void onReorderWorkflow(run.id, 'up')}
-                  />
-                  <CardAction
-                    icon={ChevronDown}
-                    label="Move workflow down"
-                    disabled={!canMoveDown}
-                    onClick={() => void onReorderWorkflow(run.id, 'down')}
-                  />
-                </>
-              ) : null}
-            </CardActionSlot>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      {expanded ? (
-        <div className="col-span-2 row-start-2 flex flex-col gap-2">
-          {isDetail && !isDiscarded && writableMountCount > 1 ? (
-            <WriteDestinationControl sessionId={task.id} agentId={null} fallback="automatic" />
-          ) : null}
-          {expanded &&
-          !isDiscarded &&
-          !isDynamic &&
-          (isDetail || wfBlockReason === 'failed-step') ? (
-            <div className={cn('pb-1', !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'))}>
-              <WorkflowNextStepCta
-                workflow={workflow}
-                runs={wfAgents}
-                roleModels={roleModels}
-                agentModel={ctaRouting.agentModel}
-                agentProvider={ctaRouting.agentProvider}
-                agentEffort={ctaRouting.agentEffort}
-                sessionProvider={sessionProvider}
-                sessionEffort={sessionEffort}
-                blockReason={wfBlockReason}
-                onAdvance={({ step, isConfirmed }) => {
-                  const pending = wfAgents.find(
-                    (agent) => agent.stepId === step.id && agent.status === 'pending',
-                  );
-                  if (pending == null) {
-                    return;
-                  }
-                  void onStartStepAgent({ agent: pending, isConfirmed });
-                }}
-                onForceAdvance={() =>
-                  void skipStuckStepAndAdvance(task.id, run.id, { onlyWhenBlocked: true })
-                }
-                onRecover={() => recoverStuckStep({ sessionId: task.id, workflowRunId: run.id })}
-              />
-            </div>
-          ) : null}
-          {expanded && !isDiscarded ? (
-            <div
-              className={cn(
-                'flex flex-col gap-2 pb-1',
-                !isDetail && (forceExpanded ? 'pl-1' : 'pl-3'),
+      {expanded && (
+        <ScrollFade
+          className="min-h-0 min-w-0 flex-1"
+          viewportClassName={cn(PANE_RHYTHM.inset, 'pb-5')}
+          fadeSize={24}
+        >
+          <WorkTimeProvider sessionId={task.id} workspaceId={task.workspaceId}>
+            <div className={cn(PANE_RHYTHM.stack, PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+              {!isDiscarded && !isDynamic && (
+                <WorkflowNextStepCta
+                  workflow={workflow}
+                  runs={wfAgents}
+                  roleModels={roleModels}
+                  agentModel={ctaRouting.agentModel}
+                  agentProvider={ctaRouting.agentProvider}
+                  agentEffort={ctaRouting.agentEffort}
+                  sessionProvider={sessionProvider}
+                  sessionEffort={sessionEffort}
+                  blockReason={wfBlockReason}
+                  onAdvance={({ step, isConfirmed }) => {
+                    const pending = wfAgents.find(
+                      (agent) => agent.stepId === step.id && agent.status === 'pending',
+                    );
+                    if (pending == null) {
+                      return;
+                    }
+                    void onStartStepAgent({ agent: pending, isConfirmed });
+                  }}
+                />
               )}
-            >
-              {isDynamic ? (
-                <OrchestratorPanel
+              {!isDiscarded && isDynamic && (
+                <OrchestratorStrip
                   sessionId={task.id}
                   run={run}
                   agents={wfAgents}
@@ -502,179 +387,72 @@ export const WorkflowRow = ({
                   costUsd={costUsd}
                   isOrchestrating={isOrchestrating}
                 />
-              ) : null}
-            </div>
-          ) : null}
-          {expanded ? (
-            wfAgents.length > 0 ? (
-              isDetail ? (
-                <WorkflowStepGraph
-                  workflow={workflow}
-                  runs={wfAgents}
-                  childrenByParentId={childrenByParentId}
-                  agentKindOverride={agentKindOverride}
-                  agentModelOverride={agentModelOverride}
-                  agentProviderOverride={agentProviderOverride}
-                  roleModels={roleModels}
-                  sessionProvider={sessionProvider}
-                  sessionEffort={sessionEffort}
-                  selectedAgentId={selectedAgentId}
-                  onSelect={onPickAgent}
-                />
-              ) : (
-                <div className={cn('flex flex-col gap-1 pb-1', forceExpanded ? 'pl-1' : 'pl-3')}>
-                  {wfAgents.map((run, index) => {
-                    const isActionable =
-                      run.stepId === actionableStepId && run.status === 'pending';
-                    const kind = classifyAgent({
-                      agent: run,
-                      override: agentKindOverride[run.id] ?? null,
-                    });
-                    const step = run.stepId != null ? stepById.get(run.stepId) : undefined;
-                    const resolvedRouting = resolveStepRouting({
-                      step: step ?? null,
-                      kind,
+              )}
+              <div className="flex min-w-0 flex-col gap-2">
+                {wfAgents.length > 0 ? (
+                  <RunTree
+                    sessionId={task.id}
+                    runId={run.id}
+                    tree={tree}
+                    routing={{
+                      stepById,
                       roleModels,
-                      agentModel: agentModelOverride[run.id] ?? run.modelOverride,
-                      agentProvider: agentProviderOverride[run.id] ?? run.providerOverride,
                       sessionProvider,
                       sessionEffort,
-                    });
-                    const clusterChildren = childrenByParentId.get(run.id) ?? EMPTY_ARRAY;
-                    const clustersExpanded = clusterExpand.get(run.id) ?? false;
-                    const clusterUnread = countUnread(clusterChildren);
-                    return (
-                      <Fragment key={run.id}>
-                        <WorkflowStepRow
-                          run={run}
-                          kind={kind}
-                          index={index}
-                          resolvedModel={resolvedRouting.model}
-                          resolvedProvider={resolvedRouting.provider}
-                          isActionable={isActionable}
-                          blockReason={isActionable ? wfBlockReason : null}
-                          isSelected={run.id === selectedAgentId}
-                          isTaskActive={isTaskActive}
-                          isEditing={editingId === run.id}
-                          telemetry={latestTelemetryByAgentId.get(run.id) ?? null}
-                          aggregate={aggregatesByAgentId.get(run.id) ?? null}
-                          contextUsage={providerUsageByAgentId.get(run.id) ?? EMPTY_ARRAY}
-                          turns={turnsByAgentId.get(run.id) ?? 0}
-                          turnsLoading={run.id === selectedAgentId && isTranscriptLoading}
-                          onStart={() => void onStartStepAgent({ agent: run })}
-                          onForceStart={() =>
-                            void onStartStepAgent({ agent: run, isConfirmed: true })
-                          }
-                          onSelect={() => onPickAgent(run.id)}
-                          onRenameStart={() => setEditingId(run.id)}
-                          onRenameCommit={(name) => void onRenameCommit(run.id, name)}
-                          onRenameCancel={() => setEditingId(null)}
-                          onResolveFirst={() => onResolveFirstForRun(workflowRun)}
-                        />
-                        {clusterChildren.length === 0 ? null : kind === 'scout' ? (
-                          <ScoutSubtree
-                            containerId={run.id}
-                            depth={0}
-                            childrenByParentId={childrenByParentId}
-                            aggregatesByAgentId={aggregatesByAgentId}
-                            selectedAgentId={selectedAgentId}
-                            isTaskActive={isTaskActive}
-                            expandState={clusterExpand}
-                            onToggle={toggleClusterExpand}
-                            onSelect={onPickAgent}
-                          />
-                        ) : (
-                          <div className="ml-3 border-l border-border-soft pl-2">
-                            <Collapsible
-                              open={clustersExpanded || clusterChildren.some(isRunning)}
-                              onOpenChange={() => toggleClusterExpand(run.id)}
-                              trigger={
-                                <span className="flex min-w-0 items-center gap-1.5 text-2xs text-muted-foreground">
-                                  <span className="min-w-0 truncate">
-                                    {clusterChildren.length}{' '}
-                                    {clusterChildren.length === 1 ? 'subagent' : 'subagents'}
-                                  </span>
-                                  {clusterUnread > 0 ? (
-                                    <span
-                                      className={cn(
-                                        'inline-flex shrink-0 items-center gap-1 rounded-md',
-                                        tintClasses('warning').bg,
-                                        'px-1 py-0.5 text-2xs font-medium text-warning',
-                                      )}
-                                      title={`${clusterUnread} subagent ${clusterUnread === 1 ? 'reply' : 'replies'} to review`}
-                                    >
-                                      <span
-                                        aria-hidden
-                                        className="size-1 rounded-full bg-warning"
-                                      />
-                                      {clusterUnread}
-                                    </span>
-                                  ) : null}
-                                </span>
-                              }
-                            >
-                              <div className="flex flex-col gap-0.5">
-                                {clusterChildren.map((child, ci) => (
-                                  <ClusterChildRow
-                                    key={child.id}
-                                    child={child}
-                                    index={ci}
-                                    total={clusterChildren.length}
-                                    costUsd={
-                                      aggregatesByAgentId.get(child.id)?.estimatedCostUsd ?? 0
-                                    }
-                                    isSelected={child.id === selectedAgentId}
-                                    isTaskActive={isTaskActive}
-                                    onSelect={() => onPickAgent(child.id)}
-                                  />
-                                ))}
-                              </div>
-                            </Collapsible>
-                          </div>
-                        )}
-                      </Fragment>
-                    );
-                  })}
+                    }}
+                    selectedAgentId={selectedAgentId}
+                    highlightedStepId={highlightedStepId}
+                    onHighlight={setHoveredStepId}
+                    onSelect={onPickAgent}
+                    onAnswer={onAnswerQuestion}
+                  />
+                ) : (
+                  <p className="pb-1 text-2xs text-faint-foreground">
+                    No agents yet for this workflow.
+                  </p>
+                )}
+                {!isDiscarded && !isCompleted && (
+                  <WorkflowAddStep
+                    sessionId={task.id}
+                    workspaceId={workflow.workspaceId}
+                    workflowRunId={run.id}
+                    stepCount={total}
+                  />
+                )}
+              </div>
+              <WorkflowRunSummary summary={run.orchestratorSummary} />
+              <div className="flex min-w-0 flex-col gap-2">
+                <WorkflowRunAsk
+                  goal={(run.goal ?? workflow.goal ?? '').trim()}
+                  processText={(workflow.processText ?? '').trim()}
+                />
+                <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+              </div>
+              {isDynamic && (
+                <WorkflowDecisions
+                  run={run}
+                  steps={workflow.steps}
+                  tree={tree}
+                  highlightedStepId={highlightedStepId}
+                  onHighlight={setHoveredStepId}
+                />
+              )}
+              {isCompleted && (
+                <div className="flex shrink-0 flex-wrap items-center gap-1">
+                  <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
+                  <CreateWireframeCta sessionId={task.id} workflowRunId={run.id} />
+                  <WorkflowAddStep
+                    sessionId={task.id}
+                    workspaceId={workflow.workspaceId}
+                    workflowRunId={run.id}
+                    stepCount={total}
+                  />
                 </div>
-              )
-            ) : (
-              <p className={cn('pb-1 text-2xs text-faint-foreground', !isDetail && 'pl-3')}>
-                No agents yet for this workflow.
-              </p>
-            )
-          ) : null}
-          {isDetail && expanded && !isDiscarded && !isCompleted ? (
-            <WorkflowAddStep
-              sessionId={task.id}
-              workspaceId={workflow.workspaceId}
-              workflowRunId={run.id}
-              stepCount={total}
-            />
-          ) : null}
-          {isDetail ? <WorkflowRunSummary summary={run.orchestratorSummary} /> : null}
-          {isDetail && expanded ? (
-            <div className="flex flex-col gap-2">
-              <WorkflowRunAsk
-                goal={(run.goal ?? workflow.goal ?? '').trim()}
-                processText={(workflow.processText ?? '').trim()}
-              />
-              <GoalAttachmentsStrip owner={{ type: 'workflow_run', id: run.id }} />
+              )}
             </div>
-          ) : null}
-          {isDetail && isCompleted ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-1">
-              <CreateReportCta sessionId={task.id} workflowRunId={run.id} />
-              <CreateWireframeCta sessionId={task.id} workflowRunId={run.id} />
-              <WorkflowAddStep
-                sessionId={task.id}
-                workspaceId={workflow.workspaceId}
-                workflowRunId={run.id}
-                stepCount={total}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+          </WorkTimeProvider>
+        </ScrollFade>
+      )}
     </div>
   );
 };

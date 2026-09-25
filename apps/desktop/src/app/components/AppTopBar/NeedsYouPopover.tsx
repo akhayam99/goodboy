@@ -50,7 +50,9 @@ export const NeedsYouPopover = ({ sessions, count }: Props) => {
         >
           <StatusDot tone="warning" size="sm" pulsing />
           <span className="font-medium tabular-nums text-foreground">{count}</span>
-          <span className="text-muted-foreground">need you</span>
+          <span className="hidden text-muted-foreground @min-chrome-labels/topbar:inline">
+            need you
+          </span>
         </button>
       }
     >

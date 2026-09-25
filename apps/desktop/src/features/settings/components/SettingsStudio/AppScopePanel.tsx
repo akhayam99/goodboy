@@ -5,8 +5,10 @@ import { AppBackupSection } from './AppBackupSection';
 import { AppDangerSection } from './AppDangerSection';
 import { AppGeneralSection } from './AppGeneralSection';
 import { AppHelpSection } from './AppHelpSection';
-import { SHORTCUT_COUNT, ShortcutsSection } from './ShortcutsSection';
+import { ShortcutsSection } from './ShortcutsSection';
+import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { StorageSection } from './StorageSection';
+import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
   readonly section: AppSection;
@@ -19,7 +21,8 @@ const BACKUP_HINT = `Export or import workspaces, ${
 
 const SECTION_HINT: Readonly<Record<AppSection, string>> = {
   general: 'Updates, appearance and the editor on this computer.',
-  shortcuts: 'Every keyboard shortcut, grouped by where it works.',
+  shortcuts:
+    'Every keyboard shortcut, grouped by task. Each chord also shows in the tooltip of its control.',
   backup: BACKUP_HINT,
   storage: 'What the local database and archived sessions hold on this computer.',
   help: 'Guides, your phone, and feedback.',
@@ -53,9 +56,10 @@ export const AppScopePanel = ({ section, requestClose }: Props) => {
     <PaneShell
       key={section}
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       title={label}
       description={SECTION_HINT[section]}
-      meta={section === 'shortcuts' ? `${SHORTCUT_COUNT} shortcuts` : undefined}
+      meta={section === 'shortcuts' ? `${SHORTCUT_ROW_COUNT} shortcuts` : undefined}
     >
       <SectionBody section={section} requestClose={requestClose} />
     </PaneShell>

@@ -5,6 +5,7 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionLoading } from '../../../../store';
 import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
+import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 
 type Params = {
@@ -43,6 +44,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
   const clearAgentDone = useAppStore((state) => state.clearAgentDone);
   const loading = useSessionLoading(sessionId);
   const metrics = useAgentMetrics({ sessionId });
+  const signals = useAgentLifecycleSignals({ sessionId });
 
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<AgentId | null>(null);
@@ -130,13 +132,31 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
         .sort((a, b) => b.ordinal - a.ordinal),
     [sorted, agentKindOverride],
   );
+  const finishedIds = useMemo(
+    () =>
+      new Set(
+        standaloneAgents
+          .filter((agent) =>
+            isAgentFinished({
+              agent,
+              hasOpenQuestion: signals.openQuestionAgentIds.has(agent.id),
+              isTurnLive: signals.liveTurnAgentIds.has(agent.id),
+              hasActiveChild: (childrenByParentId.get(agent.id) ?? []).some(
+                (child) => child.status === 'pending' || child.status === 'running',
+              ),
+            }),
+          )
+          .map((agent) => agent.id),
+      ),
+    [standaloneAgents, signals, childrenByParentId],
+  );
   const activeAgents = useMemo(
-    () => standaloneAgents.filter((agent) => !isAgentFinished({ agent })),
-    [standaloneAgents],
+    () => standaloneAgents.filter((agent) => !finishedIds.has(agent.id)),
+    [standaloneAgents, finishedIds],
   );
   const completedAgents = useMemo(
-    () => standaloneAgents.filter((agent) => isAgentFinished({ agent })),
-    [standaloneAgents],
+    () => standaloneAgents.filter((agent) => finishedIds.has(agent.id)),
+    [standaloneAgents, finishedIds],
   );
 
   const onPickAgent = useCallback(
@@ -172,7 +192,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     [deleteAgent, sessionId],
   );
 
-  const onMarkDone = useCallback(
+  const onClose = useCallback(
     (agentId: AgentId) => {
       void setAgentDone(sessionId, agentId);
     },
@@ -199,13 +219,14 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     isTaskActive,
     isTranscriptLoading: loading.transcript,
     metrics,
+    onClose,
     onDeleteAgent,
-    onMarkDone,
     onReopen,
     onPickAgent,
     onRenameCommit,
     selectedAgentId,
     setEditingId,
+    signals,
     standaloneAgents,
     toggleClusterExpand,
   };

@@ -972,15 +972,13 @@ export const BUILDER_DRAFT: WorkflowBuilderDraft = {
   },
   saveAsPreset: false,
   autoRun: true,
-  customName: '',
-  customNameEdited: false,
-  dynamicName: 'Settlement rounding recovery',
-  dynamicNameEdited: true,
+  title: 'Settlement rounding recovery',
   orchestratorModel: {
     providerOverride: 'codex',
     modelOverride: 'gpt-5.6-sol',
     effortOverride: 'high',
   },
+  providerPool: null,
 };
 
 export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [

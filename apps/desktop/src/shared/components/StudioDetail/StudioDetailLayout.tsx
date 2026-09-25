@@ -10,6 +10,7 @@ type Props = {
   readonly header: ReactNode;
   readonly eyebrow?: ReactNode;
   readonly rail?: ReactNode;
+  readonly banner?: ReactNode;
   readonly dock?: ReactNode;
   readonly properties?: ResolvedDetailFields;
   readonly tabs?: ReactNode;
@@ -21,6 +22,7 @@ export const StudioDetailLayout = ({
   header,
   eyebrow,
   rail,
+  banner,
   dock,
   properties,
   tabs,
@@ -55,7 +57,12 @@ export const StudioDetailLayout = ({
                 {rail != null ? <div className="min-w-0">{rail}</div> : null}
               </div>
             ) : null}
-            {tabs}
+            {banner != null && (
+              <div data-testid="detail-banner" className="min-w-0">
+                {banner}
+              </div>
+            )}
+            {tabs != null ? <div className="flex min-w-0">{tabs}</div> : null}
           </div>
         </div>
         <Divider />

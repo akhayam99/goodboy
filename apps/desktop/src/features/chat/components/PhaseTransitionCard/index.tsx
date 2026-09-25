@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Milestone } from 'lucide-react';
-import { Button, Markdown, tintClasses, Eyebrow } from '@goodboy/ui';
+import { Button, Markdown, Notice, tintClasses, Eyebrow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatCardTime } from '../../utils/format-card-time';
@@ -56,7 +56,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
               <span
                 className={`shrink-0 rounded-md px-1 py-px text-2xs font-medium ${warningTint.bg} ${warningTint.text}`}
               >
-                degraded handoff
+                partial brief
               </span>
             )
           }
@@ -83,23 +83,22 @@ export const PhaseTransitionCard = ({ item }: Props) => {
       }
     >
       {item.degraded === true ? (
-        <div className={`flex flex-col gap-2 rounded-md p-3 text-xs ${warningTint.bg}`}>
-          <span className={warningTint.text}>
-            The summary failed, so this step received a deterministic copy of the previous output.
-            Long output omits its middle. A retry repairs the summary for later steps, but cannot
-            replace context already sent to this step.
-          </span>
-          <Button
-            variant="warning"
-            emphasis="outline"
-            size="sm"
-            disabled={!canRetry || isRetrying}
-            onClick={() => void retry()}
-            className="self-start"
-          >
-            {isRetrying ? 'Retrying summary' : 'Retry summary'}
-          </Button>
-        </div>
+        <Notice
+          tone="warning"
+          placement="inline"
+          title="The step summary failed"
+          body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but cannot replace context already sent to this step."
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!canRetry || isRetrying}
+              onClick={() => void retry()}
+            >
+              {isRetrying ? 'Retrying summary' : 'Retry summary'}
+            </Button>
+          }
+        />
       ) : null}
       <Eyebrow label="carried forward" />
       <div className="overflow-x-auto text-xs text-foreground">

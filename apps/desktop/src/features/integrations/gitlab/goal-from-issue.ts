@@ -1,5 +1,4 @@
-import { capText } from '../../../shared/utils/capText';
-import { GOAL_BODY_CHAR_CAP } from '../shared/goalBodyCap';
+import { composeGoal } from '../shared/composeGoal';
 import { issueIdentifier, type GitlabIssue } from './client';
 
 type Params = {
@@ -7,10 +6,10 @@ type Params = {
 };
 
 export const goalFromIssue = ({ issue }: Params): string => {
-  const heading = `[${issueIdentifier(issue)}] ${issue.title.trim()}`;
-  const description = (issue.description ?? '').trim();
-  if (description === '') {
-    return heading;
-  }
-  return `${heading}\n\n${capText({ text: description, capChars: GOAL_BODY_CHAR_CAP })}`;
+  const identifier = issueIdentifier(issue);
+  return composeGoal({
+    heading: `[${identifier}] ${issue.title.trim()}`,
+    body: (issue.description ?? '').trim(),
+    source: { noun: 'issue', reference: identifier, url: issue.webUrl },
+  });
 };

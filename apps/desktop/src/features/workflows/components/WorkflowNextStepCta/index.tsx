@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { AlertTriangle, Play, RotateCcw } from 'lucide-react';
-import { Button, ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
+import { useMemo } from 'react';
+import { AlertTriangle, Play } from 'lucide-react';
+import { ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
 import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
 import type {
   Agent,
@@ -32,8 +32,6 @@ export type Props = {
   readonly workflow: Workflow;
   readonly runs: ReadonlyArray<Agent>;
   readonly onAdvance: (params: AdvanceParams) => void | Promise<void>;
-  readonly onForceAdvance?: () => void | Promise<void>;
-  readonly onRecover?: () => void | Promise<void>;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly consumesActivePlan?: boolean;
   readonly className?: string;
@@ -49,8 +47,6 @@ export const WorkflowNextStepCta = ({
   workflow,
   runs,
   onAdvance,
-  onForceAdvance,
-  onRecover,
   blockReason = null,
   consumesActivePlan = false,
   className,
@@ -61,9 +57,6 @@ export const WorkflowNextStepCta = ({
   sessionProvider = null,
   sessionEffort = null,
 }: Props) => {
-  const [busy, setBusy] = useState(false);
-  const [pendingForce, setPendingForce] = useState(false);
-  const [isRecovering, setIsRecovering] = useState(false);
   const chain = useMemo(() => classifyWorkflowChain(workflow, runs), [workflow, runs]);
   const next = chain.kind === 'step' ? chain.step : null;
   const kind = useMemo(() => (next != null ? classifyStep({ step: next }) : 'generic'), [next]);
@@ -92,91 +85,7 @@ export const WorkflowNextStepCta = ({
       });
     },
   });
-  const doForce = async () => {
-    if (busy) {
-      return;
-    }
-    setBusy(true);
-    setPendingForce(false);
-    try {
-      await onForceAdvance?.();
-    } finally {
-      setBusy(false);
-    }
-  };
-  const recover = async () => {
-    if (busy) {
-      return;
-    }
-    setBusy(true);
-    setIsRecovering(true);
-    try {
-      await onRecover?.();
-    } finally {
-      setBusy(false);
-      setIsRecovering(false);
-    }
-  };
-  if (chain.kind === 'complete') {
-    return null;
-  }
-  if (chain.kind === 'blocked') {
-    return (
-      <div className={cn('flex items-center gap-2', className)}>
-        <Button
-          variant="warning"
-          emphasis="outline"
-          size="sm"
-          onClick={() => void recover()}
-          disabled={busy || onRecover == null}
-          data-testid="workflow-recover-step-cta"
-          title="Ask the agent to verify the work, finish anything missing, and emit the completion marker"
-          className={cn(
-            'h-auto',
-            tintClasses('warning').border,
-            tintClasses('warning').bg,
-            'px-2 py-1 text-2xs font-semibold',
-          )}
-        >
-          <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          {isRecovering ? 'Checking step' : 'Check completion'}
-        </Button>
-        <ConfirmPopover
-          role="alert"
-          icon={<AlertTriangle size={ICON_SIZE.row} />}
-          title="Skip the blocked step and start the next agent?"
-          description={`${chain.failedStep.name} will be marked skipped. Its output will not be carried forward.`}
-          confirmLabel="Skip and continue"
-          cancelLabel="Cancel"
-          isBusy={busy}
-          isOpen={pendingForce}
-          onConfirm={() => void doForce()}
-          onCancel={() => setPendingForce(false)}
-          trigger={() => (
-            <Button
-              variant="warning"
-              emphasis="outline"
-              size="sm"
-              onClick={() => setPendingForce(true)}
-              disabled={busy}
-              data-testid="workflow-force-next-step-cta"
-              title="Discard this step output and continue without it"
-              className={cn(
-                'h-auto',
-                tintClasses('warning').border,
-                tintClasses('warning').bg,
-                'px-2 py-1 text-2xs font-semibold',
-              )}
-            >
-              <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              Skip blocked step
-            </Button>
-          )}
-        />
-      </div>
-    );
-  }
-  if (!next) {
+  if (next == null) {
     return null;
   }
   const pendingAgent = runs.find((agent) => agent.stepId === next.id && agent.status === 'pending');

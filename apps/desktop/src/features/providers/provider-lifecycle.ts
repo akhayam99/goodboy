@@ -37,6 +37,9 @@ export const resolveLifecycleCommand = (
   if (action === 'install') {
     return entry.install[platform];
   }
+  if (action === 'update') {
+    return (entry.update ?? entry.install)[platform];
+  }
   const command = entry[action];
   if (command === undefined) {
     throw new Error(`no ${action} command for provider: ${providerId}`);

@@ -12,19 +12,24 @@ import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
+import {
+  selectActiveMountId,
+  selectTurnMountCount,
+} from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { useEditorMenuItems } from '../useEditorMenuItems';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
+import { MountPresence } from './MountPresence';
 import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { MountActionsMenu } from './MountActionsMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
+import { useMountPresence } from './useMountPresence';
 import { useProjectActivity } from './useProjectActivity';
 import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
 
@@ -40,7 +45,7 @@ type Props = {
 };
 
 const UTILITY_REVEAL =
-  'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100';
+  'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100 @max-md:hidden';
 
 const CELL = 'flex items-center px-1';
 const NARROW_HIDDEN = '@max-[36rem]:px-0 @max-[36rem]:*:hidden';
@@ -75,6 +80,8 @@ export const ProjectMountRow = ({
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
+  const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
+  const presence = useMountPresence({ sessionId, mountId: row.mountId });
   const reportError = useAppStore((state) => state.reportError);
   const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
@@ -89,7 +96,8 @@ export const ProjectMountRow = ({
   });
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
-  const isWriteDestination = row.isAttached && row.mountId === activeMountId;
+  const hasTurnChoice = turnMountCount > 1;
+  const canStartTurnsHere = hasTools && hasTurnChoice && row.mountId !== activeMountId;
   const worktreeState = mountWorktreeState({
     status: worktreeStatus,
     isPending: isStatusPendingProp,
@@ -115,32 +123,32 @@ export const ProjectMountRow = ({
     try {
       await attachMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      void reportError({ title: `Couldn't mount ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't reopen ${label}`, error, sessionId });
     } finally {
       setIsAttaching(false);
     }
   };
 
-  const applyNextTurns = async () => {
+  const startTurnsHere = async () => {
     try {
       await setSessionActiveMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      void reportError({ title: `Couldn't send next turns to ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't start new turns in ${label}`, error, sessionId });
     }
   };
 
   const menuItems: ReadonlyArray<OverflowMenuItem> = hasTools
     ? [
-        ...(isWriteDestination
-          ? []
-          : [
+        ...(canStartTurnsHere
+          ? [
               {
                 kind: 'item',
-                key: 'next-turns',
-                label: 'Use for next turns',
-                onClick: () => void applyNextTurns(),
+                key: 'start-turns',
+                label: 'Start new turns here',
+                onClick: () => void startTurnsHere(),
               } satisfies OverflowMenuItem,
-            ]),
+            ]
+          : []),
         {
           kind: 'item',
           key: 'terminal',
@@ -187,16 +195,6 @@ export const ProjectMountRow = ({
               canSwitch={isRepo && row.isAttached}
             />
           )}
-          {isWriteDestination ? (
-            <Chip
-              tone="primary"
-              size="3xs"
-              bordered={false}
-              label="Writes here next"
-              title={`Next turns write to ${label} unless changed from the chat header.`}
-              className="shrink-0"
-            />
-          ) : null}
           {operation === null ? null : (
             <Chip
               tone="warning"
@@ -206,6 +204,9 @@ export const ProjectMountRow = ({
               title={operation.title}
               className="shrink-0"
             />
+          )}
+          {hasTurnChoice && row.isAttached && (
+            <MountPresence sessionId={sessionId} label={label} agents={presence} />
           )}
         </div>
         {row.series === null ? (
@@ -262,8 +263,8 @@ export const ProjectMountRow = ({
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}
               title={
                 row.isOnDisk
-                  ? 'Not mounted. Its files are still on disk.'
-                  : 'Not mounted. Its files were removed.'
+                  ? 'Closed. Its files are still on disk.'
+                  : 'Closed. Its files were removed.'
               }
               className="shrink-0"
             />
@@ -284,14 +285,14 @@ export const ProjectMountRow = ({
             <button
               type="button"
               disabled={isAttaching}
-              aria-label={`Mount ${label}`}
+              aria-label={`Reopen ${label}`}
               onClick={() => void mount()}
               className={cn(
                 'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}
             >
-              {isAttaching ? 'Mounting…' : 'Mount'}
+              {isAttaching ? 'Reopening…' : 'Reopen'}
             </button>
           )}
         </div>

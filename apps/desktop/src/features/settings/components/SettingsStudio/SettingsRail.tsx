@@ -1,30 +1,42 @@
-import type { ReactNode } from 'react';
-import { PANE_RHYTHM, SelectableRow, cn } from '@goodboy/ui';
-import { Boxes, Settings, Wrench } from 'lucide-react';
+import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
 import type { SettingsScopeChange, SettingsStudioScope } from './types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../store';
+import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
+
+export type NestedScope = 'providers' | 'tools';
 
 type Props = {
   readonly scope: SettingsStudioScope;
   readonly appSection: AppSection;
   readonly workspaceName: string | null;
   readonly hasWorkspace: boolean;
-  readonly nested: ReactNode;
+  readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
+  readonly onNestedClosed: (params: { readonly scope: NestedScope }) => void;
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
-const ITEMS = [
-  { scope: 'app', label: 'App', icon: Settings, needsWorkspace: false },
-  { scope: 'workspace', label: 'Workspace', icon: Wrench, needsWorkspace: true },
-  { scope: 'providers', label: 'Providers & models', icon: Boxes, needsWorkspace: false },
+const SCOPE_ITEMS = [
+  { scope: 'workspace', label: 'Workspace', icon: CONCEPT_ICONS.workspace, needsWorkspace: true },
+  {
+    scope: 'providers',
+    label: 'Providers & models',
+    icon: CONCEPT_ICONS.providers,
+    needsWorkspace: false,
+  },
   { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations, needsWorkspace: true },
-] satisfies ReadonlyArray<{
-  scope: SettingsStudioScope;
+] as const satisfies ReadonlyArray<{
+  scope: Exclude<SettingsStudioScope, 'app'>;
   label: string;
-  icon: typeof Settings;
+  icon: (typeof CONCEPT_ICONS)[keyof typeof CONCEPT_ICONS];
   needsWorkspace: boolean;
 }>;
+
+const DANGER_ROW = 'text-danger hover:text-danger data-[selected=true]:text-danger';
+
+export const isNestedScope = (scope: SettingsStudioScope): scope is NestedScope =>
+  scope === 'providers' || scope === 'tools';
 
 export const settingsScopeAvailable = ({
   scope,
@@ -32,60 +44,87 @@ export const settingsScopeAvailable = ({
 }: {
   readonly scope: SettingsStudioScope;
   readonly hasWorkspace: boolean;
-}): boolean => hasWorkspace || ITEMS.some((item) => item.scope === scope && !item.needsWorkspace);
+}): boolean =>
+  scope === 'app' ||
+  hasWorkspace ||
+  SCOPE_ITEMS.some((item) => item.scope === scope && !item.needsWorkspace);
 
 export const SettingsRail = ({
   scope,
   appSection,
   workspaceName,
   hasWorkspace,
-  nested,
+  nestedSlot,
+  onNestedClosed,
   onSelect,
-}: Props) => (
-  <nav aria-label="Settings scopes" className={`flex flex-col gap-1 ${PANE_RHYTHM.navRail.body}`}>
-    {ITEMS.filter((item) => hasWorkspace || !item.needsWorkspace).map((item) => {
-      const Icon = item.icon;
-      const subtitle = item.scope === 'workspace' ? workspaceName : null;
-      const isActive = scope === item.scope;
-      const hasItems = item.scope === 'app' || (isActive && nested !== null);
-      return (
-        <div key={item.scope} className="flex flex-col gap-0.5">
-          <SelectableRow
-            selected={isActive && !hasItems}
-            ariaCurrent={isActive && !hasItems}
-            onClick={() => onSelect({ scope: item.scope })}
-            className={cn(
-              `items-center gap-2.5 ${PANE_RHYTHM.navRail.row}`,
-              isActive && hasItems && 'text-foreground',
-            )}
-          >
-            <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-            <span className="flex min-w-0 flex-col">
-              <span className="text-sm font-medium">{item.label}</span>
-              {subtitle !== null && (
-                <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
+}: Props) => {
+  const providerAttention = useAppStore((state) => selectProviderAttention({ state }));
+  const hasUpdate = useAppStore((state) => state.updaterStatus === 'available');
+
+  return (
+    <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
+      <div className="flex flex-col gap-0.5">
+        <StatusRailItem
+          icon={<CONCEPT_ICONS.settings size={ICON_SIZE.control} />}
+          label="App"
+          selected={false}
+          onClick={() => onSelect({ scope: 'app' })}
+          className={cn(scope === 'app' && 'text-foreground')}
+        />
+        <ul
+          aria-label="App settings"
+          className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
+        >
+          {APP_SECTIONS.map((section) => {
+            const Icon = CONCEPT_ICONS[section.concept];
+            const isGeneralUpdate = section.id === 'general' && hasUpdate;
+            return (
+              <li key={section.id}>
+                <StatusRailItem
+                  icon={<Icon size={ICON_SIZE.row} />}
+                  label={section.label}
+                  density="compact"
+                  tone={isGeneralUpdate ? 'info' : undefined}
+                  statusLabel={isGeneralUpdate ? 'Update available' : undefined}
+                  selected={scope === 'app' && appSection === section.id}
+                  onClick={() => onSelect({ scope: 'app', section: section.id })}
+                  className={cn(section.id === 'danger' && DANGER_ROW)}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {SCOPE_ITEMS.filter((item) => hasWorkspace || !item.needsWorkspace).map((item) => {
+          const Icon = item.icon;
+          const isActive = scope === item.scope;
+          const nested = isNestedScope(item.scope) ? item.scope : null;
+          const attention = item.scope === 'providers' ? providerAttention : null;
+          return (
+            <div key={item.scope} className="flex flex-col gap-0.5">
+              <StatusRailItem
+                icon={<Icon size={ICON_SIZE.control} />}
+                label={item.label}
+                subtitle={
+                  item.scope === 'workspace'
+                    ? (workspaceName ?? undefined)
+                    : (attention ?? undefined)
+                }
+                tone={attention === null ? undefined : 'warning'}
+                selected={isActive && nested === null}
+                onClick={() => onSelect({ scope: item.scope })}
+                className={cn(isActive && 'text-foreground')}
+              />
+              {nested === null ? null : (
+                <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
+                  <div ref={nestedSlot[nested]} />
+                </Reveal>
               )}
-            </span>
-          </SelectableRow>
-          {isActive && item.scope !== 'app' && nested}
-          {isActive && item.scope === 'app' && (
-            <ul aria-label={`${item.label} settings`} className="flex flex-col gap-0.5">
-              {APP_SECTIONS.map((section) => (
-                <li key={section.id}>
-                  <SelectableRow
-                    selected={appSection === section.id}
-                    ariaCurrent={appSection === section.id}
-                    onClick={() => onSelect({ scope: 'app', section: section.id })}
-                    className="items-center py-1 pl-8 pr-2 text-sm"
-                  >
-                    {section.label}
-                  </SelectableRow>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      );
-    })}
-  </nav>
-);
+            </div>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};

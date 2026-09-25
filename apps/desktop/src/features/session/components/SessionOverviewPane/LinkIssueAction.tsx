@@ -96,7 +96,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
     >
       {connected.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {`No tracker connected yet. Connect ${TRACKER_NAMES} from the integrations studios in the footer, then link issues here.`}
+          {`No tracker connected yet. Connect ${TRACKER_NAMES} from the footer, then link issues here.`}
         </p>
       ) : tracker != null ? (
         <div className="flex flex-col gap-2">

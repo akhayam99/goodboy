@@ -241,7 +241,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'mount-project') {
       return {
         primary: {
-          label: 'Mount project',
+          label: 'Add project',
           isDisabled: false,
           onAct: () => {
             void proposalActions.mount(proposalTarget({ suggestion })).catch(() => undefined);

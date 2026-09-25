@@ -51,7 +51,7 @@ export const WorkflowStarter = ({
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-foreground">Build a workflow</h2>
         <p className="max-w-prose text-sm text-muted-foreground">
-          Describe the outcome and the handoffs. An agent will write the steps for you.
+          Describe the outcome and what each step passes on. An agent will write the steps for you.
         </p>
       </div>
 

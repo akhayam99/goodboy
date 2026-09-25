@@ -72,7 +72,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   onRestore,
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
-  const { stage, reason } = useSessionStageInfo(session);
+  const { stage, reason, attention } = useSessionStageInfo(session);
   const isAutoMode =
     stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
 
@@ -195,7 +195,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       }}
       className={cn(
         'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
-        sessionCardShell({ stage, selected }),
+        sessionCardShell({ stage, attention, selected }),
       )}
     >
       <span className="flex min-w-0 flex-col justify-between">

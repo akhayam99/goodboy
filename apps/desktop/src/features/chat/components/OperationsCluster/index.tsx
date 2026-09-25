@@ -1,3 +1,4 @@
+import type { RetryRunParams } from '../../retryRun';
 import { memo, useMemo, useState } from 'react';
 import { Layers } from 'lucide-react';
 import { cn, MetaRow, tintClasses } from '@goodboy/ui';
@@ -18,8 +19,8 @@ type Props = {
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-  readonly onRetryError?: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
-  readonly retryingErrorRunId?: ProviderRunId | null;
+  readonly onRetryRun?: (params: RetryRunParams) => void;
+  readonly retryingRunId?: ProviderRunId | null;
 };
 
 const runningTool = (
@@ -46,8 +47,8 @@ const OperationsClusterView = ({
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
-  onRetryError,
-  retryingErrorRunId = null,
+  onRetryRun,
+  retryingRunId = null,
 }: Props) => {
   const [open, setOpen] = useState(false);
   const { running, errorCount, successCount } = useMemo(() => {
@@ -157,8 +158,8 @@ const OperationsClusterView = ({
           workingDir={workingDir}
           onRefreshAuth={onRefreshAuth}
           onOpenDiff={onOpenDiff}
-          onRetryError={onRetryError}
-          retryingErrorRunId={retryingErrorRunId}
+          onRetryRun={onRetryRun}
+          retryingRunId={retryingRunId}
         />
       ))}
     </TranscriptDisclosure>
@@ -172,7 +173,7 @@ const propsEqual = (previous: Props, next: Props): boolean =>
   previous.workingDir === next.workingDir &&
   previous.onRefreshAuth === next.onRefreshAuth &&
   previous.onOpenDiff === next.onOpenDiff &&
-  previous.onRetryError === next.onRetryError &&
-  previous.retryingErrorRunId === next.retryingErrorRunId;
+  previous.onRetryRun === next.onRetryRun &&
+  previous.retryingRunId === next.retryingRunId;
 
 export const OperationsCluster = memo(OperationsClusterView, propsEqual);

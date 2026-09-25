@@ -3,6 +3,7 @@ import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHa
 import type {
   Agent,
   AgentId,
+  AgentTurnSpan,
   IsoDateTime,
   MountId,
   ProjectId,
@@ -59,6 +60,7 @@ vi.mock('@goodboy/db', () => ({
   insertSession: vi.fn(),
   insertSessionWorktree: vi.fn(),
   insertTelemetry: vi.fn(),
+  insertAgentTurnSpan: vi.fn(async () => undefined),
   insertWorkspace: vi.fn(),
   listContextSlotsForSession: vi.fn(async () => []),
   listMessagesForSession: vi.fn(async () => []),
@@ -87,7 +89,7 @@ vi.mock('@goodboy/db', () => ({
   listMessagesForAgent: vi.fn(async () => []),
   insertNotification: vi.fn(async () => undefined),
   listNotifications: vi.fn(async () => []),
-  countNotifications: vi.fn(async () => ({ total: 0, unread: 0 })),
+  countNotifications: vi.fn(async () => []),
   NOTIFICATION_LIST_LIMIT: 200,
   markAllNotificationsRead: vi.fn(async () => undefined),
   clearAllNotifications: vi.fn(async () => undefined),
@@ -178,6 +180,15 @@ async function* doneOnlyStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
   yield {
     kind: 'done',
     runId,
+    at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
+  };
+}
+
+async function* answerStream(runId: ProviderRunId): AsyncIterable<TurnEvent> {
+  yield {
+    kind: 'assistant_text',
+    runId,
+    delta: 'done',
     at: '2026-05-08T00:00:01.000Z' as IsoDateTime,
   };
 }
@@ -411,6 +422,43 @@ describe('sendTurn, terminal state guarantees', () => {
     const transcript = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     const errorEvents = transcript.filter((e) => e.kind === 'error');
     expect(errorEvents).toHaveLength(0);
+  });
+
+  it('records a measured span for a turn that answered', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => answerStream(args.runId));
+    setupSession(useAppStore);
+
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+
+    const db = await import('@goodboy/db');
+    const insertSpan = db.insertAgentTurnSpan as ReturnType<typeof vi.fn>;
+    expect(insertSpan).toHaveBeenCalledOnce();
+    const [{ span }] = insertSpan.mock.calls[0] as [{ span: AgentTurnSpan }];
+    expect(span).toMatchObject({
+      agentId: AGENT_ID,
+      sessionId: SESSION_ID,
+      workspaceId: WORKSPACE_ID,
+      workflowRunId: null,
+      stepRole: 'custom',
+      provider: 'anthropic',
+      endReason: 'succeeded',
+      touchedMountIds: [],
+    });
+    expect(Date.parse(span.endedAt)).toBeGreaterThanOrEqual(Date.parse(span.startedAt));
+  });
+
+  it('records a failed span once when the stream throws mid-turn', async () => {
+    runTurnSpy.mockImplementation((args: { runId: ProviderRunId }) => throwingStream(args.runId));
+    setupSession(useAppStore);
+
+    await expect(
+      useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'boom' }),
+    ).rejects.toThrow('provider crashed mid-stream');
+
+    const db = await import('@goodboy/db');
+    const insertSpan = db.insertAgentTurnSpan as ReturnType<typeof vi.fn>;
+    expect(insertSpan).toHaveBeenCalledOnce();
+    expect(insertSpan.mock.calls[0]?.[0]).toMatchObject({ span: { endReason: 'failed' } });
   });
 
   it('transitions session to error and rethrows when the stream throws mid-turn', async () => {

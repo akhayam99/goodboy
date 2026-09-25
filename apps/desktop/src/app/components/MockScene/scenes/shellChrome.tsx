@@ -82,7 +82,7 @@ export const seedShellChrome = ({
     providers: state.providers.length > 0 ? state.providers : [CLAUDE_PROVIDER],
     notifications: [],
     notificationsLoading: false,
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: [],
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
@@ -157,7 +157,7 @@ export const seedStudioChrome = (): void => {
   useAppStore.setState({
     notifications: [],
     notificationsLoading: false,
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: [],
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,

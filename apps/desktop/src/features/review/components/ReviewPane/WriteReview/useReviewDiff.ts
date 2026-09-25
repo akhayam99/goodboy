@@ -53,7 +53,7 @@ export const useReviewDiff = ({ session }: Params): Result => {
     if (workspace == null || repo == null) {
       setFiles([]);
       setLoading(false);
-      setError('No repository is mounted for this session.');
+      setError('No repository is in this session yet.');
       return;
     }
     const fetchDiff =

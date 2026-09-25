@@ -42,7 +42,7 @@ const isProviderId = (value: unknown): value is ProviderId =>
   typeof value === 'string' && PROVIDER_IDS.some((providerId) => providerId === value);
 
 const isProviderLifecycleAction = (value: unknown): value is ProviderLifecycleAction =>
-  value === 'install' || value === 'login' || value === 'logout';
+  value === 'install' || value === 'login' || value === 'logout' || value === 'update';
 
 const isInboxProvider = (value: unknown): value is InboxProvider =>
   typeof value === 'string' && INBOX_PROVIDERS.some((provider) => provider === value);

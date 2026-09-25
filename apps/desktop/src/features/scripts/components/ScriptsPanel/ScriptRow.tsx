@@ -270,7 +270,7 @@ export const ScriptRow = ({
                 className="truncate font-mono text-2xs text-muted-foreground"
                 title={mountPath ?? undefined}
               >
-                {mountPath ?? `${projectName} is not mounted in this session`}
+                {mountPath ?? `${projectName} is not in this session`}
               </p>
             ) : null}
             {editingField !== null && projects.length > 1 ? (

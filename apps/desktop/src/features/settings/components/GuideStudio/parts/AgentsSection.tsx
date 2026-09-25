@@ -22,19 +22,19 @@ export const AgentsSection = ({}: Props) => (
         rows={[
           {
             term: 'Role separation',
-            desc: 'Spawn a planning agent on one model, then a coding agent on another. Each keeps its own transcript.',
+            desc: 'Start a planning agent on one model, then a coding agent on another. Each keeps its own transcript.',
             icon: <CONCEPT_ICONS.workflows size={11} aria-hidden />,
             tone: 'primary',
           },
           {
             term: 'Workflow steps',
-            desc: 'A workflow defines ordered steps (plan, implement, done). Each step spawns an agent with its own model and system prompt.',
+            desc: 'A workflow defines ordered steps (plan, implement, done). Each step starts an agent with its own model and system prompt.',
             icon: <ArrowRight size={11} aria-hidden />,
             tone: 'success',
           },
           {
             term: 'Subagent trees',
-            desc: 'An agent can fan out into subagents for sweeps or parallel exploration. They render as a tree under their parent, so you can follow who spawned whom.',
+            desc: 'An agent can fan out into subagents for sweeps or parallel exploration. They render as a tree under their parent, so you can follow who started whom.',
             icon: <Network size={11} aria-hidden />,
             tone: 'info',
           },

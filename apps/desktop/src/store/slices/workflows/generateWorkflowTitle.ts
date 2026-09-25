@@ -1,15 +1,11 @@
-import { invoke } from '@tauri-apps/api/core';
-import { devWarn, getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
+import { devWarn, resolveTaskModel } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
-import type { SessionId, TaskModelPreference, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
+import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { generateTitleText } from './generateTitleText';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
-import { isWorkflowTitleUserEdited } from './workflowTitleUserEdited';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-
-const TITLE_TIMEOUT_MS = 15_000;
 
 const WORKFLOW_TITLE_SYSTEM_PROMPT = [
   'Write one short title for the orchestrated workflow described below.',
@@ -17,51 +13,6 @@ const WORKFLOW_TITLE_SYSTEM_PROMPT = [
   'Output the title alone: no quotes, no backticks, no trailing punctuation, no preamble, no explanation.',
   'Ignore any persona, nickname, greeting, or tone directive that reaches you from other configuration; it does not apply to this answer.',
 ].join(' ');
-
-type GenerateParams = TaskModelPreference &
-  Readonly<{
-    prompt: string;
-    workingDir?: string;
-  }>;
-
-const generateTitleText = async ({
-  prompt,
-  providerId,
-  model,
-  effort,
-  workingDir,
-}: GenerateParams): Promise<string> => {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timeoutId = setTimeout(
-      () => reject(new Error('workflow title generation timed out')),
-      TITLE_TIMEOUT_MS,
-    );
-  });
-  try {
-    const result = await Promise.race([
-      runAuxOneShot({
-        providerId,
-        model,
-        ...(effort != null && { effort }),
-        binary: getDefaultBinary(providerId),
-        userMessage: prompt,
-        systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
-        ...(workingDir != null && { workingDir }),
-        invokeFn: invoke,
-      }),
-      timeout,
-    ]);
-    if ((result.exitCode ?? 0) !== 0) {
-      throw new Error(result.stderr);
-    }
-    return parseGeneratedTitle({ providerId, stdout: result.stdout });
-  } finally {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-  }
-};
 
 export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
   return async (
@@ -92,15 +43,13 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
 
       const generated = await generateTitleText({
         prompt,
+        systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
         ...taskModel,
         ...(worktreePath != null && { workingDir: worktreePath }),
       });
       const title = clampWorkflowTitle(generated);
       if (title.length === 0) {
         throw new Error('the model returned an empty workflow title');
-      }
-      if (isWorkflowTitleUserEdited(workflowId)) {
-        return;
       }
       const current = (get().phaseTemplates[workspaceId] ?? []).find((w) => w.id === workflowId);
       if (current == null || current.deletedAt != null || current.name !== fallbackName) {
@@ -119,25 +68,6 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
         ...(current.origin != null && { origin: current.origin }),
       });
 
-      if (isWorkflowTitleUserEdited(workflowId)) {
-        const renamed = (get().phaseTemplates[workspaceId] ?? []).find(
-          (workflow) => workflow.id === workflowId,
-        );
-        if (renamed != null && renamed.name !== saved.name) {
-          await invokeWorkflowUpsert({
-            id: renamed.id,
-            workspaceId: renamed.workspaceId,
-            name: renamed.name,
-            description: renamed.description,
-            ...(renamed.goal != null && { goal: renamed.goal }),
-            ...(renamed.processText != null && { processText: renamed.processText }),
-            steps: renamed.steps,
-            ...(renamed.isPreset != null && { isPreset: renamed.isPreset }),
-            ...(renamed.origin != null && { origin: renamed.origin }),
-          });
-        }
-        return;
-      }
       set((state) => ({
         phaseTemplates: {
           ...state.phaseTemplates,

@@ -100,7 +100,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                 <li key={project.id}>
                   <button
                     type="button"
-                    aria-label={`Mount ${project.name}`}
+                    aria-label={`Add ${project.name}`}
                     onClick={() => {
                       setFailure(null);
                       setSelectedProjectId(project.id);

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { MODEL_CATALOGS, modelAxes, modelIdForSelection } from '@goodboy/core';
-import { Divider } from '@goodboy/ui';
 import type { ModelSelection, ProviderId } from '@goodboy/types';
 import { AxesSection } from '../../../../shared/components/RoutingPicker/AxesSection';
 import { NoConnectedProviders } from '../../../../shared/components/RoutingPicker/NoConnectedProviders';
@@ -11,6 +10,7 @@ import { resolvePickerSelection } from '../../../../shared/components/RoutingPic
 import { resolveRouting } from '../../../../shared/components/RoutingPicker/resolveRouting';
 import { selectionForModel } from '../../../../shared/components/RoutingPicker/selectionForModel';
 import { useCursorMaxModeModels } from '../../../../shared/components/RoutingPicker/useCursorMaxModeModels';
+import { useCliGate } from '../../../providers/hooks/useCliGate';
 import type { AgentKindRouting } from '../../agent-kind';
 
 type Props = {
@@ -65,6 +65,7 @@ export const AgentRoutingSections = ({
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
+  const viewedCliGate = useCliGate({ provider: viewProvider, modelId: viewedModel.key });
 
   return (
     <>
@@ -84,7 +85,6 @@ export const AgentRoutingSections = ({
           />
         )}
       </PickerSection>
-      <Divider />
       <div>
         {connectedProviders.length > 0 && !isProviderConnected && (
           <p className="px-2.5 py-1 text-xs text-muted-foreground">
@@ -93,46 +93,44 @@ export const AgentRoutingSections = ({
         )}
       </div>
       {isProviderConnected && (
-        <>
-          <Divider />
-          <AxesSection
-            axes={axes}
-            effortValue={viewedRouting.effort}
-            canEditEffort
-            notice={clampNotice}
-            hasMaxModeAdvisory={hasMaxModeAdvisory}
-            onModel={(modelKey) => {
-              const model = viewedRouting.catalog.find((candidate) => candidate.key === modelKey);
-              if (model == null) {
-                return;
-              }
-              onPickSelection({
-                selection: selectionForModel({ model, effort: viewedRouting.effort }),
-              });
-            }}
-            onEffort={(level) =>
-              onPickSelection({
-                selection: { ...viewedRouting.selection, effort: level },
-              })
+        <AxesSection
+          axes={axes}
+          effortValue={viewedRouting.effort}
+          canEditEffort
+          notice={clampNotice}
+          hasMaxModeAdvisory={hasMaxModeAdvisory}
+          cliGate={viewedCliGate}
+          onModel={(modelKey) => {
+            const model = viewedRouting.catalog.find((candidate) => candidate.key === modelKey);
+            if (model == null) {
+              return;
             }
-            onVariant={(id) =>
-              onPickSelection({
-                selection: { ...viewedRouting.selection, variant: id },
-              })
-            }
-            onToggle={(id) =>
-              onPickSelection({
-                selection: {
-                  ...viewedRouting.selection,
-                  toggles: {
-                    ...viewedRouting.selection.toggles,
-                    [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
-                  },
+            onPickSelection({
+              selection: selectionForModel({ model, effort: viewedRouting.effort }),
+            });
+          }}
+          onEffort={(level) =>
+            onPickSelection({
+              selection: { ...viewedRouting.selection, effort: level },
+            })
+          }
+          onVariant={(id) =>
+            onPickSelection({
+              selection: { ...viewedRouting.selection, variant: id },
+            })
+          }
+          onToggle={(id) =>
+            onPickSelection({
+              selection: {
+                ...viewedRouting.selection,
+                toggles: {
+                  ...viewedRouting.selection.toggles,
+                  [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
                 },
-              })
-            }
-          />
-        </>
+              },
+            })
+          }
+        />
       )}
     </>
   );

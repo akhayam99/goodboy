@@ -26,6 +26,19 @@ const closestWith = ({
 };
 
 describe('PaneShell', () => {
+  it.each(['pane', 'body'] as const)('fills a flex row parent with scroll %s', (scroll) => {
+    const { container } = render(
+      <div className="flex">
+        <PaneShell title="Notifications" scroll={scroll}>
+          <p>Body copy</p>
+        </PaneShell>
+      </div>,
+    );
+
+    const root = container.firstElementChild?.firstElementChild;
+    expect(root?.className.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+  });
+
   it('renders the title, meta, description, actions, and children', () => {
     render(
       <PaneShell
@@ -94,6 +107,13 @@ describe('PaneShell', () => {
 
     const host = closestWith({ node: region, pattern: /^p[xy]-/ }) as HTMLElement;
     expect(host.className).toContain(PANE_RHYTHM.body);
+
+    const headerBand = closestWith({
+      node: screen.getByRole('heading', { name: 'Resolve' }),
+      pattern: /^\[scrollbar-gutter:stable\]$/,
+    });
+    expect(headerBand).not.toBeNull();
+    expect(viewport.className).toContain('[scrollbar-gutter:stable]');
   });
 
   it('keeps one scroller for the whole pane by default', () => {

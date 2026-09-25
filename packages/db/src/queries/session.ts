@@ -21,6 +21,7 @@ import type {
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { SESSION_WORKFLOW_COLS, toWorkflowRun, type SessionWorkflowRow } from './session-workflow';
+import { serializeProviderPool } from './provider-pool-column';
 import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type SessionRow = {
@@ -222,7 +223,7 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
   );
   for (const run of session.workflowRuns) {
     await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, title, title_user_edited, provider_pool, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         run.id,
         session.id,
@@ -231,6 +232,9 @@ export const insertSession = async (db: Database, session: Session): Promise<voi
         run.currentStep,
         run.autoRun ? 1 : 0,
         run.goal ?? null,
+        run.title ?? null,
+        run.titleUserEdited === true ? 1 : 0,
+        serializeProviderPool({ pool: run.providerPool }),
         run.discardedAt != null ? Date.parse(run.discardedAt) : null,
         run.executionMode,
         run.orchestrationOutcome ?? null,

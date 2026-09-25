@@ -28,7 +28,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 - **Agent turns never go through a shell.** `turn.rs` builds argv with `build_provider_cli_args` and calls the binary directly. The side calls (`summarize.rs`, `planner.rs`) do the same. So a shell never splits anything a model writes into words. Where a shell does run, its body is the user's own text or a table constant:
   - `scripts.rs`: `bash -c` on a workspace script the user wrote.
   - `terminal.rs`: the user's login shell.
-  - `provider_lifecycle.rs`: install and login.
+  - `provider_lifecycle.rs`: install, update and login.
   - `skills.rs`: a skill script file, with its path guarded under `<project-root>/.kay/skills`.
 - **Which processes replay the login environment** is owned by [docs/architecture.md](../../docs/architecture.md) → Subprocess environment. A script body the user wrote gets it. Everything else gets only PATH. Where it is replayed it is broad: the resolved env is the user's own shell, not a sandbox.
 - Every provider process start removes the env vars of a nested session (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`, `CLAUDE_AGENT_SDK_VERSION`), through `aux_spawn::scrub_nested_session_env`. If they stay, the CLI refuses to run or falls back to broken auth.

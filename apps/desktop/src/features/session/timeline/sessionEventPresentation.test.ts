@@ -80,6 +80,14 @@ describe('sessionEventTitle', () => {
     );
   });
 
+  it('names the run the user closed', () => {
+    const payload = { workflowName: 'Add rate limiting' };
+    expect(sessionEventTitle({ event: event({ kind: 'workflow_closed', payload }) })).toBe(
+      'Closed Add rate limiting by you',
+    );
+    expect(sessionEventEmphasis({ kind: 'workflow_closed' })).toBe('muted');
+  });
+
   it('counts decisions on both sides', () => {
     expect(
       sessionEventTitle({
@@ -104,7 +112,7 @@ describe('sessionEventTitle', () => {
           payload: { projectName: 'api', branch: 'goodboy/untitled', reason: 'added manually' },
         }),
       }),
-    ).toBe('Mounted api on goodboy/untitled');
+    ).toBe('Added api on goodboy/untitled');
   });
 
   it('falls back to the old mount copy without a project name, rationale left out', () => {
@@ -115,7 +123,7 @@ describe('sessionEventTitle', () => {
           payload: { branch: 'goodboy/untitled', reason: 'added manually by the user' },
         }),
       }),
-    ).toBe('Project mounted on goodboy/untitled');
+    ).toBe('Project added on goodboy/untitled');
   });
 
   it('names the detached project and whether the worktree survived', () => {
@@ -147,7 +155,7 @@ describe('sessionEventTitle', () => {
     });
 
     expect(sessionEventSecondary({ event: mounted })).toBeNull();
-    expect(sessionEventTitle({ event: mounted })).toBe('Mounted api on goodboy/untitled');
+    expect(sessionEventTitle({ event: mounted })).toBe('Added api on goodboy/untitled');
   });
 
   it('keeps the refusal reason, which is the whole point of that payload', () => {
@@ -158,7 +166,7 @@ describe('sessionEventTitle', () => {
           payload: { projectName: 'api', reason: 'branch already checked out' },
         }),
       }),
-    ).toBe('Mount refused for api: branch already checked out');
+    ).toBe("Couldn't add api: branch already checked out");
   });
 
   it('stays readable when the payload is missing', () => {
@@ -178,7 +186,7 @@ describe('sessionEventLabel', () => {
         }),
       }),
     ).toEqual([
-      { kind: 'text', text: 'Mounted ' },
+      { kind: 'text', text: 'Added ' },
       { kind: 'value', text: 'api', variant: 'project' },
       { kind: 'text', text: ' on ' },
       { kind: 'value', text: 'goodboy/untitled', variant: 'branch' },
@@ -316,7 +324,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['storefront-web', 'infra'],
         }),
       }),
-    ).toBe('Mounted api, detached storefront-web and infra');
+    ).toBe('Added api, detached storefront-web and infra');
   });
 
   it('keeps each list readable when both verbs name more than one project', () => {
@@ -327,13 +335,13 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['infra'],
         }),
       }),
-    ).toBe('Mounted api and storefront-web, detached infra');
+    ).toBe('Added api and storefront-web, detached infra');
   });
 
   it('keeps every project name a chip, never prose', () => {
     expect(sessionEventProjectRunLabel({ mounted: ['api'], detached: ['storefront-web'] })).toEqual(
       [
-        { kind: 'text', text: 'Mounted ' },
+        { kind: 'text', text: 'Added ' },
         { kind: 'value', text: 'api', variant: 'project' },
         { kind: 'text', text: ', detached ' },
         { kind: 'value', text: 'storefront-web', variant: 'project' },
@@ -371,7 +379,7 @@ describe('sessionEventProjectRunLabel', () => {
           detached: ['docs', 'cli', 'agents', 'ui', 'core'],
         }),
       }),
-    ).toBe('Mounted api, storefront-web, infra and 2 more, detached docs, cli, agents and 2 more');
+    ).toBe('Added api, storefront-web, infra and 2 more, detached docs, cli, agents and 2 more');
   });
 
   it('names every project when the caller lifts the limit, as a tooltip does', () => {

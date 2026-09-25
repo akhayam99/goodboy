@@ -59,9 +59,9 @@ const runOptions = ({
   readonly attached: ReturnType<typeof useAttachedWorkflowRuns>;
 }): ReadonlyArray<ArtifactRunOption> => {
   const live = attached.filter(({ run }) => run.discardedAt == null);
-  const names = live.map(({ workflow }) => workflowKindName(workflow));
+  const names = live.map(({ run, workflow }) => run.title ?? workflowKindName(workflow));
   return live.map(({ run, workflow }) => {
-    const name = workflowKindName(workflow);
+    const name = run.title ?? workflowKindName(workflow);
     const isAmbiguous = names.filter((entry) => entry === name).length > 1;
     return {
       workflowRunId: run.id,

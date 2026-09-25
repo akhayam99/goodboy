@@ -112,9 +112,10 @@ grid, so no column resize, hide animation or overlay can move it.
 mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
-lives in the session overview and always has the Mount project action, even
+lives in the session overview and always has the Add project action, even
 before the first mount. Mounted projects show as dense rows. The empty section
-is one quiet action row with a short explanation. Sessions are created lazily
+is its header with a one-line hint: turns run in the session folder until you
+add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
 is where a session's footprint grows. The session header has no second mount
 control.
@@ -190,12 +191,25 @@ surface itself shows urgency, never a badge parked beside it.
 
 Workspace identity stays on the left. The Goodboy brand is centred on the
 window. Workspace-wide signals and set-once preferences stay on the right.
-The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`.
-When the signals fit their share, the brand sits at the window midpoint. When
-they do not, the brand slides off the midpoint instead of being covered. The
-identity has a size limit and truncates, with the full name in its tooltip.
-The wordmark drops below `brand-word` and the mascot below `brand-mark`. No
-control ever moves into an overflow menu.
+The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
+and each zone is pinned to its own track (`col-start-1/2/3`), so an item that
+drops never lets another zone slide into its column. When the signals fit their
+share, the brand sits at the window midpoint. When they do not, the brand
+slides off the midpoint instead of being covered. The identity has a size limit
+and truncates, with the full name in its tooltip. No control ever moves into an
+overflow menu.
+
+The bar is an `@container/topbar` and degrades on its own width, never the
+viewport, so app zoom takes the same path as a narrow window:
+
+1. Below `chrome-word` the wordmark drops. The mascot glyph never drops.
+2. Below `chrome-labels` the signal words (`need you`, `running`, `today`)
+   drop. Counts, dots and the spend figure stay, and their tooltips carry the
+   words.
+
+Identity, mascot, spend, report, notifications, theme and the setup chip never
+hide. `chrome-labels` sits below the 1024px minimum window, so words only drop
+under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
@@ -232,6 +246,12 @@ Centre: the beta pill and, while an update is pending, the update pip.
 
 Right: the launchers reached by name and a `More` popover for the rest.
 
+The footer is an `@container/footer` on the same `chrome-labels` step as the
+top bar. Below it, every launcher label and the **Link integration** label
+drop together and the glyphs stay, with the name in the tooltip. The first
+link action keeps its label, since it is the only thing on the left. The beta
+pill and the update pip never hide. Past that the glyph strip scrolls.
+
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one
   notice names the installed version and opens its notes. It works offline. A
@@ -254,7 +274,20 @@ outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
-elsewhere, where Ctrl+T belongs to the shell. **A shortcut is taught where it
+elsewhere, where Ctrl+T belongs to the shell. The plane is for the dispatcher.
+Every entry also names the task `group` it belongs to (General, Workspaces,
+Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
+groups in that order, read top to bottom per column. Entries that share a
+`family` (only the nine workspace digits today) render as one row, "Go to
+workspace 1 to 9" with ⌘1-9, while the registry keeps one entry per chord. A
+family is only for chords that do the same thing to a different index: the
+integration digits (⌘⌥1 to ⌘⌥6) open different lenses and keep a row each.
+A few entries are keys a focused control answers, not global chords: Submit
+comment (⌘↵) and Open the workflow of an activity row (⇧↵, the only combo
+without ⌘). They sit in the registry so the list and the tooltips name them.
+The control that owns each one handles its own key event and never registers
+it with the dispatcher; the activity row matches through `eventMatches`.
+**A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the
 tooltip is the only place it shows. Off macOS, typing wins over the lens
@@ -278,18 +311,45 @@ one is open at a time.
   not count: workflow steps select agents on their own.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
-  popover (its header's Open all) and from the palette's Go to group, never
-  from the footer, since the bell already shows the unread count. The popover
-  never deletes history. That lives in the studio, behind its confirm. Report
-  an issue opens from the top bar, **Settings > App > Help** and the palette.
-  It sits next to settings, not beside the named launchers.
-- **Settings nests items in its rail.** While App is active, its items
-  (General, Shortcuts, Backup, Storage, Help, Danger zone) sit under the App
-  row as indented rows, and the panel shows one item at a time. Providers &
-  models nests Defaults and one row per provider the same way, and Tools nests
-  one row per tool. So no scope adds a second rail column. Every scope panel
-  keeps the reading width. Precedent: the VS Code settings table of contents
-  and Linear's settings sidebar.
+  popover (its footer's Open all notifications) and from the palette's Go to
+  group, never from the footer, since the bell already shows the unread count.
+  The popover never deletes history. That lives in the studio, behind its
+  confirm. Report an issue opens from the top bar, **Settings > App > Help**
+  and the palette. It sits next to settings, not beside the named launchers.
+- **Notifications have one row and one scope.** `NotificationRow` draws a
+  group in the popover (`compact`, one line, eight rows at most, Unread or
+  All) and in the studio (`cozy`, opens in place with the body, the older
+  members and Send to developers). Both lead with a fixed unread slot that holds
+  a primary dot on unread rows and stays empty on read ones, so every title
+  keeps one left edge; unread titles are also bold and read rows recede. In the
+  studio the time owns a fixed last column and Mark read and Dismiss swap in
+  over it on hover, so the row never changes width. The studio rail filters by
+  view, severity and source with counts that come from SQL
+  (`countNotifications`), so they stay true past the loaded page; Load older
+  pages with a cursor. Both surfaces default to this workspace: a row belongs to
+  its own workspace, or its session's, and a row with neither is app-wide and
+  shows in every workspace. Mark all read and Delete all act on that same scope.
+  In the studio, j and k move, Enter runs the row's action and e dismisses.
+- **Settings nests items in its rail.** The App items (General, Shortcuts,
+  Backup, Storage, Help, Danger zone) always sit under the App row as indented
+  rows, whichever scope is active, so switching scope never moves a row above
+  the pointer. The panel shows one item at a time. Providers & models nests
+  Defaults and one row per provider, and Tools nests one row per tool. Those
+  two lists open and close with `Reveal`, and the rail stays one mounted
+  element across scopes: `SettingsStudio` portals each scope's nested list and
+  detail into slots it owns, and keeps a closing scope mounted until its list
+  has collapsed. Every settings panel enters with `nav-step-in`
+  (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
+  panel keeps the reading width. Precedent: the VS Code settings table of
+  contents and Linear's settings sidebar.
+- **Settings rail tone is state, never decoration.** Each row carries its
+  concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
+  doing: warning on Providers & models when a connected CLI is too old for a
+  model it serves or no provider is connected (`selectProviderAttention`, with
+  the reason as the row subtitle), info on General while an app update is
+  ready. Danger zone reads in `text-danger`. Panel sections sit on
+  `SectionSurface` cards with gap between them and no `Divider`; a danger zone
+  is an inline danger `Notice`.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.

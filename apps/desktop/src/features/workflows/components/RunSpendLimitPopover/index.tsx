@@ -13,7 +13,7 @@ import {
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { useRunSpendUsd } from '../../../../store/selectors';
-import { OrchestratorAction } from '../OrchestratorPanel/OrchestratorAction';
+import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
 import { SpendLimitFields, parseSpendLimit } from './SpendLimitFields';
 
 type Props = {

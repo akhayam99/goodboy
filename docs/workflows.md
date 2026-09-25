@@ -25,15 +25,72 @@ that agent is done, it hands a summary to the next one.
 
 ## Picking or building one
 
-Open the workflow builder in a session and choose one of three modes.
+Open the workflow builder in a session. The builder is a preview of the run:
+the plan draws with the same tree, nodes and meta as the workflow detail, so
+what you see before the start is what you see after it. From the top:
 
-1. **Preset**: pick a ready workflow. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust.
-2. **Custom**: write the steps yourself, or describe what you want and Goodboy drafts the steps for you to edit.
-3. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes.
+- **Name**: a large inline field that wraps a long name instead of cutting
+  it, and never takes a line break. It stays empty and shows a name as its
+  placeholder. Once you leave the goal, Goodboy asks the naming model for a
+  title from the goal and shows it there; **Tab** keeps it. The suggestion is
+  never typed into the field for you. An empty field starts with the
+  suggestion, or else the planner title, the preset name, "Custom workflow" or
+  "Orchestrated workflow", so the name never blocks the start. If you rename a
+  preset, you get a new workflow of your own and the shared preset keeps its
+  name.
+- **Goal**: what the run should do. **Add files**, **Use session goal**,
+  **Undo** and **Polish** sit inside the field.
+- **Mode**, with one line under it that says what the mode does, and the
+  mode's own control on the right of the same row.
+- **Plan**: the steps as a tree that grows upward, step 1 at the bottom.
+- **Launch bar**: when it starts, **Autorun**, the spend cap or **Save as
+  preset**, and **Start workflow**. The reason Start is off shows under it.
 
-Every workflow has a name in the **Workflow name** field. It shows a default
-name until you type your own. If you rename a preset inside the builder, you
-get a new workflow of your own, and the shared preset keeps its name.
+The three modes:
+
+1. **Orchestrated**: give a goal and let the orchestrator choose each step as the work goes. The plan shows the orchestrator with its model at the bottom, and three example steps above it that grow in once when the tab opens. They are marked as an example and carry no model, because the real steps are picked one at a time. **Add guidance for the orchestrator** under it opens **Guidance (optional)**: what the orchestrator should respect or avoid, and when to stop. An emptied field folds back. **Can use**, next to the tabs, sets the providers this run may put agents on. It starts on every connected provider and keeps at least one. The goal alone is enough to start.
+2. **Custom**: write the steps yourself, or open **Draft with planner**, describe what you want and Goodboy drafts the steps for you to edit.
+3. **Preset**: pick a ready workflow from the **Preset** picker. Goodboy comes with **Refactor (example)**, a scout, plan, implement and test sequence you can copy and adjust. A preset is a source: editing a step marks it, the name shows "Edited from" the preset, and switching to **Custom** keeps the steps.
+
+Click a step to edit it in place: title, role, instruction, expected output,
+and provider, model, variant and effort on the right. Its footer moves,
+duplicates or removes the step. Remove asks first. Escape or **Done** closes
+it. The grip on the row drags a step, and the arrow keys on the grip move it:
+up runs it later, down runs it earlier.
+
+Once the workspace has measured 10 finished steps, every step row shows how
+long steps like it usually take and what they usually cost, as a range
+("12-20m", "$0.90-1.60"), and the name row carries the plan's total
+("≈ 35-55m · $2.10-3.40"). A range with `~` leans on a broader history than
+this exact model and effort, a dash means there is not enough history for that
+step, and the tooltip always names the basis. When no step in the plan has an
+estimate yet, the rows show no time or cost columns at all. With **Autorun** off the total
+adds "+ your reviews", because your time between steps is not estimated. An
+orchestrated run shows a total only once the workspace has 5 finished
+orchestrated runs. The open editor repeats the step's estimate in its footer.
+Steps drafted with the planner carry the planner's size (small, medium or
+large), and the range narrows to the faster or slower half of past runs; the
+tooltip and the editor footer say so. The planner never gives minutes, and the
+agents never see the size.
+Every estimate is machine time only ([turns.md](turns.md#measured-time-and-estimates)).
+
+The page draws the plan bottom up, but the page order stays the run order:
+a screen reader and Tab read step 1 first. So keyboard focus moves upward on
+the screen. That is a known cost of matching the run's tree.
+
+The builder opens on the mode of the last workflow you started in that
+workspace, and on **Orchestrated** the first time. Only starting a workflow
+changes it, so looking at another tab does not. A remembered **Preset** falls
+back to **Orchestrated** once the workspace has no presets left.
+
+Each run also gets a title of its own, at most six words, written from the run
+goal by the `agent_naming` task model when the run starts. The activity feed,
+the workflow detail, the breadcrumb and the **Starts** picker show that title, so
+two runs of the same preset read apart. Until the title arrives, or when the
+run has no goal, they show the workflow name. An orchestrated run keeps the
+name generated for its workflow and gets no second title. You rename a run
+only from the header of its workflow detail. That name stays with the run, a
+later generated title never replaces it, and the preset keeps its own name.
 
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
@@ -42,9 +99,14 @@ another workspace.
 
 ### When a run starts
 
-- **Immediately** when you add it. This is the default
+The **Starts** chip in the launch bar picks one:
+
+- **Now**, as soon as you start it. This is the default
 - **Manually**, when you press start
-- **After another run** finishes, and then it carries on by itself
+- **After** another run that is still going, and then it carries on by itself
+
+**Autorun** is off by default: the run pauses after each step so you can
+review it. Turn it on and each next step starts on its own.
 
 ## What a step carries
 
@@ -65,8 +127,8 @@ scout step can split into several agents.
 
 The orchestrator is an agent that plans the run for you. In an
 **Orchestrated** run there is no fixed list of steps. After each step
-finishes, the orchestrator reads the goal, your process notes and what the
-steps so far produced. Then it decides one thing: the next step, done, or
+finishes, the orchestrator reads the goal, your guidance when you gave any,
+and what the steps so far produced. Then it decides one thing: the next step, done, or
 blocked.
 
 - It never does the work itself. It has no tools and cannot open your repository
@@ -75,7 +137,36 @@ blocked.
 - It keeps a running recap of what is done and what is left
 - It ends the run when the goal is met, or stops and asks you when a decision needs you
 
-You choose the model the orchestrator runs on in the launch form.
+You choose the model the orchestrator runs on in the launch form, and the
+providers it may pick from with **Can use**.
+
+### The orchestrator strip
+
+In the workflow detail, an orchestrated run shows the orchestrator as one row
+(`OrchestratorStrip`): what it is doing ("Choosing the next step", "Waiting on
+step 3 · Implement"), how long the running step has taken, the model it runs
+on, the **Autorun** switch and a menu. The row says its state with the colour
+of its left rail, never with a filled background. It shows at most one action:
+**Decide next step** only while autorun is off, **Resume the run** after you
+stopped it, **Retry** after a failed decision, **Continue the run** once it is
+complete, or the spend limit on a budget pause. A failed step and an open
+question are left to the Next action strip, so the row only says the run is
+paused, on a neutral rail: the strip above carries the tone. When the pane is
+too narrow for the sentence and the controls on one line, the controls wrap to
+a second line on the right instead of cutting the sentence. **Stop now** and **Model per step** (the model each step runs on, and
+why) sit in the menu. The hint field sits under the row, always open.
+
+### Why each step
+
+Under the goal, **Why each step** gives the orchestrator's reason for each step
+it chose, newest first (`WorkflowDecisions`). Each line opens with the same
+node the run tree draws for that step, with the same number or check. Hovering
+a line lights its row in the tree, and hovering or selecting a step row lights
+its line. When the run has ended, its closing reason sits on top. The five
+newest lines show, and the rest sit behind a count. The tree rows carry no
+reasons of their own. An agent's Brief repeats its own step's reason under
+**Why this step**, below any open question it asks. Sub-agents show none,
+because the reason belongs to the step.
 
 ### Hints
 
@@ -85,14 +176,16 @@ with the step where the orchestrator first read it.
 
 - **Queue** waits until the next decision
 - **Read now** restarts a decision that is in progress. If a step is running, it stops that step, keeps what it wrote, and decides again
-- You can remove a queued hint before it is read
+- The field stays open while the orchestrator decides, and it empties as soon as you send. If the hint can't be saved, your text comes back
+- Each hint says where it stands: **Waits for the next decision**, **Reading now** while a decision has it, or **Read at step N**. Read hints sit behind a count
+- You can remove a hint, except while a decision is reading it
 
 Asking for a certain provider or model on a step is a hint too.
 
 ### Spend limit
 
 Each run can have a spending limit in dollars. You set it on the run, in the
-orchestrator panel or in the creation form. You also choose what happens when
+orchestrator strip or in the creation form. You also choose what happens when
 the run reaches it: Goodboy notifies you, or pauses the run. The limit starts
 at unlimited. The orchestrator decides how many steps to plan based on the goal.
 
@@ -109,14 +202,116 @@ A run waits when:
 - The summarizer is still writing the handoff
 - An agent is still running
 
-When a run waits for more than one reason, Goodboy shows the one you need to
-deal with first. An open question comes before a failed step.
+When a run waits for more than one reason, its row in the activity feed says
+one thing only. A failed step comes first, then an open question, then a step
+waiting for your click, then the spend limit. A summarizer writing the handoff
+and an agent still running are Goodboy at work, so the row shows them as
+running, never as waiting on you. The rule lives in `resolveRunRowState`.
+
+The workflow detail draws the run as a run tree (`RunTree`), the same stream
+the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
+the same way: the first step sits at the bottom, queued steps sit above the
+running one, and NOW closes the tree at the top. The run lane starts on the
+first step, so the tree has no session spine and no time column. Sub-agents
+sit one column right, on the run's colour. The view scrolls to the row that is
+running or waiting on you when it opens. The run header and the Next action
+strip stay pinned while the tree scrolls. A long run name wraps to a second
+line in the header before it truncates, and so does a long agent name in the
+agent header.
+
+The run tree shows which agent is waiting on you. The agent that asked, even a
+sub-agent under a step, gets the question mark on its node and an **Answer**
+action on its row, which opens the questions view on that question. An agent
+that answers a question for a step never shows it, in the tree or in the
+activity feed, because the question belongs to that step. Every row ends with
+the same meta as the activity feed: the model, the effort and what the row has
+spent, with a dotted model name when routing picked another one than the plan.
+The Answer column exists only while a row in the tree has an Answer, so a tree
+with nothing to answer gives that width to the titles. In a narrow pane the
+kind chip narrows and the effort column hides, so the title keeps its room.
+Clicking a row opens that agent.
+
+An agent's Brief draws its sub-agents with the same tree, under **Subagents**
+(`SubagentTree`, from `buildAgentTreeStream`). The agent sits at the bottom
+with its ordinal in the run, for example `3`, and its sub-agents stack above it
+one column right, `3.1`, `3.2`, `3.3`, each with its own model, effort and
+spend. Sub-agents of an agent outside a workflow are numbered from `1`. The
+header counts them in words ("2 of 3 done"). An implementer split into parts
+shows no Outcome, because the tree already says what each part did. A planner
+shows no sub-agents, and delegates and follow-ups keep their own sections.
+
+In the activity feed, every agent and step row ends with the same meta: the
+provider glyph, the model, the effort and what the row has spent. Before a
+step starts, the meta shows the routing it is planned to run on, in faint.
+Once it runs, the meta shows what actually ran, and a dotted model name means
+routing picked something other than the plan (the tooltip names both). The
+effort works the same way: once a run has started, the column shows the effort
+the CLI was started with, in the row tone, and a dotted effort means it left
+the plan ("Planned High, ran Medium" in the tooltip). A run with no recorded
+effort, like one from before turn spans existed or a CLI with no effort flag,
+keeps the planned effort in faint and never shows a made-up value. The agent
+header reads the same way. The
+run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
+orchestrated run, which has no total) and what the whole run has spent.
+
+The time column is measured machine time, never the wall clock between start
+and end. A finished row shows its active time ("8m 12s"). A running row with
+enough history reads "5m of ~9m" and its node fills an arc toward the usual
+time; past it the arc stays full and the row reads "11m, usually ~9m". While
+the row waits on you the arc freezes in amber and the time still reads "5m of
+~9m": the pause is said once, by the row state and the node, never again in
+the time column. A failed row drops the arc and reads "4m", next to its
+"Failed" state. Without
+enough history a running row shows only its active time and the node keeps
+the moving border. A queued step shows its usual range. The run row adds up
+finished steps and the usual time of the steps left, and shows a total only
+when every step left has an estimate; an orchestrated run shows only its
+active time. The workflow detail and a Brief's Subagents use the same column.
+How the numbers are measured is in [turns.md](turns.md#measured-time-and-estimates).
+
+### Next action
+
+When a run needs you, one **Next action** strip says what to do. It sits in
+the fixed header of the workflow detail and of the agent detail, above the
+tabs, so Brief and Transcript show the same strip and the transcript does not
+repeat it at the bottom. Orchestrated runs get the same strip, and the
+orchestrator strip carries no answer or skip button of its own.
+
+- A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
+- An open question: "Implement asks: ..." with the step that waits on it, or "This step waits on your answer." when the agent that asked is that step, and **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
+- The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
+
+In the agent detail, the strip shows only on the agent the failed step is
+waiting on, or on one of its sub-agents. `resolveNextAction` picks the strip
+from the advance state. It reads `resolveWorkflowAdvance` and never decides
+on its own whether the run can move.
 
 ### Skipping a failed step
 
 Getting past a blocked run always takes more than one click. A failed step
 takes two. First you confirm the skip, then the next agent starts. The failed
 step is marked **skipped**, not left as failed.
+
+### Closing a workflow
+
+**Close workflow** ends a run that nobody else will end: an orchestrated run
+between decisions, a run stuck on a failed step, a run you have seen enough
+of. It sits in the header of the workflow detail and in the menu of the run
+row in the activity feed. Goodboy asks you to confirm first. Steps that have
+not run are marked skipped, the step in flight stops and is marked skipped,
+and a failed step stays failed, because it did fail. Everything already written
+is kept.
+
+A closed run reads **Closed by you**, never complete: its node is the neutral
+check, its lane ends on its newest node with no dash to NOW, and it offers no
+Next action and no autorun. A run chained to start after it switches to a
+manual start, so closing never starts other work. The closure lands in the
+activity feed as its own row ("Closed Add rate limiting by you"). Adding a step
+opens the run again.
+
+Close is offered once the run has started and until it ends. A queued run has
+nothing to close; discard it instead. **Discard** and **Delete** sit in the
+run menu next to it.
 
 ### Hands-free runs
 
@@ -153,6 +348,9 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/store/slices/workflows/preSpawnWorkflowAgents.ts`: creates the run's agents when a workflow is added
 - `apps/desktop/src/store/slices/workflows/notifyWorkflowGateBlock.ts`: sends the blocked notification
 - `apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts`: asks the orchestrator for one decision
+- `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
+- `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. `parts/PlanTree/` draws the plan with `WorkNode` and `WorkMeta`, and the step editor mounts `RoutingPicker` with `presentation="inline"`
+- `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`
@@ -212,8 +410,10 @@ A blocked result always carries the failed step, whichever reason came first.
 So screens that name the failed step keep naming it while a short-lived block
 is showing.
 
-Every screen reads this one resolver through one view that handles every case
-of the union. No screen narrows the union on its own. The one exception on
+Every screen reads this one resolver through a view that handles every case
+of the union: `viewWorkflowAdvance` for the step rows and the advance button,
+`resolveNextAction` for the Next action strip. No screen narrows the union on
+its own. The one exception on
 purpose is the chat button, because it shows nothing under `automatic`.
 
 ### Autorun logic
@@ -233,6 +433,17 @@ agent with a parent is still neither `completed` nor `skipped`. This is checked
 first, so a dynamic run marked `done` still waits for a running child. After
 that, a dynamic run finishes on its `done` outcome. A static run needs its
 template, at least one step, and every step agent settled.
+
+"Settled" has one definition in `@goodboy/core`, with two readings.
+`isAgentStatusSettled` is the status alone: `completed` or `skipped`. Every
+check that advances, chains or finishes a run uses it, so closing an agent by
+hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
+closed. Only what the screen draws uses it: the lane of an agent's children in
+the activity rail and in the run tree of the workflow detail.
+
+A step has no Close. Closing an agent is for agents outside a workflow (see
+[concepts.md](concepts.md#agents)). A stuck step is unblocked with Skip step,
+which says what the run does next.
 
 A hands-free run (`auto_run`, set on the run or taken from the session) waits
 for a busy summarizer. It checks every 100ms for up to 60 seconds, then moves
@@ -270,6 +481,10 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`. **Stop now** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.
+  **Close workflow** (`closeWorkflowRun`) saves `closed` next to the `done`
+  outcome, on static runs too, so `isWorkflowRunClosedByUser` is the one test
+  for a closed run and `isWorkflowRunComplete` reads it as ended. A decision
+  in flight is thrown away when it returns, as after an operator stop.
   Nothing decides again until you continue. Continuing or retrying clears the
   outcome and the stop, and a retry after an operator stop turns autorun back
   on.
@@ -278,6 +493,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   orchestrator task model. A saved model the catalog dropped is ignored, never
   started. Steps take their role models from the resolved settings. A run has
   no per-role model overrides of its own.
+- **Its provider pool.** `provider_pool` on `session_workflows` (m170) holds
+  the providers picked in **Can use**, as a JSON list. Empty means every
+  connected provider. `workflowAvailabilitySnapshot` drops the providers
+  outside the pool, so the model menu, the routing of each decision, the
+  children a step fans out (`childRoutingBatch` with the run id) and the child
+  menu in the agent prompt all see the same narrowed set. A pick outside the
+  pool is moved the same way as a pick on a provider in cooldown. The
+  orchestrator's own model is not bound by the pool.
 - **Hints.** Hints are saved in the run's hint log (`orchestrator_hint_log` on
   `session_workflows`) and survive a restart. **Read now** on a live
   orchestrated run marks a decision in flight for restart: its answer is
@@ -285,10 +508,14 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   reads the hint. Running steps are cancelled and marked skipped before a new
   decision is asked for. When a decision lands, the hints it read are marked
   used, with the step they informed. A hint added while it was deciding stays
-  pending for the next one.
+  pending for the next one. `orchestratorReadingHints` holds, per run, the
+  unread hints a decision in flight took in, plus a hint sent with **Read now**
+  until the decision it asked for starts. A decision that ends with no restart
+  queued behind it clears the entry, so a hint nothing picked up goes back to
+  queued.
 
-The restart marks, the set of runs that are deciding and the queued requests
-live in memory, keyed by run and removed with it. Everything a restart needs
+The restart marks, the hints being read, the set of runs that are deciding and
+the queued requests live in memory, keyed by run and removed with it. Everything a restart needs
 (outcome, stop, summary, hints) is on the run's row.
 
 Expected output belongs to a workflow's own steps. Step library entries do not

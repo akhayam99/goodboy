@@ -43,13 +43,13 @@ import { AppFooter } from './index';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
 const SETTINGS_LABEL = `Open settings (${shortcutGlyphs('settings.open')})`;
-const REST_MORE_LABEL = 'More studios: impact and changelog';
+const REST_MORE_LABEL = 'More pages: impact and changelog';
 
 const footerRow = () => screen.getByTestId('beta-badge-trigger').closest('.grid');
 
 const openMore = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^More studios/ }));
-  return screen.getByRole('dialog', { name: 'More studios' });
+  fireEvent.click(screen.getByRole('button', { name: /^More pages/ }));
+  return screen.getByRole('dialog', { name: 'More pages' });
 };
 
 type FooterProps = ComponentProps<typeof AppFooter>;
@@ -175,7 +175,7 @@ describe('AppFooter', () => {
         })}
       />,
     );
-    expect(screen.getByRole('button', { name: /^More studios/ }).className).toContain(
+    expect(screen.getByRole('button', { name: /^More pages/ }).className).toContain(
       'bg-muted text-foreground',
     );
   });
@@ -186,7 +186,7 @@ describe('AppFooter', () => {
     openMore();
     fireEvent.keyDown(window, { key: 'Escape' });
 
-    expect(screen.queryByRole('dialog', { name: 'More studios' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'More pages' })).toBeNull();
   });
 
   it('never dots the more control, release notes announce themselves elsewhere', () => {
@@ -469,5 +469,20 @@ describe('AppFooter', () => {
     ).toBe(7);
     fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
+  });
+
+  it('drops words before glyphs at narrow widths and keeps the first link label', () => {
+    const { container, unmount } = render(
+      <AppFooter {...footerProps({ overrides: { connected: ALL_CONNECTED } })} />,
+    );
+
+    expect(container.querySelector('.\\@container\\/footer')).not.toBeNull();
+    ['Inbox', 'Workflows', 'Providers', 'Settings', 'More', 'Link integration'].forEach((word) => {
+      expect(screen.getByText(word).className).toContain('@min-chrome-labels/footer:inline');
+    });
+    unmount();
+
+    render(<AppFooter {...footerProps()} />);
+    expect(screen.getByText('Link integration').className).not.toContain('hidden');
   });
 });

@@ -46,7 +46,7 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   {
     id: 'plan',
     title: 'Make your first plan',
-    why: 'Spawn a planner, it emits a structured plan you can hand off to an implementer.',
+    why: 'Start a planner. It writes a structured plan an implementer can pick up.',
     group: 'build',
   },
   {

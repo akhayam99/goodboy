@@ -122,9 +122,11 @@ export const SESSION_EVICTION = [
   { key: 'workflowRunAttachments', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'orchestratingWorkflowRuns', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'decisionRestartMarks', keyedBy: 'workflowRun', evictOn: 'delete' },
+  { key: 'orchestratorReadingHints', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedWorkflowBlocks', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
+  { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -152,6 +154,7 @@ export const NON_SESSION_STATE_KEYS = [
   'providers',
   'providerLifecycle',
   'providerConnect',
+  'cliRequirements',
   'providerCredentials',
   'providerCooldowns',
   'hydrated',
@@ -184,6 +187,8 @@ export const NON_SESSION_STATE_KEYS = [
   'notifications',
   'notificationsLoading',
   'notificationCounts',
+  'notificationScope',
+  'hasOlderNotifications',
   'planConsumptions',
   'openQuestionScrollTarget',
   'boardReady',
@@ -208,6 +213,8 @@ export const NON_SESSION_STATE_KEYS = [
   'slackThreads',
   'retainedWorktreePaths',
   'prWriteClaims',
+  'issueBriefs',
+  'workspaceDurationHistory',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

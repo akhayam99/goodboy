@@ -105,6 +105,8 @@ export {
   updateWorkflowRunOrchestratorRouting,
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
+  updateGeneratedWorkflowRunTitle,
+  updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
@@ -149,6 +151,13 @@ export {
   summarizeWorkspaceProviderTelemetry,
   type ProviderTelemetrySummary,
 } from './queries/telemetry';
+export {
+  hasOtherSessionTurnSince,
+  insertAgentTurnSpan,
+  listAgentTurnSpanRoutes,
+  listSessionTurnSpans,
+  listWorkspaceTurnSpans,
+} from './queries/agent-turn-span';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,
@@ -260,7 +269,8 @@ export {
   clearAllNotifications,
   NOTIFICATION_LIST_LIMIT,
   type Notification,
-  type NotificationCounts,
+  type NotificationCountBucket,
+  type NotificationCursor,
   type NotificationAction,
   type NotificationKind,
   type NotificationSeverity,

@@ -13,7 +13,20 @@ const FEED = join(
   'parts',
   'TimelinePane',
 );
-const MARKER = join(FEED, 'TimelineMarker.tsx');
+const NODE_CENTER = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  '..',
+  'packages',
+  'ui',
+  'src',
+  'components',
+  'WorkTree',
+  'WorkNodeCenter.tsx',
+);
 
 const ANIMATION = /animate-|spin-border|attention-ring/;
 
@@ -32,10 +45,10 @@ const listSourceFiles = (dir: string, acc: string[] = []): string[] => {
 };
 
 describe('activity feed motion', () => {
-  it('animates the running marker and nothing else on the rail', () => {
+  it('leaves every animation on the rail to the running WorkNode', () => {
     const offenders: string[] = [];
     for (const file of listSourceFiles(FEED)) {
-      if (file === MARKER || file.endsWith('.test.tsx') || file.endsWith('.test.ts')) {
+      if (file.endsWith('.test.tsx') || file.endsWith('.test.ts')) {
         continue;
       }
       readFileSync(file, 'utf8')
@@ -48,12 +61,12 @@ describe('activity feed motion', () => {
     }
     expect(
       offenders,
-      `Running is the only animated state in the feed, and it lives in TimelineMarker.tsx:\n${offenders.join('\n')}`,
+      `Running is the only animated state in the feed, and it lives in WorkNode:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 
   it('gates the running dot on motion-safe so reduced motion keeps the dot and drops the pulse', () => {
-    const source = readFileSync(MARKER, 'utf8');
+    const source = readFileSync(NODE_CENTER, 'utf8');
     const pulses = source.split('\n').filter((line) => line.includes('animate-soft-pulse'));
 
     expect(pulses).toHaveLength(1);

@@ -98,7 +98,7 @@ export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Pro
           size="control"
           className={cn(CHIP_CLASS, 'hover:bg-hover hover:text-foreground')}
           label={
-            <Tooltip content="Switch the branch of this mount">
+            <Tooltip content="Switch the branch of this worktree">
               <button
                 type="button"
                 aria-label={`Switch branch ${branch}`}

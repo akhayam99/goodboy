@@ -149,8 +149,8 @@ uses its providers.
   appear here
 - **Routing pool**: the providers Goodboy can move work between by itself
 - **Task models**: the provider and model for each small side job. Side jobs include
-  summaries, planning, prose polish, agent titles, the workflow orchestrator,
-  delegated answers, pull request drafts and rebases. Each one starts on **Auto**
+  summaries, planning, prose polish, agent titles, issue briefs, the workflow
+  orchestrator, delegated answers, pull request drafts and rebases. Each one starts on **Auto**
   on the default provider: the cheap model for most jobs, the mid model for the
   workflow orchestrator and delegated answers, and for rebases Sonnet 5 on Claude
   and the default turn model elsewhere
@@ -181,6 +181,13 @@ pays for every turn.
   another provider. Session summaries count against the same limit
 - **Wrong account**: follow [Switching accounts](#switching-accounts), then check
   the account on the card before you continue
+- **A model needs a newer CLI**: some models only run on a recent CLI. When yours is
+  too old, the composer and the model picker say so before you send, and the
+  provider shows **Update needed** in Settings. **Update Claude CLI** runs the
+  update in a terminal inside the card. A turn the CLI turned down keeps your
+  message: retry it once the update is done, or run it on the newest model your
+  CLI supports. Goodboy never guesses: a CLI whose version it can't read is never
+  flagged. Update waits while a turn on the same provider is running
 
 ## Under the hood
 
@@ -247,6 +254,33 @@ Install commands:
 - gemini: `curl -fsSL https://antigravity.google/cli/install.sh | bash`
 - opencode, openrouter, moonshot: `npm install -g opencode-ai`
 - gemini logout: `rm -rf ~/.gemini/antigravity-cli`
+
+Update commands (`update` in the table). A provider without one runs its install
+command again, which is how the cursor and gemini installers update:
+
+- anthropic: `claude update`
+- codex: `npm install -g @openai/codex@latest`
+- opencode, openrouter, moonshot: `npm install -g opencode-ai@latest`
+
+### CLI version gate
+
+- `minCliVersion` on a catalog model is the oldest CLI that runs it. Opus 5.5
+  needs Claude CLI 2.1.280 and Fable 5.1 needs 2.1.251
+- A `cli_too_old` refusal also teaches the gate. `learnCliRequirement` stores the
+  required version per provider and model in the `provider.cliRequirements`
+  setting, so the next time the gate warns before the send even for a model with
+  no catalog minimum
+- `cliGate` in `packages/core/src/providers/cliGate.ts` compares the requirement
+  with the version detection read. An unknown version is never gated
+- The transcript turns a refusal into a `cli_too_old` item, encoded like
+  `auth_required`. Its payload keeps the model, both versions and the raw error.
+  When the turn already fell back to a sibling model, the item names it and no
+  second fallback row is written
+- The update runs through `provider_lifecycle_run` with action `update`, in the
+  same PTY as install and login. On exit the lifecycle refreshes detection, and
+  `provider-cli-updated` logs the new version. `provider-cli-outdated` is logged
+  the first time a requirement is learned, with an action that opens the provider
+  and starts the update
 
 Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code/getting-started),
 [Cursor CLI](https://docs.cursor.com/en/cli/installation),
@@ -434,7 +468,8 @@ When a provider ships or retires a model, update three files under
 ### Source map
 
 - `packages/core/src/providers/provider-connect.ts`: connect tiers and `loginEnv`
-- `packages/core/src/providers/provider-commands.ts`: install, login and logout commands
+- `packages/core/src/providers/provider-commands.ts`: install, update, login and logout commands
+- `packages/core/src/providers/cliGate.ts`: which models the installed CLI can't run
 - `packages/core/src/providers/provider-catalog.ts`: `PROVIDER_KIND`, `OPENCODE_ROUTING`
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`

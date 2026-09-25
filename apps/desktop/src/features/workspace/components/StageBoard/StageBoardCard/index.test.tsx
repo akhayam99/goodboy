@@ -524,17 +524,17 @@ describe('StageBoardCard footer', () => {
     expect(metaRow?.querySelector('.lucide-chevron-right')).toBeNull();
   });
 
-  it('holds the project slot at one width and truncates the name inside it', () => {
+  it('sizes the project chip to its name, caps it, and lets it yield before the icons', () => {
     state.projects = [{}, {}];
     state.sessionProjectMounts = {
       [SESSION_ID]: [{ projectId: 'project-1', mountName: 'gateway' }],
     };
     render(<StageBoardCard session={session} nav={nav} />);
     const chipLabel = screen.getByText('gateway');
-    const slot = chipLabel.closest('.w-24');
+    const slot = chipLabel.closest('.max-w-24');
     expect(chipLabel.className).toContain('truncate');
-    expect(slot?.className).toContain('w-24');
-    expect(slot?.className).toContain('shrink-0');
+    expect(slot?.className).toContain('min-w-0');
+    expect(slot?.className).not.toContain('shrink-0');
     expect(slot?.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe('gateway');
   });
 

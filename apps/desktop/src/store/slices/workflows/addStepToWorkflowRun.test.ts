@@ -639,6 +639,28 @@ describe('addStepToWorkflowRun', () => {
     expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
   });
 
+  it('reopens a static run the user closed once a step is added', async () => {
+    const state = baseState();
+    const [current] = state['sessions'] as ReadonlyArray<Session>;
+    state['sessions'] = [
+      {
+        ...current!,
+        workflowRuns: current!.workflowRuns.map((run) => ({
+          ...run,
+          orchestrationOutcome: 'done' as const,
+          orchestrationStop: { kind: 'closed' as const, message: 'Closed by you' },
+        })),
+      },
+    ];
+    const { add } = harness(state);
+
+    await add({ sessionId: SESSION_ID, workflowRunId: RUN_ID, name: 'Review', role: 'reviewer' });
+
+    const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
+    expect(run.orchestrationStop).toBeUndefined();
+    expect(run.orchestrationOutcome).toBeUndefined();
+  });
+
   it('takes a step on a dynamic run the orchestrator stopped as blocked', async () => {
     const state = baseState({ dynamicOutcome: 'blocked' });
     const { add } = harness(state);
@@ -653,6 +675,34 @@ describe('addStepToWorkflowRun', () => {
     expect(result.kind).toBe('added');
     const sessions = state['sessions'] as ReadonlyArray<Session>;
     expect(sessions[0]!.workflowRuns[0]!.orchestrationOutcome).toBeUndefined();
+  });
+
+  it('keeps a step added to a pooled run inside the run pool', async () => {
+    const base = baseState({ dynamicOutcome: 'blocked' });
+    const sessions = base['sessions'] as ReadonlyArray<Session>;
+    const pooled = sessions.map((session) => ({
+      ...session,
+      workflowRuns: session.workflowRuns.map((run) => ({
+        ...run,
+        providerPool: ['codex' as const],
+      })),
+    }));
+    const state = { ...base, sessions: pooled };
+    const { add } = harness(state);
+
+    const result = await add({
+      sessionId: SESSION_ID,
+      workflowRunId: RUN_ID,
+      name: 'Review',
+      role: 'reviewer',
+    });
+
+    expect(result.kind).toBe('added');
+    expect(preSpawnSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        availability: expect.objectContaining({ connectedProviders: ['codex'] }),
+      }),
+    );
   });
 
   it('routes the new agent through the workspace role model', async () => {

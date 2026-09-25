@@ -25,6 +25,7 @@ export const PANE_RHYTHM = {
     inset: 'px-2',
     body: 'px-2 py-3',
     row: 'px-2 py-1.5',
+    nest: 'pl-6',
   },
   board: {
     pad: 'px-6 py-5',

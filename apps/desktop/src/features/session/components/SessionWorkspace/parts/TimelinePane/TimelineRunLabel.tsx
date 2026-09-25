@@ -1,48 +1,39 @@
-import { cn } from '@goodboy/ui';
+import { WORK_ROW, cn } from '@goodboy/ui';
+import type { RowState } from '../../../../../workTreeModel/rowState';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
-import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunChip } from './TimelineRunChip';
 
 type Props = {
   readonly entry: TimelineRunEntry;
-  readonly isDeciding?: boolean;
+  readonly rowState: RowState;
+  readonly isLaneLit?: boolean;
 };
 
-const titleOf = ({ entry }: { readonly entry: TimelineRunEntry }): string | null => {
-  const goal = entry.run.goal?.trim() ?? '';
-  if (goal.length === 0 || goal === entry.workflow.name.trim()) {
-    return null;
-  }
-  return goal;
-};
-
-export const TimelineRunLabel = ({ entry, isDeciding = false }: Props) => {
-  const title = titleOf({ entry });
+export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
+  const title = entry.run.title ?? entry.workflow.name;
   return (
     <>
       <TimelineRunChip
         kind={runWorkflowKind({ workflow: entry.workflow })}
+        workflowName={entry.workflow.name}
         identity={entry.identity}
         muted={isDiscarded}
+        lit={isLaneLit}
       />
       <span
+        title={title}
         className={cn(
-          'min-w-0 truncate text-sm leading-5',
+          'truncate text-sm leading-5',
+          WORK_ROW.title,
           isDiscarded ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
-        {entry.workflow.name}
+        {title}
       </span>
-      {title == null ? null : (
-        <span className="min-w-0 truncate text-sm leading-5 text-muted-foreground">{title}</span>
-      )}
-      {isDeciding ? (
-        <span className="min-w-0 truncate text-2xs text-muted-foreground">
-          {ORCHESTRATOR_DECIDING_SENTENCE}
-        </span>
-      ) : null}
+      <TimelineRowStateLine state={rowState} />
     </>
   );
 };

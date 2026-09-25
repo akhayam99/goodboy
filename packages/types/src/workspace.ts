@@ -91,7 +91,8 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
-export type WorkflowOrchestrationStopKind = 'failure' | 'budget' | 'questions' | 'operator';
+export type WorkflowOrchestrationStopKind =
+  'failure' | 'budget' | 'questions' | 'operator' | 'closed';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;
@@ -132,6 +133,9 @@ export type WorkflowRun = Readonly<{
   spendLimitMode?: WorkflowSpendLimitMode;
   chainAfterId?: WorkflowRunId;
   goal?: string;
+  title?: string;
+  titleUserEdited?: boolean;
+  providerPool?: ReadonlyArray<ProviderId>;
   discardedAt?: IsoDateTime;
   createdAt?: IsoDateTime;
 }>;

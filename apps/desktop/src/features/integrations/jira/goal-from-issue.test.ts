@@ -22,9 +22,15 @@ describe('goalFromIssue', () => {
     );
   });
 
-  it('truncates a long description with an ellipsis', () => {
-    const goal = goalFromIssue({ issue: issue({ description: 'x'.repeat(1500) }) });
-    expect(goal.endsWith('…')).toBe(true);
-    expect(goal.length).toBeLessThan(1300);
+  it('cuts a long description and points at the full issue', () => {
+    const goal = goalFromIssue({
+      issue: issue({
+        description: 'x'.repeat(1500),
+        url: 'https://acme.atlassian.net/browse/ENG-142',
+      }),
+    });
+    expect(goal).toBe(
+      `[ENG-142] Session rail drops focus\n\n${'x'.repeat(1200)}…\n\nFull issue: ENG-142 https://acme.atlassian.net/browse/ENG-142`,
+    );
   });
 });

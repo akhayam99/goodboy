@@ -51,7 +51,7 @@ describe('buildBranchDecision', () => {
 
     expect(decision?.alt?.resolution).toBe('keep-both');
     expect(decision?.description).toBe(
-      'Expected ak/part-one, found ak/part-two. Keep both branches records ak/part-two here and mounts ak/part-one again in a row of its own.',
+      'Expected ak/part-one, found ak/part-two. Keep both branches keeps ak/part-two here and opens ak/part-one again in a worktree of its own.',
     );
   });
 

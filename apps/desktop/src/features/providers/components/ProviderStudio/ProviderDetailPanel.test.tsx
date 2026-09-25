@@ -10,6 +10,12 @@ const { state } = vi.hoisted(() => ({
     connectProvider: vi.fn(async () => undefined),
     logoutProvider: vi.fn(async () => undefined),
     refreshProviders: vi.fn(async () => undefined),
+    providers: [] as ReadonlyArray<unknown>,
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    providerLifecycle: { anthropic: { phase: 'idle', action: null, runId: null, errorTail: null } },
+    agentTurnState: {},
+    runRouting: {},
+    updateProviderCli: vi.fn(async () => undefined),
   },
 }));
 
@@ -44,7 +50,7 @@ const info = {
 
 describe('ProviderDetailPanel', () => {
   it('signs the provider out only after the row confirm', () => {
-    render(<ProviderDetailPanel info={info} autoConnect={false} />);
+    render(<ProviderDetailPanel info={info} autoConnect={false} autoUpdate={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
     expect(state.logoutProvider).not.toHaveBeenCalled();
@@ -55,7 +61,7 @@ describe('ProviderDetailPanel', () => {
   });
 
   it('cancels back to the account actions', () => {
-    render(<ProviderDetailPanel info={info} autoConnect={false} />);
+    render(<ProviderDetailPanel info={info} autoConnect={false} autoUpdate={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

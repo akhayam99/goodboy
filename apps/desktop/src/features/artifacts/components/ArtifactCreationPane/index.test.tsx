@@ -343,7 +343,9 @@ describe('ArtifactCreationPane', () => {
         'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('No mounted project, so no local change evidence.')).toBeTruthy();
+    expect(
+      screen.getByText('No project in this session, so no local change evidence.'),
+    ).toBeTruthy();
   });
 
   it('lists what the pack carries and what it cuts short', async () => {

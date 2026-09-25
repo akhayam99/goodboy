@@ -34,7 +34,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Mount project' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 };
 
 describe('MountProjectAction', () => {
@@ -54,7 +54,7 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Mount project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('tells the workspace has no projects at all', () => {
@@ -76,7 +76,7 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByText('Add a project in workspace settings to mount it here.')).toBeDefined();
+    expect(screen.getByText('Add a project in workspace settings to use it here.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
     expect(onOpenWorkspaceSettings).toHaveBeenCalledOnce();
     expect(settingsDetail).toEqual({ scope: 'workspace', section: 'projects' });
@@ -97,8 +97,8 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByText('Every workspace project is mounted here.')).toBeDefined();
-    expect(screen.queryByText('Add a project in workspace settings to mount it here.')).toBeNull();
+    expect(screen.getByText('Every workspace project is already in this session.')).toBeDefined();
+    expect(screen.queryByText('Add a project in workspace settings to use it here.')).toBeNull();
     expect(screen.getByRole('button', { name: 'Add workspace project' })).toBeDefined();
   });
 
@@ -113,6 +113,6 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByRole('button', { name: 'Mount API' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add API' })).toBeDefined();
   });
 });

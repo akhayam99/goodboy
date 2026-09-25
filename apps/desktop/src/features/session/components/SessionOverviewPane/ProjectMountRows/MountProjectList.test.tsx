@@ -72,7 +72,7 @@ afterEach(cleanup);
 describe('MountProjectList', () => {
   it('shows base, branch and target path before creating anything', () => {
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
     expect(screen.getByText('main')).toBeTruthy();
@@ -82,7 +82,7 @@ describe('MountProjectList', () => {
 
   it('creates with exactly the branch and the mount the preview showed', async () => {
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     await waitFor(() =>
@@ -99,23 +99,23 @@ describe('MountProjectList', () => {
   it('names the branch it had to step around', () => {
     h.preflight.preflight.renamedFrom = 'ak/taken';
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     expect(screen.getByRole('status').textContent).toContain('ak/taken already exists');
   });
 
   it('goes back to the list without creating anything', () => {
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(screen.getByRole('button', { name: 'Mount goodboy' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add goodboy' })).toBeTruthy();
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
   });
   it('names what is running while the branches are read and while it creates', async () => {
     h.preflight.status = 'checking';
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
 
     expect(screen.getByText('Reading the branches already in the repository…')).toBeTruthy();
 
@@ -137,7 +137,7 @@ describe('MountProjectList', () => {
       new Error('cannot find base ref: tried origin/main'),
     );
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount goodboy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
 
     const alert = await screen.findByRole('alert');

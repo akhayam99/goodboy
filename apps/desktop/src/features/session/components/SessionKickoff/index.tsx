@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { cn, Skeleton, Eyebrow } from '@goodboy/ui';
 import type { IsoDateTime, Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -11,30 +11,25 @@ import {
   TrackerStudioLinks,
 } from '../../../integrations/components/TrackerStudioLinks';
 import { OverviewActions } from '../SessionOverviewPane/OverviewActions';
-import { MountProjectAction } from '../SessionOverviewPane/ProjectMountRows/MountProjectAction';
-import { hasNothingToAdopt, proposeIssueAdoption, type IssueAdoption } from './issueAdoption';
+import { KickoffGhostTree } from './KickoffGhostTree';
 import { useKickoffIssues } from './useKickoffIssues';
 
 type Props = {
   readonly session: Session;
   readonly onOpenWorkflowBuilder: () => void;
-  readonly onProposeAdoption?: (adoption: IssueAdoption) => void;
+  readonly onPickIssue?: (params: PickIssueParams) => void;
 };
 
 type PickIssueParams = {
   readonly candidate: IssueCandidate;
 };
 
-export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdoption }: Props) => {
+export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onPickIssue }: Props) => {
   const issues = useKickoffIssues({ workspaceId: session.workspaceId });
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
   const reportError = useAppStore((state) => state.reportError);
-  const slots = useSessionSlots(session.id);
   const { showToast } = useToast();
   const [linkingKey, setLinkingKey] = useState<string | null>(null);
-  const hasMounts = useAppStore(
-    (state) => (state.sessionProjectMounts[session.id] ?? EMPTY_ARRAY).length > 0,
-  );
 
   const pickIssue = async ({ candidate }: PickIssueParams) => {
     const key = `${candidate.provider}:${candidate.externalId}`;
@@ -48,14 +43,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
         url: candidate.url,
         createdAt: new Date().toISOString() as IsoDateTime,
       });
-      const proposed = proposeIssueAdoption({
-        candidate,
-        currentTitle: session.goal,
-        currentGoal: slots.find((slot) => slot.key === 'goal')?.value ?? '',
-      });
-      if (onProposeAdoption != null && !hasNothingToAdopt({ adoption: proposed })) {
-        onProposeAdoption(proposed);
-      }
+      onPickIssue?.({ candidate });
       showToast({ kind: 'success', message: `Linked ${candidate.identifier} to this session.` });
     } catch (cause) {
       void reportError({
@@ -77,23 +65,12 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onProposeAdopti
   return (
     <section aria-label="Kickoff" className="flex flex-col gap-3">
       <header className="flex flex-col gap-0.5 px-0.5">
-        <h3 className="text-sm font-medium text-foreground">How do you want to start?</h3>
+        <h3 className="text-sm font-medium text-foreground">No activity yet</h3>
         <p className="text-xs text-muted-foreground">
-          Pick a starting point. These suggestions step aside once the first activity lands.
+          Each agent you start shows up here as a row, newest on top.
         </p>
       </header>
-      {hasMounts ? null : (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border px-3 py-2">
-          <p className="min-w-0 text-xs text-muted-foreground">
-            Mount a project first so agents have code to work in.
-          </p>
-          <MountProjectAction
-            sessionId={session.id}
-            workspaceId={session.workspaceId}
-            presentation="button"
-          />
-        </div>
-      )}
+      <KickoffGhostTree />
       <OverviewActions
         sessionId={session.id}
         variant="tile"

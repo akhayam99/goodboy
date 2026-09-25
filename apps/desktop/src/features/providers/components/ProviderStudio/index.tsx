@@ -27,12 +27,16 @@ export const ProviderSettingsScope = ({
   const landing: ProviderId | 'defaults' =
     initialFocus ?? (workspaceId === null ? (PROVIDER_ORDER[0] ?? 'defaults') : 'defaults');
   const [focused, setFocused] = useState<ProviderId | 'defaults'>(landing);
-  const [autoConnect, setAutoConnect] = useState(initialFocus != null && initialAction != null);
+  const wantsConnect = initialFocus != null && initialAction != null && initialAction !== 'update';
+  const wantsUpdate = initialFocus != null && initialAction === 'update';
+  const [autoConnect, setAutoConnect] = useState(wantsConnect);
+  const [autoUpdate, setAutoUpdate] = useState(wantsUpdate);
 
   useEffect(() => {
     setFocused(landing);
-    setAutoConnect(initialFocus != null && initialAction != null);
-  }, [initialAction, landing]);
+    setAutoConnect(wantsConnect);
+    setAutoUpdate(wantsUpdate);
+  }, [initialAction, landing, wantsConnect, wantsUpdate]);
 
   const ordered = PROVIDER_ORDER.map((id) => providers.find((p) => p.id === id)).filter(
     (p): p is ProviderDisplayInfo => p !== undefined,
@@ -53,6 +57,7 @@ export const ProviderSettingsScope = ({
 
   const onSelect = (id: ProviderId) => {
     setAutoConnect(false);
+    setAutoUpdate(false);
     setFocused(id);
   };
 
@@ -67,6 +72,7 @@ export const ProviderSettingsScope = ({
             ? undefined
             : () => {
                 setAutoConnect(false);
+                setAutoUpdate(false);
                 setFocused('defaults');
               }
         }
@@ -79,6 +85,7 @@ export const ProviderSettingsScope = ({
         <ProviderDetailPanel
           info={selected}
           autoConnect={autoConnect && selected?.id === initialFocus}
+          autoUpdate={autoUpdate && selected?.id === initialFocus}
         />
       ),
   });

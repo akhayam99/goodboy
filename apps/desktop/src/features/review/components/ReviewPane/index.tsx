@@ -159,7 +159,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
       if (worktreePath === null) {
         showToast({
           kind: 'warning',
-          message: 'Materialize the project first. The fix needs its worktree.',
+          message: 'Add the project to this session first. The fix needs its worktree.',
         });
         return;
       }

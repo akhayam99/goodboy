@@ -77,7 +77,7 @@ export const deriveSessionSuggestions = ({
       id: `mount-project:${event.projectId}`,
       kind: 'mount-project',
       priority: 5,
-      title: `Mount ${event.projectName}`,
+      title: `Add ${event.projectName}`,
       detail: event.reason,
       sessionId,
       payload: {

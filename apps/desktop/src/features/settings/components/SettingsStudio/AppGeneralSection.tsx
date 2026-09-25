@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Divider, FieldRow, SectionHeader, Select } from '@goodboy/ui';
+import { FieldRow, SectionSurface, Select } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
 import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 
 const THEME_OPTIONS = [
@@ -50,13 +51,15 @@ export const AppGeneralSection = () => {
     : [...detectedEditors, { binary: editorBinary, label: editorBinary }];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <UpdatesSection />
 
-      <Divider />
-
-      <section className="flex flex-col gap-4">
-        <SectionHeader label="Appearance" hint="How the app looks on this computer." />
+      <SectionSurface
+        label="Appearance"
+        hint="How the app looks on this computer."
+        icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
         <div className="flex flex-col">
           <FieldRow label="Theme" help="Applies to every window.">
             <Select
@@ -79,12 +82,14 @@ export const AppGeneralSection = () => {
             </Select>
           </FieldRow>
         </div>
-      </section>
+      </SectionSurface>
 
-      <Divider />
-
-      <section className="flex flex-col gap-4">
-        <SectionHeader label="Editor" hint="How session worktrees open." />
+      <SectionSurface
+        label="Editor"
+        hint="How session worktrees open."
+        icon={<CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />}
+        headingLevel={2}
+      >
         <div className="flex flex-col">
           <FieldRow label="Default editor" help="Opens session worktrees.">
             <Select
@@ -101,7 +106,7 @@ export const AppGeneralSection = () => {
             </Select>
           </FieldRow>
         </div>
-      </section>
+      </SectionSurface>
     </div>
   );
 };

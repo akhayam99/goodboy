@@ -67,7 +67,7 @@ export const wireframeCreationAdapter: ArtifactCreationAdapter = {
       return 'Plain wireframe, no design files read.';
     }
     if (repo === null) {
-      return 'No mounted project, so the generic theme is used.';
+      return 'No project in this session, so the generic theme is used.';
     }
     const branch = repo.branch === null ? 'a detached head' : repo.branch;
     return `Design files read from ${repo.mountName} on ${branch}.`;

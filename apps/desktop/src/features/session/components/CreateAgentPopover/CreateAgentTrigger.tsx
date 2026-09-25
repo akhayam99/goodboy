@@ -28,7 +28,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
         className={cn('min-w-0', className)}
       >
         <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span className="truncate">Create agent</span>
+        <span className="truncate">Start agent</span>
       </Button>
     );
   }
@@ -43,7 +43,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
         className={cn(TILE_CLASS, className)}
       >
         <DogMascot size={ICON_SIZE.control} className="shrink-0 text-success" />
-        <span className="min-w-0 truncate text-sm font-medium text-foreground">Create agent</span>
+        <span className="min-w-0 truncate text-sm font-medium text-foreground">Start agent</span>
       </button>
     );
   }
@@ -58,7 +58,7 @@ export const CreateAgentTrigger = ({ variant, isOpen, className, description, on
     >
       <DogMascot size={ICON_SIZE.hero} className="shrink-0 text-success" />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
-        <span className="text-sm font-medium text-foreground">Create agent</span>
+        <span className="text-sm font-medium text-foreground">Start agent</span>
         <span className="truncate text-2xs text-muted-foreground">{description}</span>
       </span>
       <ArrowRight

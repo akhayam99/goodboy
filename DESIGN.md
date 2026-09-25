@@ -46,7 +46,10 @@ two share the same look.
 ## Voice & copy
 
 - **Speak the domain language.** Agent, session, workspace, workflow, plan. No
-  synonyms, no aliases.
+  synonyms, no aliases. Internal words (mount, spawn, cluster, lens, studio,
+  handoff, materialize) never reach the screen: the table of what the screen
+  says instead lives in [docs/concepts.md](./docs/concepts.md) → Vocabulary
+  rules.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md) owns the language of
   product copy. [CONVENTIONS.md](./CONVENTIONS.md) owns the language of the
   repository.
@@ -177,21 +180,32 @@ about its effect is a worse defect than one that reads badly.
   No invented percentages, no made-up estimates. A failure keeps the input,
   states the cause, puts the technical detail behind a disclosure, and leaves a
   way to retry.
+- **Estimates come only from measured machine time.** A duration or cost
+  estimate is allowed only when it is built from machine time observed in this
+  workspace (the turns an agent actually ran, never the wall clock between its
+  start and its end). It needs at least 5 comparable samples, reads with `~`
+  or as a range, and names its basis in the tooltip ("Based on 23 finished
+  implementer steps on Sonnet 5 medium, last 90 days"). Progress toward an
+  estimate moves only while the machine works, so a step that waits on you
+  stops where it was. Unknown shows a dash or nothing, never a guess.
 - **Reversible acts immediately, definitive asks first.** Archiving and
   similar actions happen at once, with an undo. Anything that destroys data for
   good, or that acts on a remote provider, asks for confirmation inline. It
   states exactly what is lost or sent, including what stays on disk. The same
   action behaves the same way from every entry point.
 - **Durable changes land in the timeline.** A change of destination, an archive
-  or restore, a discard, an answer, a publication outcome: each one is recorded
-  and linked to the object it concerns. Transcript traffic is not. A fact does
-  not arrive twice saying two different things.
+  or restore, a discard, a closed workflow, an answer, a publication outcome:
+  each one is recorded and linked to the object it concerns. Transcript traffic
+  is not. A fact does not arrive twice saying two different things.
 
 ## Color & theme
 
 - **Dark by default**, light fully supported, and Match system as a third
   choice that follows the OS. The choice is saved. The top bar and palette
   toggles set the opposite of what is showing.
+- **The brand mark in the chrome is a bare glyph in `foreground`**: light on
+  dark, dark on light, no tile. The black tile belongs to the dock icon, the
+  favicon and the site ([docs/brand.md](docs/brand.md)).
 - Color comes from **semantic tokens**: `success`, `warning`, `danger`, `info`,
   `merged`, the elevation ramp, per-provider accents. A raw hex or `oklch` in a
   component is a bug. Raw colors are allowed in two places only, because they
@@ -212,8 +226,17 @@ about its effect is a worse defect than one that reads badly.
 
 ## Status & signals
 
+- **Errors, warnings, tips and toasts are Notices.** A tone rail and a tone
+  icon on a neutral surface, neutral text, the raw output behind Details. A
+  danger or warning tint never fills a message: `tone-is-a-rail-not-a-fill.test.ts`
+  allows it only on chips, small controls and diff cells, and its debt list
+  only shrinks. The anatomy and placements live in
+  [packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Notices.
+
 - **The element is the signal.** A running session shows a moving border, not a
-  spinner placed beside it.
+  spinner placed beside it. On a board card the border that moves is the left
+  rail, because that is where a card keeps its tone: a light runs down the info
+  rail. A card never gets a tinted box around it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
 - **A toast says what already happened.** `success` means finished. `info`
@@ -270,7 +293,7 @@ Actions sit with the object they affect. The slots that carry each zone are in
 
 - **Object actions live on the context row.** The fixed breadcrumb or
   object-title row holds generic object actions (open folder, archive,
-  restore, delete) at its far end. Lifecycle actions (mark done, reopen) sit
+  restore, delete) at its far end. Lifecycle actions (close, reopen) sit
   there too, because they change the object, not the current section. A
   destructive action confirms inline, next to its trigger.
 - **The focused object's primary action sits in the fixed header.** It is the
@@ -294,7 +317,11 @@ second home for them.
   builder, the first-run wizard and the question answer flow have one.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
-  Never a dead end, never a "start chatting" prompt.
+  Never a dead end, never a "start chatting" prompt. An empty Activity shows
+  the shape work will take: a ghost run of three queued nodes (Scout, Plan,
+  Implement), no model and no estimate, because nothing is chosen yet. No tour
+  and no onboarding popup: an empty state teaches every time it is needed and
+  leaves on its own.
 - **A card in a collection keeps that grammar. The sole occupant of a pane gets
   a header toolbar.** When a record is shown alone, it is a pane, not a card.
   Its lifecycle and destructive actions move up beside the title.
@@ -316,7 +343,7 @@ second home for them.
   Generating right now (seconds): moving border plus pulsing dot. Idle on
   purpose while something else runs (minutes to hours): no motion. It stays
   alive through information instead: it names the step it waits on and ticks
-  an elapsed counter. Waiting on the user: no motion at all, `warning` tone,
+  its measured active time. Waiting on the user: no motion at all, `warning` tone,
   and a clear ask. Motion means the machine is working, so animating "waiting
   for you" puts the work on the wrong party. A surface that shimmers for hours
   teaches that its motion means nothing.

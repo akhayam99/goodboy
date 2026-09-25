@@ -370,9 +370,9 @@ const missingLine = ({
 }): string => {
   const only = measured[0];
   if (measured.length === 1 && only !== undefined) {
-    return `The directory at ${only.path} is already absent; detach will remove only the session's mount record.`;
+    return `The directory at ${only.path} is already absent; detach will remove only the session's record of it.`;
   }
-  return `Every directory of ${projectName} is already absent; detach will remove only the session's mount records.`;
+  return `Every directory of ${projectName} is already absent; detach will remove only the session's records of them.`;
 };
 
 const unavailableLine = ({
@@ -534,7 +534,7 @@ export const detachOutcomeMessage = ({
     case 'kept':
       return `Detached ${projectName}. Files remain at ${worktreePath}.`;
     case 'failed':
-      return 'Could not finish removing the worktree. The mount is retained; check again before retrying.';
+      return 'Could not finish removing the worktree. It stays in the session; check again before retrying.';
   }
 };
 
@@ -561,7 +561,7 @@ export const detachFailureMessage = ({ outcomes }: DetachFailureMessageParams): 
     failed.length === 1
       ? `Could not remove ${first.worktreePath}${reason}.`
       : `Could not remove ${failed.length} worktrees, starting with ${first.worktreePath}${reason}.`;
-  const retained = failed.length === 1 ? 'Its mount stays' : 'Their mounts stay';
+  const retained = failed.length === 1 ? 'It stays in the session' : 'They stay in the session';
   return `${lead}${target} ${retained}; check again before retrying.`;
 };
 

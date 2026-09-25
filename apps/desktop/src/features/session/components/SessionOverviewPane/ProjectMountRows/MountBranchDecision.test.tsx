@@ -66,7 +66,7 @@ describe('MountBranchDecision', () => {
     await waitFor(() =>
       expect(
         screen.getByText(
-          'Expected ak/part-one, found ak/part-two. Keep both branches records ak/part-two here and mounts ak/part-one again in a row of its own.',
+          'Expected ak/part-one, found ak/part-two. Keep both branches keeps ak/part-two here and opens ak/part-one again in a worktree of its own.',
         ),
       ).toBeDefined(),
     );
@@ -112,7 +112,7 @@ describe('MountBranchDecision', () => {
     expect(screen.getByText('ledger-core is not on the branch it was left on')).toBeDefined();
     expect(
       screen.getByText(
-        'Expected ak/part-one, found ak/part-two. ak/part-two is already mounted as PR #418 in this session, and git keeps one branch in one worktree.',
+        'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out as PR #418 in this session, and git keeps one branch in one worktree.',
       ),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();
@@ -184,7 +184,7 @@ describe('MountBranchDecision', () => {
     await waitFor(() =>
       expect(
         screen.getByText(
-          'Expected ak/part-one, found ak/part-two. ak/part-two is already mounted in another worktree of this project, and git keeps one branch in one worktree.',
+          'Expected ak/part-one, found ak/part-two. ak/part-two is already checked out in another worktree of this project, and git keeps one branch in one worktree.',
         ),
       ).toBeDefined(),
     );

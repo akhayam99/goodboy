@@ -41,11 +41,11 @@ export const MountPicker = ({ scriptName, mounts, anchor, onPick, onClose }: Mou
     <Popover
       innerRef={panelRef}
       role="dialog"
-      ariaLabel={`Pick a mount for ${scriptName}`}
+      ariaLabel={`Pick where to run ${scriptName}`}
       style={{ position: 'fixed', left, top, width }}
       className="z-popover flex flex-col gap-1 p-2"
     >
-      <span className="px-1 text-2xs text-muted-foreground">Run in which mount?</span>
+      <span className="px-1 text-2xs text-muted-foreground">Run in which worktree?</span>
       {mounts.map((mount) => (
         <button
           key={mount.mountId ?? mount.worktreePath}

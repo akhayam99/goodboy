@@ -9,8 +9,12 @@ export type ProviderLifecyclePhase =
   | 'connecting'
   | 'connected'
   | 'disconnecting'
+  | 'updating'
   | 'error'
   | 'cancelled';
+
+export const ACTIVE_LIFECYCLE_PHASES: ReadonlySet<ProviderLifecyclePhase> =
+  new Set<ProviderLifecyclePhase>(['installing', 'connecting', 'disconnecting', 'updating']);
 
 export type ProviderLifecycleState = {
   readonly phase: ProviderLifecyclePhase;

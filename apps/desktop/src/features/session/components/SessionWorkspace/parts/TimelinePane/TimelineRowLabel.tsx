@@ -1,4 +1,4 @@
-import { ValueToken, cn } from '@goodboy/ui';
+import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../AgentKindChip';
@@ -15,14 +15,20 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import type { TimelineRowGrade } from '../../../../timeline/timelineRhythm';
+import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
+import { TimelineRowStateLine } from './TimelineRowStateLine';
+import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
 type Props = {
   readonly item: TimelineRowItem;
   readonly diffStat?: MountDiffStat | null;
+  readonly isLaneLit?: boolean;
+  readonly worktrees?: ReadonlyArray<string>;
 };
+
+const NO_WORKTREES: ReadonlyArray<string> = [];
 
 type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
 
@@ -119,22 +125,28 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     return null;
   }
   if (!isChained) {
-    return <AgentKindChip kind={entry.agentKind} />;
+    return <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />;
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1">
       <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
-      <AgentKindChip kind={entry.agentKind} />
+      <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
     </span>
   );
 };
 
-export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
+export const TimelineRowLabel = ({
+  item,
+  diffStat = null,
+  isLaneLit = false,
+  worktrees = NO_WORKTREES,
+}: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
-    return <TimelineRunLabel entry={entry} isDeciding={item.markerState === 'deciding'} />;
+    return <TimelineRunLabel entry={entry} rowState={item.rowState} isLaneLit={isLaneLit} />;
   }
-  const isStep = grade === 'step';
+  const isStep = grade !== 'entry';
+  const isQueued = item.rowState.phase === 'queued';
   const emphasis =
     entry.kind === 'event' ? sessionEventEmphasis({ kind: entry.event.kind }) : 'plain';
   const secondary =
@@ -144,31 +156,39 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
   const segments = segmentsOf({ entry });
   return (
     <>
-      {chipOf({ entry, grade })}
       {item.ordinal != null ? (
-        <span className="w-4 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
+      {chipOf({ entry, grade })}
       <span
         title={titleOf({ entry, segments })}
         className={cn(
-          'flex min-w-0 items-center overflow-hidden',
+          'flex items-center overflow-hidden',
+          entry.kind === 'agent' ? WORK_ROW.title : 'min-w-0',
           isStep ? 'text-xs leading-4' : 'text-sm leading-5',
-          emphasis === 'muted'
+          emphasis === 'muted' || isQueued
             ? 'text-muted-foreground'
-            : item.markerState === 'running' || item.hasUnread
+            : item.rowState.phase === 'running' || item.hasUnread
               ? 'font-medium text-foreground'
               : 'text-foreground',
         )}
       >
         {segments.map((segment, index) =>
           segment.kind === 'value' ? (
-            <ValueToken key={`${segment.variant}:${index}`} value={segment.text} />
+            <ValueToken
+              key={`${segment.variant}:${index}`}
+              value={segment.text}
+              className={cn(index < segments.length - 1 && 'shrink-0')}
+            />
           ) : (
             <span
               key={`text:${index}`}
-              className="min-w-0 overflow-hidden text-ellipsis whitespace-pre"
+              className={cn(
+                'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
+                index < segments.length - 1 && 'shrink-0',
+              )}
             >
               {segment.text}
             </span>
@@ -181,6 +201,8 @@ export const TimelineRowLabel = ({ item, diffStat = null }: Props) => {
       {secondary != null ? (
         <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
       ) : null}
+      {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} />}
+      {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
     </>
   );
 };

@@ -204,4 +204,29 @@ describe('parsePlannerOutput', () => {
     const out = parsePlannerOutput(padded);
     expect(out.workflowName).toBe('Auth');
   });
+
+  it('keeps a known planner size and drops anything else', () => {
+    const sized = JSON.stringify({
+      workflowName: 'X',
+      reasoning: 'x',
+      steps: [
+        { name: 'A', role: 'scout', promptPrefix: 'p', expectedOutput: 'o', size: 'small' },
+        { name: 'B', role: 'implementer', promptPrefix: 'p', expectedOutput: 'o', size: ' Large ' },
+        { name: 'C', role: 'reviewer', promptPrefix: 'p', expectedOutput: 'o', size: '20 minutes' },
+        { name: 'D', role: 'tester', promptPrefix: 'p', expectedOutput: 'o' },
+      ],
+    });
+
+    expect(parsePlannerOutput(sized).steps.map((step) => step.size)).toEqual([
+      'small',
+      'large',
+      null,
+      null,
+    ]);
+  });
+
+  it('asks for a relative size and never for a duration', () => {
+    expect(PLANNER_SYSTEM_PROMPT).toContain('"size": "<small|medium|large>"');
+    expect(PLANNER_SYSTEM_PROMPT).toContain('never a duration');
+  });
 });

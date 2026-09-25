@@ -1,5 +1,6 @@
 import { AnchoredPopover, cn, tintClasses, Tooltip, useDropdown } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { FOOTER_LABEL, FOOTER_LABELED_PAD } from './FooterButton';
 import { MORE_STUDIOS, type MoreStudioId } from './moreStudios';
 import type { FooterTarget } from '../../hooks/useAppOverlays/overlayState';
 
@@ -10,8 +11,8 @@ type Props = {
 
 const PANEL_WIDTH = 208;
 const PANEL_MAX_HEIGHT = 200;
-const PANEL_LABEL = 'More studios';
-const TRIGGER_LABEL = 'More studios: impact and changelog';
+const PANEL_LABEL = 'More pages';
+const TRIGGER_LABEL = 'More pages: impact and changelog';
 
 export const MoreStudiosPopover = ({ target, openers }: Props) => {
   const dropdown = useDropdown({
@@ -42,14 +43,15 @@ export const MoreStudiosPopover = ({ target, openers }: Props) => {
             aria-label={TRIGGER_LABEL}
             aria-expanded={dropdown.open}
             className={cn(
-              'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
+              'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
+              FOOTER_LABELED_PAD,
               holdsActiveStudio || dropdown.open
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />
-            <span>More</span>
+            <span className={FOOTER_LABEL}>More</span>
           </button>
         </Tooltip>
       }

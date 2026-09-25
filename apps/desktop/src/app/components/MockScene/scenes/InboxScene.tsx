@@ -199,7 +199,7 @@ export const InboxScene = () => {
           icon={CONCEPT_ICONS.inbox}
           tone={CONCEPT_TONE.inbox}
           title="Inbox"
-          closeLabel="close inbox studio"
+          closeLabel="close inbox"
           headerAccessory={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
           onClose={noop}
         >

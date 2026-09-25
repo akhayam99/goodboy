@@ -7,6 +7,7 @@ import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{ readonly id: ProviderId; readonly connection: string }>;
+  readonly cliRequirements: ReadonlyArray<never>;
   readonly sessions: ReadonlyArray<Session>;
   readonly workspaceOverrides: Record<string, unknown>;
   readonly providerConnect: Readonly<Record<string, unknown>>;
@@ -60,6 +61,7 @@ vi.mock('../../../../store', () => ({
     selector({
       spawnAgent: h.spawnAgent,
       providers: h.providers,
+      cliRequirements: [],
       sessions: h.sessions as ReadonlyArray<Session>,
       workspaceOverrides: {},
       providerConnect: h.providerConnect,
@@ -81,11 +83,11 @@ const renderControl = ({ variant, onSpawned = vi.fn() }: RenderControlParams = {
 };
 
 const openPopover = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Create agent' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 };
 
 const confirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^Spawn / }));
+  fireEvent.click(screen.getByRole('button', { name: /^Start (?!agent$)/ }));
 };
 
 const expandRouting = () => {
@@ -114,13 +116,13 @@ describe('CreateAgentPopover', () => {
 
   it('replaces the multi-control row with one tile that opens a single popover', () => {
     renderControl();
-    const trigger = screen.getByRole('button', { name: 'Create agent' });
+    const trigger = screen.getByRole('button', { name: 'Start agent' });
 
     expect(trigger.className).toContain('rounded-lg');
-    expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
 
     openPopover();
-    const dialog = screen.getByRole('dialog', { name: 'Create agent' });
+    const dialog = screen.getByRole('dialog', { name: 'Start agent' });
     expect(dialog).toBeTruthy();
     expect(dialog.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
     expect(dialog.className).toContain('fixed');
@@ -238,7 +240,7 @@ describe('CreateAgentPopover', () => {
     openPopover();
 
     confirm();
-    const action = screen.getByRole('button', { name: 'Spawning Generalist' });
+    const action = screen.getByRole('button', { name: 'Starting Generalist' });
     fireEvent.click(action);
 
     expect(h.spawnAgent).toHaveBeenCalledOnce();
@@ -277,10 +279,10 @@ describe('CreateAgentPopover', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('provider is unavailable');
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: 'Spawn Generalist' }).hasAttribute('disabled'),
+        screen.getByRole('button', { name: 'Start Generalist' }).hasAttribute('disabled'),
       ).toBe(false),
     );
-    expect(screen.getByRole('dialog', { name: 'Create agent' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
   });
 
   it('renders codex checkpoints as chips without a native select', () => {
@@ -357,7 +359,7 @@ describe('CreateAgentPopover', () => {
     fireEvent.click(openProviders);
     window.removeEventListener('goodboy:open-settings', onOpenProviderStudio);
     expect(onOpenProviderStudio).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('dialog', { name: 'Create agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
   });
 
   it('keeps the role section available for a folder project', () => {
@@ -377,7 +379,7 @@ describe('CreateAgentPopover', () => {
 
   it('renders a compact header control without its own edge inset', () => {
     renderControl({ variant: 'compact' });
-    const trigger = screen.getByRole('button', { name: 'Create agent' });
+    const trigger = screen.getByRole('button', { name: 'Start agent' });
 
     expect(trigger.className).toContain('h-7');
     expect(trigger.parentElement?.className).not.toContain('pl-2');
@@ -387,7 +389,7 @@ describe('CreateAgentPopover', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 220 });
     renderControl();
     openPopover();
-    const action = screen.getByRole('button', { name: 'Spawn Generalist' });
+    const action = screen.getByRole('button', { name: 'Start Generalist' });
     const footer = action.closest('footer');
     expect(footer?.className).toContain('shrink-0');
     expect(footer?.previousElementSibling?.getAttribute('role')).toBe('separator');

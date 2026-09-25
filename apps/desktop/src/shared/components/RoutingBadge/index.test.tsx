@@ -209,4 +209,106 @@ describe('RoutingBadge', () => {
 
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
+
+  describe('bare variant', () => {
+    it('lays the model and the effort out as meta columns with no chip fill', () => {
+      const { container } = render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-opus-4-5" effort="high" />,
+      );
+
+      const model = container.querySelector('[data-meta-column="model"]');
+      const effort = container.querySelector('[data-meta-column="effort"]');
+      expect(model?.textContent).toBe('Opus 4.5');
+      expect(effort?.textContent).toBe('High');
+      expect(container.innerHTML).not.toContain('bg-muted');
+    });
+
+    it('keeps the whole route in the tooltip so a narrow pane loses nothing', () => {
+      render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-opus-4-5" effort="high" />,
+      );
+
+      const model = screen.getByText('Opus 4.5').parentElement!;
+      expect(tooltipTextOf({ element: model })).toBe('Opus 4.5 High on Claude');
+    });
+
+    it('names a divergence in the tooltip instead of striking the plan through', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-opus-4-5"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-4-5' }}
+        />,
+      );
+
+      const label = screen.getByTestId('routing-divergence');
+      expect(label.className).toContain('decoration-dotted');
+      expect(tooltipTextOf({ element: label.parentElement! })).toBe(
+        'Opus 4.5 on Claude. Planned Sonnet 4.5, routing picked Opus 4.5 instead',
+      );
+    });
+
+    it('draws a planned effort in faint and an observed one in the row tone', () => {
+      const { container, rerender } = render(
+        <RoutingBadge variant="bare" provider="anthropic" model="claude-sonnet-5" effort="high" />,
+      );
+      const effortOf = () => container.querySelector('[data-meta-column="effort"]')!;
+      expect(effortOf().className).toContain('text-faint-foreground');
+
+      rerender(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="high"
+          isEffortObserved
+        />,
+      );
+      expect(effortOf().className).not.toContain('text-faint-foreground');
+      expect(screen.queryByTestId('effort-divergence')).toBeNull();
+    });
+
+    it('names an effort that left the plan in the tooltips', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="medium"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-5', effort: 'high' }}
+          isEffortObserved
+        />,
+      );
+
+      const effort = screen.getByTestId('effort-divergence');
+      expect(effort.textContent).toBe('Medium');
+      expect(effort.className).toContain('decoration-dotted');
+      expect(tooltipTextOf({ element: effort })).toBe('Planned High, ran Medium');
+      expect(tooltipTextOf({ element: screen.getByText('Sonnet 5').parentElement! })).toBe(
+        'Sonnet 5 Medium on Claude. Planned High, ran Medium',
+      );
+    });
+
+    it('never names a divergence for an effort nobody observed', () => {
+      render(
+        <RoutingBadge
+          variant="bare"
+          provider="anthropic"
+          model="claude-sonnet-5"
+          effort="medium"
+          planned={{ provider: 'anthropic', model: 'claude-sonnet-5', effort: 'high' }}
+        />,
+      );
+
+      expect(screen.queryByTestId('effort-divergence')).toBeNull();
+    });
+
+    it('holds both columns empty when nothing is routed yet', () => {
+      const { container } = render(<RoutingBadge variant="bare" />);
+
+      expect(container.textContent).toBe('');
+      expect(container.children).toHaveLength(2);
+    });
+  });
 });

@@ -191,6 +191,9 @@ describe('shortcut dispatcher off darwin', () => {
   it('resolves every registry combo to ctrl and never to the command key', () => {
     for (const entry of Object.values(SHORTCUTS)) {
       const combo: string = 'offMacCombo' in entry ? entry.offMacCombo : entry.combo;
+      if (!combo.includes('cmd') && !combo.includes('ctrl')) {
+        continue;
+      }
       const code = combo.split('+').at(-1) ?? '';
       const shiftKey = combo.includes('shift');
       const altKey = combo.includes('alt');
@@ -207,6 +210,27 @@ describe('shortcut dispatcher off darwin', () => {
           entry,
         }),
         `${combo} still answers to the command key`,
+      ).toBe(false);
+    }
+  });
+
+  it('resolves a combo without the command key to the bare keys, never to ctrl', () => {
+    for (const entry of Object.values(SHORTCUTS)) {
+      const combo: string = entry.combo;
+      if (combo.includes('cmd') || combo.includes('ctrl')) {
+        continue;
+      }
+      const code = combo.split('+').at(-1) ?? '';
+      const shiftKey = combo.includes('shift');
+      const altKey = combo.includes('alt');
+      expect(
+        eventMatches({ event: new KeyboardEvent('keydown', { code, shiftKey, altKey }), entry }),
+      ).toBe(true);
+      expect(
+        eventMatches({
+          event: new KeyboardEvent('keydown', { code, ctrlKey: true, shiftKey, altKey }),
+          entry,
+        }),
       ).toBe(false);
     }
   });

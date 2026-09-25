@@ -58,13 +58,15 @@ export const slackThreadCandidates = async ({
         channelId: channel.id,
         messageTs: threadTs,
       }).catch(() => '');
+      const goal = goalFromThread({ channelName: channel.name, messages: [head], userNames });
       return {
         provider: 'slack',
         externalId: slackThreadExternalId({ channelId: channel.id, threadTs }),
         identifier: slackThreadIdentifier({ channelName: channel.name, text: head.text }),
         title: slackThreadTitle({ text: head.text }),
         url,
-        goal: goalFromThread({ channelName: channel.name, messages: [head], userNames }),
+        goal,
+        body: goal,
         branchSlug: slackThreadBranchSlug({ text: head.text }),
       } satisfies IssueCandidate;
     }),

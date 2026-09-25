@@ -19,7 +19,7 @@ export const LEFT_SIDEBAR_MAX = 640;
 export const LEFT_SIDEBAR_DEFAULT = 340;
 export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
 
-const LEFT_RAIL_WIDTH = 44;
+export const COLLAPSED_RAIL_WIDTH = 44;
 
 const readPersistedLeftWidth = (): number => {
   if (typeof localStorage === 'undefined') {
@@ -65,7 +65,11 @@ const buildLayout = ({
       templateRows: rows,
     };
   }
-  const leftCol = leftHidden ? '0px' : leftCollapsed ? `${LEFT_RAIL_WIDTH}px` : `${leftWidthPx}px`;
+  const leftCol = leftHidden
+    ? '0px'
+    : leftCollapsed
+      ? `${COLLAPSED_RAIL_WIDTH}px`
+      : `${leftWidthPx}px`;
   const handleCol = leftHidden || leftCollapsed ? '0px' : '6px';
   return {
     templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',

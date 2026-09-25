@@ -20,17 +20,10 @@ type Props = {
   task: Session;
   only?: 'workflows';
   workflowRunId?: WorkflowRunId;
-  workflowVariant?: 'sidebar' | 'detail';
   showWorkflowAttach?: boolean;
 };
 
-export const AgentsSection = ({
-  task,
-  only,
-  workflowRunId,
-  workflowVariant = 'sidebar',
-  showWorkflowAttach = true,
-}: Props) => {
+export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = true }: Props) => {
   const forceExpanded = only === 'workflows';
   const showSidebarSections = only == null;
   const section = useAgentsSection({ task, workflowRunId });
@@ -38,7 +31,7 @@ export const AgentsSection = ({
   const areAgentsExpanded = forceExpanded || section.agentsExpanded;
 
   return (
-    <section className="flex flex-col">
+    <section className={cn('flex flex-col', forceExpanded && 'min-h-0 flex-1')}>
       {!forceExpanded && (
         <SectionHeader
           className={FIRST_HEADER_CLASS}
@@ -66,54 +59,35 @@ export const AgentsSection = ({
       )}
       {isWorkflowExpanded && !section.hasAnyWorkflow && <WorkflowStartButton sessionId={task.id} />}
       {isWorkflowExpanded && section.hasAnyWorkflow && (
-        <div className="flex flex-col gap-1.5">
-          <div className={cn('flex flex-col', forceExpanded ? 'gap-3' : 'gap-0.5')}>
+        <div className={cn('flex flex-col gap-1.5', forceExpanded && 'min-h-0 flex-1')}>
+          <div className={cn('flex flex-col', forceExpanded ? 'min-h-0 flex-1 gap-3' : 'gap-0.5')}>
             {section.visibleWorkflowRuns.map(({ run, workflow }) => (
               <WorkflowRow
                 key={run.id}
                 run={run}
                 workflow={workflow}
-                index={section.attachedRuns.findIndex(
-                  ({ run: candidate }) => candidate.id === run.id,
-                )}
                 task={task}
-                attachedRuns={section.attachedRuns}
                 agentsByRunId={section.agentsByRunId}
                 actionableStepIdByRunId={section.actionableStepIdByRunId}
                 blockReasonByRunId={section.blockReasonByRunId}
-                countUnread={section.countUnread}
                 focusedWorkflowRunId={section.focusedWorkflowRunId}
                 workflowExpand={section.workflowExpand}
                 workflowNameByRunId={section.workflowNameByRunId}
-                forceExpanded={forceExpanded}
-                variant={workflowVariant}
                 toggleWorkflowExpand={section.toggleWorkflowExpand}
                 startWorkflowRun={section.startWorkflowRun}
                 setWorkflowRunAutoRun={section.setWorkflowRunAutoRun}
-                onReorderWorkflow={section.onReorderWorkflow}
                 onDiscardWorkflow={section.onDiscardWorkflow}
                 onDeleteWorkflow={section.onDeleteWorkflow}
                 agentKindOverride={section.agentKindOverride}
                 agentModelOverride={section.agentModelOverride}
                 agentProviderOverride={section.agentProviderOverride}
+                agentEffortOverride={section.agentEffortOverride}
                 childrenByParentId={section.childrenByParentId}
-                clusterExpand={section.clusterExpand}
                 selectedAgentId={section.selectedAgentId}
-                isTaskActive={section.isTaskActive}
-                editingId={section.editingId}
-                latestTelemetryByAgentId={section.metrics.latestTelemetryByAgentId}
                 aggregatesByAgentId={section.metrics.aggregatesByAgentId}
-                providerUsageByAgentId={section.metrics.providerUsageByAgentId}
-                turnsByAgentId={section.metrics.turnsByAgentId}
-                isTranscriptLoading={section.isTranscriptLoading}
                 onStartStepAgent={section.onStartStepAgent}
                 onPickAgent={section.onPickAgent}
-                setEditingId={section.setEditingId}
-                onRenameCommit={section.onRenameCommit}
-                onResolveFirstForRun={section.onResolveFirstForRun}
-                toggleClusterExpand={section.toggleClusterExpand}
-                skipStuckStepAndAdvance={section.skipStuckStepAndAdvance}
-                recoverStuckStep={section.recoverStuckStep}
+                onAnswerQuestion={section.onAnswerQuestion}
               />
             ))}
           </div>

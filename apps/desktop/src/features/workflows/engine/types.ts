@@ -3,6 +3,7 @@ import type {
   ProviderId,
   StepDefId,
   StepId,
+  StepSize,
   VerbosityLevel,
   WorkflowOrigin,
   EffortLevel,
@@ -20,6 +21,7 @@ export type StepDraft = {
   readonly model: string;
   readonly effort: EffortLevel;
   readonly verbosity: VerbosityLevel;
+  readonly size: StepSize | null;
 };
 
 export type WorkflowDraft = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
-import { Button, IconButton, cn, tintClasses } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { Button, IconButton, Notice, cn, type NoticeTone } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { toastDuration } from './toastTiming';
 import type { ToastItem, ToastKind } from './types';
@@ -10,33 +10,12 @@ type ToastCardProps = {
   readonly onDismiss: (params: { id: string }) => void;
 };
 
-const KIND_ICON = {
-  error: AlertCircle,
-  warning: AlertTriangle,
-  success: CheckCircle2,
-  info: Info,
-} as const satisfies Record<ToastKind, unknown>;
-
 const KIND_TONE = {
   error: 'danger',
   warning: 'warning',
   success: 'success',
   info: 'info',
-} as const satisfies Record<ToastKind, string>;
-
-const KIND_STRIP = {
-  error: 'bg-danger',
-  warning: 'bg-warning',
-  success: 'bg-success',
-  info: 'bg-info',
-} as const satisfies Record<ToastKind, string>;
-
-const KIND_ICON_CLASS = {
-  error: 'text-danger',
-  warning: 'text-warning',
-  success: 'text-success',
-  info: 'text-info',
-} as const satisfies Record<ToastKind, string>;
+} as const satisfies Record<ToastKind, NoticeTone>;
 
 const isAssertive = ({ kind }: { kind: ToastKind }): boolean =>
   kind === 'error' || kind === 'warning';
@@ -79,11 +58,11 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
     setIsFocused(false);
   };
 
-  const Icon = KIND_ICON[toast.kind];
   const hasTitle = toast.title !== undefined && toast.title !== '';
-  const hasMessage = toast.message !== '';
   const hasContext = toast.context !== undefined && toast.context !== '';
   const { action } = toast;
+  const headline = hasTitle ? toast.title : toast.message;
+  const hasMessageInBody = hasTitle && toast.message !== '';
 
   return (
     <div
@@ -93,71 +72,61 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
       onFocus={() => setIsFocused(true)}
       onBlur={onBlur}
       className={cn(
-        'pointer-events-auto flex w-full overflow-hidden rounded-lg border bg-elevated shadow-lg',
+        'pointer-events-auto w-full',
         'motion-safe:transition-all motion-safe:duration-200',
-        tintClasses(KIND_TONE[toast.kind]).borderSoft,
         isShown ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
     >
-      <div className={cn('w-1 shrink-0', KIND_STRIP[toast.kind])} />
-      <div className="flex min-w-0 flex-1 items-start gap-3 p-3">
-        <Icon
-          size={ICON_SIZE.control}
-          className={cn('shrink-0', KIND_ICON_CLASS[toast.kind])}
-          aria-hidden
-        />
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
-          {hasTitle && (
-            <p className="flex w-full items-baseline gap-2 text-sm font-semibold leading-snug text-foreground">
-              <span className="min-w-0 flex-1">{toast.title}</span>
-              {toast.count > 1 && (
-                <span className="shrink-0 text-2xs font-medium tabular-nums text-muted-foreground">
-                  ×{toast.count}
-                </span>
+      <Notice
+        tone={KIND_TONE[toast.kind]}
+        placement="floating"
+        title={
+          <>
+            {headline}
+            {toast.count > 1 && (
+              <span className="ml-2 text-2xs font-medium tabular-nums text-muted-foreground">
+                ×{toast.count}
+              </span>
+            )}
+          </>
+        }
+        body={
+          (hasMessageInBody || hasContext) && (
+            <>
+              {hasMessageInBody && <p>{toast.message}</p>}
+              {hasContext && (
+                <p className="mt-0.5 line-clamp-2 text-2xs text-faint-foreground">
+                  {toast.context}
+                </p>
               )}
-            </p>
-          )}
-          {hasMessage && (
-            <p
-              className={cn(
-                'w-full break-words text-xs leading-snug',
-                hasTitle ? 'text-muted-foreground' : 'text-foreground',
-              )}
-            >
-              {toast.message}
-              {!hasTitle && toast.count > 1 && (
-                <span className="ml-2 text-2xs font-medium tabular-nums text-muted-foreground">
-                  ×{toast.count}
-                </span>
-              )}
-            </p>
-          )}
-          {hasContext && (
-            <p className="line-clamp-2 w-full text-2xs text-faint-foreground">{toast.context}</p>
-          )}
-          {action !== undefined && (
-            <Button
-              size="sm"
-              variant="secondary"
-              className="mt-1"
-              onClick={() => {
-                action.onClick();
-                onDismiss({ id: toast.id });
-              }}
-            >
-              {action.label}
-            </Button>
-          )}
-        </div>
-        <IconButton
-          icon={X}
-          label="Dismiss notification"
-          variant="ghost"
-          iconSize={ICON_SIZE.row}
-          className="shrink-0 p-1"
-          onClick={() => onDismiss({ id: toast.id })}
-        />
-      </div>
+            </>
+          )
+        }
+        actions={
+          <>
+            {action !== undefined && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  action.onClick();
+                  onDismiss({ id: toast.id });
+                }}
+              >
+                {action.label}
+              </Button>
+            )}
+            <IconButton
+              icon={X}
+              label="Dismiss notification"
+              variant="ghost"
+              iconSize={ICON_SIZE.row}
+              className="-my-1 shrink-0 p-1"
+              onClick={() => onDismiss({ id: toast.id })}
+            />
+          </>
+        }
+      />
     </div>
   );
 };

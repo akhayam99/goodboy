@@ -1,0 +1,238 @@
+import { isAgentStatusSettled } from '@goodboy/core';
+import { formatUsd } from '@goodboy/ui';
+import type { Tone } from '@goodboy/ui';
+import type { Agent, AgentId, WorkflowOrchestrationStopKind, WorkflowRun } from '@goodboy/types';
+import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../orchestratorCopy';
+
+type OrchestratorPhase =
+  | 'deciding'
+  | 'stopping-graceful'
+  | 'stopping'
+  | 'waiting'
+  | 'automatic'
+  | 'ready-first'
+  | 'ready-mid'
+  | 'needs-answer'
+  | 'paused-budget'
+  | 'blocked'
+  | 'failed'
+  | 'step-failed'
+  | 'stopped'
+  | 'done';
+
+export type OrchestratorState = {
+  readonly phase: OrchestratorPhase;
+  readonly tone: Tone;
+  readonly sentence: string;
+  readonly detail: string | null;
+  readonly waitingOnAgentId: AgentId | null;
+};
+
+type Params = {
+  readonly run: WorkflowRun;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly isOrchestrating: boolean;
+  readonly hasOpenQuestions: boolean;
+  readonly costUsd: number;
+};
+
+type StopPresentation = {
+  readonly phase: OrchestratorPhase;
+  readonly tone: Tone;
+  readonly sentence: string;
+  readonly showsMessage: boolean;
+};
+
+const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation> = {
+  budget: {
+    phase: 'paused-budget',
+    tone: 'warning',
+    sentence: 'Paused · budget cap reached',
+    showsMessage: true,
+  },
+  failure: {
+    phase: 'failed',
+    tone: 'danger',
+    sentence: 'Last decision failed',
+    showsMessage: true,
+  },
+  questions: {
+    phase: 'needs-answer',
+    tone: 'neutral',
+    sentence: 'Paused for your answer',
+    showsMessage: false,
+  },
+  operator: {
+    phase: 'stopped',
+    tone: 'warning',
+    sentence: 'Stopped by you · the step in flight was skipped',
+    showsMessage: true,
+  },
+  closed: {
+    phase: 'done',
+    tone: 'neutral',
+    sentence: 'Closed by you',
+    showsMessage: false,
+  },
+};
+
+const OPERATOR_STOP_IN_FLIGHT: StopPresentation = {
+  phase: 'stopping',
+  tone: 'warning',
+  sentence: 'Stopping · waiting for the decision already in flight',
+  showsMessage: false,
+};
+
+const UNKNOWN_STOP: StopPresentation = {
+  phase: 'failed',
+  tone: 'danger',
+  sentence: 'Stopped · reason not recognized',
+  showsMessage: true,
+};
+
+export const resolveOrchestratorState = ({
+  run,
+  agents,
+  isOrchestrating,
+  hasOpenQuestions,
+  costUsd,
+}: Params): OrchestratorState => {
+  const ordered = [...agents].sort((left, right) => left.ordinal - right.ordinal);
+  const doneCount = ordered.filter((agent) =>
+    isAgentStatusSettled({ status: agent.status }),
+  ).length;
+  const base = { detail: null, waitingOnAgentId: null };
+  const hasRunningStep = agents.some((agent) => agent.status === 'running');
+
+  if (isOrchestrating && run.orchestrationStop?.kind === 'operator') {
+    return {
+      ...base,
+      phase: OPERATOR_STOP_IN_FLIGHT.phase,
+      tone: OPERATOR_STOP_IN_FLIGHT.tone,
+      sentence: OPERATOR_STOP_IN_FLIGHT.sentence,
+    };
+  }
+  if (hasRunningStep && run.autoRun === false && run.orchestrationStop?.kind !== 'operator') {
+    return {
+      ...base,
+      phase: 'stopping-graceful',
+      tone: 'neutral',
+      sentence: 'Finishing the step in flight · autorun is off',
+    };
+  }
+  if (isOrchestrating) {
+    return {
+      ...base,
+      phase: 'deciding',
+      tone: 'info',
+      sentence: ORCHESTRATOR_DECIDING_SENTENCE,
+    };
+  }
+  if (run.orchestrationStop?.kind === 'closed') {
+    const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;
+    return {
+      ...base,
+      phase: STOP_PRESENTATION.closed.phase,
+      tone: STOP_PRESENTATION.closed.tone,
+      sentence: `${STOP_PRESENTATION.closed.sentence} · ${steps} · ${formatUsd(costUsd)}`,
+    };
+  }
+  if (run.orchestrationOutcome === 'done') {
+    const steps = `${ordered.length} ${ordered.length === 1 ? 'step' : 'steps'}`;
+    return {
+      ...base,
+      phase: 'done',
+      tone: 'success',
+      sentence: `Run complete · ${steps} · ${formatUsd(costUsd)}`,
+    };
+  }
+  if (run.orchestrationOutcome === 'blocked') {
+    return {
+      ...base,
+      phase: 'blocked',
+      tone: 'warning',
+      sentence: 'Stopped · needs a human call',
+    };
+  }
+  const stop = run.orchestrationStop;
+  const isAnsweredQuestionStop = stop?.kind === 'questions' && hasOpenQuestions === false;
+  if (stop != null && isAnsweredQuestionStop === false) {
+    const known: StopPresentation | undefined = STOP_PRESENTATION[stop.kind];
+    const presentation = known ?? UNKNOWN_STOP;
+    return {
+      ...base,
+      phase: presentation.phase,
+      tone: presentation.tone,
+      sentence: presentation.sentence,
+      detail: presentation.showsMessage ? stop.message : null,
+    };
+  }
+  const runningIndex = ordered.findIndex((agent) => agent.status === 'running');
+  if (runningIndex >= 0) {
+    const agent = ordered[runningIndex]!;
+    return {
+      ...base,
+      phase: 'waiting',
+      tone: 'neutral',
+      sentence: `Waiting on step ${runningIndex + 1} · ${agent.name}`,
+      waitingOnAgentId: agent.id,
+    };
+  }
+  if (hasOpenQuestions) {
+    return {
+      ...base,
+      phase: 'needs-answer',
+      tone: 'neutral',
+      sentence: 'Paused for your answer',
+    };
+  }
+  const failedIndex = ordered.findIndex((agent) => agent.status === 'failed');
+  if (failedIndex >= 0) {
+    return {
+      ...base,
+      phase: 'step-failed',
+      tone: 'neutral',
+      sentence: `Paused on failed step ${failedIndex + 1}`,
+    };
+  }
+  const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');
+  if (pendingIndex >= 0) {
+    const agent = ordered[pendingIndex]!;
+    return {
+      ...base,
+      phase: 'waiting',
+      tone: 'neutral',
+      sentence: `Waiting on step ${pendingIndex + 1} · ${agent.name}`,
+    };
+  }
+  if (run.autoRun) {
+    return {
+      ...base,
+      phase: 'automatic',
+      tone: 'info',
+      sentence: 'Continuing automatically',
+    };
+  }
+  if (ordered.length === 0) {
+    return {
+      ...base,
+      phase: 'ready-first',
+      tone: 'neutral',
+      sentence: 'Ready to plan the first step',
+    };
+  }
+  if (run.autoRun === false) {
+    return {
+      ...base,
+      phase: 'ready-mid',
+      tone: 'neutral',
+      sentence: 'Paused · autorun is off',
+    };
+  }
+  return {
+    ...base,
+    phase: 'ready-mid',
+    tone: 'neutral',
+    sentence: `Step ${doneCount} done · ready to continue`,
+  };
+};

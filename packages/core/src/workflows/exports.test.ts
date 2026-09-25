@@ -9,6 +9,8 @@ describe('phases barrel exports', () => {
     expect(core.buildParallelCarryForward).toBeTypeOf('function');
     expect(core.buildStepPrompt).toBeTypeOf('function');
     expect(core.isWorkflowComplete).toBeTypeOf('function');
+    expect(core.isAgentSettled).toBeTypeOf('function');
+    expect(core.isAgentStatusSettled).toBeTypeOf('function');
   });
 
   it('exposes the same symbols from the phases sub-barrel', () => {

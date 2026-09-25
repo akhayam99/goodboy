@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
@@ -14,7 +14,7 @@ const state = vi.hoisted(() => ({
 }));
 
 const executedRouting = vi.hoisted(() => ({
-  value: null as { provider: string; model: string } | null,
+  value: null as { provider: string; model: string; effort: string | null } | null,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -27,6 +27,9 @@ vi.mock('../../../chat/components/ChatView', () => ({
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
 vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
+vi.mock('./AgentNextAction', () => ({
+  AgentNextAction: () => <div>Next action strip</div>,
+}));
 
 import { AgentDetailPane } from './index';
 
@@ -57,6 +60,20 @@ beforeEach(() => {
 });
 
 describe('AgentDetailPane', () => {
+  it('pins the next action in the fixed header, above the tabs, on both tabs', () => {
+    render(<AgentDetailPane session={session} agent={agent} isChatActive onBack={() => {}} />);
+
+    const band = screen.getByTestId('detail-header-band');
+    const strip = within(band).getByText('Next action strip');
+    const tabs = within(band).getByRole('tab', { name: 'Brief' });
+    expect(strip.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
+    expect(
+      within(screen.getByTestId('detail-header-band')).getByText('Next action strip'),
+    ).toBeDefined();
+  });
+
   it('places the title at the shared detail inset above agent metadata', () => {
     render(
       <AgentDetailPane
@@ -167,7 +184,7 @@ describe('AgentDetailPane', () => {
 
   it('shows the model that actually ran and names the plan it replaced', () => {
     Object.assign(state, { agentModelOverride: { [agentId]: 'claude-haiku-4-5' } });
-    executedRouting.value = { provider: 'codex', model: 'gpt-5.1-codex' };
+    executedRouting.value = { provider: 'codex', model: 'gpt-5.1-codex', effort: null };
 
     render(
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
@@ -176,6 +193,18 @@ describe('AgentDetailPane', () => {
     expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
     expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
     expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
+  });
+
+  it('shows the effort the run was started with and marks where it left the plan', () => {
+    Object.assign(state, { agentEffortOverride: { [agentId]: 'high' } });
+    executedRouting.value = { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' };
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByTestId('effort-divergence').textContent).toBe('Medium');
+    expect(screen.queryByText('High')).toBeNull();
   });
 
   it('reveals the transcript without changing the selected agent', () => {

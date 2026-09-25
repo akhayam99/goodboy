@@ -2,6 +2,7 @@ import type { IsoDateTime, Message, ProviderRunId, SessionId, TurnState } from '
 import { formatError } from '@goodboy/ui';
 import {
   listAgentRunIdsForSession,
+  listAgentTurnSpanRoutes,
   listOpenQuestionsForSession,
   listTelemetryForSession,
   setSetting as dbSetSetting,
@@ -14,6 +15,7 @@ import type { AgentKind } from '../../../features/session/agent-kind';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { EMPTY_LOADING } from '../../session-mutators';
 import type { SessionLoadingFlags } from '../../types';
+import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
@@ -163,8 +165,12 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       void Promise.all([
         invokeAgentList(id).finally(() => endPhaseRunList()),
         listAgentRunIdsForSession(tauriDatabase, id).finally(() => endRunIds()),
+        listAgentTurnSpanRoutes({ db: tauriDatabase, sessionId: id }).catch((error: unknown) => {
+          console.error(`[turn spans] load failed for session ${id}`, formatError(error));
+          return [];
+        }),
       ])
-        .then(([agents, agentRunIds]) => {
+        .then(([agents, agentRunIds, spanRoutes]) => {
           const seededHistory: Record<string, ReadonlyArray<ProviderRunId>> = {};
           const seededTurnState: Record<string, TurnState> = {};
           const session = get().sessions.find((s) => s.id === id);
@@ -209,6 +215,10 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           set((state) => ({
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [id]: agents },
             agentRunHistory: { ...state.agentRunHistory, ...seededHistory },
+            runRouting: seedRunRoutingFromSpans({
+              runRouting: state.runRouting,
+              routes: spanRoutes,
+            }),
             agentTurnState: { ...state.agentTurnState, ...seededTurnState },
             agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
           }));

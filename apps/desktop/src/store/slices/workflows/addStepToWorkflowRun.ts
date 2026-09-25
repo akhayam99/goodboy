@@ -23,6 +23,7 @@ import {
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { clearOrchestrationOutcome } from './clearOrchestrationOutcome';
+import { isWorkflowRunClosedByUser } from '../../../features/workflows/isWorkflowRunClosedByUser';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
@@ -256,6 +257,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        providerPool: run.providerPool ?? null,
       }),
     });
 
@@ -283,7 +285,7 @@ export const addStepToWorkflowRun = (set: SetFn, get: GetFn) => {
       agentEffortOverride: { ...state.agentEffortOverride, ...spawned.effortOverrides },
     }));
 
-    if (run.executionMode === 'dynamic') {
+    if (run.executionMode === 'dynamic' || isWorkflowRunClosedByUser({ run })) {
       await clearOrchestrationOutcome({ set, sessionId, workflowRunId });
     }
 

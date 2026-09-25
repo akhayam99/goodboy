@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Divider } from '@goodboy/ui';
+import { useMemo } from 'react';
+import { X } from 'lucide-react';
+import { IconButton, SectionSurface } from '@goodboy/ui';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
 import { useAppStore } from '../../../../store/store';
 import { WORKFLOW_ROUTING_COPY } from '../../workflowRoutingCopy';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WorkflowNodeRoutingRow } from './WorkflowNodeRoutingRow';
 
 const EMPTY_AGENTS: ReadonlyArray<Agent> = [];
@@ -15,10 +16,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
   readonly steps: ReadonlyArray<Step>;
+  readonly onClose: () => void;
 };
 
-export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps, onClose }: Props) => {
   const sessionAgents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_AGENTS);
   const providers = useAppStore((state) => state.providers ?? EMPTY_PROVIDERS);
   const nodes = useMemo(
@@ -39,48 +40,33 @@ export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps }: Props) 
   if (nodes.length === 0) {
     return null;
   }
-  const summary = nodes.length === 1 ? '1 model choice' : `${String(nodes.length)} model choices`;
-
   return (
-    <>
-      <Divider />
-      <section
-        data-testid="workflow-node-routing"
-        aria-label={WORKFLOW_ROUTING_COPY.sectionLabel}
-        className="flex min-w-0 flex-col gap-1.5"
-      >
-        <button
-          type="button"
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((open) => open === false)}
-          className="flex items-center gap-1 self-start rounded-md text-2xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {isOpen ? (
-            <ChevronDown size={11} aria-hidden className="shrink-0" />
-          ) : (
-            <ChevronRight size={11} aria-hidden className="shrink-0" />
-          )}
-          {summary}
-        </button>
-        {isOpen ? (
-          <>
-            <p className="text-2xs leading-relaxed text-muted-foreground">
-              {WORKFLOW_ROUTING_COPY.sectionHint}
-            </p>
-            <ul className="flex min-w-0 flex-col gap-1.5">
-              {nodes.map((agent) => (
-                <WorkflowNodeRoutingRow
-                  key={agent.id}
-                  sessionId={sessionId}
-                  agent={agent}
-                  step={steps.find((candidate) => candidate.id === agent.stepId) ?? null}
-                  connectedProviders={connectedProviders}
-                />
-              ))}
-            </ul>
-          </>
-        ) : null}
-      </section>
-    </>
+    <SectionSurface
+      label={WORKFLOW_ROUTING_COPY.sectionLabel}
+      ariaLabel={WORKFLOW_ROUTING_COPY.sectionLabel}
+      hint={WORKFLOW_ROUTING_COPY.sectionHint}
+      action={
+        <IconButton
+          variant="ghost"
+          icon={X}
+          iconSize={ICON_SIZE.row}
+          label={`Hide ${WORKFLOW_ROUTING_COPY.sectionLabel.toLowerCase()}`}
+          onClick={onClose}
+          className="size-6"
+        />
+      }
+    >
+      <ul data-testid="workflow-node-routing" className="flex min-w-0 flex-col gap-1.5">
+        {nodes.map((agent) => (
+          <WorkflowNodeRoutingRow
+            key={agent.id}
+            sessionId={sessionId}
+            agent={agent}
+            step={steps.find((candidate) => candidate.id === agent.stepId) ?? null}
+            connectedProviders={connectedProviders}
+          />
+        ))}
+      </ul>
+    </SectionSurface>
   );
 };

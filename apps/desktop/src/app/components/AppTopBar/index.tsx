@@ -23,15 +23,17 @@ export const AppTopBar = ({ onOpenSpend }: Props) => {
     <>
       <div
         data-tauri-drag-region
-        className="grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background px-3"
+        className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background pl-1.5 pr-3"
       >
-        <div className="flex min-w-0 max-w-56 items-center">
+        <div className="col-start-1 flex min-w-0 max-w-56 items-center">
           <WorkspaceIdentityRow />
         </div>
 
-        <BrandBadge />
+        <div className="col-start-2 flex items-center">
+          <BrandBadge />
+        </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="col-start-3 flex items-center justify-end gap-2">
           <WorkspaceRollupStrip onOpenSpend={onOpenSpend} />
 
           <Divider orientation="vertical" className="h-4 shrink-0 self-center" />

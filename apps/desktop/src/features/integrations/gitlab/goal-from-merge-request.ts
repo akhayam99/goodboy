@@ -1,15 +1,17 @@
-import { capText } from '../../../shared/utils/capText';
-import { GOAL_BODY_CHAR_CAP } from '../shared/goalBodyCap';
+import { composeGoal } from '../shared/composeGoal';
 import type { GitlabMergeRequest } from './client';
 
 type Params = {
   readonly mergeRequest: GitlabMergeRequest;
 };
 
-export const goalFromMergeRequest = ({ mergeRequest }: Params): string => {
-  const heading = `GitLab merge request !${mergeRequest.iid}: ${mergeRequest.title.trim()}`;
-  const description = (mergeRequest.description ?? '').trim();
-  return description === ''
-    ? heading
-    : `${heading}\n\n${capText({ text: description, capChars: GOAL_BODY_CHAR_CAP })}`;
-};
+export const goalFromMergeRequest = ({ mergeRequest }: Params): string =>
+  composeGoal({
+    heading: `GitLab merge request !${mergeRequest.iid}: ${mergeRequest.title.trim()}`,
+    body: (mergeRequest.description ?? '').trim(),
+    source: {
+      noun: 'merge request',
+      reference: `!${mergeRequest.iid}`,
+      url: mergeRequest.webUrl ?? null,
+    },
+  });

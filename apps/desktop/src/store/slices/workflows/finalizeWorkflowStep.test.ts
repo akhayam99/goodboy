@@ -579,8 +579,8 @@ describe('finalizeWorkflowStep output summary', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: `${agent.name} is waiting on clusters`,
-        body: expect.stringContaining('1 cluster agent has not finished'),
+        title: `${agent.name} is waiting on subagents`,
+        body: expect.stringContaining('1 subagent has not finished'),
         sessionId: SESSION_ID,
       }),
     );

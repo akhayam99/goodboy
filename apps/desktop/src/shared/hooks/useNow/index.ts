@@ -23,6 +23,7 @@ function ensureRunning(ticker: Ticker, cadence: Cadence): void {
   if (ticker.intervalId !== null) {
     return;
   }
+  ticker.now = Date.now();
   ticker.intervalId = window.setInterval(() => {
     ticker.now = Date.now();
     for (const listener of ticker.listeners) listener(ticker.now);

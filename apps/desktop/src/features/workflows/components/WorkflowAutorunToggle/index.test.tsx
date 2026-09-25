@@ -7,29 +7,27 @@ import { WorkflowAutorunToggle } from './index';
 afterEach(cleanup);
 
 describe('WorkflowAutorunToggle', () => {
-  it('shows the computed on/off label in the detail variant instead of a static word', () => {
+  it('reads as a switch named Autorun that carries its state', () => {
     render(<WorkflowAutorunToggle isOn={false} onToggle={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Autorun off' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Autorun' })).toBeNull();
+    const toggle = screen.getByRole('switch', { name: 'Autorun' });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
   });
 
   it('toggles immediately when no step is in flight', () => {
     const onToggle = vi.fn();
     render(<WorkflowAutorunToggle isOn={false} onToggle={onToggle} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun off' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
   it('turns autorun off immediately without presenting a stop confirmation', () => {
     const onToggle = vi.fn();
     render(<WorkflowAutorunToggle isOn onToggle={onToggle} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Autorun on' }));
+    expect(screen.getByRole('switch', { name: 'Autorun' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('switch', { name: 'Autorun' }));
     expect(onToggle).toHaveBeenCalledOnce();
     expect(screen.queryByRole('group')).toBeNull();
-  });
-
-  it('keeps the sidebar variant as an icon with the same computed label as its tooltip', () => {
-    render(<WorkflowAutorunToggle variant="sidebar" isOn onToggle={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Autorun on' })).toBeDefined();
   });
 });

@@ -18,6 +18,7 @@ import type {
 } from '@goodboy/types';
 import type { Database, PlainStatement } from '../client';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
+import { serializeProviderPool, toProviderPool } from './provider-pool-column';
 
 export type SessionWorkflowRow = {
   workflow_run_id: string;
@@ -40,12 +41,15 @@ export type SessionWorkflowRow = {
   spend_limit_mode: string;
   chain_after_run_id: string | null;
   goal: string | null;
+  title: string | null;
+  title_user_edited: number;
+  provider_pool: string | null;
   discarded_at: number | null;
   created_at: number | string;
 };
 
 export const SESSION_WORKFLOW_COLS =
-  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, discarded_at, created_at';
+  'workflow_run_id, workflow_id, ordinal, current_step_ordinal, auto_run, trigger_mode, execution_mode, orchestration_outcome, orchestration_reason, orchestration_error, orchestration_stop_kind, orchestrator_hint_log, orchestrator_summary, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, chain_after_run_id, goal, title, title_user_edited, provider_pool, discarded_at, created_at';
 
 type RoutingColumns = {
   readonly provider: string | null;
@@ -97,6 +101,7 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
     return Number.isNaN(timestamp) ? undefined : (new Date(timestamp).toISOString() as IsoDateTime);
   })();
   const orchestratorHints = toOrchestratorHintLog({ value: row.orchestrator_hint_log });
+  const providerPool = toProviderPool({ value: row.provider_pool });
   return {
     id: row.workflow_run_id as WorkflowRunId,
     workflowId: row.workflow_id as WorkflowId,
@@ -121,6 +126,9 @@ export const toWorkflowRun = (row: SessionWorkflowRow): WorkflowRun => {
       chainAfterId: row.chain_after_run_id as WorkflowRunId,
     }),
     ...(row.goal != null && row.goal !== '' && { goal: row.goal }),
+    ...(row.title != null && row.title !== '' && { title: row.title }),
+    ...(row.title_user_edited !== 0 && { titleUserEdited: true }),
+    ...(providerPool != null && { providerPool }),
     ...(row.discarded_at != null && {
       discardedAt: new Date(row.discarded_at).toISOString() as IsoDateTime,
     }),
@@ -163,6 +171,7 @@ type AttachWorkflowToSessionParams = {
   readonly orchestratorRouting?: OrchestratorRouting;
   readonly spendLimitUsd?: number;
   readonly spendLimitMode?: WorkflowSpendLimitMode;
+  readonly providerPool?: ReadonlyArray<ProviderId>;
 };
 
 export const attachWorkflowToSession = async ({
@@ -179,6 +188,7 @@ export const attachWorkflowToSession = async ({
   orchestratorRouting,
   spendLimitUsd,
   spendLimitMode = 'pause',
+  providerPool,
 }: AttachWorkflowToSessionParams): Promise<void> => {
   const maxOrdinal = await db.select<{ max_ordinal: number | null }>(
     'SELECT MAX(ordinal) as max_ordinal FROM session_workflows WHERE session_id = ?',
@@ -187,7 +197,7 @@ export const attachWorkflowToSession = async ({
   const nextOrdinal = (maxOrdinal[0]?.max_ordinal ?? -1) + 1;
 
   await db.execute(
-    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, trigger_mode, chain_after_run_id, execution_mode, orchestrator_provider, orchestrator_model, orchestrator_effort, spend_limit_usd, spend_limit_mode, provider_pool, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       workflowRunId,
       sessionId,
@@ -204,6 +214,7 @@ export const attachWorkflowToSession = async ({
       orchestratorRouting?.effort ?? null,
       spendLimitUsd ?? null,
       spendLimitMode,
+      serializeProviderPool({ pool: providerPool }),
       Date.parse(updatedAt),
     ],
   );
@@ -387,6 +398,35 @@ export const updateWorkflowRunSpendLimit = async (
   await db.execute(
     'UPDATE session_workflows SET spend_limit_usd = ?, spend_limit_mode = ? WHERE workflow_run_id = ?',
     [spendLimitUsd, mode, workflowRunId],
+  );
+};
+
+type WorkflowRunTitleParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+  readonly title: string;
+};
+
+export const updateGeneratedWorkflowRunTitle = async ({
+  db,
+  workflowRunId,
+  title,
+}: WorkflowRunTitleParams): Promise<boolean> => {
+  const { rowsAffected } = await db.execute(
+    'UPDATE session_workflows SET title = ? WHERE workflow_run_id = ? AND title_user_edited = 0',
+    [title, workflowRunId],
+  );
+  return rowsAffected > 0;
+};
+
+export const updateUserWorkflowRunTitle = async ({
+  db,
+  workflowRunId,
+  title,
+}: WorkflowRunTitleParams): Promise<void> => {
+  await db.execute(
+    'UPDATE session_workflows SET title = ?, title_user_edited = 1 WHERE workflow_run_id = ?',
+    [title, workflowRunId],
   );
 };
 

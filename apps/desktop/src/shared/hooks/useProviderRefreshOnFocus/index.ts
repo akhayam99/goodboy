@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../../store/store';
-import { ACTIVE_CONNECT_PHASES } from '../../../store/slices/providers/types';
+import {
+  ACTIVE_CONNECT_PHASES,
+  ACTIVE_LIFECYCLE_PHASES,
+} from '../../../store/slices/providers/types';
 
 const DEBOUNCE_MS = 500;
 const LIFECYCLE_RETRY_MS = 2_000;
@@ -32,10 +35,8 @@ export const useProviderRefreshOnFocus = (): void => {
 
         const { providerLifecycle, providerConnect } = useAppStore.getState();
         const inFlight =
-          Object.values(providerLifecycle).some(
-            (l) =>
-              l.phase === 'installing' || l.phase === 'connecting' || l.phase === 'disconnecting',
-          ) || Object.values(providerConnect).some((c) => ACTIVE_CONNECT_PHASES.has(c.phase));
+          Object.values(providerLifecycle).some((l) => ACTIVE_LIFECYCLE_PHASES.has(l.phase)) ||
+          Object.values(providerConnect).some((c) => ACTIVE_CONNECT_PHASES.has(c.phase));
         if (inFlight) {
           schedule({ delayMs: LIFECYCLE_RETRY_MS });
           return;

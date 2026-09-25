@@ -2,6 +2,8 @@ import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import type { Agent, AgentId, TelemetryRecord } from '@goodboy/types';
 import { EMPTY_ARRAY } from '../../../../store';
 import { resolveAgentKind, type AgentKind } from '../../agent-kind';
+import { isAgentClosable, isAgentClosedByUser } from '../../agent-lifecycle';
+import type { AgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import type { AgentAggregate } from '../AgentMetrics';
 import type { AgentCardDensity } from '../AgentCard/agentCardDensity';
 import type { ProviderContextUsage } from './ContextWindowBar';
@@ -29,8 +31,9 @@ type Props = {
   readonly onDeleteAgent: (id: AgentId) => Promise<void>;
   readonly isInspected?: boolean;
   readonly onInspectAgent?: (id: AgentId) => void;
-  readonly onMarkDone: (id: AgentId) => void;
-  readonly onReopen?: (id: AgentId) => void;
+  readonly signals: AgentLifecycleSignals;
+  readonly onClose: (id: AgentId) => void;
+  readonly onReopen: (id: AgentId) => void;
   readonly isMuted?: boolean;
   readonly density?: AgentCardDensity;
 };
@@ -56,7 +59,8 @@ export const AdHocRow = ({
   onDeleteAgent,
   isInspected = false,
   onInspectAgent,
-  onMarkDone,
+  signals,
+  onClose,
   onReopen,
   isMuted = false,
   density = 'sidebar',
@@ -70,6 +74,11 @@ export const AdHocRow = ({
   const activeDelegatedChildCount = scoutChildren.filter(
     (child) => child.status === 'pending' || child.status === 'running',
   ).length;
+  const isClosable = isAgentClosable({
+    agent: run,
+    hasOpenQuestion: signals.openQuestionAgentIds.has(run.id),
+    isTurnLive: signals.liveTurnAgentIds.has(run.id),
+  });
   return (
     <Fragment key={run.id}>
       <AgentRow
@@ -92,8 +101,8 @@ export const AdHocRow = ({
         onDelete={() => void onDeleteAgent(run.id)}
         isInspected={isInspected}
         onInspect={onInspectAgent === undefined ? undefined : () => onInspectAgent(run.id)}
-        onMarkDone={() => onMarkDone(run.id)}
-        {...(onReopen !== undefined && { onReopen: () => onReopen(run.id) })}
+        {...(isClosable && { onClose: () => onClose(run.id) })}
+        {...(isAgentClosedByUser({ agent: run }) && { onReopen: () => onReopen(run.id) })}
         isMuted={isMuted}
         density={density}
       />

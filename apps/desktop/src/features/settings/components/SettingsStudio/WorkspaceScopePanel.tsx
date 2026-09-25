@@ -3,13 +3,11 @@ import type { WorkspaceId } from '@goodboy/types';
 import {
   Button,
   cn,
-  Divider,
   FieldRow,
   InlineConfirm,
   Input,
-  PANE_RHYTHM,
-  ScrollFade,
-  SectionHeader,
+  Notice,
+  SectionSurface,
   Switch,
   tintClasses,
 } from '@goodboy/ui';
@@ -25,8 +23,13 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
+import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+
+const WORKSPACE_PANE_HINT =
+  'How this workspace is named, what it works on and how its sessions start.';
 
 type DisconnectTitleParams = {
   readonly name: string;
@@ -160,67 +163,69 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
       .slice(0, 16);
 
   return (
-    <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
-      <div className={`flex flex-col ${PANE_RHYTHM.column} ${PANE_RHYTHM.measure.reading}`}>
-        <div className="flex flex-col gap-6">
-          {workspace == null ? null : (
-            <>
-              <section
-                id="identity"
-                ref={anchor({ id: 'identity' })}
-                className="flex flex-col gap-4"
+    <PaneShell
+      measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
+      title="Workspace"
+      meta={workspace?.name}
+      description={WORKSPACE_PANE_HINT}
+    >
+      <div className="flex flex-col gap-4">
+        {workspace == null ? null : (
+          <>
+            <div id="identity" ref={anchor({ id: 'identity' })}>
+              <SectionSurface
+                label="Workspace"
+                hint="How this workspace is labelled across the app."
+                icon={<CONCEPT_ICONS.workspace size={ICON_SIZE.row} aria-hidden />}
+                headingLevel={2}
               >
-                <SectionHeader
-                  label="Workspace"
-                  hint="How this workspace is labelled across the app."
-                />
-                <FieldRow
-                  label="Display name"
-                  help="Only the label changes. Project folders stay where they are."
-                >
-                  <Input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    onBlur={() => void commitDisplayName()}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        void commitDisplayName();
-                      }
-                      if (e.key === 'Escape') {
-                        setDisplayName(workspace.name);
-                      }
-                    }}
-                    placeholder={workspace.slug}
-                    disabled={renaming}
-                    maxLength={60}
-                    aria-label="Display name"
-                    className="w-56"
-                  />
-                </FieldRow>
-              </section>
+                <div className="flex flex-col">
+                  <FieldRow
+                    label="Display name"
+                    help="Only the label changes. Project folders stay where they are."
+                  >
+                    <Input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      onBlur={() => void commitDisplayName()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          void commitDisplayName();
+                        }
+                        if (e.key === 'Escape') {
+                          setDisplayName(workspace.name);
+                        }
+                      }}
+                      placeholder={workspace.slug}
+                      disabled={renaming}
+                      maxLength={60}
+                      aria-label="Display name"
+                      className="w-56"
+                    />
+                  </FieldRow>
+                </div>
+              </SectionSurface>
+            </div>
 
-              <Divider />
+            <div ref={anchor({ id: 'projects' })}>
+              <WorkspaceProjectsSection workspaceId={workspaceId} />
+            </div>
 
-              <div ref={anchor({ id: 'projects' })}>
-                <WorkspaceProjectsSection workspaceId={workspaceId} />
-              </div>
+            <div ref={anchor({ id: 'profile' })}>
+              <WorkspaceProfileSection workspaceId={workspaceId} />
+            </div>
+          </>
+        )}
 
-              <Divider />
-
-              <div ref={anchor({ id: 'profile' })}>
-                <WorkspaceProfileSection workspaceId={workspaceId} />
-              </div>
-
-              <Divider />
-            </>
-          )}
-
-          <section id="general" ref={anchor({ id: 'general' })} className="flex flex-col gap-4">
-            <SectionHeader
-              label="Session defaults"
-              hint="Applied to new sessions and agents in this workspace."
-            />
+        <div id="general" ref={anchor({ id: 'general' })}>
+          <SectionSurface
+            label="Session defaults"
+            hint="Applied to new sessions and agents in this workspace."
+            icon={<CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden />}
+            headingLevel={2}
+          >
             <div className="flex flex-col">
               <FieldRow label="Branch prefix" help="Prefixes every new session branch.">
                 <div className="flex items-center gap-1.5">
@@ -299,45 +304,32 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 />
               </FieldRow>
             </div>
-          </section>
+          </SectionSurface>
+        </div>
 
-          {WORKSPACE_FEATURES.skills ? (
-            <>
-              <Divider />
-              <div ref={anchor({ id: 'skills' })}>
-                <SkillsPanel workspaceId={workspaceId} />
-              </div>
-            </>
-          ) : null}
-
-          <div ref={anchor({ id: 'orphans' })}>
-            <OrphanWorktreesSection workspaceId={workspaceId} />
+        {WORKSPACE_FEATURES.skills ? (
+          <div ref={anchor({ id: 'skills' })}>
+            <SkillsPanel workspaceId={workspaceId} />
           </div>
+        ) : null}
 
-          <Divider />
+        <div ref={anchor({ id: 'orphans' })}>
+          <OrphanWorktreesSection workspaceId={workspaceId} />
+        </div>
 
-          <section id="danger" ref={anchor({ id: 'danger' })} className="flex flex-col gap-4">
-            <SectionHeader label="Danger zone" hint="Destructive workspace controls." />
-            <FieldRow
-              label="Disconnect workspace"
-              help="Hides it from the sidebar. Nothing on disk is deleted."
-            >
-              {confirmDisconnect ? (
-                <InlineConfirm
-                  role="danger"
-                  icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-                  title={disconnectTitle({
-                    name: workspace?.name ?? 'this workspace',
-                    runningCount,
-                  })}
-                  description="Projects, branches and worktrees stay on disk. Choose Add workspace with the same folder to bring it back with its sessions."
-                  confirmLabel="Disconnect"
-                  isBusy={disconnecting}
-                  onConfirm={onDisconnect}
-                  onCancel={() => setConfirmDisconnect(false)}
-                  className="w-80 text-left"
-                />
-              ) : (
+        <section
+          id="danger"
+          ref={anchor({ id: 'danger' })}
+          aria-label="Danger zone"
+          className="flex flex-col"
+        >
+          <Notice
+            tone="danger"
+            placement="inline"
+            title="Disconnect workspace"
+            body="Hides it from the sidebar. Nothing on disk is deleted."
+            actions={
+              confirmDisconnect ? null : (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -347,11 +339,28 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                   <Unplug size={ICON_SIZE.row} aria-hidden />
                   Disconnect
                 </Button>
-              )}
-            </FieldRow>
-          </section>
-        </div>
+              )
+            }
+          >
+            {confirmDisconnect && (
+              <InlineConfirm
+                role="danger"
+                icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+                title={disconnectTitle({
+                  name: workspace?.name ?? 'this workspace',
+                  runningCount,
+                })}
+                description="Projects, branches and worktrees stay on disk. Choose Add workspace with the same folder to bring it back with its sessions."
+                confirmLabel="Disconnect"
+                isBusy={disconnecting}
+                onConfirm={onDisconnect}
+                onCancel={() => setConfirmDisconnect(false)}
+                className="text-left"
+              />
+            )}
+          </Notice>
+        </section>
       </div>
-    </ScrollFade>
+    </PaneShell>
   );
 };

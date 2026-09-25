@@ -91,6 +91,27 @@ describe('StudioDetailLayout', () => {
     expect(screen.getByText('Tabs slot')).toBeDefined();
   });
 
+  it('pins the banner in the header band, after the header and before the tabs', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Header slot</span>}
+        banner={<span>Banner slot</span>}
+        tabs={<span>Tabs slot</span>}
+        fit="bleed"
+      >
+        <span>Main slot</span>
+      </StudioDetailLayout>,
+    );
+
+    const band = screen.getByTestId('detail-header-band');
+    const banner = within(band).getByText('Banner slot');
+    const header = within(band).getByText('Header slot');
+    const tabs = within(band).getByText('Tabs slot');
+    expect(header.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(banner.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(scrollAncestors({ node: banner })).toHaveLength(0);
+  });
+
   it('uses the shared pane measure for every header and a fill body', () => {
     const { unmount } = render(
       <StudioDetailLayout header={<span>Header slot</span>} fit="fill">

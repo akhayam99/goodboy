@@ -7,6 +7,7 @@ import type { WorkspaceId } from '@goodboy/types';
 const { state } = vi.hoisted(() => ({
   state: {
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
+    cliRequirements: [] as ReadonlyArray<never>,
     refreshProviders: vi.fn(async () => undefined),
     providerConnect: {} as Record<string, { phase: string }>,
   },

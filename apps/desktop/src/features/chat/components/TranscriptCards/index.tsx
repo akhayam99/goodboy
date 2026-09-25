@@ -1,3 +1,4 @@
+import type { RetryRunParams } from '../../retryRun';
 import { memo, type ReactNode } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -5,6 +6,7 @@ import { transcriptItemEqual } from '../../utils/transcriptItemEqual';
 import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
+import { CliTooOldNotice } from '../CliTooOldNotice';
 import { SkillInvocationCard } from '../SkillInvocationCard';
 import { PhaseTransitionCard } from '../PhaseTransitionCard';
 import { OrchestratorDecisionCard } from '../OrchestratorDecisionCard';
@@ -27,8 +29,8 @@ type TranscriptCardProps = {
   readonly workingDir?: string | null;
   readonly onRefreshAuth?: () => void;
   readonly onOpenDiff?: (filePath: string) => void;
-  readonly onRetryError?: (item: Extract<TranscriptItem, { kind: 'error' }>) => void;
-  readonly retryingErrorRunId?: ProviderRunId | null;
+  readonly onRetryRun?: (params: RetryRunParams) => void;
+  readonly retryingRunId?: ProviderRunId | null;
 };
 
 const TranscriptCardImpl = ({
@@ -38,8 +40,8 @@ const TranscriptCardImpl = ({
   workingDir = null,
   onRefreshAuth,
   onOpenDiff,
-  onRetryError,
-  retryingErrorRunId = null,
+  onRetryRun,
+  retryingRunId = null,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -70,18 +72,20 @@ const TranscriptCardImpl = ({
       );
     case 'usage':
       return <UsageRow usage={item.usage} />;
-    case 'error':
+    case 'error': {
+      const errorRunId = item.runId;
       return (
         <TranscriptErrorRow
           message={item.message}
           onRetry={
-            item.retryable === true && onRetryError != null ? () => onRetryError(item) : undefined
+            item.retryable === true && errorRunId != null && onRetryRun != null
+              ? () => onRetryRun({ runId: errorRunId, model: null })
+              : undefined
           }
-          isRetrying={
-            item.runId != null && retryingErrorRunId != null && item.runId === retryingErrorRunId
-          }
+          isRetrying={item.runId != null && retryingRunId != null && item.runId === retryingRunId}
         />
       );
+    }
     case 'decision_note':
       return <DecisionNoteRow message={item.message} />;
     case 'artifact_capture_failed':
@@ -92,6 +96,15 @@ const TranscriptCardImpl = ({
           providerId={item.providerId}
           identity={item.identity}
           onRefresh={onRefreshAuth ?? (() => undefined)}
+        />
+      );
+    case 'cli_too_old':
+      return (
+        <CliTooOldNotice
+          payload={item.payload}
+          runId={item.runId ?? null}
+          onRetryRun={onRetryRun}
+          isRetrying={item.runId != null && retryingRunId === item.runId}
         />
       );
     case 'skill_invocation':
@@ -128,6 +141,6 @@ export const TranscriptCard = memo(
     prev.workingDir === next.workingDir &&
     prev.onRefreshAuth === next.onRefreshAuth &&
     prev.onOpenDiff === next.onOpenDiff &&
-    prev.onRetryError === next.onRetryError &&
-    prev.retryingErrorRunId === next.retryingErrorRunId,
+    prev.onRetryRun === next.onRetryRun &&
+    prev.retryingRunId === next.retryingRunId,
 );

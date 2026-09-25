@@ -1,40 +1,26 @@
-import { CheckCheck, Mail, Trash2 } from 'lucide-react';
-import { CountToggle, InlineConfirm, SegmentedTabs, cn, tintClasses } from '@goodboy/ui';
-import type { SegmentedTabOption } from '@goodboy/ui';
-import type { NotificationSeverityFilter } from '../../grouping';
+import { CheckCheck, Trash2 } from 'lucide-react';
+import { InlineConfirm, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-
-const SEVERITY_OPTIONS: ReadonlyArray<SegmentedTabOption<NotificationSeverityFilter>> = [
-  { value: 'all', label: 'All' },
-  { value: 'error', label: 'Errors', tone: 'danger' },
-  { value: 'warning', label: 'Warnings', tone: 'warning' },
-  { value: 'info', label: 'Info', tone: 'info' },
-];
 
 type Props = {
   readonly unreadCount: number;
-  readonly severity: NotificationSeverityFilter;
-  readonly isUnreadOnly: boolean;
   readonly isArmed: boolean;
   readonly onArm: () => void;
   readonly onDisarm: () => void;
   readonly onMarkAllRead: () => void;
   readonly onDeleteAll: () => Promise<void>;
-  readonly onSeverityChange: (severity: NotificationSeverityFilter) => void;
-  readonly onUnreadOnlyChange: (isUnreadOnly: boolean) => void;
 };
+
+const GHOST =
+  'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors';
 
 export const NotificationsToolbar = ({
   unreadCount,
-  severity,
-  isUnreadOnly,
   isArmed,
   onArm,
   onDisarm,
   onMarkAllRead,
   onDeleteAll,
-  onSeverityChange,
-  onUnreadOnlyChange,
 }: Props) => {
   if (isArmed) {
     return (
@@ -42,8 +28,8 @@ export const NotificationsToolbar = ({
         className="w-80"
         role="danger"
         icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title="Delete every notification?"
-        description="This clears the whole history for good. Nothing here can be recovered."
+        title="Delete these notifications?"
+        description="This clears the history shown here for good. Nothing here can be recovered."
         confirmLabel="Delete all"
         onConfirm={onDeleteAll}
         onCancel={onDisarm}
@@ -52,27 +38,12 @@ export const NotificationsToolbar = ({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      <SegmentedTabs
-        ariaLabel="Filter notifications by severity"
-        options={SEVERITY_OPTIONS}
-        value={severity}
-        onChange={onSeverityChange}
-        size="sm"
-      />
-      <CountToggle
-        label="Unread only"
-        count={unreadCount}
-        isShown={isUnreadOnly}
-        icon={Mail}
-        onChange={onUnreadOnlyChange}
-        isFilter
-      />
+    <div className="flex items-center justify-end gap-1">
       {unreadCount > 0 && (
         <button
           type="button"
           onClick={onMarkAllRead}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          className={cn(GHOST, 'hover:bg-hover hover:text-foreground')}
         >
           <CheckCheck size={ICON_SIZE.row} aria-hidden />
           Mark all read
@@ -81,11 +52,7 @@ export const NotificationsToolbar = ({
       <button
         type="button"
         onClick={onArm}
-        className={cn(
-          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors',
-          tintClasses('danger').hoverBg,
-          'hover:text-danger',
-        )}
+        className={cn(GHOST, tintClasses('danger').hoverBg, 'hover:text-danger')}
       >
         <Trash2 size={ICON_SIZE.row} aria-hidden />
         Delete all

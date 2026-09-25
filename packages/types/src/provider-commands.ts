@@ -1,6 +1,6 @@
 import type { ProviderId } from './provider-registry';
 
-export type ProviderLifecycleAction = 'install' | 'login' | 'logout';
+export type ProviderLifecycleAction = 'install' | 'login' | 'logout' | 'update';
 
 export type ProviderPlatform = 'darwin' | 'linux' | 'win32';
 
@@ -12,6 +12,7 @@ export type ProviderPlatformCommands = {
 
 export type ProviderLifecycleCommands = {
   readonly install: ProviderPlatformCommands;
+  readonly update?: ProviderPlatformCommands;
   readonly login?: string;
   readonly logout: string;
 };

@@ -6,26 +6,14 @@ import type { Session, WorkflowRunId } from '@goodboy/types';
 
 type AgentsSectionMockProps = {
   readonly workflowRunId: WorkflowRunId;
-  readonly workflowVariant: string;
   readonly showWorkflowAttach: boolean;
 };
 
-vi.mock('@goodboy/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@goodboy/ui')>()),
-  ScrollFade: ({ children }: { readonly children: React.ReactNode }) => <div>{children}</div>,
-  cn: (...parts: ReadonlyArray<unknown>) => parts.filter(Boolean).join(' '),
-}));
-
 vi.mock('../../AgentTree/AgentsSection', () => ({
-  AgentsSection: ({
-    workflowRunId,
-    workflowVariant,
-    showWorkflowAttach,
-  }: AgentsSectionMockProps) => (
+  AgentsSection: ({ workflowRunId, showWorkflowAttach }: AgentsSectionMockProps) => (
     <div
       data-testid="agents-section"
       data-run-id={workflowRunId}
-      data-variant={workflowVariant}
       data-attach={String(showWorkflowAttach)}
     />
   ),
@@ -44,7 +32,6 @@ describe('WorkflowRunDetail', () => {
 
     const section = screen.getByTestId('agents-section');
     expect(section.getAttribute('data-run-id')).toBe(RUN_ID);
-    expect(section.getAttribute('data-variant')).toBe('detail');
     expect(section.getAttribute('data-attach')).toBe('false');
   });
 });

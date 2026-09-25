@@ -64,7 +64,7 @@ describe('NewScriptCard', () => {
 
     expect(
       screen.getByText(
-        'API is not mounted in this session yet, so this script has nowhere to run until it is.',
+        'API is not in this session yet, so this script has nowhere to run until it is.',
       ),
     ).toBeTruthy();
   });

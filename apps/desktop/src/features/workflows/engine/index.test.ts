@@ -5,12 +5,14 @@ import {
   draftFromPlannerSteps,
   draftFromStepDef,
   draftFromWorkflow,
+  duplicateStep,
   removeStep,
   reorderSteps,
   stepDraftWithModel,
   updateStep,
   upsertArgsFromDraft,
   validateDraft,
+  type StepDraft,
 } from './index';
 
 vi.stubGlobal('crypto', { randomUUID: vi.fn(() => `key-${Math.random()}`) });
@@ -90,11 +92,41 @@ describe('workflow authoring engine', () => {
   it('normalizes planner role aliases and unknown roles', () => {
     const steps = draftFromPlannerSteps({
       steps: [
-        { name: 'Known', role: 'reviewer', promptPrefix: 'Review', expectedOutput: 'Notes' },
-        { name: 'Docs', role: 'writer', promptPrefix: 'Document', expectedOutput: 'Docs' },
-        { name: 'Debug', role: 'debugger', promptPrefix: 'Debug', expectedOutput: 'Fix' },
-        { name: 'General', role: 'generic', promptPrefix: 'Handle', expectedOutput: 'Result' },
-        { name: 'Unknown', role: 'emperor', promptPrefix: 'Rule', expectedOutput: 'Order' },
+        {
+          name: 'Known',
+          role: 'reviewer',
+          promptPrefix: 'Review',
+          expectedOutput: 'Notes',
+          size: null,
+        },
+        {
+          name: 'Docs',
+          role: 'writer',
+          promptPrefix: 'Document',
+          expectedOutput: 'Docs',
+          size: null,
+        },
+        {
+          name: 'Debug',
+          role: 'debugger',
+          promptPrefix: 'Debug',
+          expectedOutput: 'Fix',
+          size: null,
+        },
+        {
+          name: 'General',
+          role: 'generic',
+          promptPrefix: 'Handle',
+          expectedOutput: 'Result',
+          size: null,
+        },
+        {
+          name: 'Unknown',
+          role: 'emperor',
+          promptPrefix: 'Rule',
+          expectedOutput: 'Order',
+          size: null,
+        },
       ],
     });
     expect(steps.map((step) => step.role)).toEqual([
@@ -104,6 +136,39 @@ describe('workflow authoring engine', () => {
       'custom',
       'custom',
     ]);
+  });
+
+  it('keeps the planner size for this run and leaves it out of a preset', () => {
+    const steps = draftFromPlannerSteps({
+      steps: [
+        {
+          name: 'Build',
+          role: 'implementer',
+          promptPrefix: 'Build',
+          expectedOutput: 'Diff',
+          size: 'large',
+        },
+        {
+          name: 'Check',
+          role: 'reviewer',
+          promptPrefix: 'Check',
+          expectedOutput: 'Notes',
+          size: null,
+        },
+      ],
+    });
+    expect(steps.map((step) => step.size)).toEqual(['large', null]);
+
+    const draft = { ...draftFromWorkflow({ workflow }), steps, isPreset: false };
+    const oneOff = upsertArgsFromDraft({ draft, workspaceId: workflow.workspaceId });
+    expect(oneOff.steps.map((step) => step.size)).toEqual(['large', undefined]);
+    expect(oneOff.steps[0]?.promptPrefix).toBe('Build');
+
+    const preset = upsertArgsFromDraft({
+      draft: { ...draft, isPreset: true },
+      workspaceId: workflow.workspaceId,
+    });
+    expect(preset.steps.map((step) => step.size)).toEqual([undefined, undefined]);
   });
 
   it('clamps effort when the model changes', () => {
@@ -172,5 +237,23 @@ describe('workflow authoring engine', () => {
     expect(updated).not.toBe(source);
     expect(reordered.map((step) => step.key)).toEqual([second.key, first.key]);
     expect(removed).toEqual([second]);
+  });
+
+  it('duplicates a step right after itself as a new unsaved step', () => {
+    const [first, second] = addStep({ steps: addStep({ steps: [] }) });
+    if (first === undefined || second === undefined) {
+      throw new Error('expected two steps');
+    }
+    const named = updateStep({
+      steps: [first, second],
+      key: first.key,
+      patch: { name: 'Scout', sourceStepId: 'step-1' as StepDraft['sourceStepId'] },
+    });
+    const duplicated = duplicateStep({ steps: named, key: first.key });
+
+    expect(duplicated.map((step) => step.name)).toEqual(['Scout', 'Scout', '']);
+    expect(duplicated[1]?.key).not.toBe(first.key);
+    expect(duplicated[1]?.sourceStepId).toBeNull();
+    expect(duplicateStep({ steps: named, key: 'missing' })).toBe(named);
   });
 });

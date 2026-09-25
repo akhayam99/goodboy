@@ -848,7 +848,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                     const mountPath = mountByProjectId.get(script.projectId)?.worktreePath ?? null;
                     const runDisabledReason =
                       runnable && mountPath == null
-                        ? `${projectName} is not mounted in this session`
+                        ? `${projectName} is not in this session`
                         : null;
                     return (
                       <li key={script.id}>
@@ -910,7 +910,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, hasHostHeading = false }:
                 ) : null}
                 {selectedMount === null ? (
                   <p className="text-xs text-muted-foreground">
-                    This project is not mounted in this session.
+                    This project is not in this session.
                   </p>
                 ) : null}
                 {!isDiscoveryLoading &&

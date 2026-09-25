@@ -149,7 +149,7 @@ The **Impact** studio tracks what the agents spend.
 - Next to the monthly cap and the alert threshold
 - So you see which models are worth what they cost
 
-![The Impact studio: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
+![The Impact page: spend per provider and per session in the rail, one provider against its monthly cap and alert threshold, and its cost broken down by model](./docs/images/impact.png)
 
 <br>
 

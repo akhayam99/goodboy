@@ -4,7 +4,14 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../platform', () => ({ currentPlatform: () => platform.current }));
 
-import { SHORTCUTS, formatCombo, shortcutGlyphs, withShortcutHint } from './registry';
+import {
+  SHORTCUTS,
+  formatCombo,
+  shortcutGlyphs,
+  shortcutRangeGlyphs,
+  withShortcutHint,
+} from './registry';
+import type { ShortcutEntry } from './registry';
 
 const RESERVED_COMBOS: ReadonlyArray<string> = [
   'cmd+KeyQ',
@@ -137,6 +144,32 @@ describe('shortcut registry', () => {
         /[⌘⌥⇧⌃⌫⎋↵␣]/,
       );
     }
+  });
+
+  it('keeps each family contiguous inside one group', () => {
+    const widened: ReadonlyArray<readonly [string, ShortcutEntry]> = entries;
+    const families = new Set(widened.flatMap(([, entry]) => entry.family ?? []));
+    for (const family of families) {
+      const indexes = widened.flatMap(([, entry], index) =>
+        entry.family === family ? [index] : [],
+      );
+      const groups = new Set(indexes.map((index) => widened[index]?.[1].group));
+      const start = indexes[0] ?? 0;
+      expect(groups.size, `${family} spans more than one group`).toBe(1);
+      expect(
+        indexes.every((value, offset) => value === start + offset),
+        `${family} is not contiguous`,
+      ).toBe(true);
+    }
+  });
+
+  it('spells a family range once, with the shared modifiers up front', () => {
+    platform.current = 'darwin';
+    expect(shortcutRangeGlyphs({ first: 'workspace.1', last: 'workspace.9' })).toBe('⌘1-9');
+    expect(shortcutRangeGlyphs({ first: 'palette.open', last: 'palette.open' })).toBe('⌘K');
+
+    platform.current = 'linux';
+    expect(shortcutRangeGlyphs({ first: 'workspace.1', last: 'workspace.9' })).toBe('Ctrl+1-9');
   });
 
   it('hangs the chord off the control that triggers it', () => {

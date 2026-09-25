@@ -1,7 +1,5 @@
-import { cn, tintClasses } from '@goodboy/ui';
-import { TriangleAlert } from 'lucide-react';
+import { Notice } from '@goodboy/ui';
 import type { CoverageTurnCounts } from './lib';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly counts: CoverageTurnCounts;
@@ -13,18 +11,11 @@ export const CoverageNotice = ({ counts }: Props) => {
   }
 
   return (
-    <p
-      className={cn(
-        'flex items-center gap-2.5 rounded-lg border',
-        tintClasses('warning').borderSoft,
-        tintClasses('warning').bg,
-        'px-3 py-2 text-xs text-foreground',
-      )}
-    >
-      <TriangleAlert size={ICON_SIZE.control} aria-hidden className="shrink-0 text-warning" />
-      <span>
-        {`No price for ${counts.unpriced} of ${counts.total} turns, so a cap cannot include them`}
-      </span>
-    </p>
+    <Notice
+      tone="warning"
+      placement="banner"
+      title="Some turns have no price"
+      body={`No price for ${counts.unpriced} of ${counts.total} turns, so a cap cannot include them`}
+    />
   );
 };

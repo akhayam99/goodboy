@@ -1,5 +1,5 @@
 import type { SessionEventKind } from '@goodboy/types';
-import type { TimelineTopLevelEntry } from './buildTimelineGroups';
+import type { TimelineAgentEntry, TimelineTopLevelEntry } from './buildTimelineGroups';
 
 export const ACTIVITY_CATEGORIES = [
   'agents',
@@ -53,7 +53,7 @@ export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
 
 export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   suggestions: 'Suggestions',
-  worktree: 'Worktree and branch',
+  worktree: 'Branches and worktrees',
   issues: 'Issues',
   pullRequests: 'Pull requests',
   workflows: 'Workflows',
@@ -62,7 +62,7 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   questions: 'Questions',
   resolver: 'Resolver',
   decisions: 'Decisions',
-  session: 'Archive and restore',
+  session: 'Session events',
 };
 
 export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
@@ -84,6 +84,138 @@ export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
   wireframes: true,
 };
 
+type ActivityGroup = {
+  readonly id: 'work' | 'outputs' | 'log';
+  readonly label: string;
+  readonly categories: ReadonlyArray<ActivityCategory>;
+};
+
+export const ACTIVITY_GROUPS = [
+  { id: 'work', label: 'Work', categories: ['agents', 'workflows', 'questions', 'suggestions'] },
+  { id: 'outputs', label: 'Outputs', categories: ['artifacts', 'pullRequests', 'issues'] },
+  {
+    id: 'log',
+    label: 'Session log',
+    categories: ['worktree', 'resolver', 'decisions', 'session'],
+  },
+] as const satisfies ReadonlyArray<ActivityGroup>;
+
+export type ActivityFilterPreset = 'everything' | 'work';
+
+export type ActivityPreset = ActivityFilterPreset | 'needsYou';
+
+export const ACTIVITY_PRESET_LABEL: Record<ActivityPreset, string> = {
+  everything: 'Everything',
+  work: 'Work',
+  needsYou: 'Needs you',
+};
+
+type TogglesParams = {
+  readonly categories: ReadonlyArray<ActivityCategory>;
+};
+
+const filterShowing = ({ categories }: TogglesParams): ActivityFilter => {
+  const shown = new Set<ActivityToggle>(categories);
+  for (const toggle of ACTIVITY_CHILD_TOGGLES) {
+    if (shown.has(ACTIVITY_CHILD[toggle].parent)) {
+      shown.add(toggle);
+    }
+  }
+  return Object.fromEntries(
+    ACTIVITY_TOGGLES.map((toggle) => [toggle, shown.has(toggle)]),
+  ) as ActivityFilter;
+};
+
+export const ACTIVITY_FILTER_PRESETS: Record<ActivityFilterPreset, ActivityFilter> = {
+  everything: filterShowing({ categories: ACTIVITY_CATEGORIES }),
+  work: filterShowing({ categories: ACTIVITY_GROUPS[0].categories }),
+};
+
+type PresetOfParams = {
+  readonly filter: ActivityFilter;
+};
+
+export const activityFilterPresetOf = ({ filter }: PresetOfParams): ActivityFilterPreset | null => {
+  const matches = (preset: ActivityFilterPreset) =>
+    ACTIVITY_TOGGLES.every((toggle) => ACTIVITY_FILTER_PRESETS[preset][toggle] === filter[toggle]);
+  if (matches('everything')) {
+    return 'everything';
+  }
+  if (matches('work')) {
+    return 'work';
+  }
+  return null;
+};
+
+export const hiddenActivityToggles = ({ filter }: PresetOfParams): ReadonlyArray<ActivityToggle> =>
+  ACTIVITY_GROUPS.flatMap(({ categories }) =>
+    categories.flatMap((category): ReadonlyArray<ActivityToggle> => {
+      if (!filter[category]) {
+        return [category];
+      }
+      return ACTIVITY_CHILD_TOGGLES.filter(
+        (toggle) => ACTIVITY_CHILD[toggle].parent === category && !filter[toggle],
+      );
+    }),
+  );
+
+export const activityToggleLabel = ({ toggle }: { readonly toggle: ActivityToggle }): string => {
+  const child = ACTIVITY_CHILD_TOGGLES.find((candidate) => candidate === toggle);
+  if (child !== undefined) {
+    return ACTIVITY_CHILD[child].ariaLabel;
+  }
+  const category = ACTIVITY_CATEGORIES.find((candidate) => candidate === toggle);
+  return category === undefined ? toggle : ACTIVITY_CATEGORY_LABEL[category];
+};
+
+export type ActivityCounts = Readonly<Record<ActivityToggle, number>>;
+
+type CountsParams = {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+  readonly suggestionCount: number;
+};
+
+type AgentTreeParams = {
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+};
+
+const agentTreeSize = ({ children }: AgentTreeParams): number =>
+  children.reduce((total, child) => total + 1 + agentTreeSize({ children: child.children }), 0);
+
+export const activityCounts = ({ entries, suggestionCount }: CountsParams): ActivityCounts => {
+  const counts = Object.fromEntries(ACTIVITY_TOGGLES.map((toggle) => [toggle, 0])) as Record<
+    ActivityToggle,
+    number
+  >;
+  counts.suggestions = suggestionCount;
+  const countChild = ({ entry }: EntryParams) => {
+    const child = activityChildOf({ entry });
+    if (child != null) {
+      counts[child] += 1;
+    }
+  };
+  for (const entry of entries) {
+    const category = activityCategoryOf({ entry });
+    if (category != null) {
+      counts[category] += 1;
+    }
+    countChild({ entry });
+    if (entry.kind === 'agent') {
+      counts.agentSubagents += agentTreeSize({ children: entry.children });
+    }
+    if (entry.kind === 'run') {
+      for (const child of entry.children) {
+        if (child.kind === 'agent') {
+          counts.workflowSubagents += 1 + agentTreeSize({ children: child.children });
+          continue;
+        }
+        countChild({ entry: child });
+      }
+    }
+  }
+  return counts;
+};
+
 const ACTIVITY_FILTER_STORAGE_KEY = 'goodboy:activity-filter';
 
 const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
@@ -101,6 +233,7 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   workflow_started: 'workflows',
   workflow_discarded: 'workflows',
   workflow_restored: 'workflows',
+  workflow_closed: 'workflows',
   workflow_deleted: 'workflows',
   decisions_changed: 'decisions',
   project_materialized: 'worktree',

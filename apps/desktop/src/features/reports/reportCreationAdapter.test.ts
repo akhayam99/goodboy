@@ -78,7 +78,7 @@ describe('reportCreationAdapter', () => {
       }),
     ).toBe('Local change evidence from ledger-core on ak/fix-rounding, against main.');
     expect(reportCreationAdapter.repoLine({ choice: 'session-summary', repo: null })).toBe(
-      'No mounted project, so no local change evidence.',
+      'No project in this session, so no local change evidence.',
     );
   });
 });

@@ -64,8 +64,8 @@ describe('continueOrPause', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Cluster paused on cluster 1',
-        body: 'The implementer stopped before completing this cluster. Open the agent and continue manually.',
+        title: 'Subagent paused on cluster 1',
+        body: "The implementer stopped before completing this subagent's part. Open the agent and continue manually.",
         sessionId: SESSION_ID,
       }),
     );

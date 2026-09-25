@@ -1,13 +1,5 @@
 import type { ReactNode } from 'react';
-import {
-  Button,
-  Divider,
-  EmptyState,
-  InlineConfirm,
-  ScrollFade,
-  SectionHeader,
-  cn,
-} from '@goodboy/ui';
+import { Button, EmptyState, InlineConfirm, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
 import { Plus, RotateCcw } from 'lucide-react';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import {
@@ -93,9 +85,7 @@ export const WorkflowsRail = ({
         )}
       </ScrollFade>
 
-      <Divider />
-      <div className="shrink-0 px-3 py-3">{importSection}</div>
-      <Divider />
+      <div className="mx-3 mb-3 shrink-0 rounded-lg bg-subtle p-3">{importSection}</div>
 
       <div className="shrink-0 px-3 pb-3 pt-1 empty:hidden">
         {confirmReset ? (

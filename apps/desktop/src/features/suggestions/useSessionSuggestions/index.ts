@@ -152,7 +152,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         const advance = advanceByRunId.get(run.id);
         return {
           id: run.id,
-          title: workflow.name,
+          title: run.title ?? workflow.name,
           advanceState: {
             kind: advance?.kind ?? 'blocked',
             stepId: advance?.kind === 'ready' ? advance.step.id : undefined,

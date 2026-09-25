@@ -51,6 +51,13 @@ export type StepDef = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
+const STEP_SIZES = ['small', 'medium', 'large'] as const;
+
+export type StepSize = (typeof STEP_SIZES)[number];
+
+export const isStepSize = (value: unknown): value is StepSize =>
+  typeof value === 'string' && STEP_SIZES.some((size) => size === value);
+
 export type Step = Readonly<{
   id: StepId;
   workflowId: WorkflowId;
@@ -68,6 +75,7 @@ export type Step = Readonly<{
   routingLock?: WorkflowRoutingLock | null;
   routingDecision?: WorkflowRoutingDecision | null;
   taskProfile?: WorkflowTaskProfile | null;
+  size?: StepSize;
   deletedAt?: IsoDateTime;
 }>;
 

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Notification } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 import {
-  filterNotificationGroups,
+  groupByDay,
   groupNotifications,
+  notificationGroupKey,
   sortNotificationGroupsNewestFirst,
 } from './grouping';
 
@@ -64,29 +65,45 @@ describe('notification grouping', () => {
     ]);
   });
 
-  it('matches a group when each active filter is satisfied by some member, not necessarily the same one', () => {
-    const readError = buildNotification({ id: 'read-error', read: true, coalesceKey: 'mixed' });
-    const unreadWarning = buildNotification({
-      id: 'unread-warning',
-      severity: 'warning',
-      coalesceKey: 'mixed',
-    });
-    const groups = groupNotifications({ notifications: [readError, unreadWarning] });
+  it('keys a group by its latest coalesce key, falling back to the id', () => {
+    const keyed = buildNotification({ id: 'a', coalesceKey: 'retry' });
+    const loose = buildNotification({ id: 'b' });
 
-    expect(filterNotificationGroups({ groups, severity: 'warning', isUnreadOnly: true })).toEqual([
-      [readError, unreadWarning],
-    ]);
-    expect(filterNotificationGroups({ groups, severity: 'error', isUnreadOnly: true })).toEqual([
-      [readError, unreadWarning],
+    expect(notificationGroupKey({ group: [keyed] })).toBe('retry');
+    expect(notificationGroupKey({ group: [loose] })).toBe('b');
+  });
+
+  it('splits groups into today, yesterday and earlier on local day boundaries', () => {
+    const now = new Date(2026, 8, 2, 9, 0, 0);
+    const today = buildNotification({
+      id: 'today',
+      ts: at({ value: new Date(2026, 8, 2, 0, 5).toISOString() }),
+    });
+    const yesterday = buildNotification({
+      id: 'yesterday',
+      ts: at({ value: new Date(2026, 8, 1, 23, 55).toISOString() }),
+    });
+    const earlier = buildNotification({
+      id: 'earlier',
+      ts: at({ value: new Date(2026, 7, 30, 12, 0).toISOString() }),
+    });
+
+    const days = groupByDay({ groups: [[today], [yesterday], [earlier]], now });
+
+    expect(days.map((entry) => [entry.day, entry.groups.map((group) => group[0]?.id)])).toEqual([
+      ['today', ['today']],
+      ['yesterday', ['yesterday']],
+      ['earlier', ['earlier']],
     ]);
   });
 
-  it('includes success notifications in the info filter', () => {
-    const success = buildNotification({ id: 'done', severity: 'success' });
-    const groups = groupNotifications({ notifications: [success] });
+  it('leaves out a day with nothing in it', () => {
+    const now = new Date(2026, 8, 2, 9, 0, 0);
+    const earlier = buildNotification({
+      id: 'earlier',
+      ts: at({ value: new Date(2026, 7, 1).toISOString() }),
+    });
 
-    expect(filterNotificationGroups({ groups, severity: 'info', isUnreadOnly: false })).toEqual([
-      [success],
-    ]);
+    expect(groupByDay({ groups: [[earlier]], now }).map((entry) => entry.day)).toEqual(['earlier']);
   });
 });

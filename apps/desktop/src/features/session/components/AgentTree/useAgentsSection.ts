@@ -4,19 +4,16 @@ import { useShallow } from 'zustand/react/shallow';
 import type {
   Agent,
   AgentId,
+  EffortLevel,
+  OpenQuestion,
   ProviderId,
   Session,
   SessionId,
   TurnState,
-  WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useSessionLoading,
-  useSessionOpenQuestions,
-} from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import { resolveWorkflowAdvance, type WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../workflows/workflowAdvanceView';
 import { WORKFLOW_BLOCK_COPY } from '../../../workflows/blockCopy';
@@ -39,7 +36,6 @@ export type StartStepAgentParams = {
 };
 
 export const useAgentsSection = ({ task, workflowRunId }: Params) => {
-  const isTaskActive = useAppStore((s) => s.currentSessionId === task.id);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[task.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
@@ -91,39 +87,49 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
       return out;
     }),
   );
+  const agentEffortOverride = useAppStore(
+    useShallow((s) => {
+      const out: Record<string, EffortLevel> = {};
+      const runs = s.sessionPhaseRuns[task.id];
+      if (!runs) {
+        return out;
+      }
+      for (const run of runs) {
+        const effort = s.agentEffortOverride[run.id];
+        if (effort !== undefined) {
+          out[run.id] = effort;
+        }
+      }
+      return out;
+    }),
+  );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
   const selectAgent = useAppStore((s) => s.selectAgent);
-  const requestOpenQuestionScroll = useAppStore((s) => s.requestOpenQuestionScroll);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const skipStuckStepAndAdvance = useAppStore((s) => s.skipStuckStepAndAdvance);
-  const recoverStuckStep = useAppStore((s) => s.recoverStuckStep);
   const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
-  const renameAgent = useAppStore((s) => s.renameAgent);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
-  const reorderSessionWorkflows = useAppStore((s) => s.reorderSessionWorkflows);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
     for (const { run, workflow } of attachedRuns) {
-      map.set(run.id, workflowKindName(workflow));
+      map.set(run.id, run.title ?? workflowKindName(workflow));
     }
     return map;
   }, [attachedRuns]);
   const openQuestions = useSessionOpenQuestions(task.id);
-  const loading = useSessionLoading(task.id);
+  const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const summarizerBusy = useAppStore((s) => s.summarizerStatus[task.id]?.status === 'running');
   const [spawnError, setSpawnError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<AgentId | null>(null);
   const workflowExpand = useAppStore((s) => s.workflowExpand[task.id]);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId?.[task.id] ?? null);
   const toggleWorkflowExpand = useAppStore((s) => s.toggleWorkflowExpand);
   const setPanelSectionExpanded = useAppStore((s) => s.setPanelSectionExpanded);
   const workflowExpanded = useAppStore((s) => s.sessionPanelExpanded[task.id]?.workflow ?? true);
-  const tree = useSessionAgentTree({ phaseRuns, selectedAgentId, isTaskActive });
+  const tree = useSessionAgentTree({ phaseRuns });
   const agentTurnState = useAppStore(
     useShallow((s) => {
       const out: Record<string, TurnState> = {};
@@ -184,27 +190,6 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     [detachWorkflowFromSession, task.id],
   );
 
-  const onReorderWorkflow = useCallback(
-    async (runId: WorkflowRunId, direction: 'up' | 'down') => {
-      const shown = [...task.workflowRuns].sort((a, b) => b.ordinal - a.ordinal).map((r) => r.id);
-      const idx = shown.indexOf(runId);
-      if (idx === -1) {
-        return;
-      }
-      const swap = direction === 'up' ? idx - 1 : idx + 1;
-      if (swap < 0 || swap >= shown.length) {
-        return;
-      }
-      [shown[idx], shown[swap]] = [shown[swap]!, shown[idx]!];
-      try {
-        await reorderSessionWorkflows(task.id, [...shown].reverse());
-      } catch (err) {
-        setSpawnError(formatError(err));
-      }
-    },
-    [reorderSessionWorkflows, task.id, task.workflowRuns],
-  );
-
   const standaloneAgentCount = useMemo(
     () =>
       tree.adHocAgents.filter(
@@ -228,16 +213,11 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
-  const onResolveFirstForRun = (run: WorkflowRun) => {
-    const q = openQuestions.find(
-      (oq) => oq.status === 'open' && (!oq.workflowRunId || oq.workflowRunId === run.id),
-    );
-    if (!q || !q.createdByAgentId) {
-      return;
+  const onAnswerQuestion = (question: OpenQuestion | null) => {
+    if (question != null) {
+      focusQuestion(question.id);
     }
-    void selectAgent(task.id, q.createdByAgentId);
-    requestOpenQuestionScroll({ agentId: q.createdByAgentId, questionId: q.id });
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    setActiveLens(task.id, 'questions');
   };
 
   const onStartStepAgent = async ({ agent, model, isConfirmed = false }: StartStepAgentParams) => {
@@ -275,15 +255,6 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     setActiveLens(sessionId, 'workflows');
   };
 
-  const onRenameCommit = async (id: AgentId, name: string) => {
-    setEditingId(null);
-    try {
-      await renameAgent(task.id, id, name);
-    } catch (err) {
-      setSpawnError(formatError(err));
-    }
-  };
-
   const visibleWorkflowRuns =
     workflowRunId == null
       ? attachedRuns
@@ -294,36 +265,26 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     agentKindOverride,
     agentModelOverride,
     agentProviderOverride,
+    agentEffortOverride,
     agentsByRunId: tree.agentsByRunId,
     agentsExpanded,
     attachedRuns,
     blockReasonByRunId,
     childrenByParentId: tree.childrenByParentId,
-    clusterExpand: tree.clusterExpand,
-    countUnread: tree.countUnread,
-    editingId,
     focusedWorkflowRunId,
-    skipStuckStepAndAdvance,
-    recoverStuckStep,
     hasAnyWorkflow: attachedRuns.length > 0,
-    isTaskActive,
-    isTranscriptLoading: loading.transcript,
+    onAnswerQuestion,
     metrics,
     onDiscardWorkflow,
     onDeleteWorkflow,
     onPickAgent,
-    onRenameCommit,
-    onReorderWorkflow,
-    onResolveFirstForRun,
     onStartStepAgent,
     selectedAgentId,
-    setEditingId,
     setPanelSectionExpanded,
     setWorkflowRunAutoRun,
     spawnError,
     standaloneAgentCount,
     startWorkflowRun: onStartWorkflowRun,
-    toggleClusterExpand: tree.toggleClusterExpand,
     toggleWorkflowExpand,
     visibleWorkflowRuns,
     workflowExpand,

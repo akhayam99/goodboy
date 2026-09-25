@@ -513,7 +513,7 @@ describe('MountActionsMenu', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Detach and remove' })));
     expect(
       screen.getByText(
-        "The directory at /worktrees/api is already absent; detach will remove only the session's mount record.",
+        "The directory at /worktrees/api is already absent; detach will remove only the session's record of it.",
       ),
     ).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Detach and remove' }));
@@ -577,7 +577,8 @@ describe('MountActionsMenu', () => {
       expect(state.reportError).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Couldn't detach api",
-          error: 'Could not remove /worktrees/api. Its mount stays; check again before retrying.',
+          error:
+            'Could not remove /worktrees/api. It stays in the session; check again before retrying.',
         }),
       ),
     );
@@ -602,7 +603,7 @@ describe('MountActionsMenu', () => {
     renderRowMenu();
 
     fireEvent.click(screen.getByRole('button', { name: 'api on ak/feat actions' }));
-    expect(screen.queryByRole('menuitem', { name: 'Unmount branch' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Close worktree' })).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Remove from session' }));
     expect(screen.getByText('Remove ak/feat?')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
@@ -777,7 +778,7 @@ describe('MountActionsMenu', () => {
     expect(trigger.className).not.toContain('opacity-0');
     fireEvent.click(trigger);
     const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
-    expect(names).toEqual(['Open terminal', 'Open scripts', 'Unmount branch']);
+    expect(names).toEqual(['Open terminal', 'Open scripts', 'Close worktree']);
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open terminal' }));
     expect(onTerminal).toHaveBeenCalledOnce();

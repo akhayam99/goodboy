@@ -5,6 +5,7 @@ import {
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
   getDefaultTurnModel,
+  isAgentStatusSettled,
   isSlotKey,
   runsForWorkflowRun,
   type SlotKey,
@@ -472,9 +473,7 @@ async function advanceNextWorkflowStep(sessionId: SessionId): Promise<void> {
       const allPrevDone = sortedSteps
         .filter((s) => s.ordinal < step.ordinal)
         .every((s) =>
-          runAgents.some(
-            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
-          ),
+          runAgents.some((r) => r.stepId === s.id && isAgentStatusSettled({ status: r.status })),
         );
       if (allPrevDone) {
         try {

@@ -160,6 +160,7 @@ import {
   createProvidersSlice,
   INITIAL_CONNECT_MAP,
   INITIAL_LIFECYCLE_MAP,
+  type LearnCliRequirementParams,
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
@@ -213,6 +214,10 @@ import { createMountCleanupSlice, mountCleanupInitialState } from './slices/moun
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
+import { createIssueBriefsSlice } from './slices/issue-briefs';
+import { issueBriefsInitialState } from './slices/issue-briefs/state';
+import { createDurationEstimatesSlice } from './slices/durationEstimates';
+import { durationEstimatesInitialState } from './slices/durationEstimates/state';
 import type {
   CreatePrSeriesInput,
   LoadPrSeriesInput,
@@ -273,7 +278,7 @@ import type { BitbucketConnection } from '../features/integrations/bitbucket/cli
 import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
-import type { AppState } from './types';
+import type { AppState, NotificationScope } from './types';
 import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
@@ -343,6 +348,9 @@ type AppActions = {
   connectProvider(providerId: ProviderId): Promise<void>;
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
+  updateProviderCli(providerId: ProviderId): Promise<void>;
+  hydrateCliRequirements(): Promise<void>;
+  learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
@@ -436,6 +444,7 @@ type AppActions = {
     workspaceId: WorkspaceId;
     projectId?: ProjectId;
     goal: string;
+    title?: string;
     branchPrefix?: string;
     branchSlug?: string;
     existingBranch?: string;
@@ -507,12 +516,18 @@ type AppActions = {
     args: { sha: string; message: string },
   ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
+  renameWorkflowRun(
+    sessionId: SessionId,
+    workflowRunId: WorkflowRunId,
+    name: string,
+  ): Promise<void>;
   setWorkflowRunAutoRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     autoRun: boolean,
   ): Promise<void>;
   stopWorkflowRunNow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
+  closeWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   attachWorkflowToSession(
     sessionId: SessionId,
@@ -642,7 +657,6 @@ type AppActions = {
   copyWorkflowFromWorkspace(params: CopyWorkflowFromWorkspaceParams): Promise<Workflow>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
-  renameWorkflow(workspaceId: WorkspaceId, workflowId: WorkflowId, name: string): Promise<void>;
   makeWorkflowPreset(workspaceId: WorkspaceId, workflowId: WorkflowId): Promise<void>;
   generateWorkflowTitle(
     workspaceId: WorkspaceId,
@@ -652,6 +666,7 @@ type AppActions = {
     goal: string,
     process: string,
   ): Promise<void>;
+  suggestWorkflowTitle(sessionId: SessionId, goal: string): Promise<string | null>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
   saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
@@ -873,6 +888,8 @@ type AppActions = {
   ): Promise<void>;
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   loadNotifications(): Promise<void>;
+  loadOlderNotifications(): Promise<void>;
+  setNotificationScope(scope: NotificationScope): Promise<void>;
   emitNotification(params: EmitNotificationParams): Promise<void>;
   reportError(params: ReportErrorParams): Promise<void>;
   retryStepSummary(params: {
@@ -1003,7 +1020,9 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
-  ReturnType<typeof createPrWritesSlice>;
+  ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createIssueBriefsSlice> &
+  ReturnType<typeof createDurationEstimatesSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1045,6 +1064,7 @@ export const initialState: AppState = {
   }),
   providerLifecycle: INITIAL_LIFECYCLE_MAP,
   providerConnect: INITIAL_CONNECT_MAP,
+  cliRequirements: [],
   providerCredentials: [],
   providerCooldowns: {},
   hydrated: false,
@@ -1061,6 +1081,8 @@ export const initialState: AppState = {
   ...mountCleanupInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...issueBriefsInitialState,
+  ...durationEstimatesInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
@@ -1084,6 +1106,7 @@ export const initialState: AppState = {
   sessionPhaseRuns: {},
   orchestratingWorkflowRuns: {},
   decisionRestartMarks: {},
+  orchestratorReadingHints: {},
   pendingOrchestrations: {},
   pendingAdvanceSessions: new Set<SessionId>(),
   announcedWorkflowBlocks: {},
@@ -1138,7 +1161,9 @@ export const initialState: AppState = {
   workflowRunAttachments: {},
   notifications: [],
   notificationsLoading: false,
-  notificationCounts: { total: 0, unread: 0 },
+  notificationCounts: [],
+  notificationScope: 'workspace',
+  hasOlderNotifications: false,
   sessionPlans: {},
   sessionNudges: {},
   planConsumptions: {},
@@ -1202,6 +1227,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createMountCleanupSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
+  ...createIssueBriefsSlice(set, get),
+  ...createDurationEstimatesSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

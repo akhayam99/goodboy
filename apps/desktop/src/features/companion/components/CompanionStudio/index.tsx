@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlaskConical, Smartphone } from 'lucide-react';
-import { Divider, formatError, ScrollFade, cn, tintClasses } from '@goodboy/ui';
+import { Smartphone } from 'lucide-react';
+import { Divider, formatError, Notice, ScrollFade } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import {
   bridgeRevoke,
   bridgeStart,
@@ -130,24 +129,13 @@ export const CompanionStudio = ({ onClose }: Props) => {
               </div>
             )}
 
-            <div
-              className={cn(
-                'flex max-w-[20rem] items-start gap-2 rounded-lg border',
-                tintClasses('warning').borderSoft,
-                tintClasses('warning').bg,
-                'px-3 py-2 text-left',
-              )}
-            >
-              <FlaskConical
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="mt-0.5 shrink-0 text-warning"
-              />
-              <p className="text-2xs leading-relaxed text-warning">
-                Goodboy for iPhone is in private testing and cannot be downloaded yet. Pairing works
-                with a build you already have.
-              </p>
-            </div>
+            <Notice
+              tone="warning"
+              placement="inline"
+              className="max-w-[20rem] text-left"
+              title="Goodboy for iPhone is in private testing"
+              body="It cannot be downloaded yet. Pairing works with a build you already have."
+            />
 
             {showsCode && (
               <PairingCode

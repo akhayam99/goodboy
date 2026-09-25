@@ -18,6 +18,16 @@ in `packages/ui`. Code shared across features that knows the desktop app (its
 domains, state, routing or runtime) stays in `apps/desktop/src/shared/`. How
 many places use the code does not change this boundary.
 
+The work tree shows the split. `WorkNode` in `packages/ui/src/components/WorkTree/`
+only draws a node from a state, a mark, a label and an optional progress.
+What a row is doing (`RowState`), how long it has worked and usually takes
+(`workTime`), the rail geometry and the row rhythm know agents and runs, so
+they live in `apps/desktop/src/features/workTreeModel/`, which the activity
+feed, the workflow run tree and the project rows all read. The folder is not
+called `features/workTree`: `features/worktree` (git worktrees) already exists,
+and the macOS file system folds case, so the two would share one folder on
+disk and split in two on Linux.
+
 ## Top-level (`apps/desktop/src/`)
 
 - `app/`: shell components only.

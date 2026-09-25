@@ -40,6 +40,7 @@ const {
     setAgentConfig: (sessionId: string, agentId: string, fields: unknown) => Promise<void>;
     workspaceOverrides: Record<string, never>;
     providers: ReadonlyArray<{ id: string; connection: string }>;
+    cliRequirements: ReadonlyArray<never>;
     skills: Record<string, never>;
     projectScripts: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
@@ -86,6 +87,7 @@ const {
       { id: 'cursor', connection: 'connected' },
       { id: 'codex', connection: 'connected' },
     ],
+    cliRequirements: [],
     skills: {},
     projectScripts: {},
     sessionWorktrees: {},
@@ -355,8 +357,9 @@ describe('ChatInput, input wiring', () => {
     await user.keyboard('{Enter}');
 
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText("Couldn't send the message")).toBeTruthy();
     expect(screen.getByText('session not found: session-1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'retry' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 
   it('suppresses the composer alert for transcript-owned stream failures', async () => {

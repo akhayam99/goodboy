@@ -62,7 +62,7 @@ vi.mock('./SessionCostChip', () => ({
 vi.mock('./LinkedWorkChips', () => ({ LinkedWorkChips: () => <span>Linked work</span> }));
 vi.mock('./LinkIssueAction', () => ({ LinkIssueAction: () => <button>Link issue</button> }));
 vi.mock('./ProjectMountRows', () => ({
-  ProjectMountRows: () => <section aria-label="Mounted projects" />,
+  ProjectMountRows: () => <section aria-label="Projects" />,
 }));
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
@@ -164,7 +164,7 @@ describe('HeaderBand', () => {
 
     const goal = screen.getByText('Goal');
     const digest = screen.getByRole('region', { name: 'Context digest' });
-    const projects = screen.getByRole('region', { name: 'Mounted projects' });
+    const projects = screen.getByRole('region', { name: 'Projects' });
     expect(goal.compareDocumentPosition(digest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(
       digest.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,

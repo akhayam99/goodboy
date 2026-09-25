@@ -3,7 +3,7 @@ import type { ArtifactContextInventoryRow } from '../artifacts/artifactContextIn
 import { WIREFRAME_SCOUT_DEADLINE_MS } from './wireframeScoutReports';
 import type { WireframeScout } from './wireframeScoutRoles';
 
-export const WIREFRAME_SCOUT_SKIP_NO_MOUNT = 'no mounted project, so nothing is scouted';
+export const WIREFRAME_SCOUT_SKIP_NO_MOUNT = 'no project in this session, so nothing is scouted';
 
 export const WIREFRAME_SCOUT_SKIP_BUDGET = 'this session is budget blocked, so nothing is scouted';
 

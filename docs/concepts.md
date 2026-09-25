@@ -135,13 +135,22 @@ its own worktree, its own current branch and its own pull request history.
   mismatch. It waits for you to pick switch or fork, because the checkout
   alone does not say what you wanted.
 
-**Unmount** takes one mount out of the session and keeps its history.
+**Unmount** takes one mount out of the session and keeps its history. The
+screen calls it **Close worktree**, and a closed row offers **Reopen**.
 **Cleanup** deletes the worktree and keeps its local branch. Goodboy does not
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
+
+A turn **starts in** one mount: that is where it opens its terminal, runs git
+and shows its pull request. It can still write in every mount of the session.
+The chat header names the start ("Starts in") and lists the rest of the reach
+in its tooltip. With two or more mounts, you pick where new turns start there
+or from a row's menu, and each row shows the agents working in it right now.
+Once a turn ends, Goodboy records which mounts it changed, so an agent's row in
+Activity names every worktree it changed, not only the one it started in.
 
 ## Activity
 
@@ -154,13 +163,27 @@ It includes:
 - The container and branches being created
 - Issues linked and unlinked
 - One pull request per project, from opened to merged or closed
-- Workflow runs started and discarded
+- Workflow runs started, closed and discarded
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
+
+The header counts the rows that wait on you ("2 need you") and jumps to the
+first one. **Filter** opens one panel with every kind of row at once, in three
+groups: Work (agents, workflows, questions, suggestions), Outputs (artifacts
+with plans, reports and wireframes, pull requests, issues) and Session log
+(branches and worktrees, resolver, decisions, session events). Each row shows
+how many of its kind the session holds. Presets set the whole filter in one
+click: **Everything**, **Work**, and **Needs you**, which shows only what
+waits on you whatever the filter hides and lasts until you leave it. The
+filter shows once the feed holds more than one kind of row. **Start agent**
+is the one primary, and its menu starts a workflow, a report or a wireframe.
+When the activity column is narrower than 28rem, the needs-you chip keeps
+its count, Filter keeps its icon and the Suggested next strip keeps its
+title and action.
 
 ## Agents
 
@@ -172,6 +195,19 @@ Each agent has its own provider, model, effort, verbosity and kind.
 You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
+
+An agent finishes on its own. Once its last turn succeeded, it has no open
+question of its own, no turn is starting or running and no child still works,
+it moves to the finished agents without a click. Sending it a new message
+opens it again. There is no "mark done".
+
+**Close** is only for an agent outside a workflow that is stuck on a failed
+turn or on its own question. It means "stop waiting on this agent": the agent
+reads "Closed by you" with a neutral check, not a success, and **Reopen** takes
+it back. A workflow step never has Close. A stuck step is unblocked with Skip
+step in its next action, because closing it would leave the run blocked with
+no instruction. `isAgentFinished` and `isAgentClosable` in
+`apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
 
 ### Agent kinds
 
@@ -388,6 +424,28 @@ integrated when you can do all three:
 - **Route it**: turn it into a session with the goal already written, and
   follow it back when the work ships
 
+A routed goal carries the item's text up to 1,200 characters, or 2,000 for a
+Slack thread. A longer text is cut at the last paragraph, line or sentence that
+fits, never inside an open code block, and ends with a line that names the full
+item and its link. Agents read the whole item through the
+[query bridge](query-bridge.md). A proposed session title is cut at a word and
+ends with an ellipsis.
+
+Picking an issue in the session kickoff, or opening the launch dock on an
+inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
+of one to three sentences and up to five "done when" criteria, in the issue's
+language. It reads the issue text, not its comments, and answers in checked
+JSON, so a reply with a preamble fails instead of leaking into the goal. The
+brief is only a proposal. In the overview you pick Use brief, Edit, Use issue
+text or Dismiss, and a failure stays inline in the card with Retry. The brief
+renames the session only when you have not renamed it yourself, and the goal it
+writes lands in the goal history, so the previous goal can be restored. In the
+launch dock the brief fills the goal only while you have not edited it, and
+Launch works with the issue text while the brief is still loading. Briefs are
+kept in memory per issue text, so the same issue is not briefed twice. With no
+connected provider free for the task, the card shows the issue text alone.
+Merge and pull requests launch with their text as it is.
+
 ### Each source
 
 - **GitHub**: read pull requests and act on them (approve, request changes,
@@ -485,6 +543,32 @@ in Goodboy.
 - Each word has one meaning. **workspace** is the container, **project** is
   the repo or folder, **session** is the goal, **agent** is the chat.
 - No screen may use a different word for any of these four
+- Internal words stay in code and technical docs. The screen says the word the
+  user already knows from git, the file system or the rest of the app:
+
+  | Internal word       | On screen                                         |
+  | ------------------- | ------------------------------------------------- |
+  | mount, branch mount | worktree (repo), folder (folder project), project |
+  | mount a project     | Add project                                       |
+  | fork a mount        | New worktree                                      |
+  | unmount             | Close worktree, and Reopen for a closed row       |
+  | spawn               | Start (an agent, a reviewer, an implementer)      |
+  | handoff             | Suggested next: Implementer, the next brief       |
+  | cluster             | subagent                                          |
+  | lens                | tab                                               |
+  | studio              | the page name alone: Workflows, Impact, Providers |
+  | materialize         | add to this session                               |
+
+  `jargon-copy.test.ts` fails when rendered copy under `features/`,
+  `app/components/` or `shared/components/` uses one of the internal words.
+  Its baseline lists only text that agents read (prompts, bridge errors) and
+  can only shrink.
+
+- A word that stays and still needs a sentence (workflow, orchestrated,
+  artifact) gets a `TermHint`: the word is underlined with dots and opens a
+  one-line definition on click or keyboard focus, never on hover and never on
+  its own. The definitions live once, in `GLOSSARY`
+  (`apps/desktop/src/features/session/glossary.ts`).
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
 - Integrations share the layout, never the logic. A Sentry issue and a GitHub

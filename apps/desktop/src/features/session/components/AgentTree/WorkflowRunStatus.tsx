@@ -1,8 +1,10 @@
 import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
+import { isAgentStatusSettled } from '@goodboy/core';
 import { StatusDot, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
+import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -23,8 +25,8 @@ export const WorkflowRunStatus = ({
   hasOrchestratorStrip = false,
   blockReason = null,
 }: Props) => {
-  const completedSteps = agents.filter(
-    (agent) => agent.status === 'completed' || agent.status === 'skipped',
+  const completedSteps = agents.filter((agent) =>
+    isAgentStatusSettled({ status: agent.status }),
   ).length;
   const isDiscarded = run.discardedAt != null;
   const isDynamic = run.executionMode === 'dynamic';
@@ -41,7 +43,7 @@ export const WorkflowRunStatus = ({
     run.orchestrationOutcome == null &&
     hasStarted &&
     !isRunning &&
-    agents.every((agent) => agent.status === 'completed' || agent.status === 'skipped');
+    agents.every((agent) => isAgentStatusSettled({ status: agent.status }));
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const isQueuedAfter = !isDiscarded && run.triggerMode === 'after_run' && !hasStarted;
 
@@ -53,6 +55,14 @@ export const WorkflowRunStatus = ({
       <span className={cn(baseClass, 'bg-muted text-muted-foreground')}>
         <CONCEPT_ICONS.runCancelled size={10} aria-hidden />
         Discarded
+      </span>
+    );
+  }
+  if (isWorkflowRunClosedByUser({ run })) {
+    return (
+      <span className={cn(baseClass, 'bg-muted text-muted-foreground')} title="Closed by you">
+        <CONCEPT_ICONS.runDone size={10} aria-hidden />
+        Closed
       </span>
     );
   }

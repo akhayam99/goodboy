@@ -1,6 +1,6 @@
 import type { ProviderId } from '@goodboy/types';
 import { invokeProviderLifecycleCancel } from '../../../features/providers/provider-lifecycle';
-import type { GetFn, SetFn } from './types';
+import { ACTIVE_LIFECYCLE_PHASES, type GetFn, type SetFn } from './types';
 
 export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
   return async (providerId: ProviderId): Promise<void> => {
@@ -8,11 +8,7 @@ export const cancelProviderLifecycle = (set: SetFn, get: GetFn) => {
     if (!curr.runId) {
       return;
     }
-    if (
-      curr.phase !== 'installing' &&
-      curr.phase !== 'connecting' &&
-      curr.phase !== 'disconnecting'
-    ) {
+    if (!ACTIVE_LIFECYCLE_PHASES.has(curr.phase)) {
       return;
     }
     set((state) => ({

@@ -8,9 +8,11 @@ export type { DropdownController } from './useDropdown';
 export { PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';
 export { formatError } from './formatError';
+export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export {
   AppShell,
+  COLLAPSED_RAIL_WIDTH,
   LEFT_SIDEBAR_DEFAULT,
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
@@ -32,13 +34,18 @@ export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
 export { MetaItem } from './components/MetaItem';
+export { Notice } from './components/Notice';
+export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { NoteCard } from './components/NoteCard';
 export { NoteComposer } from './components/NoteComposer';
 export { NoteHeader } from './components/NoteHeader';
 export { NoteListSkeleton } from './components/NoteListSkeleton';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
-export type { OverflowMenuItem } from './components/OverflowMenu';
+export { MenuItems } from './components/MenuItems';
+export type { OverflowMenuItem } from './components/MenuItems';
+export { SplitButton } from './components/SplitButton';
+export type { SplitButtonPrimaryParams } from './components/SplitButton';
 export { PanelLoading } from './components/PanelLoading';
 export { RailBlock } from './components/RailBlock';
 export { RailCard } from './components/RailCard';
@@ -116,6 +123,8 @@ export { ActionTile } from './components/ActionTile';
 export type { ActionTileProps } from './components/ActionTile';
 export { AnchoredPopover } from './components/AnchoredPopover';
 export type { AnchoredPopoverProps } from './components/AnchoredPopover';
+export { TermHint } from './components/TermHint';
+export type { TermHintAction, TermHintProps } from './components/TermHint';
 export { Popover, PopoverBody, PopoverFooter } from './components/Popover';
 export type { PopoverBodyProps, PopoverFooterProps, PopoverProps } from './components/Popover';
 export { RemoteImage } from './components/RemoteImage';
@@ -126,6 +135,8 @@ export type { LocalImageLoader } from './components/LocalImage/loaderContext';
 export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageLoaderProvider';
 export type { RemoteImageLoader } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
+export { Reveal } from './components/Reveal';
+export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { ScrollArea } from './components/ScrollArea';
 export type { ScrollAreaProps } from './components/ScrollArea';
@@ -156,3 +167,8 @@ export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipSide } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
+export { WorkMeta } from './components/WorkTree/WorkMeta';
+export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
+export { WorkNode } from './components/WorkTree/WorkNode';
+export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
+export type { WorkNodeMark, WorkNodeState } from './components/WorkTree/workNodeSpec';

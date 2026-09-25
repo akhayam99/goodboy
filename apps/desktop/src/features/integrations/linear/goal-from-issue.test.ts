@@ -33,10 +33,14 @@ describe('goalFromIssue', () => {
     );
   });
 
-  it('caps an overlong description at the goal body cap', () => {
-    const long = 'x'.repeat(2000);
+  it('cuts an overlong description at a paragraph and links the full issue', () => {
+    const paragraph = `${'x'.repeat(99)}.`;
+    const long = Array.from({ length: 20 }, () => paragraph).join('\n\n');
+    const kept = Array.from({ length: 11 }, () => paragraph).join('\n\n');
     const goal = goalFromIssue({ issue: makeIssue({ description: long }) });
-    expect(goal).toBe(`[SER-123] Add user signup\n\n${'x'.repeat(1200)}…`);
+    expect(goal).toBe(
+      `[SER-123] Add user signup\n\n${kept}\n\nFull issue: SER-123 https://linear.app/demo-team/issue/SER-123`,
+    );
   });
 
   it('strips title whitespace', () => {

@@ -27,6 +27,7 @@ export type IssueCandidate = {
   readonly title: string;
   readonly url: string;
   readonly goal: string;
+  readonly body: string;
   readonly branchSlug: string;
 };
 
@@ -57,6 +58,7 @@ export const fetchIssueCandidates = async ({
         title: issue.title,
         url: issue.url,
         goal: goalFromLinearIssue({ issue }),
+        body: issue.description ?? '',
         branchSlug: slugifyBranch({ input: issue.title, maxLength: 48 }),
       }));
     }
@@ -78,6 +80,7 @@ export const fetchIssueCandidates = async ({
         title: issue.title,
         url: issue.url,
         goal: goalFromGithubIssue({ issue }),
+        body: issue.body,
         branchSlug: githubBranchSlug({ issue }),
       }));
     }
@@ -93,6 +96,7 @@ export const fetchIssueCandidates = async ({
         title: issue.title,
         url: issue.webUrl,
         goal: goalFromGitlabIssue({ issue }),
+        body: issue.description ?? '',
         branchSlug: gitlabBranchSlug(issue),
       }));
     }
@@ -114,20 +118,25 @@ export const fetchIssueCandidates = async ({
         title: issue.summary,
         url: issue.url,
         goal: goalFromJiraIssue({ issue }),
+        body: issue.description,
         branchSlug: jiraBranchSlug({ issue }),
       }));
     }
     case 'sentry': {
       const page = await sentryFetchIssues(workspaceId);
-      return page.issues.map((issue) => ({
-        provider,
-        externalId: issue.id,
-        identifier: issue.shortId ?? issue.id,
-        title: issue.title,
-        url: issue.permalink ?? '',
-        goal: goalFromSentry({ issue }),
-        branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
-      }));
+      return page.issues.map((issue) => {
+        const goal = goalFromSentry({ issue });
+        return {
+          provider,
+          externalId: issue.id,
+          identifier: issue.shortId ?? issue.id,
+          title: issue.title,
+          url: issue.permalink ?? '',
+          goal,
+          body: goal,
+          branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
+        };
+      });
     }
     case 'slack': {
       return slackThreadCandidates({ workspaceId });

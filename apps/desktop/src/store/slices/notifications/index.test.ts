@@ -260,7 +260,7 @@ describe('store contract', () => {
         store.getState().emitNotification({ kind: 'error', severity: 'error', title: 'Kept' }),
       ).resolves.toBeUndefined();
       expect(store.getState().notifications[0]?.title).toBe('Kept');
-      expect(store.getState().notificationCounts.unread).toBe(1);
+      expect(storySpies.countNotifications).not.toHaveBeenCalled();
     });
 
     it('reportError persists an error row with the formatted failure as body', async () => {
@@ -329,61 +329,99 @@ describe('store contract', () => {
       );
     });
 
-    it('loadNotifications keeps the counts true when the list is capped', async () => {
+    it('loadNotifications takes the counts from SQL and knows when older rows exist', async () => {
       const store = useAppStore;
+      store.setState({ currentWorkspaceId: WS_ID });
       const capped = Array.from({ length: 200 }, (_, i) => ({
         id: `n${i}`,
         read: true,
       })) as unknown as ReadonlyArray<Notification>;
+      const buckets = [{ severity: 'error', kind: 'error', read: false, count: 205 }];
       storySpies.listNotifications.mockResolvedValue(capped);
-      storySpies.countNotifications.mockResolvedValue({ total: 205, unread: 1 });
+      storySpies.countNotifications.mockResolvedValue(buckets);
 
       await store.getState().loadNotifications();
 
       const s = store.getState();
       expect(s.notifications).toHaveLength(200);
-      expect(s.notifications.some((n) => !n.read)).toBe(false);
-      expect(s.notificationCounts).toEqual({ total: 205, unread: 1 });
+      expect(s.notificationCounts).toEqual(buckets);
+      expect(s.hasOlderNotifications).toBe(true);
+      expect(storySpies.listNotifications).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID }),
+      );
     });
 
-    it('markNotificationRead decrements the unread count past the cap', async () => {
+    it('setNotificationScope lists every workspace once set to all', async () => {
       const store = useAppStore;
-      store.setState({
-        notifications: [{ id: 'n1', read: false } as never],
-        notificationCounts: { total: 205, unread: 3 },
-      });
-      await store.getState().markNotificationRead('n1');
-      expect(store.getState().notificationCounts).toEqual({ total: 205, unread: 2 });
+      store.setState({ currentWorkspaceId: WS_ID });
+
+      await store.getState().setNotificationScope('all');
+
+      expect(store.getState().notificationScope).toBe('all');
+      expect(storySpies.listNotifications).toHaveBeenLastCalledWith(
+        expect.objectContaining({ workspaceId: null }),
+      );
+      expect(storySpies.countNotifications).toHaveBeenLastCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID }),
+      );
     });
 
-    it('dismissNotification decrements both counts past the cap', async () => {
+    it('loadOlderNotifications appends the page after the oldest row', async () => {
       const store = useAppStore;
-      store.setState({
-        notifications: [{ id: 'n1', read: false } as never],
-        notificationCounts: { total: 205, unread: 3 },
-      });
-      await store.getState().dismissNotification('n1');
-      expect(store.getState().notificationCounts).toEqual({ total: 204, unread: 2 });
+      const oldest = { id: 'n1', ts: NOW, read: true } as unknown as Notification;
+      store.setState({ notifications: [oldest], hasOlderNotifications: true });
+      storySpies.listNotifications.mockResolvedValueOnce([
+        { id: 'n0', ts: NOW, read: true },
+      ] as unknown as ReadonlyArray<Notification>);
+
+      await store.getState().loadOlderNotifications();
+
+      expect(storySpies.listNotifications).toHaveBeenCalledWith(
+        expect.objectContaining({ before: { ts: NOW, id: 'n1' } }),
+      );
+      expect(store.getState().notifications.map((n) => n.id)).toEqual(['n1', 'n0']);
+      expect(store.getState().hasOlderNotifications).toBe(false);
     });
 
-    it('markNotificationsRead zeroes unread even for rows past the cap', async () => {
+    it('emitNotification keeps another workspace out of a workspace-scoped list', async () => {
       const store = useAppStore;
-      store.setState({
-        notifications: [{ id: 'n1', read: false } as never],
-        notificationCounts: { total: 205, unread: 7 },
-      });
-      await store.getState().markNotificationsRead();
-      expect(store.getState().notificationCounts).toEqual({ total: 205, unread: 0 });
-    });
+      store.setState({ currentWorkspaceId: WS_ID, notificationScope: 'workspace' });
 
-    it('clearNotifications empties the array', async () => {
-      const store = useAppStore;
-      store.setState({
-        notifications: [{ id: 'n1' } as never],
+      await store.getState().emitNotification({
+        kind: 'error',
+        severity: 'error',
+        title: 'elsewhere',
+        workspaceId: WS_ID_2,
       });
-      await store.getState().clearNotifications();
+
       expect(store.getState().notifications).toEqual([]);
-      expect(store.getState().notificationCounts).toEqual({ total: 0, unread: 0 });
+      expect(storySpies.insertNotification).toHaveBeenCalledTimes(1);
+      expect(storySpies.countNotifications).toHaveBeenCalled();
+    });
+
+    it('marking read, dismissing and clearing refresh the counts from SQL', async () => {
+      const store = useAppStore;
+      store.setState({
+        currentWorkspaceId: WS_ID,
+        notifications: [{ id: 'n1', read: false } as never, { id: 'n2', read: false } as never],
+      });
+      const refreshed = [{ severity: 'info', kind: 'pr-created', read: true, count: 1 }];
+      storySpies.countNotifications.mockResolvedValue(refreshed);
+
+      await store.getState().markNotificationRead('n1');
+      expect(store.getState().notificationCounts).toEqual(refreshed);
+      await store.getState().markNotificationsRead();
+      await store.getState().dismissNotification('n1');
+      await store.getState().clearNotifications();
+
+      expect(storySpies.countNotifications).toHaveBeenCalledTimes(4);
+      expect(storySpies.markAllNotificationsRead).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID }),
+      );
+      expect(storySpies.clearAllNotifications).toHaveBeenCalledWith(
+        expect.objectContaining({ workspaceId: WS_ID }),
+      );
+      expect(store.getState().notifications).toEqual([]);
     });
   });
 });

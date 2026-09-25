@@ -29,6 +29,10 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
     terminalTabs: {},
     scriptRuns: {},
     sessionPhaseRuns: {},
+    sessionOpenQuestions: {},
+    agentTurnState: {},
+    agentTurnDestination: {},
+    selectAgent: vi.fn(async () => undefined),
     projectScripts: {},
     mountCleanupProposals: {},
     loadMountCleanupProposals: vi.fn(async () => []),
@@ -54,7 +58,7 @@ vi.mock('../../../hooks/useWorktreeStatuses', () => ({
   useWorktreeStatusPending,
 }));
 vi.mock('./MountProjectAction', () => ({
-  MountProjectAction: () => <button>Mount project</button>,
+  MountProjectAction: () => <button>Add project</button>,
 }));
 vi.mock('./ProjectBranchChip', () => ({
   ProjectBranchChip: ({ branch }: { readonly branch: string }) => <span>{branch}</span>,
@@ -63,7 +67,7 @@ vi.mock('./ProjectSyncControl', () => ({ ProjectSyncControl: () => null }));
 vi.mock('./MountActionsMenu', () => ({ MountActionsMenu: () => null }));
 vi.mock('./RemoveWorktreeAction', () => ({ RemoveWorktreeAction: () => null }));
 vi.mock('./NewBranchMountAction', () => ({
-  NewBranchMountAction: () => <button>New branch mount</button>,
+  NewBranchMountAction: () => <button>New worktree</button>,
 }));
 vi.mock('../useEditorMenuItems', () => ({ useEditorMenuItems: () => [] }));
 vi.mock('../MountCleanupProposals', () => ({
@@ -187,13 +191,13 @@ describe('ProjectMountRows', () => {
     };
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByRole('list', { name: 'API branch mounts' })).toBeDefined();
-    expect(screen.getByRole('list', { name: 'WEB branch mounts' })).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'New branch mount' })).toHaveLength(2);
+    expect(screen.getByRole('list', { name: 'API worktrees' })).toBeDefined();
+    expect(screen.getByRole('list', { name: 'WEB worktrees' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'New worktree' })).toHaveLength(2);
     expect(screen.getByRole('listitem', { name: 'WEB on feat/three' })).toBeDefined();
   });
 
-  it('gives each project its own group, separated by rhythm and not by a box', () => {
+  it('gives each project its own group on shared columns, separated by rhythm and not by a box', () => {
     store.projects = [
       ...store.projects,
       { id: 'web', workspaceId: 'workspace-1', name: 'WEB', kind: 'repo', rootPath: '/repo/web' },
@@ -207,7 +211,7 @@ describe('ProjectMountRows', () => {
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
     const blocks = ['API', 'WEB'].map(
-      (name) => screen.getByRole('list', { name: `${name} branch mounts` }).parentElement,
+      (name) => screen.getByRole('list', { name: `${name} worktrees` }).parentElement,
     );
 
     expect(new Set(blocks).size).toBe(2);
@@ -216,7 +220,12 @@ describe('ProjectMountRows', () => {
       expect((block as HTMLElement).className).not.toContain('border');
       expect(within(block as HTMLElement).getAllByTestId('project-mount-row')).toHaveLength(1);
     }
-    expect(blocks[0]?.parentElement?.className).toContain('gap-3');
+    expect(blocks[0]?.parentElement?.className).toContain('gap-y-3');
+    expect(blocks[0]?.parentElement).toBe(blocks[1]?.parentElement);
+    expect(blocks[0]?.parentElement?.className).toContain('grid-cols-[');
+    for (const block of blocks) {
+      expect(block?.className).toContain('grid-cols-subgrid');
+    }
   });
 
   it('renders one row per branch mount of the same project', () => {
@@ -282,7 +291,7 @@ describe('ProjectMountRows', () => {
     };
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mount API on feat/two' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen API on feat/two' }));
 
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({
@@ -374,12 +383,22 @@ describe('ProjectMountRows', () => {
     expect(screen.getAllByTestId('project-mount-row')).toHaveLength(2);
   });
 
-  it('renders a quiet mount action when no project is mounted', () => {
+  it('says where turns run once it knows the session has no project', () => {
+    store.sessionProjectMounts = { 'session-1': [] };
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
     expect(screen.getByText('Projects')).toBeDefined();
-    expect(screen.queryByText('No project mounted yet')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Mount project' })).toBeDefined();
+    expect(
+      screen.getByText('No project yet. Turns run in the session folder until you add one.'),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+  });
+
+  it('stays quiet while the projects of the session are still loading', () => {
+    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByText(/No project yet/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('keeps the mount action in the section header when mounts exist', () => {
@@ -397,10 +416,8 @@ describe('ProjectMountRows', () => {
     };
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Mount project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.getByTestId('project-mount-row')).toBeDefined();
-    expect(
-      screen.queryByText('Mount a workspace project to make it available in this session.'),
-    ).toBeNull();
+    expect(screen.queryByText(/No project yet/)).toBeNull();
   });
 });

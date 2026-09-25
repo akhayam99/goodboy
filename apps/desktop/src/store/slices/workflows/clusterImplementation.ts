@@ -7,7 +7,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { extractClusterDone } from '@goodboy/core';
+import { extractClusterDone, isAgentStatusSettled } from '@goodboy/core';
 import {
   invokeAgentInsertBatch,
   invokeAgentList,
@@ -128,8 +128,8 @@ const failChildStart = async ({
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: `Cluster ${name} couldn't start`,
-    body: `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
+    title: `Subagent ${name} couldn't start`,
+    body: `${reason} open the agent and continue it manually. the step stays open until this subagent finishes.`,
     sessionId,
   });
 };
@@ -172,7 +172,7 @@ const handleChildStartFailure = async ({
     if (child === undefined) {
       return;
     }
-    if (child.status === 'completed' || child.status === 'skipped') {
+    if (isAgentStatusSettled({ status: child.status })) {
       return;
     }
     const session = get().sessions.find((s) => s.id === sessionId);
@@ -250,6 +250,7 @@ export const fanOutClusters = async (
   const batch = childRoutingBatch({
     state: get(),
     sessionId,
+    workflowRunId: container.workflowRunId ?? null,
     role: 'implementer',
     requests: clusters.map((cluster) => ({
       proposal: cluster.routingProposal ?? null,
@@ -261,7 +262,7 @@ export const fanOutClusters = async (
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${container.name} is blocked`,
+      title: `Subagent ${container.name} is blocked`,
       body: batch.reason,
       sessionId,
     });
@@ -477,13 +478,11 @@ const resolveClustersPlan = async ({
   return selectClustersPlan(plans, workflowRunId);
 };
 
-const isSettledChild = (agent: Agent): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
-
 export const unsettledClusterChildren = (
   runs: ReadonlyArray<Agent>,
   containerId: AgentId,
-): ReadonlyArray<Agent> => childrenOf(runs, containerId).filter((child) => !isSettledChild(child));
+): ReadonlyArray<Agent> =>
+  childrenOf(runs, containerId).filter((child) => !isAgentStatusSettled({ status: child.status }));
 
 type ResumeClusterChildrenParams = {
   readonly set: SetFn;
@@ -500,7 +499,7 @@ export const resumeClusterChildren = async ({
 }: ResumeClusterChildrenParams): Promise<boolean> => {
   const runs = get().sessionPhaseRuns[sessionId] ?? [];
   const children = childrenOf(runs, container.id);
-  const next = children.find((child) => !isSettledChild(child));
+  const next = children.find((child) => !isAgentStatusSettled({ status: child.status }));
   if (next == null || next.status !== 'pending') {
     return false;
   }
@@ -521,8 +520,8 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${next.name} is blocked`,
-      body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      title: `Subagent ${next.name} is blocked`,
+      body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
       sessionId,
     });
     return false;
@@ -539,7 +538,7 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${next.name} is blocked`,
+      title: `Subagent ${next.name} is blocked`,
       body: revalidated.reason,
       sessionId,
     });
@@ -641,13 +640,14 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed } }));
 
     const children = childrenOf(refreshed, containerId);
-    const isDone = (c: Agent): boolean => c.id === childAgentId || isSettledChild(c);
+    const isDone = (c: Agent): boolean =>
+      c.id === childAgentId || isAgentStatusSettled({ status: c.status });
     const settledCount = children.filter(isDone).length;
     const total = clusters.length > 0 ? clusters.length : children.length;
 
     if (settledCount >= total) {
       const container = refreshed.find((r) => r.id === containerId);
-      if (container != null && !isSettledChild(container)) {
+      if (container != null && !isAgentStatusSettled({ status: container.status })) {
         await invokeAgentUpdateStatus(containerId, {
           status: 'completed',
           outputSummary: `completed ${settledCount} clusters`,
@@ -671,8 +671,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'This cluster has no implementer',
-        body: 'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        title: 'This subagent has no implementer',
+        body: 'the resolved plan has more parts than this implementation has subagents, so the next one cannot start. open the plan and re-run the implementer.',
         sessionId,
       });
       return;
@@ -685,8 +685,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Cluster ${next.name} is blocked`,
-        body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        title: `Subagent ${next.name} is blocked`,
+        body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
         sessionId,
       });
       return;
@@ -705,7 +705,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Cluster ${next.name} is blocked`,
+        title: `Subagent ${next.name} is blocked`,
         body: revalidated.reason,
         sessionId,
       });

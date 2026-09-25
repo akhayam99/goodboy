@@ -31,8 +31,8 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
         await emitNotification({
           kind: 'error',
           severity: 'error',
-          title: "Couldn't mount the project",
-          body: `Could not mount ${projectName}. Try again. ${formatError(error)}`,
+          title: "Couldn't add the project",
+          body: `Could not add ${projectName}. Try again. ${formatError(error)}`,
           sessionId,
         });
         throw error;

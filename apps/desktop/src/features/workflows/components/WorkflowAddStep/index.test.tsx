@@ -18,6 +18,7 @@ type StoreState = {
   addStepToWorkflowRun: typeof addStepSpy;
   workspaceOverrides: Record<string, { roleModels?: RoleModelPreferences }>;
   providers: ReadonlyArray<{ id: ProviderId; connection: string }>;
+  cliRequirements: ReadonlyArray<never>;
   orchestratingWorkflowRuns: Record<string, boolean>;
   sessions: ReadonlyArray<Record<string, unknown>>;
 };
@@ -26,6 +27,7 @@ const storeState: StoreState = {
   addStepToWorkflowRun: addStepSpy,
   workspaceOverrides: {},
   providers: [{ id: 'anthropic', connection: 'connected' }],
+  cliRequirements: [],
   orchestratingWorkflowRuns: {},
   sessions: [],
 };

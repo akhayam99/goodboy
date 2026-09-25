@@ -8,10 +8,11 @@ import type {
   TimelineRunEntry,
 } from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
-import type { TimelineMarkerState } from '../../../../timeline/markerState';
-import type { RailRow } from '../../../../timeline/railGeometry';
+import { DONE_ROW_STATE, type RowState } from '../../../../../workTreeModel/rowState';
+import type { TimelineLaneControl } from './TimelineRail';
+import type { RailRow } from '../../../../../workTreeModel/railGeometry';
 import { runIdentity } from '../../../../timeline/runIdentity';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
+import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../../../../../workflows/orchestratorCopy';
 
 vi.mock('../../../../../../store', () => ({
@@ -64,7 +65,8 @@ const itemOf = (): TimelineRowItem => ({
   identity: null,
   familyId: 'run:one',
   ordinal: '2',
-  markerState: 'done',
+  nodeIndex: '2',
+  rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.step.height + TIMELINE_RHYTHM.gap.sibling,
   topY: 0,
@@ -86,18 +88,15 @@ const runEntryOf = (): TimelineRunEntry =>
     producedPlan: null,
   }) as unknown as TimelineRunEntry;
 
-const runItemOf = ({
-  markerState,
-}: {
-  readonly markerState: TimelineMarkerState;
-}): TimelineRowItem => ({
+const runItemOf = ({ rowState }: { readonly rowState: RowState }): TimelineRowItem => ({
   ...itemOf(),
   id: 'run:one',
   grade: 'entry',
   entry: runEntryOf(),
   identity: runIdentity({ laneIndex: 0, seed: 0 }),
   ordinal: null,
-  markerState,
+  nodeIndex: null,
+  rowState,
   groupId: null,
 });
 
@@ -174,11 +173,13 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Implement the parser')).toBeDefined();
   });
 
-  it('hides the open hint until the row is hovered or focused', () => {
+  it('keeps the open hint out of the row until it is hovered or focused in a wide row', () => {
     renderRow();
 
-    expect(screen.getByText('Open chat ↵').className).toContain('opacity-0');
-    expect(screen.getByText('Open chat ↵').className).toContain('group-hover:opacity-100');
+    const hint = screen.getByText('Open chat ↵').className;
+    expect(hint).toContain('hidden');
+    expect(hint).toContain('@min-[640px]:group-hover:inline');
+    expect(hint).toContain('@min-[640px]:group-focus-within:inline');
   });
 
   it('renders a plain row when it has no open target', () => {
@@ -212,7 +213,9 @@ describe('TimelineStreamRow', () => {
   it('spins the run marker in its lane hue while the orchestrator is choosing', () => {
     const { container } = render(
       <TimelineStreamRow
-        item={runItemOf({ markerState: 'deciding' })}
+        item={runItemOf({
+          rowState: { phase: 'running', reason: { kind: 'deciding' }, ask: null },
+        })}
         rail={railOf()}
         railWidth={32}
         sessionId={SESSION_ID}
@@ -230,7 +233,7 @@ describe('TimelineStreamRow', () => {
   it('leaves a run with no decision in flight on the idle clock and no sentence', () => {
     const { container } = render(
       <TimelineStreamRow
-        item={runItemOf({ markerState: 'pending' })}
+        item={runItemOf({ rowState: { phase: 'queued', reason: null, ask: null } })}
         rail={railOf()}
         railWidth={32}
         sessionId={SESSION_ID}
@@ -249,5 +252,118 @@ describe('TimelineStreamRow', () => {
     const button = screen.getByRole('button', { name: /Implement the parser/ });
 
     expect(button.getAttribute('style')).toContain(`${TIMELINE_RHYTHM.grade.step.height}px`);
+  });
+
+  const laneRailOf = (): RailRow => ({
+    ...railOf(),
+    segments: [
+      {
+        column: 1,
+        laneId: 'lane:run:one',
+        identityIndex: 0,
+        isMuted: false,
+        dash: 'solid',
+        fromY: 0,
+        toY: 36,
+      },
+    ],
+  });
+
+  const lanesOf = ({
+    hoveredLaneId = null,
+    openRun,
+  }: {
+    readonly hoveredLaneId?: string | null;
+    readonly openRun: () => void;
+  }): TimelineLaneControl => ({
+    targetFor: ({ laneId }) => ({ laneId, title: 'Orchestrated workflow 3', open: openRun }),
+    hoveredLaneId,
+    onHover: vi.fn(),
+  });
+
+  const renderLaneRow = ({ onOpen = vi.fn(), openRun = vi.fn() } = {}) =>
+    render(
+      <TimelineStreamRow
+        item={itemOf()}
+        rail={laneRailOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open chat', open: onOpen }}
+        action={null}
+        lanes={lanesOf({ openRun })}
+        runLane={{ laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun }}
+      />,
+    );
+
+  it('opens the run from its lane and the leaf from the row text', () => {
+    const onOpen = vi.fn();
+    const openRun = vi.fn();
+    renderLaneRow({ onOpen, openRun });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open workflow: Orchestrated workflow 3' }));
+    expect(openRun).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Implement the parser/ }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(openRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the run of the focused row on Shift+Enter', () => {
+    const onOpen = vi.fn();
+    const openRun = vi.fn();
+    renderLaneRow({ onOpen, openRun });
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+
+    expect(row.getAttribute('aria-keyshortcuts')).toBe('Shift+Enter');
+    fireEvent.keyDown(row, { code: 'Enter', key: 'Enter', shiftKey: true });
+    expect(openRun).toHaveBeenCalledTimes(1);
+
+    fireEvent.keyDown(row, { code: 'Enter', key: 'Enter' });
+    expect(openRun).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('lets the node on a lane pass the pointer through to the lane', () => {
+    const { container } = renderLaneRow();
+    const marker = container.querySelector('[style*="top: 18px"]');
+
+    expect(marker?.className).toContain('pointer-events-none');
+  });
+
+  it('lights the run chip while its lane is hovered', () => {
+    const openRun = vi.fn();
+    const identity = runIdentity({ laneIndex: 0, seed: 0 });
+    const runLane = { laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun };
+    const { rerender } = render(
+      <TimelineStreamRow
+        item={runItemOf({ rowState: DONE_ROW_STATE })}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open run', open: openRun }}
+        action={null}
+        lanes={lanesOf({ openRun })}
+        runLane={runLane}
+      />,
+    );
+    const chip = () => screen.getByText('Workflow').parentElement ?? document.body;
+
+    expect(chip().className).toContain(identity.chip);
+
+    rerender(
+      <TimelineStreamRow
+        item={runItemOf({ rowState: DONE_ROW_STATE })}
+        rail={railOf()}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Open run', open: openRun }}
+        action={null}
+        lanes={lanesOf({ openRun, hoveredLaneId: 'lane:run:one' })}
+        runLane={runLane}
+      />,
+    );
+
+    expect(chip().className).toContain(identity.litChip);
   });
 });

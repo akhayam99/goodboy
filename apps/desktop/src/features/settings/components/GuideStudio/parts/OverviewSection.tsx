@@ -1,10 +1,9 @@
 import { BookOpen, GitBranch, LayoutDashboard, MessageSquare } from 'lucide-react';
-import { Eyebrow, SectionHeader } from '@goodboy/ui';
+import { Eyebrow, Notice, SectionHeader } from '@goodboy/ui';
 import { SESSION_FEATURES } from '../../../../../shared/lib/features';
 import { DogMascot } from '../../../../../shared/components/DogMascot';
-import { Callout } from './Callout';
 import { ConceptCard } from './ConceptCard';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 type Section =
   'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
@@ -21,17 +20,17 @@ export const OverviewSection = ({ onJump }: Props) => (
       label="What is Goodboy?"
       hint={
         SESSION_FEATURES.budget
-          ? 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with budget caps and audit logs along the way.'
-          : 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with audit logs along the way.'
+          ? 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the full-screen pages are destinations you navigate to from there, with budget caps and audit logs along the way.'
+          : 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the full-screen pages are destinations you navigate to from there, with audit logs along the way.'
       }
     />
 
-    <Callout tone="info" icon={<CONCEPT_ICONS.providers size={ICON_SIZE.row} />}>
-      Goodboy does <strong className="text-foreground">not</strong> talk to providers directly. It
-      spawns each provider's own CLI as a subprocess and streams its events. Your login, usage, and
-      quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on
-      top, provider-neutral by design.
-    </Callout>
+    <Notice
+      tone="info"
+      placement="inline"
+      title="Goodboy runs each provider's own CLI"
+      body="It never talks to providers directly. It runs each CLI as a subprocess and streams its events. Your login, usage, and quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on top, provider-neutral by design."
+    />
 
     <div>
       <Eyebrow label="Mental model" />
@@ -47,14 +46,14 @@ export const OverviewSection = ({ onJump }: Props) => (
           icon={<GitBranch size={ICON_SIZE.control} aria-hidden />}
           tone="success"
           label="Session"
-          body="One goal, on its own git worktree and branch. It opens on its overview, then the lens switcher reaches diff, terminal, IDE, or a studio."
+          body="One goal, on its own git worktree and branch. It opens on its overview, then its tabs reach diff, terminal, IDE, or a full-screen page."
           onClick={() => onJump('session')}
         />
         <ConceptCard
           icon={<DogMascot size={ICON_SIZE.control} />}
           tone="warning"
           label="Agent"
-          body="One CLI invocation inside a session. Spawn several; subagents render as a tree under their parent."
+          body="One CLI invocation inside a session. Start several; subagents render as a tree under their parent."
           onClick={() => onJump('agents')}
         />
         <ConceptCard

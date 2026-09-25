@@ -2,16 +2,15 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { tintClasses } from '@goodboy/ui';
+import { WORK_NODE_SIZE, tintClasses } from '@goodboy/ui';
 import { CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
-import { TIMELINE_RHYTHM } from '../../../../timeline/timelineRhythm';
-import { TimelineMarker } from './TimelineMarker';
+import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
+import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
 import { TimelineRowMarker } from './TimelineRowMarker';
-import { TIMELINE_SURFACE_FILL } from './timelineLayout';
 
 afterEach(cleanup);
 
@@ -40,7 +39,8 @@ const itemOf = ({ entry }: { readonly entry: TimelineStreamEntry }): TimelineRow
   identity: null,
   familyId: null,
   ordinal: null,
-  markerState: 'done',
+  nodeIndex: null,
+  rowState: DONE_ROW_STATE,
   hasUnread: false,
   height: TIMELINE_RHYTHM.grade.entry.height,
   topY: 0,
@@ -50,56 +50,90 @@ const itemOf = ({ entry }: { readonly entry: TimelineStreamEntry }): TimelineRow
   gap: 'entry',
 });
 
-const glyphOf = ({ label }: { readonly label: string }): Element => screen.getByLabelText(label);
+const nodeOf = ({ label }: { readonly label: string }): HTMLElement =>
+  screen.getByRole('img', { name: label });
+
+const agentEntry = ({ stepLabel }: { readonly stepLabel: string | null }): TimelineStreamEntry =>
+  ({
+    kind: 'agent',
+    id: 'agent:one',
+    at: '2026-08-17T09:04:00Z',
+    agent: { id: 'one', name: 'Implement', status: 'pending' },
+    stepLabel,
+    openQuestions: [],
+    children: [],
+  }) as unknown as TimelineStreamEntry;
 
 describe('TimelineRowMarker', () => {
-  it('gives the plan the emphasis the open question has, not a dim circle', () => {
+  it('draws the plan on the same 20px node as every row, in its concept hue', () => {
     render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-    const plan = glyphOf({ label: 'Plan' });
-    cleanup();
-    render(<TimelineMarker state="question" grade="entry" />);
-    const question = glyphOf({ label: 'Waiting on your answer' });
+    const plan = nodeOf({ label: 'Plan' });
 
-    expect(plan.getAttribute('width')).toBe(question.getAttribute('width'));
-    expect(plan.getAttribute('fill-opacity')).toBe(question.getAttribute('fill-opacity'));
-    expect(plan.getAttribute('fill')).toBe(question.getAttribute('fill'));
-  });
-
-  it('sizes the plan glyph like every other marker of its grade', () => {
-    render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-    const plan = glyphOf({ label: 'Plan' });
-
-    expect(plan.getAttribute('width')).toBe(String(TIMELINE_RHYTHM.grade.entry.glyphSize));
-  });
-
-  it('sizes the plan disc like every other marker of its grade', () => {
-    const { container } = render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-
-    expect(container.firstElementChild?.getAttribute('style')).toContain(
-      `${TIMELINE_RHYTHM.grade.entry.markerSize}px`,
-    );
-  });
-
-  it('takes the plan hue from the concept map, so it never reads as a question', () => {
-    render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-
-    expect(glyphOf({ label: 'Plan' }).getAttribute('class')).toContain(
-      tintClasses(CONCEPT_TONE.plans).icon,
-    );
-    expect(glyphOf({ label: 'Plan' }).getAttribute('class')).not.toContain('text-warning');
+    expect(plan.style.width).toBe(`${WORK_NODE_SIZE}px`);
+    expect(plan.className).toContain(tintClasses(CONCEPT_TONE.plans).ring);
+    expect(plan.innerHTML).toContain(tintClasses(CONCEPT_TONE.plans).icon);
+    expect(plan.innerHTML).not.toContain('text-warning');
   });
 
   it('occludes the lane behind the plan marker as well', () => {
-    const { container } = render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
-    const root = container.firstElementChild;
+    render(<TimelineRowMarker item={itemOf({ entry: planEntry() })} />);
 
-    expect(root?.className).toContain(TIMELINE_SURFACE_FILL);
+    expect(nodeOf({ label: 'Plan' }).className).toContain('bg-background');
   });
 
-  it('leaves the other artifact markers on their own container', () => {
-    const { container } = render(<TimelineRowMarker item={itemOf({ entry: branchEntry() })} />);
+  it('draws a branch as a neutral concept node', () => {
+    render(<TimelineRowMarker item={itemOf({ entry: branchEntry() })} />);
 
-    expect(screen.getByLabelText('Branch')).toBeDefined();
-    expect(container.firstElementChild?.className).toContain('rounded-full');
+    expect(nodeOf({ label: 'Branch' }).getAttribute('data-node-state')).toBe('marker');
+  });
+
+  it('prints the local index inside a queued step, not its full path', () => {
+    render(
+      <TimelineRowMarker
+        item={{
+          ...itemOf({ entry: agentEntry({ stepLabel: '4.2' }) }),
+          nodeIndex: '2',
+          rowState: { phase: 'queued', reason: null, ask: null },
+        }}
+      />,
+    );
+
+    const node = nodeOf({ label: 'Not started' });
+    expect(node.textContent).toBe('2');
+    expect(node.getAttribute('data-node-state')).toBe('queued');
+  });
+
+  it('swaps the index for a glyph when the step waits on you', () => {
+    render(
+      <TimelineRowMarker
+        item={{
+          ...itemOf({ entry: agentEntry({ stepLabel: '3' }) }),
+          nodeIndex: '3',
+          rowState: {
+            phase: 'waiting',
+            reason: { kind: 'question', stepLabel: null },
+            ask: { kind: 'answer', question: null },
+          },
+        }}
+      />,
+    );
+
+    expect(nodeOf({ label: 'Waiting on your answer' }).textContent).toBe('?');
+  });
+
+  it('spins a deciding run in its own identity colour', () => {
+    render(
+      <TimelineRowMarker
+        item={{
+          ...itemOf({ entry: agentEntry({ stepLabel: null }) }),
+          identity: { spin: 'spin-border-identity-4' } as unknown as TimelineRowItem['identity'],
+          rowState: { phase: 'running', reason: { kind: 'deciding' }, ask: null },
+        }}
+      />,
+    );
+
+    expect(nodeOf({ label: 'Choosing the next step' }).className).toContain(
+      'spin-border-identity-4',
+    );
   });
 });

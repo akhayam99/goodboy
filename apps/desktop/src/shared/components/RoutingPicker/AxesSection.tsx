@@ -1,7 +1,9 @@
+import type { CliGate } from '@goodboy/core';
 import type { EffortLevel, ModelAxes, ModelKey } from '@goodboy/types';
 import { EFFORT_LABEL } from '../../../features/chat/utils/chat-constants';
 import { toggleTone } from './chipTone';
 import { AxisRow } from './AxisRow';
+import { CliGateLine } from '../../../features/providers/components/CliGateLine';
 import { EffortChips } from './EffortChips';
 import { PickerChip } from './PickerChip';
 
@@ -14,6 +16,7 @@ type Props = {
     readonly applied: EffortLevel;
   };
   readonly hasMaxModeAdvisory: boolean;
+  readonly cliGate: CliGate | null;
   readonly onEffort: (level: EffortLevel) => void;
   readonly onModel: (modelKey: ModelKey) => void;
   readonly onVariant: (id: string) => void;
@@ -26,6 +29,7 @@ export const AxesSection = ({
   canEditEffort,
   notice,
   hasMaxModeAdvisory,
+  cliGate,
   onEffort,
   onModel,
   onVariant,
@@ -107,6 +111,7 @@ export const AxesSection = ({
           </div>
         </AxisRow>
       )}
+      {cliGate !== null && <CliGateLine gate={cliGate} />}
       {axes.requiresMaxMode && (
         <p role="status" aria-label="Max Mode" className="text-2xs text-warning">
           Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.

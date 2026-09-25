@@ -108,8 +108,8 @@
 
   --chat-header-h: 2rem;
 
-  --breakpoint-brand-mark: 1024px;
-  --breakpoint-brand-word: 1180px;
+  --container-chrome-word: 1000px;
+  --container-chrome-labels: 960px;
 
   /* Density grade, name three opinionated triplets so siblings agree on
      font-size + gap + padding instead of drifting independently. Apply via
@@ -511,6 +511,48 @@ dialog[open]::backdrop {
 @media (prefers-reduced-motion: no-preference) {
   .spin-border::before {
     animation: spin-border 3.6s linear infinite;
+  }
+}
+
+.spin-rail {
+  position: relative;
+}
+
+.spin-rail::before {
+  content: '';
+  position: absolute;
+  inset: -1px -1px -1px -2px;
+  border-radius: inherit;
+  padding-left: 2px;
+  background: var(--spin-border-color, var(--color-info));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes spin-rail {
+  from {
+    background-position: 0 -150%;
+  }
+  to {
+    background-position: 0 250%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin-rail::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--spin-border-color, var(--color-info)),
+        transparent
+      )
+      no-repeat;
+    background-size: 100% 60%;
+    animation: spin-rail 2.4s ease-in-out infinite;
   }
 }
 

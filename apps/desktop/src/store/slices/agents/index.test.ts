@@ -280,7 +280,7 @@ describe('store contract', () => {
       await store.getState().setAgentDone(SESSION_ID, AGENT_ID);
 
       expect(store.getState().sessionPhaseRuns[SESSION_ID]?.[0]?.doneAt).toBeUndefined();
-      expect(store.getState().notifications[0]?.title).toBe("Couldn't mark this agent done");
+      expect(store.getState().notifications[0]?.title).toBe("Couldn't close this agent");
     });
 
     it('markAgentViewed stamps lastViewedAt and invokes persist when finished is newer than viewed', async () => {

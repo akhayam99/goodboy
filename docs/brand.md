@@ -41,8 +41,14 @@ never a new file.
 ## The lockup
 
 `website/src/components/Logo.tsx` is the lockup: the mask in white on a black
-tile, then the word `Goodboy`. `BrandBadge.tsx` is the same lockup in the app.
-It has no tagline, no registered mark and no second line.
+tile, then the word `Goodboy`. It has no tagline, no registered mark and no
+second line.
+
+In the app chrome the mark drops the tile. `BrandBadge.tsx` draws the bare
+glyph in `text-foreground`, so it is light on the dark theme and dark on the
+light theme, next to the same word. The mask file and its ratios do not
+change. This is the title bar convention of Linear, Cursor and Arc: a
+monochrome glyph in the chrome, the tile on the dock icon.
 
 The tile has one shape everywhere, and no other shape exists:
 
@@ -74,18 +80,18 @@ The identity colour of the product is `--color-primary`. The website keeps its
 own `--accent` token for the same role. Read the tokens, do not retype them.
 
 The tile behind the mark is **black, never the primary colour**. It is the same
-value in the app, on the site, in the favicon and in the app icon: `--brand-tile` in
+value on the site, in the favicon and in the app icon: `--brand-tile` in
 `website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 
-**The tile is meant to disappear in the app, and that is not a defect.**
-On the top bar (`bg-background`) the black tile has a contrast of 1.09:1. So
-the eye sees a bare white mark there, and that is the whole point: the mark is
-white on black, not a coloured pill. The mark itself reaches 19.66:1, so
-nothing is hard to read. Do not add a border, a lighter dark-theme tile or a
-glow to make the tile visible. On the site the background is white, and in the
-dock the icon stands alone, so there the same tile is clearly visible and does
-its job.
+**The app chrome never paints the tile.** A fixed black tile on the top bar
+disappeared on the dark theme (1.09:1 against `bg-background`) and read as a
+dark block on the light theme. Neither is the brand. So the top bar shows the
+bare glyph in the theme foreground, and `--color-brand` stays only to keep the
+generator honest against the site. Do not bring the tile back into the chrome,
+and do not give it a border, a lighter dark-theme variant or a glow. On the
+site, the favicon and the dock the tile stands alone and does its job.
+`brand-mark-is-centered-in-its-tile.test.ts` checks both halves.
 
 The background is white on the site and charcoal in the app, and both are
 correct. An asset made for one does not automatically work on the other. So a

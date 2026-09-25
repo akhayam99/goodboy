@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
-import { decodeAuthRequiredMessage } from '../../../features/chat/turn';
+import { decodeAuthRequiredMessage, decodeCliTooOldMessage } from '../../../features/chat/turn';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 
 const ANTHROPIC = 'anthropic' as ProviderId;
@@ -47,15 +47,26 @@ describe('resolveErrorTurnMessage', () => {
     );
   });
 
-  it('tells the user to update the CLI when the model outranks it', () => {
+  it('encodes a CLI refusal with the model, both versions and the raw error', () => {
     const message =
       'API Error: 400 Claude Code 2.1.259 does not support this model; version 2.1.280 or newer is required.';
 
-    const resolved = resolveErrorTurnMessage({ message, providerId: ANTHROPIC, identity: null });
+    const resolved = resolveErrorTurnMessage({
+      message,
+      providerId: ANTHROPIC,
+      identity: null,
+      model: 'claude-opus-5-5',
+      fallbackModel: 'claude-opus-5',
+    });
 
-    expect(resolved).toBe(
-      'This model needs anthropic CLI 2.1.280 or newer, and 2.1.259 is installed. Update the CLI or choose another model.',
-    );
+    expect(decodeCliTooOldMessage(resolved)).toEqual({
+      providerId: ANTHROPIC,
+      modelKey: 'opus-5.5',
+      installedVersion: '2.1.259',
+      requiredVersion: '2.1.280',
+      fallbackModelKey: 'opus-5',
+      detail: message,
+    });
   });
 
   it('tells a Codex user to choose a model supported by their account', () => {

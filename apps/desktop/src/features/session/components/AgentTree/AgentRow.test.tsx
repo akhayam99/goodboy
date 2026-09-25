@@ -85,7 +85,7 @@ const renderRow = (
         onRenameCancel={() => undefined}
         onDelete={remove}
         onInspect={inspect}
-        onMarkDone={markDone}
+        onClose={markDone}
         density={density}
       />
     </ul>,
@@ -167,21 +167,16 @@ describe('AgentRow', () => {
     },
   );
 
-  it('offers mark done for a stopped standalone agent', () => {
-    renderRow(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark agent done' }));
+  it('offers close when the lane hands it a close handler', () => {
+    renderRow(false, { status: 'failed' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close agent' }));
     expect(markDone).toHaveBeenCalledOnce();
-  });
-
-  it('hides mark done while the agent is running', () => {
-    renderRow(false, { status: 'running' });
-    expect(screen.queryByRole('button', { name: 'Mark agent done' })).toBeNull();
   });
 
   it('keeps the row actions mounted at rest and reveals them by opacity', () => {
     renderRow(false);
     const remove = screen.getByRole('button', { name: 'Delete agent' });
-    const done = screen.getByRole('button', { name: 'Mark agent done' });
+    const done = screen.getByRole('button', { name: 'Close agent' });
     const details = screen.getByRole('button', { name: 'Toggle agent details' });
     const navigationSlot = screen.getByRole('group', { name: 'Agent navigation actions' });
     const lifecycleSlot = screen.getByRole('group', { name: 'Agent lifecycle actions' });
@@ -239,10 +234,10 @@ describe('AgentRow', () => {
     expect(remove).toHaveBeenCalledOnce();
   });
 
-  it('keeps mark done and delete on the lane density card too', () => {
+  it('keeps close and delete on the lane density card too', () => {
     renderRow(false, {}, 'lane');
 
-    expect(screen.getByRole('button', { name: 'Mark agent done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close agent' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete agent' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Toggle agent details' })).toBeTruthy();
   });
@@ -258,10 +253,10 @@ describe('AgentRow', () => {
     expect(labelsOf()).toEqual(atRest);
   });
 
-  it('keeps mark done and delete on the sidebar density card', () => {
+  it('keeps close and delete on the sidebar density card', () => {
     renderRow(false, {}, 'sidebar');
 
-    expect(screen.getByRole('button', { name: 'Mark agent done' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close agent' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete agent' })).toBeTruthy();
   });
 });

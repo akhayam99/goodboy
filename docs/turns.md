@@ -44,10 +44,14 @@ provider with no bound API key stops the turn with a connect prompt instead of
 spawning.
 
 The route that actually ran is recorded per run in `runRouting`, keyed by agent
-and run id, the moment the run id exists. `executedAgentRouting` reads an
-agent's newest run from its turn telemetry and falls back to that live record,
-so the agent's chip names the model that is running before any usage lands.
-The live record is memory only and is evicted with the agent.
+and run id, the moment the run id exists: provider, model and the effort flag
+the CLI was started with (null when none was passed). `executedAgentRouting`
+reads an agent's newest run from its turn telemetry and falls back to that live
+record, so the agent's chip names the model that is running before any usage
+lands. Telemetry has no effort, so the effort always comes from `runRouting`.
+The live record is memory only and is evicted with the agent. Opening a session
+seeds it back from the session's turn spans (`seedRunRoutingFromSpans`), and a
+record a live turn already wrote wins.
 
 ## What the prompt carries
 
@@ -154,6 +158,28 @@ the move, and reruns the same input on the same mount target. A usage limit
 with no fallback notifies, and when the provider names its reset time it
 schedules one retry on the same model at that time. Any other failure leaves
 the agent in `error` with a retryable error event.
+
+## Turn spans
+
+- Every provider run that reaches the CLI closes with one `agent_turn_spans` row, keyed by its run id. `sendTurn` writes it through `recordTurnSpan` on both exits: when the stream ends, and in the failure path before any fallback retry. The first write wins, so a failure after a finished stream keeps the finished span.
+- A span holds machine time only: `started_at` is taken right before the CLI starts and `ended_at` when its stream ends. Waiting on an open question, a review or a retry never falls inside a span, so an agent's execution time is the sum of its spans. `Agent.startedAt` to `lastFinishedAt` is wall clock and is not that number.
+- `provider`, `model` and `effort` are what the CLI was actually started with, after routing and clamping. `effort` is null when no effort flag was passed. `cost_usd` is the sum of the telemetry the run recorded, null when it recorded none.
+- `end_reason` is `cancelled` for a stopped turn, `failed` for a thrown turn or one with no answer, `awaiting_user` when the answer ends on a blocking question, and `succeeded` otherwise.
+- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. There is no backfill: older wall clock numbers would bring back the wrong duration, so a run from before spans existed has no observed effort and its row shows the planned one in faint.
+- `touched_mount_ids` lists the session mounts the turn changed, as a JSON array (null on spans from before it was recorded). `collectTouchedMounts` joins two signals. Every `file_edit` path the CLI reported maps to the innermost mount that holds it. On top of that, `snapshotMountChanges` reads each writable mount's numstat (`worktreeChangedFiles`) right before the CLI starts and again at the end, and a mount whose numstat moved counts too, which catches edits made through the shell. The numstat signal is dropped when another agent of the session was running at the end of the turn or closed a turn during it (`hasOtherSessionTurnSince`), because the change could be theirs. Gemini reports no `file_edit`, so its turns rely on the numstat signal alone. A failure never fails the turn; it falls back to the reported edits.
+- The activity feed shows these mounts on an agent row (`useAgentTouchedWorktrees`, union over the agent's spans) only when the session has two or more mounts. The row shows the worktree icon and a count, never a name that the title would have to share space with; the tooltip and accessible name list the mounts. A mount that left the session drops out of the row.
+- After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.
+- `listAgentTurnSpanRoutes` reads a session's spans back as routes (run, agent, provider, model, effort) when the session opens. That is where the observed effort in the activity meta, the run tree and the agent header comes from after a reload.
+
+## Measured time and estimates
+
+- `listSessionTurnSpans` and `listWorkspaceTurnSpans` (`@goodboy/db`) read spans with the agent's parent and status. The `durationEstimates` store slice keeps them: `sessionTurnSpans` per session for live rows, `workspaceDurationHistory` per workspace for the estimator (last 90 days).
+- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
+- `buildDurationHistory` (`@goodboy/core`) turns spans into samples: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn, plus one per finished orchestrated run.
+- `estimateDuration` picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then role and provider (8), then role alone (8). It keeps the newest 50, caps them at the 95th percentile, and returns a band of time and cost (`lowMs`, `midMs`, `highMs`). An unsized step gets the 25th, 50th and 75th percentiles. A running row measures against the top of the band, so a typical run fills its arc without overflowing it; a queued row shows the band.
+- `WorkTimeProvider` gives each panel (the activity feed, the workflow detail, a Brief's Subagents) one source and one 5 second clock (`useNow`), which ticks only while something runs. Rows read it with `useAgentWorkTime`; outside a provider a row shows no time column.
+- The workflow builder hides estimates until the workspace has 10 measured steps, and an orchestrated run shows a band only from 5 finished orchestrated runs.
+- The planner gives each drafted step a relative `size` (`small`, `medium` or `large`), never minutes: it has no history to judge time from, and an agent handed a deadline cuts scope. The size only picks the band from the same samples: small takes the 10th to 50th percentile, medium the 25th to 75th, large the 50th to 90th. It is stored on the step (`steps.size`, m172) so the running workflow keeps the band the form showed, and no prompt ever carries it. A preset keeps no sizes, because a size judges one plan, not every future goal.
 
 ## After a turn succeeds
 

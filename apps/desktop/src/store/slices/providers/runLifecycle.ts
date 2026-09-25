@@ -17,7 +17,7 @@ import { clearStaleConnect } from './clearStaleConnect';
 import { detectAuthUrl } from './detectAuthUrl';
 import { stripAnsi } from './stripAnsi';
 import type { GetFn, SetFn } from './types';
-import { IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
+import { ACTIVE_LIFECYCLE_PHASES, IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
 
 const OUTPUT_TAIL_CAP = 4 * 1024;
 const ERROR_TAIL_CAP = 500;
@@ -29,13 +29,20 @@ const OPENCODE_BINARY_PROVIDERS: ReadonlySet<ProviderId> = new Set<ProviderId>([
 ]);
 
 function pendingPhase(action: ProviderLifecycleAction): ProviderLifecyclePhase {
-  if (action === 'install') {
-    return 'installing';
+  switch (action) {
+    case 'install':
+      return 'installing';
+    case 'login':
+      return 'connecting';
+    case 'logout':
+      return 'disconnecting';
+    case 'update':
+      return 'updating';
+    default: {
+      const exhaustive: never = action;
+      return exhaustive;
+    }
   }
-  if (action === 'login') {
-    return 'connecting';
-  }
-  return 'disconnecting';
 }
 
 function restingPhase(
@@ -44,6 +51,9 @@ function restingPhase(
 ): ProviderLifecyclePhase {
   const installed = payload.status.available;
   const connected = payload.auth.state === 'connected';
+  if (action === 'update') {
+    return payload.exitCode === 0 && installed ? 'installed' : 'error';
+  }
   if (payload.exitCode !== 0) {
     if (action === 'install') {
       return installed ? 'installed' : 'error';
@@ -111,19 +121,16 @@ export type RunLifecycleArgs = {
   readonly action: ProviderLifecycleAction;
   readonly cols?: number;
   readonly rows?: number;
+  readonly onExit?: (payload: LifecycleExitPayload) => void;
 };
 
 export const runLifecycle = async (
   set: SetFn,
   get: GetFn,
-  { providerId, action, cols = 100, rows = 24 }: RunLifecycleArgs,
+  { providerId, action, cols = 100, rows = 24, onExit }: RunLifecycleArgs,
 ): Promise<void> => {
   const existing = get().providerLifecycle[providerId];
-  if (
-    existing.phase === 'installing' ||
-    existing.phase === 'connecting' ||
-    existing.phase === 'disconnecting'
-  ) {
+  if (ACTIVE_LIFECYCLE_PHASES.has(existing.phase)) {
     return;
   }
 
@@ -231,6 +238,7 @@ export const runLifecycle = async (
         },
       };
     });
+    onExit?.(payload);
     void get().refreshProviders();
   });
 

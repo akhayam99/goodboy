@@ -954,7 +954,7 @@ describe('cluster child routing lifecycle', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Cluster heavy rewrite is blocked',
+        title: 'Subagent heavy rewrite is blocked',
         body: expect.stringContaining('codex/gpt-5.6-sol'),
         sessionId: SID,
       }),
@@ -990,7 +990,7 @@ describe('cluster child routing lifecycle', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Cluster container is blocked',
+        title: 'Subagent container is blocked',
         body: expect.any(String),
         sessionId: SID,
       }),
@@ -1078,7 +1078,7 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('Cluster paused'),
+        title: expect.stringContaining('Subagent paused'),
         body: expect.stringContaining('Autorun is off'),
         sessionId: SID,
       }),
@@ -1496,8 +1496,8 @@ describe('advanceClusterImplementation', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'This cluster has no implementer',
-        body: expect.stringContaining('more clusters'),
+        title: 'This subagent has no implementer',
+        body: expect.stringContaining('more parts'),
         sessionId: SID,
       }),
     );
@@ -1750,7 +1750,7 @@ describe('resumeClusterChildren', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Cluster child-1 is blocked',
+        title: 'Subagent child-1 is blocked',
         body: expect.any(String),
         sessionId: SID,
       }),

@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn, tintClasses, Tooltip, type Tone } from '@goodboy/ui';
 
+export const FOOTER_LABELED_PAD = 'gap-1.5 px-1.5 @min-chrome-labels/footer:px-2';
+export const FOOTER_LABEL = 'hidden @min-chrome-labels/footer:inline';
+
 type Props = {
   readonly icon: ReactNode;
   readonly label: string;
@@ -29,7 +32,7 @@ export const FooterButton = ({
       aria-label={title ?? label}
       className={cn(
         'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
-        showLabel ? 'gap-1.5 px-2' : 'px-1.5',
+        showLabel ? FOOTER_LABELED_PAD : 'px-1.5',
         active
           ? 'bg-muted text-foreground'
           : pulse
@@ -46,7 +49,7 @@ export const FooterButton = ({
       >
         {icon}
       </span>
-      {showLabel ? <span>{label}</span> : null}
+      {showLabel ? <span className={FOOTER_LABEL}>{label}</span> : null}
     </button>
   </Tooltip>
 );

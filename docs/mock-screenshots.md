@@ -53,14 +53,14 @@ real app as soon as either one changes, and it shows.
 
 There are two cases, and each needs a different approach:
 
-**The component is pure props.** `WorkflowStepGraph` and `RoleModelRow` work
+**The component is pure props.** `RoleModelRow` works
 this way. Read the component's prop type and build fake data that matches it.
 Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s enabling flags work
-this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
+`WorkflowRunDetail`, `DefaultsPanel`, `SessionNavSidebar` and `AppFooter`'s
+enabling flags work this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
 ```tsx
@@ -86,14 +86,9 @@ the component instead of a gap in the mock.
 - **Every "role" badge goes through `classifyAgent`.** The
   `agentKindOverride` entry for the agent id wins, then `agent.kind`, then the
   agent name. Setting `kind: 'implementer'` on the agent is enough.
-  Components that take `agentKindOverride` as a prop (`WorkflowStepGraph`)
+  Components that take `agentKindOverride` as a prop (`RunTree`)
   read the prop instead of the store, so an override set only in the store
   does not reach them.
-- **`useWorkspaceRuns`'s Activity lane builds its workflow lookup from
-  `state.phaseTemplates[workspaceId]`, not `state.sessionWorkflows`.**
-  `SessionOverviewPane`'s own `workflowById` union does read
-  `sessionWorkflows`. But if you fill only `sessionWorkflows`, the Activity
-  card stays empty. Fill both.
 - **Provider/model routing badges** fall back to `run.modelOverride` /
   `run.providerOverride` on the `Agent` object when the
   `agentModelOverride`/`agentProviderOverride` prop maps are empty. Use real
@@ -101,10 +96,10 @@ the component instead of a gap in the mock.
   `composer-2.5-fast`, codex's `gpt-6-astra` or `gpt-5.6-sol`), not made-up
   strings. `RoutingBadge` and the model picker look up their labels in that
   catalog.
-- **Fan-out / sub-agents** render through `WorkflowStepGraph`'s
-  `childrenByParentId: ReadonlyMap<string, ReadonlyArray<Agent>>` prop, keyed
-  by the parent agent's id. The node shows a `doneChildCount/childCount`
-  badge on its own. You don't compute or render that yourself.
+- **Fan-out / sub-agents** in the workflow detail come from
+  `sessionPhaseRuns`: an agent with `parentAgentId` set is a child of that
+  step. `RunTree` numbers it (`2.1`, `2.2`) and draws it on its own lane one
+  column right. You don't compute or render that yourself.
 - **Mounting anything that calls `useToast` on its own throws `useToast must
 be used inside ToastProvider`.** `App` returns `MockScene` under the
   `MOCK_ENABLED` gate before it mounts `ToastProvider`. So a scene that renders

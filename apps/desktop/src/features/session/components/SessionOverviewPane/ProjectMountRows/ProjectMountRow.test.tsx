@@ -48,6 +48,10 @@ const { store, remoteKind } = vi.hoisted(() => ({
     sessionActiveProject: {} as Record<string, string>,
     sessionMounts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
+    agentTurnState: {} as Record<string, { kind: string }>,
+    agentTurnDestination: {} as Record<string, { kind: string; mountId?: string }>,
+    selectAgent: vi.fn(async () => undefined),
   },
 }));
 
@@ -171,6 +175,9 @@ beforeEach(() => {
   store.sessionActiveProject = {};
   store.sessionMounts = {};
   store.sessionProjectMounts = {};
+  store.sessionOpenQuestions = {};
+  store.agentTurnState = {};
+  store.agentTurnDestination = {};
 });
 
 afterEach(cleanup);
@@ -268,7 +275,7 @@ describe('ProjectMountRow availability', () => {
     renderRow({ row: detached });
 
     expect(screen.getByText('Files kept')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen API' }));
 
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
@@ -316,31 +323,6 @@ describe('ProjectMountRow availability', () => {
     cleanup();
     renderRow({});
     expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
-  });
-});
-
-describe('ProjectMountRow write destination', () => {
-  it('marks the row that sendTurn will actually write to next', () => {
-    store.sessionActiveMount = { [sessionId]: 'mount-1' };
-    store.sessionProjectMounts = {
-      [sessionId]: [{ mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' }],
-    };
-    renderRow({});
-
-    expect(screen.getByText('Writes here next')).toBeDefined();
-  });
-
-  it('leaves the badge off a row that is not the resolved destination', () => {
-    store.sessionActiveMount = { [sessionId]: 'mount-2' };
-    store.sessionProjectMounts = {
-      [sessionId]: [
-        { mountId: 'mount-1', projectId: 'api', mountName: 'API', branch: 'feat/api' },
-        { mountId: 'mount-2', projectId: 'web', mountName: 'web', branch: 'feat/web' },
-      ],
-    };
-    renderRow({});
-
-    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 });
 
@@ -422,7 +404,7 @@ describe('ProjectMountRow column grammar', () => {
     renderRow({ row: detached });
     const slots = slotsOf();
 
-    expect(slots[5]?.textContent).toBe('Mount');
+    expect(slots[5]?.textContent).toBe('Reopen');
     expect(slots.at(-1)?.querySelector('[data-testid="detach-menu"]')).not.toBeNull();
   });
 
@@ -675,18 +657,22 @@ describe('ProjectMountRow worktree state', () => {
   });
 });
 
-describe('ProjectMountRow write destination', () => {
-  it('offers the destination in the menu of a mount that is not the destination', async () => {
-    store.sessionProjectMounts = {
-      [sessionId]: [
-        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
-        { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
-      ],
-    };
+const twoMounts = () => {
+  store.sessionProjectMounts = {
+    [sessionId]: [
+      { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
+      { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
+    ],
+  };
+};
+
+describe('ProjectMountRow new turns', () => {
+  it('offers to start new turns in a mount that is not the chosen one', async () => {
+    twoMounts();
     store.sessionActiveMount = { [sessionId]: 'mount-2' };
     renderRow({});
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Use for next turns' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Start new turns here' }));
 
     await waitFor(() =>
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -694,20 +680,83 @@ describe('ProjectMountRow write destination', () => {
         mountId: 'mount-1',
       }),
     );
-    expect(screen.queryByText('Writes here next')).toBeNull();
   });
 
-  it('badges the destination mount and offers no action on it', () => {
-    store.sessionProjectMounts = {
-      [sessionId]: [
-        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
-        { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
-      ],
-    };
+  it('offers nothing on the mount new turns already start in', () => {
+    twoMounts();
     store.sessionActiveMount = { [sessionId]: 'mount-1' };
     renderRow({});
 
-    expect(screen.getByText('Writes here next')).toBeTruthy();
-    expect(screen.queryByRole('menuitem', { name: 'Use for next turns' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Start new turns here' })).toBeNull();
+  });
+
+  it('hides the choice when the session has a single mount', () => {
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
+      ],
+    };
+    renderRow({});
+
+    expect(screen.queryByRole('menuitem', { name: 'Start new turns here' })).toBeNull();
+  });
+});
+
+describe('ProjectMountRow presence', () => {
+  const agent = ({ id, ordinal, name }: { id: string; ordinal: number; name: string }) => ({
+    id,
+    ordinal,
+    name,
+    status: 'running',
+  });
+
+  it('shows the agents whose turn runs in this mount and opens one on click', () => {
+    twoMounts();
+    store.sessionPhaseRuns = {
+      [sessionId]: [
+        agent({ id: 'a-2', ordinal: 2, name: 'Planner' }),
+        agent({ id: 'a-1', ordinal: 1, name: 'Implementer' }),
+        agent({ id: 'a-3', ordinal: 3, name: 'Scout' }),
+        agent({ id: 'a-4', ordinal: 4, name: 'Reviewer' }),
+      ],
+    };
+    store.agentTurnState = {
+      'a-1': { kind: 'running' },
+      'a-2': { kind: 'idle' },
+      'a-3': { kind: 'running' },
+      'a-4': { kind: 'blocked' },
+    };
+    store.agentTurnDestination = {
+      'a-1': { kind: 'mount', mountId: 'mount-1' },
+      'a-2': { kind: 'mount', mountId: 'mount-1' },
+      'a-3': { kind: 'mount', mountId: 'mount-2' },
+      'a-4': { kind: 'mount', mountId: 'mount-1' },
+    };
+    store.sessionOpenQuestions = { [sessionId]: [{ createdByAgentId: 'a-2' }] };
+    renderRow({});
+
+    const presence = screen.getByRole('group', { name: 'Agents working in API' });
+    const nodes = Array.from(presence.querySelectorAll('button')).map((node) =>
+      node.getAttribute('aria-label'),
+    );
+    expect(nodes).toEqual(['Open Implementer', 'Open Planner', 'Open Reviewer']);
+    expect(presence.textContent).toContain('3 agents here');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Planner' }));
+    expect(store.selectAgent).toHaveBeenCalledWith(sessionId, 'a-2');
+  });
+
+  it('shows no presence with a single mount', () => {
+    store.sessionProjectMounts = {
+      [sessionId]: [
+        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
+      ],
+    };
+    store.sessionPhaseRuns = { [sessionId]: [agent({ id: 'a-1', ordinal: 1, name: 'Scout' })] };
+    store.agentTurnState = { 'a-1': { kind: 'running' } };
+    store.agentTurnDestination = { 'a-1': { kind: 'mount', mountId: 'mount-1' } };
+    renderRow({});
+
+    expect(screen.queryByTestId('mount-presence')).toBeNull();
   });
 });

@@ -40,6 +40,7 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   workflow_started: 'plain',
   workflow_discarded: 'muted',
   workflow_restored: 'plain',
+  workflow_closed: 'muted',
   workflow_deleted: 'muted',
   decisions_changed: 'muted',
   project_materialized: 'plain',
@@ -84,6 +85,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   workflow_started: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
   workflow_discarded: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_restored: { icon: CONCEPT_ICONS.workflows, tone: 'primary', label: 'Workflow' },
+  workflow_closed: { icon: CONCEPT_ICONS.workflows, tone: 'neutral', label: 'Workflow' },
   workflow_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Workflow' },
   decisions_changed: {
     icon: CONCEPT_ICONS.decisions,
@@ -219,6 +221,12 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
       return [workflowSegment({ payload }), { kind: 'text', text: ' discarded' }];
     case 'workflow_restored':
       return [workflowSegment({ payload }), { kind: 'text', text: ' restored' }];
+    case 'workflow_closed':
+      return [
+        { kind: 'text', text: 'Closed ' },
+        workflowSegment({ payload }),
+        { kind: 'text', text: ' by you' },
+      ];
     case 'workflow_deleted':
       return [workflowSegment({ payload }), { kind: 'text', text: ' deleted' }];
     case 'decisions_changed':
@@ -238,10 +246,10 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
               { kind: 'value', text: branch, variant: 'branch' },
             ];
       if (payload?.projectName == null) {
-        return [{ kind: 'text', text: 'Project mounted' }, ...onBranch];
+        return [{ kind: 'text', text: 'Project added' }, ...onBranch];
       }
       return [
-        { kind: 'text', text: 'Mounted ' },
+        { kind: 'text', text: 'Added ' },
         { kind: 'value', text: payload.projectName, variant: 'project' },
         ...onBranch,
       ];
@@ -249,28 +257,27 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'project_materialization_refused': {
       const reason = payload?.reason ?? 'unknown failure';
       if (payload?.projectName == null) {
-        return [{ kind: 'text', text: `Project mount refused: ${reason}` }];
+        return [{ kind: 'text', text: `Couldn't add a project: ${reason}` }];
       }
       return [
-        { kind: 'text', text: 'Mount refused for ' },
+        { kind: 'text', text: "Couldn't add " },
         { kind: 'value', text: payload.projectName, variant: 'project' },
         { kind: 'text', text: `: ${reason}` },
       ];
     }
     case 'project_materialization_proposed':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Asked to mount a project' }]
+        ? [{ kind: 'text', text: 'Asked to add a project' }]
         : [
-            { kind: 'text', text: 'Asked to mount ' },
+            { kind: 'text', text: 'Asked to add ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
           ];
     case 'project_materialization_dismissed':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Mount declined' }]
+        ? [{ kind: 'text', text: 'Declined adding a project' }]
         : [
-            { kind: 'text', text: 'Mount of ' },
+            { kind: 'text', text: 'Declined adding ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
-            { kind: 'text', text: ' declined' },
           ];
     case 'project_detached':
       return payload?.projectName == null
@@ -380,7 +387,7 @@ export const sessionEventProjectRunLabel = ({
   const mountedSegments: ReadonlyArray<TimelineLabelSegment> =
     mounted.length === 0
       ? []
-      : [{ kind: 'text', text: 'Mounted ' }, ...projectListSegments({ names: mounted, limit })];
+      : [{ kind: 'text', text: 'Added ' }, ...projectListSegments({ names: mounted, limit })];
   const detachedSegments: ReadonlyArray<TimelineLabelSegment> =
     detached.length === 0
       ? []

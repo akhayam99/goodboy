@@ -1,5 +1,5 @@
-import { Fragment, useState } from 'react';
-import { Divider, EmptyState, SectionHeader } from '@goodboy/ui';
+import { useState } from 'react';
+import { EmptyState, SectionHeader } from '@goodboy/ui';
 import { Plus } from 'lucide-react';
 import type { ProviderId, StepDef, StepDefId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -70,33 +70,28 @@ export const StepLibraryPalette = ({
         />
       )}
 
-      <ul className="flex flex-col">
-        {library.map((def, i) =>
+      <ul className="flex flex-col gap-px rounded-lg bg-subtle p-1">
+        {library.map((def) =>
           editing === def.id ? (
-            <Fragment key={def.id}>
-              {i > 0 ? <Divider /> : null}
-              <li className="py-2">
-                <LibraryStepForm
-                  def={def}
-                  workspaceId={workspaceId}
-                  connectedProviders={connectedProviders}
-                  onCommit={onSaveDef}
-                  onClose={() => setEditing(null)}
-                />
-              </li>
-            </Fragment>
-          ) : (
-            <Fragment key={def.id}>
-              {i > 0 ? <Divider /> : null}
-              <LibraryCard
+            <li key={def.id} className="py-2">
+              <LibraryStepForm
                 def={def}
-                dragDisabled={false}
-                onStartDrag={onStartDrag}
-                onAdd={() => onAdd(def)}
-                onEdit={() => setEditing(def.id)}
-                onDelete={() => onDeleteDef(def.id)}
+                workspaceId={workspaceId}
+                connectedProviders={connectedProviders}
+                onCommit={onSaveDef}
+                onClose={() => setEditing(null)}
               />
-            </Fragment>
+            </li>
+          ) : (
+            <LibraryCard
+              key={def.id}
+              def={def}
+              dragDisabled={false}
+              onStartDrag={onStartDrag}
+              onAdd={() => onAdd(def)}
+              onEdit={() => setEditing(def.id)}
+              onDelete={() => onDeleteDef(def.id)}
+            />
           ),
         )}
       </ul>

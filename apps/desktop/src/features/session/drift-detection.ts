@@ -59,7 +59,7 @@ export const detectDrift = (input: DriftDetectionInput): ReadonlyArray<DriftViol
     violations.push({
       kind: agentKind,
       signal: 'impl-output-from-readonly-kind',
-      detail: `${agentKind} agent produced implementation-like diff output. consider spawning an implementer.`,
+      detail: `${agentKind} agent produced implementation-like diff output. consider starting an implementer.`,
     });
   }
 

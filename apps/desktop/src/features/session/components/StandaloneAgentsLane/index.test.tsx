@@ -71,6 +71,8 @@ beforeEach(() => {
     renameAgent: vi.fn(),
     deleteAgent: vi.fn(),
     setAgentDone: vi.fn(),
+    agentTurnState: {},
+    sessionOpenQuestions: {},
   });
 });
 
@@ -132,6 +134,38 @@ describe('StandaloneAgentsLane', () => {
     view.rerender(<StandaloneAgentsLane session={session} variant="lens" />);
 
     expect(screen.getByText('No active agents')).toBeTruthy();
+  });
+
+  it('finishes an agent on its own once its turn succeeded and nothing waits on it', () => {
+    setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent', status: 'completed' })]);
+    render(<StandaloneAgentsLane session={session} variant="lens" />);
+
+    expect(screen.getByText('No active agents')).toBeTruthy();
+  });
+
+  it('keeps a completed agent active while it waits on its own question', () => {
+    setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent', status: 'completed' })]);
+    h.state.sessionOpenQuestions = {
+      [SESSION_ID]: [{ id: 'q-1', status: 'open', createdByAgentId: 'solo' }],
+    };
+    render(<StandaloneAgentsLane session={session} variant="lens" />);
+
+    expect(screen.getByTestId('agent-row').textContent).toBe('solo agent');
+  });
+
+  it('keeps a completed agent active while a turn is still live', () => {
+    setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent', status: 'completed' })]);
+    h.state.agentTurnState = { solo: { kind: 'starting', startedAt: NOW } };
+    render(<StandaloneAgentsLane session={session} variant="lens" />);
+
+    expect(screen.getByTestId('agent-row').textContent).toBe('solo agent');
+  });
+
+  it('keeps a failed agent active until you close it', () => {
+    setAgents([buildAgent({ id: 'solo' as AgentId, name: 'solo agent', status: 'failed' })]);
+    render(<StandaloneAgentsLane session={session} variant="lens" />);
+
+    expect(screen.getByTestId('agent-row').textContent).toBe('solo agent');
   });
 
   it('hides completed agents by default', () => {

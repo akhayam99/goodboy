@@ -18,6 +18,7 @@ import { bitbucketPrUrl } from '../../../integrations/bitbucket/bitbucketPrUrl';
 import { issueIdentifier } from '../../../integrations/gitlab/client';
 import type { InboxRecord } from '../../types';
 import { UnlinkSessionAction } from './UnlinkSessionAction';
+import { issueBriefSourceFor } from './issueBriefSourceFor';
 
 type Props = {
   readonly record: InboxRecord;
@@ -30,42 +31,51 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
   const payload = record.payload;
 
   switch (payload.provider) {
-    case 'github':
+    case 'github': {
+      const externalTask = {
+        provider: 'github',
+        externalId: String(payload.issue.number),
+        identifier: `#${payload.issue.number}`,
+        url: payload.issue.url,
+        title: payload.issue.title,
+      } as const;
       return (
         <LaunchSessionPanel
           workspaceId={workspaceId}
           linkedSessionId={payload.sessionId}
           goalSeed={goalFromGithubIssue({ issue: payload.issue })}
-          externalTask={{
-            provider: 'github',
-            externalId: String(payload.issue.number),
-            identifier: `#${payload.issue.number}`,
-            url: payload.issue.url,
-            title: payload.issue.title,
-          }}
+          externalTask={externalTask}
+          briefSource={issueBriefSourceFor({ task: externalTask, body: payload.issue.body })}
           onClose={onClose}
           focusRequest={focusRequest}
         />
       );
+    }
     case 'gitlab':
       switch (payload.kind) {
-        case 'issue':
+        case 'issue': {
+          const externalTask = {
+            provider: 'gitlab',
+            externalId: String(payload.issue.id),
+            identifier: issueIdentifier(payload.issue),
+            url: payload.issue.webUrl,
+            title: payload.issue.title,
+          } as const;
           return (
             <LaunchSessionPanel
               workspaceId={workspaceId}
               linkedSessionId={payload.sessionId}
               goalSeed={goalFromGitlabIssue({ issue: payload.issue })}
-              externalTask={{
-                provider: 'gitlab',
-                externalId: String(payload.issue.id),
-                identifier: issueIdentifier(payload.issue),
-                url: payload.issue.webUrl,
-                title: payload.issue.title,
-              }}
+              externalTask={externalTask}
+              briefSource={issueBriefSourceFor({
+                task: externalTask,
+                body: payload.issue.description ?? '',
+              })}
               onClose={onClose}
               focusRequest={focusRequest}
             />
           );
+        }
         case 'mr':
           return (
             <LaunchSessionPanel
@@ -79,6 +89,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
                 url: payload.mr.webUrl,
                 title: payload.mr.title,
               }}
+              briefSource={null}
               onClose={onClose}
               focusRequest={focusRequest}
             />
@@ -88,55 +99,67 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
           return exhaustive;
         }
       }
-    case 'linear':
+    case 'linear': {
+      const externalTask = {
+        provider: 'linear',
+        externalId: payload.issue.id,
+        identifier: payload.issue.identifier,
+        url: payload.issue.url,
+        title: payload.issue.title,
+      } as const;
       return (
         <LaunchSessionPanel
           workspaceId={workspaceId}
           linkedSessionId={payload.sessionId}
           goalSeed={goalFromLinearIssue({ issue: payload.issue })}
-          externalTask={{
-            provider: 'linear',
-            externalId: payload.issue.id,
-            identifier: payload.issue.identifier,
-            url: payload.issue.url,
-            title: payload.issue.title,
-          }}
+          externalTask={externalTask}
+          briefSource={issueBriefSourceFor({
+            task: externalTask,
+            body: payload.issue.description ?? '',
+          })}
           onClose={onClose}
           focusRequest={focusRequest}
         />
       );
-    case 'jira':
+    }
+    case 'jira': {
+      const externalTask = {
+        provider: 'jira',
+        externalId: payload.issue.id,
+        identifier: payload.issue.key,
+        url: payload.issue.url,
+        title: payload.issue.summary,
+      } as const;
       return (
         <LaunchSessionPanel
           workspaceId={workspaceId}
           linkedSessionId={payload.sessionId}
           goalSeed={goalFromJiraIssue({ issue: payload.issue })}
-          externalTask={{
-            provider: 'jira',
-            externalId: payload.issue.id,
-            identifier: payload.issue.key,
-            url: payload.issue.url,
-            title: payload.issue.summary,
-          }}
+          externalTask={externalTask}
+          briefSource={issueBriefSourceFor({ task: externalTask, body: payload.issue.description })}
           onClose={onClose}
           focusRequest={focusRequest}
         />
       );
+    }
     case 'sentry': {
       const linkedSessionId = payload.sessionId;
+      const goalSeed = goalFromSentry({ issue: payload.issue });
+      const externalTask = {
+        provider: 'sentry',
+        externalId: payload.issue.id,
+        identifier: payload.issue.shortId ?? payload.issue.id,
+        url: payload.issue.permalink ?? '',
+        title: payload.issue.title,
+      } as const;
       return (
         <div className="flex flex-col gap-1.5">
           <LaunchSessionPanel
             workspaceId={workspaceId}
             linkedSessionId={linkedSessionId}
-            goalSeed={goalFromSentry({ issue: payload.issue })}
-            externalTask={{
-              provider: 'sentry',
-              externalId: payload.issue.id,
-              identifier: payload.issue.shortId ?? payload.issue.id,
-              url: payload.issue.permalink ?? '',
-              title: payload.issue.title,
-            }}
+            goalSeed={goalSeed}
+            externalTask={externalTask}
+            briefSource={issueBriefSourceFor({ task: externalTask, body: goalSeed })}
             onClose={onClose}
             focusRequest={focusRequest}
           />
@@ -152,21 +175,27 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
     }
     case 'slack': {
       const threadTs = payload.head.threadTs ?? payload.head.ts;
+      const goalSeed = goalFromThread({
+        channelName: payload.channel.name,
+        messages: [payload.head],
+      });
+      const externalTask = {
+        provider: 'slack',
+        externalId: slackThreadExternalId({ channelId: payload.channel.id, threadTs }),
+        identifier: slackThreadIdentifier({
+          channelName: payload.channel.name,
+          text: payload.head.text,
+        }),
+        url: record.url,
+        title: slackThreadTitle({ text: payload.head.text }),
+      } as const;
       return (
         <LaunchSessionPanel
           workspaceId={workspaceId}
           linkedSessionId={payload.sessionId}
-          goalSeed={goalFromThread({ channelName: payload.channel.name, messages: [payload.head] })}
-          externalTask={{
-            provider: 'slack',
-            externalId: slackThreadExternalId({ channelId: payload.channel.id, threadTs }),
-            identifier: slackThreadIdentifier({
-              channelName: payload.channel.name,
-              text: payload.head.text,
-            }),
-            url: record.url,
-            title: slackThreadTitle({ text: payload.head.text }),
-          }}
+          goalSeed={goalSeed}
+          externalTask={externalTask}
+          briefSource={issueBriefSourceFor({ task: externalTask, body: goalSeed, noun: 'thread' })}
           onClose={onClose}
           focusRequest={focusRequest}
         />
@@ -192,6 +221,7 @@ export const RecordLaunchDock = ({ record, workspaceId, onClose, focusRequest }:
             url: bitbucketPrUrl({ repo: payload.repo, pullRequest: payload.pullRequest }),
             title: payload.pullRequest.title,
           }}
+          briefSource={null}
           onClose={onClose}
           focusRequest={focusRequest}
         />

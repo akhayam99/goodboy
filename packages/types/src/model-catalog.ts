@@ -23,6 +23,7 @@ export type BaseModel = {
   readonly tier: ModelTier;
   readonly contextWindow: number;
   readonly presentation: ModelPresentation;
+  readonly minCliVersion?: string;
 };
 
 export type AnthropicModel = BaseModel & {

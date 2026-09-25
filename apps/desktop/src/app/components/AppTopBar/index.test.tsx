@@ -180,8 +180,14 @@ describe('AppTopBar', () => {
     expect(children[2]?.className).not.toContain('min-w-0');
     expect(children.length).toBe(3);
     expect(children[0]?.contains(screen.getByLabelText('Switch workspace: Test WS'))).toBe(true);
-    expect(children[1]).toBe(screen.getByRole('img', { name: 'Goodboy' }));
+    expect(children[1]?.contains(screen.getByRole('img', { name: 'Goodboy' }))).toBe(true);
     expect(children[2]?.contains(screen.getByTestId('onboarding-chip'))).toBe(true);
+    expect(bar?.className).toContain('@container/topbar');
+    expect(children.map((child) => child.className.split(' ')[0])).toEqual([
+      'col-start-1',
+      'col-start-2',
+      'col-start-3',
+    ]);
   });
 
   it('leaves the column control to the sidebar', () => {
@@ -199,16 +205,18 @@ describe('AppTopBar', () => {
     expect(children.some((child) => child.className.includes('absolute'))).toBe(false);
   });
 
-  it('drops the wordmark before the mascot and the mascot before identity gives way', () => {
+  it('keeps the mascot at every width and drops only the wordmark and signal words', () => {
+    hooks.rollup = { attentionCount: 0, runningCount: 2, todaySpend: 1 };
     renderBar();
 
     const brand = screen.getByRole('img', { name: 'Goodboy' });
     const wordmark = screen.getByText('Goodboy');
 
-    expect(brand.className).toContain('hidden');
-    expect(brand.className).toContain('brand-mark:inline-flex');
+    expect(brand.className).not.toContain('hidden');
     expect(wordmark.className).toContain('hidden');
-    expect(wordmark.className).toContain('brand-word:inline');
+    expect(wordmark.className).toContain('@min-chrome-word/topbar:inline');
+    expect(screen.getByText('running').className).toContain('@min-chrome-labels/topbar:inline');
+    expect(screen.getByText('today').className).toContain('@min-chrome-labels/topbar:inline');
   });
 
   it('leaves session breadcrumbs to the page, not the drag strip', () => {
@@ -223,7 +231,7 @@ describe('AppTopBar', () => {
     const onOpenSpend = vi.fn();
     renderBar({ onOpenSpend });
 
-    fireEvent.click(screen.getByTitle("Today's spend across providers, open the impact studio"));
+    fireEvent.click(screen.getByTitle("Today's spend across providers, open Impact"));
     expect(onOpenSpend).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));

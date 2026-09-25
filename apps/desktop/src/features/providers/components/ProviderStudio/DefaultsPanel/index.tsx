@@ -6,7 +6,7 @@ import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
   TASKS,
 } from '@goodboy/core';
-import { Divider, EmptyState, FieldRow, SectionHeader, SegmentedTabs } from '@goodboy/ui';
+import { EmptyState, FieldRow, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
@@ -17,6 +17,7 @@ import { useDefaultsPersistence } from './useDefaultsPersistence';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -104,6 +105,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     <PaneShell
       scroll="body"
       measure="reading"
+      animationClassName={SETTINGS_PANE_ENTRY}
       title="Defaults"
       description="Choose provider defaults for this workspace, its agent roles, and its auxiliary tasks."
     >
@@ -124,7 +126,6 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
             />
           </div>
         </FieldRow>
-        <Divider />
         <FieldRow
           label="Routing pool"
           help="Providers Goodboy can pick on its own. New sessions start with this pool."
@@ -167,43 +168,39 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         />
 
         {group === 'task' ? (
-          <div className="flex flex-col">
-            {TASKS.map((task, index) => (
-              <div key={task.id} className="@container flex flex-col">
-                {index > 0 ? <Divider /> : null}
-                <TaskModelRow
-                  task={task.id}
-                  label={task.label}
-                  help={task.description}
-                  preference={overrides.taskModels?.[task.id] ?? null}
-                  defaultProviderId={defaultProviderId}
-                  connectedProviderIds={connectedProviderIds}
-                  disabled={busy}
-                  onChange={(preference) => persistTaskModel({ task: task.id, preference })}
-                />
-              </div>
+          <div className="@container flex flex-col">
+            {TASKS.map((task) => (
+              <TaskModelRow
+                key={task.id}
+                task={task.id}
+                label={task.label}
+                help={task.description}
+                preference={overrides.taskModels?.[task.id] ?? null}
+                defaultProviderId={defaultProviderId}
+                connectedProviderIds={connectedProviderIds}
+                disabled={busy}
+                onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+              />
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             <p className="text-2xs text-faint-foreground">
-              Applies to every agent spawned in this role unless pinned per agent or per step.
+              Applies to every agent started in this role unless pinned per agent or per step.
             </p>
             <div className="flex flex-col">
-              {ROLES.map((role, index) => (
-                <div key={role} className="flex flex-col">
-                  {index > 0 ? <Divider /> : null}
-                  <RoleModelRow
-                    role={role}
-                    label={ROLE_LABEL[role]}
-                    help={ROLE_REGISTRY[role].description}
-                    preference={overrides.roleModels?.[role] ?? null}
-                    defaultProviderId={defaultProviderId}
-                    connectedProviderIds={connectedProviderIds}
-                    disabled={busy}
-                    onChange={(preference) => persistRoleModel({ role, preference })}
-                  />
-                </div>
+              {ROLES.map((role) => (
+                <RoleModelRow
+                  key={role}
+                  role={role}
+                  label={ROLE_LABEL[role]}
+                  help={ROLE_REGISTRY[role].description}
+                  preference={overrides.roleModels?.[role] ?? null}
+                  defaultProviderId={defaultProviderId}
+                  connectedProviderIds={connectedProviderIds}
+                  disabled={busy}
+                  onChange={(preference) => persistRoleModel({ role, preference })}
+                />
               ))}
             </div>
           </div>

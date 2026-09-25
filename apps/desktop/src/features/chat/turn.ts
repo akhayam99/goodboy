@@ -9,7 +9,13 @@ import {
   parseOpenCodeJsonLine,
   type ParseContext,
 } from '@goodboy/core';
-import type { IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
+import {
+  PROVIDER_IDS,
+  type IsoDateTime,
+  type ProviderId,
+  type ProviderRunId,
+  type TurnEvent,
+} from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
 
 function parseForProvider(
@@ -55,6 +61,45 @@ export const decodeAuthRequiredMessage = (message: string): AuthRequiredPayload 
   }
   try {
     return JSON.parse(message.slice(AUTH_REQUIRED_PREFIX.length)) as AuthRequiredPayload;
+  } catch {
+    return null;
+  }
+};
+
+const CLI_TOO_OLD_PREFIX = '__cli_too_old__:';
+
+export type CliTooOldPayload = {
+  readonly providerId: ProviderId;
+  readonly modelKey: string | null;
+  readonly installedVersion: string;
+  readonly requiredVersion: string;
+  readonly fallbackModelKey: string | null;
+  readonly detail: string;
+};
+
+const isNullableString = (value: unknown): value is string | null =>
+  value === null || typeof value === 'string';
+
+const isCliTooOldPayload = (value: unknown): value is CliTooOldPayload =>
+  typeof value === 'object' &&
+  value !== null &&
+  PROVIDER_IDS.some((providerId) => providerId === Reflect.get(value, 'providerId')) &&
+  isNullableString(Reflect.get(value, 'modelKey')) &&
+  typeof Reflect.get(value, 'installedVersion') === 'string' &&
+  typeof Reflect.get(value, 'requiredVersion') === 'string' &&
+  isNullableString(Reflect.get(value, 'fallbackModelKey')) &&
+  typeof Reflect.get(value, 'detail') === 'string';
+
+export const encodeCliTooOldMessage = (payload: CliTooOldPayload): string =>
+  `${CLI_TOO_OLD_PREFIX}${JSON.stringify(payload)}`;
+
+export const decodeCliTooOldMessage = (message: string): CliTooOldPayload | null => {
+  if (!message.startsWith(CLI_TOO_OLD_PREFIX)) {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(message.slice(CLI_TOO_OLD_PREFIX.length));
+    return isCliTooOldPayload(parsed) ? parsed : null;
   } catch {
     return null;
   }

@@ -81,7 +81,7 @@ describe('HandoffChip', () => {
     render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start implementer' }));
     expect(state.spawnAgent).toHaveBeenCalledWith('sess-1', {
       kindOverride: 'implementer',
       parentAgentId: SOURCE_AGENT_ID,
@@ -111,7 +111,7 @@ describe('HandoffChip', () => {
 
     expect(screen.getByText('running')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Go to chat' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Spawn implementer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start implementer' })).toBeNull();
   });
 
   it('disables the action while the spawned child is waiting to enter the store', () => {
@@ -125,12 +125,12 @@ describe('HandoffChip', () => {
     render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
-    const action = screen.getByRole('button', { name: 'Spawn implementer' });
+    const action = screen.getByRole('button', { name: 'Start implementer' });
 
     fireEvent.click(action);
     fireEvent.click(action);
 
-    expect(screen.getByRole('button', { name: 'Spawning implementer' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Starting implementer' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -150,7 +150,7 @@ describe('HandoffChip', () => {
     render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn implementer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start implementer' }));
 
     await waitFor(() => expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1'));
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());

@@ -196,6 +196,14 @@ export {
   opencodeModelArg,
 } from './providers/provider-catalog';
 export { PROVIDER_LIFECYCLE_COMMANDS } from './providers/provider-commands';
+export { cleanCliVersion, isCliVersionBelow, newestCliVersion } from './providers/cliVersion';
+export {
+  cliGate,
+  cliSupportedSibling,
+  outdatedCliModels,
+  type CliGate,
+  type CliRequirement,
+} from './providers/cliGate';
 export { PROVIDER_CONNECT_CAPABILITIES } from './providers/provider-connect';
 export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-preference';
 export { CLI_CREDENTIAL } from './providers/provider-credential';
@@ -220,6 +228,7 @@ export { resolveModelIdForProvider } from './providers/resolveModelIdForProvider
 export { canonicalModelId } from './providers/canonicalModelId';
 export { modelCatalogKey } from './providers/modelCatalogKey';
 export { MODEL_CATALOGS } from './providers/catalogs';
+export { catalogModelForId } from './providers/catalogModelForId';
 export { ANTHROPIC_CATALOG } from './providers/claude/catalog';
 export { CODEX_CATALOG } from './providers/codex/catalog';
 export { CURSOR_CATALOG } from './providers/cursor/catalog';
@@ -329,12 +338,18 @@ export {
   isFallbackStepOutputSummary,
   previewStepOutputSummary,
   rewriteWorkflowGoal,
+  generateIssueBrief,
   summarizeStepOutput,
   buildGoalRewriteUserPrompt,
   type ContextSlotDelta,
   type ContextSlotDeltaUpsert,
   type GoalRewriteDeps,
   type GoalRewriteInput,
+  type IssueBrief,
+  type IssueBriefDeps,
+  type IssueBriefFailure,
+  type IssueBriefInput,
+  type IssueBriefResult,
   type SummarizeInput,
   type SummarizerDeps,
   type SummarizerResult,
@@ -348,6 +363,8 @@ export {
   classifyWorkflowChain,
   findReusableAgent,
   isWorkflowComplete,
+  isAgentSettled,
+  isAgentStatusSettled,
   runsForWorkflowRun,
   type ChainCarryForwardStep,
   type ParallelCarryForwardBranch,
@@ -452,6 +469,25 @@ export {
   type PlannerClientResult,
   type PlannerUsage,
 } from './planner';
+
+export {
+  EMPTY_DURATION_HISTORY,
+  ESTIMATE_WINDOW_MS,
+  buildDurationHistory,
+  estimateDuration,
+  estimateOrchestratedRun,
+  sumEstimates,
+  unionDurationMs,
+  type CostRange,
+  type DurationEstimate,
+  type DurationHistory,
+  type DurationSample,
+  type EstimateKey,
+  type EstimateTier,
+  type EstimateTotal,
+  type RunDurationSample,
+  type TimeInterval,
+} from './estimates';
 
 export {
   formatWorkflowModelMenu,

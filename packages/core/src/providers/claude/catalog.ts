@@ -37,6 +37,7 @@ export const ANTHROPIC_CATALOG = [
     cliId: 'claude-opus-5-5',
     efforts: OPUS_EFFORTS,
     defaultEffort: 'high',
+    minCliVersion: '2.1.280',
   },
   {
     key: 'fable-5.1',
@@ -54,6 +55,7 @@ export const ANTHROPIC_CATALOG = [
     cliId: 'claude-fable-5-1',
     efforts: OPUS_EFFORTS,
     defaultEffort: 'high',
+    minCliVersion: '2.1.251',
   },
   {
     key: 'fable-5',

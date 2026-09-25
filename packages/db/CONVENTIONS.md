@@ -12,7 +12,7 @@ Data is stored **only locally**. No data leaves the user's machine.
 - API keys are NEVER stored here. Use the OS keyring through the desktop secret store.
 - Conversation history is stored locally, so Goodboy owns the conversation across providers. Nothing is sent anywhere.
 - The user can wipe the DB by deleting the file. Reset = clean slate.
-- Retention runs at boot in `runDatabaseHygiene`. `permission_audit_log` keeps 30 days and at most 5000 rows. `turn_events` keeps 90 days and at most 200k rows. A finished `provider_runs` row older than 90 days is deleted only when no `telemetry_records`, `agents` or `file_versions` row points at it. Spend rows are never pruned.
+- Retention runs at boot in `runDatabaseHygiene`. `permission_audit_log` keeps 30 days and at most 5000 rows. `turn_events` keeps 90 days and at most 200k rows. A finished `provider_runs` row older than 90 days is deleted only when no `telemetry_records`, `agents` or `file_versions` row points at it. Spend rows are never pruned, and neither are `agent_turn_spans` rows, which hold no content and carry the duration history (see [docs/turns.md](../../docs/turns.md#turn-spans)).
 
 ## Schema rules
 

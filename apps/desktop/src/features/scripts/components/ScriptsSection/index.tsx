@@ -141,7 +141,7 @@ export const ScriptsSection = ({
                 const projectName = project?.name ?? 'Project';
                 const mount = mounts.find((candidate) => candidate.projectId === script.projectId);
                 const disabledReason =
-                  mount === undefined ? `${projectName} is not mounted in this session` : null;
+                  mount === undefined ? `${projectName} is not in this session` : null;
                 return (
                   <li key={script.id}>
                     <ScriptRow

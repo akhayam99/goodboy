@@ -21,6 +21,7 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
+import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -33,6 +34,7 @@ type Options = {
   orchestratorRouting?: OrchestratorRouting;
   spendLimitUsd?: number;
   spendLimitMode?: WorkflowSpendLimitMode;
+  providerPool?: ReadonlyArray<ProviderId>;
   navigate?: boolean;
 };
 
@@ -60,6 +62,12 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
         : undefined;
     const spendLimitMode = options?.spendLimitMode ?? 'pause';
     const orchestratorRouting = options?.orchestratorRouting;
+    const providerPool =
+      executionMode === 'dynamic' &&
+      options?.providerPool != null &&
+      options.providerPool.length > 0
+        ? options.providerPool
+        : undefined;
     let triggerMode: WorkflowTriggerMode = options?.triggerMode ?? 'immediate';
     if (triggerMode === 'after_run' && chainAfterId) {
       const predecessor = session.workflowRuns.find((r) => r.id === chainAfterId);
@@ -94,6 +102,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ...(orchestratorRouting != null && { orchestratorRouting }),
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
+      ...(providerPool != null && { providerPool }),
     });
 
     const existingRuns = get().sessionPhaseRuns[sessionId] ?? [];
@@ -145,6 +154,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
       ...(goal && { goal }),
       ...(spendLimitUsd != null && { spendLimitUsd }),
       spendLimitMode,
+      ...(providerPool != null && { providerPool }),
     };
 
     const transcriptEntries: Record<string, ReadonlyArray<never>> = {};
@@ -199,6 +209,10 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
 
     void get().reprocessGoalForWorkflow(sessionId);
+
+    if (goal != null && template.origin !== 'orchestrated') {
+      void generateWorkflowRunTitle({ set, get, sessionId, workflowRunId });
+    }
 
     if (triggerMode === 'after_run') {
       void get().maybeAutoAdvanceWorkflow(sessionId);

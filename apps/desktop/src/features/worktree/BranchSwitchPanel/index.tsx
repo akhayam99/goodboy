@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, Copy, GitBranch } from 'lucide-react';
+import { Check, Copy, GitBranch } from 'lucide-react';
 import {
   Button,
   IconButton,
   formatError,
   Input,
+  Notice,
   SegmentedTabs,
-  cn,
-  tintClasses,
   useCopyLink,
 } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
@@ -18,7 +17,6 @@ import { BranchCombobox } from '../BranchCombobox';
 import { getCachedLocalBranches, listLocalBranches, type LocalBranchInfo } from '../worktree';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { selectMountById } from '../../../store/slices/project-mounts/selectors';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -131,9 +129,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
     <div className="flex w-96 flex-col gap-3 p-4">
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-foreground">Switch branch</span>
-        <span className="text-2xs text-muted-foreground">
-          Move this branch mount to another branch
-        </span>
+        <span className="text-2xs text-muted-foreground">Move this worktree to another branch</span>
       </div>
 
       {branch === null ? null : (
@@ -211,25 +207,18 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
       )}
 
       {needsConfirmation ? (
-        <div
-          className={cn(
-            'flex items-start gap-2 rounded-md',
-            tintClasses('warning').bg,
-            'p-3 text-xs',
-          )}
-        >
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0 text-warning" />
-          <div className="flex flex-col gap-1">
-            <ul className="list-disc pl-4 text-muted-foreground">
+        <Notice
+          tone="warning"
+          placement="inline"
+          title={`Click ${isReuseConfirmed ? '"Confirm switch"' : '"Switch branch"'} again to confirm`}
+          body={
+            <ul className="list-disc pl-4">
               {isOwnedByOtherSession ? <li>Already attached to another session</li> : null}
               {isInUseElsewhere ? <li>Checked out in another git worktree</li> : null}
               {isDirty ? <li>That worktree has uncommitted changes</li> : null}
             </ul>
-            <span className={cn('text-2xs', tintClasses('warning').text)}>
-              Click {isReuseConfirmed ? '"Confirm switch"' : '"Switch branch"'} again to confirm
-            </span>
-          </div>
-        </div>
+          }
+        />
       ) : null}
 
       {error != null ? <p className="text-xs text-danger">{error}</p> : null}

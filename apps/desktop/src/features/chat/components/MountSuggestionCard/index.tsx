@@ -20,10 +20,10 @@ type SentenceParams = {
 };
 
 const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams): string => {
-  const lead = `Mount ${projectName} so ${agentName} can use it in this session`;
+  const lead = `Add ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
-      return `${lead}. This request has already mounted two projects.`;
+      return `${lead}. This request has already added two projects.`;
     case 'scope':
     case null:
       return `${lead}. It adds a third project to this session.`;
@@ -69,7 +69,7 @@ export const MountSuggestionCard = ({
 
   return (
     <section
-      aria-label={`Mount suggestion for ${projectName}`}
+      aria-label={`Project suggestion for ${projectName}`}
       data-testid="mount-suggestion-card"
       className={cn(
         'flex min-w-0 flex-col gap-2 rounded-lg border px-3 py-2 text-xs',
@@ -90,16 +90,16 @@ export const MountSuggestionCard = ({
           emphasis="outline"
           size="sm"
           isBusy={isMounting}
-          busyLabel="Mounting"
+          busyLabel="Adding"
           onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
-          Mount project
+          Add project
         </Button>
         <IconButton
           icon={ChevronRight}
           variant="ghost"
-          label={`Mount suggestion details for ${projectName}`}
+          label={`Project suggestion details for ${projectName}`}
           aria-expanded={isOpen}
           iconSize={ICON_SIZE.row}
           className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}

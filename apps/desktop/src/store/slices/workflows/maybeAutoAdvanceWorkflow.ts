@@ -1,6 +1,11 @@
 import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
 import { listOpenQuestionsForSession } from '@goodboy/db';
-import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
+import {
+  classifyWorkflowChain,
+  findReusableAgent,
+  isAgentStatusSettled,
+  runsForWorkflowRun,
+} from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
@@ -17,9 +22,6 @@ import { waitForSessionSummarizer } from './summarizerGate';
 import type { GetFn, SetFn } from './types';
 
 const advanceInFlight = new Set<SessionId>();
-
-const isSettled = (agent: Agent): boolean =>
-  agent.status === 'completed' || agent.status === 'skipped';
 
 type Params = {
   readonly set: SetFn;
@@ -115,7 +117,11 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
     for (const run of runnableRuns) {
       const runAgents = [...runsForWorkflowRun(runs, run.id)].sort((a, b) => a.ordinal - b.ordinal);
       for (const agent of runAgents) {
-        if (agent.stepId == null || agent.parentAgentId != null || !isSettled(agent)) {
+        if (
+          agent.stepId == null ||
+          agent.parentAgentId != null ||
+          !isAgentStatusSettled({ status: agent.status })
+        ) {
           continue;
         }
         if (unsettledClusterChildren(runAgents, agent.id).length > 0) {
@@ -151,9 +157,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
         }
         const prevSteps = sortedSteps.filter((s) => s.ordinal < step.ordinal);
         const allDone = prevSteps.every((s) =>
-          runAgents.some(
-            (r) => r.stepId === s.id && (r.status === 'completed' || r.status === 'skipped'),
-          ),
+          runAgents.some((r) => r.stepId === s.id && isAgentStatusSettled({ status: r.status })),
         );
         if (allDone) {
           return agent;
@@ -162,7 +166,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
       }
       if (
         run.executionMode === 'dynamic' &&
-        runAgents.every((agent) => agent.status === 'completed' || agent.status === 'skipped') &&
+        runAgents.every((agent) => isAgentStatusSettled({ status: agent.status })) &&
         run.orchestrationOutcome == null
       ) {
         dynamicRunId = run.id;

@@ -1,3 +1,4 @@
+import type { CliRequirement } from '@goodboy/core';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
@@ -7,7 +8,9 @@ import type { StorageStats } from './slices/storage';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
-import type { Notification, NotificationCounts } from '@goodboy/db';
+import type { IssueBriefsState } from './slices/issue-briefs/state';
+import type { DurationEstimatesState } from './slices/durationEstimates/state';
+import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
   AgentId,
@@ -17,6 +20,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  EffortLevel,
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
@@ -231,10 +235,14 @@ type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &
+  IssueBriefsState &
+  DurationEstimatesState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState;
+
+export type NotificationScope = 'workspace' | 'all';
 
 export type AppState = AppSliceState & {
   readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
@@ -263,6 +271,7 @@ export type AppState = AppSliceState & {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
   readonly providerLifecycle: ProviderLifecycleMap;
   readonly providerConnect: ProviderConnectMap;
+  readonly cliRequirements: ReadonlyArray<CliRequirement>;
   readonly providerCredentials: ReadonlyArray<ProviderCredential>;
   readonly providerCooldowns: ProviderCooldowns;
   readonly hydrated: boolean;
@@ -315,6 +324,7 @@ export type AppState = AppSliceState & {
   readonly sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>;
   readonly orchestratingWorkflowRuns: Readonly<Record<WorkflowRunId, boolean>>;
   readonly decisionRestartMarks: Readonly<Record<WorkflowRunId, number>>;
+  readonly orchestratorReadingHints: Readonly<Record<WorkflowRunId, ReadonlyArray<string>>>;
   readonly pendingOrchestrations: Readonly<Record<WorkflowRunId, PendingOrchestration>>;
   readonly pendingAdvanceSessions: ReadonlySet<SessionId>;
   readonly announcedWorkflowBlocks: Readonly<Record<WorkflowRunId, string>>;
@@ -358,7 +368,7 @@ export type AppState = AppSliceState & {
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;
-  readonly agentEffortOverride: Readonly<Record<AgentId, string>>;
+  readonly agentEffortOverride: Readonly<Record<AgentId, EffortLevel>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
   readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
@@ -378,7 +388,9 @@ export type AppState = AppSliceState & {
   readonly workflowRunAttachments: Readonly<Record<WorkflowRunId, ReadonlyArray<GoalAttachment>>>;
   readonly notifications: ReadonlyArray<Notification>;
   readonly notificationsLoading: boolean;
-  readonly notificationCounts: NotificationCounts;
+  readonly notificationCounts: ReadonlyArray<NotificationCountBucket>;
+  readonly notificationScope: NotificationScope;
+  readonly hasOlderNotifications: boolean;
   readonly sessionPlans: Readonly<Record<SessionId, ReadonlyArray<PlanWithCount>>>;
   readonly planConsumptions: Readonly<Record<PlanId, ReadonlyArray<PlanConsumption>>>;
   readonly sessionOpenQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;

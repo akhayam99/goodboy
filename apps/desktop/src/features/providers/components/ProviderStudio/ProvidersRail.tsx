@@ -1,9 +1,12 @@
-import { SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
+import { outdatedCliModels } from '@goodboy/core';
+import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../../store';
+import { PROVIDER_CONNECTION_LABEL } from '../../connectionLabel';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
@@ -20,17 +23,13 @@ const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
   unknown: 'neutral',
 };
 
-const STATUS_LABEL: Record<ProviderConnectionState, string> = {
-  connected: 'connected',
-  installed_disconnected: 'installed',
-  missing: 'not installed',
-  error: 'error',
-  unknown: 'checking',
-};
-
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
+  const learned = useAppStore((state) => state.cliRequirements);
   return (
-    <ul aria-label="Providers & models settings" className="flex flex-col gap-0.5 pl-6">
+    <ul
+      aria-label="Providers & models settings"
+      className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
+    >
       {onSelectDefaults !== undefined && (
         <li>
           <SelectableRow
@@ -51,17 +50,21 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
       {providers.map((p) => {
         const id = p.id as ProviderId;
         const Icon = PROVIDER_BRAND[id].icon;
-        const subtitle =
-          p.connection === 'connected'
-            ? (p.identity ?? STATUS_LABEL.connected)
-            : STATUS_LABEL[p.connection];
+        const isOutdated =
+          p.connection !== 'missing' &&
+          outdatedCliModels({ provider: id, installedVersion: p.version, learned }).length > 0;
+        const subtitle = isOutdated
+          ? 'update needed'
+          : p.connection === 'connected'
+            ? (p.identity ?? PROVIDER_CONNECTION_LABEL.connected)
+            : PROVIDER_CONNECTION_LABEL[p.connection];
         return (
           <li key={id}>
             <StatusRailItem
               icon={<Icon size={ICON_SIZE.control} style={{ color: brandColor(id) }} />}
               label={p.label}
               subtitle={subtitle}
-              tone={STATUS_TONE[p.connection]}
+              tone={isOutdated ? 'warning' : STATUS_TONE[p.connection]}
               selected={id === focusedId}
               onClick={() => onSelect(id)}
             />

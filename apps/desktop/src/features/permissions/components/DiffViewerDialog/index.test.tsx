@@ -36,6 +36,7 @@ const { showToast, state, fixtures } = vi.hoisted(() => ({
     ],
     workspaceOverrides: {} as Record<string, { taskModels: Record<string, unknown> | null }>,
     providers: [{ id: 'anthropic', connection: 'connected' }],
+    cliRequirements: [],
     loadDiffComments: vi.fn(async () => undefined),
     addDiffComment: vi.fn(async () => undefined),
     resolveDiffComment: vi.fn(async () => undefined),

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Kanban, PanelLeft, Plus } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { COLLAPSED_RAIL_WIDTH, Tooltip, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -23,7 +23,10 @@ export const CollapsedRail = ({ onExpand }: Props) => {
   }, [setCurrentSession]);
 
   return (
-    <div className="flex h-full w-11 min-w-0 flex-col items-center gap-1 py-2">
+    <div
+      className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
+      style={{ width: COLLAPSED_RAIL_WIDTH }}
+    >
       <Tooltip content={`Show session sidebar (${shortcutGlyphs('column.toggle')})`} side="right">
         <button
           type="button"

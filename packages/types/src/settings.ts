@@ -11,6 +11,7 @@ export type AuxTaskId =
   | 'plan_generation'
   | 'prose_polish'
   | 'agent_naming'
+  | 'issue_brief'
   | 'workflow_orchestrator'
   | 'question_delegate'
   | 'pr_draft'

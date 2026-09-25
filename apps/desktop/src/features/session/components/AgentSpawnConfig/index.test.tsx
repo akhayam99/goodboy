@@ -9,6 +9,7 @@ type Store = {
     readonly id: ProviderId;
     readonly connection: string;
   }>;
+  readonly cliRequirements: ReadonlyArray<never>;
 };
 
 const h = vi.hoisted(() => ({
@@ -19,7 +20,8 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Store) => T) => selector({ providers: h.providers }),
+  useAppStore: <T,>(selector: (state: Store) => T) =>
+    selector({ providers: h.providers, cliRequirements: [] }),
 }));
 
 import { AgentSpawnConfig } from './index';

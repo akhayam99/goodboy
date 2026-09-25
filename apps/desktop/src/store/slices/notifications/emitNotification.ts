@@ -1,5 +1,4 @@
 import {
-  NOTIFICATION_LIST_LIMIT,
   insertNotification,
   type Notification,
   type NotificationAction,
@@ -8,7 +7,9 @@ import {
 } from '@goodboy/db';
 import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import { refreshNotificationCounts } from './refreshNotificationCounts';
+import { scopedWorkspaceId } from './notificationScope';
+import type { GetFn, SetFn } from './types';
 
 export type EmitNotificationParams = {
   kind: NotificationKind;
@@ -21,7 +22,7 @@ export type EmitNotificationParams = {
   coalesceKey?: string;
 };
 
-export const emitNotification = (set: SetFn) => {
+export const emitNotification = (set: SetFn, get: GetFn) => {
   return async ({
     kind,
     severity,
@@ -46,13 +47,22 @@ export const emitNotification = (set: SetFn) => {
       coalesceKey:
         coalesceKey ?? `${kind}:${sessionId ?? workspaceId ?? 'global'}:${severity}:${title}`,
     };
-    set((state) => ({
-      notifications: [n, ...state.notifications].slice(0, NOTIFICATION_LIST_LIMIT),
-      notificationCounts: {
-        total: state.notificationCounts.total + 1,
-        unread: state.notificationCounts.unread + 1,
-      },
-    }));
-    await insertNotification(tauriDatabase, n).catch(() => undefined);
+    const state = get();
+    const scope = scopedWorkspaceId({ state });
+    const owner =
+      workspaceId ??
+      state.sessions.find((session) => session.id === sessionId)?.workspaceId ??
+      null;
+    if (scope == null || owner == null || owner === scope) {
+      set((current) => ({ notifications: [n, ...current.notifications] }));
+    }
+    const isStored = await insertNotification(tauriDatabase, n).then(
+      () => true,
+      () => false,
+    );
+    if (!isStored) {
+      return;
+    }
+    await refreshNotificationCounts({ set, get });
   };
 };

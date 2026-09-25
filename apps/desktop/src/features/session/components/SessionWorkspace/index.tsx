@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
+import { isAgentStatusSettled } from '@goodboy/core';
 import { cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
@@ -164,9 +165,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const agentCounts = useMemo(
     () => ({
       running: standaloneAgents.filter((agent) => agent.status === 'running').length,
-      done: standaloneAgents.filter(
-        (agent) => agent.status === 'completed' || agent.status === 'skipped',
-      ).length,
+      done: standaloneAgents.filter((agent) => isAgentStatusSettled({ status: agent.status }))
+        .length,
       failed: standaloneAgents.filter((agent) => agent.status === 'failed').length,
     }),
     [standaloneAgents],

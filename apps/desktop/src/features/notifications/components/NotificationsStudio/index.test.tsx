@@ -1,18 +1,23 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Notification } from '@goodboy/db';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
     notifications: Object.freeze(Array<Notification>()),
-    notificationCounts: { total: 0, unread: 0 },
+    notificationCounts: Array<NotificationCountBucket>(),
+    notificationScope: 'workspace',
+    hasOlderNotifications: false,
     notificationsLoading: false,
+    currentWorkspaceId: 'ws-1',
     sessions: [],
-    workspaces: [],
+    workspaces: [{ id: 'ws-1', name: 'Harborline' }],
     loadNotifications: vi.fn(async () => undefined),
+    loadOlderNotifications: vi.fn(async () => undefined),
+    setNotificationScope: vi.fn(async () => undefined),
     markNotificationRead: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
     dismissNotification: vi.fn(async () => undefined),
@@ -60,19 +65,27 @@ const buildNotification = (overrides: Partial<Notification> = {}): Notification 
 
 const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Notification> }) => {
   state.notifications = notifications;
-  state.notificationCounts = {
-    total: notifications.length,
-    unread: notifications.filter((notification) => notification.read === false).length,
-  };
+  state.notificationCounts = notifications.map((notification) => ({
+    severity: notification.severity,
+    kind: notification.kind,
+    hasSession: notification.sessionId != null,
+    hasAction: notification.action != null,
+    read: notification.read,
+    inWorkspace: true,
+    count: 1,
+  }));
 };
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
 beforeEach(() => {
   state.notifications = [];
-  state.notificationCounts = { total: 0, unread: 0 };
+  state.notificationCounts = [];
   state.notificationsLoading = false;
+  state.hasOlderNotifications = false;
   state.loadNotifications.mockClear();
+  state.loadOlderNotifications.mockClear();
+  state.setNotificationScope.mockClear();
   state.markNotificationRead.mockClear();
   state.markNotificationsRead.mockClear();
   state.dismissNotification.mockClear();
@@ -96,13 +109,14 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    const list = screen.getByRole('region', { name: 'Earlier' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(1);
     expect(screen.getByText('Latest failure')).toBeDefined();
     expect(screen.getByLabelText('2 notifications')).toBeDefined();
     expect(screen.queryByText('Older failure')).toBeNull();
   });
 
-  it('expands a group to reveal older members', () => {
+  it('opens a row in place with its body and the older members of the group', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'older', coalesceKey: 'retry', title: 'Older failure' }),
@@ -111,12 +125,17 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand notifications' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Older failure' }));
 
-    expect(screen.getByText('Older failure')).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: 'Older failure' }).getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(screen.getByRole('list', { name: 'Earlier in this group' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /send to developers/i })).toBeDefined();
+    expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
   });
 
-  it('filters groups by severity', () => {
+  it('counts every facet and filters by severity from the rail', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'error', title: 'Error row' }),
@@ -125,25 +144,53 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Warnings' }));
+    const rail = screen.getByRole('navigation', { name: 'Filter notifications' });
+    expect(within(rail).getByRole('button', { name: /errors 1/i })).toBeDefined();
+    fireEvent.click(within(rail).getByRole('button', { name: /warnings/i }));
 
     expect(screen.getByText('Warning row')).toBeDefined();
     expect(screen.queryByText('Error row')).toBeNull();
+    expect(
+      within(rail)
+        .getByRole('button', { name: /warnings/i })
+        .getAttribute('aria-current'),
+    ).toBe('true');
   });
 
-  it('filters groups to unread only', () => {
+  it('filters to unread and to rows that need an action', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'unread', title: 'Unread row' }),
-        buildNotification({ id: 'read', title: 'Read row', read: true }),
+        buildNotification({
+          id: 'read',
+          title: 'Read row',
+          read: true,
+          action: deserialize({ value: JSON.stringify({ kind: 'retry-update' }) }),
+        }),
       ],
     });
     renderStudio();
+    const rail = screen.getByRole('navigation', { name: 'Filter notifications' });
 
-    fireEvent.click(screen.getByRole('button', { name: /unread only/i }));
-
+    fireEvent.click(within(rail).getByRole('button', { name: /^unread/i }));
     expect(screen.getByText('Unread row')).toBeDefined();
     expect(screen.queryByText('Read row')).toBeNull();
+
+    fireEvent.click(within(rail).getByRole('button', { name: /needs action/i }));
+    expect(screen.getByText('Read row')).toBeDefined();
+    expect(screen.queryByText('Unread row')).toBeNull();
+  });
+
+  it('defaults to this workspace and switches to every workspace', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    expect(screen.getByRole('tab', { name: /harborline/i }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /all/i }));
+
+    expect(state.setNotificationScope).toHaveBeenCalledWith('all');
   });
 
   it('marks every member in a group read', async () => {
@@ -156,9 +203,7 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     await act(async () => {
-      fireEvent.click(
-        screen.getByRole('button', { name: /mark "summarizer failed" group as read/i }),
-      );
+      fireEvent.click(screen.getByRole('button', { name: /mark "summarizer failed" read/i }));
     });
 
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
@@ -176,12 +221,93 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /dismiss "summarizer failed" group/i }));
+      fireEvent.click(screen.getByRole('button', { name: /dismiss "summarizer failed"/i }));
     });
 
     expect(state.dismissNotification).toHaveBeenCalledTimes(2);
     expect(state.dismissNotification).toHaveBeenCalledWith('first');
     expect(state.dismissNotification).toHaveBeenCalledWith('second');
+  });
+
+  it('moves with j, dismisses with e, and leaves the row list keyboard only', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          id: 'top',
+          title: 'Top row',
+          ts: at({ value: '2026-09-02T12:00:00.000Z' }),
+        }),
+        buildNotification({ id: 'bottom', title: 'Bottom row' }),
+      ],
+    });
+    renderStudio();
+
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(screen.getByRole('button', { name: 'Top row' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(screen.getByRole('button', { name: 'Bottom row' }).getAttribute('aria-expanded')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(window, { key: 'e' });
+
+    expect(state.dismissNotification).toHaveBeenCalledWith('bottom');
+  });
+
+  it('reserves the unread slot on every row and fills it only on unread rows', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'n1', title: 'New one', coalesceKey: 'a' }),
+        buildNotification({ id: 'n2', title: 'Seen one', coalesceKey: 'b', read: true }),
+      ],
+    });
+    renderStudio();
+
+    const slots = ['New one', 'Seen one'].map((title) =>
+      screen
+        .getByRole('heading', { name: title })
+        .closest('li')
+        ?.querySelector('[data-unread-slot]'),
+    );
+    expect(slots.map((slot) => slot?.childElementCount)).toEqual([1, 0]);
+    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
+  });
+
+  it('keeps the primary action visible and reserves the hover slot for row actions', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({
+          action: deserialize({
+            value: JSON.stringify({
+              kind: 'retry-step-summary',
+              sessionId: 'session-1',
+              agentId: 'agent-1',
+            }),
+          }),
+        }),
+      ],
+    });
+    renderStudio();
+
+    const slot = screen
+      .getByRole('button', { name: /dismiss "summarizer failed"/i })
+      .closest('span');
+    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+    expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
+  });
+
+  it('offers older notifications and says how many are loaded', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    state.hasOlderNotifications = true;
+    state.notificationCounts = [{ ...state.notificationCounts[0]!, count: 12 }];
+    renderStudio();
+
+    expect(screen.getByText('Showing 1 of 12')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Load older' }));
+
+    expect(state.loadOlderNotifications).toHaveBeenCalledOnce();
   });
 
   it('keeps bulk mark-read and armed delete-all actions', async () => {
@@ -203,7 +329,7 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Warnings' }));
+    fireEvent.click(screen.getByRole('button', { name: /warnings/i }));
     expect(screen.getByRole('heading', { name: 'No notifications match' })).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));

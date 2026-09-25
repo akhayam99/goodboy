@@ -127,6 +127,12 @@ export { isProviderName, PROVIDER_NAMES } from './provider';
 export type { ProviderUsage, TurnEvent } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
+  AgentTurnSpan,
+  AgentTurnSpanEndReason,
+  AgentTurnSpanRoute,
+  MeasuredTurnSpan,
+} from './agent-turn-span';
+export type {
   EffortLevel,
   ModelCostTier,
   ModelDescriptor,
@@ -206,10 +212,11 @@ export type {
   AgentStatus,
   Step,
   StepDef,
+  StepSize,
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isWorkflowOrigin } from './workflow';
+export { WORKFLOW_ORIGINS, isStepSize, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

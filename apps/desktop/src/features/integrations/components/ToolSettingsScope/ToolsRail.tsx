@@ -1,4 +1,4 @@
-import { StatusRailItem } from '@goodboy/ui';
+import { cn, PANE_RHYTHM, StatusRailItem } from '@goodboy/ui';
 import type { IntegrationBinding } from '@goodboy/types';
 import { FOOTER_INTEGRATIONS } from '../../../../app/components/AppFooter/categories';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,7 +24,7 @@ export const ToolsRail = ({
   connected,
   githubIdentity,
 }: Props) => (
-  <ul aria-label="Tools settings" className="flex flex-col gap-0.5 pl-6">
+  <ul aria-label="Tools settings" className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}>
     {FOOTER_INTEGRATIONS.map(({ provider }) => {
       const subtitle = !connected[provider]
         ? 'not connected'

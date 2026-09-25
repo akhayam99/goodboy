@@ -56,7 +56,7 @@ describe('executedAgentRouting', () => {
       liveRouting: {},
     });
 
-    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex' });
+    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex', effort: null });
   });
 
   it('skips a newer run without telemetry and reports the last one that ran', () => {
@@ -67,7 +67,7 @@ describe('executedAgentRouting', () => {
       liveRouting: {},
     });
 
-    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
+    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5', effort: null });
   });
 
   it('reports the model a running turn was spawned on before its telemetry lands', () => {
@@ -75,21 +75,25 @@ describe('executedAgentRouting', () => {
       agentRunId: null,
       runHistory: ['run-1' as ProviderRunId, 'run-2' as ProviderRunId],
       records: [record({ runId: 'run-1' as ProviderRunId })],
-      liveRouting: { ['run-2' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol' } },
+      liveRouting: {
+        ['run-2' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      },
     });
 
-    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.6-sol' });
+    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' });
   });
 
-  it('lets turn telemetry win over the spawn routing of the same run', () => {
+  it('lets turn telemetry name the model and keeps the effort the run was started with', () => {
     const result = executedAgentRouting({
       agentRunId: null,
       runHistory: ['run-1' as ProviderRunId],
       records: [record({ runId: 'run-1' as ProviderRunId })],
-      liveRouting: { ['run-1' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol' } },
+      liveRouting: {
+        ['run-1' as ProviderRunId]: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      },
     });
 
-    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
+    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5', effort: 'high' });
   });
 
   it('prefers the latest record inside a single run', () => {
@@ -107,7 +111,7 @@ describe('executedAgentRouting', () => {
       liveRouting: {},
     });
 
-    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex' });
+    expect(result).toEqual({ provider: 'codex', model: 'gpt-5.1-codex', effort: null });
   });
 
   it('falls back to the persisted agent run id when the history is empty', () => {
@@ -118,7 +122,7 @@ describe('executedAgentRouting', () => {
       liveRouting: {},
     });
 
-    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5' });
+    expect(result).toEqual({ provider: 'anthropic', model: 'claude-sonnet-4-5', effort: null });
   });
 
   it('ignores telemetry that is not a turn', () => {

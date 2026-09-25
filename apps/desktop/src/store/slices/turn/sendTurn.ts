@@ -33,6 +33,7 @@ import {
 } from '@goodboy/db';
 import type {
   AgentId,
+  AgentTurnSpan,
   AttachmentInput,
   EffortLevel,
   IsoDateTime,
@@ -58,6 +59,7 @@ import { invokePermissionRuleList } from '../../../features/permissions/permissi
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
+import { runProviderPool } from '../../../features/workflows/runProviderPool';
 import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import {
@@ -139,6 +141,7 @@ import {
 } from './mountContinuations';
 import {
   buildTurnWritableRoots,
+  isTurnWritableMount,
   repoRootsForTurn,
   resolveGitCommonDirs,
 } from './turnWritableRoots';
@@ -150,11 +153,16 @@ import { persistAttachments } from './persistAttachments';
 import { pickedTurnExecution } from './pickedTurnExecution';
 import { auditToolCall } from './auditToolCall';
 import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
+import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { fallbackNoticeMessage } from './fallbackNoticeMessage';
 import { budgetRoutingNoticeMessage, budgetRoutingReason } from './budgetRoutingNoticeMessage';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
+import { collectTouchedMounts } from './collectTouchedMounts';
+import { recordTurnSpan } from './recordTurnSpan';
+import { snapshotMountChanges } from './snapshotMountChanges';
+import { turnSpanEndReason } from './turnSpanEndReason';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
@@ -687,7 +695,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...state.runRouting,
           [activeAgentId]: {
             ...state.runRouting[activeAgentId],
-            [runId]: { provider, model: spawnModel },
+            [runId]: { provider, model: spawnModel, effort: effortFlag ?? null },
           },
         },
       };
@@ -840,6 +848,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionId,
           isRunBudgetBlocked: false,
           nowMs: Date.now(),
+          providerPool: runProviderPool({
+            sessions: get().sessions,
+            sessionId,
+            workflowRunId: agentRowEarly?.workflowRunId,
+          }),
         }),
       });
       if (childRoutingBlock.length > 0) {
@@ -946,6 +959,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
     const filesTouchedThisTurn = new Set<string>();
+    const editedPathsThisTurn = new Set<string>();
 
     const resumeSessionId =
       origin !== 'mount-continuation' && agentRowEarly?.providerSessionProviderId === provider
@@ -1047,6 +1061,32 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
     }
 
+    const turnSpanBase: Omit<AgentTurnSpan, 'endedAt' | 'endReason' | 'touchedMountIds'> = {
+      runId,
+      agentId: activeAgentId,
+      sessionId,
+      workspaceId: session.workspaceId,
+      workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
+      stepRole: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+      provider,
+      model,
+      effort: effortFlag ?? null,
+      startedAt: now(),
+    };
+    const turnMounts = scopeMounts.filter(isTurnWritableMount);
+    const mountChangesBefore = snapshotMountChanges({ mounts: turnMounts });
+    const touchedMountsForTurn = () =>
+      collectTouchedMounts({
+        get,
+        sessionId,
+        agentId: activeAgentId,
+        mounts: turnMounts,
+        workingDir,
+        editedPaths: Array.from(editedPathsThisTurn),
+        before: mountChangesBefore,
+        startedAt: turnSpanBase.startedAt,
+      });
+
     try {
       for await (const rawEvent of runTurn({
         runId,
@@ -1095,9 +1135,18 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                         message: rawEvent.message,
                         providerId: provider,
                         identity: get().authResults?.[provider]?.identity ?? null,
+                        model: spawnModel,
                       }),
               }
             : rawEvent;
+        if (rawEvent.kind === 'error') {
+          learnFromCliRefusal({
+            get,
+            providerId: provider,
+            model: spawnModel,
+            message: rawEvent.message,
+          });
+        }
         const event: TurnEvent =
           resolvedEvent.kind === 'provider_session_init'
             ? { ...resolvedEvent, provider }
@@ -1129,6 +1178,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
         if (event.kind === 'file_edit') {
           filesTouchedThisTurn.add(toRelPath(event.path, workingDir));
+          editedPathsThisTurn.add(event.path);
         }
 
         if (provider === 'anthropic' && event.kind === 'tool_call_start') {
@@ -1161,6 +1211,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           }
         }
       }
+      const turnEndedAt = now();
       await resolveCandidateWriter.flush();
       const afterAgentState = get().agentTurnState[activeAgentId];
       if (afterAgentState?.kind === 'running') {
@@ -1180,6 +1231,15 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       const wasCancelled = cancelledRunIds.delete(runId);
       turnWasCancelled = wasCancelled;
+      await recordTurnSpan({
+        get,
+        span: {
+          ...turnSpanBase,
+          endedAt: turnEndedAt,
+          endReason: turnSpanEndReason({ wasCancelled, assistantText }),
+          touchedMountIds: await touchedMountsForTurn(),
+        },
+      });
       if (
         provider === 'cursor' &&
         receivedProviderError === false &&
@@ -1355,15 +1415,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               : advisorySelection.selection.key,
         });
       }
-      const message =
-        maxModeFailure != null
-          ? cursorMaxModeMessage(maxModeFailure)
-          : resolveErrorTurnMessage({
-              message: rawMessage,
-              providerId: provider,
-              identity: get().authResults?.[provider]?.identity ?? null,
-            });
+      learnFromCliRefusal({ get, providerId: provider, model: spawnModel, message: rawMessage });
       const cancelledBeforeFailure = cancelledRunIds.delete(runId);
+      await recordTurnSpan({
+        get,
+        span: {
+          ...turnSpanBase,
+          endedAt: now(),
+          endReason: cancelledBeforeFailure ? 'cancelled' : 'failed',
+          touchedMountIds: await touchedMountsForTurn(),
+        },
+      });
       const failure = classifyProviderError({ message: rawMessage });
       const usageLimitResetAtMs =
         failure.kind === 'usage_limit' ? (failure.resetAtMs ?? null) : null;
@@ -1402,6 +1464,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               },
             }),
           });
+      const message =
+        maxModeFailure != null
+          ? cursorMaxModeMessage(maxModeFailure)
+          : resolveErrorTurnMessage({
+              message: rawMessage,
+              providerId: provider,
+              identity: get().authResults?.[provider]?.identity ?? null,
+              model: spawnModel,
+              fallbackModel:
+                fallbackPlan != null && fallbackPlan.provider === provider
+                  ? fallbackPlan.model
+                  : null,
+            });
       if (fallbackPlan != null) {
         await updateProviderRunStatus(tauriDatabase, runId, {
           kind: 'failed',
@@ -1415,16 +1490,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           retryable: false,
           at: now(),
         });
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId,
-          message: fallbackNoticeMessage({
-            provider,
-            failure: failure.kind,
-            plan: fallbackPlan,
-          }),
-          at: now(),
-        });
+        const isNamedInRefusal =
+          maxModeFailure == null &&
+          failure.kind === 'cli_too_old' &&
+          fallbackPlan.provider === provider;
+        if (!isNamedInRefusal) {
+          get().appendTurnEvent(activeAgentId, sessionId, {
+            kind: 'error',
+            runId,
+            message: fallbackNoticeMessage({
+              provider,
+              failure: failure.kind,
+              plan: fallbackPlan,
+            }),
+            at: now(),
+          });
+        }
         const retryState: TurnState = { kind: 'idle', lastActivityAt: now() };
         const retryDerived = applyAgentTurnState(set, sessionId, activeAgentId, retryState, now());
         await updateSessionState(tauriDatabase, sessionId, retryDerived, now());

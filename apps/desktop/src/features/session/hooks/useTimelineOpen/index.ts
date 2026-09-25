@@ -25,6 +25,7 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   workflow_started: { lens: 'workflows', label: 'Open workflows' },
   workflow_discarded: { lens: 'workflows', label: 'Open workflows' },
   workflow_restored: { lens: 'workflows', label: 'Open workflows' },
+  workflow_closed: { lens: 'workflows', label: 'Open workflows' },
   workflow_deleted: { lens: 'workflows', label: 'Open workflows' },
   decisions_changed: { lens: 'decisions', label: 'Open decisions' },
   project_materialized: { lens: 'files', label: 'Open files' },

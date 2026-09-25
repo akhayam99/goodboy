@@ -1,9 +1,11 @@
+import type { DurationHistory, DurationSample } from '@goodboy/core';
 import type {
   Agent,
   AgentId,
   ArtifactId,
   ContextSlot,
   IsoDateTime,
+  MeasuredTurnSpan,
   MountId,
   OpenQuestion,
   OpenQuestionId,
@@ -1015,6 +1017,57 @@ const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
   externalTask('sentry', 'PAYMENTS-API-3F2', 'DuplicateCreditError in handleInvoicePaid'),
 ];
 
+const MINUTE_MS = 60_000;
+
+const TURN_SPANS: ReadonlyArray<MeasuredTurnSpan> = AGENTS.flatMap((agent) => {
+  if (agent.status !== 'completed' || agent.startedAt == null) {
+    return [];
+  }
+  const startedAtMs = Date.parse(agent.startedAt);
+  return [
+    {
+      agentId: agent.id,
+      parentAgentId: agent.parentAgentId ?? null,
+      agentStatus: agent.status,
+      workflowRunId: agent.workflowRunId ?? null,
+      isOrchestratedRunDone: false,
+      stepRole: 'implementer',
+      provider: agent.providerOverride ?? 'anthropic',
+      model: agent.modelOverride ?? 'claude-sonnet-4-5',
+      effort: null,
+      startedAtMs,
+      endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
+      endReason: 'succeeded',
+      costUsd: null,
+      touchedMountIds: null,
+    },
+  ];
+});
+
+const HISTORY_ROLES: ReadonlyArray<DurationSample['role']> = [
+  'scout',
+  'planner',
+  'implementer',
+  'tester',
+  'reviewer',
+  'report',
+];
+
+const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => ({
+  steps: HISTORY_ROLES.flatMap((role, roleIndex) =>
+    [6, 7, 8, 9, 10, 11, 12, 13].map((minutes) => ({
+      role,
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-5',
+      effort: null,
+      activeMs: (minutes + roleIndex) * MINUTE_MS,
+      costUsd: (minutes + roleIndex) / 40,
+      endedAtMs: nowMs - (minutes + 1) * 24 * 60 * MINUTE_MS,
+    })),
+  ),
+  orchestratedRuns: [],
+});
+
 export const seedActivityRunScene = () => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
@@ -1076,9 +1129,11 @@ export const seedActivityRunScene = () => {
       [CONSOLE_BANNER_AGENT_ID]: {
         kind: 'running',
         runId: CONSOLE_PROVIDER_RUN_ID,
-        startedAt: at({ day: DAY_TWO, time: '09:59:00' }),
+        startedAt: new Date(Date.now() - 4 * MINUTE_MS).toISOString() as IsoDateTime,
       },
     },
+    sessionTurnSpans: { [SESSION_ID]: TURN_SPANS },
+    workspaceDurationHistory: { [WORKSPACE_ID]: durationHistory({ nowMs: Date.now() }) },
     sessionTelemetry: {
       [SESSION_ID]: [
         {

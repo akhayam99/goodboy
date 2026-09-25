@@ -144,8 +144,6 @@ export const WorkflowComposer = ({
           </div>
         ) : null}
 
-        <Divider />
-
         <div className="flex shrink-0 flex-col gap-5 py-5">
           <div className="mx-auto w-full max-w-2xl px-6">
             <Input

@@ -61,6 +61,11 @@ export const selectWritableMounts = ({
   return toProjectMounts(views.filter(isOnDisk));
 };
 
+export const selectTurnMountCount = ({ state, sessionId }: SessionParams): number =>
+  selectWritableMounts({ state, sessionId }).filter(
+    (mount) => mount.isAttached && mount.worktreePath !== '',
+  ).length;
+
 export const selectMountBranchObservation = ({
   state,
   sessionId,

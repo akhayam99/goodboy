@@ -125,7 +125,7 @@ export const CreateAgentPopover = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Create agent"
+      ariaLabel="Start agent"
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
       anchorClassName={cn('min-w-0', variant === 'tile' && 'w-full')}
       trigger={
@@ -152,14 +152,12 @@ export const CreateAgentPopover = ({
             className="px-2.5 py-1.5"
           />
         )}
-        <Divider />
         <AgentInstructionsField
           value={instructions}
           onChange={setInstructions}
           disabled={isSpawning}
           className="px-2.5 py-1.5"
         />
-        <Divider />
         <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
           <div className="px-2.5">
             <button
@@ -183,8 +181,7 @@ export const CreateAgentPopover = ({
           </div>
         </PickerSection>
         {isRoutingOpen && (
-          <div id={ROUTING_PANEL_ID}>
-            <Divider />
+          <div id={ROUTING_PANEL_ID} className="pt-1.5">
             <AgentRoutingSections
               connectedProviders={connectedProviders}
               effective={effective}
@@ -223,9 +220,9 @@ export const CreateAgentPopover = ({
           onClick={() => void onCreate()}
           disabled={isSpawning}
           isBusy={isSpawning}
-          busyLabel={`Spawning ${AGENT_KIND_META[selectedKind].label}`}
+          busyLabel={`Starting ${AGENT_KIND_META[selectedKind].label}`}
         >
-          Spawn {AGENT_KIND_META[selectedKind].label}
+          Start {AGENT_KIND_META[selectedKind].label}
         </Button>
       </PopoverFooter>
     </AnchoredPopover>

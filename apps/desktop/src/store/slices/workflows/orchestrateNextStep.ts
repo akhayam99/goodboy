@@ -36,6 +36,7 @@ import {
   resolveTaskModel,
   resolveWorkflowRouting,
   devWarn,
+  isAgentStatusSettled,
   runsForWorkflowRun,
   serializeRunSummary,
   type OrchestratorRoleDefault,
@@ -69,6 +70,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
 import { decisionRestartMark } from './decisionRestart';
+import { clearHintsReading, markHintsReading } from './orchestratorReadingHints';
 import { updateOrchestratorHints } from './updateOrchestratorHints';
 import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';
@@ -237,7 +239,7 @@ type PersistOutcomeParams = {
   readonly reason: string;
 };
 
-const persistOrchestrationOutcome = async ({
+export const persistOrchestrationOutcome = async ({
   set,
   sessionId,
   workflowRunId,
@@ -341,7 +343,8 @@ const hasOperatorStop = ({ get, sessionId, workflowRunId }: OperatorStopParams):
   const current = get()
     .sessions.find((candidate) => candidate.id === sessionId)
     ?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
-  return current?.orchestrationStop?.kind === 'operator';
+  const kind = current?.orchestrationStop?.kind;
+  return kind === 'operator' || kind === 'closed';
 };
 
 export const isRoutingModelKnown = ({ providerId, model }: OrchestratorRouting): boolean =>
@@ -604,7 +607,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         ...runsForWorkflowRun(get().sessionPhaseRuns[sessionId] ?? [], workflowRunId),
       ].sort((left, right) => left.ordinal - right.ordinal);
       const completedSteps = agents
-        .filter((agent) => agent.status === 'completed' || agent.status === 'skipped')
+        .filter((agent) => isAgentStatusSettled({ status: agent.status }))
         .map((agent) => ({
           name: agent.name,
           ...(agent.outputSummary != null && { outputSummary: agent.outputSummary }),
@@ -632,6 +635,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
+      markHintsReading({
+        set,
+        workflowRunId,
+        hintIds: readHints.filter((hint) => hint.consumedAt == null).map((hint) => hint.id),
+      });
       const restartMark = decisionRestartMark({ get, workflowRunId });
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
@@ -652,6 +660,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         sessionId,
         isRunBudgetBlocked: false,
         nowMs: Date.now(),
+        providerPool: run.providerPool ?? null,
       });
       const modelMenu = orchestratorModelPool({ availability });
       const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
@@ -951,6 +960,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       orchestrationInFlight.delete(workflowRunId);
       setDeciding({ set, workflowRunId, isDeciding: false });
       const pending = get().pendingOrchestrations?.[workflowRunId];
+      if (pending == null) {
+        clearHintsReading({ set, workflowRunId });
+      }
       if (pending != null) {
         set((state) => ({
           pendingOrchestrations: Object.fromEntries(

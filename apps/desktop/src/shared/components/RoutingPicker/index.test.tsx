@@ -228,7 +228,8 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet · 4.6' });
-    expect(row.querySelector('svg')).toBeNull();
+    expect(row.querySelectorAll('svg')).toHaveLength(1);
+    expect(row.textContent).toBe('RecommendedSonnet · 4.6');
     fireEvent.click(row);
     expect(onProvider).toHaveBeenCalledWith('');
   });
@@ -354,6 +355,35 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: '4.6' }));
     expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
     expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('mounts the same axes inline, with no trigger, no popover and no separators', () => {
+    const onModel = vi.fn();
+    const { rerender } = render(
+      <RoutingPicker {...baseProps} presentation="inline" onModel={onModel} />,
+    );
+    const inline = screen.getByRole('group', { name: 'routing' });
+    expect(screen.queryByRole('button', { name: /^routing:/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(within(inline).queryAllByRole('separator')).toHaveLength(0);
+
+    fireEvent.click(within(inline).getByRole('button', { name: 'Sonnet' }));
+    fireEvent.click(within(inline).getByRole('button', { name: '4.6' }));
+    expect(onModel).toHaveBeenCalledWith('claude-sonnet-4-6');
+
+    rerender(
+      <RoutingPicker
+        {...baseProps}
+        presentation="inline"
+        model="claude-sonnet-4-6"
+        onModel={onModel}
+      />,
+    );
+    expect(
+      within(screen.getByRole('group', { name: 'routing' }))
+        .getByRole('button', { name: 'Sonnet' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 
   it('reports the picked provider and keeps the popover open', () => {

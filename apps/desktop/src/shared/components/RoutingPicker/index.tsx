@@ -35,12 +35,13 @@ import { ProviderGrid } from './ProviderGrid';
 import { RecommendationRow } from './RecommendationRow';
 import { TriggerLabel } from './TriggerLabel';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
-import { recommendationSummary } from './recommendationSummary';
+import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolvePickerSelection } from './resolvePickerSelection';
 import { resolveRouting, type Recommendation } from './resolveRouting';
 import { selectionForModel } from './selectionForModel';
 import { useCursorMaxModeModels } from './useCursorMaxModeModels';
+import { useCliGate } from '../../../features/providers/hooks/useCliGate';
 import { NoConnectedProviders } from './NoConnectedProviders';
 import { ProviderInlineConnect } from '../../../features/providers/components/ProviderInlineConnect';
 
@@ -86,6 +87,7 @@ export type Props = {
   readonly openEvent?: string;
   readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
+  readonly presentation?: 'popover' | 'inline';
 };
 
 export const RoutingPicker = ({
@@ -110,7 +112,10 @@ export const RoutingPicker = ({
   openEvent,
   shortcut,
   availability = 'run',
+  presentation = 'popover',
 }: Props) => {
+  const isInline = presentation === 'inline';
+  const separator = isInline ? null : <Divider />;
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
   const dropdown = useDropdown({
     disabled,
@@ -190,9 +195,10 @@ export const RoutingPicker = ({
   const advisoryKeys =
     viewProvider === 'cursor' ? maxModeModels : ROUTING_PICKER_CONSTANTS.emptyModelKeys;
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);
+  const viewedCliGate = useCliGate({ provider: viewProvider, modelId: viewedModel.key });
 
   useEffect(() => {
-    if (open) {
+    if (open && !isInline) {
       return;
     }
     setViewProvider(routing.provider);
@@ -202,6 +208,7 @@ export const RoutingPicker = ({
     setConnectProvider(null);
   }, [
     open,
+    isInline,
     isInheritingRecommendation,
     routing.provider,
     routing.model,
@@ -272,6 +279,185 @@ export const RoutingPicker = ({
     const next = selectionForModel({ model: nextModel, effort: viewedRouting.effort });
     onPickSelection({ next, provider: viewProvider });
   };
+
+  const body = (
+    <>
+      {defaultSummary != null && (
+        <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
+          <span className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}>
+            {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
+            {isOverridden ? summary : defaultSummary}
+          </span>
+          {onReset != null && isOverridden && (
+            <button
+              type="button"
+              onClick={() => {
+                onReset();
+                close();
+              }}
+              className="font-medium text-warning underline-offset-2 hover:underline"
+            >
+              reset
+            </button>
+          )}
+        </div>
+      )}
+      {recommendedProvider != null && (
+        <>
+          <RecommendationRow
+            routing={recommendedRoutingOf({
+              provider: recommendedProvider,
+              model: recommendedModel,
+              effort: recommendedEffort,
+            })}
+            summary={recommendationSummary({
+              provider: recommendedProvider,
+              model: recommendedModel,
+              effort: recommendedEffort,
+            })}
+            active={isViewingAuto}
+            {...(recommendedReason != null && { reason: recommendedReason })}
+            {...(recommendedLabel != null && { label: recommendedLabel })}
+            onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
+          />
+          {separator}
+        </>
+      )}
+      <PickerSection label="Provider">
+        {connectedProviders.length === 0 && availability === 'run' ? (
+          <NoConnectedProviders onNavigate={close} />
+        ) : (
+          <ProviderGrid
+            connectedProviders={connectedProviders}
+            activeProvider={isViewingAuto ? null : viewProvider}
+            secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
+            showDisconnected={availability === 'setup'}
+            onNavigateProviders={close}
+            onSelect={(id) => {
+              const isConnected = connectedProviders.includes(id);
+              setViewProvider(id);
+              setIsViewingAuto(false);
+              setConnectProvider(null);
+              if (isConnected === false) {
+                const preview = remapModelSelection({
+                  sourceProvider: viewProvider,
+                  targetProvider: id,
+                  selection: viewedRouting.selection,
+                });
+                setDraftSelection(
+                  id === 'gemini'
+                    ? { ...preview.selection, effort: viewedRouting.effort }
+                    : preview.selection,
+                );
+                return;
+              }
+              onPickProvider({ next: id, viewedProvider: id });
+            }}
+          />
+        )}
+      </PickerSection>
+      {separator}
+      {connectProvider != null ? (
+        <section aria-label="Connect provider" className="min-h-0">
+          <ProviderInlineConnect
+            providerId={connectProvider}
+            onDone={() => setConnectProvider(null)}
+            onInFlightChange={setIsProviderConnectionInFlight}
+          />
+        </section>
+      ) : null}
+      {connectedProviders.length > 0 && !isViewProviderConnected && connectProvider == null && (
+        <section aria-label="Models" className="flex items-center gap-2 p-3">
+          <p className="flex-1 text-xs text-muted-foreground">
+            {PROVIDER_LABEL[viewProvider]} is not connected
+          </p>
+          <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
+            Connect {PROVIDER_LABEL[viewProvider]}
+          </Button>
+        </section>
+      )}
+      {isViewProviderConnected && connectProvider == null && (
+        <>
+          {separator}
+          <AxesSection
+            axes={axes}
+            effortValue={viewedRouting.effort}
+            canEditEffort={editableEffort != null}
+            notice={clampNotice}
+            hasMaxModeAdvisory={hasMaxModeAdvisory}
+            cliGate={viewedCliGate}
+            onModel={(modelKey) => {
+              const nextModel = viewedRouting.catalog.find(
+                (candidate) => candidate.key === modelKey,
+              );
+              if (nextModel == null) {
+                return;
+              }
+              onPickModel(nextModel);
+            }}
+            onEffort={(level) =>
+              onPickSelection({
+                next: { ...viewedRouting.selection, effort: level },
+                provider: viewProvider,
+              })
+            }
+            onVariant={(id) =>
+              onPickSelection({
+                next: { ...viewedRouting.selection, variant: id },
+                provider: viewProvider,
+              })
+            }
+            onToggle={(id) =>
+              onPickSelection({
+                next: {
+                  ...viewedRouting.selection,
+                  toggles: {
+                    ...viewedRouting.selection.toggles,
+                    [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
+                  },
+                },
+                provider: viewProvider,
+              })
+            }
+          />
+        </>
+      )}
+      {isViewProviderConnected &&
+        connectProvider == null &&
+        verbosity != null &&
+        onVerbosity != null && (
+          <>
+            {separator}
+            <PickerSection label="Replies" hint="How detailed the answers should be">
+              <div className={CHIP_GROUP_CLASS_NAME}>
+                {VERBOSITY_LEVELS.map((level) => (
+                  <PickerChip
+                    key={level}
+                    label={VERBOSITY_LABEL[level]}
+                    active={verbosity === level}
+                    tone={verbosityTone(level)}
+                    onSelect={() => onVerbosity(level)}
+                  />
+                ))}
+              </div>
+            </PickerSection>
+          </>
+        )}
+    </>
+  );
+
+  if (isInline) {
+    return (
+      <div
+        role="group"
+        aria-label={ariaLabel ?? 'model routing'}
+        aria-disabled={disabled}
+        className={cn('flex min-w-0 flex-col', disabled && 'pointer-events-none opacity-60')}
+      >
+        {body}
+      </div>
+    );
+  }
 
   return (
     <AnchoredPopover
@@ -350,161 +536,7 @@ export const RoutingPicker = ({
         </>
       }
     >
-      {defaultSummary != null && (
-        <div className="flex items-start gap-1.5 px-2.5 py-2 text-2xs leading-relaxed">
-          <span className={cn('flex-1', isOverridden ? 'text-warning' : 'text-muted-foreground')}>
-            {isOverridden ? 'Overriding default' : 'Using default'} ·{' '}
-            {isOverridden ? summary : defaultSummary}
-          </span>
-          {onReset != null && isOverridden && (
-            <button
-              type="button"
-              onClick={() => {
-                onReset();
-                close();
-              }}
-              className="font-medium text-warning underline-offset-2 hover:underline"
-            >
-              reset
-            </button>
-          )}
-        </div>
-      )}
-      {recommendedProvider != null && (
-        <>
-          <RecommendationRow
-            summary={recommendationSummary({
-              provider: recommendedProvider,
-              model: recommendedModel,
-              effort: recommendedEffort,
-            })}
-            active={isViewingAuto}
-            {...(recommendedReason != null && { reason: recommendedReason })}
-            {...(recommendedLabel != null && { label: recommendedLabel })}
-            onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
-          />
-          <Divider />
-        </>
-      )}
-      <PickerSection label="Provider">
-        {connectedProviders.length === 0 && availability === 'run' ? (
-          <NoConnectedProviders onNavigate={close} />
-        ) : (
-          <ProviderGrid
-            connectedProviders={connectedProviders}
-            activeProvider={isViewingAuto ? null : viewProvider}
-            secondaryProvider={isViewingAuto ? (recommendedProvider ?? null) : null}
-            showDisconnected={availability === 'setup'}
-            onNavigateProviders={close}
-            onSelect={(id) => {
-              const isConnected = connectedProviders.includes(id);
-              setViewProvider(id);
-              setIsViewingAuto(false);
-              setConnectProvider(null);
-              if (isConnected === false) {
-                const preview = remapModelSelection({
-                  sourceProvider: viewProvider,
-                  targetProvider: id,
-                  selection: viewedRouting.selection,
-                });
-                setDraftSelection(
-                  id === 'gemini'
-                    ? { ...preview.selection, effort: viewedRouting.effort }
-                    : preview.selection,
-                );
-                return;
-              }
-              onPickProvider({ next: id, viewedProvider: id });
-            }}
-          />
-        )}
-      </PickerSection>
-      <Divider />
-      {connectProvider != null ? (
-        <section aria-label="Connect provider" className="min-h-0">
-          <ProviderInlineConnect
-            providerId={connectProvider}
-            onDone={() => setConnectProvider(null)}
-            onInFlightChange={setIsProviderConnectionInFlight}
-          />
-        </section>
-      ) : null}
-      {connectedProviders.length > 0 && !isViewProviderConnected && connectProvider == null && (
-        <section aria-label="Models" className="flex items-center gap-2 p-3">
-          <p className="flex-1 text-xs text-muted-foreground">
-            {PROVIDER_LABEL[viewProvider]} is not connected
-          </p>
-          <Button size="sm" onClick={() => setConnectProvider(viewProvider)}>
-            Connect {PROVIDER_LABEL[viewProvider]}
-          </Button>
-        </section>
-      )}
-      {isViewProviderConnected && connectProvider == null && (
-        <>
-          <Divider />
-          <AxesSection
-            axes={axes}
-            effortValue={viewedRouting.effort}
-            canEditEffort={editableEffort != null}
-            notice={clampNotice}
-            hasMaxModeAdvisory={hasMaxModeAdvisory}
-            onModel={(modelKey) => {
-              const nextModel = viewedRouting.catalog.find(
-                (candidate) => candidate.key === modelKey,
-              );
-              if (nextModel == null) {
-                return;
-              }
-              onPickModel(nextModel);
-            }}
-            onEffort={(level) =>
-              onPickSelection({
-                next: { ...viewedRouting.selection, effort: level },
-                provider: viewProvider,
-              })
-            }
-            onVariant={(id) =>
-              onPickSelection({
-                next: { ...viewedRouting.selection, variant: id },
-                provider: viewProvider,
-              })
-            }
-            onToggle={(id) =>
-              onPickSelection({
-                next: {
-                  ...viewedRouting.selection,
-                  toggles: {
-                    ...viewedRouting.selection.toggles,
-                    [id]: !(viewedRouting.selection.toggles?.[id] ?? false),
-                  },
-                },
-                provider: viewProvider,
-              })
-            }
-          />
-        </>
-      )}
-      {isViewProviderConnected &&
-        connectProvider == null &&
-        verbosity != null &&
-        onVerbosity != null && (
-          <>
-            <Divider />
-            <PickerSection label="Replies" hint="How detailed the answers should be">
-              <div className={CHIP_GROUP_CLASS_NAME}>
-                {VERBOSITY_LEVELS.map((level) => (
-                  <PickerChip
-                    key={level}
-                    label={VERBOSITY_LABEL[level]}
-                    active={verbosity === level}
-                    tone={verbosityTone(level)}
-                    onSelect={() => onVerbosity(level)}
-                  />
-                ))}
-              </div>
-            </PickerSection>
-          </>
-        )}
+      {body}
     </AnchoredPopover>
   );
 };

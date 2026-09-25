@@ -126,7 +126,7 @@ Never build a colored role word or an outlined kind chip by hand.
 | `projectFolder` | `Folder`            | neutral | A project whose kind is `folder`            |
 | `mount`         | `Layers2`           | info    | A project mounted into a session            |
 | `worktree`      | `FolderTree`        | neutral | The session folder on disk                  |
-| `workspace`     | `FolderPlus`        | info    | A workspace                                 |
+| `workspace`     | `LayoutGrid`        | info    | A workspace                                 |
 | `branch`        | `GitBranch`         | info    | A branch, and the branch chip               |
 | `commits`       | `GitCommit`         | info    | Commits                                     |
 | `timeline`      | `GitCommitVertical` | neutral | The activity rail                           |
@@ -144,6 +144,22 @@ Brand marks only, never a lucide stand-in. `github`, `gitlab`, `bitbucket`,
 components. The footer strip draws them through `IntegrationGlyph`: in brand
 color when the integration is connected, muted when it is not. `providers`
 (`Blocks`) and `integrations` (`Link2`) name the categories, not a vendor.
+
+## Settings
+
+The settings rail and the panel sections read these, so an item and its
+section share one glyph.
+
+| Concept      | Glyph                       | Tone    | Meaning                                      |
+| ------------ | --------------------------- | ------- | -------------------------------------------- |
+| `appearance` | `Palette`                   | neutral | Settings > App > General, and its Appearance |
+| `updates`    | `CircleFadingArrowUp`       | info    | App updates                                  |
+| `editor`     | `SquareCode`                | neutral | The default editor                           |
+| `shortcuts`  | `Keyboard`                  | neutral | Keyboard shortcuts                           |
+| `backup`     | `DatabaseBackup`            | neutral | Config export and import                     |
+| `storage`    | `Database`                  | neutral | Local database and archived sessions         |
+| `help`       | `MessageCircleQuestionMark` | neutral | Guides, the phone and feedback               |
+| `danger`     | `TriangleAlert`             | danger  | A danger zone                                |
 
 ## Actions
 
@@ -165,9 +181,10 @@ trigger in the migrated areas.
 
 ## Timeline markers
 
-`TimelineRowMarker` sizes every glyph from `TIMELINE_RHYTHM.grade[grade]`, not
-from `ICON_SIZE`, because rail markers scale with the row grade. The glyph
-itself still comes from the registry through `sessionEventGlyph`.
+`TimelineRowMarker` draws every fact row as a `WorkNode` marker and sizes its
+glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
+20px on every grade. The glyph itself still comes from the registry through
+`sessionEventGlyph`.
 
 | Entry           | Glyph                                     |
 | --------------- | ----------------------------------------- |
@@ -185,8 +202,8 @@ itself still comes from the registry through `sessionEventGlyph`.
 ## Suggestions
 
 One map, `SUGGESTION_ICONS` in `features/suggestions/suggestionIcons.ts`.
-The suggestion row and the timeline suggestion row both use it. They used to
-disagree on four of six kinds.
+The suggestion row and the "Suggested next" strip above NOW in the activity
+feed both use it. They used to disagree on four of six kinds.
 
 | Kind                 | Concept     | Glyph                |
 | -------------------- | ----------- | -------------------- |

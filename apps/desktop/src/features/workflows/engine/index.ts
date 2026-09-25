@@ -39,6 +39,7 @@ export const draftFromWorkflow = ({ workflow }: DraftFromWorkflowParams): Workfl
       model: step.modelOverride ?? '',
       effort: (step.effort as EffortLevel | undefined) ?? DEFAULT_EFFORT,
       verbosity: step.verbosity ?? 'normal',
+      size: step.size ?? null,
     })),
 });
 
@@ -56,6 +57,7 @@ export const draftFromStepDef = ({ def }: DraftFromStepDefParams): StepDraft => 
   model: def.modelDefault ?? '',
   effort: (def.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
   verbosity: def.verbosityDefault ?? 'normal',
+  size: null,
 });
 
 type DraftFromPlannerStepsParams = { readonly steps: PlannerOutput['steps'] };
@@ -73,6 +75,7 @@ export const draftFromPlannerSteps = ({ steps }: DraftFromPlannerStepsParams): S
     model: '',
     effort: DEFAULT_EFFORT,
     verbosity: 'normal',
+    size: step.size,
   }));
 
 type UpsertArgsFromDraftParams = {
@@ -105,6 +108,7 @@ export const upsertArgsFromDraft = ({
     ...(step.model.trim().length > 0 && { modelOverride: step.model.trim() }),
     effort: step.effort,
     verbosity: step.verbosity,
+    ...(step.size !== null && !draft.isPreset && { size: step.size }),
   })),
   isPreset: draft.isPreset,
   origin: draft.origin,
@@ -192,6 +196,7 @@ export const addStep = ({
       model: '',
       effort: DEFAULT_EFFORT,
       verbosity: 'normal',
+      size: null,
     },
   );
   return next;
@@ -210,3 +215,21 @@ type UpdateStepParams = {
 
 export const updateStep = ({ steps, key, patch }: UpdateStepParams): ReadonlyArray<StepDraft> =>
   steps.map((step) => (step.key === key ? { ...step, ...patch } : step));
+
+type DuplicateStepParams = {
+  readonly steps: ReadonlyArray<StepDraft>;
+  readonly key: string;
+};
+
+export const duplicateStep = ({ steps, key }: DuplicateStepParams): ReadonlyArray<StepDraft> => {
+  const index = steps.findIndex((step) => step.key === key);
+  const source = steps[index];
+  if (source === undefined) {
+    return steps;
+  }
+  return addStep({
+    steps,
+    step: { ...source, key: nextKey(), sourceStepId: null },
+    atIndex: index + 1,
+  });
+};

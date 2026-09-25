@@ -39,7 +39,7 @@ const holderLocation = ({ holder }: LocationParams): string => {
     return 'in another worktree of this project';
   }
   if (holder.label === null) {
-    return 'in another mount of this session';
+    return 'in another worktree of this session';
   }
   return `as ${holder.label} in this session`;
 };
@@ -67,7 +67,7 @@ export const buildBranchDecision = ({
       if (holder !== null && holder !== 'checking') {
         return {
           title,
-          description: `${cause} ${recorded} is already mounted ${holderLocation({ holder })}.`,
+          description: `${cause} ${recorded} is already checked out ${holderLocation({ holder })}.`,
           confirm: recheck({ isDisabled: false }),
           alt: null,
         };
@@ -102,14 +102,14 @@ export const buildBranchDecision = ({
       if (holder !== null) {
         return {
           title,
-          description: `${cause} ${found} is already mounted ${holderLocation({ holder })}, and git keeps one branch in one worktree.`,
+          description: `${cause} ${found} is already checked out ${holderLocation({ holder })}, and git keeps one branch in one worktree.`,
           confirm: recheck({ isDisabled: false }),
           alt: null,
         };
       }
       return {
         title,
-        description: `${cause} Keep both branches records ${found} here and mounts ${recorded} again in a row of its own.`,
+        description: `${cause} Keep both branches keeps ${found} here and opens ${recorded} again in a worktree of its own.`,
         confirm: { label: 'Use this branch here', resolution: 'adopt-observed', isDisabled: false },
         alt: { label: 'Keep both branches', resolution: 'keep-both', isDisabled: false },
       };

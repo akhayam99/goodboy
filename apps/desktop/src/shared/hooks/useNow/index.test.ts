@@ -40,4 +40,17 @@ describe('useNow', () => {
       vi.useRealTimers();
     }
   });
+
+  it('starts from the current time when a stopped clock resumes', () => {
+    vi.useFakeTimers();
+    try {
+      const first = renderHook(() => useNow(5_000));
+      first.unmount();
+      vi.setSystemTime(Date.now() + 60 * 60_000);
+      const { result } = renderHook(() => useNow(5_000));
+      expect(result.current).toBe(Date.now());
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -66,11 +66,22 @@ const renderColumn = (
 afterEach(cleanup);
 
 describe('StageColumn', () => {
-  it('renders only the label for an empty column', () => {
-    const { container } = renderColumn([]);
-    expect(screen.getByText('building')).toBeDefined();
-    expect(screen.queryByText('Nothing here')).toBeNull();
+  it('teaches what lands in an empty column, without a count', () => {
+    const { container } = renderColumn([], makeSelection(), {
+      kind: 'stage',
+      stage: 'attention',
+    });
+    expect(screen.getByText('needs you')).toBeDefined();
+    expect(screen.getByText('Nothing needs you')).toBeDefined();
+    expect(screen.getByText(/when an agent asks you something/)).toBeDefined();
     expect(container.querySelector('.tabular-nums')).toBeNull();
+  });
+
+  it('keeps a collapsed empty column to its header', () => {
+    renderColumn([], makeSelection(), { kind: 'stage', stage: 'done' });
+    expect(screen.queryByText('Nothing done yet')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /done/ }));
+    expect(screen.getByText('Nothing done yet')).toBeDefined();
   });
 
   it('renders the count and stage label once the column has cards', () => {

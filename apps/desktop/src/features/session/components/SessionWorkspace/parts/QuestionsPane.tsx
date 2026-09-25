@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Bot } from 'lucide-react';
 import { Skeleton } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
@@ -71,6 +71,8 @@ type ClusterSectionProps = {
   readonly onClearJustAnswered: (id: OpenQuestionId) => void;
   readonly onDismiss: (question: OpenQuestion) => void;
   readonly pendingUndoQuestionId: OpenQuestionId | null;
+  readonly focusIndex: number | null;
+  readonly onFocused: () => void;
   readonly onUndo: (question: OpenQuestion) => void;
   readonly onSubmit: (
     pairs: ReadonlyArray<AnswerPair>,
@@ -114,10 +116,22 @@ const ClusterSection = ({
   onClearJustAnswered,
   onDismiss,
   pendingUndoQuestionId,
+  focusIndex,
+  onFocused,
   onUndo,
   onSubmit,
 }: ClusterSectionProps) => {
   const [stepIndex, setStepIndex] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusIndex == null) {
+      return;
+    }
+    setStepIndex(focusIndex);
+    sectionRef.current?.scrollIntoView?.({ block: 'nearest' });
+    onFocused();
+  }, [focusIndex, onFocused]);
 
   const answerableQuestions = cluster.questions.filter(
     (question) => question.id !== pendingUndoQuestionId,
@@ -155,7 +169,7 @@ const ClusterSection = ({
   const showsFooter = flow.showsStepper || stagedCount > 0;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={sectionRef} className="flex flex-col gap-2">
       {(cluster.ownerAgentName !== null || ownerAgent !== null) && (
         <QuestionClusterHeader
           sessionId={sessionId}
@@ -346,6 +360,8 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
   const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
+  const focusedQuestionId = useOpenQuestions((s) => s.focusedQuestionId);
+  const clearFocusedQuestion = useOpenQuestions((s) => s.clearFocusedQuestion);
 
   const loadQuestions = useCallback(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -376,6 +392,26 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
     () => buildQuestionClusters({ questions: answerable, agents, workflows }),
     [answerable, agents, workflows],
   );
+
+  const focusedClusterIndex = useMemo(() => {
+    if (focusedQuestionId == null) {
+      return null;
+    }
+    for (const cluster of clusters) {
+      const index = cluster.questions.findIndex((question) => question.id === focusedQuestionId);
+      if (index !== -1) {
+        return { ownerAgentId: cluster.ownerAgentId, index };
+      }
+    }
+    return null;
+  }, [clusters, focusedQuestionId]);
+
+  useEffect(() => {
+    if (focusedQuestionId == null || !openLoaded || focusedClusterIndex != null) {
+      return;
+    }
+    clearFocusedQuestion();
+  }, [clearFocusedQuestion, focusedClusterIndex, focusedQuestionId, openLoaded]);
 
   const agentById = useMemo(() => {
     const map = new Map<AgentId, Agent>();
@@ -545,6 +581,13 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
             onClearJustAnswered={clearJustAnswered}
             onDismiss={(question) => void handleDismiss(question)}
             pendingUndoQuestionId={pendingUndoQuestion?.id ?? null}
+            focusIndex={
+              focusedClusterIndex != null &&
+              focusedClusterIndex.ownerAgentId === cluster.ownerAgentId
+                ? focusedClusterIndex.index
+                : null
+            }
+            onFocused={clearFocusedQuestion}
             onUndo={(question) => void handleUndo(question)}
             onSubmit={(pairs, requests, ownerAgentId) =>
               void handleSubmit(pairs, requests, ownerAgentId)

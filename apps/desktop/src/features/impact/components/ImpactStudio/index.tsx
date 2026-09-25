@@ -175,8 +175,8 @@ export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
     <StudioShell
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
-      title="Impact studio"
-      closeLabel="close impact studio"
+      title="Impact"
+      closeLabel="close impact"
       headerAccessory={
         <SegmentedTabs
           ariaLabel="Impact window"

@@ -2,13 +2,24 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, OpenQuestion, Session, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  OpenQuestion,
+  Session,
+  SessionId,
+  StepId,
+  WorkflowRunId,
+} from '@goodboy/types';
 
 const state = vi.hoisted(() => ({
   sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
   sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
   agentTurnState: {} as Record<string, unknown>,
   agentKindOverride: {} as Record<string, unknown>,
+  agentProviderOverride: {} as Record<string, unknown>,
+  agentModelOverride: {} as Record<string, unknown>,
+  agentEffortOverride: {} as Record<string, unknown>,
   sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   answeredQuestions: [] as ReadonlyArray<OpenQuestion>,
@@ -27,6 +38,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => state.openQuestions,
   useSessionAnsweredQuestions: () => state.answeredQuestions,
+  useExecutedAgentRouting: () => null,
 }));
 
 vi.mock('../../../../store/transcript', () => ({
@@ -46,12 +58,32 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
   }),
 }));
 
+const attached = vi.hoisted(() => ({
+  runs: [] as ReadonlyArray<unknown>,
+}));
+
 vi.mock('../../../workflows/useAttachedWorkflowRuns', () => ({
-  useAttachedWorkflowRuns: () => [],
+  useAttachedWorkflowRuns: () => attached.runs,
 }));
 
 vi.mock('./AgentFollowUps', () => ({
   AgentFollowUps: () => null,
+}));
+
+vi.mock('./AgentBriefChildren', () => ({
+  AgentBriefChildren: ({
+    children,
+  }: {
+    readonly children: ReadonlyArray<{ readonly agent: Agent }>;
+  }) =>
+    children.length === 0 ? null : (
+      <section>
+        <span>Subagents</span>
+        {children.map((child) => (
+          <span key={child.agent.id}>{child.agent.name}</span>
+        ))}
+      </section>
+    ),
 }));
 
 const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
@@ -89,6 +121,7 @@ beforeEach(() => {
     answeredQuestions: [],
   });
   transcriptItems.items = [];
+  attached.runs = [];
 });
 
 describe('AgentBrief summary', () => {
@@ -100,6 +133,48 @@ describe('AgentBrief summary', () => {
     expect(screen.getByText('Outcome')).toBeDefined();
     expect(screen.getByText('shipped the refactor')).toBeDefined();
     expect(screen.queryByText('from the last reply')).toBeNull();
+  });
+
+  it('lets the subagent tree speak for an implementer split into parts', () => {
+    const container = makeAgent({ outputSummary: 'completed 2 clusters' });
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        container,
+        makeAgent({
+          id: 'part-1' as AgentId,
+          ordinal: 1,
+          name: 'part one',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+
+    render(<AgentBrief session={session} agent={container} />);
+
+    expect(screen.queryByText('Outcome')).toBeNull();
+    expect(screen.queryByText('completed 2 clusters')).toBeNull();
+    expect(screen.getByText('part one')).toBeTruthy();
+  });
+
+  it('keeps the outcome of a scout that spawned subagents', () => {
+    const scout = makeAgent({ kind: 'scout', outputSummary: 'mapped the store' });
+    state.sessionPhaseRuns = {
+      [sessionId]: [
+        scout,
+        makeAgent({
+          id: 'sub-1' as AgentId,
+          ordinal: 1,
+          name: 'sub scout',
+          kind: 'scout',
+          parentAgentId: agentId,
+        }),
+      ],
+    };
+
+    render(<AgentBrief session={session} agent={scout} />);
+
+    expect(screen.getByText('Outcome')).toBeDefined();
+    expect(screen.getByText('mapped the store')).toBeDefined();
   });
 
   it('falls back to the last assistant reply when outputSummary is an empty string', () => {
@@ -312,7 +387,7 @@ describe('AgentBrief delegated answers', () => {
 
     render(<AgentBrief session={session} agent={makeAgent({})} />);
 
-    expect(screen.getByText('Clusters')).toBeTruthy();
+    expect(screen.getByText('Subagents')).toBeTruthy();
     expect(screen.getByText('cluster one')).toBeTruthy();
     expect(screen.queryByText('answer: pick a database')).toBeNull();
   });
@@ -366,5 +441,64 @@ describe('AgentBrief sections', () => {
 
     expect(sections.length).toBeGreaterThan(2);
     expect(sections.every(opensWithItsLabel)).toBe(true);
+  });
+});
+
+describe('AgentBrief why this step', () => {
+  const runId = 'run-1' as WorkflowRunId;
+  const STEP_ID = 'step-3' as StepId;
+  const withReason = (reason: string) => {
+    attached.runs = [
+      {
+        run: { id: runId },
+        workflow: {
+          steps: [{ id: STEP_ID, name: 'Implement validators', orchestratorReason: reason }],
+        },
+      },
+    ];
+  };
+
+  it('says why the orchestrator chose the step, above the outcome', () => {
+    withReason('The plan splits validators, schemas and the banner.');
+
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID, outputSummary: 'shipped it' })}
+      />,
+    );
+
+    const why = screen.getByRole('region', { name: 'Why this step' });
+    expect(why.textContent).toContain('The plan splits validators, schemas and the banner.');
+    expect(
+      why.compareDocumentPosition(screen.getByText('Outcome')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('leaves the reason to the step agent, not to its subagents', () => {
+    withReason('The plan splits validators, schemas and the banner.');
+
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({
+          workflowRunId: runId,
+          stepId: STEP_ID,
+          parentAgentId: 'agent-0' as AgentId,
+        })}
+      />,
+    );
+
+    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
+  });
+
+  it('says nothing when the step carries no reason', () => {
+    withReason('  ');
+
+    render(
+      <AgentBrief session={session} agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID })} />,
+    );
+
+    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
   });
 });

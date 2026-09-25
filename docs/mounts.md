@@ -185,15 +185,23 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 ## Mount row
 
-Rows of one project share a grid: branch, series part, sync, diff, state,
-action, menu. A column no row fills takes no width, and below a 36rem
-container the sync and diff cells empty out (the Changes lens still has the
+Every row of every project shares one grid (each project group and its list
+are subgrids of it), so the columns line up down the whole section: branch,
+series part, sync, diff, state, action, menu. A column no row fills takes no
+width, and below a 36rem container the sync and diff cells empty out (the Changes lens still has the
 diff). Every row action lives in the always visible row menu
-(`MountActionsMenu`): use for next turns, terminal, scripts, editors, copy
-path, then unmount or remove. The terminal and scripts icons on the row are
+(`MountActionsMenu`): start new turns here (only with two or more mounts),
+terminal, scripts, editors, copy path, then close (unmount) or remove. A
+closed row offers Reopen in its action cell. The terminal and scripts icons on the row are
 hover accelerators, shown at rest only while something runs there; a hover
-icon is never the only way to an action. The project menu holds Detach
+icon is never the only way to an action. Below a 28rem container the idle
+accelerators take no room and New worktree shows its icon only. The project menu holds Detach
 project and renders nothing when the project has no mount to detach.
+
+With two or more mounts, a row shows its presence (`MountPresence`): the
+state node of each agent whose turn runs, waits on an answer or needs you in
+that mount, at most three, then a count. A node opens that agent. There is no
+badge for the mount new turns start in; the chat header owns that choice.
 
 The branch chip is the branch control: on a mounted repo row the whole chip
 opens the branch switcher, whose header copies the branch name. Where the
