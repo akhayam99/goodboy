@@ -529,6 +529,13 @@ pub const CATALOG: &[VerbSpec] = &[
     },
     VerbSpec {
         provider: "gitlab",
+        verb: "issue-discussions",
+        params: &[req("project"), num("iid")],
+        access: Access::Read,
+        summary: "comment threads on an issue",
+    },
+    VerbSpec {
+        provider: "gitlab",
         verb: "issue-update",
         params: &[req("project"), num("iid"), req("description")],
         access: Access::Write,
@@ -540,6 +547,13 @@ pub const CATALOG: &[VerbSpec] = &[
         params: &[req("project"), num("iid"), req("body")],
         access: Access::Write,
         summary: "post a note on an issue",
+    },
+    VerbSpec {
+        provider: "gitlab",
+        verb: "issue-discussion-reply",
+        params: &[req("project"), num("iid"), req("discussion"), req("body")],
+        access: Access::Write,
+        summary: "reply inside an existing issue thread",
     },
     VerbSpec {
         provider: "gitlab",

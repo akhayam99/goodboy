@@ -2,14 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 import type { OverrideSettings } from '@goodboy/types';
-import type { GitlabIssue, GitlabIssueNote } from '../client';
+import type { GitlabIssue, GitlabMrDiscussion } from '../client';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 
 type StoreGitlabIntegration = { provider: string; config: { host: string } };
 
 const h = vi.hoisted(() => ({
-  list: vi.fn<() => Promise<ReadonlyArray<GitlabIssueNote>>>(),
+  list: vi.fn<() => Promise<ReadonlyArray<GitlabMrDiscussion>>>(),
   createNote: vi.fn(async () => 1),
+  reply: vi.fn(async () => 2),
   store: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<StoreGitlabIntegration>>,
     workspaceOverrides: {} as Record<string, OverrideSettings>,
@@ -21,11 +22,12 @@ vi.mock('../../../../store', () => ({
 }));
 
 vi.mock('../client', () => ({
-  gitlabListIssueNotes: h.list,
+  gitlabListIssueDiscussions: h.list,
   gitlabCreateIssueNote: h.createNote,
+  gitlabReplyToIssueDiscussion: h.reply,
 }));
 
-import { useGitlabIssueNotes } from './index';
+import { useGitlabIssueDiscussions } from './index';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 
@@ -43,22 +45,36 @@ const ISSUE: GitlabIssue = {
   labels: [],
 };
 
-type Params = {
-  readonly id: number;
+const TARGET = {
+  workspaceId: WORKSPACE_ID,
+  host: 'https://gitlab.com',
+  projectPath: 'acme/web',
+  issueIid: 7,
+  projectId: undefined,
 };
 
-const note = ({ id }: Params): GitlabIssueNote => ({
+const discussion = ({ id }: { readonly id: string }): GitlabMrDiscussion => ({
   id,
-  body: `note ${id}`,
-  system: false,
-  author: { username: 'alice', name: 'Alice', avatarUrl: null },
-  createdAt: '2026-07-22T10:00:00Z',
+  individualNote: true,
+  notes: [
+    {
+      id: 1,
+      body: `note ${id}`,
+      system: false,
+      author: { username: 'alice', name: 'Alice', avatarUrl: null },
+      createdAt: '2026-07-22T10:00:00Z',
+      resolvable: false,
+      resolved: null,
+      position: null,
+    },
+  ],
 });
 
 beforeEach(() => {
   h.list.mockReset();
-  h.list.mockResolvedValue([note({ id: 1 })]);
+  h.list.mockResolvedValue([discussion({ id: 'd-1' })]);
   h.createNote.mockClear();
+  h.reply.mockClear();
   h.store.workspaceIntegrations = {
     [WORKSPACE_ID]: [{ provider: 'gitlab', config: { host: 'https://gitlab.com' } }],
   };
@@ -67,13 +83,13 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('useGitlabIssueNotes', () => {
-  it('loads the notes for an issue backed by a connected workspace', async () => {
+describe('useGitlabIssueDiscussions', () => {
+  it('loads the threads for an issue backed by a connected workspace', async () => {
     const { result } = renderHook(() =>
-      useGitlabIssueNotes({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
+      useGitlabIssueDiscussions({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
     );
 
-    await waitFor(() => expect(result.current.notes).toHaveLength(1));
+    await waitFor(() => expect(result.current.discussions).toHaveLength(1));
     expect(h.list).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       host: 'https://gitlab.com',
@@ -84,7 +100,7 @@ describe('useGitlabIssueNotes', () => {
 
   it('stays idle and offers no post path without an issue', async () => {
     const { result } = renderHook(() =>
-      useGitlabIssueNotes({ issue: null, workspaceId: WORKSPACE_ID }),
+      useGitlabIssueDiscussions({ issue: null, workspaceId: WORKSPACE_ID }),
     );
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -95,29 +111,42 @@ describe('useGitlabIssueNotes', () => {
   it('surfaces a load failure', async () => {
     h.list.mockRejectedValue(new Error('GitLab token expired'));
     const { result } = renderHook(() =>
-      useGitlabIssueNotes({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
+      useGitlabIssueDiscussions({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
     );
 
     await waitFor(() => expect(result.current.error).toBe('GitLab token expired'));
   });
 
-  it('reloads after posting a note', async () => {
+  it('starts a new thread with a note and reloads', async () => {
     const { result } = renderHook(() =>
-      useGitlabIssueNotes({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
+      useGitlabIssueDiscussions({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
     );
     await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
 
-    await result.current.post?.('looks good');
+    await result.current.post?.({ body: 'looks good', discussionId: null });
 
     expect(h.createNote).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      host: 'https://gitlab.com',
-      projectPath: 'acme/web',
-      issueIid: 7,
+      ...TARGET,
       body: `looks good\n\n*Written by Goodboy*`,
-      projectId: undefined,
     });
+    expect(h.reply).not.toHaveBeenCalled();
     await waitFor(() => expect(h.list).toHaveBeenCalledTimes(2));
+  });
+
+  it('replies inside the chosen thread', async () => {
+    const { result } = renderHook(() =>
+      useGitlabIssueDiscussions({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
+    );
+    await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
+
+    await result.current.post?.({ body: 'agreed', discussionId: 'd-1' });
+
+    expect(h.reply).toHaveBeenCalledWith({
+      ...TARGET,
+      discussionId: 'd-1',
+      body: `agreed\n\n*Written by Goodboy*`,
+    });
+    expect(h.createNote).not.toHaveBeenCalled();
   });
 
   it('drops the attribution line when the workspace switched it off', async () => {
@@ -125,19 +154,12 @@ describe('useGitlabIssueNotes', () => {
       [WORKSPACE_ID]: overridesWithAttribution({ attributionFooter: false }),
     };
     const { result } = renderHook(() =>
-      useGitlabIssueNotes({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
+      useGitlabIssueDiscussions({ issue: ISSUE, workspaceId: WORKSPACE_ID }),
     );
     await waitFor(() => expect(h.list).toHaveBeenCalledOnce());
 
-    await result.current.post?.('looks good');
+    await result.current.post?.({ body: 'looks good', discussionId: null });
 
-    expect(h.createNote).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      host: 'https://gitlab.com',
-      projectPath: 'acme/web',
-      issueIid: 7,
-      body: 'looks good',
-      projectId: undefined,
-    });
+    expect(h.createNote).toHaveBeenCalledWith({ ...TARGET, body: 'looks good' });
   });
 });

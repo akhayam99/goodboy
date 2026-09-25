@@ -304,6 +304,18 @@ async fn run_read(
             .await
             .map_err(|error| error.to_string())?,
         ),
+        ("gitlab", "issue-discussions") => encode(
+            crate::gitlab::gitlab_list_issue_discussions(
+                scope.workspace.to_string(),
+                scope.project.clone(),
+                config_field("gitlab", scope, "host")?,
+                text(args, "project")?,
+                number(args, "iid")?,
+                app.state(),
+            )
+            .await
+            .map_err(|error| error.to_string())?,
+        ),
         ("gitlab", "mrs-assigned") => encode(
             crate::gitlab::gitlab_fetch_assigned_mrs(
                 scope.workspace.to_string(),
@@ -654,6 +666,20 @@ async fn run_write(
                 config_field("gitlab", scope, "host")?,
                 text(args, "project")?,
                 number(args, "iid")?,
+                text(args, "body")?,
+                app.state(),
+            )
+            .await
+            .map_err(|error| error.to_string())?,
+        ),
+        ("gitlab", "issue-discussion-reply") => encode(
+            crate::gitlab::gitlab_reply_to_issue_discussion(
+                scope.workspace.to_string(),
+                scope.project.clone(),
+                config_field("gitlab", scope, "host")?,
+                text(args, "project")?,
+                number(args, "iid")?,
+                text(args, "discussion")?,
                 text(args, "body")?,
                 app.state(),
             )
@@ -1027,6 +1053,7 @@ mod tests {
         ("gitlab", "issues-assigned"),
         ("gitlab", "issue"),
         ("gitlab", "issue-notes"),
+        ("gitlab", "issue-discussions"),
         ("gitlab", "mrs-assigned"),
         ("gitlab", "mrs"),
         ("gitlab", "mr-for-branch"),
@@ -1072,6 +1099,7 @@ mod tests {
         ("github", "pr-create"),
         ("gitlab", "issue-update"),
         ("gitlab", "issue-note-create"),
+        ("gitlab", "issue-discussion-reply"),
         ("gitlab", "mr-note-create"),
         ("gitlab", "mr-discussion-reply"),
         ("gitlab", "mr-discussion-resolve"),

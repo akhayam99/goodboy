@@ -11,7 +11,7 @@ import { gitlabIssueFields, resolveFacts } from '../../../../shared/detail-field
 import { stateWord } from '../../../inbox/stateWord';
 import { issueIdentifier, type GitlabIssue } from '../client';
 import { useGitlabIssueDescription } from '../useGitlabIssueDescription';
-import { useGitlabIssueNotes } from '../useGitlabIssueNotes';
+import { useGitlabIssueDiscussions } from '../useGitlabIssueDiscussions';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
 import { GITLAB_ISSUE_CAPABILITIES, gitlabIssueConversation } from '../gitlabIssueConversation';
@@ -26,15 +26,13 @@ type Props = {
 
 export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
   const { description, save } = useGitlabIssueDescription({ issue, workspaceId, projectId });
-  const {
-    notes: noteList,
-    isLoading,
-    error,
-    reload,
-    post,
-  } = useGitlabIssueNotes({ issue, workspaceId, projectId });
+  const { discussions, isLoading, error, reload, post } = useGitlabIssueDiscussions({
+    issue,
+    workspaceId,
+    projectId,
+  });
   const source = useMemo<ConversationSource>(() => {
-    const conversation = gitlabIssueConversation({ notes: noteList });
+    const conversation = gitlabIssueConversation({ discussions });
     return {
       toolLabel: 'GitLab issues',
       threads: conversation.threads,
@@ -42,7 +40,7 @@ export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null 
       isLoading,
       error,
       onRetry: reload,
-      onPost: post == null ? null : ({ body }) => post(body),
+      onPost: post == null ? null : ({ body, threadId }) => post({ body, discussionId: threadId }),
       onResolve: null,
       resolveError: null,
       emptyDescription: 'Notes on this issue show up here.',
@@ -50,7 +48,7 @@ export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null 
       composerNote: null,
       renderMessageFooter: null,
     };
-  }, [noteList, isLoading, error, reload, post]);
+  }, [discussions, isLoading, error, reload, post]);
   const conversation = useConversationPane({ source, resetKey: issue.webUrl });
 
   return (

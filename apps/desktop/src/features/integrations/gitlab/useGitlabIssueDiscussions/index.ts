@@ -4,9 +4,10 @@ import type { GitlabIntegrationBinding, ProjectId, WorkspaceId } from '@goodboy/
 import { useAppStore } from '../../../../store';
 import {
   gitlabCreateIssueNote,
-  gitlabListIssueNotes,
+  gitlabListIssueDiscussions,
+  gitlabReplyToIssueDiscussion,
   type GitlabIssue,
-  type GitlabIssueNote,
+  type GitlabMrDiscussion,
 } from '../client';
 import { projectPathFromIssue } from '../issueProjectPath';
 import { appendAttribution, isAttributionEnabled } from '../../../../shared/utils/attribution';
@@ -17,15 +18,20 @@ type Params = {
   readonly projectId?: ProjectId;
 };
 
+type PostParams = {
+  readonly body: string;
+  readonly discussionId: string | null;
+};
+
 type Result = {
-  readonly notes: ReadonlyArray<GitlabIssueNote>;
+  readonly discussions: ReadonlyArray<GitlabMrDiscussion>;
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly reload: () => void;
-  readonly post: ((body: string) => Promise<void>) | null;
+  readonly post: ((params: PostParams) => Promise<void>) | null;
 };
 
-export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): Result => {
+export const useGitlabIssueDiscussions = ({ issue, workspaceId, projectId }: Params): Result => {
   const host = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
       (candidate): candidate is GitlabIntegrationBinding => candidate.provider === 'gitlab',
@@ -35,7 +41,7 @@ export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): 
   const isAttributed = useAppStore((state) =>
     isAttributionEnabled({ overrides: state.workspaceOverrides[workspaceId] }),
   );
-  const [notes, setNotes] = useState<ReadonlyArray<GitlabIssueNote>>([]);
+  const [discussions, setDiscussions] = useState<ReadonlyArray<GitlabMrDiscussion>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
@@ -44,7 +50,7 @@ export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): 
   const isReady = host != null && projectPath != null && issueIid != null;
 
   useEffect(() => {
-    setNotes([]);
+    setDiscussions([]);
   }, [workspaceId, host, projectPath, issueIid, projectId]);
 
   useEffect(() => {
@@ -56,12 +62,12 @@ export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): 
 
     let isCancelled = false;
     setIsLoading(true);
-    gitlabListIssueNotes({ workspaceId, host, projectPath, issueIid, projectId })
+    gitlabListIssueDiscussions({ workspaceId, host, projectPath, issueIid, projectId })
       .then((next) => {
         if (isCancelled) {
           return;
         }
-        setNotes(next);
+        setDiscussions(next);
       })
       .catch((fetchError: unknown) => {
         if (isCancelled) {
@@ -86,25 +92,22 @@ export const useGitlabIssueNotes = ({ issue, workspaceId, projectId }: Params): 
   }, []);
 
   const post = useCallback(
-    async (body: string) => {
+    async ({ body, discussionId }: PostParams) => {
       if (host == null || projectPath == null || issueIid == null) {
         return;
       }
-      await gitlabCreateIssueNote({
-        workspaceId,
-        host,
-        projectPath,
-        issueIid,
-        body: appendAttribution({ body, isEnabled: isAttributed, syntax: 'markdown' }),
-        projectId,
-      });
+      const target = { workspaceId, host, projectPath, issueIid, projectId };
+      const attributed = appendAttribution({ body, isEnabled: isAttributed, syntax: 'markdown' });
+      await (discussionId == null
+        ? gitlabCreateIssueNote({ ...target, body: attributed })
+        : gitlabReplyToIssueDiscussion({ ...target, discussionId, body: attributed }));
       setReloadToken((token) => token + 1);
     },
     [workspaceId, host, projectPath, issueIid, projectId, isAttributed],
   );
 
   return {
-    notes,
+    discussions,
     isLoading,
     error,
     reload,

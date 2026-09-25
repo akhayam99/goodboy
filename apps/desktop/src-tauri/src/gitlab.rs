@@ -836,6 +836,60 @@ pub async fn gitlab_create_issue_note(
     Ok(note.id)
 }
 
+fn issue_discussions_path(project_path: &str, issue_iid: i64) -> String {
+    let encoded = encode_project_path(project_path);
+    format!("/projects/{encoded}/issues/{issue_iid}/discussions")
+}
+
+fn issue_discussion_notes_path(project_path: &str, issue_iid: i64, discussion_id: &str) -> String {
+    let discussion = percent_encode(discussion_id);
+    format!(
+        "{}/{discussion}/notes",
+        issue_discussions_path(project_path, issue_iid)
+    )
+}
+
+#[tauri::command]
+pub async fn gitlab_list_issue_discussions(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabMrDiscussion>, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    get_json_paged(
+        &host,
+        &token,
+        &issue_discussions_path(&project_path, issue_iid),
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn gitlab_reply_to_issue_discussion(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    issue_iid: i64,
+    discussion_id: String,
+    body: String,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<i64, GitlabError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let note: GitlabNote = send_json(
+        reqwest::Method::POST,
+        &host,
+        &token,
+        &issue_discussion_notes_path(&project_path, issue_iid, &discussion_id),
+        &serde_json::json!({ "body": body }),
+    )
+    .await?;
+    Ok(note.id)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitlabApproval {
     pub user: GitlabMrAuthor,
@@ -1426,6 +1480,36 @@ mod tests {
         assert!(note.system);
         assert_eq!(note.author.unwrap().username, "bob");
         assert_eq!(note.created_at, "2026-07-22T10:00:00Z");
+    }
+
+    #[test]
+    fn issue_discussion_paths_escape_the_project_and_the_discussion() {
+        assert_eq!(
+            issue_discussions_path("group/sub/repo", 7),
+            "/projects/group%2Fsub%2Frepo/issues/7/discussions"
+        );
+        assert_eq!(
+            issue_discussion_notes_path("acme/web", 7, "note/7 a+b"),
+            "/projects/acme%2Fweb/issues/7/discussions/note%2F7%20a%2Bb/notes"
+        );
+    }
+
+    #[test]
+    fn issue_discussion_deserializes_notes_with_resolvable_flags() {
+        let raw = r#"{
+            "id": "6a9c1750b37d513a",
+            "individual_note": false,
+            "notes": [
+                { "id": 1, "body": "why", "created_at": "2026-07-22T10:00:00Z", "resolvable": true, "resolved": false },
+                { "id": 2, "body": "because", "created_at": "2026-07-22T11:00:00Z", "resolvable": true, "resolved": false }
+            ]
+        }"#;
+        let discussion: GitlabMrDiscussion = serde_json::from_str(raw).unwrap();
+        assert_eq!(discussion.id, "6a9c1750b37d513a");
+        assert!(!discussion.individual_note);
+        assert_eq!(discussion.notes.len(), 2);
+        assert!(discussion.notes[0].resolvable);
+        assert!(discussion.notes[1].position.is_none());
     }
 
     #[test]
