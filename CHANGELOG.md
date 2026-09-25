@@ -7,6 +7,50 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.5.0
+
+Every piece of work now reads as one tree, from the overview to the workflow run to an agent's brief.
+
+### [#1875] One tree for sessions, workflow runs and agents
+
+The overview activity, a workflow run, the subagents in an agent's brief and the workflow builder draw work the same way: numbered steps growing from the bottom, with provider, model, effort, time and cost in the same columns on every row. Click the colored line to open the workflow, click a row to open that agent, question or artifact.
+
+States read the same everywhere. A step waiting on your answer, a failed step and a queued step look different at a glance, and the next action for a stuck step sits above the tabs instead of only in the transcript. Agents that finished their work show as done without a manual click.
+
+### [#1875] See how long a step has left
+
+A running step fills its ring as it works, based on how long similar steps actually ran. Time spent paused or waiting on you does not count. The workflow builder shows an estimate before you start.
+
+### [#1875] A workflow builder that previews the run
+
+The builder shows the plan as the tree it will become. Orchestrated comes first and shows agents arriving one at a time. Custom and preset plans let you edit each step's provider, model, effort, role and instructions in place. Autorun is a toggle, intent and constraints are optional, and every run gets a generated title.
+
+### [#1875] Start a session from an issue with a written brief
+
+Instead of copying the issue text, Goodboy drafts a short title and goal from the issue, with a link back to it. Accept it, edit it or discard it.
+
+### [#1875] Notifications you can scan
+
+One compact row per notification, filters with counts, a "This workspace" default with the full count one click away, and j, k and e to move through them.
+
+### [#1875] Know when a provider CLI is too old
+
+When a model needs a newer CLI than the one installed, Goodboy says which version you have and which one it needs, with an update button in Providers and in the chat.
+
+### [#1875] Cleaner screens at every window size
+
+Errors and warnings use one notice with a colored edge and an icon instead of a full colored background. Dividers only separate the app frame from its content. The top bar keeps the Goodboy mascot and its right side in place on small windows, and rows keep their titles readable as the window narrows. Settings gained icons, status dots and smooth transitions, and shortcuts are grouped by task.
+
+### Fixes
+
+- Queued nested steps no longer appear above later steps in the overview [#1875]
+- A hint sent with Read now shows as being read, the composer stays open while the orchestrator runs, and the input clears after sending [#1875]
+- Long issue descriptions no longer cut the session goal mid-sentence [#1875]
+- Workflow rows show a title instead of the raw goal text [#1875]
+- Open questions from an agent inside a workflow show in the workflow too [#1875]
+- The collapsed sidebar avatar and the footer pill line up, and the logo follows the light and dark theme [#1875]
+- Close a workflow from its header or from its row in the activity feed [#1875]
+
 ## Goodboy v0.4.3
 
 The board and your sessions answer every click again, and the board keeps its shape on wide screens.
