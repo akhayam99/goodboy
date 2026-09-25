@@ -1,6 +1,7 @@
 import { isStepSize } from '@goodboy/types';
 import { normalizeSelectableAgentRole } from '../roles';
 import type { PlannerOutput, PlannerStep } from './types';
+import { unwrapEdgeFence } from '../code-fence';
 
 export class PlannerParseError extends Error {
   constructor(
@@ -100,8 +101,7 @@ export const parsePlannerOutput = (raw: string): PlannerOutput => {
 };
 
 function stripCodeFences(raw: string): string {
-  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(raw.trim());
-  return (fenced?.[1] ?? raw).trim();
+  return unwrapEdgeFence({ text: raw.trim() }).trim();
 }
 
 function extractJsonObject(text: string): string | null {

@@ -3,6 +3,7 @@ import { extractAuxOutput } from '../providers/aux-output';
 import { runAuxOneShot } from '../providers/aux-spawn';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { computeProviderCostUsd } from '../providers/provider-cost';
+import { unwrapEdgeFence } from '../code-fence';
 
 const ISSUE_BRIEF_SYSTEM_PROMPT = `You turn a tracker item (an issue, a ticket, an error report or a chat thread) into the brief for an AI coding session.
 
@@ -75,18 +76,6 @@ export const buildIssueBriefUserPrompt = ({ identifier, title, body }: IssueBrie
     '',
     'Write the brief following your instructions. Output only the JSON object.',
   ].join('\n');
-};
-
-const FENCE = '```';
-const FENCE_LANGUAGE = 'json';
-
-const unwrapEdgeFence = ({ text }: ParseParams): string => {
-  if (text.length < FENCE.length * 2 || !text.startsWith(FENCE) || !text.endsWith(FENCE)) {
-    return text;
-  }
-  const inner = text.slice(FENCE.length, -FENCE.length);
-  const hasLanguage = inner.slice(0, FENCE_LANGUAGE.length).toLowerCase() === FENCE_LANGUAGE;
-  return (hasLanguage ? inner.slice(FENCE_LANGUAGE.length) : inner).trim();
 };
 
 const singleLine = ({ text }: ParseParams): string => text.replace(/\s+/g, ' ').trim();
