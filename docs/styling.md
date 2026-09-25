@@ -197,7 +197,11 @@ user decides. Its placements and trigger styling belong to
 
 **`Dialog` survives for the three cases an anchor cannot serve**: a full-screen
 viewer, a multi-step flow that owns the whole screen, and a blocking system
-prompt. Everything else is a popover or inline.
+prompt. Everything else is a popover or inline. A centred `Dialog` sits on
+`bg-floating`, like popovers, toasts and the command palette; the full-screen
+viewer passes `surface="screen"` to stay on the content surface. Any line that
+sets a background on a `z-popover`, `z-toast` or `z-command-palette` layer uses
+`bg-floating`, and `no-token-bypass.test.ts` holds that.
 
 ## z-index: a named scale, not a magic number per file
 

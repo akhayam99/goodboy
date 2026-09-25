@@ -69,6 +69,12 @@ const RULES = [
     why: 'global layers use the named z-index tokens',
   },
   {
+    pattern:
+      /^(?=.*\bz-(?:popover|toast|command-palette)(?![\w-]))(?=.*(?<![\w:-])bg-(?!(?:floating|hover|selected|transparent)(?![\w-])))/,
+    allow: NO_ALLOW,
+    why: 'floating layers sit on the floating surface',
+  },
+  {
     pattern: /\bduration-\[/,
     allow: NO_ALLOW,
     why: 'durations use the numeric scale, never an arbitrary value',

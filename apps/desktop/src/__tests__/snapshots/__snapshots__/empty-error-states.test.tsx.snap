@@ -195,7 +195,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
 
 exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1`] = `
 <div
-  class="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-subtle shadow-md"
+  class="absolute bottom-full left-0 right-0 z-popover mb-1 overflow-hidden rounded-md border border-border bg-floating shadow-lg"
 >
   <div
     class="flex items-start gap-2.5 text-left px-3 py-2"

@@ -63,4 +63,20 @@ describe('Popover', () => {
     expect(viewport?.className).toContain('flex-1');
     expect(viewport?.className).not.toContain('h-full');
   });
+
+  it('floats above the cards it opens from', () => {
+    render(
+      <Popover role="menu" ariaLabel="Floating">
+        <PopoverBody>Row</PopoverBody>
+        <PopoverFooter>
+          <button type="button">Start</button>
+        </PopoverFooter>
+      </Popover>,
+    );
+
+    expect(screen.getByRole('menu').className).toContain('bg-floating');
+    expect(screen.getByRole('button', { name: 'Start' }).closest('footer')?.className).toContain(
+      'bg-floating',
+    );
+  });
 });

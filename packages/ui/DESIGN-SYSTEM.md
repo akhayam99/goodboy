@@ -537,7 +537,7 @@ surface stays neutral, the title is `foreground` and the body is
   (`Info`), `success` (`CircleCheck`).
 - **Placement** changes the surface and padding, never the anatomy.
   `transcript` is transparent with no border, `inline` and `banner` sit on
-  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-elevated` with
+  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-floating` with
   a shadow. The rail is 2px in the page and 4px when floating.
 - **Title names the action** that failed ("Couldn't load pull requests"). The
   body states the cause in plain words. Raw output (stderr, exit codes, paths,

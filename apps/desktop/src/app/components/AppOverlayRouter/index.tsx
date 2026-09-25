@@ -262,7 +262,7 @@ export const AppOverlayRouter = ({
         />
       ) : null}
       {deleteTargetSession !== null && deleteOpen ? (
-        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg bg-background shadow-lg">
+        <div className="fixed bottom-4 right-4 z-popover w-96 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-floating shadow-lg">
           <DeleteSessionConfirm session={deleteTargetSession} onClose={closeDeleteConfirm} />
         </div>
       ) : null}

@@ -13,6 +13,30 @@ const pressEscape = (): KeyboardEvent => {
 };
 
 describe('Dialog', () => {
+  it('sits on the floating surface by default', () => {
+    render(
+      <Dialog open onClose={() => undefined} title="Add workspace">
+        <p>body</p>
+      </Dialog>,
+    );
+
+    const dialog = document.querySelector('dialog');
+    expect(dialog?.className).toContain('bg-floating');
+    expect(dialog?.className).not.toContain('bg-background');
+  });
+
+  it('keeps a screen dialog on the content surface', () => {
+    render(
+      <Dialog open onClose={() => undefined} title="Diff" surface="screen">
+        <p>body</p>
+      </Dialog>,
+    );
+
+    const dialog = document.querySelector('dialog');
+    expect(dialog?.className).toContain('bg-background');
+    expect(dialog?.className).not.toContain('bg-floating');
+  });
+
   it('focuses the first enabled field in the dialog body', () => {
     render(
       <Dialog open onClose={() => undefined} title="Add workspace">

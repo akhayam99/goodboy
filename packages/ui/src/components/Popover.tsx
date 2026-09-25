@@ -39,7 +39,7 @@ export const Popover = ({
       tabIndex={tabIndex}
       style={style}
       className={cn(
-        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-border bg-elevated text-xs shadow-lg',
+        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-border bg-floating text-xs shadow-lg',
         className,
       )}
     >
@@ -60,5 +60,5 @@ export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
 );
 
 export const PopoverFooter = ({ children, className }: PopoverFooterProps) => (
-  <footer className={cn('relative z-10 shrink-0 bg-elevated', className)}>{children}</footer>
+  <footer className={cn('relative z-10 shrink-0 bg-floating', className)}>{children}</footer>
 );

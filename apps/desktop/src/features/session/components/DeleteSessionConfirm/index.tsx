@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -10,9 +10,10 @@ type Props = {
   readonly session: Session;
   readonly onClose: () => void;
   readonly className?: string;
+  readonly surface?: ComponentProps<typeof InlineConfirm>['surface'];
 };
 
-export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => {
+export const DeleteSessionConfirm = ({ session, onClose, className, surface }: Props) => {
   const deleteTask = useAppStore((s) => s.deleteTask);
   const { archive } = useSessionArchive();
   const sessionBranch = useAppStore((s) => s.sessionBranches[session.id as SessionId]);
@@ -62,6 +63,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className }: Props) => 
       onConfirm={onConfirm}
       onCancel={onClose}
       isBusy={busy}
+      surface={surface}
       className={className}
       {...(session.archivedAt == null && {
         altAction: {
