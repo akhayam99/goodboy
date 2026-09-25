@@ -9,7 +9,7 @@ type SkeletonProps = {
 export const Skeleton = ({ className, style }: SkeletonProps) => {
   return (
     <div
-      className={cn('motion-safe:animate-pulse rounded-sm bg-muted', className)}
+      className={cn('motion-safe:animate-pulse rounded-sm bg-fill', className)}
       style={style}
       aria-hidden
     />

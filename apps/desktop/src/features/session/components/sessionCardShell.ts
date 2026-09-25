@@ -1,4 +1,4 @@
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
 import { ATTENTION_REASON_META } from '../session-stage';
 
@@ -8,17 +8,6 @@ type Params = {
   readonly selected?: boolean;
   readonly active?: boolean;
   readonly dimmed?: boolean;
-};
-
-const RAIL: Record<Tone, string> = {
-  success: 'border-l-success',
-  info: 'border-l-info',
-  warning: 'border-l-warning',
-  danger: 'border-l-danger',
-  primary: 'border-l-primary',
-  merged: 'border-l-merged',
-  draft: 'border-l-draft',
-  neutral: 'border-l-border',
 };
 
 type RestBorderParams = Pick<Params, 'stage' | 'attention' | 'selected'>;
@@ -33,7 +22,7 @@ const restBorder = ({ stage, attention = null, selected }: RestBorderParams): st
   if (stage === 'attention') {
     return cn(
       'border-border-soft',
-      RAIL[attention === null ? 'warning' : ATTENTION_REASON_META[attention].tone],
+      tintClasses(attention === null ? 'warning' : ATTENTION_REASON_META[attention].tone).rail,
     );
   }
   return 'border-border-soft hover:border-border';

@@ -23,12 +23,6 @@ const TONE = {
   summarizing: 'info',
 } as const satisfies Record<ShownKind, 'warning' | 'danger' | 'info'>;
 
-const RAIL = {
-  answer: 'border-l-warning',
-  recover: 'border-l-danger',
-  summarizing: 'border-l-info',
-} as const satisfies Record<ShownKind, string>;
-
 const LABEL = {
   answer: 'Next action: answer',
   recover: 'Next action: recover the step',
@@ -57,7 +51,7 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
       data-kind={action.kind}
       className={cn(
         'flex min-w-0 flex-wrap items-start gap-x-2.5 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background px-3 py-2.5',
-        RAIL[action.kind],
+        tint.rail,
         className,
       )}
     >

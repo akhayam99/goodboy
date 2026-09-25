@@ -15,7 +15,7 @@ export const ConceptCard = ({ icon, tone, label, body, onClick }: Props) => (
   <button
     type="button"
     onClick={onClick}
-    className="group flex flex-col items-start gap-2 rounded-lg border border-border-soft bg-background p-4 text-left motion-safe:transition-all motion-safe:hover:-translate-y-0.5 hover:border-border hover:shadow-sm"
+    className="group flex flex-col items-start gap-2 rounded-lg border border-border-soft bg-elevated p-4 text-left motion-safe:transition-colors hover:border-border"
   >
     <span
       className={cn(

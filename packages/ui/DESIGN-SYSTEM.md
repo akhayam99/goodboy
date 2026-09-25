@@ -66,7 +66,8 @@ instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is 
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
-`SelectableRow` and `RailCard isSelected`). No ring and no primary tint mark a
+`SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
+hairline track, `bg-selected` on the active segment, no raised pill. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -185,8 +186,11 @@ Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
 - Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
   fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
   `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
-  own wash), `border` (40%, decoration, never the only signal) and `bgSoft`
-  (5%, only for washing a whole card).
+  own wash), `border` (40%, decoration, never the only signal), `rail` (full
+  tone left border, for a card or strip whose edge carries meaning; neutral is
+  `border-l-border`) and `bgSoft` (5%, only for washing a whole card). The
+  neutral `bg`, `bgSoft` and `solid` sit on `fill`, so a neutral chip sinks one
+  step into any parent.
 
 ## Icon and tone vocabulary
 

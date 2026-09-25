@@ -43,7 +43,7 @@ const RULES = [
   },
   {
     pattern:
-      /(?:bg-(?:muted|subtle|background|elevated|foreground)|border-soft|divide-border-soft)\/(?:\d+|\[[^\]]+\])|bg-(?:black|white)\/|shadow-2xl|rgba\(/,
+      /(?:bg-(?:muted|subtle|background|elevated|foreground)|(?:bg|border)-(?:muted|faint|disabled)-foreground|border-foreground|border-soft|divide-border-soft)\/(?:\d+|\[[^\]]+\])|bg-(?:black|white)\/|shadow-2xl|rgba\(/,
     allow: NO_ALLOW,
     why: 'neutral surfaces use the opaque ramp or named overlays and shadows',
   },

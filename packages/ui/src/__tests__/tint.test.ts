@@ -22,6 +22,15 @@ describe('tintClasses', () => {
     expect(tint.hoverBg).toMatch(/^hover:bg-\S+\/20$/);
     expect(tint.hoverBgSoft).toMatch(/^hover:bg-\S+\/5$/);
     expect(tint.solid).toMatch(/^bg-\S+ text-on-tone$/);
+    expect(tint.rail).toBe(`border-l-${tone}`);
+  });
+
+  it('keeps neutral chips one step inside any parent with the relative fill', () => {
+    const neutral = tintClasses('neutral');
+    expect(neutral.bg).toBe('bg-fill');
+    expect(neutral.bgSoft).toBe('bg-fill');
+    expect(neutral.solid).toBe('bg-fill text-foreground');
+    expect(neutral.rail).toBe('border-l-border');
   });
 
   it('reads the draft tone from the TINT record, not a hardcoded coverage list', () => {

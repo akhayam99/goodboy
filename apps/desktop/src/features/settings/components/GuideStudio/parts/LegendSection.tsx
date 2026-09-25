@@ -18,12 +18,12 @@ export const LegendSection = ({}: Props) => (
     <LegendBlock title="Agent status, workflow steps">
       <LegendaGrid
         rows={[
-          { dot: 'bg-muted-foreground/50', label: 'pending', desc: 'not yet started' },
+          { dot: 'bg-idle', label: 'pending', desc: 'not yet started' },
           { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
           { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
           { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
           {
-            dot: 'bg-muted-foreground/30',
+            dot: 'border border-idle bg-transparent',
             label: 'skipped',
             desc: 'bypassed by workflow logic',
           },
@@ -62,7 +62,7 @@ export const LegendSection = ({}: Props) => (
       <LegendaGrid
         rows={[
           { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
-          { dot: 'bg-muted-foreground/60', label: 'modify', desc: 'existing file changed' },
+          { dot: 'bg-idle', label: 'modify', desc: 'existing file changed' },
           { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
         ]}
       />
@@ -96,7 +96,7 @@ export const LegendSection = ({}: Props) => (
           { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
           { dot: 'bg-info', label: 'default', desc: 'writes and runs ask for approval' },
           {
-            dot: 'bg-muted-foreground/40',
+            dot: 'bg-idle',
             label: 'plan',
             desc: 'no tool calls executed, read-only',
           },

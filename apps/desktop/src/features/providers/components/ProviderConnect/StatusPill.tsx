@@ -35,7 +35,7 @@ const connectionSpec = ({ connection }: SpecParams): PillSpec => {
       return {
         label: PROVIDER_CONNECTION_LABEL.missing,
         tone: 'neutral',
-        dotClassName: 'bg-muted-foreground/40',
+        dotClassName: 'bg-idle',
         labelClass: 'text-muted-foreground',
       };
     case 'error':
@@ -44,7 +44,7 @@ const connectionSpec = ({ connection }: SpecParams): PillSpec => {
       return {
         label: PROVIDER_CONNECTION_LABEL.unknown,
         tone: 'neutral',
-        dotClassName: 'bg-muted-foreground/40',
+        dotClassName: 'border border-idle bg-transparent',
         labelClass: 'text-muted-foreground',
       };
     default: {
