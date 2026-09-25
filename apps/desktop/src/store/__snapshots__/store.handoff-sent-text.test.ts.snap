@@ -115,7 +115,9 @@ Every posting rounds itself, 3,100 lines per batch.
 
 Move rounding from post_line to settle_batch.
 
-**Scope** this step only, never a later one. Emit \`<<step-done id="agent-2">>\` on its own line once it is truly done.",
+**Scope** this step only, never a later one. Emit \`<<step-done id="agent-2">>\` on its own line once it is truly done.
+
+**Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one \`<<ctx-question blocking="true">>the question<</ctx-question>>\` block and stop.",
   "systemPrompt": "[projects-scope]
 You are operating from an ephemeral scratch directory at: /tmp/goodboy-root/scratch/mountless
 This session has no materialized project mounts yet. Nothing you put in the scratch directory is kept.
@@ -169,6 +171,8 @@ user: Move rounding from post_line to settle_batch.
 
 **Scope** this step only, never a later one. Emit \`<<step-done id="agent-2">>\` on its own line once it is truly done.
 
+**Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one \`<<ctx-question blocking="true">>the question<</ctx-question>>\` block and stop.
+
 workflow handoff (carried forward): ## workflow handoff
 ### step 0 output: Trace the rounding
 Every posting rounds itself, 3,100 lines per batch.
@@ -199,7 +203,9 @@ Every posting rounds itself, 3,100 lines per batch.
 
 Move rounding from post_line to settle_batch.
 
-**Scope** this step only, never a later one. Emit \`<<step-done id="agent-2">>\` on its own line once it is truly done.",
+**Scope** this step only, never a later one. Emit \`<<step-done id="agent-2">>\` on its own line once it is truly done.
+
+**Questions** a question in plain prose never reaches the user. When you need the user to answer, approve or confirm something before you can go on (a destructive command, a choice only they can make), ask it in one \`<<ctx-question blocking="true">>the question<</ctx-question>>\` block and stop.",
   "systemPrompt": "[projects-scope]
 You are operating from an ephemeral scratch directory at: /tmp/goodboy-root/scratch/mountless
 This session has no materialized project mounts yet. Nothing you put in the scratch directory is kept.
