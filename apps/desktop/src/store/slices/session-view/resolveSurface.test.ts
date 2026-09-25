@@ -58,7 +58,6 @@ describe('the round trip between the resolve queue and the diff', () => {
 
     const state = getState();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      filter: 'needs_review',
       expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser', 't-client'],
       scrollTop: 240,
@@ -83,7 +82,7 @@ describe('the round trip between the resolve queue and the diff', () => {
 
   it('returns to the queue with the pinned position intact and the pill gone', () => {
     const { actions, getState } = buildSlice();
-    actions.setResolveQueueView({ sessionId: SESSION_ID, patch: { filter: 'everything' } });
+    actions.setResolveQueueView({ sessionId: SESSION_ID, patch: { isDeferredShown: true } });
     actions.openResolveDiff({
       sessionId: SESSION_ID,
       threadId: 't-parser',
@@ -100,13 +99,12 @@ describe('the round trip between the resolve queue and the diff', () => {
     expect(state.activeLens[SESSION_ID]).toBe('review');
     expect(state.resolveDiffReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      filter: 'everything',
       expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser'],
       scrollTop: 120,
       detailScrollTop: 0,
       detailFocus: 'primary',
-      isDeferredShown: false,
+      isDeferredShown: true,
       isCompletedShown: false,
       lastRouting: null,
     });
@@ -133,7 +131,7 @@ describe('the round trip between the resolve queue and the agent', () => {
     const { actions, getState } = buildSlice();
     actions.setResolveQueueView({
       sessionId: SESSION_ID,
-      patch: { filter: 'everything', order: ['t-parser', 't-client'], scrollTop: 90 },
+      patch: { order: ['t-parser', 't-client'], scrollTop: 90 },
     });
 
     actions.openResolveAgent({
@@ -149,7 +147,6 @@ describe('the round trip between the resolve queue and the agent', () => {
       threadId: 't-parser',
       prNumber: 264,
       view: {
-        filter: 'everything',
         expandedThreadId: 't-parser',
         order: ['t-parser', 't-client'],
         scrollTop: 90,
@@ -166,7 +163,7 @@ describe('the round trip between the resolve queue and the agent', () => {
     const { actions, getState } = buildSlice();
     actions.setResolveQueueView({
       sessionId: SESSION_ID,
-      patch: { filter: 'retryable', order: ['t-parser'], scrollTop: 40, isCompletedShown: true },
+      patch: { order: ['t-parser'], scrollTop: 40, isCompletedShown: true },
     });
     actions.openResolveAgent({
       sessionId: SESSION_ID,
@@ -176,7 +173,7 @@ describe('the round trip between the resolve queue and the agent', () => {
     });
     actions.setResolveQueueView({
       sessionId: SESSION_ID,
-      patch: { filter: 'needs_review', expandedThreadId: null, scrollTop: 0 },
+      patch: { isCompletedShown: false, expandedThreadId: null, scrollTop: 0 },
     });
 
     actions.returnFromResolveAgent({ sessionId: SESSION_ID });
@@ -185,7 +182,6 @@ describe('the round trip between the resolve queue and the agent', () => {
     expect(state.activeLens[SESSION_ID]).toBe('review');
     expect(state.resolveAgentReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      filter: 'retryable',
       expandedThreadId: 't-parser',
       order: ['t-parser'],
       scrollTop: 40,

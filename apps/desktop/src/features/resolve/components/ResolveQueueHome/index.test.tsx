@@ -258,7 +258,7 @@ describe('the resolve queue home', () => {
 
   it('drops the open comment when a target settles on an error', () => {
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     h.state.reviewTargets = {
       [SESSION_ID]: targetOf({
@@ -325,7 +325,6 @@ describe('the resolve queue home', () => {
     ];
     h.state.resolveQueueView = {
       [SESSION_ID]: {
-        filter: 'needs_review',
         expandedThreadId: 'PRRT_1',
         order: [],
         scrollTop: 0,
@@ -402,7 +401,6 @@ describe('walking the queue from the keyboard', () => {
     twoRows();
     h.state.resolveQueueView = {
       [SESSION_ID]: {
-        filter: 'needs_review',
         expandedThreadId: 'PRRT_1',
         order: [],
         scrollTop: 0,
@@ -441,7 +439,7 @@ describe('walking the queue from the keyboard', () => {
     });
 
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
     };
     rerender(<ResolveQueueHome session={SESSION} />);
 
@@ -453,7 +451,7 @@ describe('walking the queue from the keyboard', () => {
   it('carries the focus into the comment the decision moved on to', () => {
     twoRows();
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     const { rerender } = render(<ResolveQueueHome session={SESSION} />);
 
@@ -464,7 +462,7 @@ describe('walking the queue from the keyboard', () => {
     fireEvent.click(approve);
 
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
     };
     rerender(<ResolveQueueHome session={SESSION} />);
 
@@ -477,14 +475,14 @@ describe('walking the queue from the keyboard', () => {
   it('moves focus into a comment opened with the mouse', () => {
     twoRows();
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     const { rerender } = render(<ResolveQueueHome session={SESSION} />);
 
     fireEvent.click(rowFor('PRRT_2'));
 
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
     };
     rerender(<ResolveQueueHome session={SESSION} />);
 
@@ -518,7 +516,7 @@ describe('walking the queue from the keyboard', () => {
   it('hands Escape back to the reply field the maintainer is typing in', () => {
     twoRows();
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     render(<ResolveQueueHome session={SESSION} />);
 
@@ -532,7 +530,7 @@ describe('walking the queue from the keyboard', () => {
   it('closes the panel on unhandled Escape', () => {
     twoRows();
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     render(<ResolveQueueHome session={SESSION} />);
 
@@ -551,7 +549,7 @@ describe('walking the queue from the keyboard', () => {
   it('keeps Enter on the open row going straight to the panel', () => {
     twoRows();
     h.state.resolveQueueView = {
-      [SESSION_ID]: { filter: 'needs_review', expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
+      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
     };
     render(<ResolveQueueHome session={SESSION} />);
 

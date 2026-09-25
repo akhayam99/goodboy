@@ -41,7 +41,7 @@ const CONNECTED: ReadonlyArray<ProviderId> = ['anthropic', 'codex', 'opencode', 
 const threadOf = (threadId: string): CommentThread => ({
   head: {
     id: `comment-${threadId}`,
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body: 'This retries forever on a 500.',
     createdAt: '2026-01-05T09:00:00.000Z',

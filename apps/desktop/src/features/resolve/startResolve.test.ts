@@ -15,7 +15,7 @@ const PR = {
 const threadOf = (threadId: string, path = 'src/retry.ts'): CommentThread => ({
   head: {
     id: `comment-${threadId}`,
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body: `Please look at ${threadId}.`,
     createdAt: '2026-01-05T09:00:00.000Z',

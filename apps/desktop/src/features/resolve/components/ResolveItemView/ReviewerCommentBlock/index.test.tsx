@@ -9,7 +9,7 @@ import { ReviewerCommentBlock } from './index';
 const THREAD: CommentThread = {
   head: {
     id: 'comment-1',
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body: 'This retries forever on a 500.',
     createdAt: '2026-01-05T09:00:00.000Z',
@@ -42,7 +42,7 @@ describe('the reviewer comment block', () => {
     expect(screen.getByText('This retries forever on a 500.')).toBeDefined();
     expect(screen.getByText('The backoff never kicks in.')).toBeDefined();
     expect(screen.getByText('src/retry.ts:84')).toBeDefined();
-    expect(screen.getByText('dhh')).toBeDefined();
+    expect(screen.getByText('harbor-reviewer')).toBeDefined();
   });
 
   it('says the comment is gone instead of rendering an empty block', () => {
