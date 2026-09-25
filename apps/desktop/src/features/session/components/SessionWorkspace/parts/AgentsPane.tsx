@@ -26,7 +26,7 @@ export const AgentsPane = ({ session, meta }: Props) => {
             isOn={autoRun}
             onToggle={() => void setSessionAutoRun(sessionId, !autoRun)}
           />
-          <CreateAgentPopover sessionId={sessionId} variant="compact" />
+          <CreateAgentPopover sessionId={sessionId} />
         </>
       }
     >

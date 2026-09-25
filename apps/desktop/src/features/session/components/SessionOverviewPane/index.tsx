@@ -35,6 +35,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const [isGoalEditing, setIsGoalEditing] = useState(false);
+  const [isKickoffShown, setIsKickoffShown] = useState(false);
   const { proposal, pickIssue } = useIssueBriefProposal({ session });
   const goalSlot = slots.find((slot) => slot.key === 'goal');
 
@@ -54,6 +55,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         <HeaderBand
           session={session}
           onSelectLens={onSelectLens}
+          isEmpty={isKickoffShown}
           titleAction={
             presence === 'own' || isGoalEditing || isGoalLoading ? null : (
               <GoalDetailAction
@@ -95,14 +97,15 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
           </ArchivedGate>
         }
         kickoff={
-          <ArchivedGate isArchived={isArchived}>
+          isArchived ? undefined : (
             <SessionKickoff
               session={session}
               onOpenWorkflowBuilder={openWorkflowBuilder}
               onPickIssue={pickIssue}
             />
-          </ArchivedGate>
+          )
         }
+        onKickoffShownChange={setIsKickoffShown}
       />
     </PaneShell>
   );

@@ -29,7 +29,7 @@ between them instead of mixing one surface through opacity.
 | 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
 | 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
-| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`, `ActionTile`            |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                          |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
 | 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
 
@@ -625,6 +625,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
+- The empty session follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. Rarer starts sit in a quiet `More ways to start` menu, and an item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
 
@@ -728,11 +729,12 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-The empty Activity of a new session is the kickoff. It leads with "No activity
-yet", then a ghost run: three `WorkNode`s in the `queued` state on a dashed
-spine, at reduced opacity, each with its role chip and one line of what it
-does, and no meta column, because no provider or model is chosen yet. The ways
-to start follow it.
+The empty Activity of a new session is the kickoff. It asks "How do you want to
+start?" and answers with a single-select list of three rows, each a concept
+glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
+selected row reveals its fields and its one primary under the list. Arrow keys
+move between rows and Enter moves into the selected row's fields. There is no
+example run and no grid of tiles.
 
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses

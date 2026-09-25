@@ -72,9 +72,9 @@ describe('createUntitledSession', () => {
     );
   });
 
-  it('flags the created session for title focus', async () => {
+  it('flags the created session for kickoff focus', async () => {
     const { action, set } = setup();
     const { session } = await action({ workspaceId: WS_ID });
-    expect(set).toHaveBeenCalledWith({ pendingTitleFocusSessionId: session.id });
+    expect(set).toHaveBeenCalledWith({ pendingKickoffFocusSessionId: session.id });
   });
 });

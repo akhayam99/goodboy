@@ -16,8 +16,8 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../shared/components/DogMascot', () => ({ DogMascot: () => null }));
 
 vi.mock('../CreateAgentPopover', () => ({
-  CreateAgentPopover: ({ variant }: { readonly variant?: string }) => (
-    <button type="button" data-testid="create-agent" data-variant={variant}>
+  CreateAgentPopover: () => (
+    <button type="button" data-testid="create-agent">
       Create agent
     </button>
   ),
@@ -175,7 +175,7 @@ describe('StandaloneAgentsLane', () => {
     expect(screen.queryByTestId('agent-row')).toBeNull();
   });
 
-  it('drops the tabs and shows a compact create control in the sidebar variant', () => {
+  it('drops the tabs and shows the create control in the sidebar variant', () => {
     setAgents([
       buildAgent({ id: 'active' as AgentId, name: 'active agent', ordinal: 0 }),
       buildAgent({ id: 'done' as AgentId, name: 'done agent', ordinal: 1, doneAt: NOW }),
@@ -184,6 +184,6 @@ describe('StandaloneAgentsLane', () => {
 
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.getAllByTestId('agent-row')).toHaveLength(2);
-    expect(screen.getByTestId('create-agent').getAttribute('data-variant')).toBe('compact');
+    expect(screen.getByTestId('create-agent')).toBeDefined();
   });
 });

@@ -29,7 +29,7 @@ import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
 import { LaunchEstimateNote } from './LaunchEstimateNote';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
-import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
+import { CreateAgentTrigger } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 
@@ -37,19 +37,11 @@ const ROUTING_PANEL_ID = 'create-agent-routing';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly variant?: CreateAgentTriggerVariant;
   readonly className?: string;
-  readonly description?: string;
   readonly onSpawned?: () => void;
 };
 
-export const CreateAgentPopover = ({
-  sessionId,
-  variant = 'tile',
-  className,
-  description,
-  onSpawned,
-}: Props) => {
+export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) => {
   const dropdown = useDropdown({
     align: 'center',
     expectedHeight: 460,
@@ -140,16 +132,8 @@ export const CreateAgentPopover = ({
       role="dialog"
       ariaLabel="Start agent"
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
-      anchorClassName={cn('min-w-0', variant === 'tile' && 'w-full')}
-      trigger={
-        <CreateAgentTrigger
-          variant={variant}
-          isOpen={open}
-          description={description}
-          className={cn(variant === 'tile' && 'w-full', className)}
-          onClick={toggle}
-        />
-      }
+      anchorClassName="min-w-0"
+      trigger={<CreateAgentTrigger isOpen={open} className={className} onClick={toggle} />}
     >
       <PopoverBody>
         {agentKinds.length > 1 ? (

@@ -7,8 +7,6 @@ import type { Session } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
-    pendingTitleFocusSessionId: null as string | null,
-    clearPendingTitleFocus: vi.fn(),
     sessionGithub: {},
     sessionExternalTasks: {},
     sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
@@ -52,6 +50,9 @@ vi.mock('./SessionDestructiveActions', () => ({
     </>
   ),
 }));
+vi.mock('./SessionActionsMenu', () => ({
+  SessionActionsMenu: () => <button aria-label="Session actions" />,
+}));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
 vi.mock('./ContextDigest', () => ({
   ContextDigest: () => <section aria-label="Context digest" />,
@@ -81,8 +82,6 @@ const session = {
 
 describe('HeaderBand', () => {
   beforeEach(() => {
-    store.pendingTitleFocusSessionId = null;
-    store.clearPendingTitleFocus.mockClear();
     store.sessionArtifacts = {};
     store.sessionOpenQuestions = {};
     store.sessionResolveQueueItems = {};
@@ -199,6 +198,41 @@ describe('HeaderBand', () => {
     render(<HeaderBand session={untitled} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
 
     expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
+  });
+
+  it('keeps an empty session header to its title and one actions menu', () => {
+    render(
+      <HeaderBand
+        session={session}
+        onSelectLens={vi.fn()}
+        goal={<div>Goal</div>}
+        titleAction={<button type="button">Set a goal</button>}
+        isEmpty
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Set a goal' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Link issue' })).toBeNull();
+    expect(screen.queryByText('Context')).toBeNull();
+  });
+
+  it('shows the placeholder title faint until it is renamed', () => {
+    const untitled = { ...session, goal: 'Untitled session 2', titleUserEdited: false } as Session;
+    const { unmount } = render(
+      <HeaderBand session={untitled} onSelectLens={vi.fn()} goal={<div>Goal</div>} />,
+    );
+    expect(screen.getByRole('button', { name: 'Untitled session 2' }).className).toContain(
+      'text-faint-foreground',
+    );
+    unmount();
+
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    expect(screen.getByRole('button', { name: 'Refactor auth' }).className).not.toContain(
+      'text-faint-foreground',
+    );
   });
 
   it('renders the session cost at the right edge of the context row', () => {

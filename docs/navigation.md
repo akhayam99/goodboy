@@ -171,6 +171,27 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
+**An empty session asks one question.** Until the session has any activity,
+the overview body is the kickoff: "How do you want to start?" with three
+options in a single-select list.
+
+- **Pick up a task** shows the open issues of the connected trackers with a
+  search field. Picking one and pressing **Pick up** links it and proposes the
+  brief, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Without a tracker it shows the connect links.
+- **Run a workflow** asks for the goal and a workflow, then **Run workflow**
+  starts it with that goal.
+- **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
+  that reads the project and suggests where to start.
+
+Only the selected option's primary shows. **Draw a wireframe**, and **Write a
+report** once an agent has finished, sit in a quiet **More ways to start**
+menu. The list preselects Pick up a task when a tracker has open issues and
+Run a workflow otherwise, and it remembers the last choice per workspace in
+local UI storage. A new session puts focus on the question, not on the title.
+The empty header keeps the title, faint while it is still the placeholder, and
+one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
+
 ## Breadcrumbs
 
 - **The trail belongs to the page, not to the chrome.** It sits in the content

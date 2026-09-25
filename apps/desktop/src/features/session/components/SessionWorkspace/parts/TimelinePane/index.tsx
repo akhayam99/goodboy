@@ -77,9 +77,10 @@ type Props = {
   readonly session: Session;
   readonly actions: ReactNode;
   readonly kickoff?: ReactNode;
+  readonly onKickoffShownChange?: (isShown: boolean) => void;
 };
 
-export const TimelinePane = ({ session, actions, kickoff }: Props) => {
+export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -185,6 +186,13 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
       worktrees,
     ],
   );
+
+  const isKickoffShown =
+    model.entries.length === 0 && kickoff != null && areEventsLoaded && areAgentsLoaded;
+
+  useEffect(() => {
+    onKickoffShownChange?.(isKickoffShown);
+  }, [isKickoffShown, onKickoffShownChange]);
 
   const stepById = useMemo(() => {
     const steps = new Map<string, Step>();
@@ -476,7 +484,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
       ? 'Nothing yet. Agents, workflows and session facts land here as they happen.'
       : undefined;
 
-  if (model.entries.length === 0 && kickoff != null && areEventsLoaded && areAgentsLoaded) {
+  if (isKickoffShown) {
     return <>{kickoff}</>;
   }
 

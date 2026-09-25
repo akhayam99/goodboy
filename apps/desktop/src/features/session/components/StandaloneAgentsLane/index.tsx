@@ -103,7 +103,7 @@ export const StandaloneAgentsLane = ({
         {isLoadingEmpty && <AgentListSkeleton />}
         {!isLoadingEmpty && hasNoAgents && <AgentLaneNote text="No agents yet. Start one below." />}
         {!isLoadingEmpty && !hasNoAgents && list}
-        {showCreateControl && <CreateAgentPopover sessionId={sessionId} variant="compact" />}
+        {showCreateControl && <CreateAgentPopover sessionId={sessionId} />}
         {error}
       </div>
     );

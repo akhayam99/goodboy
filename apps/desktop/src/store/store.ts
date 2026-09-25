@@ -476,7 +476,7 @@ type AppActions = {
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
-  clearPendingTitleFocus(): void;
+  clearPendingKickoffFocus(): void;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
@@ -1055,7 +1055,7 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
-  pendingTitleFocusSessionId: null,
+  pendingKickoffFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

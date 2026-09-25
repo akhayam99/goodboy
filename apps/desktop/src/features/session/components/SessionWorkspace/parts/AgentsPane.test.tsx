@@ -72,8 +72,8 @@ vi.mock('../../StandaloneAgentsLane', () => ({
 }));
 
 vi.mock('../../CreateAgentPopover', () => ({
-  CreateAgentPopover: ({ variant }: { readonly variant?: string }) => (
-    <button type="button" data-testid="header-spawn" data-variant={variant}>
+  CreateAgentPopover: () => (
+    <button type="button" data-testid="header-spawn">
       Create agent
     </button>
   ),
@@ -95,14 +95,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AgentsPane', () => {
-  it('hosts a single compact create-agent trigger in the pane header', () => {
+  it('hosts a single create-agent trigger in the pane header', () => {
     render(<AgentsPane session={SESSION} meta={undefined} />);
 
     const heading = screen.getByRole('heading', { name: 'Agents' });
     const header = heading.parentElement?.parentElement?.parentElement;
     const trigger = screen.getByTestId('header-spawn');
     expect(header?.contains(trigger)).toBe(true);
-    expect(trigger.getAttribute('data-variant')).toBe('compact');
     expect(screen.getAllByTestId('header-spawn')).toHaveLength(1);
   });
 

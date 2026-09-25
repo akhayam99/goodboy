@@ -143,7 +143,7 @@ export const NON_SESSION_STATE_KEYS = [
   'sessions',
   'archivedSessions',
   'currentSessionId',
-  'pendingTitleFocusSessionId',
+  'pendingKickoffFocusSessionId',
   'settings',
   'sessionSummary',
   'providerStatus',

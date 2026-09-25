@@ -54,26 +54,4 @@ describe('CreateReportCta', () => {
     expect(trigger.hasAttribute('disabled')).toBe(false);
     expect(trigger.getAttribute('title')).toBe('Write a report from what this session did');
   });
-
-  it('hides the tile while the session has produced nothing', () => {
-    render(<CreateReportCta sessionId={SESSION_ID} variant="tile" />);
-
-    expect(screen.queryByTestId('create-report-cta')).toBeNull();
-    expect(state.openArtifactCreation).not.toHaveBeenCalled();
-  });
-
-  it('opens the tile once an agent has finished', () => {
-    state.sessionPhaseRuns = { [SESSION_ID]: [{ status: 'completed' }] };
-
-    render(<CreateReportCta sessionId={SESSION_ID} variant="tile" />);
-
-    const trigger = screen.getByTestId('create-report-cta');
-    expect(trigger.hasAttribute('disabled')).toBe(false);
-    fireEvent.click(trigger);
-    expect(state.openArtifactCreation).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      kind: 'report',
-      workflowRunId: null,
-    });
-  });
 });

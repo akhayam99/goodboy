@@ -28,7 +28,7 @@ type Params = {
   readonly workspaceId: WorkspaceId;
 };
 
-type Result = {
+export type KickoffIssues = {
   readonly connected: Readonly<Record<TrackerProvider, boolean>>;
   readonly hasSources: boolean;
   readonly rows: ReadonlyArray<IssueCandidate>;
@@ -36,7 +36,7 @@ type Result = {
   readonly sources: ReadonlyArray<IssueSource>;
 };
 
-export const useKickoffIssues = ({ workspaceId }: Params): Result => {
+export const useKickoffIssues = ({ workspaceId }: Params): KickoffIssues => {
   const { integrations, github, connected } = useToolConnections({ workspaceId });
   const rootPath = useAppStore((state) =>
     primaryProjectRoot({ projects: state.projects, workspaceId }),

@@ -100,7 +100,7 @@ describe('story: a first-run user opens their workspace and starts a session', (
     expect(state.sessions.map((candidate) => candidate.id)).toContain(session.id);
     expect(session.goal).toBe('Untitled session');
     expect(state.currentSessionId).toBe(session.id);
-    expect(state.pendingTitleFocusSessionId).toBe(session.id);
+    expect(state.pendingKickoffFocusSessionId).toBe(session.id);
 
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
     expect(storySpies.createSessionDir).not.toHaveBeenCalled();

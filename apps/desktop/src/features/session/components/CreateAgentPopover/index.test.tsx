@@ -84,12 +84,11 @@ vi.mock('../../../../store', () => ({
 import { CreateAgentPopover } from './index';
 
 type RenderControlParams = {
-  readonly variant?: 'tile' | 'compact';
   readonly onSpawned?: () => void;
 };
 
-const renderControl = ({ variant, onSpawned = vi.fn() }: RenderControlParams = {}) => {
-  return render(<CreateAgentPopover sessionId={SID} variant={variant} onSpawned={onSpawned} />);
+const renderControl = ({ onSpawned = vi.fn() }: RenderControlParams = {}) => {
+  return render(<CreateAgentPopover sessionId={SID} onSpawned={onSpawned} />);
 };
 
 const openPopover = () => {
@@ -126,11 +125,9 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: 'Docs' })).toBeDefined();
   });
 
-  it('replaces the multi-control row with one tile that opens a single popover', () => {
+  it('opens a single popover from one trigger', () => {
     renderControl();
-    const trigger = screen.getByRole('button', { name: 'Start agent' });
 
-    expect(trigger.className).toContain('rounded-lg');
     expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
 
     openPopover();
@@ -390,7 +387,7 @@ describe('CreateAgentPopover', () => {
   });
 
   it('renders a compact header control without its own edge inset', () => {
-    renderControl({ variant: 'compact' });
+    renderControl();
     const trigger = screen.getByRole('button', { name: 'Start agent' });
 
     expect(trigger.className).toContain('h-7');

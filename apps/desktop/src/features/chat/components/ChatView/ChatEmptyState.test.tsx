@@ -60,4 +60,22 @@ describe('ChatEmptyState', () => {
 
     expect(screen.getByText('Pick an agent')).not.toBeNull();
   });
+
+  it('reduces an agent with no messages to its glyph, one line and a faint subline', () => {
+    const { container } = render(
+      <ChatEmptyState
+        sessionId={'session-1' as SessionId}
+        selectedAgentId={'agent-1' as AgentId}
+        phaseRuns={[{ id: 'agent-1' as AgentId, name: 'Scout', kind: 'scout' } as never]}
+        hasWorkflow={false}
+      />,
+    );
+
+    expect(screen.getByText('Scout')).not.toBeNull();
+    expect(screen.getByText(/Reads and searches codebase/)).not.toBeNull();
+    expect(screen.getByText('It shares the session brief with every other agent.')).not.toBeNull();
+    expect(screen.getByTestId('agent-focus-glyph').className).toContain('size-5');
+    expect(container.querySelector('li')).toBeNull();
+    expect(screen.queryByRole('heading')).toBeNull();
+  });
 });
