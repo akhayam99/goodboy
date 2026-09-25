@@ -191,12 +191,25 @@ surface itself shows urgency, never a badge parked beside it.
 
 Workspace identity stays on the left. The Goodboy brand is centred on the
 window. Workspace-wide signals and set-once preferences stay on the right.
-The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`.
-When the signals fit their share, the brand sits at the window midpoint. When
-they do not, the brand slides off the midpoint instead of being covered. The
-identity has a size limit and truncates, with the full name in its tooltip.
-The wordmark drops below `brand-word` and the mascot below `brand-mark`. No
-control ever moves into an overflow menu.
+The bar is one three-column grid, `minmax(0,1fr) auto minmax(max-content,1fr)`,
+and each zone is pinned to its own track (`col-start-1/2/3`), so an item that
+drops never lets another zone slide into its column. When the signals fit their
+share, the brand sits at the window midpoint. When they do not, the brand
+slides off the midpoint instead of being covered. The identity has a size limit
+and truncates, with the full name in its tooltip. No control ever moves into an
+overflow menu.
+
+The bar is an `@container/topbar` and degrades on its own width, never the
+viewport, so app zoom takes the same path as a narrow window:
+
+1. Below `chrome-word` the wordmark drops. The mascot glyph never drops.
+2. Below `chrome-labels` the signal words (`need you`, `running`, `today`)
+   drop. Counts, dots and the spend figure stay, and their tooltips carry the
+   words.
+
+Identity, mascot, spend, report, notifications, theme and the setup chip never
+hide. `chrome-labels` sits below the 1024px minimum window, so words only drop
+under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
@@ -232,6 +245,12 @@ flow.
 Centre: the beta pill and, while an update is pending, the update pip.
 
 Right: the launchers reached by name and a `More` popover for the rest.
+
+The footer is an `@container/footer` on the same `chrome-labels` step as the
+top bar. Below it, every launcher label and the **Link integration** label
+drop together and the glyphs stay, with the name in the tooltip. The first
+link action keeps its label, since it is the only thing on the left. The beta
+pill and the update pip never hide. Past that the glyph strip scrolls.
 
 - **The release notice answers "have you read the notes for what you're
   running"**, not "has a new release been published". After an update, one

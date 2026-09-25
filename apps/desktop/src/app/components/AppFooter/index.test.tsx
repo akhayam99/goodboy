@@ -470,4 +470,19 @@ describe('AppFooter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Link integration' }));
     expect(screen.getByRole('dialog', { name: 'Integrations' })).toBeDefined();
   });
+
+  it('drops words before glyphs at narrow widths and keeps the first link label', () => {
+    const { container, unmount } = render(
+      <AppFooter {...footerProps({ overrides: { connected: ALL_CONNECTED } })} />,
+    );
+
+    expect(container.querySelector('.\\@container\\/footer')).not.toBeNull();
+    ['Inbox', 'Workflows', 'Providers', 'Settings', 'More', 'Link integration'].forEach((word) => {
+      expect(screen.getByText(word).className).toContain('@min-chrome-labels/footer:inline');
+    });
+    unmount();
+
+    render(<AppFooter {...footerProps()} />);
+    expect(screen.getByText('Link integration').className).not.toContain('hidden');
+  });
 });

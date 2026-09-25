@@ -108,8 +108,8 @@
 
   --chat-header-h: 2rem;
 
-  --breakpoint-brand-mark: 1024px;
-  --breakpoint-brand-word: 1180px;
+  --container-chrome-word: 1160px;
+  --container-chrome-labels: 960px;
 
   /* Density grade, name three opinionated triplets so siblings agree on
      font-size + gap + padding instead of drifting independently. Apply via

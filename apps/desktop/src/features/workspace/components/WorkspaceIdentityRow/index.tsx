@@ -33,7 +33,7 @@ export const WorkspaceIdentityRow = () => {
         dropdown={dropdown}
         role="dialog"
         ariaLabel="Switch or open a workspace"
-        anchorClassName="min-w-0 flex-1"
+        anchorClassName="min-w-0"
         hasBackdrop
         trigger={
           <button

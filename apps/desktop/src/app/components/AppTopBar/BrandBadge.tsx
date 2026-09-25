@@ -6,10 +6,13 @@ export const BrandBadge = () => (
   <span
     role="img"
     aria-label="Goodboy"
-    className="hidden shrink-0 items-center justify-center gap-2 text-foreground brand-mark:inline-flex"
+    className="inline-flex shrink-0 items-center justify-center gap-2 text-foreground"
   >
     <DogMascot size={MARK_SIZE} className="text-foreground" />
-    <span aria-hidden className="hidden text-sm font-semibold tracking-tight brand-word:inline">
+    <span
+      aria-hidden
+      className="hidden text-sm font-semibold tracking-tight @min-chrome-word/topbar:inline"
+    >
       Goodboy
     </span>
   </span>

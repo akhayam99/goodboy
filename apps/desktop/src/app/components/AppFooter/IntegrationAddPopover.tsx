@@ -2,6 +2,7 @@ import { AnchoredPopover, cn, ScrollFade, Tooltip, useDropdown } from '@goodboy/
 import { Plus } from 'lucide-react';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { FooterIntegrationEntry } from './categories';
+import { FOOTER_LABEL, FOOTER_LABELED_PAD } from './FooterButton';
 import { IntegrationAddRow } from './IntegrationAddRow';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
@@ -55,14 +56,15 @@ export const IntegrationAddPopover = ({
             aria-label={actionLabel}
             aria-expanded={dropdown.open}
             className={cn(
-              'flex items-center gap-1.5 rounded-md px-2 py-1 text-2xs font-medium transition-colors',
+              'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
+              isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,
               active
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
             )}
           >
             <Plus size={ICON_SIZE.row} aria-hidden />
-            <span>Link integration</span>
+            <span className={cn(!isEmpty && FOOTER_LABEL)}>Link integration</span>
           </button>
         </Tooltip>
       }
