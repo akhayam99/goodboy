@@ -12,6 +12,7 @@ import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
+import { drawerAfterMove } from '../drawer/drawerAfterMove';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
@@ -59,6 +60,7 @@ export const setActiveLens = (set: SetFn) => {
           ...s.lensHistory,
           [sessionId]: { entries, index: entries.length - 1 },
         },
+        drawer: drawerAfterMove({ drawer: s.drawer, sessionId, lens }),
       };
     });
   };

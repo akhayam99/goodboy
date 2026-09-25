@@ -18,6 +18,8 @@ export {
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
 } from './components/AppShell';
+export { DrawerFrame } from './components/DrawerFrame';
+export type { DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export { Avatar } from './components/Avatar';

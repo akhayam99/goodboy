@@ -1,0 +1,126 @@
+// @vitest-environment happy-dom
+
+import { beforeEach, describe, expect, it } from 'vitest';
+import type { SessionId } from '@goodboy/types';
+import type { AppState } from '../../types';
+import { setActiveLens } from '../session-view/workSurface';
+import { createDrawerSlice } from './index';
+import { selectOpenDrawer } from './selectOpenDrawer';
+import type { DrawerRequest } from './state';
+
+const SESSION_ID = 'session-1' as SessionId;
+const OTHER_SESSION_ID = 'session-2' as SessionId;
+
+const GOAL_HISTORY: DrawerRequest = {
+  kind: 'slot-history',
+  sessionId: SESSION_ID,
+  payload: { slotKey: 'goal' },
+};
+
+const README_PREVIEW: DrawerRequest = {
+  kind: 'explore-file',
+  sessionId: SESSION_ID,
+  payload: {
+    sessionDir: '/work/ledger-core',
+    entry: {
+      name: 'README.md',
+      relPath: 'README.md',
+      isDir: false,
+      sizeBytes: 120,
+      modifiedAt: null,
+    },
+  },
+};
+
+type Harness = {
+  readonly get: () => AppState;
+  readonly set: (patch: Partial<AppState>) => void;
+  readonly slice: ReturnType<typeof createDrawerSlice>;
+  readonly setLens: ReturnType<typeof setActiveLens>;
+};
+
+const harness = (): Harness => {
+  let state = {
+    drawer: null,
+    currentSessionId: SESSION_ID,
+    activeLens: { [SESSION_ID]: 'explore' },
+    lensHistory: {},
+    selectedAgentId: {},
+    sessionStudio: {},
+    focusedWorkflowRunId: {},
+    diffFocus: {},
+    diffMountPath: {},
+    terminalMountPath: {},
+    focusedPlanId: {},
+    focusedArtifactId: {},
+    focusedGithubIssueNumber: {},
+    focusedExternalTask: {},
+  } as unknown as AppState;
+  const set = (patch: Partial<AppState> | ((current: AppState) => Partial<AppState>)) => {
+    state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
+  };
+  const get = () => state;
+  const slice = createDrawerSlice(set as never, get as never);
+  state = { ...state, ...slice };
+  return { get, set, slice, setLens: setActiveLens(set as never) };
+};
+
+describe('drawer slice', () => {
+  let h = harness();
+
+  beforeEach(() => {
+    localStorage.clear();
+    h = harness();
+  });
+
+  it('opens one drawer at a time and records the lens that opened it', () => {
+    h.slice.openDrawer(GOAL_HISTORY);
+    h.slice.openDrawer(README_PREVIEW);
+
+    expect(selectOpenDrawer(h.get())).toEqual({ ...README_PREVIEW, lens: 'explore' });
+  });
+
+  it('closes when its trigger is pressed again and switches when another one is', () => {
+    h.slice.toggleDrawer(README_PREVIEW);
+    expect(selectOpenDrawer(h.get())?.kind).toBe('explore-file');
+
+    h.slice.toggleDrawer(GOAL_HISTORY);
+    expect(selectOpenDrawer(h.get())?.kind).toBe('slot-history');
+
+    h.slice.toggleDrawer(GOAL_HISTORY);
+    expect(h.get().drawer).toBeNull();
+  });
+
+  it('closes with the pane that opened it when the lens changes', () => {
+    h.slice.openDrawer(README_PREVIEW);
+
+    h.setLens(SESSION_ID, 'explore');
+    expect(selectOpenDrawer(h.get())).not.toBeNull();
+
+    h.setLens(SESSION_ID, 'files');
+    expect(h.get().drawer).toBeNull();
+  });
+
+  it('keeps the drawer when another session changes lens', () => {
+    h.slice.openDrawer(README_PREVIEW);
+
+    h.setLens(OTHER_SESSION_ID, 'files');
+
+    expect(selectOpenDrawer(h.get())).not.toBeNull();
+  });
+
+  it('shows nothing once the window moves to another session', () => {
+    h.slice.openDrawer(README_PREVIEW);
+
+    h.set({ currentSessionId: OTHER_SESSION_ID });
+
+    expect(selectOpenDrawer(h.get())).toBeNull();
+  });
+
+  it('closes on request', () => {
+    h.slice.openDrawer(GOAL_HISTORY);
+    h.slice.closeDrawer();
+
+    expect(h.get().drawer).toBeNull();
+  });
+});

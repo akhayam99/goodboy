@@ -106,6 +106,13 @@ The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the brand. Page breadcrumbs stay in the
 content column of the pane that owns them and do not set the top bar's size.
 
+The right drawer is a grid column too: `rhandle` and `right` after `main`,
+`0px 0px` while closed, `6px` and the saved width while open. The same
+`grid-template-columns` transition moves the main area in 200ms, so the content
+column slides and stays centred. When pushing would leave the column under
+560px, the drawer moves onto the `main` area instead as an overlay.
+[navigation.md](navigation.md#the-right-drawer) owns what goes in it.
+
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
 `pointer-events-none` at its root, then turns events back on for the panel
@@ -176,7 +183,7 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 A `Divider` marks the boundary between app chrome and a pane's content, not a
 boundary inside content. Allowed: the top bar and footer, a studio or sidebar
 rail against the detail pane (vertical), a pane's fixed header against its
-scrolling body (a `PaneShell` dock, `InspectorHeader`), and inside a
+scrolling body (a `PaneShell` dock, the `DrawerFrame` header), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 

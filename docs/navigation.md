@@ -92,9 +92,10 @@ script in the project, or no match for the filter.
 them one sidebar plus main. **There is one app layout and every surface fills its
 slots.** The board, the session and the studios do not define their own frames.
 A surface that needs a different frame changes the shared one instead of forking
-a second. **Two flanking columns at once is not the IA.** A session draws one
-full-width pane, and its navigation lives in that single left sidebar. Nothing
-has to reach for a second column, and there is no second width to persist. The
+a second. **Two navigation columns at once is not the IA. The right drawer is
+context, never navigation.** A session draws one full-width pane, and its
+navigation lives in that single left sidebar. The right drawer holds reference
+material beside the page and closes with the pane that opened it. The
 sidebar carries presence. It appears when something else is going on. Inside a
 session it follows a saved preference, toggled from one control or ⌘B. Peek
 never touches that preference.
@@ -397,9 +398,12 @@ one is open at a time.
 - **A step chat is one explicit click**, never an automatic redirect.
 - **A lens-wide toggle is its own row**, never inside an empty state's action
   slot.
-- **A sibling detail is a split, not a rail.** It is a resizable column owned
-  by the pane it opens in, so it closes with that pane. There is one
-  implementation of that split. Reuse it instead of growing a rail.
+- **Reference beside the work opens in the right drawer, not a rail.** Popover
+  = pick one thing in ten seconds; drawer = reference next to the work; page =
+  the work. Slot and goal history and the Explore file preview open there.
+  Creating or configuring stays in a popover, navigating stays in the sidebar,
+  and an object you work on is a child page in the trail. See
+  [The right drawer](#the-right-drawer).
 - **Review is the pull request destination for GitHub, and it has no second
   copy.** The lens is Review, its list of review threads is Conversations
   (heading, back links and the overview action say so), and Resolve stays a
@@ -444,3 +448,23 @@ issue picker. The section hides when none of the allowed sources is connected.
 Creating a session picks no project either. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
+
+## The right drawer
+
+The drawer is a column of the window grid (`AppShell`, areas
+`left lhandle main rhandle right`), never a split nested inside a pane. It opens
+at 400px, resizes from 340 to 560px, and keeps one saved width
+(`goodboy:right-drawer-width:v1`, clamped on read). Closed, its tracks are
+`0px 0px` and it is `inert`. When the main area minus the drawer and the two
+gutters would leave the content column under 560px, it lies over the right of
+the main area with `shadow-xl` and no scrim, and the main stays interactive.
+It never touches the sidebar preference.
+
+One drawer at a time, per window. The `drawer` store slice holds
+`{ kind, sessionId, payload, lens }`: `openDrawer`, `closeDrawer` and
+`toggleDrawer` (pressing the trigger again closes it). It closes when the lens
+or the session changes, with Escape, and with its X; focus then returns to the
+trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
+one action, close), one divider, a `ScrollFade` body and an optional dock. A
+new kind adds a variant to `DrawerContent` and a case to the host.

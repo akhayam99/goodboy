@@ -269,6 +269,8 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
+import { createDrawerSlice } from './slices/drawer';
+import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
 import type { Params as AddBugReportImagesParams } from './slices/bugReportDraft/addBugReportImages';
@@ -336,6 +338,9 @@ type AppActions = {
   addBugReportImages(params: AddBugReportImagesParams): void;
   removeBugReportImage(params: RemoveBugReportImageParams): void;
   clearBugReportDraft(): void;
+  openDrawer(request: DrawerRequest): void;
+  closeDrawer(): void;
+  toggleDrawer(request: DrawerRequest): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;
@@ -1033,6 +1038,7 @@ export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
+  ...initialDrawerState,
   ...initialScriptsState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
@@ -1242,4 +1248,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
+  ...createDrawerSlice(set, get),
 }));

@@ -197,8 +197,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/InspectorSplit/InspectorHeader.tsx':
-    { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
@@ -283,6 +281,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
+  'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/ArtifactScenes.tsx': {
