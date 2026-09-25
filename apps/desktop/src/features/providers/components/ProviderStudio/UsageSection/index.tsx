@@ -2,6 +2,7 @@ import { PROVIDERS_REPORTING_LIMITS } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { Notice, SectionHeader } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { useAutoDetour } from '../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../hooks/useProviderLimitsChip';
 import { sortLimitWindows } from '../../../limits/limitWindowLabel';
 import { usageNotice } from '../../../limits/usageNotice';
@@ -25,7 +26,8 @@ export const UsageSection = ({ providerId, billing }: Props) => {
   const { chip, nowMs } = useProviderLimitsChip({ providerId });
   const label = PROVIDER_LABEL[providerId];
   const windows = sortLimitWindows({ windows: chip.windows });
-  const notice = usageNotice({ chip, nowMs });
+  const detour = useAutoDetour({ providerId });
+  const notice = usageNotice({ chip, nowMs, detour });
   const reports = PROVIDERS_REPORTING_LIMITS.includes(providerId);
   const reportedBy =
     chip.observedAt === null

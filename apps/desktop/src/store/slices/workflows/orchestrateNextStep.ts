@@ -77,6 +77,7 @@ import { findWorkflowActivationBlock } from './workflowActivationGate';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -616,12 +617,17 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider) as ProviderId;
       const workspaceRoleModels =
         selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
+      const limitContext = autoLimitContext({ state: get() });
       const taskModel = resolveTaskModel({
         task: 'workflow_orchestrator',
         preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
         workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
           ?.defaultProviderOverride,
         sessionDefaultProviderId: defaultProvider,
+        ...(limitContext !== null && {
+          connectedProviders: limitContext.connected,
+          atLimitProviders: limitContext.atLimit,
+        }),
       });
       const pinnedRouting =
         run.orchestratorRouting != null && isRoutingModelKnown(run.orchestratorRouting)

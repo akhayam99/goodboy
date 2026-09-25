@@ -4,6 +4,8 @@ import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@g
 import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
+import { autoLimitReason } from '../../../../../../shared/components/RoutingPicker/autoLimitReason';
+import { useAutoLimitContext } from '../../../../hooks/useAutoLimitContext';
 import { RoutingStatusControl } from '../RoutingStatusControl';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
@@ -29,11 +31,16 @@ export const TaskModelRow = ({
   disabled,
   onChange,
 }: Props) => {
+  const limitContext = useAutoLimitContext();
   const automatic = resolveTaskModel({
     task,
     preferences: null,
     workspaceDefaultProviderId: defaultProviderId,
     sessionDefaultProviderId: defaultProviderId,
+    ...(limitContext !== null && {
+      connectedProviders: limitContext.connected,
+      atLimitProviders: limitContext.atLimit,
+    }),
   });
   const preferredProviderId = preference?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState(preferredProviderId);
@@ -100,6 +107,11 @@ export const TaskModelRow = ({
               provider: automatic.providerId,
               model: automatic.model,
               ...AUTO_RECOMMENDATION_COPY,
+              reason: autoLimitReason({
+                defaultProvider: defaultProviderId,
+                pickedProvider: automatic.providerId,
+                atLimit: limitContext?.atLimit ?? [],
+              }),
             }}
             overridden={preference != null}
             disabled={disabled}

@@ -475,8 +475,14 @@ When a provider ships or retires a model, update three files under
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
   OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
-  provider. `AUTO_PROVIDER_GATES` is the list of provider checks (today: connected);
-  a new check, like a provider at its usage limit, is one more entry there. No
+  provider. `AUTO_PROVIDER_GATES` is the list of provider checks: connected, and not
+  at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
+  observation says a window is out and has not reset). A pick that passed a
+  provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
+  through `autoLimitContext` only while some provider is out, for agent spawns,
+  the summarizer and the workflow orchestrator; the Auto row of the Defaults
+  task pickers and the orchestrator picker then says which provider it left and
+  why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and snapshots the table
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is

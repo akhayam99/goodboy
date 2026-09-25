@@ -221,6 +221,7 @@ export {
   type LimitsChip,
   type LimitsChipState,
 } from './providers/limits/selectLimitsChips';
+export { providersAtLimit } from './providers/limits/providersAtLimit';
 
 export {
   PROVIDER_CAPABILITIES,

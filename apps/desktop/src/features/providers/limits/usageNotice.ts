@@ -1,4 +1,5 @@
 import type { LimitsChip } from '@goodboy/core';
+import type { ProviderId } from '@goodboy/types';
 import type { NoticeTone } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../providerLabel';
 import { formatLimitReset } from './formatLimitReset';
@@ -12,12 +13,26 @@ export type UsageNotice = Readonly<{
 type Params = {
   readonly chip: LimitsChip;
   readonly nowMs: number;
+  readonly detour?: ProviderId | null;
+};
+
+type DetourParams = {
+  readonly body: string | null;
+  readonly detour: ProviderId | null | undefined;
+};
+
+const withDetour = ({ body, detour }: DetourParams): string | null => {
+  if (detour == null) {
+    return body;
+  }
+  const sentence = `Auto routes new agents to ${PROVIDER_LABEL[detour]} until then.`;
+  return body === null ? sentence : `${body} ${sentence}`;
 };
 
 const windowPhrase = ({ chip }: Pick<Params, 'chip'>): string =>
   chip.window?.kind === 'fiveHour' ? 'The 5-hour window' : 'The week';
 
-export const usageNotice = ({ chip, nowMs }: Params): UsageNotice | null => {
+export const usageNotice = ({ chip, nowMs, detour }: Params): UsageNotice | null => {
   const label = PROVIDER_LABEL[chip.providerId];
   const reset = chip.resetsAt === null ? null : formatLimitReset({ iso: chip.resetsAt, nowMs });
   switch (chip.state) {
@@ -34,7 +49,7 @@ export const usageNotice = ({ chip, nowMs }: Params): UsageNotice | null => {
           chip.window?.kind === 'fiveHour'
             ? `${label} is out for now.`
             : `${label} is out for the week.`,
-        body: reset === null ? null : `It comes back ${reset}.`,
+        body: withDetour({ body: reset === null ? null : `It comes back ${reset}.`, detour }),
       };
     case 'waiting':
       return {

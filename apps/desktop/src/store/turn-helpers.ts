@@ -95,6 +95,7 @@ import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullReque
 import { selectMountById } from './slices/project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
 import { selectResolvedSettings } from './slices/overrides/selectResolvedSettings';
+import { autoLimitContext } from './slices/providerLimits/autoLimitContext';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -276,6 +277,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     .providers.filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
   const enabledProviders = session.providerPreference.enabledProviders ?? null;
+  const limitContext = autoLimitContext({ state: get() });
   const taskModel =
     entry.taskModelOverride ??
     routeTaskModel({
@@ -285,6 +287,10 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
         workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
           ?.defaultProviderOverride,
         sessionDefaultProviderId: session.providerPreference.defaultProvider,
+        ...(limitContext !== null && {
+          connectedProviders: limitContext.connected,
+          atLimitProviders: limitContext.atLimit,
+        }),
       }),
       connectedProviders,
       enabledProviders,

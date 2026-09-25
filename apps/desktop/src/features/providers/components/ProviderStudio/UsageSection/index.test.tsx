@@ -10,6 +10,8 @@ const { state, spendSpy } = vi.hoisted(() => ({
     budgetRules: [] as ReadonlyArray<BudgetRule>,
     loadBudgetRules: vi.fn(async () => undefined),
     currentWorkspaceId: 'ws-harborline',
+    workspaces: [] as ReadonlyArray<never>,
+    providers: [] as ReadonlyArray<{ id: ProviderId; connection: string }>,
   },
   spendSpy: vi.fn(),
 }));
@@ -112,6 +114,35 @@ describe('UsageSection', () => {
 
     expect(screen.getByText('Codex is out for the week.')).toBeTruthy();
     expect(screen.getByRole('listitem').textContent).toMatch(/100% usedOut until \S+ 18:12$/);
+    expect(screen.queryByText(/Auto routes new agents/)).toBeNull();
+  });
+
+  it('says where Auto sends new agents only when the ladder really skips the provider', () => {
+    state.providers = [
+      { id: 'codex', connection: 'connected' },
+      { id: 'anthropic', connection: 'connected' },
+    ];
+    state.providerLimits = {
+      codex: {
+        providerId: 'codex',
+        plan: 'Plus',
+        status: 'reached',
+        windows: [
+          {
+            kind: 'weekly',
+            model: null,
+            status: 'reached',
+            usedFraction: 1,
+            resetsAt: localIso(18, 12, 6),
+          },
+        ],
+        observedAt: localIso(11, 48),
+      },
+    };
+    render(<UsageSection providerId="codex" billing="plan" />);
+
+    expect(screen.getByText(/Auto routes new agents to Claude until then\.$/)).toBeTruthy();
+    state.providers = [];
   });
 
   it('tells a provider without limits apart from one still waiting for a turn', () => {
