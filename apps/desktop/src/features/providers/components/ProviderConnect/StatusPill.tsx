@@ -1,5 +1,6 @@
 import { StatusDot, type Tone } from '@goodboy/ui';
 import type { ProviderConnectionState } from '../../providers';
+import { PROVIDER_CONNECTION_LABEL } from '../../connectionLabel';
 
 type Props = {
   readonly connection: ProviderConnectionState;
@@ -19,21 +20,29 @@ type SpecParams = {
 const connectionSpec = ({ connection }: SpecParams): PillSpec => {
   switch (connection) {
     case 'connected':
-      return { label: 'Connected', tone: 'primary', labelClass: 'text-primary' };
+      return {
+        label: PROVIDER_CONNECTION_LABEL.connected,
+        tone: 'primary',
+        labelClass: 'text-primary',
+      };
     case 'installed_disconnected':
-      return { label: 'Not signed in', tone: 'warning', labelClass: 'text-warning' };
+      return {
+        label: PROVIDER_CONNECTION_LABEL.installed_disconnected,
+        tone: 'warning',
+        labelClass: 'text-warning',
+      };
     case 'missing':
       return {
-        label: 'Not installed',
+        label: PROVIDER_CONNECTION_LABEL.missing,
         tone: 'neutral',
         dotClassName: 'bg-muted-foreground/40',
         labelClass: 'text-muted-foreground',
       };
     case 'error':
-      return { label: 'Error', tone: 'danger', labelClass: 'text-danger' };
+      return { label: PROVIDER_CONNECTION_LABEL.error, tone: 'danger', labelClass: 'text-danger' };
     case 'unknown':
       return {
-        label: 'Checking',
+        label: PROVIDER_CONNECTION_LABEL.unknown,
         tone: 'neutral',
         dotClassName: 'bg-muted-foreground/40',
         labelClass: 'text-muted-foreground',

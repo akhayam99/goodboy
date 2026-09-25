@@ -6,6 +6,7 @@ import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { SlidersHorizontal } from 'lucide-react';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
+import { PROVIDER_CONNECTION_LABEL } from '../../connectionLabel';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderDisplayInfo>;
@@ -20,14 +21,6 @@ const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
   missing: 'neutral',
   error: 'danger',
   unknown: 'neutral',
-};
-
-const STATUS_LABEL: Record<ProviderConnectionState, string> = {
-  connected: 'connected',
-  installed_disconnected: 'installed',
-  missing: 'not installed',
-  error: 'error',
-  unknown: 'checking',
 };
 
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
@@ -63,8 +56,8 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
         const subtitle = isOutdated
           ? 'update needed'
           : p.connection === 'connected'
-            ? (p.identity ?? STATUS_LABEL.connected)
-            : STATUS_LABEL[p.connection];
+            ? (p.identity ?? PROVIDER_CONNECTION_LABEL.connected)
+            : PROVIDER_CONNECTION_LABEL[p.connection];
         return (
           <li key={id}>
             <StatusRailItem
