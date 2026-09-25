@@ -53,7 +53,11 @@ describe('CONCEPT_ICONS', () => {
 
 describe('ICON_SIZE', () => {
   it('exposes exactly the three sizes the app draws with', () => {
-    expect(ICON_SIZE).toEqual({ row: 13, control: 14, hero: 18 });
+    expect(ICON_SIZE).toEqual({ row: 12, control: 14, hero: 18 });
+  });
+
+  it('keeps every size even so a glyph centres on whole pixels in an even badge', () => {
+    expect(Object.values(ICON_SIZE).filter((size) => size % 2 !== 0)).toEqual([]);
   });
 });
 

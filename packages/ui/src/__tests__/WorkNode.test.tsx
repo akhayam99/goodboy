@@ -170,4 +170,24 @@ describe('WorkNode', () => {
     expect(node.className).toContain('ring-warning/20');
     expect(node.textContent).toBe('P');
   });
+
+  it('centres the glyph on both axes in a full box, off the text baseline', () => {
+    render(<WorkNode state="done" mark={{ kind: 'dot' }} label="Done" />);
+
+    const node = nodeOf('Done');
+    const glyph = screen.getByTestId('work-node-glyph');
+    expect(node.className).toContain('items-center');
+    expect(node.className).toContain('justify-center');
+    expect(glyph.className.split(' ')).toEqual(
+      expect.arrayContaining([
+        'flex',
+        'size-full',
+        'items-center',
+        'justify-center',
+        'leading-none',
+        '[&_svg]:block',
+      ]),
+    );
+    expect(glyph.className).not.toContain('inline-flex');
+  });
 });

@@ -34,9 +34,14 @@ Three tokens, exported from `conceptIcons.ts`:
 
 | Token               | px  | Use                                                    |
 | ------------------- | --- | ------------------------------------------------------ |
-| `ICON_SIZE.row`     | 13  | Leading and trailing glyphs inside list and table rows |
+| `ICON_SIZE.row`     | 12  | Leading and trailing glyphs inside list and table rows |
 | `ICON_SIZE.control` | 14  | Buttons, menu triggers, rail tabs, form adornments     |
 | `ICON_SIZE.hero`    | 18  | Empty states, studio headers, choice tiles             |
+
+Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
+`WorkNode` at 20 px), so an odd glyph lands on a half pixel and looks off
+centre. `WorkNode` centres its glyph in a full-size flex box with no line
+height, and draws the svg as a block so it never sits on a text baseline.
 
 Sizes below the row token (8 to 11 px) stay as plain numbers. They belong to
 chips, badges and status dots, where the glyph is a mark inside a shape, not a

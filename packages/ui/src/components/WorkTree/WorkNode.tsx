@@ -78,7 +78,11 @@ export const WorkNode = ({
     style={{ width: WORK_NODE_SIZE, height: WORK_NODE_SIZE }}
   >
     {ringOf({ state, progress })}
-    <span aria-hidden className="relative inline-flex items-center justify-center">
+    <span
+      aria-hidden
+      data-testid="work-node-glyph"
+      className="relative flex size-full items-center justify-center leading-none [&_svg]:block [&_svg]:shrink-0"
+    >
       <WorkNodeCenter
         state={state}
         mark={mark}

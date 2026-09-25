@@ -87,7 +87,7 @@ import {
 } from '@goodboy/ui';
 
 export const ICON_SIZE = {
-  row: 13,
+  row: 12,
   control: 14,
   hero: 18,
 } as const;
