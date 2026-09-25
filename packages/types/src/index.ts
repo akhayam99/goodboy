@@ -47,6 +47,9 @@ export type {
   SessionMount,
   SessionMountView,
   SessionProjectMount,
+  WorktreeLedgerEntry,
+  WorktreeRoot,
+  WorktreeRootSource,
 } from './mount';
 export type {
   PrSeries,

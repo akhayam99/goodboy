@@ -9,7 +9,28 @@ const {
   markRetainedWorktreePathChecked,
   scanOrphanWorktrees,
   worktreeDirectorySize,
+  listWorktreeRoots,
+  listWorktreeLedger,
+  markWorktreeRootScanned,
+  registerWorktreeRoot,
+  deleteWorktreeLedgerEntries,
+  recordOrphanWorktrees,
+  worktreeFolderFacts,
 } = vi.hoisted(() => ({
+  listWorktreeRoots: vi.fn(async (): Promise<ReadonlyArray<Record<string, unknown>>> => []),
+  listWorktreeLedger: vi.fn(async (): Promise<ReadonlyArray<Record<string, unknown>>> => []),
+  markWorktreeRootScanned: vi.fn(async () => undefined),
+  registerWorktreeRoot: vi.fn(async () => undefined),
+  deleteWorktreeLedgerEntries: vi.fn(
+    async (_params: { ids: ReadonlyArray<string> }): Promise<void> => undefined,
+  ),
+  recordOrphanWorktrees: vi.fn(
+    async (_params: { orphans: ReadonlyArray<Record<string, unknown>> }): Promise<void> =>
+      undefined,
+  ),
+  worktreeFolderFacts: vi.fn(async ({ requests }: { requests: ReadonlyArray<{ path: string }> }) =>
+    requests.map((request) => ({ path: request.path, branch: 'goodboy/ghost' })),
+  ),
   listMountPathOwnership: vi.fn(async () => [
     {
       mountId: 'mount-live',
@@ -63,11 +84,18 @@ vi.mock('@goodboy/db', () => ({
   detachSessionMounts,
   deleteRetainedWorktreePath,
   markRetainedWorktreePathChecked,
+  listWorktreeRoots,
+  listWorktreeLedger,
+  markWorktreeRootScanned,
+  registerWorktreeRoot,
+  deleteWorktreeLedgerEntries,
+  recordOrphanWorktrees,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   scanOrphanWorktrees,
   worktreeDirectorySize,
+  worktreeFolderFacts,
 }));
 
 import { reconcileOrphanWorktrees } from './reconcileOrphanWorktrees';
@@ -94,6 +122,8 @@ const run = async (store: Store) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  listWorktreeRoots.mockResolvedValue([]);
+  listWorktreeLedger.mockResolvedValue([]);
   listAllRetainedWorktreePaths.mockResolvedValue([]);
   listUnsettledMountOperations.mockResolvedValue([]);
   listMountPathOwnership.mockResolvedValue([
@@ -275,6 +305,87 @@ describe('reconciling the worktrees folder', () => {
     expect(scanOrphanWorktrees.mock.calls[0]?.[0]).toMatchObject({
       knownPaths: expect.arrayContaining(['/repo/.goodboy/worktrees/gb-unreadable']),
     });
+  });
+
+  it('registers the roots of repository projects and records their orphans in the ledger', async () => {
+    const store = makeStore('repo');
+
+    await run(store);
+
+    expect(registerWorktreeRoot).toHaveBeenCalledWith({
+      db: {},
+      repoRoot: '/repo',
+      addedBy: 'project',
+    });
+    expect(recordOrphanWorktrees.mock.calls[0]?.[0].orphans).toEqual([
+      {
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
+        branch: 'goodboy/ghost',
+        workspaceId: 'ws-1',
+        projectId: 'project-1',
+        sizeBytes: 4096,
+      },
+    ]);
+    expect(markWorktreeRootScanned).toHaveBeenCalledWith(
+      expect.objectContaining({ repoRoot: '/repo' }),
+    );
+  });
+
+  it('scans the root of a disconnected project and keeps it out of the workspace list', async () => {
+    listWorktreeRoots.mockResolvedValue([
+      {
+        repoRoot: '/relay',
+        firstSeenAt: '2026-01-01T00:00:00.000Z',
+        lastScannedAt: null,
+        addedBy: 'project',
+        projectId: 'project-relay',
+        projectName: 'notify-relay',
+        workspaceId: 'ws-2',
+        workspaceName: 'Northwind',
+        isDisconnected: true,
+      },
+    ]);
+    const store = makeStore('folder');
+
+    await run(store);
+
+    expect(scanOrphanWorktrees).toHaveBeenCalledWith(
+      expect.objectContaining({ repoPath: '/relay' }),
+    );
+    expect(recordOrphanWorktrees.mock.calls[0]?.[0].orphans[0]).toMatchObject({
+      repoRoot: '/relay',
+      workspaceId: 'ws-2',
+      projectId: 'project-relay',
+    });
+    expect(store.orphanWorktrees).toEqual({});
+  });
+
+  it('drops a ledger orphan whose folder is gone and never looks up a known one again', async () => {
+    listWorktreeLedger.mockResolvedValue([
+      {
+        id: 'stale',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/gb-vanished',
+        reason: 'orphan',
+        workspaceId: null,
+        sourceSessionId: null,
+      },
+      {
+        id: 'known',
+        repoRoot: '/repo',
+        worktreePath: '/repo/.goodboy/worktrees/gb-ghost',
+        reason: 'orphan',
+        workspaceId: 'ws-1',
+        sourceSessionId: null,
+      },
+    ]);
+    const store = makeStore('repo');
+
+    await run(store);
+
+    expect(deleteWorktreeLedgerEntries.mock.calls[0]?.[0].ids).toEqual(['stale']);
+    expect(worktreeFolderFacts).toHaveBeenCalledWith({ requests: [] });
   });
 
   it('leaves a folder-backed workspace alone', async () => {

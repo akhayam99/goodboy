@@ -104,8 +104,8 @@ describe('transferMountPathToRetained', () => {
     await db.execute(
       `INSERT INTO retained_worktree_paths
         (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
-         worktree_path, branch, reason, last_checked_at, created_at, updated_at)
-       VALUES ('older', ?, NULL, ?, ?, '/repo', '/worktrees/mount', 'feature', 'unmount', NULL, 1, 1)`,
+         worktree_path, branch, reason, last_checked_at, first_seen_at, created_at, updated_at)
+       VALUES ('older', ?, NULL, ?, ?, '/repo', '/worktrees/mount', 'feature', 'unmount', NULL, 1, 1, 1)`,
       [workspaceId, sessionId, mountId],
     );
 

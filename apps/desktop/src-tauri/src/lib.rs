@@ -42,6 +42,7 @@ mod session_dir;
 mod settings_overrides;
 mod skills;
 mod slack;
+mod storage;
 mod summarize;
 mod terminal;
 mod turn;
@@ -216,6 +217,8 @@ pub fn run() {
             worktree::worktree_tidy_goodboy,
             worktree::worktree_orphans,
             worktree::worktree_folder_remove,
+            storage::worktree_folder_facts,
+            storage::disk_free,
             worktree::worktree_list,
             worktree::worktree_remote_url,
             worktree::worktree_diff,

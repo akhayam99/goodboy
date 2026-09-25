@@ -8,6 +8,7 @@ import type {
   WorktreeDiffScope,
   WorktreeInspection,
   WorktreeRemovalMode,
+  WorktreeRemovalReason,
   WorktreeRemovalResult,
   WorktreeStatus,
 } from '@goodboy/types';
@@ -327,6 +328,49 @@ export const removeWorktreeFolder = async ({
   mode,
 }: RemoveWorktreeFolderParams): Promise<WorktreeRemovalResult> => {
   return invoke<WorktreeRemovalResult>('worktree_folder_remove', { repoPath, path, mode });
+};
+
+export type WorktreeFolderFacts = {
+  readonly path: string;
+  readonly exists: boolean;
+  readonly isRegistered: boolean;
+  readonly branch: string | null;
+  readonly lastCommitAt: number | null;
+  readonly localOnlyCommits: number | null;
+  readonly changedFiles: number;
+  readonly changedSample: string | null;
+  readonly reasons: ReadonlyArray<WorktreeRemovalReason>;
+};
+
+export type WorktreeFolderFactsRequest = {
+  readonly repoRoot: string;
+  readonly path: string;
+};
+
+type WorktreeFolderFactsParams = {
+  readonly requests: ReadonlyArray<WorktreeFolderFactsRequest>;
+};
+
+export const worktreeFolderFacts = async ({
+  requests,
+}: WorktreeFolderFactsParams): Promise<ReadonlyArray<WorktreeFolderFacts>> => {
+  if (requests.length === 0) {
+    return [];
+  }
+  return invoke<ReadonlyArray<WorktreeFolderFacts>>('worktree_folder_facts', { requests });
+};
+
+export type DiskFree = {
+  readonly freeBytes: number | null;
+  readonly totalBytes: number | null;
+};
+
+type DiskFreeParams = {
+  readonly path: string;
+};
+
+export const diskFree = async ({ path }: DiskFreeParams): Promise<DiskFree> => {
+  return invoke<DiskFree>('disk_free', { path });
 };
 
 export type WorktreeEntry = {

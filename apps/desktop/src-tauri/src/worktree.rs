@@ -910,7 +910,7 @@ fn registered_worktrees_with(
     Ok(parse_registered_worktrees(&output))
 }
 
-fn canonical_path(path: &Path) -> Option<PathBuf> {
+pub(crate) fn canonical_path(path: &Path) -> Option<PathBuf> {
     std::fs::canonicalize(path).ok()
 }
 
@@ -1255,7 +1255,7 @@ pub async fn worktree_detach_assessment(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn local_only_commit_count(cwd: &Path) -> Option<u32> {
+pub(crate) fn local_only_commit_count(cwd: &Path) -> Option<u32> {
     git(cwd, &["rev-list", "--count", "HEAD", "--not", "--remotes"])
         .ok()
         .and_then(|raw| raw.trim().parse::<u32>().ok())
@@ -1579,11 +1579,22 @@ fn directory_size(path: &Path) -> (Option<u64>, bool) {
             continue;
         }
         match entry.metadata() {
-            Ok(meta) => total = total.saturating_add(meta.len()),
+            Ok(meta) => total = total.saturating_add(allocated_bytes(&meta)),
             Err(_) => is_partial = true,
         }
     }
     (Some(total), is_partial)
+}
+
+#[cfg(unix)]
+pub(crate) fn allocated_bytes(meta: &std::fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    meta.blocks().saturating_mul(512)
+}
+
+#[cfg(not(unix))]
+pub(crate) fn allocated_bytes(meta: &std::fs::Metadata) -> u64 {
+    meta.len()
 }
 
 fn worktree_directory_size_blocking(path: String) -> WorktreeDirectorySize {
@@ -1722,7 +1733,7 @@ fn kept_folder(path: &Path, reason: WorktreeRemovalReason) -> WorktreeRemovalRes
     }
 }
 
-fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
+pub(crate) fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
     let repo = canonical_path(repo_path)?;
     let parent = canonical_path(&worktrees_parent(repo_path))?;
     parent.starts_with(&repo).then_some(parent)
@@ -3139,7 +3150,7 @@ pub(crate) fn read_working_tree(cwd: &Path) -> GitWorkingTree {
     parse_working_tree(&raw)
 }
 
-fn parse_working_tree(raw: &str) -> GitWorkingTree {
+pub(crate) fn parse_working_tree(raw: &str) -> GitWorkingTree {
     let mut staged = 0u32;
     let mut unstaged = 0u32;
     let mut untracked = 0u32;
@@ -3408,7 +3419,7 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     String::from_utf8(output.stdout).map_err(|_| WorktreeError::InvalidUtf8)
 }
 
-fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
+pub(crate) fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
     let mut entries = Vec::new();
     let mut is_first = true;
 
@@ -4799,7 +4810,7 @@ mod changed_files_tests {
 #[cfg(test)]
 mod teardown_tests {
     use super::{
-        collect_orphans, inspect_worktree_with, remove_worktree_checked_leased,
+        allocated_bytes, collect_orphans, inspect_worktree_with, remove_worktree_checked_leased,
         remove_worktree_checked_with, remove_worktree_folder_with,
         worktree_detach_assessment_blocking, worktree_directory_size_blocking, BranchIntegration,
         WorktreeDetachAssessment, WorktreeError, WorktreeInspection, WorktreeRemovalMode,
@@ -5212,7 +5223,7 @@ mod teardown_tests {
             found.iter().map(|o| o.name.as_str()).collect::<Vec<_>>(),
             vec!["gb-ghost", "gb-live"]
         );
-        assert_eq!(found[0].size_bytes, 4096);
+        assert!(found[0].size_bytes >= 4096);
         assert!(!found[0].is_registered);
         assert!(found[1].is_registered);
         assert!(orphan.exists());
@@ -5234,9 +5245,31 @@ mod teardown_tests {
 
         let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
 
-        assert_eq!(result.size_bytes, Some(35));
+        let expected = [
+            target.join("one.bin"),
+            target.join("nested").join("two.bin"),
+        ]
+        .iter()
+        .map(|file| allocated_bytes(&std::fs::metadata(file).unwrap()))
+        .sum::<u64>();
+        assert_eq!(result.size_bytes, Some(expected));
+        assert!(expected >= 35);
         assert!(!result.is_partial);
         assert!(result.exists);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn directory_size_counts_allocated_blocks_so_sparse_files_stay_small() {
+        let root = temp_root("directory-size-sparse");
+        let target = root.join("target");
+        std::fs::create_dir_all(&target).unwrap();
+        let sparse = std::fs::File::create(target.join("sparse.bin")).unwrap();
+        sparse.set_len(64 * 1024 * 1024).unwrap();
+
+        let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
+
+        assert!(result.size_bytes.unwrap() < 64 * 1024 * 1024);
     }
 
     #[test]
@@ -5290,7 +5323,8 @@ mod teardown_tests {
         let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
 
         std::fs::set_permissions(&unreadable, std::fs::Permissions::from_mode(0o700)).unwrap();
-        assert_eq!(result.size_bytes, Some(17));
+        let readable = allocated_bytes(&std::fs::metadata(target.join("readable.bin")).unwrap());
+        assert_eq!(result.size_bytes, Some(readable));
         assert!(result.is_partial);
         assert!(result.exists);
     }

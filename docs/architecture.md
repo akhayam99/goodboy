@@ -142,7 +142,11 @@ Everything the app saves for itself lives in `~/.goodboy`.
 
 When a session works on a repository, it gets its own git worktree in the
 repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
-can have several worktrees of the same project.
+can have several worktrees of the same project. The `worktree_roots` table
+remembers every repository that ever held one, even after its project or
+workspace is gone, and the storage scan only ever looks inside
+`<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
+the way Finder's "size on disk" does.
 
 Two things live next to your code instead of in `~/.goodboy`. A folder
 project keeps its session folders in `<project-root>/sessions/`. Skills live
