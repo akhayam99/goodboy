@@ -36,3 +36,7 @@
 .artifact-prose-measure {
   max-width: 680px;
 }
+.artifact-prose :where([data-tone='summary'], [data-tone='goal']) [data-block='callout-body'] {
+  font-size: var(--text-lg);
+  line-height: 28px;
+}

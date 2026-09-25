@@ -21,7 +21,9 @@ export const ReportTile = ({ sessionId, className, onOpen }: Props) => {
 
   return (
     <ActionTile
-      icon={<CONCEPT_ICONS.changelog size={ICON_SIZE.hero} aria-hidden className="text-info" />}
+      icon={
+        <CONCEPT_ICONS.report size={ICON_SIZE.hero} aria-hidden className="text-muted-foreground" />
+      }
       title="Create report"
       description={reportCreationAdapter.ctaTitle}
       testId="create-report-cta"

@@ -208,6 +208,13 @@ concept cannot get an icon without a tone, or a tone without an icon.
   is `danger` because it is errors. `terminal` and `settings` are `neutral`
   because they are plumbing. Giving a concept a new color changes what it
   claims.
+- **On an artifact, colour says the state, never the kind.** `plan`, `report`
+  and `wireframe` are `neutral`: the glyph and the word name the kind. A plan
+  nobody ran is `warning` (the next click is yours), one that ran is `success`,
+  a replaced or discarded one is `neutral`, and `merged` never appears on an
+  artifact. In the report kit, `decision`, `summary`, `goal` and `note` are
+  neutral structure, `risk` and `question` are `warning`. A kit callout is a
+  neutral surface with a tone rail and a toned icon, never a tinted fill.
 
 Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `draft`, `neutral`). Each one resolves through the single accessor

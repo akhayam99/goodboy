@@ -16,6 +16,7 @@ import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
 import { WireframeCanvasControls } from './WireframeCanvasControls';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
+import { WireframeFlowLegend } from './WireframeFlowLegend';
 import { WireframeScreenTabs } from './WireframeScreenTabs';
 import { useWireframeNavigation } from './useWireframeNavigation';
 
@@ -211,9 +212,12 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
       <WireframeAdjustments adjustments={adjustments} />
       <Divider />
       <div className={cn('flex min-w-0 flex-col gap-2')}>
-        <h2>
-          <Eyebrow label="Flow" />
-        </h2>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <h2>
+            <Eyebrow label="Flow" />
+          </h2>
+          <WireframeFlowLegend />
+        </div>
         <WireframeFlowOverview
           document={document}
           index={index}

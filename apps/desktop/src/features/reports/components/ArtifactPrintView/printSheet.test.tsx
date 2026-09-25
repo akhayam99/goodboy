@@ -245,9 +245,7 @@ describe('print sheet styling', () => {
     expect(SHEET_CSS).toMatch(
       /\[data-block='chip'\] \{[^}]*background: color-mix\(in srgb, var\(--print-tone\) 12%/,
     );
-    expect(SHEET_CSS).toMatch(
-      /\[data-block='callout'\] \{[^}]*background: color-mix\(in srgb, var\(--print-tone\) 6%/,
-    );
+    expect(SHEET_CSS).toMatch(/\[data-block='callout'\] \{[^}]*background: var\(--print-wash\)/);
     expect(SHEET_CSS).toMatch(
       /\[data-block='callout'\] \{[^}]*border-left: 1\.5pt solid var\(--print-tone\)/,
     );

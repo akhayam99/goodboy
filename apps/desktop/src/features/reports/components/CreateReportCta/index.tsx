@@ -38,7 +38,7 @@ export const CreateReportCta = ({
       title={title ?? reportCreationAdapter.ctaTitle}
       onClick={open}
     >
-      <CONCEPT_ICONS.changelog size={ICON_SIZE.row} aria-hidden />
+      <CONCEPT_ICONS.report size={ICON_SIZE.row} aria-hidden />
       Create report
     </Button>
   );

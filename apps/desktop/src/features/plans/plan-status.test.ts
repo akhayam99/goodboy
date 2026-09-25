@@ -5,15 +5,22 @@ import { PLAN_STATUS_PRESENTATION, describePlanStatus } from './plan-status';
 const STATUSES = Object.keys(PLAN_STATUS_PRESENTATION) as ReadonlyArray<PlanStatus>;
 
 describe('describePlanStatus', () => {
-  it('stops a healthy active plan from wearing the attention colour', () => {
-    expect(describePlanStatus({ status: 'active' }).tone).toBe('info');
+  it('asks for the next click on a plan nobody ran yet, never the running blue', () => {
+    const ready = describePlanStatus({ status: 'active' });
+    expect(ready.label).toBe('Ready to run');
+    expect(ready.tone).toBe('warning');
   });
 
-  it('raises attention only when the plan is blocked on an answer', () => {
-    const blocked = describePlanStatus({ status: 'active', openQuestionCount: 2 });
+  it('says a plan ran with the success tone, never the merged purple of pull requests', () => {
+    const ran = describePlanStatus({ status: 'consumed' });
+    expect(ran.label).toBe('Ran');
+    expect(ran.tone).toBe('success');
+  });
 
+  it('raises attention when the plan is blocked on an answer', () => {
+    const blocked = describePlanStatus({ status: 'active', openQuestionCount: 2 });
     expect(blocked.tone).toBe('warning');
-    expect(blocked.label).toBe('needs you');
+    expect(blocked.label).toBe('Needs you');
     expect(blocked.reason).toContain('open questions');
   });
 
@@ -23,19 +30,15 @@ describe('describePlanStatus', () => {
     );
   });
 
-  it('separates a plan that ran from one that was dropped', () => {
-    const consumed = describePlanStatus({ status: 'consumed' });
-    const discarded = describePlanStatus({ status: 'discarded' });
-
-    expect(consumed.tone).not.toBe(discarded.tone);
-    expect(consumed.icon).not.toBe(discarded.icon);
-    expect(consumed.reason).not.toBe(discarded.reason);
+  it('keeps replaced and discarded plans neutral', () => {
+    expect(describePlanStatus({ status: 'superseded' }).tone).toBe('neutral');
+    expect(describePlanStatus({ status: 'discarded' }).tone).toBe('neutral');
   });
 
-  it('gives every status a label and a reason', () => {
+  it('uses no borrowed tone on any status', () => {
     for (const status of STATUSES) {
       const presentation = describePlanStatus({ status });
-      expect(presentation.label.length, status).toBeGreaterThan(0);
+      expect(['info', 'merged', 'primary', 'danger']).not.toContain(presentation.tone);
       expect(presentation.reason.length, status).toBeGreaterThan(0);
     }
   });

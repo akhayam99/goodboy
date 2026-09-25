@@ -48,6 +48,27 @@ export type FlowEdgeKind = 'step' | 'skip' | 'back' | 'self';
 
 export type FlowEdgeRole = 'spine' | 'branch' | 'skip' | 'back' | 'self';
 
+const QUIET_PAINT = {
+  line: 'stroke-muted-foreground/60',
+  head: 'fill-muted-foreground/60',
+  plate: 'fill-background stroke-border/60',
+  ink: 'fill-muted-foreground',
+} as const;
+
+export const FLOW_EDGE_GLYPH = {
+  step: null,
+  skip: null,
+  back: '\u21a9',
+  self: '\u21bb',
+} as const satisfies Record<FlowEdgeKind, string | null>;
+
+const FLOW_EDGE_DASH = {
+  step: undefined,
+  skip: undefined,
+  back: '4 4',
+  self: '1.5 3',
+} as const satisfies Record<FlowEdgeKind, string | undefined>;
+
 const EDGE_PAINT = {
   spine: {
     line: 'stroke-muted-foreground/85',
@@ -61,24 +82,9 @@ const EDGE_PAINT = {
     plate: 'fill-background stroke-border/60',
     ink: 'fill-muted-foreground',
   },
-  skip: {
-    line: 'stroke-info/75',
-    head: 'fill-info/75',
-    plate: 'fill-background stroke-info/40',
-    ink: 'fill-info',
-  },
-  back: {
-    line: 'stroke-warning/75',
-    head: 'fill-warning/75',
-    plate: 'fill-background stroke-warning/40',
-    ink: 'fill-warning',
-  },
-  self: {
-    line: 'stroke-merged/75',
-    head: 'fill-merged/75',
-    plate: 'fill-background stroke-merged/40',
-    ink: 'fill-merged',
-  },
+  skip: QUIET_PAINT,
+  back: QUIET_PAINT,
+  self: QUIET_PAINT,
 } as const satisfies Record<
   FlowEdgeRole,
   Readonly<Record<'line' | 'head' | 'plate' | 'ink', string>>
@@ -88,6 +94,7 @@ const EDGE_ROLES = ['spine', 'branch', 'skip', 'back', 'self'] as const;
 
 export type FlowLabel = Readonly<{
   text: string;
+  glyph: string | null;
   full: string | null;
   x: number;
   y: number;
@@ -179,6 +186,16 @@ const fitText = ({
 
 const plateWidthOf = ({ text }: { readonly text: string }): number =>
   Math.round(text.length * LABEL_CHAR_WIDTH + LABEL_PAD_X * 2);
+
+const GLYPH_WIDTH = LABEL_CHAR_WIDTH * 2;
+
+const labelWidthOf = ({
+  text,
+  kind,
+}: {
+  readonly text: string;
+  readonly kind: FlowEdgeKind;
+}): number => plateWidthOf({ text }) + (FLOW_EDGE_GLYPH[kind] === null ? 0 : GLYPH_WIDTH);
 
 const cutBackEdges = ({
   screenIds,
@@ -886,7 +903,7 @@ export const buildFlowLayout = ({
     const spans = inLane.map((edge) => {
       const risers = riserByKey.get(edge.key) ?? { near: 0, far: 0 };
       const fitted = laneLabels.get(edge.key);
-      const width = fitted === undefined ? 0 : plateWidthOf({ text: fitted.text });
+      const width = fitted === undefined ? 0 : labelWidthOf({ text: fitted.text, kind: edge.kind });
       const center = (risers.near + risers.far) / 2;
 
       return {
@@ -944,6 +961,7 @@ export const buildFlowLayout = ({
               ? null
               : {
                   text: fitted.text,
+                  glyph: FLOW_EDGE_GLYPH[edge.kind],
                   full: fitted.full,
                   x: Math.round(plateCenter - width / 2),
                   y: plateTop,
@@ -966,10 +984,10 @@ export const buildFlowLayout = ({
           ? undefined
           : fitText({
               text: edge.label,
-              maxWidth: BOX_WIDTH - LABEL_PAD_X * 2,
+              maxWidth: BOX_WIDTH - LABEL_PAD_X * 2 - GLYPH_WIDTH,
               charWidth: LABEL_CHAR_WIDTH,
             });
-      const width = fitted === undefined ? 0 : plateWidthOf({ text: fitted.text });
+      const width = fitted === undefined ? 0 : labelWidthOf({ text: fitted.text, kind: edge.kind });
 
       return [
         {
@@ -988,6 +1006,7 @@ export const buildFlowLayout = ({
               ? null
               : {
                   text: fitted.text,
+                  glyph: FLOW_EDGE_GLYPH[edge.kind],
                   full: fitted.full,
                   x: Math.round(box.x + box.width / 2 - width / 2),
                   y: laneY - LABEL_LIFT - LABEL_HEIGHT,
@@ -1010,7 +1029,7 @@ export const buildFlowLayout = ({
       to,
     ];
     const fitted = laneLabels.get(edge.key);
-    const width = fitted === undefined ? 0 : plateWidthOf({ text: fitted.text });
+    const width = fitted === undefined ? 0 : labelWidthOf({ text: fitted.text, kind: edge.kind });
     const plateY = edge.kind === 'skip' ? laneY - LABEL_LIFT - LABEL_HEIGHT : laneY + LABEL_LIFT;
 
     return [
@@ -1030,6 +1049,7 @@ export const buildFlowLayout = ({
             ? null
             : {
                 text: fitted.text,
+                glyph: FLOW_EDGE_GLYPH[edge.kind],
                 full: fitted.full,
                 x: Math.round((risers.near + risers.far) / 2 - width / 2),
                 y: plateY,
@@ -1113,7 +1133,7 @@ export const WireframeFlowOverview = ({
             className={EDGE_PAINT[edge.role].line}
             strokeWidth={edge.role === 'spine' ? 1.5 : 1.25}
             strokeLinecap="round"
-            strokeDasharray={edge.kind === 'back' ? '4 4' : undefined}
+            strokeDasharray={FLOW_EDGE_DASH[edge.kind]}
             markerEnd={`url(#wireframe-flow-arrow-${edge.role})`}
           />
         ))}
@@ -1173,6 +1193,9 @@ export const WireframeFlowOverview = ({
                 textAnchor="middle"
                 className={cn('text-3xs', EDGE_PAINT[edge.role].ink)}
               >
+                {edge.label.glyph === null ? null : (
+                  <tspan aria-hidden>{`${edge.label.glyph} `}</tspan>
+                )}
                 {edge.label.text}
                 {edge.label.full === null ? null : <title>{edge.label.full}</title>}
               </text>

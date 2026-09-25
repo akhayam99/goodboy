@@ -1,35 +1,16 @@
 import type { ArtifactKind, ArtifactStatus } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
+import { PLAN_STATUS_PRESENTATION } from '../plans/plan-status';
 import type { StatePresentation } from '../../shared/utils/statePresentation';
 
 export const ARTIFACT_STATUS_PRESENTATION = {
-  active: {
-    label: 'Active',
-    reason: 'the current revision of this artifact',
-    tone: 'info',
-    icon: CONCEPT_ICONS.plans,
-  },
-  consumed: {
-    label: 'Used',
-    reason: 'an agent already executed it',
-    tone: 'merged',
-    icon: CONCEPT_ICONS.runDone,
-  },
-  superseded: {
-    label: 'Superseded',
-    reason: 'a newer revision replaced it',
-    tone: 'neutral',
-    icon: CONCEPT_ICONS.changelog,
-  },
+  superseded: PLAN_STATUS_PRESENTATION.superseded,
   discarded: {
     label: 'Discarded',
     reason: 'dropped, kept for reference only',
     tone: 'neutral',
-    icon: CONCEPT_ICONS.runCancelled,
+    icon: PLAN_STATUS_PRESENTATION.discarded.icon,
   },
-} satisfies Record<ArtifactStatus, StatePresentation>;
-
-const PLAN_LIFECYCLE_STATUSES: ReadonlyArray<ArtifactStatus> = ['active', 'consumed'];
+} satisfies Record<Exclude<ArtifactStatus, 'active' | 'consumed'>, StatePresentation>;
 
 export const describeArtifactStatus = ({
   kind,
@@ -39,9 +20,12 @@ export const describeArtifactStatus = ({
   readonly status: ArtifactStatus;
 }): StatePresentation | null => {
   if (kind === 'plan') {
-    return ARTIFACT_STATUS_PRESENTATION[status];
+    return PLAN_STATUS_PRESENTATION[status];
   }
-  return PLAN_LIFECYCLE_STATUSES.includes(status) ? null : ARTIFACT_STATUS_PRESENTATION[status];
+  if (status === 'active' || status === 'consumed') {
+    return null;
+  }
+  return ARTIFACT_STATUS_PRESENTATION[status];
 };
 
 export const ARTIFACT_KIND_LABEL: Record<ArtifactKind, string> = {

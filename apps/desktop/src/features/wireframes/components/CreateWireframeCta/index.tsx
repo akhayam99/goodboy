@@ -1,8 +1,7 @@
-import { LayoutTemplate } from 'lucide-react';
 import { ActionTile, Button, cn } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { wireframeCreationAdapter } from '../../wireframeCreationAdapter';
 
 type CreateWireframeCtaVariant = 'compact' | 'tile';
@@ -30,7 +29,13 @@ export const CreateWireframeCta = ({
   if (variant === 'tile') {
     return (
       <ActionTile
-        icon={<LayoutTemplate size={ICON_SIZE.hero} aria-hidden className="text-primary" />}
+        icon={
+          <CONCEPT_ICONS.wireframe
+            size={ICON_SIZE.hero}
+            aria-hidden
+            className="text-muted-foreground"
+          />
+        }
         title="Create wireframe"
         description={WIREFRAME_TILE_DESCRIPTION}
         testId="create-wireframe-cta"
@@ -49,7 +54,7 @@ export const CreateWireframeCta = ({
       title={title ?? wireframeCreationAdapter.ctaTitle}
       onClick={open}
     >
-      <LayoutTemplate size={ICON_SIZE.row} aria-hidden />
+      <CONCEPT_ICONS.wireframe size={ICON_SIZE.row} aria-hidden />
       Create wireframe
     </Button>
   );
