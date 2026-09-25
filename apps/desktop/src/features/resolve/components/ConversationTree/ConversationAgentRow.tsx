@@ -57,6 +57,12 @@ export const ConversationAgentRow = ({ row, now, onOpenCommit }: Props) => {
             </button>
           </Tooltip>
         )}
+        {result.link !== undefined && (
+          <span className="shrink-0 text-faint-foreground">
+            · {result.link.label}{' '}
+            <span className="font-mono tabular-nums">{shortSha({ sha: result.link.sha })}</span>
+          </span>
+        )}
         {result.sha !== null && result.isPushed && (
           <span className="shrink-0 text-faint-foreground">on origin</span>
         )}

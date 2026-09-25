@@ -369,6 +369,18 @@ opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 
+- Goodboy reads what the commit is from git, not from the agent. A commit whose
+  subject is `fixup! <subject>` of a commit on the branch shows as
+  `Fixed in 9e8d7c6 · fixup of 3a1f9c2`. A revision that rewrote an earlier fix
+  shows `Fixed in 7c1e0aa · replaces 4f21c8b`
+- With the fixup commit style, Goodboy blames the commented line and asks the
+  agent for `git commit --fixup=<sha>` of the commit that introduced it. The
+  default is a new commit for every fix. Goodboy never squashes or force-pushes
+- Approving a fix fast-forwards the branch to it. When the branch moved on
+  since the fix started, the fix is cherry-picked onto the new head and that
+  commit becomes the sha on the branch. If it no longer applies, the pick is
+  aborted and the branch stays as it was
+
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
   suggestion. Each carries the thread ids and the marker contract. The click

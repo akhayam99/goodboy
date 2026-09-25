@@ -9,6 +9,7 @@ export const RESOLVER_KICKOFF_LABELS = {
   replyFrom: /^- reply from (.+):$/,
   quote: '>',
   instructions: 'What to do',
+  commitStyle: 'How to commit',
   reporting: 'How to report each thread',
   replyContract: 'Reply contract',
   priorWork: 'What already happened',

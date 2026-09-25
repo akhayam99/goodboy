@@ -137,6 +137,25 @@ export const setResolveThreadStage = async ({
   );
 };
 
+type CommitLinksParams = ListParams & {
+  readonly threadId: string;
+  readonly fixupOfSha: string | null;
+  readonly replacesSha: string | null;
+};
+
+export const setResolveThreadCommitLinks = async ({
+  db,
+  sessionId,
+  threadId,
+  fixupOfSha,
+  replacesSha,
+}: CommitLinksParams): Promise<void> => {
+  await db.execute(
+    'UPDATE resolve_threads SET fixup_of_sha = ?, replaces_sha = ? WHERE session_id = ? AND thread_id = ?',
+    [fixupOfSha, replacesSha, sessionId, threadId],
+  );
+};
+
 export const setResolveThreadReplyDraft = async ({
   db,
   sessionId,

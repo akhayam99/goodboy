@@ -372,6 +372,7 @@ export {
   listResolveThreads,
   setResolveThreadReplyDraft,
   setResolveThreadStage,
+  setResolveThreadCommitLinks,
   setResolveThreadState,
   upsertResolveThread,
 } from './queries/resolve-thread';

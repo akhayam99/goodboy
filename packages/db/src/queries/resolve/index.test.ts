@@ -11,7 +11,12 @@ import type {
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../../test-helpers/test-db';
 import { migrate } from '../../migrations/runner';
-import { listResolveThreads, setResolveThreadState, upsertResolveThread } from '../resolve-thread';
+import {
+  listResolveThreads,
+  setResolveThreadCommitLinks,
+  setResolveThreadState,
+  upsertResolveThread,
+} from '../resolve-thread';
 import {
   insertResolveAttempt,
   listActiveResolveAttempts,
@@ -89,6 +94,34 @@ describe('durable resolve rows', () => {
     expect((await listResolveThreads({ db, sessionId: SESSION }))[0]).toMatchObject({
       revision: 1,
       replyDraft: 'Racing write',
+    });
+  });
+
+  it('round trips the commit links and sets them without a new revision', async () => {
+    const db = await seed();
+    await migrate(db);
+    await upsertResolveThread({
+      db,
+      row: { ...row, fixupOfSha: '3a1f9c2', replacesSha: null },
+      expectedRevision: null,
+    });
+    expect((await listResolveThreads({ db, sessionId: SESSION }))[0]).toMatchObject({
+      fixupOfSha: '3a1f9c2',
+      replacesSha: null,
+    });
+
+    await setResolveThreadCommitLinks({
+      db,
+      sessionId: SESSION,
+      threadId: 'PRRT_1',
+      fixupOfSha: null,
+      replacesSha: '4f21c8b',
+    });
+
+    expect((await listResolveThreads({ db, sessionId: SESSION }))[0]).toMatchObject({
+      revision: 0,
+      fixupOfSha: null,
+      replacesSha: '4f21c8b',
     });
   });
 

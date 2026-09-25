@@ -196,11 +196,42 @@ const priorContextBlock = ({
   return lines;
 };
 
+export type ResolveCommitStyle = 'new' | 'fixup';
+
+export type FixupTarget = {
+  readonly threadId: string;
+  readonly sha: string;
+  readonly subject: string;
+};
+
+export const commitStyleInstruction = ({
+  style,
+  fixupTargets,
+}: {
+  readonly style: ResolveCommitStyle;
+  readonly fixupTargets: ReadonlyArray<FixupTarget>;
+}): ReadonlyArray<string> => {
+  if (style === 'new' || fixupTargets.length === 0) {
+    return [];
+  }
+  return [
+    RESOLVER_KICKOFF_LABELS.commitStyle,
+    'Commit each fix below as a fixup of the commit that introduced the commented line, so the branch can be autosquashed before merge. Every other fix is a normal new commit.',
+    ...fixupTargets.map(
+      ({ threadId, sha, subject }) =>
+        `- ${threadId}: \`git commit --fixup=${sha}\`, so the subject reads \`fixup! ${subject}\``,
+    ),
+    'Never rebase, squash or force-push.',
+  ];
+};
+
 type KickoffParams = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly pr: PullRequestState;
   readonly hint: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
+  readonly commitStyle?: ResolveCommitStyle;
+  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
 };
 
 export const buildResolverKickoff = ({
@@ -208,6 +239,8 @@ export const buildResolverKickoff = ({
   pr,
   hint,
   priorContext,
+  commitStyle = 'new',
+  fixupTargets = [],
 }: KickoffParams): string => {
   const noun = threads.length === 1 ? 'thread' : 'threads';
   const lines: Array<string> = [
@@ -224,6 +257,13 @@ export const buildResolverKickoff = ({
     const threadId = threadIdOf({ comment: thread.head });
     return threadId === '' ? [] : [threadId];
   });
+  const styleLines = commitStyleInstruction({
+    style: commitStyle,
+    fixupTargets: fixupTargets.filter((target) => threadIds.includes(target.threadId)),
+  });
+  if (styleLines.length > 0) {
+    lines.push('', ...styleLines);
+  }
   if (threadIds.length > 0) {
     lines.push('', ...reportingSection({ threadIds }));
     lines.push('', RESOLVER_KICKOFF_LABELS.replyContract, ...REPLY_CONTRACT);
@@ -250,6 +290,8 @@ type ResolverAgentArgsParams = {
   readonly pr: PullRequestState;
   readonly hint?: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
+  readonly commitStyle?: ResolveCommitStyle;
+  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
 };
 
 export const buildResolverAgentArgs = ({
@@ -257,6 +299,8 @@ export const buildResolverAgentArgs = ({
   pr,
   hint = '',
   priorContext,
+  commitStyle,
+  fixupTargets,
 }: ResolverAgentArgsParams): CommentAgentArgs => {
   const first = threads[0];
   if (first === undefined) {
@@ -276,6 +320,8 @@ export const buildResolverAgentArgs = ({
       pr,
       hint,
       ...(priorContext !== undefined && { priorContext }),
+      ...(commitStyle !== undefined && { commitStyle }),
+      ...(fixupTargets !== undefined && { fixupTargets }),
     }),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,

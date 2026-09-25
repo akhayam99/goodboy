@@ -1,4 +1,5 @@
 import type { AgentId, PullRequestState, SessionId } from '@goodboy/types';
+import type { ResolveCommitStyle } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../github/comment-threads';
 import type { AgentKindRouting } from '../session/agent-kind';
 import { contextWindowFor } from '../session/contextWindowFor';
@@ -8,6 +9,7 @@ import {
   type SetAgentConfigFn,
   type SpawnAgentFn,
 } from '../review/startFixAttempt';
+import { resolveFixupTargets } from './resolveFixupTargets';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -15,6 +17,8 @@ type Params = {
   readonly pr: PullRequestState;
   readonly routing: AgentKindRouting;
   readonly note?: string;
+  readonly commitStyle?: ResolveCommitStyle;
+  readonly worktreePath?: string | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -35,23 +39,32 @@ export const resolveAgentCount = ({ threads, pr, routing, note = '' }: CountPara
     contextWindow: contextWindowFor(routing.model),
   }).length;
 
-export const startResolve = ({
+export const startResolve = async ({
   sessionId,
   threads,
   pr,
   routing,
   note = '',
+  commitStyle = 'new',
+  worktreePath = null,
   spawnAgent,
   setAgentConfig,
-}: Params): Promise<ReadonlyArray<AgentId>> =>
-  startFixAttempt({
+}: Params): Promise<ReadonlyArray<AgentId>> => {
+  const fixupTargets =
+    commitStyle === 'fixup' && worktreePath !== null
+      ? await resolveFixupTargets({ worktreePath, threads })
+      : [];
+  return startFixAttempt({
     sessionId,
     threads,
     pr,
     choice: { provider: routing.provider, model: routing.model, effort: routing.effort },
     instructions: note,
     mode: 'shared',
+    commitStyle,
+    fixupTargets,
     contextWindow: contextWindowFor(routing.model),
     spawnAgent,
     setAgentConfig,
   });
+};

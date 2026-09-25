@@ -18,6 +18,7 @@ export type ParsedResolverKickoff = {
 
 const SECTION_LABELS: ReadonlyArray<string> = [
   LABELS.instructions,
+  LABELS.commitStyle,
   LABELS.reporting,
   LABELS.replyContract,
   LABELS.operatorNotes,

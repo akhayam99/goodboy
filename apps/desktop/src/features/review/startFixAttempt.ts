@@ -2,7 +2,9 @@ import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy
 import {
   buildResolverAgentArgs,
   buildResolverKickoff,
+  type FixupTarget,
   type PriorContext,
+  type ResolveCommitStyle,
   type ResolveModelChoice,
 } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../github/comment-threads';
@@ -43,6 +45,8 @@ type Params = {
   readonly instructions?: string | null;
   readonly mode: FixMode;
   readonly priorContext?: ReadonlyArray<PriorContext>;
+  readonly commitStyle?: ResolveCommitStyle;
+  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
   readonly contextWindow?: number | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
@@ -80,6 +84,8 @@ export const startFixAttempt = async ({
   instructions,
   mode,
   priorContext,
+  commitStyle = 'new',
+  fixupTargets = [],
   contextWindow = null,
   spawnAgent,
   setAgentConfig,
@@ -97,6 +103,8 @@ export const startFixAttempt = async ({
       pr,
       hint,
       ...(scoped.length > 0 && { priorContext: scoped }),
+      commitStyle,
+      fixupTargets,
     });
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
