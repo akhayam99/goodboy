@@ -1,4 +1,7 @@
-import { blockerCopy } from '../../../features/resolve/resolvePublishCopy';
+import {
+  blockerCopy,
+  publicationOutcomeSentence,
+} from '../../../features/resolve/resolvePublishCopy';
 import type { SliceParams } from './types';
 import type { SessionId } from '@goodboy/types';
 
@@ -35,6 +38,6 @@ export const publishResolveThread = async ({ get, sessionId, threadId }: Params)
     throw new Error(NOTHING_TO_PUBLISH);
   }
   if (result.failed > 0) {
-    throw new Error('The reply did not reach the pull request. Check it and retry');
+    throw new Error(publicationOutcomeSentence({ outcome: result }));
   }
 };

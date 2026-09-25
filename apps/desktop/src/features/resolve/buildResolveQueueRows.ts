@@ -132,7 +132,7 @@ const deliveryFor = ({
   return {
     isReplyPosted: latest.replyPhase === 'posted',
     replyPostedAt: latest.replyPostedAt,
-    isThreadResolved: latest.resolvePhase === 'resolved',
+    isThreadResolved: thread.githubResolved === true,
     resolvedAt: latest.resolvedAt,
     isComplete: isDeliveryComplete({ receipt: latest }),
     replyBody: latest.replyBody,

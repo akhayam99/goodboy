@@ -3,6 +3,7 @@ import type {
   ResolvePublicationDrift,
   ResolvePublicationPreview,
 } from '@goodboy/types';
+import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
 import { closingThreadCount } from './closingThreadCount';
 import type { ResolvePublishIntent } from './publishIntent';
 import { formatClockTime } from '../../shared/utils/formatClockTime';
@@ -24,7 +25,6 @@ const plural = ({
 }): string => `${count} ${count === 1 ? one : many}`;
 
 export const REVIEW_PUBLICATION = 'Review publication';
-export const PUBLICATION_COMPLETE = 'Publication complete';
 
 export const PUBLISH_INTENT_LABEL: Record<ResolvePublishIntent, string> = {
   publish_fix: 'Push fix and resolve threads',
@@ -175,4 +175,32 @@ export const blockerCopy = ({
       return { sentence: never, action: null };
     }
   }
+};
+
+const SHORT_SHA_LENGTH = 7;
+
+export const publicationOutcomeSentence = ({
+  outcome,
+}: {
+  readonly outcome: PublicationOutcome;
+}): string => {
+  const parts = [
+    outcome.pushedHead === null ? null : `${outcome.pushedHead.slice(0, SHORT_SHA_LENGTH)} pushed`,
+    outcome.replies === 0
+      ? null
+      : outcome.replied === outcome.replies
+        ? `${plural({ count: outcome.replied, one: 'reply', many: 'replies' })} posted`
+        : `${outcome.replied} of ${plural({ count: outcome.replies, one: 'reply', many: 'replies' })} posted`,
+    outcome.resolved === 0
+      ? null
+      : `${plural({ count: outcome.resolved, one: 'thread', many: 'threads' })} resolved`,
+    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open`,
+  ].flatMap((part) => (part === null ? [] : [part]));
+  const done = parts.length === 0 ? null : `${parts.join(', ')}.`;
+  if (outcome.failed > 0) {
+    const failure = `${outcome.failed} failed${outcome.error === null ? '' : `: ${outcome.error}`}.`;
+    return done === null ? failure : `${done} ${failure}`;
+  }
+  const lead = `Closed ${outcome.total} on GitHub.`;
+  return done === null ? lead : `${lead} ${done}`;
 };

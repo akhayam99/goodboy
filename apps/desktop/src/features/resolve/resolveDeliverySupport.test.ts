@@ -27,7 +27,7 @@ describe('deliverySupportLine', () => {
       replyBody: 'We are keeping this as it is',
     };
     expect(deliverySupportLine({ row: rowOf({ status: 'ready_to_push', delivery }) })).toBe(
-      'Reply posted · Thread left open',
+      'Reply posted · Left open on GitHub',
     );
   });
 
@@ -41,7 +41,7 @@ describe('deliverySupportLine', () => {
       replyBody: 'We are keeping this as it is',
     };
     expect(deliverySupportLine({ row: rowOf({ status: 'wont_fix', delivery }) })).toBe(
-      'Reply posted · Thread left open',
+      'Reply posted · Left open on GitHub',
     );
   });
 

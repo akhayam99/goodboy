@@ -24,8 +24,20 @@ export const postThreadReply = async ({
   frozen,
 }: Params): Promise<PostedReply> => {
   const receipt = get().sessionResolveThreads[sessionId]?.find((row) => row.threadId === threadId);
-  if (receipt?.replyPostedAt != null || frozen.replyPhase === 'posted') {
+  if (frozen.replyPhase === 'posted') {
     return { posted: false, replyId: frozen.replyId };
+  }
+  if (receipt !== undefined && receipt.replyPostedAt !== null) {
+    await upsertResolvePublicationThread({
+      db: tauriDatabase,
+      thread: {
+        ...frozen,
+        replyPhase: 'posted',
+        replyId: receipt.replyId ?? frozen.replyId,
+        replyPostedAt: receipt.replyPostedAt,
+      },
+    });
+    return { posted: false, replyId: receipt.replyId ?? frozen.replyId };
   }
   if (replyBody === null) {
     return { posted: false, replyId: null };

@@ -614,7 +614,7 @@ describe('the resolve item view', () => {
     });
 
     expect(screen.getByText('Reply posted')).toBeDefined();
-    expect(screen.getByText('Reply posted · Thread left open')).toBeDefined();
+    expect(screen.getByText('Reply posted · Left open on GitHub')).toBeDefined();
     expect(screen.queryByLabelText('Reply to reviewer')).toBeNull();
   });
 });

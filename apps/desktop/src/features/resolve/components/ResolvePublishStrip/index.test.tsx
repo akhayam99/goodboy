@@ -15,12 +15,25 @@ const h = vi.hoisted(() => {
     sessionResolveQueueItems: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionGithub: {} as Record<string, unknown>,
     activePublicationPreview: {} as Record<string, unknown>,
     preparePublication: vi.fn(async () => null as unknown),
     publishConversations: vi.fn(
       async (params: { readonly sessionId: string; readonly publicationId: string }) => {
         void params;
-        return { kind: 'done', pushed: false, closed: 1, replied: 1, failed: 0 };
+        return {
+          kind: 'done',
+          pushed: false,
+          pushedHead: null,
+          total: 1,
+          replies: 1,
+          replied: 1,
+          closed: 1,
+          resolved: 1,
+          leftOpen: 0,
+          failed: 0,
+          error: null,
+        };
       },
     ),
     cancelPublication: vi.fn(async () => undefined),

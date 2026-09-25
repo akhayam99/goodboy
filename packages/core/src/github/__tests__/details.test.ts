@@ -100,6 +100,7 @@ describe('fetchPrDetail', () => {
     expect(detail.comments[1]!.resolved).toBe(false);
     expect(detail.comments[1]!.outdated).toBe(false);
     expect(detail.comments[1]!.threadId).toBe('PRT_1');
+    expect(detail.comments[1]!.canResolve).toBeUndefined();
   });
 
   it('propagates resolved status and reply threading from review threads', async () => {
@@ -117,6 +118,7 @@ describe('fetchPrDetail', () => {
                       id: 'PRT_X',
                       isResolved: true,
                       isOutdated: true,
+                      viewerCanResolve: false,
                       path: 'pkg/a.ts',
                       line: 10,
                       comments: {
@@ -158,6 +160,7 @@ describe('fetchPrDetail', () => {
     expect(detail.comments).toHaveLength(2);
     expect(detail.comments.every((c) => c.resolved === true)).toBe(true);
     expect(detail.comments.every((c) => c.outdated === true)).toBe(true);
+    expect(detail.comments.every((c) => c.canResolve === false)).toBe(true);
     expect(detail.comments[1]!.inReplyToId).toBe('review-1');
   });
 

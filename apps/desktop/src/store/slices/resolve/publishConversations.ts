@@ -1,11 +1,8 @@
 import {
   listResolvePublicationThreads,
   listResolvePublicationsForSession,
-  listResolveQueueItems,
   listResolveThreads,
-  markResolveQueueItemDelivered,
   setResolvePublicationPhase,
-  upsertResolvePublicationThread,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import type {
@@ -13,14 +10,17 @@ import type {
   ResolvePublicationDrift,
   ResolvePublicationPreview,
   ResolvePublicationThread,
+  ResolveThread,
 } from '@goodboy/types';
 import { acquireWorktreeWriter, releaseWorktreeWriter } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { postThreadReply } from '../github/postThreadReply';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { liveMountTarget } from './mountTarget';
-import { markThreadDone } from './markThreadDone';
+import { deliverPublicationThread } from './deliverPublicationThread';
+import { isDeliveryComplete } from './deriveResolveQueueStatus';
 import { preparePublication } from './preparePublication';
+import { publicationOutcome, type PublicationOutcome } from './publicationOutcome';
+import { RESOLVE_ON_GITHUB_DEFAULT, resolveStepPlan } from './resolveStepPlan';
 import { isDriftChecked, mountTargetDrift, publicationDrift } from './publicationDrift';
 import { loadPublicationsInto } from './publicationState';
 import { withPublicationLock } from './publicationLock';
@@ -35,48 +35,55 @@ export type PublishConversationsResult =
   | { readonly kind: 'busy' }
   | { readonly kind: 'stale'; readonly preview: ResolvePublicationPreview }
   | { readonly kind: 'push_failed'; readonly error: string }
-  | {
-      readonly kind: 'done';
-      readonly pushed: boolean;
-      readonly closed: number;
-      readonly replied: number;
-      readonly failed: number;
-    };
+  | ({ readonly kind: 'done' } & PublicationOutcome);
 
 type LockedResult =
   | PublishConversationsResult
   | { readonly kind: 'drifted'; readonly drift: ReadonlyArray<ResolvePublicationDrift> };
 
-const UNCERTAIN = /timeout|timed out|etimedout|econnreset|network|socket hang up/i;
+type QuietlyParams = {
+  readonly publicationId: string;
+  readonly work: () => Promise<unknown>;
+};
 
-type MarkDeliveredParams = {
+const quietly = async ({ publicationId, work }: QuietlyParams): Promise<void> => {
+  try {
+    await work();
+  } catch (error) {
+    console.warn(`[resolve-publication] ${publicationId}: ${formatError(error)}`);
+  }
+};
+
+type RestoreAllParams = {
+  readonly get: SliceParams['get'];
   readonly sessionId: PublishParams['sessionId'];
-  readonly thread: ResolvePublicationThread;
+  readonly frozen: ReadonlyArray<ResolvePublicationThread>;
+  readonly rowsBefore: ReadonlyArray<ResolveThread>;
+  readonly error: string;
 };
 
-const markDelivered = async ({ sessionId, thread }: MarkDeliveredParams): Promise<void> => {
-  const items = await listResolveQueueItems({ db: tauriDatabase, sessionId });
-  const match = items.find(
-    ({ item }) =>
-      item.threadId === thread.threadId &&
-      (item.approvalState === 'accepted' || item.approvalState === 'wont_fix') &&
-      item.approvedRevision === thread.revision,
-  );
-  if (match === undefined) {
-    throw new Error('This item no longer carries the approval it was published under');
-  }
-  const delivered = await markResolveQueueItemDelivered({
-    db: tauriDatabase,
-    sessionId,
-    itemId: match.item.id,
-    deliveredAt: Date.now(),
-  });
-  if (!delivered) {
-    throw new Error('This item could not be marked done');
+const restoreAll = async ({
+  get,
+  sessionId,
+  frozen,
+  rowsBefore,
+  error,
+}: RestoreAllParams): Promise<void> => {
+  for (const thread of frozen) {
+    await restoreResolvePublication({
+      get,
+      sessionId,
+      threadId: thread.threadId,
+      previous: rowsBefore.find((item) => item.threadId === thread.threadId),
+      hasCommit: thread.resolvePhase !== 'skipped',
+      error,
+    });
   }
 };
 
-export const publishConversations = async ({
+const inFlight = new Map<string, Promise<PublishConversationsResult>>();
+
+const publishOnce = async ({
   set,
   get,
   sessionId,
@@ -93,6 +100,12 @@ export const publishConversations = async ({
   }
   const worktreePath = publication.mountTarget?.worktreePath ?? '';
   const frozen = await listResolvePublicationThreads({ db: tauriDatabase, publicationId });
+  if (publication.phase === 'finished') {
+    return {
+      kind: 'done',
+      ...publicationOutcome({ receipts: frozen, pushedHead: publication.pushedHead }),
+    };
+  }
   const locked = await withPublicationLock<LockedResult>({
     repo: publication.repo,
     prNumber: publication.prNumber,
@@ -109,6 +122,8 @@ export const publishConversations = async ({
       }
       try {
         const rowsBefore = await listResolveThreads({ db: tauriDatabase, sessionId });
+        const comments: ReadonlyArray<PrComment> =
+          get().sessionGithub[sessionId]?.detail?.comments ?? [];
         const liveTarget = liveMountTarget({ get, sessionId, target: publication.mountTarget });
         const targetDrift = mountTargetDrift({
           frozenTarget: publication.mountTarget,
@@ -116,8 +131,6 @@ export const publishConversations = async ({
         });
         const isDrifted = targetDrift !== null || isDriftChecked({ publication });
         if (isDrifted) {
-          const comments: ReadonlyArray<PrComment> =
-            get().sessionGithub[sessionId]?.detail?.comments ?? [];
           const scope = await approvedPublicationScope({ sessionId });
           const drift =
             targetDrift === null
@@ -146,139 +159,111 @@ export const publishConversations = async ({
           id: publicationId,
           phase: 'confirmed',
         });
-        for (const thread of frozen) {
-          const row = rowsBefore.find((item) => item.threadId === thread.threadId);
-          if (row?.state === 'closed') {
-            continue;
+        const receipts = new Map(frozen.map((thread) => [thread.threadId, thread]));
+        let pushedHead = publication.pushedHead;
+        try {
+          for (const thread of frozen) {
+            const row = rowsBefore.find((item) => item.threadId === thread.threadId);
+            const isSettled = thread.error === null && isDeliveryComplete({ receipt: thread });
+            if (row?.state === 'closed' || isSettled) {
+              continue;
+            }
+            await get().updateResolveThread({
+              sessionId,
+              threadId: thread.threadId,
+              prNumber: publication.prNumber,
+              patch: { state: 'publishing' },
+            });
           }
-          await get().updateResolveThread({
-            sessionId,
-            threadId: thread.threadId,
-            prNumber: publication.prNumber,
-            patch: { state: 'publishing' },
-          });
-        }
-        const isAlreadyPushed = publication.pushedHead !== null;
-        let pushed = isAlreadyPushed;
-        if (publication.requiresPush && !isAlreadyPushed) {
-          await setResolvePublicationPhase({
-            db: tauriDatabase,
-            id: publicationId,
-            phase: 'pushing',
-          });
-          const error = await verifiedPush({ get, sessionId, publication });
-          if (error !== null) {
+          if (publication.requiresPush && pushedHead === null) {
             await setResolvePublicationPhase({
               db: tauriDatabase,
               id: publicationId,
-              phase: 'failed',
-              error,
+              phase: 'pushing',
             });
-            for (const thread of frozen) {
-              await restoreResolvePublication({
-                get,
-                sessionId,
-                threadId: thread.threadId,
-                previous: rowsBefore.find((item) => item.threadId === thread.threadId),
-                hasCommit: thread.resolvePhase !== 'skipped',
+            const error = await verifiedPush({ get, sessionId, publication });
+            if (error !== null) {
+              await setResolvePublicationPhase({
+                db: tauriDatabase,
+                id: publicationId,
+                phase: 'failed',
                 error,
               });
+              await restoreAll({ get, sessionId, frozen, rowsBefore, error });
+              await loadPublicationsInto({ set, sessionId });
+              void get().emitNotification({
+                kind: 'error',
+                severity: 'error',
+                title: 'Nothing was pushed',
+                body: `${error}. The conversations stayed as they were.`,
+                sessionId,
+                action: { kind: 'retry-publication', sessionId },
+              });
+              return { kind: 'push_failed', error };
             }
-            await loadPublicationsInto({ set, sessionId });
-            void get().emitNotification({
-              kind: 'error',
-              severity: 'error',
-              title: 'Nothing was pushed',
-              body: `${error}. The conversations stayed as they were.`,
-              sessionId,
-              action: { kind: 'retry-publication', sessionId },
+            pushedHead = publication.localHead;
+            await setResolvePublicationPhase({
+              db: tauriDatabase,
+              id: publicationId,
+              phase: 'pushed',
+              pushedHead,
             });
-            return { kind: 'push_failed', error };
           }
-          pushed = true;
           await setResolvePublicationPhase({
             db: tauriDatabase,
             id: publicationId,
-            phase: 'pushed',
-            pushedHead: publication.localHead,
+            phase: 'posting',
           });
-        }
-        await setResolvePublicationPhase({
-          db: tauriDatabase,
-          id: publicationId,
-          phase: 'posting',
-        });
-        let closed = 0;
-        let replied = 0;
-        let failed = 0;
-        let lastError = '';
-        for (const thread of frozen) {
-          const current =
-            (await listResolvePublicationThreads({ db: tauriDatabase, publicationId })).find(
-              (item) => item.threadId === thread.threadId,
-            ) ?? thread;
-          if (current.resolvePhase === 'resolved') {
-            continue;
-          }
-          try {
-            const reply = await postThreadReply({
+          for (const thread of frozen) {
+            const receipt = await deliverPublicationThread({
               get,
               sessionId,
-              threadId: thread.threadId,
-              replyBody: current.replyBody,
-              frozen: current,
-            });
-            if (reply.posted) {
-              replied += 1;
-            }
-            if (current.resolvePhase === 'skipped') {
-              if (reply.posted) {
-                await markDelivered({ sessionId, thread: { ...current, ...reply } });
-              }
-              continue;
-            }
-            await markThreadDone({
-              get,
-              sessionId,
-              threadId: thread.threadId,
-              frozen: { ...current, replyPhase: reply.posted ? 'posted' : current.replyPhase },
-            });
-            await markDelivered({ sessionId, thread: current });
-            closed += 1;
-          } catch (err) {
-            failed += 1;
-            lastError = formatError(err);
-            const isUncertain = UNCERTAIN.test(lastError);
-            await upsertResolvePublicationThread({
-              db: tauriDatabase,
-              thread: {
-                ...current,
-                ...(isUncertain && { replyPhase: 'uncertain', resolvePhase: 'uncertain' }),
-                error: lastError,
-              },
-            });
-            await restoreResolvePublication({
-              get,
-              sessionId,
-              threadId: thread.threadId,
+              publicationId,
+              thread,
               previous: rowsBefore.find((item) => item.threadId === thread.threadId),
-              hasCommit: current.resolvePhase !== 'skipped',
-              error: isUncertain ? `uncertain: ${lastError}` : lastError,
+              plan: resolveStepPlan({
+                threadId: thread.threadId,
+                comments,
+                shouldResolveOnGithub: RESOLVE_ON_GITHUB_DEFAULT,
+              }),
             });
+            receipts.set(thread.threadId, receipt);
           }
+        } catch (error) {
+          await quietly({
+            publicationId,
+            work: () =>
+              restoreAll({ get, sessionId, frozen, rowsBefore, error: formatError(error) }),
+          });
+          throw error;
         }
-        await setResolvePublicationPhase({
+        const stored = await listResolvePublicationThreads({
           db: tauriDatabase,
-          id: publicationId,
-          phase: failed === 0 ? 'finished' : 'failed',
-          error: failed === 0 ? null : lastError,
+          publicationId,
+        }).catch(() => null);
+        const outcome = publicationOutcome({
+          receipts: stored ?? [...receipts.values()],
+          pushedHead,
         });
-        await loadPublicationsInto({ set, sessionId });
+        await quietly({
+          publicationId,
+          work: () =>
+            setResolvePublicationPhase({
+              db: tauriDatabase,
+              id: publicationId,
+              phase: outcome.failed === 0 ? 'finished' : 'failed',
+              error: outcome.error,
+            }),
+        });
+        await quietly({ publicationId, work: () => loadPublicationsInto({ set, sessionId }) });
         set((state) => ({
           activePublicationPreview: { ...state.activePublicationPreview, [sessionId]: null },
         }));
-        await get().refreshSessionPrDetail(sessionId, { force: true });
-        return { kind: 'done', pushed, closed, replied, failed };
+        await quietly({
+          publicationId,
+          work: () => get().refreshSessionPrDetail(sessionId, { force: true }),
+        });
+        return { kind: 'done', ...outcome };
       } finally {
         if (lease !== null) {
           await releaseWorktreeWriter({ path: worktreePath, holder }).catch(() => undefined);
@@ -299,4 +284,16 @@ export const publishConversations = async ({
   });
   await loadPublicationsInto({ set, sessionId });
   return { kind: 'stale', preview };
+};
+
+export const publishConversations = (params: Params): Promise<PublishConversationsResult> => {
+  const running = inFlight.get(params.publicationId);
+  if (running !== undefined) {
+    return running;
+  }
+  const work = publishOnce(params).finally(() => {
+    inFlight.delete(params.publicationId);
+  });
+  inFlight.set(params.publicationId, work);
+  return work;
 };

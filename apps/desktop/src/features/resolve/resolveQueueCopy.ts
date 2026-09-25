@@ -102,8 +102,13 @@ export const RESOLVE_PUBLISH_REPLIES_LABEL = 'replies';
 export const RESOLVE_DELIVERY_SUPPORT = {
   replyPending: 'Reply pending',
   replyPosted: 'Reply posted',
-  threadResolved: 'Thread resolved',
-  threadLeftOpen: 'Thread left open',
+  threadResolved: 'Resolved on GitHub',
+  threadLeftOpen: 'Left open on GitHub',
+} as const;
+
+export const RESOLVE_REPLY_PLAN = {
+  resolves: 'Resolves the thread on GitHub',
+  leavesOpen: 'Leaves the thread open on GitHub',
 } as const;
 
 export const RESOLVE_QUEUE_FILTER_LABEL: Record<ResolveQueueFilter, string> = {

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolvePublicationPreview } from '@goodboy/types';
-import { publicationCountsLine, publishIntentSummary } from './resolvePublishCopy';
+import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
+import {
+  publicationCountsLine,
+  publicationOutcomeSentence,
+  publishIntentSummary,
+} from './resolvePublishCopy';
 
 const previewOf = (patch: Partial<ResolvePublicationPreview>): ResolvePublicationPreview => ({
   publicationId: 'pub-1',
@@ -49,5 +54,60 @@ describe('the publish confirmation copy', () => {
 
     expect(publicationCountsLine({ preview })).toBe('1 reply to post');
     expect(publishIntentSummary({ preview })).toBe('1 reply to post. 0 threads on #7');
+  });
+});
+
+const outcomeOf = (patch: Partial<PublicationOutcome>): PublicationOutcome => ({
+  pushed: true,
+  pushedHead: '4f21c8b90000',
+  total: 4,
+  replies: 4,
+  replied: 4,
+  closed: 4,
+  resolved: 4,
+  leftOpen: 0,
+  failed: 0,
+  error: null,
+  ...patch,
+});
+
+describe('publicationOutcomeSentence', () => {
+  it('names the pushed commit, the replies and the resolved threads when all landed', () => {
+    expect(publicationOutcomeSentence({ outcome: outcomeOf({}) })).toBe(
+      'Closed 4 on GitHub. 4f21c8b pushed, 4 replies posted, 4 threads resolved.',
+    );
+  });
+
+  it('says what already happened before naming the failure', () => {
+    expect(
+      publicationOutcomeSentence({
+        outcome: outcomeOf({
+          replied: 3,
+          closed: 3,
+          resolved: 3,
+          failed: 1,
+          error: 'rate limited by GitHub',
+        }),
+      }),
+    ).toBe(
+      '4f21c8b pushed, 3 of 4 replies posted, 3 threads resolved. 1 failed: rate limited by GitHub.',
+    );
+  });
+
+  it('counts threads GitHub kept open apart from the resolved ones', () => {
+    expect(
+      publicationOutcomeSentence({
+        outcome: outcomeOf({
+          pushed: false,
+          pushedHead: null,
+          total: 2,
+          replies: 2,
+          replied: 2,
+          closed: 2,
+          resolved: 1,
+          leftOpen: 1,
+        }),
+      }),
+    ).toBe('Closed 2 on GitHub. 2 replies posted, 1 thread resolved, 1 left open.');
   });
 });

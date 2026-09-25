@@ -348,11 +348,15 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 
 1. Locks the conversations it will publish
 2. Pushes the branch once, if there is code to send
-3. Posts each reply and resolves each thread
+3. Posts each reply, then resolves each thread on GitHub when you are allowed
+   to resolve it there. Otherwise the thread stays open for the reviewer.
 
-Goodboy saves every step. If a publication stops halfway, it picks up where it
-left off and never posts twice. A publication is the only way a reply gets
-posted or a thread gets closed.
+Goodboy saves a receipt for every step, and the outcome it reports is read from
+those receipts: a thread shows as resolved only after GitHub confirmed it. If a
+publication stops halfway, it picks up at the first step without a receipt and
+never pushes or posts twice. Confirming the same publication twice runs it
+once. A publication is the only way a reply gets posted or a thread gets
+closed.
 
 ## Settings scopes
 

@@ -32,6 +32,7 @@ type RawReviewThreadNode = {
   id: string;
   isResolved: boolean;
   isOutdated: boolean;
+  viewerCanResolve?: boolean;
   path: string | null;
   line: number | null;
   comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
@@ -200,6 +201,7 @@ const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
           id
           isResolved
           isOutdated
+          viewerCanResolve
           path
           line
           comments(first:50){
@@ -274,6 +276,7 @@ async function fetchReviewThreads(
             ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined)
             : undefined,
           threadId: t.id,
+          ...(t.viewerCanResolve !== undefined && { canResolve: t.viewerCanResolve }),
         });
       }
     }
