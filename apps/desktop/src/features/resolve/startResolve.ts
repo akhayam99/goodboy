@@ -1,5 +1,4 @@
-import type { AgentId, PullRequestState, SessionId } from '@goodboy/types';
-import type { ResolveCommitStyle } from '../chat/spawn-from-comment';
+import type { AgentId, PullRequestState, ResolveCommitStyle, SessionId } from '@goodboy/types';
 import type { CommentThread } from '../github/comment-threads';
 import type { AgentKindRouting } from '../session/agent-kind';
 import { contextWindowFor } from '../session/contextWindowFor';

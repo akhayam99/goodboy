@@ -4,6 +4,7 @@ import type {
   ProviderId,
   PullRequestState,
   EffortLevel,
+  ResolveCommitStyle,
 } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
 import type { CommentThread } from '../github/comment-threads';
@@ -195,8 +196,6 @@ const priorContextBlock = ({
   }
   return lines;
 };
-
-export type ResolveCommitStyle = 'new' | 'fixup';
 
 export type FixupTarget = {
   readonly threadId: string;

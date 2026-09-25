@@ -111,6 +111,12 @@ const WORKSPACE_OVERRIDES: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 const WORKSPACE = mockWorkspace({ id: WORKSPACE_ID, name: 'Cascadia' });

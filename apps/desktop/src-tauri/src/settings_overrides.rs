@@ -27,6 +27,22 @@ pub struct SettingsOverrides {
     pub provider_pool: Option<Vec<String>>,
     #[serde(rename = "attributionFooter")]
     pub attribution_footer: Option<bool>,
+    #[serde(rename = "replyVoice", default)]
+    pub reply_voice: Option<String>,
+    #[serde(rename = "replyStyleNote", default)]
+    pub reply_style_note: Option<String>,
+    #[serde(rename = "replyTemplateFixed", default)]
+    pub reply_template_fixed: Option<String>,
+    #[serde(rename = "replyTemplateNoChange", default)]
+    pub reply_template_no_change: Option<String>,
+    #[serde(rename = "resolveOnGithub", default)]
+    pub resolve_on_github: Option<bool>,
+    #[serde(rename = "resolveCommitStyle", default)]
+    pub resolve_commit_style: Option<String>,
+}
+
+fn bool_to_int(value: Option<bool>) -> Option<i64> {
+    value.map(|v| if v { 1 } else { 0 })
 }
 
 fn json_to_text(value: &Option<serde_json::Value>) -> Option<String> {
@@ -57,13 +73,15 @@ pub async fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer
+        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
+                reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
         let parallel_raw: Option<i64> = row.get(3)?;
         let parallel_agents_raw: Option<i64> = row.get(8)?;
         let attribution_footer_raw: Option<i64> = row.get(10)?;
+        let resolve_on_github_raw: Option<i64> = row.get(15)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
             default_workflow_id: row.get(1)?,
@@ -76,6 +94,12 @@ pub async fn get_workspace_overrides(
             parallel_agents: parallel_agents_raw.map(|v| v != 0),
             provider_pool: string_array_from_text(row.get(9)?),
             attribution_footer: attribution_footer_raw.map(|v| v != 0),
+            reply_voice: row.get(11)?,
+            reply_style_note: row.get(12)?,
+            reply_template_fixed: row.get(13)?,
+            reply_template_no_change: row.get(14)?,
+            resolve_on_github: resolve_on_github_raw.map(|v| v != 0),
+            resolve_commit_style: row.get(16)?,
         })
     })?;
     match rows.next() {
@@ -109,8 +133,14 @@ pub async fn set_workspace_overrides(
              parallel_agents = ?9,
              provider_pool = ?10,
              attribution_footer = ?11,
-             updated_at = ?12
-         WHERE id = ?13",
+             reply_voice = ?12,
+             reply_style_note = ?13,
+             reply_template_fixed = ?14,
+             reply_template_no_change = ?15,
+             resolve_on_github = ?16,
+             resolve_commit_style = ?17,
+             updated_at = ?18
+         WHERE id = ?19",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_workflow_id,
@@ -123,6 +153,12 @@ pub async fn set_workspace_overrides(
             parallel_agents_val,
             string_array_to_text(&overrides.provider_pool),
             attribution_footer_val,
+            overrides.reply_voice,
+            overrides.reply_style_note,
+            overrides.reply_template_fixed,
+            overrides.reply_template_no_change,
+            bool_to_int(overrides.resolve_on_github),
+            overrides.resolve_commit_style,
             now,
             workspace_id,
         ],
@@ -154,6 +190,12 @@ pub async fn get_session_overrides(
             parallel_agents: None,
             provider_pool: None,
             attribution_footer: None,
+            reply_voice: None,
+            reply_style_note: None,
+            reply_template_fixed: None,
+            reply_template_no_change: None,
+            resolve_on_github: None,
+            resolve_commit_style: None,
         })
     })?;
     match rows.next() {
@@ -196,6 +238,37 @@ mod tests {
             Some(&serde_json::json!(["anthropic", "codex"]))
         );
         assert!(encoded.get("enabledProviders").is_none());
+    }
+
+    #[test]
+    fn reply_settings_travel_on_the_wire_and_default_when_absent() {
+        let payload = serde_json::json!({
+            "defaultProviderId": null,
+            "defaultWorkflowId": null,
+            "defaultBranchPrefix": null,
+            "parallelEnabled": null,
+            "defaultVerbosity": null,
+            "providerBindings": null,
+            "taskModels": null,
+            "roleModels": null,
+            "parallelAgents": null,
+            "providerPool": null,
+            "attributionFooter": null,
+            "replyVoice": "friendly",
+            "resolveOnGithub": false,
+            "resolveCommitStyle": "fixup",
+        });
+
+        let overrides: SettingsOverrides =
+            serde_json::from_value(payload).expect("deserialize overrides");
+
+        assert_eq!(overrides.reply_voice.as_deref(), Some("friendly"));
+        assert_eq!(overrides.resolve_on_github, Some(false));
+        assert_eq!(overrides.resolve_commit_style.as_deref(), Some("fixup"));
+        assert_eq!(overrides.reply_template_fixed, None);
+        let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
+        assert_eq!(encoded.get("replyVoice"), Some(&serde_json::json!("friendly")));
+        assert_eq!(encoded.get("replyStyleNote"), Some(&serde_json::Value::Null));
     }
 
     #[test]

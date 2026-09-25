@@ -1,10 +1,15 @@
-import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
+import type {
+  AgentId,
+  PullRequestState,
+  ResolveCommitStyle,
+  SessionId,
+  EffortLevel,
+} from '@goodboy/types';
 import {
   buildResolverAgentArgs,
   buildResolverKickoff,
   type FixupTarget,
   type PriorContext,
-  type ResolveCommitStyle,
   type ResolveModelChoice,
 } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../github/comment-threads';

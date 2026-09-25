@@ -222,6 +222,8 @@ export type {
   GlobalSettings,
   OverrideSettings,
   ProviderBindings,
+  ReplyVoice,
+  ResolveCommitStyle,
   ResolvedSettings,
   RoleModelFallback,
   RoleModelPreference,
@@ -232,6 +234,7 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
+export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
 export type {
   BranchCommit,
   BranchIntegration,

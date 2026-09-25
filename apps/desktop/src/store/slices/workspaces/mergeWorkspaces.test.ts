@@ -30,6 +30,12 @@ const overrides = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 } as const;
 
 const workspace = (id: WorkspaceId, name: string): Workspace => ({

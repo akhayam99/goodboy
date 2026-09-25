@@ -14,6 +14,12 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {

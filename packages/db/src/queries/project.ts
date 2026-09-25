@@ -6,7 +6,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { overridesFromRow, type OverrideRow } from './override-row';
+import {
+  REPLY_SETTING_COLUMNS,
+  overridesFromRow,
+  replySettingValues,
+  type OverrideRow,
+} from './override-row';
 
 type ProjectRow = OverrideRow & {
   readonly id: string;
@@ -67,8 +72,9 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        id, workspace_id, name, root_path, default_provider_id, default_workflow_id,
        default_branch_prefix, parallel_enabled, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
-       task_models, role_models, provider_pool, base_branch, attribution_footer
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       task_models, role_models, provider_pool, base_branch, attribution_footer,
+       ${REPLY_SETTING_COLUMNS}
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -95,6 +101,7 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
         : project.overrides.attributionFooter
           ? 1
           : 0,
+      ...replySettingValues({ overrides: project.overrides }),
     ],
   );
 };
