@@ -3,7 +3,7 @@ import { HeaderBand, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
 import { classifyAgent } from '../../agent-kind';
@@ -79,7 +79,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
             <>
               <AgentStatusBadge status={status} />
               <AgentKindChip kind={kind} />
-              <RoutingBadge
+              <RoutingLabel
                 provider={executed?.provider ?? providerOverride}
                 model={executed?.model ?? modelOverride}
                 effort={observedEffort ?? effortOverride}

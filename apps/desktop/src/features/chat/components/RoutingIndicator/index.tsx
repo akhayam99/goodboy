@@ -8,7 +8,7 @@ import type {
   TurnProviderOverride,
 } from '@goodboy/types';
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { tintClasses } from '@goodboy/ui';
@@ -104,7 +104,7 @@ export const RoutingIndicator = ({
       <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="flex items-center gap-1.5">
         Fallback to
-        <RoutingBadge provider={decision.selectedProvider} model={decision.selectedModel} />
+        <RoutingLabel provider={decision.selectedProvider} model={decision.selectedModel} />
         <span>({cause})</span>
       </span>
     </TranscriptShell>

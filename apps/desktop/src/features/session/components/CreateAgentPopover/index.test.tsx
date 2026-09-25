@@ -400,7 +400,8 @@ describe('CreateAgentPopover', () => {
 
     const routing = screen.getByRole('button', { name: /^Agent routing:/ });
     expect(routing.getAttribute('aria-expanded')).toBe('false');
-    expect(routing.textContent).toContain('Claude');
+    expect(routing.getAttribute('aria-label')).toContain('Claude');
+    expect(routing.querySelector('svg')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Opus' })).toBeNull();
 
     expandRouting();

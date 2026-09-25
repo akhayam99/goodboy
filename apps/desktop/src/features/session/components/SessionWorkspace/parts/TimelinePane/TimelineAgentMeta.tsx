@@ -1,5 +1,5 @@
 import { WorkMeta, formatUsd } from '@goodboy/ui';
-import { RoutingBadge } from '../../../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../../../shared/components/RoutingLabel';
 import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCell';
 import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 
@@ -10,12 +10,13 @@ type Props = {
 
 export const TimelineAgentMeta = ({ work, costUsd }: Props) => {
   const { routing, time } = work;
+  const cost = costUsd > 0 ? formatUsd(costUsd) : null;
   return (
     <WorkMeta
       isPlanned={routing.isPlanned}
       routing={
-        <RoutingBadge
-          variant="bare"
+        <RoutingLabel
+          isColumn
           provider={routing.provider}
           model={routing.model}
           effort={routing.effort}
@@ -23,8 +24,8 @@ export const TimelineAgentMeta = ({ work, costUsd }: Props) => {
           isEffortObserved={routing.isEffortObserved}
         />
       }
-      time={time === undefined ? undefined : <WorkTimeCell time={time} />}
-      cost={costUsd > 0 ? formatUsd(costUsd) : null}
+      time={time === undefined ? undefined : <WorkTimeCell time={time} cost={cost} />}
+      cost={cost}
     />
   );
 };

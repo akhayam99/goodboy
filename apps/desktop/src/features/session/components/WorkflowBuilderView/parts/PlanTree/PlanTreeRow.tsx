@@ -7,7 +7,7 @@ import { WorkTimeCell } from '../../../../../workTreeModel/components/WorkTimeCe
 import type { PlanStepEstimate } from '../../planEstimates';
 import { ROLE_LABEL, type AgentKind } from '../../../../agent-kind';
 import { AgentKindChip } from '../../../AgentKindChip';
-import { RoutingBadge } from '../../../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../../../shared/components/RoutingLabel';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import { PlanTreeGutter } from './PlanTreeGutter';
 import type { PlanLaneSpan } from './PlanTreeLane';
@@ -121,9 +121,7 @@ export const PlanTreeRow = ({
           <WorkMeta
             isPlanned
             isCostRange={estimate !== undefined}
-            routing={
-              <RoutingBadge variant="bare" provider={provider} model={model} effort={effort} />
-            }
+            routing={<RoutingLabel isColumn provider={provider} model={model} effort={effort} />}
             time={
               estimate === undefined ? undefined : <WorkTimeCell time={estimate?.time ?? null} />
             }

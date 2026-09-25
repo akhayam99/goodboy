@@ -124,8 +124,12 @@ const renderBrief = ({ agents, root, kind = 'implementer' }: RenderParams) => {
 
 const rowOf = (id: string): HTMLElement => screen.getByTestId(`run-tree-row-${id}`);
 
-const metaOf = (id: string, column: 'model' | 'effort'): string | null =>
-  rowOf(id).querySelector(`[data-meta-column="${column}"]`)?.textContent ?? null;
+const ROUTING_PART = { model: 'name', effort: 'detail' } as const;
+
+const metaOf = (id: string, column: keyof typeof ROUTING_PART): string | null =>
+  rowOf(id).querySelector(
+    `[data-meta-column="routing"] [data-routing-part="${ROUTING_PART[column]}"]`,
+  )?.textContent ?? null;
 
 const rowIds = (): ReadonlyArray<string> =>
   screen

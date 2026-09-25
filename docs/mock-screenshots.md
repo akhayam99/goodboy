@@ -94,7 +94,7 @@ the component instead of a gap in the mock.
   `agentModelOverride`/`agentProviderOverride` prop maps are empty. Use real
   ids from `packages/core/src/providers/*/catalog.ts` (e.g. cursor's
   `composer-2.5-fast`, codex's `gpt-6-astra` or `gpt-5.6-sol`), not made-up
-  strings. `RoutingBadge` and the model picker look up their labels in that
+  strings. `RoutingLabel` and the model picker look up their labels in that
   catalog.
 - **Fan-out / sub-agents** in the workflow detail come from
   `sessionPhaseRuns`: an agent with `parentAgentId` set is a child of that

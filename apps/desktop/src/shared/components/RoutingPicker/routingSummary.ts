@@ -5,6 +5,12 @@ import type {
   ProviderId,
   VerbosityLevel,
 } from '@goodboy/types';
+import {
+  MODEL_CATALOGS,
+  clampEffortForModel,
+  modelHasEffortAxis,
+  resolveStoredModelSelection,
+} from '@goodboy/core';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
 import { VERBOSITY_LABEL } from '../../../features/settings/verbosity';
@@ -77,5 +83,58 @@ export const routingTriggerLabel = ({
   ],
 });
 
+export const routingNameText = (label: RoutingTriggerLabel): string => label.name.join(' ');
+
 export const routingSummary = ({ provider, label }: SummaryParams): string =>
-  [PROVIDER_LABEL[provider], ...label.name, ...label.detail].join(' · ');
+  [PROVIDER_LABEL[provider], routingNameText(label), ...label.detail].join(' · ');
+
+type LabelPartsParams = {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly effort?: EffortLevel | null;
+  readonly verbosity?: VerbosityLevel;
+};
+
+type ShownEffortParams = {
+  readonly model: string;
+  readonly effort: EffortLevel | null;
+};
+
+const plainEffort = ({ model, effort }: ShownEffortParams): EffortLevel | null => {
+  if (effort == null) {
+    return null;
+  }
+  return clampEffortForModel({ model, effort }) ?? effort;
+};
+
+export const routingLabelParts = ({
+  provider,
+  model,
+  effort = null,
+  verbosity,
+}: LabelPartsParams): RoutingTriggerLabel => {
+  const stored = resolveStoredModelSelection({
+    provider,
+    id: model,
+    ...(effort != null && { effort }),
+  });
+  const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[provider];
+  const catalogModel =
+    stored.report == null
+      ? (catalog.find((candidate) => candidate.key === stored.selection.key) ?? null)
+      : null;
+  const shown = plainEffort({
+    model,
+    effort: catalogModel == null ? effort : (stored.selection.effort ?? effort),
+  });
+  const hasEffort =
+    shown != null && (catalogModel == null || modelHasEffortAxis({ model: catalogModel }));
+  return routingTriggerLabel({
+    model: catalogModel,
+    modelId: model,
+    selection: stored.selection,
+    effort: shown ?? 'medium',
+    showEffort: hasEffort,
+    ...(verbosity != null && { verbosity }),
+  });
+};

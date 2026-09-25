@@ -30,6 +30,7 @@ import { AgentKindGrid } from './AgentKindGrid';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
@@ -163,7 +164,17 @@ export const CreateAgentPopover = ({
               aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
               className="flex w-full items-center gap-1.5 rounded-md border border-border-soft bg-subtle px-2 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:border-border hover:bg-hover"
             >
-              <span className="min-w-0 flex-1 truncate">{routingSummary}</span>
+              <span className="flex min-w-0 flex-1">
+                {effective.model == null ? (
+                  <span className="truncate">{routingSummary}</span>
+                ) : (
+                  <RoutingLabel
+                    provider={effective.provider}
+                    model={effective.model}
+                    effort={effective.effort ?? null}
+                  />
+                )}
+              </span>
               <ChevronDown
                 size={11}
                 aria-hidden

@@ -89,7 +89,9 @@ describe('RoutingIndicator', () => {
         connectedProviders={[]}
       />,
     );
-    await waitFor(() => screen.getByTitle('Model: cursor-pro'));
+    await waitFor(() =>
+      expect(document.querySelector('[data-model-id="cursor-pro"]')).not.toBeNull(),
+    );
     expect(screen.getByText(/budget exceeded for claude/i)).toBeTruthy();
   });
 
@@ -107,7 +109,9 @@ describe('RoutingIndicator', () => {
         connectedProviders={[]}
       />,
     );
-    await waitFor(() => screen.getByTitle('Model: cursor-pro'));
+    await waitFor(() =>
+      expect(document.querySelector('[data-model-id="cursor-pro"]')).not.toBeNull(),
+    );
     expect(screen.getByText(/claude past its budget threshold/i)).toBeTruthy();
     expect(screen.queryByText(/budget exceeded/i)).toBeNull();
   });

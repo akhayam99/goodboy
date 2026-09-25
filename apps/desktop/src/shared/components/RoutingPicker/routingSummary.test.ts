@@ -50,7 +50,7 @@ describe('routingSummary', () => {
       showEffort: true,
     });
     expect(label.name).toEqual(['3.8', 'Flash']);
-    expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 3.8 · Flash · Medium');
+    expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 3.8 Flash · Medium');
   });
 
   it('says the mode the model offers and skips the toggle it cannot honor', () => {
@@ -63,7 +63,7 @@ describe('routingSummary', () => {
       verbosity: 'brief',
     });
     expect(routingSummary({ provider: 'cursor', label })).toBe(
-      'Cursor · Sonnet · 4.6 · Thinking · Medium · Brief',
+      'Cursor · Sonnet 4.6 · Thinking · Medium · Brief',
     );
   });
 });

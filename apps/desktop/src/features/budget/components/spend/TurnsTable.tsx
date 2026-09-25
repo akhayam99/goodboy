@@ -13,7 +13,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
-import { RoutingBadge } from '../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { StudioWidget } from '@goodboy/ui';
 import { sortTurns, type SortKey, type WorkspaceTurn } from './lib';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -111,7 +111,7 @@ export const TurnsTable = ({
                       </span>
                     </td>
                     <td className="px-2 py-2">
-                      <RoutingBadge provider={record.provider} model={record.model} />
+                      <RoutingLabel provider={record.provider} model={record.model} />
                     </td>
                     {showSession ? (
                       <td

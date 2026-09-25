@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentMetrics } from './index';
 
 afterEach(cleanup);
@@ -203,11 +204,11 @@ describe('AgentMetrics', () => {
       />,
     );
 
-    expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
-    expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
+    expect(document.querySelector('[data-model-id="gpt-5.1-codex"]')).not.toBeNull();
+    expect(document.querySelector('[data-model-id="claude-haiku-4-5"]')).toBeNull();
     const note = screen.getByTestId('routing-divergence');
-    expect(note.textContent).toBe('Haiku 4.5');
-    expect(note.className).toContain('line-through');
+    expect(note.className).toContain('decoration-dotted');
+    expect(tooltipTextOf({ element: note })).toContain('Planned Haiku 4.5, routing picked');
   });
 
   it('keeps the planned routing silent while the plan is what would run', () => {

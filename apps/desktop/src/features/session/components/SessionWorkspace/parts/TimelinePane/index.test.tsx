@@ -1272,7 +1272,7 @@ describe('TimelinePane row meta', () => {
       .getByTestId('work-meta')
       .querySelector('[data-meta-column="cost"]');
 
-    expect(runCost?.className).toContain('@max-[520px]:hidden');
-    expect(stepCost?.className).toContain('@max-[520px]:hidden');
+    expect(runCost?.className).toContain('@max-[560px]:hidden');
+    expect(stepCost?.className).toContain('@max-[560px]:hidden');
   });
 });

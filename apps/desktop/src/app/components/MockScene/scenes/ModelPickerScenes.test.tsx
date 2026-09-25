@@ -68,12 +68,12 @@ describe('ModelPickerScene', () => {
         .getAllByRole('button', { name: / routing: / })
         .map((button) => button.getAttribute('aria-label')),
     ).toEqual([
-      'cursor composer routing: Cursor · Composer · 2.5 · Fast',
-      'codex sol routing: Codex · GPT · 5.6 · Sol · High',
-      'codex astra routing: Codex · GPT · 6 · Astra · High',
-      'cursor kimi routing: Cursor · Kimi · K3 · High',
-      'claude opus routing: Claude · Opus · 5.5 · High',
-      'cursor codex routing: Cursor · GPT · 5.3 · Codex',
+      'cursor composer routing: Cursor · Composer 2.5 · Fast',
+      'codex sol routing: Codex · GPT 5.6 Sol · High',
+      'codex astra routing: Codex · GPT 6 Astra · High',
+      'cursor kimi routing: Cursor · Kimi K3 · High',
+      'claude opus routing: Claude · Opus 5.5 · High',
+      'cursor codex routing: Cursor · GPT 5.3 Codex',
       'cursor auto routing: Cursor · Auto',
     ]);
   });

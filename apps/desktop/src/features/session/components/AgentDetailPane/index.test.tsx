@@ -31,6 +31,7 @@ vi.mock('./AgentNextAction', () => ({
   AgentNextAction: () => <div>Next action strip</div>,
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { AgentDetailPane } from './index';
 
 const sessionId = 'session-1' as SessionId;
@@ -178,7 +179,7 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTitle('Model: claude-haiku-4-5')).toBeDefined();
+    expect(document.querySelector('[data-model-id="claude-haiku-4-5"]')).not.toBeNull();
     expect(screen.queryByTestId('routing-divergence')).toBeNull();
   });
 
@@ -190,9 +191,11 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTitle('Model: gpt-5.1-codex')).toBeDefined();
-    expect(screen.queryByTitle('Model: claude-haiku-4-5')).toBeNull();
-    expect(screen.getByTestId('routing-divergence').textContent).toBe('Haiku 4.5');
+    expect(document.querySelector('[data-model-id="gpt-5.1-codex"]')).not.toBeNull();
+    expect(document.querySelector('[data-model-id="claude-haiku-4-5"]')).toBeNull();
+    expect(tooltipTextOf({ element: screen.getByTestId('routing-divergence') })).toContain(
+      'Planned Haiku 4.5, routing picked',
+    );
   });
 
   it('shows the effort the run was started with and marks where it left the plan', () => {
@@ -203,8 +206,10 @@ describe('AgentDetailPane', () => {
       <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
     );
 
-    expect(screen.getByTestId('effort-divergence').textContent).toBe('Medium');
+    const label = screen.getByTestId('routing-divergence');
+    expect(label.querySelector('[data-routing-part="detail"]')?.textContent).toBe('Medium');
     expect(screen.queryByText('High')).toBeNull();
+    expect(tooltipTextOf({ element: label })).toContain('Planned High, ran Medium');
   });
 
   it('reveals the transcript without changing the selected agent', () => {

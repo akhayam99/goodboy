@@ -422,21 +422,20 @@ The right end of a work row is `WorkMeta` in
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
 `$12.40` never pushes the model of the row above out of line.
 
-| column     | width | holds                                                        | in a narrow row                              |
-| ---------- | ----- | ------------------------------------------------------------ | -------------------------------------------- |
-| model      | 96px  | provider glyph, then the model label                         | only the glyph under 640px, gone under 320px |
-| effort     | 52px  | the effort label, faint until the run reports its own        | under 760px it leaves the row                |
-| time       | 96px  | measured time or estimate ("5m of ~9m", "12-20m")            | 80px under 640px, gone under 400px           |
-| cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px it leaves the row                |
-| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px it leaves the row                |
-| action     | 76px  | the one visible action, reserved even when empty             | never drops                                  |
-| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                  |
+| column     | width | holds                                                        | in a narrow row                                             |
+| ---------- | ----- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`)   | detail goes under 720px, name under 440px, gone under 360px |
+| time       | 96px  | measured time or estimate ("5m of ~9m", "12-20m")            | 80px under 640px, gone under 360px                          |
+| cost       | 56px  | what the row has spent, empty before anything is spent       | under 560px it leaves the row                               |
+| cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 560px it leaves the row                               |
+| action     | 76px  | the one visible action, reserved even when empty             | never drops                                                 |
+| menu       | 24px  | the row menu, like Close workflow on a run row               | never drops                                                 |
 
 A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. The cost column follows
 the same rule: `cost={null}` keeps an empty column, and leaving `cost` out
 drops it, as the builder does for a plan with no measured estimate yet. A
-run row has no routing: its step progress sits in the model column and its
+run row has no routing: its step progress sits in the routing column and its
 time in the time column.
 
 The narrow rules are container queries, never window breakpoints, because
@@ -448,25 +447,30 @@ meta leaves: below 520px a role chip hugs its word and a run chip keeps only
 its glyph, and the row state after the title reads its short form ("Needs
 you", "Step 3 ready") under 880px, with the full sentence in its tooltip. The
 state never shrinks; the title truncates first, down to a 64px floor
-(`WORK_ROW.title`), and the meta leaves before the title reaches it: effort,
-then the model label, then cost, then time, then under 320px the glyph and
-the row state (the node and the action still say it). A list under 440px also
+(`WORK_ROW.title`), and the meta leaves before the title reaches it: the
+routing detail, then cost, then the model name, then under 360px the glyph and
+the time, then under 320px the row state (the node and the action still say
+it). The model outlives the cost because a narrow row, like the right drawer,
+still has to say who is working; the cost stays in the time tooltip. A list under 440px also
 drops the time gutter; the day and Now labels move beside the rail. Label segments keep their
 leading words and tokens whole ("Opened #612:") and only the last segment
 truncates. The "Open ↵" hint takes room only while a row of 640px or more is
-hovered or focused. What leaves the row stays in the model tooltip, which always
-reads the whole route ("Opus 5.5 High on Claude"). The model and effort
-columns come from `RoutingBadge variant="bare"`, the dense form of the one
-routing badge, with no fill and no chip. Planned routing (a step that has not
-started) is faint; routing that ran is muted. When the run picked something
-other than the plan, the model is underlined dotted and the tooltip names the
-plan. The effort is faint while it is only planned and takes the row tone
-once the run reports the effort it was started with; when that differs from
-the plan, the effort is underlined dotted and both its tooltip and the model
-tooltip say "Planned High, ran Medium". The activity feed, the workflow run
-tree and the Subagents tree of a Brief all end their rows with this meta, so a
-step and its sub-agents read the same wherever they appear. The inline form in headers and chips stays
-`RoutingBadge`'s compact variant.
+hovered or focused. What leaves the row stays in the routing tooltip, which
+always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
+is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
+`routingLabelParts`, the same function behind the model picker trigger, so a
+row, the trigger, the queue and a header say a route the same way: the Codex
+variant and the checkpoint belong to the name (`GPT 5.6 Sol`), the Cursor
+modes and the effort are details. Planned routing (a step that has not
+started) is faint; routing that ran is muted. The detail is faint while the
+effort is only planned and takes the row tone once the run reports the effort
+it was started with. When the run picked something other than the plan, in
+model, provider or observed effort, the whole cell is underlined dotted and
+its one tooltip names the plan ("Planned Opus 5 High, routing picked Sonnet 5
+Medium", "Planned High, ran Medium"). Nothing is struck through. The activity
+feed, the workflow run tree and the Subagents tree of a Brief all end their
+rows with this meta, so a step and its sub-agents read the same wherever they
+appear. Headers, cards, tables and the queue use the inline `RoutingLabel`.
 
 ### The plan in the workflow builder
 

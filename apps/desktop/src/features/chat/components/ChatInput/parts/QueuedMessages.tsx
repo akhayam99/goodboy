@@ -1,5 +1,5 @@
 import { Clock, Paperclip, X } from 'lucide-react';
-import { RoutingBadge } from '../../../../../shared/components/RoutingBadge';
+import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import type { QueuedTurn } from '../lib';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 
@@ -60,7 +60,7 @@ export const QueuedMessages = ({
               {preview}
             </button>
             {item.override != null && (
-              <RoutingBadge
+              <RoutingLabel
                 provider={item.override.providerId}
                 model={item.override.model ?? item.override.selection?.key}
                 effort={item.override.selection?.effort}
