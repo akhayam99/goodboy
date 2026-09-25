@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Plus, Smartphone, type LucideIcon } from 'lucide-react';
 import { Divider, EmptyState, ScrollFade, inlineMarkdownText } from '@goodboy/ui';
 import type { Agent, AgentId, SessionId, ProjectScript } from '@goodboy/types';
 import {
@@ -19,6 +20,8 @@ import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEv
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../notifications/studioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PaletteLeading } from './PaletteLeading';
+import { LENS_ICON } from '../../lens-labels';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -34,8 +37,18 @@ type PaletteItem = {
   readonly group: PaletteGroup;
   readonly isDestination?: boolean;
   readonly accent?: string;
-  readonly icon?: string;
+  readonly icon?: LucideIcon;
   readonly onSelect: () => void;
+};
+
+const GROUP_ICON: Record<PaletteGroup, LucideIcon> = {
+  goto: CONCEPT_ICONS.nextSteps,
+  workspace: CONCEPT_ICONS.workspace,
+  session: CONCEPT_ICONS.sessions,
+  agent: CONCEPT_ICONS.agents,
+  script: CONCEPT_ICONS.scripts,
+  action: CONCEPT_ICONS.nextSteps,
+  help: CONCEPT_ICONS.help,
 };
 
 const GROUP_LABELS: Record<PaletteGroup, string> = {
@@ -203,6 +216,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           label: `Open ${SHORTCUTS[destination.shortcut].label}`,
           sublabel: shortcutGlyphs(destination.shortcut),
           group: 'action',
+          icon: destination.lens === null ? CONCEPT_ICONS.sessions : LENS_ICON[destination.lens],
           isDestination: true,
           onSelect: () => openLens({ sessionId, lens: destination.lens }),
         });
@@ -215,6 +229,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: 'Back to board',
         sublabel: shortcutGlyphs('session.board'),
         group: 'goto',
+        icon: CONCEPT_ICONS.workspace,
         onSelect: () => void setCurrentSession(null),
       });
     }
@@ -224,36 +239,42 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           id: 'goto:inbox',
           label: 'Inbox',
           group: 'goto',
+          icon: CONCEPT_ICONS.inbox,
           onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-inbox')),
         },
         {
           id: 'goto:workflows',
           label: 'Workflows',
           group: 'goto',
+          icon: CONCEPT_ICONS.workflows,
           onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio')),
         },
         {
           id: 'goto:impact',
           label: 'Impact',
           group: 'goto',
+          icon: CONCEPT_ICONS.impact,
           onSelect: () => openImpactStudio({}),
         },
         {
           id: 'goto:changelog',
           label: 'Changelog',
           group: 'goto',
+          icon: CONCEPT_ICONS.changelog,
           onSelect: openChangelogStudio,
         },
         {
           id: 'goto:notifications',
           label: 'Notifications',
           group: 'goto',
+          icon: CONCEPT_ICONS.notifications,
           onSelect: () => window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT)),
         },
         {
           id: 'goto:workspace-settings',
           label: 'Workspace settings',
           group: 'goto',
+          icon: CONCEPT_ICONS.settings,
           onSelect: () => openSettings({ scope: 'workspace' }),
         },
       );
@@ -262,6 +283,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       id: 'goto:add-workspace',
       label: 'Add workspace',
       group: 'goto',
+      icon: Plus,
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace')),
     });
 
@@ -301,6 +323,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       label: 'Open settings',
       sublabel: shortcutGlyphs('settings.open'),
       group: 'action',
+      icon: CONCEPT_ICONS.settings,
       onSelect: () => openSettings({ scope: 'app' }),
     });
     if (currentWorkspace !== null) {
@@ -309,6 +332,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: 'New session',
         sublabel: shortcutGlyphs('session.new'),
         group: 'action',
+        icon: Plus,
         onSelect: requestNewSession,
       });
     }
@@ -317,24 +341,28 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       id: 'action:toggle-theme',
       label: theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
       group: 'action',
+      icon: CONCEPT_ICONS.appearance,
       onSelect: () => toggleTheme(),
     });
     out.push({
       id: 'action:connect-provider',
       label: 'Connect a provider',
       group: 'action',
+      icon: CONCEPT_ICONS.providers,
       onSelect: () => openSettings({ scope: 'providers' }),
     });
     out.push({
       id: 'action:pair-device',
       label: 'Pair your iPhone',
       group: 'action',
+      icon: Smartphone,
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-pair-device')),
     });
     out.push({
       id: 'action:report-issue',
       label: 'Report an issue',
       group: 'action',
+      icon: CONCEPT_ICONS.reportIssue,
       onSelect: () => window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT)),
     });
 
@@ -343,12 +371,14 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
       label: 'Keyboard shortcuts',
       sublabel: shortcutGlyphs('settings.shortcuts'),
       group: 'help',
+      icon: CONCEPT_ICONS.shortcuts,
       onSelect: () => openSettings({ scope: 'app', section: 'shortcuts' }),
     });
     out.push({
       id: 'help:guide',
       label: 'Getting started',
       group: 'help',
+      icon: CONCEPT_ICONS.guide,
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-guide')),
     });
 
@@ -497,28 +527,25 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         <Divider />
 
         {parsed.prefix === null && query.length === 0 && (
-          <>
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
-              {PALETTE_PREFIXES.map((p) => (
-                <button
-                  key={p.symbol}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setQuery(p.symbol);
-                    inputRef.current?.focus();
-                  }}
-                  aria-label={`Filter by ${p.hint}`}
-                  className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 transition-colors hover:bg-hover hover:text-foreground"
-                  title={p.hint}
-                >
-                  <kbd className="font-mono text-foreground">{p.symbol}</kbd>
-                  <span>{p.hint}</span>
-                </button>
-              ))}
-            </div>
-            <Divider />
-          </>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
+            {PALETTE_PREFIXES.map((p) => (
+              <button
+                key={p.symbol}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setQuery(p.symbol);
+                  inputRef.current?.focus();
+                }}
+                aria-label={`Filter by ${p.hint}`}
+                className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 transition-colors hover:bg-hover hover:text-foreground"
+                title={p.hint}
+              >
+                <kbd className="font-mono text-foreground">{p.symbol}</kbd>
+                <span>{p.hint}</span>
+              </button>
+            ))}
+          </div>
         )}
 
         <ScrollFade className="max-h-80">
@@ -543,7 +570,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                     data-id={item.id}
                     role="option"
                     aria-selected={isSelected}
-                    className={`flex cursor-pointer items-center gap-2 px-4 py-2 text-sm ${
+                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 text-sm ${
                       isSelected ? 'bg-muted' : 'hover:bg-hover'
                     }`}
                     onMouseEnter={() => setSelectedId(item.id)}
@@ -552,12 +579,10 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                       run(item);
                     }}
                   >
-                    {item.accent ? (
-                      <span
-                        aria-hidden
-                        className={`size-1.5 shrink-0 rounded-full ${item.accent}`}
-                      />
-                    ) : null}
+                    <PaletteLeading
+                      accent={item.accent}
+                      icon={item.icon ?? GROUP_ICON[item.group]}
+                    />
                     <div className="min-w-0 flex-1">
                       <span className="block truncate">{item.label}</span>
                       {item.sublabel ? (

@@ -184,8 +184,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
-    count: 2,
-    reason: 'debt',
+    count: 1,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx': {
     count: 1,
