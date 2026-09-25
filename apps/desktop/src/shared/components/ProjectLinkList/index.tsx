@@ -4,14 +4,18 @@ import type { ProjectAttachConflict } from '../../../store/slices/projects/addPr
 import { useProjectLinking } from '../../hooks/useProjectLinking';
 import { DetectedRepoList } from '../DetectedRepoList';
 import { ProjectAdoptionNotice } from '../ProjectAdoptionNotice';
+import { ProjectAddPopover } from './ProjectAddPopover';
 import { ProjectLinkAddRow } from './ProjectLinkAddRow';
 import { ProjectLinkRow } from './ProjectLinkRow';
+import type { ProjectLinkDensity } from './projectLinkDensity';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialConflicts?: ReadonlyArray<ProjectAttachConflict>;
   readonly emptyHint?: string;
   readonly rowAccessory?: (params: { readonly project: Project }) => ReactNode;
+  readonly density?: ProjectLinkDensity;
+  readonly heading?: (params: { readonly count: number }) => ReactNode;
 };
 
 export const ProjectLinkList = ({
@@ -19,21 +23,40 @@ export const ProjectLinkList = ({
   initialConflicts,
   emptyHint,
   rowAccessory,
+  density = 'comfortable',
+  heading,
 }: Props) => {
   const linking = useProjectLinking({ workspaceId, initialConflicts });
+  const isCompact = density === 'compact';
 
   return (
     <div className="flex flex-col gap-2">
+      {isCompact && (
+        <div className="flex min-w-0 items-center gap-2">
+          {heading?.({ count: linking.linked.length })}
+          <span className="flex-1" />
+          <ProjectAddPopover
+            path={linking.path}
+            busy={linking.busy}
+            onPathChange={linking.setPath}
+            onAdd={({ rootPath }) => void linking.link({ rootPath })}
+            onBrowse={() => void linking.browse()}
+            onNewProject={() => void linking.newProject()}
+            onLinkPlainFolder={() => void linking.linkPlainFolder()}
+          />
+        </div>
+      )}
       {linking.linked.length === 0 && emptyHint !== undefined && (
         <p className="text-sm text-muted-foreground">{emptyHint}</p>
       )}
       {linking.linked.length > 0 && (
-        <ul className="flex flex-col gap-2">
+        <ul className={isCompact ? 'flex flex-col' : 'flex flex-col gap-2'}>
           {linking.linked.map((project) => (
             <ProjectLinkRow
               key={project.id}
               project={project}
               busy={linking.busy}
+              density={density}
               accessory={rowAccessory?.({ project })}
               onUnlink={linking.unlink}
             />
@@ -41,14 +64,16 @@ export const ProjectLinkList = ({
         </ul>
       )}
 
-      <ProjectLinkAddRow
-        path={linking.path}
-        busy={linking.busy}
-        onPathChange={linking.setPath}
-        onAdd={({ rootPath }) => void linking.link({ rootPath })}
-        onBrowse={() => void linking.browse()}
-        onNewProject={() => void linking.newProject()}
-      />
+      {!isCompact && (
+        <ProjectLinkAddRow
+          path={linking.path}
+          busy={linking.busy}
+          onPathChange={linking.setPath}
+          onAdd={({ rootPath }) => void linking.link({ rootPath })}
+          onBrowse={() => void linking.browse()}
+          onNewProject={() => void linking.newProject()}
+        />
+      )}
 
       {linking.detected !== null && (
         <DetectedRepoList
@@ -70,14 +95,16 @@ export const ProjectLinkList = ({
         />
       ))}
 
-      <button
-        type="button"
-        onClick={() => void linking.linkPlainFolder()}
-        disabled={linking.busy}
-        className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-      >
-        Link a plain folder (no git)
-      </button>
+      {!isCompact && (
+        <button
+          type="button"
+          onClick={() => void linking.linkPlainFolder()}
+          disabled={linking.busy}
+          className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Link a plain folder (no git)
+        </button>
+      )}
 
       {linking.error !== null && (
         <p role="alert" className="text-xs text-danger">

@@ -404,7 +404,14 @@ one is open at a time.
   the reason as the row subtitle), info on General while an app update is
   ready. Danger zone reads in `text-danger`. Panel sections sit on
   `SectionSurface` cards with gap between them and no `Divider`; a danger zone
-  is an inline danger `Notice`.
+  is an inline danger `Notice`. The workspace page is the exception: one
+  column of eyebrow sections 24px apart. Its title is the workspace name,
+  renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)
+  with the path in the name's tooltip, open, copy and unlink under `⋯`, and
+  adding behind one `Add project` popover. New session defaults sit in a
+  two-column grid with each help behind an info mark, and disconnecting is a
+  ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
+  comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.
