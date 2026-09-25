@@ -1,20 +1,20 @@
 import type { ReactNode } from 'react';
-import { Divider, cn, Eyebrow } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
+import { Divider, Eyebrow, PageColumn } from '@goodboy/ui';
+import { PageCrumbRow } from './PageCrumbRow';
+import { PageCrumbContext } from './PageCrumbContext';
 
 type Props = {
   readonly lens: string;
   readonly count?: ReactNode;
   readonly actions?: ReactNode;
-  readonly eyebrow?: ReactNode;
   readonly children: ReactNode;
 };
 
-export const FocusedPane = ({ lens, count, actions, eyebrow, children }: Props) => (
-  <div className="flex h-full min-h-0 flex-col bg-background">
-    <div className={cn('flex shrink-0 flex-col gap-1', PANE_RHYTHM.header)}>
-      {eyebrow}
-      <div className="flex items-center justify-between gap-3">
+export const FocusedPane = ({ lens, count, actions, children }: Props) => (
+  <div className="@container flex h-full min-h-0 flex-col bg-background">
+    <PageColumn className="flex shrink-0 flex-col gap-1 pb-3 pt-3">
+      <PageCrumbRow isFramed={false} />
+      <div className="flex min-h-8 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
           <Eyebrow label={lens} muted />
           {count != null ? (
@@ -23,8 +23,10 @@ export const FocusedPane = ({ lens, count, actions, eyebrow, children }: Props) 
         </div>
         {actions}
       </div>
-    </div>
+    </PageColumn>
     <Divider />
-    <div className="flex min-h-0 flex-1">{children}</div>
+    <div className="flex min-h-0 flex-1">
+      <PageCrumbContext.Provider value={null}>{children}</PageCrumbContext.Provider>
+    </div>
   </div>
 );

@@ -162,9 +162,8 @@ export const NotificationsStudio = ({ onClose }: Props) => {
           detail={
             <PaneShell
               scroll="body"
-              measure="pane"
               title={VIEW_TITLE[filters.view]}
-              description={subtitle({ total: counts.total, unread: counts.unread })}
+              meta={subtitle({ total: counts.total, unread: counts.unread })}
               actions={
                 notifications.length > 0 ? (
                   <NotificationsToolbar

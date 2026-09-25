@@ -14,6 +14,7 @@ import { useReportRegenerate } from '../../../reports/useReportRegenerate';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
 import { WireframeVariantAction } from '../../../wireframes/components/WireframeVariantAction';
+import { PageCrumbRow } from '../../../../shared/components/PaneShell/PageCrumbRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -64,6 +65,7 @@ export const ArtifactDetail = ({
       data-testid="artifact-detail"
       className="flex h-full min-h-0 min-w-0 flex-col bg-background"
     >
+      <PageCrumbRow />
       <ArtifactIdentityBand
         artifact={artifact}
         tabs={tabs}
@@ -121,7 +123,7 @@ export const ArtifactDetail = ({
           viewportClassName={PANE_RHYTHM.detail.body}
           fadeSize={24}
         >
-          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+          <div className={cn(PANE_RHYTHM.column)}>
             {artifact.kind === 'report' ? (
               <ReportStudio sessionId={sessionId} artifact={artifact} mode={mode} />
             ) : null}

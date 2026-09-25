@@ -147,11 +147,19 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-vi.mock('../AgentDetailPane', () => ({
-  AgentDetailPane: ({ agent }: { agent: Agent }) => (
-    <div data-testid="agent-detail-pane">{agent.id}</div>
-  ),
-}));
+vi.mock('../AgentDetailPane', async () => {
+  const { PageCrumbRow } = await vi.importActual<
+    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
+  >('../../../../shared/components/PaneShell/PageCrumbRow');
+  return {
+    AgentDetailPane: ({ agent }: { agent: Agent }) => (
+      <div>
+        <PageCrumbRow />
+        <div data-testid="agent-detail-pane">{agent.id}</div>
+      </div>
+    ),
+  };
+});
 vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
@@ -199,14 +207,23 @@ vi.mock('../CreateAgentPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../SessionOverviewPane', () => ({
-  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
-}));
+vi.mock('../SessionOverviewPane', async () => {
+  const { PageCrumbRow } = await vi.importActual<
+    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
+  >('../../../../shared/components/PaneShell/PageCrumbRow');
+  return {
+    SessionOverviewPane: () => (
+      <div role="region" aria-label="Session overview">
+        <PageCrumbRow />
+      </div>
+    ),
+  };
+});
 vi.mock('../../../review/components/ReviewPane', () => ({
   ReviewPane: () => <div data-testid="review-board" />,
 }));
-vi.mock('../SessionCrumbBar', () => ({
-  SessionCrumbBar: () => <div data-testid="session-crumb-bar" />,
+vi.mock('../SessionCrumbBar/SessionCrumbs', () => ({
+  SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
@@ -572,7 +589,7 @@ describe('SessionWorkspace overview layout', () => {
 });
 
 describe('SessionWorkspace breadcrumb visibility', () => {
-  it('seats the crumb bar in the page above the lens', () => {
+  it('hands the crumb to the page so it sits in the content column', () => {
     store.activeLens = { [SESSION_ID]: null };
     store.selectedAgentId = {};
 

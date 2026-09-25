@@ -406,7 +406,7 @@ describe('PlanStudio subpage', () => {
     expect(shell.className).toContain('h-full');
     expect(shell.className).not.toContain('fixed');
     expect(shell.className).not.toContain('z-50');
-    expect(container.querySelector('.max-w-5xl')).not.toBeNull();
+    expect(container.querySelector('[class*="max-w-[var(--column-max)]"]')).not.toBeNull();
   });
 
   it('shows the plan matching focusedPlanId from the store', () => {
@@ -438,7 +438,7 @@ describe('PlanStudio subpage', () => {
     const status = screen.getByText('active');
 
     expect(screen.getByText('body two')).toBeDefined();
-    expect(container.querySelector('.max-w-5xl')).not.toBeNull();
+    expect(container.querySelector('[class*="max-w-[var(--column-max)]"]')).not.toBeNull();
     expect(title.className).toContain('text-xl');
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(title.closest('.px-6')?.className).toContain('py-5');

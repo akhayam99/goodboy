@@ -41,10 +41,9 @@ export const ToolDetailPanel = ({
   return (
     <PaneShell
       scroll="body"
-      measure="reading"
       animationClassName={SETTINGS_PANE_ENTRY}
       title={title}
-      description={subtitle}
+      meta={subtitle}
       glyph={<IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />}
     >
       <section className="flex flex-col gap-2">

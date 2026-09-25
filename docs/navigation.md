@@ -158,9 +158,18 @@ surface itself shows urgency, never a badge parked beside it.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome.** It sits above the
-  session pane, never in the top bar. The top bar is workspace chrome, and a
-  session trail is page context.
+- **The trail belongs to the page, not to the chrome.** It sits in the content
+  column, directly above the title, never in the top bar and never as a
+  full-width strip. The top bar is workspace chrome, and a session trail is
+  page context. `SessionWorkspace` hands the trail down through
+  `PageCrumbContext`, and `PaneShell` draws it inside the same `PageColumn` as
+  the title and body, outside the mount animation, so it holds still while the
+  view under it changes. Whatever draws the trail clears the context for its
+  children, so a nested shell never draws a second one. Outside a session the
+  context is empty and the row does not exist.
+- **Under 720px of pane width the middle collapses.** Crumbs between the
+  destination switcher and the last crumb fold into a `…` menu that lists them,
+  the way VS Code and GitHub fold long paths.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.

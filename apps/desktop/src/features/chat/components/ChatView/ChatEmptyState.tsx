@@ -147,7 +147,7 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
       className={cn(
         'flex flex-col items-center justify-center gap-5 px-6 py-16 text-center',
         PANE_RHYTHM.column,
-        PANE_RHYTHM.measure.hero,
+        PANE_RHYTHM.hero,
       )}
     >
       <div className="flex items-center justify-center">

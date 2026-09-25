@@ -31,7 +31,6 @@ export const A11Y_BASELINE = {
   'scene resolve-queue-shell': ['heading-order'],
   'scene resolve-publish-blocked': ['heading-order'],
   'scene artifacts-lens-shell': [],
-  'scene lens-switcher': ['heading-order'],
   'scene lens-switcher-closed': ['heading-order'],
   'scene providers': ['nested-interactive'],
   'scene session-states': ['aria-allowed-role'],

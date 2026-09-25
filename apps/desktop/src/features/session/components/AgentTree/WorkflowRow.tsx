@@ -202,7 +202,7 @@ export const WorkflowRow = ({
       )}
     >
       <div className={cn('shrink-0', PANE_RHYTHM.header)}>
-        <div className={cn('flex flex-col gap-4', PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+        <div className={cn('flex flex-col gap-4', PANE_RHYTHM.column)}>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto] items-start gap-2">
             <div className="col-start-1 row-start-1 flex min-w-0 items-start gap-3">
               <span
@@ -355,7 +355,7 @@ export const WorkflowRow = ({
           fadeSize={24}
         >
           <WorkTimeProvider sessionId={task.id} workspaceId={task.workspaceId}>
-            <div className={cn(PANE_RHYTHM.stack, PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+            <div className={cn(PANE_RHYTHM.stack, PANE_RHYTHM.column)}>
               {!isDiscarded && !isDynamic && (
                 <WorkflowNextStepCta
                   workflow={workflow}

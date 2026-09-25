@@ -11,6 +11,7 @@ import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuest
 import { ArtifactScouts } from './ArtifactScouts';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
+import { PageCrumbRow } from '../../../../shared/components/PaneShell/PageCrumbRow';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -44,6 +45,7 @@ export const ArtifactRunDetail = ({
       data-testid="artifact-run-detail"
       className="flex h-full min-h-0 min-w-0 flex-col bg-background"
     >
+      <PageCrumbRow />
       <div className={cn('flex h-11 shrink-0 items-center gap-2', PANE_RHYTHM.detail.band)}>
         <Button
           variant="ghost"
@@ -85,7 +87,7 @@ export const ArtifactRunDetail = ({
         viewportClassName={PANE_RHYTHM.detail.body}
         fadeSize={24}
       >
-        <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane, 'flex flex-col gap-2')}>
+        <div className={cn(PANE_RHYTHM.column, 'flex flex-col gap-2')}>
           {questions.length > 0 && (
             <div data-testid="artifact-run-questions" className="flex min-w-0 flex-col gap-2">
               <SectionHeader label="Answer this before it can produce" />

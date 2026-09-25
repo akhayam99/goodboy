@@ -21,10 +21,9 @@ import { useEscapeToList } from '../../hooks/useEscapeToList';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly eyebrow?: ReactNode;
 };
 
-export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
+export const ArtifactStudio = ({ sessionId }: Props) => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -219,7 +218,7 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
   }
 
   if (focusedPlanId !== null) {
-    return <PlanStudio sessionId={sessionId} eyebrow={eyebrow} />;
+    return <PlanStudio sessionId={sessionId} />;
   }
 
   if (selected === null && focusedRun === null) {
@@ -231,7 +230,6 @@ export const ArtifactStudio = ({ sessionId, eyebrow }: Props) => {
         counts={counts}
         openQuestionCount={openQuestionCount}
         filter={filter}
-        eyebrow={eyebrow}
         onFilterChange={changeFilter}
         onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
         onSelectArtifact={selectArtifact}

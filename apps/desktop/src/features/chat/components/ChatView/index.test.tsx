@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const chatBreadcrumbMock = vi.hoisted(() => vi.fn());
 const diffViewerMock = vi.hoisted(() => vi.fn());
 const workflowAdvance = vi.hoisted(() => ({ visible: false }));
 
@@ -85,13 +84,6 @@ vi.mock('../AuthRequiredCallout', () => ({
   AuthRequiredCallout: () => null,
 }));
 
-vi.mock('../ChatBreadcrumb', () => ({
-  ChatBreadcrumb: (props: unknown) => {
-    chatBreadcrumbMock(props);
-    return null;
-  },
-}));
-
 vi.mock('../ChatInput', () => ({
   ChatInput: () => null,
 }));
@@ -160,7 +152,6 @@ beforeEach(() => {
   state.selectAgent.mockClear();
   state.loadSessionArtifacts.mockClear();
   state.advanceClusterImplementation.mockClear();
-  chatBreadcrumbMock.mockClear();
   diffViewerMock.mockClear();
   openQuestions.current = [];
   answeredQuestions.current = [];
@@ -203,12 +194,6 @@ describe('ChatView', () => {
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();
-  });
-
-  it('renders a custom header instead of the breadcrumb', () => {
-    render(<ChatView session={session} header={<div data-testid="custom-header" />} />);
-    expect(screen.getByTestId('custom-header')).toBeDefined();
-    expect(chatBreadcrumbMock).not.toHaveBeenCalled();
   });
 
   it('shows the workflow advance action above the composer when one is available', () => {

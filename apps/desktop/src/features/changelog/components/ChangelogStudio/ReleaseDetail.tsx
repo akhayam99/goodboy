@@ -33,9 +33,8 @@ export const ReleaseDetail = ({
   return (
     <PaneShell
       scroll="body"
-      measure="reading"
       title={release?.version ?? 'Release notes'}
-      description={subtitle}
+      meta={subtitle}
       actions={action}
     >
       {view === 'loading' ? (

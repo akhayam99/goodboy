@@ -12,7 +12,7 @@ export const SessionOverviewSkeleton = ({ isFreshLayout }: Props) => {
   return (
     <ScrollFade className="h-full" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
       <div
-        className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, PANE_RHYTHM.measure.pane)}
+        className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack)}
         role="status"
         aria-label="Loading session overview"
       >

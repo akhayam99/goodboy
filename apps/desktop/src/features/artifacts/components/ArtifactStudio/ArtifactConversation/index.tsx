@@ -83,7 +83,7 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
             no conversation to show. this artifact has no agent to talk to in this session.
           </div>
         ) : (
-          <ChatView session={session} isActive={isActive} header={null} />
+          <ChatView session={session} isActive={isActive} />
         )}
       </div>
     </div>

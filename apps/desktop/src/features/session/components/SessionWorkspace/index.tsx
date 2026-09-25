@@ -14,7 +14,8 @@ import {
 } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
-import { SessionCrumbBar } from '../SessionCrumbBar';
+import { SessionCrumbs } from '../SessionCrumbBar/SessionCrumbs';
+import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
 import { AgentOverlay } from './parts/AgentOverlay';
 import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
@@ -203,159 +204,160 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [showAgentOverlay, leaveAgentOverlay]);
 
+  const crumb = useMemo(() => <SessionCrumbs session={session} />, [session]);
+
   return (
-    <div className="relative flex h-full w-full min-w-0 flex-col">
-      <div>
-        <SessionCrumbBar />
-      </div>
-      <div className="relative min-h-0 flex-1">
-        <div
-          className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
-          inert={!showLens}
-        >
-          {surface === 'overview' ? (
-            isOverviewLoaded ? (
-              <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
-            ) : (
-              <SessionOverviewLoading
-                isFreshLayout={isFreshOverviewLayout}
-                onRetry={onRetryOverview}
-              />
-            )
-          ) : null}
-          {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-          {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
-          {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
-          {lens === 'scripts' ? (
-            <PaneShell
-              title="Scripts"
-              description="Shell commands you run by hand from this session, no agent involved."
-            >
-              <ScriptsPanel
-                workspaceId={session.workspaceId}
-                sessionId={sessionId}
-                hasHostHeading
-              />
-            </PaneShell>
-          ) : null}
-          {surface === 'context' ? (
-            <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
-          ) : null}
-          {lens === 'pr' ? <PrPane session={session} /> : null}
-          {lens === 'review' ? <ReviewPane session={session} /> : null}
-          {lens === 'linear' ? (
-            <IntegrationPane
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              provider="linear"
-            />
-          ) : null}
-          {lens === 'gitlab_issues' ? (
-            <IntegrationPane
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              provider="gitlab"
-            />
-          ) : null}
-          {lens === 'jira_issues' ? (
-            <IntegrationPane
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              provider="jira"
-            />
-          ) : null}
-          {lens === 'slack_threads' ? (
-            <IntegrationPane
-              sessionId={sessionId}
-              workspaceId={session.workspaceId}
-              provider="slack"
-            />
-          ) : null}
-          {lens === 'github_issue' ? (
-            githubIssueNumber != null ? (
-              <GithubTaskDetail
-                workspaceId={session.workspaceId}
-                rootPath={projectWorktreePath}
-                {...(githubTask != null && { task: githubTask })}
-                issueNumber={githubIssueNumber}
-              />
-            ) : (
-              <PaneShell
-                title="GitHub issue"
-                description="The GitHub issue linked to this session."
-              >
-                <LensEmptyState
-                  icon={CONCEPT_ICONS.github}
-                  tone={CONCEPT_TONE.github}
-                  title="No GitHub issue linked"
-                  description="Link a GitHub issue to this session to see it here."
-                  action={
-                    <LinkTicketPopover
-                      sessionId={sessionId}
-                      workspaceId={session.workspaceId}
-                      provider="github"
-                      providerLabel="GitHub"
-                      noun="issue"
-                      nounPhrase="an issue"
-                      nounPlural="issues"
-                    />
-                  }
-                />
-              </PaneShell>
-            )
-          ) : null}
-          {lens === 'files' ? (
-            <FilesPane
-              sessionId={sessionId}
-              sessionDir={workingDir}
-              worktreePath={diffWorktreePath}
-              isBranchless={isBranchless}
-              onClose={onSelectOverview}
-            />
-          ) : null}
-          {lens === 'explore' ? (
-            <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
-          ) : null}
-          <Pane visible={lens === 'agents'}>
-            <AgentsPane session={session} meta={agentsMeta} />
-          </Pane>
-        </div>
-
-        {showAgentOverlay ? (
-          <AgentOverlay
-            session={session}
-            sessionId={sessionId}
-            isChatActive={isActive && selectedAgentId != null}
-            selectedAgentId={selectedAgentId}
-            onBack={leaveAgentOverlay}
-          />
-        ) : null}
-
-        {!isBranchless ? (
+    <PageCrumbContext.Provider value={crumb}>
+      <div className="@container relative flex h-full w-full min-w-0 flex-col">
+        <div className="relative min-h-0 flex-1">
           <div
-            className={cn(
-              'absolute inset-0 z-10 flex flex-col',
-              !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
-            )}
+            className={cn('absolute inset-0 z-0', !showLens && 'invisible pointer-events-none')}
+            inert={!showLens}
           >
-            <TerminalDock
-              sessionId={sessionId}
-              isActive={isActive && lens === 'terminal' && showLens}
-              cwd={terminalWorkingDir}
-            />
+            <PageCrumbContext.Provider value={showLens ? crumb : null}>
+              {surface === 'overview' ? (
+                isOverviewLoaded ? (
+                  <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+                ) : (
+                  <SessionOverviewLoading
+                    isFreshLayout={isFreshOverviewLayout}
+                    onRetry={onRetryOverview}
+                  />
+                )
+              ) : null}
+              {lens === 'questions' ? <QuestionsPane session={session} /> : null}
+              {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
+              {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
+              {lens === 'scripts' ? (
+                <PaneShell title="Scripts">
+                  <ScriptsPanel
+                    workspaceId={session.workspaceId}
+                    sessionId={sessionId}
+                    hasHostHeading
+                  />
+                </PaneShell>
+              ) : null}
+              {surface === 'context' ? (
+                <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
+              ) : null}
+              {lens === 'pr' ? <PrPane session={session} /> : null}
+              {lens === 'review' ? <ReviewPane session={session} /> : null}
+              {lens === 'linear' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="linear"
+                />
+              ) : null}
+              {lens === 'gitlab_issues' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="gitlab"
+                />
+              ) : null}
+              {lens === 'jira_issues' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="jira"
+                />
+              ) : null}
+              {lens === 'slack_threads' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="slack"
+                />
+              ) : null}
+              {lens === 'github_issue' ? (
+                githubIssueNumber != null ? (
+                  <GithubTaskDetail
+                    workspaceId={session.workspaceId}
+                    rootPath={projectWorktreePath}
+                    {...(githubTask != null && { task: githubTask })}
+                    issueNumber={githubIssueNumber}
+                  />
+                ) : (
+                  <PaneShell title="GitHub issue">
+                    <LensEmptyState
+                      icon={CONCEPT_ICONS.github}
+                      tone={CONCEPT_TONE.github}
+                      title="No GitHub issue linked"
+                      description="Link a GitHub issue to this session to see it here."
+                      action={
+                        <LinkTicketPopover
+                          sessionId={sessionId}
+                          workspaceId={session.workspaceId}
+                          provider="github"
+                          providerLabel="GitHub"
+                          noun="issue"
+                          nounPhrase="an issue"
+                          nounPlural="issues"
+                        />
+                      }
+                    />
+                  </PaneShell>
+                )
+              ) : null}
+              {lens === 'files' ? (
+                <FilesPane
+                  sessionId={sessionId}
+                  sessionDir={workingDir}
+                  worktreePath={diffWorktreePath}
+                  isBranchless={isBranchless}
+                  onClose={onSelectOverview}
+                />
+              ) : null}
+              {lens === 'explore' ? (
+                <ExplorePane sessionId={sessionId} sessionDir={workingDir} />
+              ) : null}
+              <Pane visible={lens === 'agents'}>
+                <PageCrumbContext.Provider value={showLens && lens === 'agents' ? crumb : null}>
+                  <AgentsPane session={session} meta={agentsMeta} />
+                </PageCrumbContext.Provider>
+              </Pane>
+            </PageCrumbContext.Provider>
           </div>
-        ) : null}
 
-        {studio != null ? (
-          <div className="absolute inset-0 z-30">
-            <SessionStudioLayer
+          {showAgentOverlay ? (
+            <AgentOverlay
               session={session}
-              studio={studio}
-              onClose={() => setSessionStudio(sessionId, null)}
+              sessionId={sessionId}
+              isChatActive={isActive && selectedAgentId != null}
+              selectedAgentId={selectedAgentId}
+              onBack={leaveAgentOverlay}
             />
-          </div>
-        ) : null}
+          ) : null}
+
+          {!isBranchless ? (
+            <div
+              className={cn(
+                'absolute inset-0 z-10 flex flex-col',
+                !(lens === 'terminal' && showLens) && 'invisible pointer-events-none',
+              )}
+            >
+              <PageCrumbContext.Provider value={lens === 'terminal' && showLens ? crumb : null}>
+                <TerminalDock
+                  sessionId={sessionId}
+                  isActive={isActive && lens === 'terminal' && showLens}
+                  cwd={terminalWorkingDir}
+                />
+              </PageCrumbContext.Provider>
+            </div>
+          ) : null}
+
+          {studio != null ? (
+            <div className="absolute inset-0 z-30">
+              <SessionStudioLayer
+                session={session}
+                studio={studio}
+                onClose={() => setSessionStudio(sessionId, null)}
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </PageCrumbContext.Provider>
   );
 };

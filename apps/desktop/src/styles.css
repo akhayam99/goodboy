@@ -117,6 +117,9 @@
 
   --chat-header-h: 2rem;
 
+  --column-max: 960px;
+  --column-frame: calc(var(--column-max) + 48px);
+
   --container-chrome-word: 1000px;
   --container-chrome-labels: 960px;
 

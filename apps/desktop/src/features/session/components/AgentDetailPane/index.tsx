@@ -104,7 +104,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
       }
     >
       {tab === 'transcript' ? (
-        <ChatView session={session} isActive={isChatActive} header={null} />
+        <ChatView session={session} isActive={isChatActive} />
       ) : (
         <AgentBrief session={session} agent={agent} />
       )}

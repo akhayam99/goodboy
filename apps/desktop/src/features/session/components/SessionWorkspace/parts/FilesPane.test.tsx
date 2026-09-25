@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
 import type {
   BranchCommit,
   MountId,
@@ -253,7 +253,7 @@ describe('FilesPane', () => {
     expect(switcher.className).toContain('border-border-soft');
     expect(switcher.className).toContain('bg-subtle');
     expect(screen.getAllByTestId('diff-mount-option')).toHaveLength(2);
-    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+    for (const cls of PANE_RHYTHM.column.split(' ')) {
       expect(switcher.parentElement?.className).toContain(cls);
     }
     expect(switcher.parentElement?.parentElement?.className).toContain('px-6');
@@ -269,7 +269,7 @@ describe('FilesPane', () => {
     });
 
     const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
-    expect(wrapper?.className).not.toContain('max-w-5xl');
+    expect(wrapper?.className).not.toContain('max-w-[var(--column-max)]');
     expect(wrapper?.className).not.toContain('mx-auto');
     expect(wrapper?.parentElement?.className).toContain('px-6');
   });
@@ -287,7 +287,7 @@ describe('FilesPane', () => {
     });
 
     const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
-    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+    for (const cls of PANE_RHYTHM.column.split(' ')) {
       expect(wrapper?.className).toContain(cls);
     }
   });

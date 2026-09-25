@@ -88,7 +88,6 @@
     "apps/desktop/src/app/components/MockScene/scenes/LensSwitcherScenes.tsx": 2,
     "apps/desktop/src/app/components/MockScene/scenes/ModelPickerScenes.tsx": 9,
     "apps/desktop/src/app/components/MockScene/scenes/SurfaceAuditScenes.tsx": 4,
-    "apps/desktop/src/features/chat/components/ChatBreadcrumb/index.tsx": 1,
     "apps/desktop/src/features/chat/components/TranscriptCards/UsageRow.tsx": 1,
     "apps/desktop/src/features/chat/components/TranscriptCards/UserText.tsx": 2,
     "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
@@ -122,7 +121,6 @@
     "packages/ui/src/components/Skeleton.tsx": 1
   },
   "function-component": {
-    "apps/desktop/src/features/chat/components/ChatBreadcrumb/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 1,
     "apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 2

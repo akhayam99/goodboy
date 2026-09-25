@@ -86,7 +86,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
       sessionEffort={sessionEffort}
       blockReason={state.kind === 'blocked' ? state.reason : null}
       onAdvance={({ step, isConfirmed }) => void onAdvance({ step, isConfirmed })}
-      className={cn('shrink-0 px-10 pb-1', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
+      className={cn('shrink-0 px-10 pb-1', PANE_RHYTHM.column)}
     />
   );
 };

@@ -18,7 +18,6 @@ type Props = {
   readonly counts: Readonly<Record<ArtifactFilter, number>>;
   readonly openQuestionCount: number;
   readonly filter: ArtifactFilter;
-  readonly eyebrow?: ReactNode;
   readonly onFilterChange: (filter: ArtifactFilter) => void;
   readonly onSelectPlan: (planId: PlanId) => void;
   readonly onSelectArtifact: (artifactId: ArtifactId) => void;
@@ -69,7 +68,6 @@ export const ArtifactCollection = ({
   counts,
   openQuestionCount,
   filter,
-  eyebrow,
   onFilterChange,
   onSelectPlan,
   onSelectArtifact,
@@ -86,9 +84,7 @@ export const ArtifactCollection = ({
   return (
     <PaneShell
       title="Artifacts"
-      description="Plans, reports and wireframes this session produced. Select one to read it."
       meta={counts.all > 0 ? counts.all : undefined}
-      eyebrow={eyebrow}
       actions={
         <>
           {reportCta}

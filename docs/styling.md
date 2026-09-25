@@ -104,13 +104,35 @@ columns exist and what each one may do.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the brand. Page breadcrumbs stay in the
-pane that owns them and do not set the top bar's size.
+content column of the pane that owns them and do not set the top bar's size.
 
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
 `pointer-events-none` at its root, then turns events back on for the panel
 itself. An overlay that must cover the work area spans main and everything to
 the right of it, never the session sidebar.
+
+## The content column
+
+Every main pane renders through `PaneShell`, and its crumb, header and body
+sit in one `PageColumn`. The column is `min(960px, pane - 2 * gutter)`:
+`--column-max` is 960px of content, the gutter is 24px a side, 16px once the
+pane is under 720px wide. The gutter switch is a container query on the pane
+(`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
+media query on the window, because the space that counts is the pane's.
+
+No view picks its own width. The column changes only when the window changes
+or the right drawer opens, never because you moved from Overview to Review to a
+chat. Anything that centres content uses `PageColumn` or `PANE_RHYTHM.column`;
+no other `max-w-*` layout width lives under `features/`.
+`shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
+`DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
+explicit allowlist, such as the image lightbox), and on a lens the session
+workspace mounts without `PaneShell`. Lenses still on `StudioDetailLayout` or a
+hand-built band render the crumb through `PageCrumbRow` until they move.
+
+Long markdown documents (report, plan, brief) keep a 72ch prose measure,
+aligned left inside the column. Tables and code take the whole column.
 
 ## Layout: fixed-height shell, scroll on content
 
@@ -154,7 +176,7 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 A `Divider` marks the boundary between app chrome and a pane's content, not a
 boundary inside content. Allowed: the top bar and footer, a studio or sidebar
 rail against the detail pane (vertical), a pane's fixed header against its
-scrolling body (`PaneShell scroll="body"`, `InspectorHeader`), and inside a
+scrolling body (a `PaneShell` dock, `InspectorHeader`), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 

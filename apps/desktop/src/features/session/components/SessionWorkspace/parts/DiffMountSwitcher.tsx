@@ -1,7 +1,6 @@
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
-import { cn } from '@goodboy/ui';
+import { cn, PANE_RHYTHM } from '@goodboy/ui';
 import { useAppStore, useMountDiffStats } from '../../../../../store';
-import { DIFF_CAPPED_COLUMN_CLASS } from '../../../../permissions/components/DiffViewerDialog/lib';
 import { DiffStat } from '../../DiffStat';
 
 type Props = {
@@ -22,7 +21,7 @@ export const DiffMountSwitcher = ({
 
   return (
     <div className="shrink-0 px-6 pt-5">
-      <div className={cn(isDiffEmpty && DIFF_CAPPED_COLUMN_CLASS)}>
+      <div className={cn(isDiffEmpty && PANE_RHYTHM.column)}>
         <div
           role="group"
           aria-label="Worktrees"

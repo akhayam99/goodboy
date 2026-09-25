@@ -33,10 +33,9 @@ import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedTo
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly eyebrow?: ReactNode;
 };
 
-export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
+export const PlanStudio = ({ sessionId }: Props) => {
   const plans = useSessionPlans(sessionId);
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const agents = useAppStore(
@@ -136,7 +135,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
 
   if (selected != null) {
     return (
-      <FocusedPane lens="Plans" count={plans.length} eyebrow={eyebrow}>
+      <FocusedPane lens="Plans" count={plans.length}>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className={cn('flex shrink-0 flex-col gap-2', PANE_RHYTHM.body)}>
             <HeaderBand
@@ -304,7 +303,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
           </div>
           <Divider />
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.pane)}>
+            <div className={cn(PANE_RHYTHM.column)}>
               {mode === 'edit' ? (
                 <Textarea
                   autoFocus
@@ -328,12 +327,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
   const active = plans.filter((plan) => plan.status === 'active');
 
   return (
-    <PaneShell
-      title="Plans"
-      description="Plans agents drafted for this session. Run one to start an agent that carries it out."
-      meta={plans.length > 0 ? plans.length : undefined}
-      eyebrow={eyebrow}
-    >
+    <PaneShell title="Plans" meta={plans.length > 0 ? plans.length : undefined}>
       {plans.length === 0 ? (
         <LensEmptyState
           tone={CONCEPT_TONE.plans}

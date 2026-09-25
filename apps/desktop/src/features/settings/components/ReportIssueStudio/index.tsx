@@ -273,9 +273,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
       {(requestClose) => (
         <div className="flex min-h-0 flex-1 flex-col">
           <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-            <div
-              className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.reading, 'flex flex-col gap-6')}
-            >
+            <div className={cn(PANE_RHYTHM.column, 'flex flex-col gap-6')}>
               <div className="flex flex-col gap-4">
                 <SegmentedTabs
                   size="md"

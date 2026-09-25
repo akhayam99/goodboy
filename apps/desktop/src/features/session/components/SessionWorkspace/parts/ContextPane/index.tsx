@@ -46,7 +46,6 @@ const REGION_CONCEPT = {
 type Props = {
   readonly session: Session;
   readonly initialRegion?: ContextLens;
-  readonly eyebrow?: ReactNode;
 };
 
 type ValueParams = {
@@ -57,7 +56,7 @@ type ValueParams = {
 const valueFor = ({ slots, slotKey }: ValueParams): string =>
   slots.find((slot) => slot.key === slotKey)?.value ?? '';
 
-export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
+export const ContextPane = ({ session, initialRegion }: Props) => {
   const sessionId = session.id as SessionId;
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
@@ -138,12 +137,7 @@ export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
         )
       }
     >
-      <PaneShell
-        title="Context"
-        icon={CONCEPT_ICONS.context}
-        tone={CONCEPT_TONE.context}
-        eyebrow={eyebrow}
-      >
+      <PaneShell title="Context" icon={CONCEPT_ICONS.context} tone={CONCEPT_TONE.context}>
         {REGION_ORDER.map((slotKey) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];

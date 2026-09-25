@@ -8,7 +8,7 @@ export const TranscriptSkeleton = () => {
     <div
       role="status"
       aria-label="Loading transcript"
-      className={cn('flex flex-col gap-6', PANE_RHYTHM.column, PANE_RHYTHM.measure.chat)}
+      className={cn('flex flex-col gap-6', PANE_RHYTHM.column)}
     >
       {[0, 1].map((i) => (
         <div key={i} className="flex flex-col gap-2.5">

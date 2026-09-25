@@ -15,13 +15,9 @@ describe('PANE_RHYTHM', () => {
     expect(PANE_RHYTHM.header).toBe('px-6 py-5');
   });
 
-  it('keeps every supported measure available', () => {
-    expect(PANE_RHYTHM.measure).toEqual({
-      reading: 'max-w-3xl',
-      pane: 'max-w-5xl',
-      full: 'max-w-none',
-      chat: 'max-w-[880px]',
-      hero: 'max-w-[640px]',
-    });
+  it('holds one content column and one hero measure', () => {
+    expect(PANE_RHYTHM.column).toBe('mx-auto w-full max-w-[var(--column-max)]');
+    expect(PANE_RHYTHM.hero).toBe('max-w-[640px]');
+    expect(Object.keys(PANE_RHYTHM)).not.toContain('measure');
   });
 });

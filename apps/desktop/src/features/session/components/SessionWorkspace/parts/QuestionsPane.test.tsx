@@ -95,11 +95,11 @@ vi.mock('./QuestionsPaneCard', () => ({
 vi.mock('../../../../../shared/components/PaneShell', () => ({
   PaneShell: (props: {
     title: string;
-    description?: string;
+    meta?: string;
     actions?: React.ReactNode;
     children: React.ReactNode;
   }) => (
-    <div data-testid="pane-shell" data-title={props.title} data-description={props.description}>
+    <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
       {props.actions}
       {props.children}
     </div>
@@ -297,14 +297,12 @@ describe('QuestionsPane', () => {
       expect(screen.getByText('No open questions')).toBeDefined();
     });
 
-    it('passes correct PaneShell description in empty state', () => {
+    it('titles the empty pane and leaves the teaching copy to the empty state', () => {
       setupStore({ openQuestions: [] });
       render(<QuestionsPane session={BASE_SESSION} />);
       const shell = screen.getByTestId('pane-shell');
       expect(shell.getAttribute('data-title')).toBe('Questions');
-      expect(shell.getAttribute('data-description')).toBe(
-        'Decisions agents need from you to keep going.',
-      );
+      expect(shell.getAttribute('data-meta')).toBeNull();
     });
   });
 
@@ -629,21 +627,21 @@ describe('QuestionsPane', () => {
     });
   });
 
-  describe('pane description', () => {
-    it('singular "question" for 1 open question', () => {
+  describe('pane meta', () => {
+    it('counts one open question', () => {
       setupStore({ openQuestions: [mkQuestion('q1')] });
       render(<QuestionsPane session={BASE_SESSION} />);
       const shell = screen.getByTestId('pane-shell');
-      expect(shell.getAttribute('data-description')).toBe('1 open question waiting on you.');
+      expect(shell.getAttribute('data-meta')).toBe('1 open');
     });
 
-    it('plural "questions" for multiple open questions', () => {
+    it('counts several open questions', () => {
       setupStore({
         openQuestions: [mkQuestion('q1'), mkQuestion('q2'), mkQuestion('q3')],
       });
       render(<QuestionsPane session={BASE_SESSION} />);
       const shell = screen.getByTestId('pane-shell');
-      expect(shell.getAttribute('data-description')).toBe('3 open questions waiting on you.');
+      expect(shell.getAttribute('data-meta')).toBe('3 open');
     });
   });
 

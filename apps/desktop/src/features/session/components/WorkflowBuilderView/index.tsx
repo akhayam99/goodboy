@@ -1112,14 +1112,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     >
       {() => (
         <ScrollFade className="min-h-0 w-full flex-1">
-          <div
-            className={cn(
-              PANE_RHYTHM.measure.pane,
-              PANE_RHYTHM.column,
-              PANE_RHYTHM.body,
-              'flex flex-col gap-8',
-            )}
-          >
+          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col gap-8')}>
             <div className="flex flex-col gap-3">
               <BuilderTitleField
                 value={title}

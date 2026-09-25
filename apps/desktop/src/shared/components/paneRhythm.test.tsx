@@ -26,137 +26,72 @@ const nearestClasses = ({ node, pattern }: ClassParams) => {
   return '';
 };
 
-const INSET = /^p[xy]-/;
-const MEASURE = /^max-w-/;
-
-const paneShellBody = () => {
-  const { unmount } = render(
-    <PaneShell title="Pane">
-      <p>Pane body</p>
-    </PaneShell>,
-  );
-  const inset = nearestClasses({ node: screen.getByText('Pane body'), pattern: INSET });
-  const measure = nearestClasses({ node: screen.getByText('Pane body'), pattern: MEASURE });
-  unmount();
-  return { inset, measure };
-};
-
-const focusedPaneHeader = () => {
-  const { unmount } = render(
-    <FocusedPane lens="Lens">
-      <p>Focused body</p>
-    </FocusedPane>,
-  );
-  const inset = nearestClasses({
-    node: screen.getByText('Lens'),
-    pattern: INSET,
-  });
-  unmount();
-  return inset;
-};
-
-const studioDetail = () => {
-  const { unmount } = render(
-    <StudioDetailLayout header={<span>Detail header</span>} tabs={<span>Detail tabs</span>}>
-      <p>Detail body</p>
-    </StudioDetailLayout>,
-  );
-  const header = {
-    inset: nearestClasses({ node: screen.getByText('Detail header'), pattern: INSET }),
-    measure: nearestClasses({ node: screen.getByText('Detail header'), pattern: MEASURE }),
-  };
-  const tabsMeasure = nearestClasses({ node: screen.getByText('Detail tabs'), pattern: MEASURE });
-  const body = {
-    inset: nearestClasses({ node: screen.getByText('Detail body'), pattern: INSET }),
-    measure: nearestClasses({ node: screen.getByText('Detail body'), pattern: MEASURE }),
-  };
-  unmount();
-  return { header, tabsMeasure, body };
-};
-
-const studioDetailBleedDock = () => {
-  const { unmount } = render(
-    <StudioDetailLayout
-      header={<span>Detail header</span>}
-      fit="bleed"
-      dock={<span>Detail dock</span>}
-    >
-      <p>Detail body</p>
-    </StudioDetailLayout>,
-  );
-  const header = {
-    inset: nearestClasses({ node: screen.getByText('Detail header'), pattern: INSET }),
-    measure: nearestClasses({ node: screen.getByText('Detail header'), pattern: MEASURE }),
-  };
-  const dock = {
-    inset: nearestClasses({ node: screen.getByText('Detail dock'), pattern: INSET }),
-    measure: nearestClasses({ node: screen.getByText('Detail dock'), pattern: MEASURE }),
-  };
-  unmount();
-  return { header, dock };
-};
-
-const paneShellFramed = () => {
-  const { unmount } = render(
-    <PaneShell title="Panel" scroll="body">
-      <p>Panel body</p>
-    </PaneShell>,
-  );
-  const header = nearestClasses({ node: screen.getByText('Panel'), pattern: INSET });
-  const body = nearestClasses({ node: screen.getByText('Panel body'), pattern: INSET });
-  unmount();
-  return { header, body };
-};
+const GUTTER = /^px-/;
+const WIDTH = /^max-w-/;
 
 describe('pane rhythm', () => {
-  it('gives every shell header the same inset', () => {
-    const detail = studioDetail();
-    const panel = paneShellFramed();
-
-    expect(focusedPaneHeader()).toBe(detail.header.inset);
-    expect(panel.header).toBe(detail.header.inset);
-    expect(detail.header.inset).not.toBe('');
-  });
-
-  it('gives every shell body the same inset', () => {
-    const detail = studioDetail();
-    const panel = paneShellFramed();
-
-    expect(paneShellBody().inset).toBe(detail.body.inset);
-    expect(panel.body).toBe(detail.body.inset);
-    expect(detail.body.inset).not.toBe('');
-  });
-
-  it('lands the detail header, its tabs, and its body on the same column', () => {
-    const detail = studioDetail();
-
-    expect(detail.header.measure).toBe(detail.body.measure);
-    expect(detail.tabsMeasure).toBe(detail.body.measure);
-    expect(detail.header.measure).toBe(PANE_RHYTHM.measure.pane);
-  });
-
-  it('lands the dock on the same column as the header, even over a full-bleed body', () => {
-    const detail = studioDetailBleedDock();
-
-    expect(detail.dock.measure).toBe(detail.header.measure);
-    expect(detail.dock.measure).toBe(PANE_RHYTHM.measure.pane);
-  });
-
-  it('centers the studio column instead of hugging the left edge', () => {
+  it('gives every shell the same horizontal gutter', () => {
     render(
-      <PaneShell title="Panel" scroll="body">
+      <>
+        <PaneShell title="Pane">
+          <p>Pane body</p>
+        </PaneShell>
+        <PaneShell title="Framed" scroll="body">
+          <p>Framed body</p>
+        </PaneShell>
+        <FocusedPane lens="Lens">
+          <p>Focused body</p>
+        </FocusedPane>
+        <StudioDetailLayout header={<span>Detail header</span>}>
+          <p>Detail body</p>
+        </StudioDetailLayout>
+      </>,
+    );
+
+    const gutters = [
+      nearestClasses({ node: screen.getByText('Pane body'), pattern: GUTTER }),
+      nearestClasses({ node: screen.getByText('Framed'), pattern: GUTTER }),
+      nearestClasses({ node: screen.getByText('Framed body'), pattern: GUTTER }),
+      nearestClasses({ node: screen.getByText('Lens'), pattern: GUTTER }),
+      nearestClasses({ node: screen.getByText('Detail header'), pattern: GUTTER }),
+      nearestClasses({ node: screen.getByText('Detail body'), pattern: GUTTER }),
+    ];
+    for (const gutter of gutters) {
+      expect(gutter.split(' ')).toContain(PANE_RHYTHM.inset);
+    }
+  });
+
+  it('lands the detail header, its tabs, its body, and its dock on the content column', () => {
+    render(
+      <StudioDetailLayout
+        header={<span>Detail header</span>}
+        tabs={<span>Detail tabs</span>}
+        dock={<span>Detail dock</span>}
+      >
+        <p>Detail body</p>
+      </StudioDetailLayout>,
+    );
+
+    for (const label of ['Detail header', 'Detail tabs', 'Detail body', 'Detail dock']) {
+      expect(nearestClasses({ node: screen.getByText(label), pattern: WIDTH })).toBe(
+        'max-w-[var(--column-max)]',
+      );
+    }
+  });
+
+  it('frames every pane shell region on the same page column', () => {
+    render(
+      <PaneShell title="Panel" scroll="body" dock={<span>Panel dock</span>}>
         <p>Panel body</p>
       </PaneShell>,
     );
 
+    const widths = ['Panel', 'Panel body', 'Panel dock'].map((label) =>
+      nearestClasses({ node: screen.getByText(label), pattern: WIDTH }),
+    );
+    expect(new Set(widths)).toEqual(new Set(['max-w-[var(--column-frame)]']));
     expect(nearestClasses({ node: screen.getByText('Panel body'), pattern: /^mx-auto$/ })).toBe(
       'mx-auto',
     );
-  });
-
-  it('holds one reading measure across the pane shell and the detail shell', () => {
-    const detail = studioDetail();
-
-    expect(paneShellBody().measure).toBe(detail.body.measure);
   });
 });

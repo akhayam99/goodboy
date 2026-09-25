@@ -52,7 +52,6 @@ type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
 
 type QuestionsPaneProps = {
   readonly session: Session;
-  readonly eyebrow?: ReactNode;
 };
 
 type ClusterSectionProps = {
@@ -334,7 +333,7 @@ const AnsweredHistory = ({ clusters, sessionId }: AnsweredHistoryProps) => {
   );
 };
 
-export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
+export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
   const open = selectOpenQuestions(useSessionOpenQuestions(sessionId));
   const answered = useSessionAnsweredQuestions(sessionId);
@@ -467,11 +466,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
 
   if ((!openLoaded || !answeredLoaded) && loadError !== undefined) {
     return (
-      <PaneShell
-        title="Questions"
-        description="Decisions agents need from you to keep going."
-        eyebrow={eyebrow}
-      >
+      <PaneShell title="Questions">
         <ContextLoadFailure title="Questions" onRetry={loadQuestions} />
       </PaneShell>
     );
@@ -479,11 +474,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
 
   if (!openLoaded || !answeredLoaded) {
     return (
-      <PaneShell
-        title="Questions"
-        description="Decisions agents need from you to keep going."
-        eyebrow={eyebrow}
-      >
+      <PaneShell title="Questions">
         <div className="flex flex-col gap-2" role="status" aria-label="Loading questions">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border-soft p-3">
@@ -499,11 +490,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
 
   if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell
-        title="Questions"
-        description="Decisions agents need from you to keep going."
-        eyebrow={eyebrow}
-      >
+      <PaneShell title="Questions">
         <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
@@ -516,11 +503,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
 
   if (open.length === 0 && pendingUndoQuestion === null) {
     return (
-      <PaneShell
-        title="Questions"
-        description="Decisions agents need from you to keep going."
-        eyebrow={eyebrow}
-      >
+      <PaneShell title="Questions">
         <LensEmptyState
           tone={CONCEPT_TONE.questions}
           icon={CONCEPT_ICONS.questions}
@@ -539,12 +522,7 @@ export const QuestionsPane = ({ session, eyebrow }: QuestionsPaneProps) => {
   return (
     <PaneShell
       title="Questions"
-      eyebrow={eyebrow}
-      description={
-        answerable.length > 0
-          ? `${answerable.length} open ${answerable.length === 1 ? 'question' : 'questions'} waiting on you.`
-          : 'Decisions agents need from you to keep going.'
-      }
+      meta={answerable.length > 0 ? `${answerable.length} open` : undefined}
     >
       <div className="flex flex-col gap-4">
         {waiting.length > 0 && (

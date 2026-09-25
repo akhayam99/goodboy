@@ -4,14 +4,8 @@ export const PANE_RHYTHM = {
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
   stack: 'flex flex-col gap-5',
-  column: 'mx-auto w-full',
-  measure: {
-    reading: 'max-w-3xl',
-    pane: 'max-w-5xl',
-    full: 'max-w-none',
-    chat: 'max-w-[880px]',
-    hero: 'max-w-[640px]',
-  },
+  column: 'mx-auto w-full max-w-[var(--column-max)]',
+  hero: 'max-w-[640px]',
   detail: {
     band: 'px-6 py-2',
     body: 'px-6 py-4',

@@ -48,9 +48,7 @@ export const WorkspaceLinkStudio = ({ variant, onClose, onOfferRepo }: Props) =>
     >
       {(requestClose) => (
         <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div
-            className={cn(PANE_RHYTHM.column, PANE_RHYTHM.measure.reading, 'flex flex-col gap-6')}
-          >
+          <div className={cn(PANE_RHYTHM.column, 'flex flex-col gap-6')}>
             <WorkspaceLinkForm
               onComplete={({ mode, workspace }) => onComplete({ mode, workspace, requestClose })}
             />

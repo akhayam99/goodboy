@@ -108,7 +108,7 @@ Overview and a comfortable everything else.
 
 | role                                             | grade               | resolves to |
 | ------------------------------------------------ | ------------------- | ----------- |
-| pane title                                       | `text-xl`           | 20px        |
+| pane title                                       | `text-lg`           | 17px / 24px |
 | section label, and its `hint`                    | `text-2xs`          | 11px / 16px |
 | top-level row label                              | `text-sm leading-5` | 14px / 20px |
 | nested row label, a child of the row above it    | `text-xs leading-4` | 12px / 16px |
@@ -570,34 +570,38 @@ detail.
 
 ## Pane anatomy
 
-The package ships the pane primitives `PANE_RHYTHM`, `ScrollFade`, and
-`Divider`, not a pane frame. `PaneShell` is a desktop component at
-`apps/desktop/src/shared/components/PaneShell/`, built from those primitives.
-It is a scroll region whose body is a centred column. It has one `h1` per
-surface. `meta` holds counts and totals in `tabular-nums`, never a control. The
-header row wraps, so actions drop under the title instead of squeezing it. The
-pane owns the gap below the header, and children add no top margins. The root
-is `min-w-0 flex-1` in both scroll modes, so inside a flex row such as
+The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
+and `Divider`, not a pane frame. `PaneShell` is a desktop component at
+`apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
+and it is the one wrapper every main pane uses. It is a scroll region whose
+crumb, header and body share one `PageColumn`. It has one `h1` per surface.
+`meta` holds counts and totals in `tabular-nums`, never a control. The header
+row wraps, so actions drop under the title instead of squeezing it. The pane
+owns the gap below the header, and children add no top margins. The root is
+`@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and the column centres in the full width.
 
-**One title grade.** Every lens pane and studio detail gets its title from
-`PaneShell`: an `h1` at `text-xl`, then an optional description, meta and
-actions. `icon` takes a concept glyph, `glyph` takes a brand mark. A detail
-that needs its own header row passes `HeaderBand` (also an `h1`) through the
-custom `header` slot. `scroll="body"` keeps the header fixed above a divider
-for studio details. Studio chrome (`OverlayHeader`) and the focused-pane lens
-label are window chrome, not headings. The header is named with `aria-label`,
-so the detail title is the only `h1` on the surface.
+**One title grade, one header height.** Every lens pane and studio detail gets
+its title from `PaneShell`: the crumb row (24px, only inside a session), then an
+`h1` at `text-lg` with `meta` inline and actions on the right (32px). Padding
+is 12px above and 16px below, 92px in all, 128px with the optional `tabs` row.
+There is no description line and no divider under the header: the text that
+teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
+`icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
+its own header row passes `HeaderBand` (also an `h1`) through the custom
+`header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
+`scroll="self"` hands the body a bounded region that scrolls itself (a
+transcript), and `dock` pins a row to the bottom of the same column. Studio
+chrome (`OverlayHeader`) and the focused-pane lens label are window chrome,
+not headings. The header is named with `aria-label`, so the detail title is
+the only `h1` on the surface.
 
-**The reading column caps at `max-w-5xl` and centres.** That is 1024px, which
-is also the window's minimum width. So the cap never applies at minimum size.
-There, the sidebar and the pane insets set the width. The cap is for wide
-monitors, where a paragraph with no cap runs past a comfortable line length.
-
-`wide` is the escape hatch for a workbench, not for a long document. It is
-applied only in one case: the workbench goes full width, but its empty state
-stays in the reading column. That way an empty pane never shows a 2000px-wide
-dashed box.
+**The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
+`--column-max` (960px of content, gutters excluded) and `PageColumn` adds the
+24px gutter, 16px when the pane is under 720px wide. No view picks its own
+width: the column changes only when the window changes or the right drawer
+opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
+[docs/styling.md](../../docs/styling.md) owns the column rules.
 
 ## Action zones
 

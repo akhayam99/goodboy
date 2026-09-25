@@ -9,6 +9,7 @@ import { ResolveReturnPill } from '../../../../resolve/components/ResolveReturnP
 import { DiffMountSwitcher } from './DiffMountSwitcher';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { PageCrumbRow } from '../../../../../shared/components/PaneShell/PageCrumbRow';
 import { listBranchCommits } from '../../../../worktree/worktree';
 import { BranchSurgeryMenu } from './BranchSurgeryMenu';
 
@@ -21,7 +22,6 @@ type Props = {
   readonly worktreePath: string | null;
   readonly isBranchless: boolean;
   readonly onClose: () => void;
-  readonly eyebrow?: ReactNode;
 };
 
 export const FilesPane = ({
@@ -30,7 +30,6 @@ export const FilesPane = ({
   worktreePath,
   isBranchless,
   onClose,
-  eyebrow,
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_MOUNTS);
@@ -66,11 +65,7 @@ export const FilesPane = ({
   if (isBranchless) {
     if (sessionDir == null) {
       return (
-        <PaneShell
-          title="File versions"
-          description="View and restore saved file copies for this session."
-          eyebrow={eyebrow}
-        >
+        <PaneShell title="File versions">
           <LensEmptyState
             tone={CONCEPT_TONE.diff}
             icon={CONCEPT_ICONS.diff}
@@ -80,22 +75,11 @@ export const FilesPane = ({
         </PaneShell>
       );
     }
-    return (
-      <FileVersionsPane
-        sessionId={sessionId}
-        sessionDir={sessionDir}
-        onClose={onClose}
-        eyebrow={eyebrow}
-      />
-    );
+    return <FileVersionsPane sessionId={sessionId} sessionDir={sessionDir} onClose={onClose} />;
   }
   if (worktreePath == null) {
     return (
-      <PaneShell
-        title={DIFF_VIEWER_PANE_COPY.title}
-        description={DIFF_VIEWER_PANE_COPY.description}
-        eyebrow={eyebrow}
-      >
+      <PaneShell title={DIFF_VIEWER_PANE_COPY.title}>
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
@@ -108,6 +92,7 @@ export const FilesPane = ({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
+      <PageCrumbRow />
       <ResolveReturnPill sessionId={sessionId} />
       {mounts.length > 1 ? (
         <DiffMountSwitcher
@@ -123,7 +108,6 @@ export const FilesPane = ({
           workingDir={sessionDir ?? undefined}
           worktreePath={worktreePath}
           diffFocus={diffFocus}
-          eyebrow={eyebrow}
           onClose={onClose}
           onContentEmptyChange={setIsDiffEmpty}
           branchRevision={branchRevision}

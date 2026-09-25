@@ -39,11 +39,7 @@ export const ShippedPanel = ({
     reviewData?.resolutionDurationsHours.filter((hours) => hours >= 1 && hours < 24).length ?? 0;
   const slowReviews = Math.max(totalReviews - fastReviews - sameDayReviews, 0);
   return (
-    <PaneShell
-      scroll="body"
-      title="Shipped"
-      description="Pull requests, review throughput, and linked issues"
-    >
+    <PaneShell scroll="body" title="Shipped">
       <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
       <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
       <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />

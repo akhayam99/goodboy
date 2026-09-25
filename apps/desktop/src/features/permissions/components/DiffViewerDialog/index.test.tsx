@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { PANE_RHYTHM } from '@goodboy/ui';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { DiffView, SessionId } from '@goodboy/types';
@@ -172,7 +173,6 @@ afterEach(() => {
 
 import { DiffViewerDialog, DiffViewerPane } from './index';
 import { listBranchCommits } from '../../../../features/worktree/worktree';
-import { DIFF_CAPPED_COLUMN_CLASS } from './lib';
 
 const SID = 's1' as SessionId;
 
@@ -290,7 +290,7 @@ describe('DiffViewerPane', () => {
     expect(refresh.parentElement?.className).toContain('gap-1.5');
     expect(refresh.parentElement?.className).toContain('pt-0.5');
     expect(container.querySelector('[class*="max-w-2xl"]')).toBeNull();
-    expect(container.querySelector('[class*="max-w-5xl"]')).not.toBeNull();
+    expect(container.querySelector('[class*="max-w-[var(--column-max)]"]')).not.toBeNull();
   });
 
   it('says the branch commits did not load instead of drawing none', async () => {
@@ -304,7 +304,7 @@ describe('DiffViewerPane', () => {
     render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     await screen.findByText('Branch matches main');
     const header = screen.getByTestId('diff-pane-header');
-    for (const cls of DIFF_CAPPED_COLUMN_CLASS.split(' ')) {
+    for (const cls of PANE_RHYTHM.column.split(' ')) {
       expect(header.className).toContain(cls);
     }
   });
@@ -314,7 +314,7 @@ describe('DiffViewerPane', () => {
     render(<DiffViewerPane worktreePath="/tmp/worktree" onClose={vi.fn()} />);
     await screen.findByText(/alpha/);
     const header = screen.getByTestId('diff-pane-header');
-    expect(header.className).not.toContain('max-w-5xl');
+    expect(header.className).not.toContain('max-w-[var(--column-max)]');
     expect(header.className).not.toContain('mx-auto');
   });
 
