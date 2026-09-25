@@ -41,7 +41,7 @@ Every task you start is a **session**, and every session sits on one board.
 - Each card shows the project, the pull request, the cost so far and the issues the task came from
 - The **needs you** column is where a task waits for your answer
 
-![The Goodboy board for a workspace: cards under building, running, needs you and in review, some linked to a Linear, Sentry, Jira or GitHub issue, with the done and archived columns folded at the end](./docs/images/board-shell.png)
+![The Goodboy board for a workspace: cards under building, running, needs you and in review, one with an open question and some linked to a Linear, Sentry, Jira or GitHub issue, with the done and archived columns folded at the end](./docs/images/board-shell.png)
 
 <br>
 
@@ -53,9 +53,16 @@ Open a session and the **Overview** holds everything about that task.
 - The issues it is linked to, from GitHub, Linear, Sentry and the other tools
 - Every repository it works on, with its branch and pull request
 
-Below it, **Activity** lists what happened, in order: every workflow step, the agents it started, the plans, the questions, the pull requests opened and merged. Come back after a day and you know where things stand.
+Below it, **Activity** draws the work as one tree: numbered steps growing from the bottom, with the agents they started, the plans, the questions and the pull requests on one timeline.
 
-![The Overview of a session: the goal with its decisions and summary, a GitHub, a Linear and a Sentry issue linked, two repositories with one branch merged and one in review, and an Activity feed where a finished workflow and a running one overlap, one step split into three agents and one of those handed its question to a fourth, with the wireframe, the plan, the report and a merged pull request in between](./docs/images/activity-run.png)
+- Every step shows its provider, model, effort, time and cost in the same columns
+- A running step fills a ring as it works, with the time left based on how long similar steps really took
+- A step waiting on you, a failed one and a queued one look different at a glance, and the next thing to do sits on top
+- Click the colored line to open a workflow, click a row to open that agent, question or artifact
+
+Come back after a day and you know where things stand.
+
+![The Overview of a session: the goal with its decisions and summary, a GitHub, a Linear and a Sentry issue linked, two repositories with branches in review and one merged, and an Activity tree with a suggested next step, numbered steps showing model, effort, time left and cost, a question waiting for an answer and a workflow on its own line](./docs/images/activity-run.png)
 
 <br>
 
@@ -67,7 +74,13 @@ A **workflow** splits a task into steps, for example explore, plan, implement, t
 - Each step has its own provider, model and effort: explore on a cheap model, plan on a strong one
 - Pick a ready workflow, build your own, or let the **orchestrator** choose the next step as the work goes
 
-![A workflow run in progress: four scouts on three different cheap models, a planner that asked for one provider and ran on another, an implementer done, a second implementer still running, and a tester queued](./docs/images/workflow-run.png)
+The builder shows the plan as the tree it will become, with an estimate of how long it takes. **Orchestrated** comes first and adds agents one at a time. In a custom or preset plan you change each step's provider, model, effort, role and instructions in place. Autorun is one switch, and every run gets a generated title.
+
+![The workflow builder on Orchestrated: the goal, an example of the steps the orchestrator will pick, its model, optional guidance, and the start, autorun and spend cap controls](./docs/images/workflow-builder.png)
+
+A running workflow reads like Activity, with a box on top to tell the orchestrator something before its next decision.
+
+![A workflow run in progress: four scouts on three different cheap models, a planner and an implementer done, a second implementer running on another provider, and a tester queued, each with its model, effort and cost](./docs/images/workflow-run.png)
 
 <br>
 
@@ -80,7 +93,7 @@ Agents work in their own copy of the code, not in yours.
 - One session can work on more repositories, and on more branches of the same one, each with its own pull request
 - From each row you open a terminal, run a project script or open the code in your editor
 
-![The Overview of a session: its decisions and summary, two repositories mounted, one with three branches of a pull request series and a merged one shown under Hide completed, the terminal, scripts and editor actions of a row, and pull requests opened and merged in Activity](./docs/images/mounts.png)
+![The Overview of a session: its decisions and summary, a ledger-core repository with three branches of a six part pull request series, one merged and one with its files kept, a notify-relay branch in review with its terminal and script actions, and pull requests opened and merged in Activity](./docs/images/mounts.png)
 
 <br>
 
@@ -89,10 +102,10 @@ Agents work in their own copy of the code, not in yours.
 When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves it as an artifact with its own page.
 
 - The next agent reads it instead of scrolling a chat
-- An **active** plan waits for the next agent, a **consumed** one moves to **Finished**
-- You can reopen or print it whenever you want
+- An **active** plan waits for the next agent, a **consumed** one folds away under **Show finished**
+- Filter by plans, reports or wireframes, and reopen or print any of them whenever you want
 
-![The Plans tab of a session: one active plan ready for the next agent, and two consumed plans under Finished](./docs/images/artifacts-lens-shell.png)
+![The Artifacts tab of a session filtered to plans: one active plan ready for the next agent and two consumed plans below it](./docs/images/artifacts-lens-shell.png)
 
 <br>
 
@@ -104,19 +117,19 @@ When an agent needs a decision, it asks you, and the session moves to **needs yo
 - Choose **let an agent answer** to hand it to another agent, with a hint if you want
 - The agent's answer counts as yours
 
-![The Questions lens of a session: one open question with two answers already picked, and four answered questions below, one of them answered by an agent](./docs/images/open-questions.png)
+![The Questions tab of a session: one open question with two answers already picked and the option to let an agent answer, and four answered questions below, one of them answered by an agent](./docs/images/open-questions.png)
 
 <br>
 
 ## Pull request review
 
-The **Review** lens shows a pull request with its checks and every comment thread.
+The **Review** tab shows a pull request with its checks and every comment thread.
 
 - Send a comment to an agent: it fixes the code in a local commit and drafts the reply
 - Each thread is marked: a question for you, a reply ready, a comment that changed
 - Nothing is pushed or posted until you approve it
 
-![The Review lens of a session: comment threads on a pull request marked as a question for you, a changed comment and two replies ready, with the push and resolve action at the bottom](./docs/images/resolve-queue-shell.png)
+![The Review tab of a session: comment threads on a pull request marked as a question for you, a changed comment and two replies ready, with the push and resolve action at the bottom](./docs/images/resolve-queue-shell.png)
 
 <br>
 
@@ -135,9 +148,11 @@ Each provider signs in the way its own tool does.
 
 In **Settings** you pick the default provider, the pool Goodboy can switch between and the model for each kind of task. Each provider can have a monthly cap: when one runs out, hits a rate limit or goes down, the next turn moves to another provider in the pool, and the chat tells you which one and why.
 
+When a model needs a newer CLI than the one you have, Goodboy shows both versions and an update button, in Providers and in the chat.
+
 [The provider guide](./docs/providers.md) covers installation and what each provider does differently.
 
-![Settings, Providers and models: the seven providers with their connection state, the default provider, the routing pool and the model picked for each task](./docs/images/providers.png)
+![Settings, Providers and models: the seven providers with their connection state, Claude marked as needing a CLI update, the default provider, the routing pool and the model picked for each task](./docs/images/providers.png)
 
 <br>
 
@@ -163,11 +178,25 @@ Connect your tools and the **Inbox** lists their issues, pull requests, threads 
 
 - Filter by tool or by kind
 - Open an item and read it without leaving Goodboy
-- Press **Launch session** and the goal is already filled in from the issue
+- Start a session from an item and Goodboy drafts a short title and goal, with a link back to it
+- Keep the brief, edit it, or go back to the issue text before you press **Launch session**
 
 Agents read from the same tools while they work, through the [query bridge](./docs/query-bridge.md).
 
-![The Inbox: issues, errors and threads from GitHub, Linear, Jira, Sentry and Slack in one list, a Linear issue open with its fields and description, and a launch box that starts a session from it](./docs/images/inbox.png)
+![The Inbox: issues, errors and threads from GitHub, Linear, Jira, Sentry and Slack in one list, a Linear issue open with its fields and description, and a launch box holding the brief drafted from it: a title, a goal and when it counts as done](./docs/images/inbox.png)
+
+<br>
+
+## Notifications
+
+The bell collects what Goodboy needs you to know: a step that failed, a session close to its cap, a pull request opened.
+
+- One compact row each, with its action next to it
+- Filters for unread, needs action, severity and source, each with its count
+- **This workspace** by default, every workspace one click away
+- **j** and **k** move through the list, **e** dismisses
+
+![Notifications: six compact rows, two with an action button, filters by view, severity and source with their counts, a switch between this workspace and all of them, and the keys to move, act and dismiss](./docs/images/notifications.png)
 
 <br>
 
@@ -179,14 +208,14 @@ Every agent in a session has its own chat, for when you want to steer it yoursel
 - File edits are grouped under one row
 - Open questions appear inline, including the ones another agent is answering for you
 
-![A session chat: the agent's plan as its own artifact, three files edited, a question answered by another agent and a second one an agent is answering right now, with the other sessions in the sidebar](./docs/images/chat-shell.png)
+![A session chat: the agent's plan as its own card, three file edits under one row, a question answered by another agent and a blocking one an agent is answering right now](./docs/images/chat-shell.png)
 
 <br>
 
 ## Also in the box
 
-- **Terminal**, **Explore** and **Diff** lenses on every session, one shortcut each
-- A **command palette** for sessions, lenses and studios
+- **Terminal**, **Explore** and **Diff** tabs on every session, one shortcut each
+- A **command palette** for sessions, tabs and pages
 - Open the worktree in **VS Code** or **Cursor** when you want to type yourself
 - Pair a **phone** to follow a session away from the desk
 
