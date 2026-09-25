@@ -79,6 +79,13 @@ everywhere. It never lists archive or delete, which are lifecycle, not
 navigation. The first row is highlighted on open, and the highlighted row is
 the one Enter runs.
 
+In the composer, `$` lists every script of the session's mounted projects
+(`useSessionScripts`): saved scripts first, then `package.json` and
+`composer.json` scripts by category, each tagged with its source. Manifests are
+read from each mount the first time `$` is typed. With more than one mount a
+row names its project. An empty list says why: no project in the session, no
+script in the project, or no match for the filter.
+
 ## Surfaces
 
 **Shell layout.** One strip of chrome sits above, one footer below, and between

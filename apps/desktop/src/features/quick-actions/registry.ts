@@ -1,23 +1,61 @@
-import type { Agent, AgentId, Skill, Workflow, ProjectScript } from '@goodboy/types';
+import type { Agent, AgentId, Skill, Workflow } from '@goodboy/types';
+import type {
+  RunnableScript,
+  RunnableScriptSource,
+  SessionScriptGroup,
+} from '../scripts/buildSessionScripts';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
-function firstLine(body: string): string | undefined {
-  const line = body.trim().split('\n', 1)[0]?.trim();
-  return line ? line : undefined;
-}
+const SOURCE_LABEL: Record<RunnableScriptSource, string> = {
+  saved: 'Saved',
+  'package-json': 'package.json',
+  composer: 'composer.json',
+};
 
-export const buildScriptActions = (
-  scripts: ReadonlyArray<ProjectScript>,
-  onPick: (script: ProjectScript) => void,
-): ReadonlyArray<QuickActionItem> => {
-  return scripts.map((script) => ({
-    id: `script:${script.id}`,
-    label: script.name,
-    sublabel: firstLine(script.body),
-    group: 'script',
-    perform: () => onPick(script),
-  }));
+export type ScriptPick = {
+  readonly script: RunnableScript;
+  readonly group: SessionScriptGroup;
+};
+
+type ScriptActionsParams = {
+  readonly groups: ReadonlyArray<SessionScriptGroup>;
+  readonly runningKeys: ReadonlySet<string>;
+  readonly onPick: (pick: ScriptPick) => void;
+};
+
+type MountLabelParams = {
+  readonly group: SessionScriptGroup;
+  readonly groups: ReadonlyArray<SessionScriptGroup>;
+};
+
+const mountLabel = ({ group, groups }: MountLabelParams): string =>
+  groups.filter((candidate) => candidate.projectId === group.projectId).length > 1
+    ? `${group.projectName} · ${group.branch}`
+    : group.projectName;
+
+export const buildScriptActions = ({
+  groups,
+  runningKeys,
+  onPick,
+}: ScriptActionsParams): ReadonlyArray<QuickActionItem> => {
+  const showsMount = groups.length > 1;
+  return groups.flatMap((group) => {
+    if (!group.isReady) {
+      return [];
+    }
+    const mount = mountLabel({ group, groups });
+    return group.scripts.map((script) => ({
+      id: `script:${group.mountId}:${script.key}`,
+      label: script.name,
+      sublabel: showsMount ? `${mount} · ${script.command}` : script.command,
+      trailing: {
+        label: runningKeys.has(script.key) ? 'Running' : SOURCE_LABEL[script.source],
+      },
+      group: 'script',
+      perform: () => onPick({ script, group }),
+    }));
+  });
 };
 
 export const buildSkillActions = (
