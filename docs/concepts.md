@@ -404,10 +404,10 @@ Settings can be set at four levels. The level closest to the work wins:
   wins. A project override sets the branch prefix for that project's mounts.
   The settings screens edit the workspace row and read that row back, since
   it is what they change.
-- **Workflows, the step library and skills** belong to the workspace. A step
-  library entry with no workspace is a built-in starter step for everyone.
-  Editing one saves a single copy in the workspace: later edits in the same
-  editor update that copy, and a blur with no change saves nothing.
+- **Workflows, saved steps and skills** belong to the workspace. Built-in
+  steps live in code and are the same everywhere. They are read only: **Save a
+  copy** puts one copy in the workspace, and that copy remembers what it is
+  based on.
 - **Project scripts** belong to the project, because only the project knows
   its root folder.
 - **Integration bindings** use the project's own connection first, then the

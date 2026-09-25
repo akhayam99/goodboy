@@ -76,6 +76,8 @@ type RawStepDefRow = {
   readonly modelDefault: string | null;
   readonly effortDefault: string | null;
   readonly verbosityDefault: string | null;
+  readonly expectedOutput: string | null;
+  readonly baseStepId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -181,12 +183,14 @@ function rowToStep(row: RawWorkflowStepRow): Step {
 function rowToStepDef(row: RawStepDefRow): StepDef {
   return {
     id: row.id as StepDefId,
-    workspaceId: row.workspaceId as WorkspaceId | null,
+    workspaceId: row.workspaceId as WorkspaceId,
     role: normalizeAgentRole({ role: row.role }),
     name: row.name,
     promptPrefix: row.promptPrefix,
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
+    ...(row.expectedOutput != null && { expectedOutput: row.expectedOutput }),
+    ...(row.baseStepId != null && { baseStepId: row.baseStepId as StepDefId }),
     ...(row.providerDefault != null && { providerDefault: row.providerDefault as ProviderId }),
     ...(row.modelDefault != null && { modelDefault: row.modelDefault }),
     ...(row.effortDefault != null && { effortDefault: row.effortDefault as AgentEffort }),
@@ -390,10 +394,12 @@ export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepD
 
 export type StepDefUpsertArgs = {
   readonly id?: StepDefId;
-  readonly workspaceId: WorkspaceId | null;
+  readonly workspaceId: WorkspaceId;
+  readonly baseStepId?: StepDefId;
   readonly role: AgentRole;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput?: string;
   readonly providerDefault?: ProviderId;
   readonly modelDefault?: string;
   readonly effortDefault?: AgentEffort;
@@ -412,6 +418,8 @@ export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<Step
       modelDefault: args.modelDefault ?? null,
       effortDefault: args.effortDefault ?? null,
       verbosityDefault: args.verbosityDefault ?? null,
+      expectedOutput: args.expectedOutput ?? null,
+      baseStepId: args.baseStepId ?? null,
     },
   });
   return rowToStepDef(row);

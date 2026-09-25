@@ -25,6 +25,7 @@ import type {
   Session,
   SessionId,
   SessionProviderPreference,
+  StepDef,
   StepDefId,
   Workflow,
   WorkflowId,
@@ -680,7 +681,7 @@ type AppActions = {
   ): Promise<void>;
   suggestWorkflowTitle(sessionId: SessionId, goal: string): Promise<string | null>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
-  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
+  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<StepDef>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
   resetWorkflows(workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;

@@ -16,6 +16,7 @@ const {
   mockGenerateWorkflowTitle,
   mockSuggestTitle,
   mockDeleteWorkflow,
+  mockSaveStepDef,
   toastMock,
   storeState,
 } = vi.hoisted(() => ({
@@ -30,6 +31,7 @@ const {
     async (_sessionId: string, _goal: string): Promise<string | null> => null,
   ),
   mockDeleteWorkflow: vi.fn(async () => undefined),
+  mockSaveStepDef: vi.fn(),
   toastMock: vi.fn(),
   storeState: {
     phaseTemplates: {} as Record<string, ReadonlyArray<Workflow>>,
@@ -70,6 +72,8 @@ vi.mock('../../../../store', () => {
     providers: storeState.providers,
     workspaceOverrides: storeState.workspaceOverrides,
     workflowDrafts: storeState.workflowDrafts,
+    stepLibrary: {},
+    saveStepDef: mockSaveStepDef,
     workspaceDurationHistory: storeState.workspaceDurationHistory,
     loadWorkspaceDurationHistory: vi.fn(async () => undefined),
     setWorkflowDraft,
@@ -311,9 +315,13 @@ const removeStepAt = (index: number) => {
   fireEvent.click(screen.getByRole('button', { name: /^remove step$/i }));
 };
 
-const handAuthorOneStep = () => {
+const addBlankStep = () => {
   fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
-  expandStep(0);
+  fireEvent.click(screen.getByRole('option', { name: /blank step/i }));
+};
+
+const handAuthorOneStep = () => {
+  addBlankStep();
   fireEvent.change(screen.getByPlaceholderText('step name'), {
     target: { value: 'read the router' },
   });
@@ -358,8 +366,7 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     setGoal();
     expect(startBtn().disabled).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
-    expandStep(0);
+    addBlankStep();
     fireEvent.change(screen.getByPlaceholderText('step name'), {
       target: { value: 'read the router' },
     });
@@ -1552,7 +1559,7 @@ describe('WorkflowBuilderView (preset mode - dirty flows)', () => {
     setGoal();
     pickPreset(/ship it/i);
 
-    fireEvent.click(screen.getByRole('button', { name: /add step/i }));
+    addBlankStep();
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
@@ -1599,7 +1606,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
     await draftPlan();
     expect(stepToggles()).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole('button', { name: /add step/i }));
+    addBlankStep();
 
     expect(stepToggles()).toHaveLength(3);
     fireEvent.click(startBtn());
@@ -2045,5 +2052,58 @@ describe('WorkflowBuilderView (preset as a source)', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /^custom$/i }));
     expect(stepToggles()).toHaveLength(2);
+  });
+});
+
+describe('WorkflowBuilderView (saved steps)', () => {
+  rememberMode({ mode: 'custom' });
+
+  it('inserts a built-in step from the add step menu, open for editing', async () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+
+    fireEvent.click(screen.getByRole('button', { name: /^add step$/i }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search steps' }), {
+      target: { value: 'scout' },
+    });
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search steps' }), { key: 'Enter' });
+
+    expect(stepToggles()).toHaveLength(1);
+    expect((screen.getByPlaceholderText('step name') as HTMLInputElement).value).toBe('Scout');
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].steps[0]).toMatchObject({
+      libraryStepId: 'seed_scout',
+      role: 'scout',
+      name: 'Scout',
+    });
+  });
+
+  it('saves a step to the workspace and links the step to it', async () => {
+    mockSaveStepDef.mockResolvedValue({
+      id: 'lib-router',
+      workspaceId: 'ws-1',
+      role: 'custom',
+      name: 'read the router',
+      promptPrefix: '',
+      createdAt: '2026-09-25T12:00:00.000Z',
+      updatedAt: '2026-09-25T12:00:00.000Z',
+    });
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    setGoal();
+    handAuthorOneStep();
+
+    fireEvent.click(screen.getByRole('button', { name: /^save as step$/i }));
+
+    await waitFor(() => expect(mockSaveStepDef).toHaveBeenCalledOnce());
+    expect(mockSaveStepDef.mock.calls[0]).toEqual([
+      expect.objectContaining({ workspaceId: 'ws-1', name: 'read the router', role: 'custom' }),
+      'ws-1',
+    ]);
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
+    expect(mockSavePhaseTemplate.mock.calls[0]![0].steps[0]).toMatchObject({
+      libraryStepId: 'lib-router',
+    });
   });
 });

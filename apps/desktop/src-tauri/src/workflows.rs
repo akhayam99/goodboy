@@ -56,6 +56,10 @@ pub struct StepDefRow {
     pub effort_default: Option<String>,
     #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
+    #[serde(rename = "expectedOutput")]
+    pub expected_output: Option<String>,
+    #[serde(rename = "baseStepId")]
+    pub base_step_id: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -79,6 +83,10 @@ pub struct StepDefUpsertInput {
     pub effort_default: Option<String>,
     #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
+    #[serde(rename = "expectedOutput", default)]
+    pub expected_output: Option<String>,
+    #[serde(rename = "baseStepId", default)]
+    pub base_step_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -328,6 +336,10 @@ pub enum PhaseError {
     InvalidRouting,
     #[error("workflow node cannot be changed: {0}")]
     NodeNotMutable(String),
+    #[error("built-in step cannot be changed: {0}")]
+    BuiltinStepReadOnly(String),
+    #[error("a saved step needs a workspace")]
+    StepDefWorkspaceRequired,
 }
 
 crate::util::impl_error_serialize!(PhaseError);
@@ -341,6 +353,8 @@ impl PhaseError {
             PhaseError::RunNotFound(_) => "run_not_found",
             PhaseError::InvalidRouting => "invalid_routing",
             PhaseError::NodeNotMutable(_) => "node_not_mutable",
+            PhaseError::BuiltinStepReadOnly(_) => "builtin_step_read_only",
+            PhaseError::StepDefWorkspaceRequired => "step_def_workspace_required",
         }
     }
 }
@@ -1045,25 +1059,42 @@ fn map_step_def_row(row: &rusqlite::Row<'_>) -> Result<StepDefRow, rusqlite::Err
         model_default: row.get(6)?,
         effort_default: row.get(7)?,
         verbosity_default: row.get(8)?,
-        created_at: crate::util::ms_to_iso(row.get(9)?),
-        updated_at: crate::util::ms_to_iso(row.get(10)?),
+        expected_output: row.get(9)?,
+        base_step_id: row.get(10)?,
+        created_at: crate::util::ms_to_iso(row.get(11)?),
+        updated_at: crate::util::ms_to_iso(row.get(12)?),
     })
 }
 
 const STEP_DEF_COLS: &str = "id, workspace_id, role, name, prompt_prefix, provider_default, \
-     model_default, effort_default, verbosity_default, created_at, updated_at";
+     model_default, effort_default, verbosity_default, expected_output, base_step_id, \
+     created_at, updated_at";
 
-#[tauri::command]
-pub async fn step_def_list(
-    state: State<'_, Db>,
-    workspace_id: String,
+const BUILTIN_STEP_PREFIX: &str = "seed_";
+
+fn is_builtin_step_row(conn: &rusqlite::Connection, id: &str) -> Result<bool, PhaseError> {
+    if id.starts_with(BUILTIN_STEP_PREFIX) {
+        return Ok(true);
+    }
+    let mut stmt = conn.prepare("SELECT workspace_id FROM step_library WHERE id = ?1 LIMIT 1")?;
+    let mut rows = stmt.query_map(rusqlite::params![id], |row| {
+        row.get::<_, Option<String>>(0)
+    })?;
+    match rows.next() {
+        Some(row) => Ok(row.map_err(PhaseError::Db)?.is_none()),
+        None => Ok(false),
+    }
+}
+
+fn list_step_defs(
+    conn: &rusqlite::Connection,
+    workspace_id: &str,
 ) -> Result<Vec<StepDefRow>, PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
     let sql = format!(
         "SELECT {cols} FROM step_library
          WHERE deleted_at IS NULL
-           AND (workspace_id = ?1 OR workspace_id IS NULL)
-         ORDER BY (workspace_id IS NULL) DESC, name ASC",
+           AND workspace_id = ?1
+         ORDER BY name ASC",
         cols = STEP_DEF_COLS
     );
     let mut stmt = conn.prepare(&sql)?;
@@ -1071,15 +1102,20 @@ pub async fn step_def_list(
     rows.collect::<Result<Vec<_>, _>>().map_err(PhaseError::Db)
 }
 
-#[tauri::command]
-pub async fn step_def_upsert(
-    state: State<'_, Db>,
+fn upsert_step_def(
+    conn: &rusqlite::Connection,
     input: StepDefUpsertInput,
 ) -> Result<StepDefRow, PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    let workspace_id = match input.workspace_id.as_deref().map(str::trim) {
+        Some(value) if !value.is_empty() => value.to_string(),
+        _ => return Err(PhaseError::StepDefWorkspaceRequired),
+    };
+    let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
+    if is_builtin_step_row(conn, &id)? {
+        return Err(PhaseError::BuiltinStepReadOnly(id));
+    }
     let now_ms = crate::util::now_ms();
     let now = crate::util::ms_to_iso(now_ms);
-    let id = input.id.clone().unwrap_or_else(crate::util::uuid_v4);
     let created_at_ms: i64 = {
         let mut stmt = conn.prepare("SELECT created_at FROM step_library WHERE id = ?1 LIMIT 1")?;
         let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get(0))?;
@@ -1093,8 +1129,9 @@ pub async fn step_def_upsert(
         "INSERT INTO step_library
            (id, workspace_id, role, name, prompt_prefix,
             provider_default, model_default, effort_default, verbosity_default,
+            expected_output, base_step_id,
             created_at, updated_at, deleted_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, NULL)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, NULL)
          ON CONFLICT(id) DO UPDATE SET
            workspace_id      = excluded.workspace_id,
            role              = excluded.role,
@@ -1104,11 +1141,13 @@ pub async fn step_def_upsert(
            model_default     = excluded.model_default,
            effort_default    = excluded.effort_default,
            verbosity_default = excluded.verbosity_default,
+           expected_output   = excluded.expected_output,
+           base_step_id      = excluded.base_step_id,
            updated_at        = excluded.updated_at,
            deleted_at        = NULL",
         rusqlite::params![
             id,
-            input.workspace_id,
+            workspace_id,
             input.role,
             input.name,
             input.prompt_prefix,
@@ -1116,6 +1155,8 @@ pub async fn step_def_upsert(
             input.model_default,
             input.effort_default,
             input.verbosity_default,
+            input.expected_output,
+            input.base_step_id,
             created_at_ms,
             now_ms,
         ],
@@ -1123,7 +1164,7 @@ pub async fn step_def_upsert(
 
     Ok(StepDefRow {
         id,
-        workspace_id: input.workspace_id,
+        workspace_id: Some(workspace_id),
         role: input.role,
         name: input.name,
         prompt_prefix: input.prompt_prefix,
@@ -1131,25 +1172,49 @@ pub async fn step_def_upsert(
         model_default: input.model_default,
         effort_default: input.effort_default,
         verbosity_default: input.verbosity_default,
+        expected_output: input.expected_output,
+        base_step_id: input.base_step_id,
         created_at: crate::util::ms_to_iso(created_at_ms),
         updated_at: now,
     })
 }
 
-/// Soft-delete a library step. Workflows that already instanced it keep their
-/// `steps` rows (the instance carries its own copy), so existing presets are
-/// unaffected; the def just stops appearing in the library picker.
-#[tauri::command]
-pub async fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+fn delete_step_def(conn: &rusqlite::Connection, id: &str) -> Result<(), PhaseError> {
+    if is_builtin_step_row(conn, id)? {
+        return Err(PhaseError::BuiltinStepReadOnly(id.to_string()));
+    }
     let affected = conn.execute(
         "UPDATE step_library SET deleted_at = ?2 WHERE id = ?1",
         rusqlite::params![id, crate::util::now_ms()],
     )?;
     if affected == 0 {
-        return Err(PhaseError::TemplateNotFound(id));
+        return Err(PhaseError::TemplateNotFound(id.to_string()));
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn step_def_list(
+    state: State<'_, Db>,
+    workspace_id: String,
+) -> Result<Vec<StepDefRow>, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    list_step_defs(&conn, &workspace_id)
+}
+
+#[tauri::command]
+pub async fn step_def_upsert(
+    state: State<'_, Db>,
+    input: StepDefUpsertInput,
+) -> Result<StepDefRow, PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    upsert_step_def(&conn, input)
+}
+
+#[tauri::command]
+pub async fn step_def_delete(state: State<'_, Db>, id: String) -> Result<(), PhaseError> {
+    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
+    delete_step_def(&conn, &id)
 }
 
 // ---------------------------------------------------------------------------
@@ -1634,6 +1699,108 @@ mod tests {
         )
         .unwrap();
         conn
+    }
+
+    fn step_library_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE step_library (
+                id TEXT PRIMARY KEY, workspace_id TEXT, role TEXT NOT NULL DEFAULT 'custom',
+                name TEXT NOT NULL, prompt_prefix TEXT NOT NULL DEFAULT '',
+                provider_default TEXT, model_default TEXT, effort_default TEXT,
+                verbosity_default TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                deleted_at INTEGER, expected_output TEXT, base_step_id TEXT
+            );
+            INSERT INTO step_library (id, workspace_id, role, name, created_at, updated_at, deleted_at)
+              VALUES ('seed_scout', NULL, 'scout', 'Scout', 1, 1, 1);
+            INSERT INTO step_library (id, workspace_id, role, name, created_at, updated_at)
+              VALUES ('legacy-global', NULL, 'custom', 'Legacy', 1, 1);",
+        )
+        .unwrap();
+        conn
+    }
+
+    fn step_input(id: Option<&str>, workspace_id: Option<&str>) -> StepDefUpsertInput {
+        StepDefUpsertInput {
+            id: id.map(str::to_string),
+            workspace_id: workspace_id.map(str::to_string),
+            role: "tester".to_string(),
+            name: "Dry run replay".to_string(),
+            prompt_prefix: "Replay settled batches.".to_string(),
+            provider_default: None,
+            model_default: None,
+            effort_default: None,
+            verbosity_default: None,
+            expected_output: Some("A replay log".to_string()),
+            base_step_id: Some("seed_tester".to_string()),
+        }
+    }
+
+    #[test]
+    fn step_def_upsert_refuses_a_step_without_a_workspace() {
+        let conn = step_library_conn();
+        assert!(matches!(
+            upsert_step_def(&conn, step_input(None, None)),
+            Err(PhaseError::StepDefWorkspaceRequired)
+        ));
+        assert!(matches!(
+            upsert_step_def(&conn, step_input(None, Some("  "))),
+            Err(PhaseError::StepDefWorkspaceRequired)
+        ));
+    }
+
+    #[test]
+    fn step_def_upsert_refuses_to_overwrite_a_built_in_step() {
+        let conn = step_library_conn();
+        assert!(matches!(
+            upsert_step_def(&conn, step_input(Some("seed_scout"), Some("ws1"))),
+            Err(PhaseError::BuiltinStepReadOnly(_))
+        ));
+        assert!(matches!(
+            upsert_step_def(&conn, step_input(Some("legacy-global"), Some("ws1"))),
+            Err(PhaseError::BuiltinStepReadOnly(_))
+        ));
+    }
+
+    #[test]
+    fn step_def_upsert_keeps_expected_output_and_base_step() {
+        let conn = step_library_conn();
+        let saved = upsert_step_def(&conn, step_input(None, Some("ws1"))).unwrap();
+        let listed = list_step_defs(&conn, "ws1").unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, saved.id);
+        assert_eq!(listed[0].expected_output.as_deref(), Some("A replay log"));
+        assert_eq!(listed[0].base_step_id.as_deref(), Some("seed_tester"));
+    }
+
+    #[test]
+    fn step_def_upsert_updates_the_same_row_by_id() {
+        let conn = step_library_conn();
+        let saved = upsert_step_def(&conn, step_input(None, Some("ws1"))).unwrap();
+        let mut renamed = step_input(Some(&saved.id), Some("ws1"));
+        renamed.name = "Replay".to_string();
+        upsert_step_def(&conn, renamed).unwrap();
+        let listed = list_step_defs(&conn, "ws1").unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].name, "Replay");
+    }
+
+    #[test]
+    fn step_def_list_skips_global_rows() {
+        let conn = step_library_conn();
+        assert!(list_step_defs(&conn, "ws1").unwrap().is_empty());
+    }
+
+    #[test]
+    fn step_def_delete_refuses_a_built_in_step() {
+        let conn = step_library_conn();
+        assert!(matches!(
+            delete_step_def(&conn, "seed_scout"),
+            Err(PhaseError::BuiltinStepReadOnly(_))
+        ));
+        let saved = upsert_step_def(&conn, step_input(None, Some("ws1"))).unwrap();
+        delete_step_def(&conn, &saved.id).unwrap();
+        assert!(list_step_defs(&conn, "ws1").unwrap().is_empty());
     }
 
     fn workflows_table_conn() -> rusqlite::Connection {

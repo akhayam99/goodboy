@@ -15,6 +15,7 @@ type Props = {
   readonly workflows: ReadonlyArray<Workflow>;
   readonly workspaceName: string | null;
   readonly isRestoring: boolean;
+  readonly tabs: ReactNode;
   readonly importControl: ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
   readonly onNew: () => void;
@@ -36,6 +37,7 @@ export const WorkflowList = ({
   workflows,
   workspaceName,
   isRestoring,
+  tabs,
   importControl,
   onOpen,
   onNew,
@@ -46,14 +48,7 @@ export const WorkflowList = ({
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 items-center gap-2">
-        <h2 className="flex min-w-0 flex-1 items-baseline gap-2 text-base font-semibold text-foreground">
-          Workflows
-          {workflows.length > 0 ? (
-            <span className="text-xs font-normal tabular-nums text-faint-foreground">
-              {workflows.length}
-            </span>
-          ) : null}
-        </h2>
+        <div className="flex min-w-0 flex-1 items-center">{tabs}</div>
         {importControl}
         <Button size="sm" onClick={onNew}>
           <Plus size={ICON_SIZE.row} aria-hidden />

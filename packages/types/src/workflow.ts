@@ -38,10 +38,12 @@ export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment
 
 export type StepDef = Readonly<{
   id: StepDefId;
-  workspaceId: WorkspaceId | null;
+  workspaceId: WorkspaceId;
+  baseStepId?: StepDefId;
   role: AgentRole;
   name: string;
   promptPrefix: string;
+  expectedOutput?: string;
   providerDefault?: ProviderId;
   modelDefault?: string;
   effortDefault?: AgentEffort;

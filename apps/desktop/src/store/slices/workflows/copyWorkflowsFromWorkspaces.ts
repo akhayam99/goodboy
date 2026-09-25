@@ -1,3 +1,4 @@
+import { isBuiltinStepId } from '@goodboy/core';
 import type { StepDefId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { isImportableWorkflow } from '../../../features/workflows/isImportableWorkflow';
 import { invokeWorkflowList, invokeWorkflowUpsert } from '../../../features/workflows/workflows';
@@ -18,14 +19,12 @@ type FactoryParams = {
   readonly set: SetFn;
 };
 
-const BUILTIN_STEP_PREFIX = 'seed_';
-
 type LibraryLinkParams = {
   readonly libraryStepId: StepDefId | null | undefined;
 };
 
 const sharedLibraryStepId = ({ libraryStepId }: LibraryLinkParams): StepDefId | null =>
-  libraryStepId != null && libraryStepId.startsWith(BUILTIN_STEP_PREFIX) ? libraryStepId : null;
+  libraryStepId != null && isBuiltinStepId({ id: libraryStepId }) ? libraryStepId : null;
 
 type CopyParams = {
   readonly workflow: Workflow;

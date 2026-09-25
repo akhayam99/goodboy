@@ -56,6 +56,7 @@ const renderList = (workflows: ReadonlyArray<Workflow>) => {
       workflows={workflows}
       workspaceName="Harborline"
       isRestoring={false}
+      tabs={<span>Workflows</span>}
       importControl={null}
       onOpen={onOpen}
       onNew={vi.fn()}

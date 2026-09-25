@@ -32,6 +32,8 @@ import { m170WorkflowRunProviderPool } from './m170-workflow-run-provider-pool';
 import { m171SessionEventWorkflowClosed } from './m171-session-event-workflow-closed';
 import { m172StepSize } from './m172-step-size';
 import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-mounts';
+import { m180StepLibraryBuiltinsInCode } from './m180-step-library-builtins-in-code';
+import { m181StepLibraryExpectedOutput } from './m181-step-library-expected-output';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -351,4 +353,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 171, sql: m171SessionEventWorkflowClosed },
   { version: 172, sql: m172StepSize },
   { version: 173, sql: m173AgentTurnSpanTouchedMounts },
+  { version: 180, sql: m180StepLibraryBuiltinsInCode },
+  { version: 181, sql: m181StepLibraryExpectedOutput },
 ];

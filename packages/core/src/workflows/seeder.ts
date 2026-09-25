@@ -2,20 +2,15 @@ import type {
   AgentRole,
   IsoDateTime,
   Step,
-  StepDefId,
   StepId,
   Workflow,
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
 import { upsertWorkflow, type Database } from '@goodboy/db';
+import { normalizeAgentRole } from '../roles';
+import { builtinStepForRole } from './builtinSteps';
 import { WORKFLOW_LIBRARY } from './library';
-
-const SEEDED_ROLES = new Set<AgentRole>(['scout', 'planner', 'implementer', 'tester']);
-
-function libraryStepIdForRole(role: string): StepDefId | undefined {
-  return SEEDED_ROLES.has(role as AgentRole) ? (`seed_${role}` as StepDefId) : undefined;
-}
 
 export type SeedWorkflowLibraryDeps = {
   readonly db: Database;
@@ -47,7 +42,7 @@ export const seedWorkflowLibrary = async (
   for (const entry of WORKFLOW_LIBRARY) {
     const workflowId = makeWorkflowId(entry.slug, workspaceId);
     const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
-      const libraryStepId = libraryStepIdForRole(s.role);
+      const libraryStepId = builtinStepForRole({ role: normalizeAgentRole({ role: s.role }) })?.id;
       return {
         id: makeStepId(entry.slug, s.name, workspaceId),
         workflowId,

@@ -1,5 +1,7 @@
 import { Plus } from 'lucide-react';
 import { WORK_NODE_GLYPH_SIZE, WorkNode } from '@goodboy/ui';
+import type { SavedStep, SavedStepGroups } from '../../savedSteps';
+import { AddStepMenu } from '../AddStepMenu';
 import { StepTreeGutter } from './StepTreeGutter';
 import type { StepLaneSpan } from './StepTreeLane';
 
@@ -7,10 +9,11 @@ type Props = {
   readonly span: StepLaneSpan;
   readonly identityIndex: number;
   readonly disabled: boolean;
-  readonly onAdd: () => void;
+  readonly savedSteps: SavedStepGroups;
+  readonly onAdd: (step: SavedStep | null) => void;
 };
 
-export const AddStepRow = ({ span, identityIndex, disabled, onAdd }: Props) => (
+export const AddStepRow = ({ span, identityIndex, disabled, savedSteps, onAdd }: Props) => (
   <li className="flex min-w-0 gap-1.5">
     <StepTreeGutter
       span={span}
@@ -23,13 +26,6 @@ export const AddStepRow = ({ span, identityIndex, disabled, onAdd }: Props) => (
         />
       }
     />
-    <button
-      type="button"
-      onClick={onAdd}
-      disabled={disabled}
-      className="flex h-8 min-w-0 flex-1 items-center rounded-md pl-2 text-left text-xs text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      Add step
-    </button>
+    <AddStepMenu groups={savedSteps} disabled={disabled} onPick={onAdd} />
   </li>
 );

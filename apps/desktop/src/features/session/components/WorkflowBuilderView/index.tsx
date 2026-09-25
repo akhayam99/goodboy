@@ -46,6 +46,7 @@ import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workfl
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
 import {
   addStep as addDraftStep,
+  blankStepDraft,
   draftFromPlannerSteps,
   draftFromWorkflow,
   duplicateStep as duplicateDraftStep,
@@ -59,6 +60,9 @@ import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
 import { ROLE_LABEL, classifyStep } from '../../agent-kind';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
+import { useSaveAsStep } from '../../../workflows/hooks/useSaveAsStep';
+import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
+import { stepDraftFromSavedStep, type SavedStep } from '../../../workflows/savedSteps';
 import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { useToast } from '../../../../app/components/Toast';
@@ -547,13 +551,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps((previous) => reorderDraftSteps({ steps: previous, from, to }));
   };
 
-  const addStep = () => {
-    setSteps((previous) => addDraftStep({ steps: previous }));
+  const savedSteps = useSavedSteps({ workspaceId: session.workspaceId });
+  const addStep = (picked: SavedStep | null) => {
+    const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
+    setSteps((previous) => addDraftStep({ steps: previous, step }));
+    setExpandedKey(step.key);
   };
+  const { savingKey, saveAsStep } = useSaveAsStep({
+    workspaceId: session.workspaceId,
+    onLinked: (key, libraryStepId) => patchStep(key, { libraryStepId }),
+    onError: (message) => setError({ title: "Couldn't save the step", message }),
+  });
 
   const { drag, dropIndex, startStepDrag, ghost } = useWorkflowDrag({
     enabled: steps.length > 0,
-    onDropLibrary: () => {},
     onReorder: moveStepTo,
   });
   const isDraggingStep = drag !== null;
@@ -936,6 +947,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       dropIndex={dropIndex}
       disabled={blocked}
       banner={planning && steps.length > 0 ? <PlanDraftingBanner /> : null}
+      savedSteps={savedSteps}
       onAddStep={addStep}
       renderStep={({ step, index, span }) => {
         const effort = step.effort ?? roleEffort(step.role);
@@ -1001,6 +1013,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 onDuplicate={() =>
                   setSteps((previous) => duplicateDraftStep({ steps: previous, key: step.key }))
                 }
+                isSavingAsStep={savingKey === step.key}
+                onSaveAsStep={() => void saveAsStep(step)}
                 onRemove={() => removeStep(step.key)}
                 onDone={() => setExpandedKey(null)}
               />
