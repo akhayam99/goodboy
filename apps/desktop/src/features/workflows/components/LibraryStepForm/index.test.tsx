@@ -86,4 +86,50 @@ describe('LibraryStepForm', () => {
       );
     }
   });
+
+  it('saves every edit of a global step into one workspace copy', () => {
+    const onCommit = vi.fn();
+    const def: StepDef = {
+      id: 'seed_scout' as StepDefId,
+      workspaceId: null,
+      role: 'scout',
+      name: 'Scout',
+      promptPrefix: 'Map the code.',
+      createdAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+      updatedAt: '2025-01-01T00:00:00.000Z' as IsoDateTime,
+    };
+    render(
+      <LibraryStepForm
+        def={def}
+        workspaceId={'workspace-1' as WorkspaceId}
+        connectedProviders={['anthropic' as ProviderId]}
+        onCommit={onCommit}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const nameInput = screen.getByPlaceholderText('step name');
+    fireEvent.blur(nameInput);
+    expect(onCommit).not.toHaveBeenCalled();
+
+    fireEvent.change(nameInput, { target: { value: 'Scout ledger-core' } });
+    fireEvent.blur(nameInput);
+    const instructions = screen.getByPlaceholderText('default role instructions…');
+    fireEvent.change(instructions, { target: { value: 'Map the ledger code.' } });
+    fireEvent.blur(instructions);
+    fireEvent.blur(nameInput);
+
+    expect(onCommit).toHaveBeenCalledTimes(2);
+    const ids = new Set(onCommit.mock.calls.map(([args]) => args.id));
+    expect(ids.size).toBe(1);
+    const [copyId] = [...ids];
+    expect(typeof copyId).toBe('string');
+    expect(copyId).not.toBe(def.id);
+    for (const [args] of onCommit.mock.calls) {
+      expect(args.workspaceId).toBe('workspace-1');
+    }
+    expect(onCommit.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({ name: 'Scout ledger-core', promptPrefix: 'Map the ledger code.' }),
+    );
+  });
 });

@@ -7,6 +7,7 @@ import type {
   AgentRole,
   ProviderId,
   StepDef,
+  StepDefId,
   VerbosityLevel,
   WorkspaceId,
   EffortLevel,
@@ -30,6 +31,29 @@ type Props = {
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 const DEFAULT_VERBOSITY: VerbosityLevel = 'normal';
 
+type FormState = {
+  name: string;
+  role: AgentRole;
+  promptPrefix: string;
+  providerOverride: ProviderId | '';
+  modelOverride: string;
+  effort: EffortLevel;
+  verbosity: VerbosityLevel;
+};
+
+const FORM_KEYS = [
+  'name',
+  'role',
+  'promptPrefix',
+  'providerOverride',
+  'modelOverride',
+  'effort',
+  'verbosity',
+] as const satisfies ReadonlyArray<keyof FormState>;
+
+const isSameForm = ({ a, b }: { a: FormState; b: FormState }): boolean =>
+  FORM_KEYS.every((key) => a[key] === b[key]);
+
 export const LibraryStepForm = ({
   def,
   workspaceId,
@@ -39,6 +63,16 @@ export const LibraryStepForm = ({
 }: Props) => {
   const roleModels = useAppStore((s) => s.workspaceOverrides?.[workspaceId]?.roleModels ?? null);
   const isGlobal = def?.workspaceId === null;
+  const copyId = useRef<StepDefId>(crypto.randomUUID() as StepDefId);
+  const saved = useRef<FormState>({
+    name: def?.name ?? '',
+    role: def?.role ?? 'custom',
+    promptPrefix: def?.promptPrefix ?? '',
+    providerOverride: (def?.providerDefault as ProviderId | undefined) ?? '',
+    modelOverride: def?.modelDefault ?? '',
+    effort: (def?.effortDefault as EffortLevel | undefined) ?? DEFAULT_EFFORT,
+    verbosity: def?.verbosityDefault ?? DEFAULT_VERBOSITY,
+  });
   const [name, setName] = useState(def?.name ?? '');
   const [role, setRole] = useState<AgentRole>(def?.role ?? 'custom');
   const [promptPrefix, setPromptPrefix] = useState(def?.promptPrefix ?? '');
@@ -64,16 +98,6 @@ export const LibraryStepForm = ({
     prefs: roleModels,
   });
 
-  type FormState = {
-    name: string;
-    role: AgentRole;
-    promptPrefix: string;
-    providerOverride: ProviderId | '';
-    modelOverride: string;
-    effort: EffortLevel;
-    verbosity: VerbosityLevel;
-  };
-
   const commit = (over: Partial<FormState> = {}) => {
     const next: FormState = {
       name,
@@ -88,6 +112,10 @@ export const LibraryStepForm = ({
     if (next.name.trim().length === 0) {
       return;
     }
+    if (def !== null && isSameForm({ a: next, b: saved.current })) {
+      return;
+    }
+    saved.current = next;
     const base: StepDefUpsertArgs = {
       workspaceId,
       role: next.role,
@@ -98,11 +126,11 @@ export const LibraryStepForm = ({
       effortDefault: next.effort as AgentEffort,
       verbosityDefault: next.verbosity,
     };
-    if (def && !isGlobal) {
-      onCommit({ ...base, id: def.id });
-    } else {
+    if (def === null) {
       onCommit(base);
+      return;
     }
+    onCommit({ ...base, id: isGlobal ? copyId.current : def.id });
   };
 
   return (
