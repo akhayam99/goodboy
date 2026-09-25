@@ -102,8 +102,9 @@ const RULES = [
       'apps/desktop/src/features/wireframes/wireframePalette.ts',
       'apps/desktop/src/app/components/MockScene/scenes/artifactSeed.ts',
       'apps/desktop/src/app/components/MockScene/scenes/InboxScene.tsx',
+      'apps/desktop/src/features/diff/lib/highlight/theme.ts',
     ],
-    why: 'raw colour lives only in the xterm, wireframe and seeded label quarantines',
+    why: 'raw colour lives only in the xterm, wireframe, seeded label and highlight sentinel quarantines',
   },
 ] satisfies ReadonlyArray<Rule>;
 

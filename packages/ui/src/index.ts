@@ -121,6 +121,14 @@ export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
+export {
+  CODE_TOKEN_CLASS,
+  CodeHighlighterContext,
+  type CodeHighlighter,
+  type CodeLines,
+  type CodeToken,
+  type CodeTokenKind,
+} from './components/Markdown/codeHighlighter';
 export { parseMarkdown } from './components/Markdown/parseMarkdown';
 export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { InlineMarkdown } from './components/Markdown/InlineMarkdown';

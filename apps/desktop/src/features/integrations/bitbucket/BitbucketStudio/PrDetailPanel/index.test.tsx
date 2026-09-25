@@ -178,9 +178,11 @@ describe('PrDetailPanel', () => {
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /^Changes/ }));
-    await waitFor(() => expect(screen.getByText('src/rocket.ts')).toBeTruthy());
-    fireEvent.click(screen.getByText('src/rocket.ts'));
+    await waitFor(() =>
+      expect(document.querySelector('[data-file-path="src/rocket.ts"]')).not.toBeNull(),
+    );
     const fileSection = document.querySelector('[data-file-path="src/rocket.ts"]');
+    expect(document.querySelector('table')).toBeNull();
     expect(fileSection?.textContent).toContain('const fuel = 100;');
     expect(fileSection?.textContent).toContain('const fuel = 0;');
   });

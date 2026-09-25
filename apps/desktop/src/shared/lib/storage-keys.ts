@@ -3,10 +3,9 @@ const PREFIX = 'goodboy:';
 export const STORAGE_KEYS = {
   theme: `${PREFIX}theme`,
   pricingSortKey: `${PREFIX}pricing-sort-key`,
-  diffSidebarCollapsed: `${PREFIX}diff-sidebar-collapsed`,
   diffLayoutMode: `${PREFIX}diff-layout-mode`,
+  diffWrap: `${PREFIX}diff-wrap`,
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
-  reviewBoardListWidth: `${PREFIX}review-board-list-width`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
 } as const;

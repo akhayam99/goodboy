@@ -636,6 +636,34 @@ says `Following output` while it runs and the exit, time and Copy output after.
 A run records the mount it ran in, so a project mounted twice reopens on the
 right branch.
 
+`file-diff` (payload `{ source, path }`) peeks at a diff without leaving the
+page. The source is a worktree (a file opened from the chat) or a commit (a
+GitHub commit link clicked anywhere in a session; outside a session the link
+opens in the browser). It shows unified and wrapped, and a worktree peek offers
+`Open in Diff`, which opens the Diff lens on that mount with the file in focus.
+`diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
+lists the review drafts of Write review; the dock count opens each one.
+
+## The Diff lens
+
+Every diff in the app is one `DiffView` (`features/diff`): the Diff lens, Write
+review, the Bitbucket pull request changes and the `file-diff` drawer. Only the
+comment behavior changes: a note for the agents in the Diff lens, a review
+draft in Write review, none in Bitbucket and the drawer. There is no file
+sidebar. The toolbar row holds `N files` (the file jump, also `T`: filter,
+arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
+saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
+previous and next file. Each file has a sticky header (status letter, path,
+changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
+on file); a viewed file collapses, and generated or binary files start
+collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+number to comment, drag or shift-click to cover a range; the composer and the
+threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
+The Diff lens docks `N open notes`, the resolver routing chip and
+`Propose fixes`; Write review docks `N drafts` and `Submit review`, whose
+popover holds the summary and the verdict. Files mount in batches of 20 as the
+browser idles, so a large diff stays responsive.
+
 ## The Scripts lens
 
 `ScriptsPanel` is one `PaneShell` (`Scripts`, meta `N projects · N running`,

@@ -13,9 +13,6 @@
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/index.tsx": 1,
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/useGitlabIssues.ts": 1,
     "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": 1,
-    "apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffViewerContent.tsx": 3,
-    "apps/desktop/src/features/permissions/components/DiffViewerDialog/FileDiffCard.tsx": 1,
-    "apps/desktop/src/features/permissions/components/DiffViewerDialog/highlight/index.ts": 19,
     "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 3,
     "apps/desktop/src/features/resolve/components/ResolveItemView/ResolveItemContainer.tsx": 1,
@@ -61,7 +58,6 @@
     "packages/core/src/worktree/manager.ts": 3,
     "packages/ui/src/components/Dialog.tsx": 2,
     "packages/ui/src/components/Markdown/parseInline.ts": 1,
-    "packages/ui/src/components/Markdown/tokenizeCode.ts": 1,
     "packages/ui/src/components/Tooltip.tsx": 1
   },
   "unbraced-if": {
@@ -91,7 +87,6 @@
     "apps/desktop/src/features/github/components/PullRequest/PrChecks.tsx": 1,
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 1,
     "apps/desktop/src/features/onboarding/OnboardingCard/index.tsx": 1,
-    "apps/desktop/src/features/permissions/components/DiffViewerDialog/index.tsx": 1,
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 2,
     "apps/desktop/src/features/resolve/components/ResolveItemHeader/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ResolveQueueHome/ResolveQueueEmptyState.tsx": 3,

@@ -35,8 +35,6 @@ import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatInput } from '../ChatInput';
-import { DiffViewerDialog } from '../../../../features/permissions/components/DiffViewerDialog';
-import { worktreeDiff } from '../../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { MountSuggestionCard } from '../MountSuggestionCard';
 import { useTranscriptMountProposals } from '../../../suggestions/useTranscriptMountProposals';
@@ -230,21 +228,20 @@ export const ChatView = ({ session, isActive = true }: Props) => {
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const [diffJumpFile, setDiffJumpFile] = useState<string | null>(null);
-  useEffect(() => {
-    setDiffJumpFile(null);
-  }, [selectedAgentId]);
-  const diffLoader = useMemo(
-    () =>
-      diffWorktreePath != null && !isBranchless
-        ? () => worktreeDiff({ worktreePath: diffWorktreePath })
-        : undefined,
-    [diffWorktreePath, isBranchless],
+  const openDrawer = useAppStore((s) => s.openDrawer);
+  const handleOpenDiff = useCallback(
+    (filePath: string) => {
+      if (diffWorktreePath == null || isBranchless) {
+        return;
+      }
+      openDrawer({
+        kind: 'file-diff',
+        sessionId: session.id,
+        payload: { source: { kind: 'worktree', worktreePath: diffWorktreePath }, path: filePath },
+      });
+    },
+    [diffWorktreePath, isBranchless, openDrawer, session.id],
   );
-
-  const handleOpenDiff = useCallback((filePath: string) => {
-    setDiffJumpFile(filePath);
-  }, []);
   const handleRefreshAuth = useCallback(() => {
     void refreshProviders();
   }, [refreshProviders]);
@@ -534,15 +531,6 @@ export const ChatView = ({ session, isActive = true }: Props) => {
           providerDisconnected={isProviderDisconnected}
         />
       ) : null}
-      <DiffViewerDialog
-        open={diffJumpFile !== null}
-        onClose={() => setDiffJumpFile(null)}
-        sessionId={session.id}
-        title="Worktree diff"
-        loader={diffLoader}
-        workingDir={diffWorktreePath ?? undefined}
-        jumpToFile={diffJumpFile ?? undefined}
-      />
     </div>
   );
 };

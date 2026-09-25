@@ -25,7 +25,23 @@ export type DrawerContent =
   | {
       readonly kind: 'scriptRun';
       readonly payload: { readonly scriptKey: string; readonly mountId: MountId | null };
+    }
+  | {
+      readonly kind: 'diff-notes';
+      readonly payload: Readonly<Record<string, never>>;
+    }
+  | {
+      readonly kind: 'review-drafts';
+      readonly payload: Readonly<Record<string, never>>;
+    }
+  | {
+      readonly kind: 'file-diff';
+      readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
     };
+
+export type FileDiffSource =
+  | { readonly kind: 'worktree'; readonly worktreePath: string }
+  | { readonly kind: 'commit'; readonly repo: string; readonly sha: string };
 
 export type DrawerRequest = DrawerContent & {
   readonly sessionId: SessionId;
