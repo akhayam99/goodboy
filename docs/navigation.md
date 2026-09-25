@@ -140,6 +140,20 @@ reach them from rows and chips inside the overview (they expand in place or
 open a side panel) and from the trail's destination switcher, never from the
 sidebar. Board → session is the full depth of navigation.
 
+**A sidebar row and a board card read the same summary.** Both take
+`useSessionSummary`, so they say the same things in the same words. The row has
+two lines. The first is the goal, with the age on the right; on hover the age
+gives its column to the cost, and the column keeps its width. The second is the
+workflow progress when a run is active (one segment per step, then
+`Implement · 3 of 5`, counted from the steps that started, never estimated),
+otherwise the stage reason. At most two marks follow it, in this order: what
+waits on you (open questions, then review drafts), the first linked task with a
+`+n` for the rest, the agent count. The row starts with a 20px node: the pull
+request glyph in its state colour when there is a request, otherwise the stage
+icon, a ring while an agent runs, and `?` or `!` when the session needs you.
+Running and needs-you rows carry the same left rail as their card
+(`sessionRail`). Nothing the row knows hides in a tooltip.
+
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.
 Peek is wider than the pinned column. The extra width applies at read time, so

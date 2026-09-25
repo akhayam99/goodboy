@@ -31,6 +31,9 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,
+    phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     loadReviewDrafts: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
@@ -51,7 +54,12 @@ vi.mock('../../../../../store', () => ({
   useNonResolverStandaloneAgents: () => hooks.agents,
   useSessionCost: () => hooks.cost,
   useSessionPrFetchState: () => hooks.prFetchState,
-  useSessionStageInfo: () => ({ stage: hooks.stage, reason: hooks.reason }),
+  useSessionStageInfo: () => ({
+    stage: hooks.stage,
+    reason: hooks.reason,
+    attention: null,
+    prState: null,
+  }),
 }));
 
 vi.mock('./useDynamicActions', () => ({
@@ -127,6 +135,9 @@ beforeEach(() => {
   state.projects = [];
   state.sessionPhaseRuns = {};
   state.reviewDrafts = {};
+  state.sessionOpenQuestions = {};
+  state.phaseTemplates = {};
+  state.sessionWorkflows = {};
   state.loadReviewDrafts.mockClear();
   state.setCurrentSession.mockClear();
   state.setActiveLens.mockClear();
@@ -170,6 +181,52 @@ describe('StageBoardCard layout', () => {
     expect(screen.queryByTestId('status-dot')).toBeNull();
     expect(screen.getByText('no PR yet').className).toContain('truncate');
     expect(screen.getByText('no PR yet').parentElement?.children.length).toBe(2);
+  });
+
+  it('trades the reason for the workflow progress the sidebar row shows', () => {
+    const running = {
+      ...session,
+      workspaceId: 'workspace-1',
+      workflowRuns: [{ id: 'run-1', workflowId: 'wf-1', ordinal: 0, executionMode: 'sequential' }],
+    } as unknown as Session;
+    state.phaseTemplates = {
+      'workspace-1': [
+        {
+          id: 'wf-1',
+          steps: [
+            { id: 'plan', name: 'Plan', ordinal: 0 },
+            { id: 'implement', name: 'Implement', ordinal: 1 },
+            { id: 'test', name: 'Test', ordinal: 2 },
+          ],
+        },
+      ],
+    };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        {
+          id: 'a-plan',
+          name: 'Plan',
+          kind: 'planner',
+          stepId: 'plan',
+          workflowRunId: 'run-1',
+          status: 'completed',
+        },
+        {
+          id: 'a-impl',
+          name: 'Implement',
+          kind: 'implementer',
+          stepId: 'implement',
+          workflowRunId: 'run-1',
+          status: 'running',
+        },
+      ],
+    };
+
+    render(<StageBoardCard session={running} nav={nav} />);
+
+    expect(screen.getByTestId('session-progress').textContent).toContain('Implement');
+    expect(screen.getByRole('img', { name: 'Step 2 of 3' })).toBeDefined();
+    expect(screen.queryByText('no PR yet')).toBeNull();
   });
 
   it('renders a backticked goal as inline code and keeps the tooltip plain', () => {
