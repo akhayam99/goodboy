@@ -12,7 +12,7 @@ import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { ARTIFACT_KIND_LABEL, formatAgo } from '../../storageCopy';
-import { ARTIFACT_COLUMN } from './artifactColumns';
+import { ARTIFACT_COLUMN } from './artifactColumnClasses';
 import { ArtifactRowActions } from './ArtifactRowActions';
 import type { ToggleArtifact } from './types';
 

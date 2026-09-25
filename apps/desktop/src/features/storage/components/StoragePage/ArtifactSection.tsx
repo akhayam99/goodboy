@@ -9,8 +9,8 @@ import type { StorageArtifactFilter } from '../../../../store/slices/storage/typ
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { useStorageSummary } from '../../useStorageSummary';
-import { ARTIFACT_COLUMN } from './artifactColumns';
 import { ArtifactBulkDeleteBar } from './ArtifactBulkDeleteBar';
+import { ArtifactColumns } from './ArtifactColumns';
 import { ArtifactRow } from './ArtifactRow';
 import type { ToggleArtifactParams } from './types';
 
@@ -22,26 +22,6 @@ const EMPTY_COPY = {
 } as const satisfies Record<StorageArtifactFilter, string>;
 
 const ReportIcon = CONCEPT_ICONS.report;
-
-type ColumnsParams = {
-  readonly isSelecting: boolean;
-};
-
-const ArtifactColumns = ({ isSelecting }: ColumnsParams) => (
-  <div
-    aria-hidden
-    className="flex h-6 items-center gap-2.5 px-2 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
-  >
-    {isSelecting ? <span className={ARTIFACT_COLUMN.check} /> : null}
-    <span className={ARTIFACT_COLUMN.node} />
-    <span className="min-w-0 flex-1">Artifact</span>
-    <span className={ARTIFACT_COLUMN.workspace}>Workspace</span>
-    <span className={ARTIFACT_COLUMN.age}>Deleted</span>
-    <span className={ARTIFACT_COLUMN.age}>Last used</span>
-    <span className={ARTIFACT_COLUMN.size}>Size</span>
-    <span className={ARTIFACT_COLUMN.actions} />
-  </div>
-);
 
 export const ArtifactSection = () => {
   const artifacts = useAppStore((state) => state.storageArtifacts);
