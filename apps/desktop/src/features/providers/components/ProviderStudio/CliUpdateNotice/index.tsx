@@ -68,8 +68,8 @@ export const CliUpdateNotice = ({ providerId, autoStart }: Props) => {
     <Notice
       tone="warning"
       placement="banner"
-      title={`Update needed for ${joinLabels({ labels: gates.map((gate) => gate.model.label) })}`}
-      body={`${required ?? ''} or newer. You have ${installed}.${failedNote}${waitNote}`}
+      title={`${joinLabels({ labels: gates.map((gate) => gate.model.label) })} ${gates.length === 1 ? 'needs' : 'need'} a newer ${cli}`}
+      body={`You have ${cli} ${installed}. Update to ${required ?? ''} or newer.${failedNote}${waitNote}`}
       detail={update.hasFailed ? update.errorTail : null}
       actions={
         <Button

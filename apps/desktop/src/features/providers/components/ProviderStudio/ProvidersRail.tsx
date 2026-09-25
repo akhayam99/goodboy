@@ -58,7 +58,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
           p.connection !== 'missing' &&
           outdatedCliModels({ provider: id, installedVersion: p.version, learned }).length > 0;
         const subtitle = isOutdated
-          ? 'Update needed'
+          ? 'update needed'
           : p.connection === 'connected'
             ? (p.identity ?? STATUS_LABEL.connected)
             : STATUS_LABEL[p.connection];
