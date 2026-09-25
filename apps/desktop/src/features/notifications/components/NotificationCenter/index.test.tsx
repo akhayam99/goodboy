@@ -139,6 +139,22 @@ describe('NotificationCenter', () => {
     expect(screen.queryByText('middle title')).toBeNull();
   });
 
+  it('reserves the unread slot on every row and fills it only on unread rows', async () => {
+    state.notifications = [
+      buildNotification({ id: 'n1', title: 'new one', coalesceKey: 'a' }),
+      buildNotification({ id: 'n2', title: 'seen one', coalesceKey: 'b', read: true }),
+    ];
+    render(<NotificationCenter />);
+    await openCenter();
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
+
+    const rows = screen.getAllByRole('listitem');
+    expect(rows.map((row) => row.querySelectorAll('[data-unread-slot]').length)).toEqual([1, 1]);
+    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
+    expect(rows[0]?.querySelector('[data-unread-slot]')?.childElementCount).toBe(1);
+    expect(rows[1]?.querySelector('[data-unread-slot]')?.childElementCount).toBe(0);
+  });
+
   it('opens on the unread tab with the rows that were new, and shows eight at most', async () => {
     state.notifications = Array.from({ length: 10 }, (_, index) =>
       buildNotification({

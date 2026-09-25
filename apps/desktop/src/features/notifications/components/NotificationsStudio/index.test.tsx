@@ -255,6 +255,25 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotification).toHaveBeenCalledWith('bottom');
   });
 
+  it('reserves the unread slot on every row and fills it only on unread rows', () => {
+    seedNotifications({
+      notifications: [
+        buildNotification({ id: 'n1', title: 'New one', coalesceKey: 'a' }),
+        buildNotification({ id: 'n2', title: 'Seen one', coalesceKey: 'b', read: true }),
+      ],
+    });
+    renderStudio();
+
+    const slots = ['New one', 'Seen one'].map((title) =>
+      screen
+        .getByRole('heading', { name: title })
+        .closest('li')
+        ?.querySelector('[data-unread-slot]'),
+    );
+    expect(slots.map((slot) => slot?.childElementCount)).toEqual([1, 0]);
+    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
+  });
+
   it('keeps the primary action visible and reserves the hover slot for row actions', () => {
     seedNotifications({
       notifications: [

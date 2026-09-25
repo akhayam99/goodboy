@@ -300,8 +300,9 @@ one is open at a time.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Send to developers). Unread reads as title weight in both, and
-  read rows recede, so no marker ever moves the title off its edge. In the
+  members and Send to developers). Both lead with a fixed unread slot that holds
+  a primary dot on unread rows and stays empty on read ones, so every title
+  keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Dismiss swap in
   over it on hover, so the row never changes width. The studio rail filters by
   view, severity and source with counts that come from SQL

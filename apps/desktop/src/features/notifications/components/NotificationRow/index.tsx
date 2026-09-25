@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { FOCUS_RING, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -86,6 +86,11 @@ export const NotificationRow = ({
       </button>
     </Tooltip>
   );
+  const unreadSlot = (
+    <span data-unread-slot className="pointer-events-none relative flex h-4 items-center">
+      {isUnread && <StatusDot tone="primary" size="sm" ariaLabel="Unread" />}
+    </span>
+  );
   const overlay = (
     <button
       type="button"
@@ -100,8 +105,9 @@ export const NotificationRow = ({
     const ActionIcon =
       latest.action != null ? notificationActionIcon({ kind: latest.action.kind }) : null;
     return (
-      <li className="group relative grid grid-cols-[0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-1.5 motion-safe:transition-colors hover:bg-hover">
+      <li className="group relative grid grid-cols-[0.375rem_0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-1.5 motion-safe:transition-colors hover:bg-hover">
         {overlay}
+        {unreadSlot}
         <SeverityIcon
           size={ICON_SIZE.control}
           className={cn('pointer-events-none relative shrink-0', tintClasses(severity.tone).icon)}
@@ -149,8 +155,9 @@ export const NotificationRow = ({
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-2.5 px-2.5 py-2">
+      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-2.5 px-2.5 py-2">
         {overlay}
+        {unreadSlot}
         <SeverityIcon
           size={ICON_SIZE.control}
           className={cn('pointer-events-none relative mt-px', tintClasses(severity.tone).icon)}
@@ -158,7 +165,6 @@ export const NotificationRow = ({
         />
         <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2">
-            {isUnread && <span className="sr-only">Unread</span>}
             <h3
               className={cn(
                 'truncate text-xs',
