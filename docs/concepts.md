@@ -224,6 +224,17 @@ question of its own, no turn is starting or running and no child still works,
 it moves to the finished agents without a click. Sending it a new message
 opens it again. There is no "mark done".
 
+Writing to an agent while its turn runs offers two choices, the same two the
+orchestrator hints use. **Queue** (Enter) waits for the turn to end. **Send
+now** (⌘Enter) stops the turn, keeps what it wrote, and continues with your
+message. Queued messages sit above the composer, reading **Waits for this
+turn** or **Sending now**, and each one can be edited, removed or sent now.
+They are saved in the database (`agent_queued_messages`), so they survive a
+restart, and they go out one per turn in order. An agent you stopped keeps its
+queue until you continue it or send one now. Once sent, a message leaves the
+queue and its bubble in the chat says "Queued · sent after the turn" or "Sent
+now · interrupted the turn".
+
 **Close** is only for an agent outside a workflow that is stuck on a failed
 turn or on its own question. It means "stop waiting on this agent": the agent
 reads "Closed by you" with a neutral check, not a success, and **Reopen** takes

@@ -40,8 +40,14 @@ describe('CONCEPT_ICONS', () => {
       CONCEPT_ICONS.runFailed,
       CONCEPT_ICONS.runBlocked,
       CONCEPT_ICONS.runCancelled,
+      CONCEPT_ICONS.runStopped,
     ];
     expect(new Set(outcomes).size).toBe(outcomes.length);
+  });
+
+  it('keeps a stopped run calm and a blocked run a warning', () => {
+    expect(CONCEPT_TONE.runStopped).toBe('neutral');
+    expect(CONCEPT_TONE.runBlocked).toBe('warning');
   });
 });
 

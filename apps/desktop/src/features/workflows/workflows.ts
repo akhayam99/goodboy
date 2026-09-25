@@ -31,6 +31,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  AgentStoppedBy,
   VerbosityLevel,
   Workflow,
   WorkflowId,
@@ -44,7 +45,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
+import { isAgentStoppedBy, isStepSize, isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -128,6 +129,8 @@ type RawAgentRow = {
   readonly routingLock: string | null;
   readonly routingDecision: string | null;
   readonly taskProfile: string | null;
+  readonly stoppedAt?: string | null;
+  readonly stoppedBy?: string | null;
 };
 
 type ParseStringArrayParams = {
@@ -276,6 +279,8 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
+    ...(row.stoppedAt != null && { stoppedAt: row.stoppedAt as IsoDateTime }),
+    ...(isAgentStoppedBy(row.stoppedBy) && { stoppedBy: row.stoppedBy }),
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
@@ -618,6 +623,8 @@ export type AgentUpdateFields = {
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
+  readonly stoppedAt?: IsoDateTime;
+  readonly stoppedBy?: AgentStoppedBy;
 };
 
 export const invokeAgentUpdateStatus = async (
@@ -632,6 +639,8 @@ export const invokeAgentUpdateStatus = async (
       outputSummary: fields.outputSummary ?? null,
       startedAt: fields.startedAt ?? null,
       completedAt: fields.completedAt ?? null,
+      stoppedAt: fields.stoppedAt ?? null,
+      stoppedBy: fields.stoppedBy ?? null,
     },
   });
   return rowToAgent(row);

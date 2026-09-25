@@ -9,6 +9,7 @@ import type {
   ProviderUsage,
   SessionId,
   TurnEvent,
+  UserTurnSentVia,
 } from '@goodboy/types';
 import { isOpenQuestionAnswerText, type ArtifactScanState } from '@goodboy/core';
 import { decodeAuthRequiredMessage, decodeCliTooOldMessage, type CliTooOldPayload } from '../turn';
@@ -23,6 +24,7 @@ export type TranscriptItem =
       attachments?: ReadonlyArray<MessageAttachment>;
       provider?: ProviderId;
       model?: string;
+      sentVia?: UserTurnSentVia;
       at: IsoDateTime;
     }
   | {
@@ -285,6 +287,7 @@ export const reduceTranscript = (
             : {}),
           ...(event.provider ? { provider: event.provider } : {}),
           ...(event.model ? { model: event.model } : {}),
+          ...(event.sentVia ? { sentVia: event.sentVia } : {}),
           at: event.at,
         });
         break;

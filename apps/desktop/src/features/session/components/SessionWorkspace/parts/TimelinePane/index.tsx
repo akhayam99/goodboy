@@ -98,6 +98,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   const setActiveLens = useAppStore((s) => s.setActiveLens);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
+  const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
@@ -438,6 +439,13 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
         return {
           label: `Start ${ask.step.name}`,
           onAct: () => void advanceAgent({ agent }),
+        };
+      }
+      case 'continue': {
+        const { agent } = ask;
+        return {
+          label: entry.kind === 'run' ? 'Continue step' : 'Continue',
+          onAct: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
         };
       }
       default: {

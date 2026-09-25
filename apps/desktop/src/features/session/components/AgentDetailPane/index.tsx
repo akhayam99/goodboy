@@ -15,6 +15,7 @@ import { AgentBrief } from './AgentBrief';
 import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
+import { AgentStoppedNotice } from './AgentStoppedNotice';
 
 type Props = {
   readonly session: Session;
@@ -80,6 +81,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   const lead = (
     <>
       {context}
+      <AgentStoppedNotice
+        session={session}
+        agent={agent}
+        executedProvider={executed?.provider ?? null}
+        providerOverride={providerOverride}
+      />
       <AgentNextAction session={session} agent={agent} />
     </>
   );

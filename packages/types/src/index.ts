@@ -127,7 +127,7 @@ export type {
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
-export type { ProviderUsage, TurnEvent } from './adapter';
+export type { ProviderUsage, TurnEvent, UserTurnSentVia } from './adapter';
 export type {
   AgentHandoff,
   HandoffDraft,
@@ -228,13 +228,14 @@ export type {
   AgentRole,
   AgentSourceKind,
   AgentStatus,
+  AgentStoppedBy,
   Step,
   StepDef,
   StepSize,
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isStepSize, isWorkflowOrigin } from './workflow';
+export { WORKFLOW_ORIGINS, isAgentStoppedBy, isStepSize, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,

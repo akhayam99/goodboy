@@ -34,6 +34,8 @@ const detailPhase = ({ status, isWaitingOnYou }: PhaseParams): RowPhase => {
       return 'waiting';
     case 'skipped':
       return 'skipped';
+    case 'stopped':
+      return 'waiting';
     default: {
       const exhaustive: never = status;
       return exhaustive;

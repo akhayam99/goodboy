@@ -80,7 +80,7 @@ export const AgentHeaderActions = ({
           <GhostActionButton
             icon={OctagonX}
             label="Interrupt"
-            onClick={() => void cancelCurrentTurn(sessionId, agent.id)}
+            onClick={() => void cancelCurrentTurn(sessionId, agent.id, 'user')}
           />
         ) : null}
         <GhostActionButton icon={Trash2} label="Delete" tone="danger" onClick={armDelete} />

@@ -200,6 +200,11 @@ export {
   type AgentConfigUpdate,
 } from './queries/agent';
 export {
+  listAgentQueuedMessages,
+  replaceAgentQueuedMessages,
+  type AgentQueuedMessageRecord,
+} from './queries/agent-queued-message';
+export {
   insertSessionWorktree,
   insertSessionMount,
   getSessionMount,

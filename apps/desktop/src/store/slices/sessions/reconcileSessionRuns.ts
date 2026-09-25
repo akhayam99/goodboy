@@ -44,6 +44,11 @@ export const reconcileLoadedAgent = async ({
   if (agent.runId != null && liveRunIds.has(agent.runId)) {
     await cancelTurn(agent.runId).catch(() => undefined);
   }
-  await updateAgentStatus(tauriDatabase, agent.id, { status: 'pending' }).catch(() => undefined);
-  return { ...agent, status: 'pending' };
+  const stoppedAt = new Date().toISOString() as IsoDateTime;
+  await updateAgentStatus(tauriDatabase, agent.id, {
+    status: 'stopped',
+    stoppedAt,
+    stoppedBy: 'app',
+  }).catch(() => undefined);
+  return { ...agent, status: 'stopped', stoppedAt, stoppedBy: 'app' };
 };

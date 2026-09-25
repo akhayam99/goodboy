@@ -12,6 +12,8 @@ export type ProviderUsage = {
   readonly estimatedCostUsd: number;
 };
 
+export type UserTurnSentVia = 'queued' | 'interrupt';
+
 export type TurnEvent =
   | {
       kind: 'user_text';
@@ -21,6 +23,7 @@ export type TurnEvent =
       provider?: ProviderId;
       model?: string;
       handoffId?: AgentId;
+      sentVia?: UserTurnSentVia;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }

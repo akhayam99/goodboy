@@ -67,8 +67,12 @@ const {
     clearAgentDraft: (agentId: string) => void;
     setAgentAttachments: (agentId: string, attachments: ReadonlyArray<never>) => void;
     clearAgentAttachments: (agentId: string) => void;
-    setAgentQueue: (agentId: string, queue: ReadonlyArray<{ id: string }>) => void;
-    clearAgentQueue: (agentId: string) => void;
+    enqueueAgentMessage: ReturnType<typeof vi.fn>;
+    sendAgentMessageNow: ReturnType<typeof vi.fn>;
+    removeQueuedMessage: ReturnType<typeof vi.fn>;
+    takeQueuedMessage: ReturnType<typeof vi.fn>;
+    sendQueuedNow: ReturnType<typeof vi.fn>;
+    loadAgentQueues: () => Promise<void>;
     dismissSessionNudge: () => Promise<void>;
     acceptSessionNudgeHandoff: () => Promise<void>;
     spawnAgent: () => Promise<void>;
@@ -136,17 +140,12 @@ const {
         delete next[agentId];
         return { agentAttachments: next };
       }),
-    setAgentQueue: (agentId, queue) =>
-      set((s) => ({ agentQueue: { ...s.agentQueue, [agentId]: queue } })),
-    clearAgentQueue: (agentId) =>
-      set((s) => {
-        if (!(agentId in s.agentQueue)) {
-          return s;
-        }
-        const next = { ...s.agentQueue };
-        delete next[agentId];
-        return { agentQueue: next };
-      }),
+    enqueueAgentMessage: vi.fn(async () => undefined),
+    sendAgentMessageNow: vi.fn(async () => undefined),
+    removeQueuedMessage: vi.fn(async () => undefined),
+    takeQueuedMessage: vi.fn(() => null),
+    sendQueuedNow: vi.fn(async () => undefined),
+    loadAgentQueues: async () => undefined,
     dismissSessionNudge: async () => undefined,
     acceptSessionNudgeHandoff: async () => undefined,
     spawnAgent: async () => undefined,
@@ -336,6 +335,57 @@ describe('ChatInput, input wiring', () => {
     expect(
       (screen.getByRole('button', { name: /^Model routing:/ }) as HTMLButtonElement).disabled,
     ).toBe(false);
+  });
+
+  describe('while the agent runs', () => {
+    const runningSession = () =>
+      makeSession({
+        state: {
+          kind: 'running',
+          runId: 'run-1' as ProviderRunId,
+          startedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        },
+      });
+
+    it('offers Queue and Send now once there is text, with the helper line', async () => {
+      const user = userEvent.setup();
+      render(<ChatInput session={runningSession()} />);
+
+      expect(screen.queryByRole('button', { name: /^Send now/ })).toBeNull();
+      await user.type(screen.getByRole('textbox'), 'keep the flag');
+
+      expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Send now/ })).toBeDefined();
+      expect(screen.getByText(/Queue waits for this turn to end/)).toBeDefined();
+    });
+
+    it('queues on Enter', async () => {
+      const user = userEvent.setup();
+      render(<ChatInput session={runningSession()} />);
+
+      await user.type(screen.getByRole('textbox'), 'keep the flag');
+      await user.keyboard('{Enter}');
+
+      const { enqueueAgentMessage, sendAgentMessageNow } = mockStore.getState();
+      expect(enqueueAgentMessage).toHaveBeenCalledWith({
+        turn: expect.objectContaining({ agentId: 'agent-1', content: 'keep the flag' }),
+      });
+      expect(sendAgentMessageNow).not.toHaveBeenCalled();
+      expect(sendTurnMock).not.toHaveBeenCalled();
+    });
+
+    it('sends now on Cmd+Enter', async () => {
+      const user = userEvent.setup();
+      render(<ChatInput session={runningSession()} />);
+
+      await user.type(screen.getByRole('textbox'), 'use decimals');
+      await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+      expect(mockStore.getState().sendAgentMessageNow).toHaveBeenCalledWith({
+        sessionId: 'session-1',
+        turn: expect.objectContaining({ agentId: 'agent-1', content: 'use decimals' }),
+      });
+    });
   });
 
   it('Enter sends the turn and clears the input', async () => {

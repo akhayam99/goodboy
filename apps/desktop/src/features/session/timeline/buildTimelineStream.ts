@@ -10,6 +10,7 @@ import {
   type RowPhase,
   type RowReadyStep,
   type RowState,
+  type RowStoppedStep,
 } from '../../workTreeModel/rowState';
 import type {
   TimelineAgentEntry,
@@ -658,6 +659,15 @@ const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
   return null;
 };
 
+const stoppedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }): RowStoppedStep | null => {
+  for (const child of entry.children) {
+    if (child.kind === 'agent' && child.agent.status === 'stopped' && child.agent.doneAt == null) {
+      return { agent: child.agent, stepLabel: child.stepLabel };
+    }
+  }
+  return null;
+};
+
 const chainedAfterTitleOf = ({
   entry,
   context,
@@ -692,6 +702,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     isDeciding,
     hasRunningStep,
     failedStep: failedStepOf({ entry }),
+    stoppedStep: stoppedStepOf({ entry }),
     question: runOpenQuestion({ entry }),
     readyStep,
     chainedAfterTitle: chainedAfterTitleOf({ entry, context }),

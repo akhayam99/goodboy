@@ -98,7 +98,7 @@ import type { DiscoveredScriptScan } from './slices/scripts/state';
 import type { DetectedEditor } from '../shared/lib/editor';
 import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
-import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
+import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { DrawerSliceState } from './slices/drawer/state';

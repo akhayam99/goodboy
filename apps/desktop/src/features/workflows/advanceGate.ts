@@ -1,7 +1,8 @@
-import { classifyWorkflowChain } from '@goodboy/core';
+import { classifyWorkflowChain, findReusableAgent } from '@goodboy/core';
 import type { Agent, Step, Workflow } from '@goodboy/types';
 
-export type WorkflowBlockReason = 'questions' | 'summarizer' | 'failed-step' | 'turn-running';
+export type WorkflowBlockReason =
+  'questions' | 'summarizer' | 'failed-step' | 'stopped-step' | 'turn-running';
 
 export type WorkflowAdvanceState =
   | { readonly kind: 'complete' }
@@ -45,6 +46,9 @@ export const resolveWorkflowAdvance = ({
   }
   if (chain.kind === 'blocked') {
     return { kind: 'blocked', reason: 'failed-step', step, failedStep };
+  }
+  if (findReusableAgent(agents, step.id)?.status === 'stopped') {
+    return { kind: 'blocked', reason: 'stopped-step', step, failedStep };
   }
   if (isAutoRun) {
     return { kind: 'automatic', step };

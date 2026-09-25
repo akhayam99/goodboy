@@ -51,6 +51,7 @@ const TranscriptCardImpl = ({
           attachments={item.attachments}
           provider={item.provider}
           model={item.model}
+          sentVia={item.sentVia}
           workingDir={workingDir}
         />
       );
