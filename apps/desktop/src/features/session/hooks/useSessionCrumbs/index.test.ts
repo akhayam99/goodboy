@@ -49,7 +49,7 @@ const STEP_AGENT_ID = 'agent-step' as AgentId;
 const ADHOC_AGENT_ID = 'agent-scout' as AgentId;
 const RESOLVER_AGENT_ID = 'agent-resolver' as AgentId;
 
-const workflow = { id: 'workflow-1', name: 'refactor', steps: [] } as unknown as Workflow;
+const workflow = { id: 'workflow-1', name: 'Refactor', steps: [] } as unknown as Workflow;
 
 const session = {
   id: SESSION_ID,
@@ -157,7 +157,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, STEP_AGENT_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
     ]);
   });
@@ -166,7 +166,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf('workflows', STEP_AGENT_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
     ]);
   });
@@ -175,7 +175,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf('agents', STEP_AGENT_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
     ]);
   });
@@ -192,7 +192,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, CLUSTER_CHILD_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
       'area alpha',
     ]);
@@ -221,7 +221,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
       'Answers',
       'pick a database',
@@ -238,7 +238,7 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, DELEGATE_ID)).toEqual([
       'Overview',
       'Workflows',
-      'refactor',
+      'Refactor',
       'Implement',
       'answer: pick a database',
     ]);

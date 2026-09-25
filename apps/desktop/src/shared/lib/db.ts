@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { seedMissingBuiltinWorkflows } from '@goodboy/core';
 import {
   DatabaseFromNewerBuildError,
   migrate as runMigrations,
@@ -142,6 +143,7 @@ export const runDbMigrations = async (): Promise<MigrateResult> => {
   const databasePath = await invokeDb<string>('db_path', {});
   const result = await runGuardedMigrations({ databasePath });
   await runDatabaseHygiene({ db: tauriDatabase, now: Date.now() });
+  await seedMissingBuiltinWorkflows({ db: tauriDatabase }).catch(() => undefined);
   await invokeDb('attachment_cleanup_orphans', {});
   return result;
 };

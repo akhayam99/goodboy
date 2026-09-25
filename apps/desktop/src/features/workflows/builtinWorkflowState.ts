@@ -37,6 +37,40 @@ const matchesEntry = ({ workflow, entry }: MatchParams): boolean => {
   });
 };
 
+export type BuiltinDrift = 'edited' | 'deleted';
+
+export type RestorableBuiltin = {
+  readonly entry: WorkflowLibraryEntry;
+  readonly drift: BuiltinDrift;
+};
+
+type WorkflowsParams = {
+  readonly workflows: ReadonlyArray<Workflow>;
+  readonly removedIds: ReadonlySet<string>;
+};
+
+export const restorableBuiltins = ({
+  workflows,
+  removedIds,
+}: WorkflowsParams): RestorableBuiltin[] =>
+  WORKFLOW_LIBRARY.flatMap((entry): RestorableBuiltin[] => {
+    const prefix = `${SEED_ID_PREFIX}${entry.slug}_`;
+    const seeded = workflows.find((workflow) => workflow.id.startsWith(prefix));
+    if (seeded !== undefined && matchesEntry({ workflow: seeded, entry })) {
+      return [];
+    }
+    if (seeded === undefined && ![...removedIds].some((id) => id.startsWith(prefix))) {
+      return [];
+    }
+    const nameTaken = workflows.some(
+      (workflow) => workflow.id !== seeded?.id && workflow.name === entry.name,
+    );
+    if (nameTaken) {
+      return [];
+    }
+    return [{ entry, drift: seeded === undefined ? 'deleted' : 'edited' }];
+  });
+
 export const builtinWorkflowState = ({ workflow }: Params): BuiltinWorkflowState => {
   if (workflow.origin !== 'library') {
     return 'custom';

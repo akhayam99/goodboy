@@ -34,6 +34,12 @@ const { invokeMock, state } = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
+const removed = vi.hoisted(() => ({ ids: new Set<string>() as ReadonlySet<string> }));
+
+vi.mock('../../hooks/useRemovedBuiltins', () => ({
+  useRemovedBuiltins: () => removed.ids,
+}));
+
 vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/core')>();
   return { ...actual, formatWorkflowFromNL: vi.fn(async () => null) };
@@ -167,15 +173,32 @@ describe('WorkflowsPanel home', () => {
     expect(screen.queryByText('Draft workflow')).toBeNull();
   });
 
+  it('keeps the restore off in a workspace that never had the built-ins', () => {
+    removed.ids = new Set();
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
+    expect((item as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('restores built-in workflows after an inline confirm that names the workspace', async () => {
+    removed.ids = new Set(
+      ['refactor-example', 'plan-and-ship', 'fix-a-bug'].map((slug) => `wf_seed_${slug}_ws-1`),
+    );
     state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
     renderPanel();
     openMenuItem('Restore built-in workflows');
     const confirm = screen.getByRole('group', {
       name: 'Restore built-in workflows in Harborline?',
     });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore' }));
-    await waitFor(() => expect(state.resetWorkflows).toHaveBeenCalledWith('ws-1'));
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore 3' }));
+    await waitFor(() =>
+      expect(state.resetWorkflows).toHaveBeenCalledWith('ws-1', [
+        'refactor-example',
+        'plan-and-ship',
+        'fix-a-bug',
+      ]),
+    );
   });
 });
 

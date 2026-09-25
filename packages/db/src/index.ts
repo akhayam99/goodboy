@@ -179,7 +179,17 @@ export {
   type ListBudgetAlertsOptions,
 } from './queries/budget';
 export { listSkillsForWorkspace, upsertSkill, deleteSkill } from './queries/skill';
-export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
+export {
+  listWorkflows,
+  getWorkflow,
+  upsertWorkflow,
+  deleteWorkflow,
+  restoreSeededWorkflow,
+  readBuiltinSeedState,
+  listRemovedSeededWorkflowIds,
+  takenNameKey,
+  type BuiltinSeedState,
+} from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,

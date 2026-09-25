@@ -20,12 +20,12 @@ describe('workflowKindName', () => {
     expect(workflowKindName(makeWorkflow('   '))).toBe('custom');
   });
 
-  it('returns the library name lowercased for a known workflow', () => {
-    expect(workflowKindName(makeWorkflow('Refactor (example)'))).toBe('refactor (example)');
+  it('returns the library name for a known workflow', () => {
+    expect(workflowKindName(makeWorkflow('Fix a bug'))).toBe('Fix a bug');
   });
 
   it('matches the library entry case-insensitively', () => {
-    expect(workflowKindName(makeWorkflow('rEfAcToR (ExAmPlE)'))).toBe('refactor (example)');
+    expect(workflowKindName(makeWorkflow('pLaN aNd ShIp'))).toBe('Plan and ship');
   });
 
   it('returns the trimmed raw name for an unknown workflow', () => {
