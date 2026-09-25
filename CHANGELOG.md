@@ -7,6 +7,35 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.5.2
+
+A new top bar and footer, one reading column for every pane, and time left on everything that runs.
+
+### [#1880] A top bar for what is happening now
+
+On macOS the window buttons sit inside the top bar, and the whole bar drags the window. In the middle, a ⌘K box opens the palette. The Now chip lists what needs you, what is running and the scripts in progress. Spend is its own button and opens Impact. Workspace settings is the last row of the workspace switcher.
+
+### [#1880] A footer for places, and a Goodboy chip
+
+The footer holds Inbox, Workflows and Settings. The Goodboy chip next to them has the version, the update, the setup checklist, bug reports, shortcuts and sponsor. Providers live in Settings and the palette. Settings opens on the current workspace.
+
+### [#1880] Time left on agents and runs
+
+A running agent or workflow run shows how long it has left, with the elapsed time in the tooltip. Start agent and the workflow run banner show the estimate before you launch. A finished run says when it took longer than usual.
+
+### [#1880] One column and a side drawer
+
+Every pane reads in the same centered column, and details open in a drawer at the right of the window instead of over the page.
+
+### [#1880] Auto picks per provider
+
+Auto now starts each role and task on the default provider of the workspace, with a chosen model for every provider. Custom agents and reports run on Sonnet 5 Medium, and plan drafting on Sonnet 5.
+
+### Fixes
+
+- Agent rows show model and effort in one cell, and keep the model name visible longest when the window narrows. [#1880]
+- Popovers, dialogs, toasts and the palette float above the page with one consistent surface, and the frame of the window has its own. [#1880]
+
 ## Goodboy v0.5.1
 
 Resolve does what it says on GitHub, and removing a leftover folder never takes work with it.
