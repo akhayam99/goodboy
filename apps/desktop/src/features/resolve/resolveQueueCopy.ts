@@ -48,12 +48,45 @@ export const RESOLVE_QUEUE_ACTION_LABEL = {
   wontFix: 'Will not fix',
   askForChanges: 'Ask agent to revise',
   send: 'Send to agent',
-  startRun: 'Start resolve run',
   openComment: 'Open comment',
   cancel: 'Cancel',
+  clearSelection: 'Clear',
+  resolveOptions: 'Choose the model',
+  note: 'Note for the agent (optional)',
 } as const;
 
-export const RESOLVE_QUEUE_REFRESH_LABEL = 'the latest comments';
+type CountParams = { readonly count: number };
+
+const commentNoun = ({ count }: CountParams): string => (count === 1 ? 'comment' : 'comments');
+
+export const resolveNewLabel = ({ count }: CountParams): string => `Resolve ${count} new`;
+
+export const resolveCountLabel = ({ count }: CountParams): string => `Resolve ${count}`;
+
+export const resolvePopoverHeading = ({ count }: CountParams): string =>
+  `Resolve ${count} ${commentNoun({ count })}`;
+
+export const resolveSelectionLabel = ({ count }: CountParams): string => `${count} selected`;
+
+export const resolveSelectLabel = ({ body }: { readonly body: string }): string => `Select ${body}`;
+
+export const resolveAgentsLine = ({
+  agents,
+  count,
+}: CountParams & { readonly agents: number }): string => {
+  const noun = commentNoun({ count });
+  if (agents <= 1) {
+    return count === 1
+      ? 'One agent works on this comment'
+      : `One agent works on these ${count} ${noun}`;
+  }
+  return `${agents} agents, ${count} ${noun}`;
+};
+
+export const resolveWithLabel = ({ summary }: { readonly summary: string }): string =>
+  `With ${summary}`;
+
+export const RESOLVE_QUEUE_REFRESH_LABEL = 'comments from GitHub';
 
 export const RESOLVE_RUN_IN_PROGRESS = 'Resolve run in progress';
 
@@ -69,8 +102,13 @@ export const RESOLVE_PUBLISH_REPLIES_LABEL = 'replies';
 export const RESOLVE_DELIVERY_SUPPORT = {
   replyPending: 'Reply pending',
   replyPosted: 'Reply posted',
-  threadResolved: 'Thread resolved',
-  threadLeftOpen: 'Thread left open',
+  threadResolved: 'Resolved on GitHub',
+  threadLeftOpen: 'Left open on GitHub',
+} as const;
+
+export const RESOLVE_REPLY_PLAN = {
+  resolves: 'Resolves the thread on GitHub',
+  leavesOpen: 'Leaves the thread open on GitHub',
 } as const;
 
 export const RESOLVE_QUEUE_FILTER_LABEL: Record<ResolveQueueFilter, string> = {

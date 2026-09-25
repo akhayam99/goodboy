@@ -145,6 +145,8 @@ only when your task reaches the case it covers.
 - [release-command.md](release-command.md): when an agent is running a
   release and needs the steps in order, plus the problems that hit past
   releases.
+- [versioning.md](versioning.md): when you pick the next version number or
+  wonder why a pull request with a migration waits for a minor release.
 - [styling.md](styling.md): when you write spacing, radius, scroll,
   overlay or z-index in code.
 - [mock-screenshots.md](mock-screenshots.md): when you need a screenshot
@@ -159,7 +161,8 @@ that matches its task. Whoever starts the agent points it here.
   `docs/file-system.md`.
 - Changing the schema: `AGENTS.md`, `docs/architecture.md`,
   `docs/testing.md`.
-- Touching a release: `docs/release-command.md`, `docs/release.md`.
+- Touching a release: `docs/release-command.md`, `docs/release.md`,
+  `docs/versioning.md`.
 - Reviewing a PR: `AGENTS.md`, `CONVENTIONS.md`, `docs/testing.md`.
 - Editing docs: this map, the doc that already covers the topic, and
   `docs/tone-of-voice.md` only for text users read.

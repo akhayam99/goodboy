@@ -21,6 +21,7 @@ export const STORAGE_PREFIXES = {
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
+  boardCollapsed: `${PREFIX}board-collapsed:v1:`,
 } as const;
 
 export const wipeLocalStorage = (): void => {

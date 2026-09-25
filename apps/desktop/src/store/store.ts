@@ -53,6 +53,7 @@ import type {
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
+  WorktreeRemovalMode,
   IntegrationBinding,
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
@@ -259,6 +260,7 @@ import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import { createWorktreesSlice } from './slices/worktrees';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
+import type { OrphanRemoval } from './slices/worktrees/removeOrphanWorktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -320,6 +322,8 @@ type AppActions = {
   setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
   hydrate(): Promise<void>;
   retryHydrate(): Promise<void>;
+  restoreNewerDatabaseBackup(): Promise<void>;
+  quitApp(): Promise<void>;
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   relaunchApp(): Promise<void>;
@@ -1012,7 +1016,8 @@ type AppActions = {
   removeOrphanWorktrees(params: {
     workspaceId: WorkspaceId;
     paths: ReadonlyArray<string>;
-  }): Promise<void>;
+    mode: WorktreeRemovalMode;
+  }): Promise<ReadonlyArray<OrphanRemoval>>;
 };
 
 export type AppStore = AppState &
@@ -1070,6 +1075,7 @@ export const initialState: AppState = {
   hydrated: false,
   bootPhase: 'pending',
   bootFailedPhase: null,
+  newerDatabase: null,
   error: null,
   transcripts: {},
   messages: {},

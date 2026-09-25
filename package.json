@@ -28,6 +28,7 @@
     "knip:production": "knip --workspace apps/desktop --production --include files,exports,types",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "check:doc-refs": "node scripts/check-doc-refs.mjs",
+    "release:kind": "node scripts/release-kind.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {

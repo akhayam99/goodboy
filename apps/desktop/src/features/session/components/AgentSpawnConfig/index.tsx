@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import { getDefaultTurnModel, getModelProvider, clampEffortForModel } from '@goodboy/core';
+import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -8,7 +8,6 @@ import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from './defaultAgentSpawnConfig';
 
 type Props = {
   readonly value: AgentSpawnConfigValue;
@@ -24,24 +23,16 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
       state.providers.filter((provider) => provider.connection === 'connected').map(({ id }) => id),
     ),
   );
-  const defaultModelProvider = getModelProvider(DEFAULT_AGENT_SPAWN_CONFIG.model) ?? 'anthropic';
-
   const onProvider = (provider: ProviderId | '') => {
     if (provider === '') {
-      onChange({ ...value, ...DEFAULT_AGENT_SPAWN_CONFIG, hint: value.hint });
       return;
     }
-    const model =
-      provider === defaultModelProvider
-        ? DEFAULT_AGENT_SPAWN_CONFIG.model
-        : getDefaultTurnModel({ id: provider });
+    const model = getDefaultTurnModel({ id: provider });
     onChange({
       ...value,
       provider,
       model,
-      effort:
-        clampEffortForModel({ model, effort: DEFAULT_AGENT_SPAWN_CONFIG.effort }) ??
-        DEFAULT_AGENT_SPAWN_CONFIG.effort,
+      effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
     });
   };
 

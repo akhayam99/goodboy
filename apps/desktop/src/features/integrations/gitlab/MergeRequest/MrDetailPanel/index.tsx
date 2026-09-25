@@ -4,7 +4,7 @@ import {
   StudioDetailLayout,
 } from '../../../../../shared/components/StudioDetail';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button, Markdown, Notice } from '@goodboy/ui';
+import { Button, ConfirmPopover, Markdown, Notice } from '@goodboy/ui';
 import { FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
@@ -230,6 +230,10 @@ export const MrDetailPanel = ({
     const actionBusy: MrActionBusy =
       busy === 'draft' || busy === 'close' || busy === 'reopen' ? busy : null;
     const postNote = discussions.post;
+    const isMergeBlocked =
+      mr.hasConflicts ||
+      mr.mergeStatus === 'cannot_be_merged' ||
+      (sessionId == null && projectPath == null);
 
     return (
       <StudioDetailLayout
@@ -245,25 +249,33 @@ export const MrDetailPanel = ({
                 <>
                   {refreshButton}
                   {mr.state === 'opened' ? (
-                    <Button
-                      onClick={() => void onMerge()}
-                      disabled={
-                        busy !== null ||
-                        mr.hasConflicts ||
-                        mr.mergeStatus === 'cannot_be_merged' ||
-                        (sessionId == null && projectPath == null)
-                      }
-                      className={busy === 'merge' ? 'animate-border-pulse' : undefined}
-                    >
-                      {busy === 'merge' ? (
-                        'Merging…'
-                      ) : (
-                        <>
-                          <GitMerge size={ICON_SIZE.row} aria-hidden />
-                          Merge request
-                        </>
+                    <ConfirmPopover
+                      role="danger"
+                      icon={<GitMerge size={ICON_SIZE.row} aria-hidden />}
+                      title={`Merge !${mr.iid}?`}
+                      description="GitLab merges it with the method the project is set to. It cannot be undone from here."
+                      confirmLabel={busy === 'merge' ? 'Merging' : 'Confirm merge'}
+                      onConfirm={onMerge}
+                      isBusy={busy === 'merge'}
+                      isConfirmDisabled={isMergeBlocked}
+                      trigger={({ isArmed, arm }) => (
+                        <Button
+                          onClick={arm}
+                          aria-expanded={isArmed}
+                          disabled={busy !== null || isMergeBlocked}
+                          className={busy === 'merge' ? 'animate-border-pulse' : undefined}
+                        >
+                          {busy === 'merge' ? (
+                            'Merging…'
+                          ) : (
+                            <>
+                              <GitMerge size={ICON_SIZE.row} aria-hidden />
+                              Merge request
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                    />
                   ) : null}
                   {headerActions}
                 </>
@@ -288,7 +300,7 @@ export const MrDetailPanel = ({
                 })
               }
               onClose={() =>
-                void runUpdate({
+                runUpdate({
                   kind: 'close',
                   toast: 'Merge request closed',
                   stateEvent: 'close',

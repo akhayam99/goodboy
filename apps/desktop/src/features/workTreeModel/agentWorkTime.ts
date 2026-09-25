@@ -1,4 +1,9 @@
-import { clampEffortForModel, estimateDuration, type EstimateKey } from '@goodboy/core';
+import {
+  clampEffortForModel,
+  estimateDuration,
+  type DurationUnit,
+  type EstimateKey,
+} from '@goodboy/core';
 import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { estimateBasis, unknownEstimateBasis } from './estimateBasis';
 import type { RowPhase } from './rowState';
@@ -23,33 +28,73 @@ export const estimateKeyOf = ({ role, provider, model, effort, size }: KeyParams
 
 type EstimateParams = {
   readonly key: EstimateKey;
+  readonly unit: DurationUnit;
   readonly source: WorkTimeSource;
 };
 
-export const workEstimateFor = ({ key, source }: EstimateParams): WorkEstimate | null => {
+export const workEstimateFor = ({ key, unit, source }: EstimateParams): WorkEstimate | null => {
   if (source.history === null) {
     return null;
   }
-  const estimate = estimateDuration({ samples: source.history.steps, key, nowMs: source.nowMs });
+  const estimate = estimateDuration({ history: source.history, unit, key, nowMs: source.nowMs });
   return estimate === null
     ? null
-    : workEstimateOf({ estimate, basis: estimateBasis({ estimate, key }) });
+    : workEstimateOf({ estimate, basis: estimateBasis({ estimate, key, unit }) });
 };
 
 type Params = {
   readonly agentId: AgentId;
   readonly key: EstimateKey;
+  readonly unit: DurationUnit;
   readonly phase: RowPhase;
   readonly source: WorkTimeSource;
 };
 
-export const agentWorkTime = ({ agentId, key, phase, source }: Params): WorkTime | null => {
+type TurnParams = Params & {
+  readonly estimate: WorkEstimate | null;
+  readonly unknownBasis: string | null;
+};
+
+const turnWorkTime = ({
+  agentId,
+  phase,
+  source,
+  estimate,
+  unknownBasis,
+}: TurnParams): WorkTime | null => {
+  const liveStartMs = source.liveStartMs.get(agentId);
+  if (phase === 'running' && liveStartMs !== undefined) {
+    return workTime({
+      phase,
+      activeMs: Math.max(0, source.nowMs - liveStartMs),
+      hasStarted: true,
+      estimate,
+      unknownBasis,
+    });
+  }
   const active = familyActiveTime({ agentIds: [agentId], source });
   return workTime({
     phase,
     activeMs: active.activeMs,
     hasStarted: active.hasStarted,
-    estimate: workEstimateFor({ key, source }),
-    unknownBasis: source.history === null ? null : unknownEstimateBasis({ key }),
+    estimate: active.hasStarted ? null : estimate,
+    unknownBasis: null,
+  });
+};
+
+export const agentWorkTime = (params: Params): WorkTime | null => {
+  const { agentId, key, unit, phase, source } = params;
+  const estimate = workEstimateFor({ key, unit, source });
+  const unknownBasis = source.history === null ? null : unknownEstimateBasis({ key, unit });
+  if (unit === 'turn') {
+    return turnWorkTime({ ...params, estimate, unknownBasis });
+  }
+  const active = familyActiveTime({ agentIds: [agentId], source });
+  return workTime({
+    phase,
+    activeMs: active.activeMs,
+    hasStarted: active.hasStarted,
+    estimate,
+    unknownBasis,
   });
 };

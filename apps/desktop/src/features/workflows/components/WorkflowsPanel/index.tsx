@@ -73,6 +73,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         .map((provider) => provider.id),
     [providers],
   );
+  const workspaceName = workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null;
   const presets = templates.filter(
     (template) => template.deletedAt == null && template.isPreset !== false,
   );
@@ -387,6 +388,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         rail={
           <WorkflowsRail
             presets={presets}
+            workspaceName={workspaceName}
             activeId={activeId}
             resetting={resetting}
             confirmReset={confirmDefaults}

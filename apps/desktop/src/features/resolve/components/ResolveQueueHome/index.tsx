@@ -8,12 +8,13 @@ import {
   type ReactNode,
   type UIEvent,
 } from 'react';
-import { Button, ErrorStrip, SectionHeader, Skeleton, Tooltip } from '@goodboy/ui';
+import { ErrorStrip, SectionHeader, Skeleton } from '@goodboy/ui';
 import type {
   PrCheckRun,
   PrComment,
   ResolveAttempt,
   ResolvePublicationDrift,
+  ResolveThread,
   Session,
   SessionId,
 } from '@goodboy/types';
@@ -33,25 +34,28 @@ import {
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
 import { reviewThreadId } from '../../../../store/slices/review-navigation';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
-import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
+import type { CommentThread } from '../../../github/comment-threads';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { heldBackByThreadId } from '../../heldBackByThreadId';
-import { startResolveRun } from '../../startResolveRun';
+import { resolvableThread } from '../../resolvableThread';
 import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
 import { orderResolveQueueRows } from '../../orderResolveQueueRows';
 import { resolveQueueErrorPlacement } from '../../resolveQueueErrorPlacement';
+import { conversationsCounter } from '../../conversationsCounter';
+import { useNow } from '../../../../shared/hooks/useNow';
 import {
-  RESOLVE_QUEUE_ACTION_LABEL,
   RESOLVE_QUEUE_REFRESH_LABEL,
   RESOLVE_QUEUE_TITLE,
   RESOLVE_RUN_IN_PROGRESS,
+  resolveNewLabel,
   sharedRunHeading,
 } from '../../resolveQueueCopy';
-import { ResolveSpawnSheet } from '../ResolveSpawnSheet';
+import { ResolveWithPopover } from '../ResolveWithPopover';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
+import { ResolveSelectionBar } from './ResolveSelectionBar';
 import { QueueFilterChips } from './QueueFilterChips';
 import { ResolveQueueRow } from './ResolveQueueRow';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
@@ -72,6 +76,8 @@ type Props = {
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const EMPTY_DRIFT: ReadonlyArray<ResolvePublicationDrift> = [];
+const EMPTY_THREADS: ReadonlyArray<ResolveThread> = [];
+const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
 type AskForChangesParams = {
   readonly threadId: string;
@@ -116,6 +122,7 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   const detailRef = useRef<HTMLDivElement | null>(null);
   const reportError = useAppStore((s) => s.reportError);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
+  const now = useNow(5_000);
   const comments = useAppStore(
     (s) =>
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
@@ -134,13 +141,47 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
   const openResolvePublication = useAppStore((s) => s.openResolvePublication);
+  const resolveThreads = useAppStore((s) => s.sessionResolveThreads[sessionId] ?? EMPTY_THREADS);
 
   const rows = useResolveQueueRows({ sessionId });
   const repo = useSessionRepo({ sessionId });
   const roleModels = useSessionRoleModels({ sessionId });
-  const [spawnConfig, setSpawnConfig] = useState<AgentSpawnConfigValue>(DEFAULT_AGENT_SPAWN_CONFIG);
-  const [isSpawning, setIsSpawning] = useState(false);
-  const [isConfiguring, setIsConfiguring] = useState(false);
+  const [checkedThreadIds, setCheckedThreadIds] = useState<ReadonlySet<string>>(EMPTY_SELECTION);
+
+  const newThreads = useMemo(
+    () => eligibleReviewThreads({ github, rows: resolveThreads }),
+    [github, resolveThreads],
+  );
+  const resolvableByThreadId = useMemo(
+    () =>
+      new Map(
+        rows.flatMap((row): ReadonlyArray<readonly [string, CommentThread]> => {
+          const thread = resolvableThread({ row });
+          return thread === null ? [] : [[row.thread.threadId, thread]];
+        }),
+      ),
+    [rows],
+  );
+  const checkedThreads = useMemo(
+    () =>
+      [...checkedThreadIds].flatMap((threadId) => {
+        const thread = resolvableByThreadId.get(threadId);
+        return thread === undefined ? [] : [thread];
+      }),
+    [checkedThreadIds, resolvableByThreadId],
+  );
+  const onToggleChecked = useCallback(
+    ({ threadId, isChecked }: { readonly threadId: string; readonly isChecked: boolean }): void => {
+      setCheckedThreadIds((current) => {
+        if (isChecked) {
+          return new Set([...current, threadId]);
+        }
+        return new Set([...current].filter((candidate) => candidate !== threadId));
+      });
+    },
+    [],
+  );
+  const clearChecked = useCallback((): void => setCheckedThreadIds(EMPTY_SELECTION), []);
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -343,20 +384,6 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
     [reportError, sessionId, takeUpResolveQueueItem],
   );
 
-  const onStartResolveRun = async (): Promise<void> => {
-    const pr = github?.pr;
-    if (pr == null) {
-      return;
-    }
-    setIsSpawning(true);
-    try {
-      await startResolveRun({ sessionId, pr, spawnConfig, spawnAgent, setAgentConfig });
-      setIsConfiguring(false);
-    } finally {
-      setIsSpawning(false);
-    }
-  };
-
   const focusRow = useCallback(({ threadId }: FocusRowParams): void => {
     listRef.current
       ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(threadId)}"]`)
@@ -503,6 +530,15 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
       <ResolveQueueRow
         key={row.thread.threadId}
         row={row}
+        selection={
+          resolvableByThreadId.has(row.thread.threadId)
+            ? {
+                isChecked: checkedThreadIds.has(row.thread.threadId),
+                onToggle: (isChecked) =>
+                  onToggleChecked({ threadId: row.thread.threadId, isChecked }),
+              }
+            : null
+        }
         isSelected={row.thread.threadId === view.expandedThreadId}
         heldBack={heldBack.get(row.thread.threadId) ?? null}
         onOpen={() => {
@@ -520,7 +556,16 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
         }
       />
     ),
-    [heldBack, onOpenInDiff, onResume, onSelect, view.expandedThreadId],
+    [
+      checkedThreadIds,
+      heldBack,
+      onOpenInDiff,
+      onResume,
+      onSelect,
+      onToggleChecked,
+      resolvableByThreadId,
+      view.expandedThreadId,
+    ],
   );
 
   const inPane = (children: ReactNode): ReactNode => (
@@ -556,6 +601,13 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
 
   const isLoading = github.detail === null && github.detailLoading;
   const isRunLive = hasActiveResolveRun({ attempts });
+  const counter = conversationsCounter({
+    comments: github.detail?.comments ?? null,
+    fetchedAt: github.detailFetchedAt ?? null,
+    error: refreshError,
+    now,
+  });
+  const isReadTrusted = github.detail !== null && refreshError === null;
 
   return (
     <div className="isolate grid h-full min-h-0 min-w-0 overflow-hidden">
@@ -568,112 +620,106 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
           <PaneShell
             title={RESOLVE_QUEUE_TITLE}
             scroll="body"
+            {...(counter !== null && { meta: counter })}
             actions={
-              isConfiguring ? null : (
-                <Tooltip
-                  content={
-                    isRunLive ? RESOLVE_RUN_IN_PROGRESS : RESOLVE_QUEUE_ACTION_LABEL.startRun
-                  }
-                >
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={isRunLive}
-                    onClick={() => setIsConfiguring(true)}
-                  >
-                    {RESOLVE_QUEUE_ACTION_LABEL.startRun}
-                  </Button>
-                </Tooltip>
+              newThreads.length === 0 ? null : (
+                <ResolveWithPopover
+                  sessionId={sessionId}
+                  threads={newThreads}
+                  label={resolveNewLabel({ count: newThreads.length })}
+                  isDisabled={isRunLive}
+                  disabledReason={RESOLVE_RUN_IN_PROGRESS}
+                />
               )
             }
           >
-            {isConfiguring ? (
-              <ResolveSpawnSheet
-                value={spawnConfig}
-                onChange={setSpawnConfig}
-                disabled={false}
-                isBusy={isSpawning}
-                onStart={() => void onStartResolveRun()}
-                onCancel={() => setIsConfiguring(false)}
-              />
-            ) : (
-              <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
-                {errorPlacement === 'inline' && refreshError !== null && (
-                  <ErrorStrip
-                    label={RESOLVE_QUEUE_REFRESH_LABEL}
-                    error={new Error(refreshError)}
-                    onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
-                  />
-                )}
-                {reviewTarget?.status === 'pending' && (
-                  <p role="status" className="text-2xs text-muted-foreground">
-                    {reviewTargetPending({ hasThread: targetThreadId !== null })}
-                  </p>
-                )}
-                {targetError !== null && (
-                  <ErrorStrip
-                    label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
-                    error={new Error(targetError)}
-                    onRetry={onRetryTarget}
-                  />
-                )}
-                <QueueFilterChips
-                  filter={view.filter}
-                  needsReviewCount={groups.needsReview.length + groups.approved.length}
-                  activeCount={groups.active.length}
-                  retryableCount={groups.retryable.length}
-                  onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
+            <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
+              {checkedThreads.length > 0 && (
+                <ResolveSelectionBar
+                  sessionId={sessionId}
+                  threads={checkedThreads}
+                  isRunLive={isRunLive}
+                  onClear={clearChecked}
                 />
-                {isLoading && (
-                  <div className="flex flex-col gap-4">
-                    {SKELETON_ROWS.map((key) => (
-                      <div key={key} className="flex flex-col gap-2 px-3 py-2">
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3.5 w-48" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
-                  <NothingToRetryState />
-                )}
-                {!isLoading && listed.length === 0 && view.filter !== 'retryable' && (
+              )}
+              {errorPlacement === 'inline' && refreshError !== null && (
+                <ErrorStrip
+                  label={RESOLVE_QUEUE_REFRESH_LABEL}
+                  error={new Error(refreshError)}
+                  onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
+                />
+              )}
+              {reviewTarget?.status === 'pending' && (
+                <p role="status" className="text-2xs text-muted-foreground">
+                  {reviewTargetPending({ hasThread: targetThreadId !== null })}
+                </p>
+              )}
+              {targetError !== null && (
+                <ErrorStrip
+                  label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
+                  error={new Error(targetError)}
+                  onRetry={onRetryTarget}
+                />
+              )}
+              <QueueFilterChips
+                filter={view.filter}
+                needsReviewCount={groups.needsReview.length + groups.approved.length}
+                activeCount={groups.active.length}
+                retryableCount={groups.retryable.length}
+                onChange={(filter) => setResolveQueueView({ sessionId, patch: { filter } })}
+              />
+              {isLoading && (
+                <div className="flex flex-col gap-4">
+                  {SKELETON_ROWS.map((key) => (
+                    <div key={key} className="flex flex-col gap-2 px-3 py-2">
+                      <Skeleton className="h-5 w-full" />
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3.5 w-48" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
+                <NothingToRetryState />
+              )}
+              {!isLoading &&
+                isReadTrusted &&
+                listed.length === 0 &&
+                view.filter !== 'retryable' && (
                   <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
                 )}
-                {!isLoading && listed.length > 0 && (
-                  <div className="flex flex-col gap-4">
-                    {listGroups.map((group) => (
-                      <div key={group.key} className="flex min-w-0 flex-col gap-2">
-                        {group.attemptId !== null && (
-                          <SectionHeader
-                            label={sharedRunHeading({ count: group.rows.length })}
-                            headingLevel={3}
-                          />
-                        )}
-                        <ol className="flex flex-col gap-2">
-                          {group.rows.map((row) => renderRow({ row }))}
-                        </ol>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <ResolveQueueFooter
-                  completed={groups.completed}
-                  later={groups.later}
-                  renderRow={renderRow}
-                  isDeferredShown={view.isDeferredShown}
-                  isCompletedShown={view.isCompletedShown}
-                  onDeferredShownChange={(isDeferredShown) =>
-                    setResolveQueueView({ sessionId, patch: { isDeferredShown } })
-                  }
-                  onCompletedShownChange={(isCompletedShown) =>
-                    setResolveQueueView({ sessionId, patch: { isCompletedShown } })
-                  }
-                />
-              </div>
-            )}
+              {!isLoading && listed.length > 0 && (
+                <div className="flex flex-col gap-4">
+                  {listGroups.map((group) => (
+                    <div key={group.key} className="flex min-w-0 flex-col gap-2">
+                      {group.attemptId !== null && (
+                        <SectionHeader
+                          label={sharedRunHeading({ count: group.rows.length })}
+                          headingLevel={3}
+                        />
+                      )}
+                      <ol className="flex flex-col gap-2">
+                        {group.rows.map((row) => renderRow({ row }))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <ResolveQueueFooter
+                completed={groups.completed}
+                later={groups.later}
+                renderRow={renderRow}
+                isDeferredShown={view.isDeferredShown}
+                isCompletedShown={view.isCompletedShown}
+                onDeferredShownChange={(isDeferredShown) =>
+                  setResolveQueueView({ sessionId, patch: { isDeferredShown } })
+                }
+                onCompletedShownChange={(isCompletedShown) =>
+                  setResolveQueueView({ sessionId, patch: { isCompletedShown } })
+                }
+              />
+            </div>
           </PaneShell>
         </StudioDetailLayout>
       </div>

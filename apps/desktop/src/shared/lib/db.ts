@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
+  DatabaseFromNewerBuildError,
   migrate as runMigrations,
+  pickRestorableSnapshot,
   runDatabaseHygiene,
   runRuntimeMigrations,
   type Database,
@@ -9,6 +11,7 @@ import {
   type StatementResult,
   type TransactionOutcome,
 } from '@goodboy/db';
+import { NewerDatabaseError } from './newerDatabase';
 
 const UNMANAGED_STATE_MARKER = 'state not managed';
 
@@ -101,13 +104,43 @@ const migrationSnapshotStorage: MigrationSnapshotStorage = {
   remove: async ({ path }) => invokeDb('db_remove_migration_snapshot', { path }),
 };
 
+type RunGuardedMigrationsParams = {
+  readonly databasePath: string;
+};
+
+const runGuardedMigrations = async ({
+  databasePath,
+}: RunGuardedMigrationsParams): Promise<MigrateResult> => {
+  try {
+    return await runRuntimeMigrations({
+      databasePath,
+      db: tauriDatabase,
+      storage: migrationSnapshotStorage,
+    });
+  } catch (error) {
+    if (!(error instanceof DatabaseFromNewerBuildError)) {
+      throw error;
+    }
+    const restorableSnapshot = pickRestorableSnapshot({
+      paths: await migrationSnapshotStorage.list(),
+      highestKnownVersion: error.highestKnownVersion,
+    });
+    throw new NewerDatabaseError({ message: error.message, restorableSnapshot });
+  }
+};
+
+type RestoreMigrationSnapshotParams = {
+  readonly path: string;
+};
+
+export const restoreMigrationSnapshot = async ({
+  path,
+}: RestoreMigrationSnapshotParams): Promise<string> =>
+  invokeDb<string>('db_restore_migration_snapshot', { path });
+
 export const runDbMigrations = async (): Promise<MigrateResult> => {
   const databasePath = await invokeDb<string>('db_path', {});
-  const result = await runRuntimeMigrations({
-    databasePath,
-    db: tauriDatabase,
-    storage: migrationSnapshotStorage,
-  });
+  const result = await runGuardedMigrations({ databasePath });
   await runDatabaseHygiene({ db: tauriDatabase, now: Date.now() });
   await invokeDb('attachment_cleanup_orphans', {});
   return result;

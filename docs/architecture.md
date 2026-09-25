@@ -119,6 +119,16 @@ m117 on, 0.1.x builds cannot read the schema
 ([ADR 001](adr/001-workspace-project-rename.md)). To go back, restore the copy.
 Installing an older version of the app on top does not work.
 
+The runner refuses to open a file that holds a migration newer than any this
+build knows. It throws `DatabaseFromNewerBuildError` before it takes a copy or
+runs anything. The app then shows a full-window screen: "This database was
+upgraded by a newer Goodboy." `schema_version` does not record which app
+version applied a migration, so the screen cannot name it. The screen offers
+two ways out. It can restore the newest copy whose schema this build can read,
+or it can quit. Restoring moves the current file aside as
+`data.db.newer-build-<ms>.bak`, so nothing is lost, puts the copy in its place,
+and starts the boot again.
+
 ### On-disk data layout
 
 Everything the app saves for itself lives in `~/.goodboy`.

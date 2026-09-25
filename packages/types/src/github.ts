@@ -135,6 +135,7 @@ export type PrComment = {
   outdated?: boolean;
   inReplyToId?: string;
   threadId?: string;
+  canResolve?: boolean;
 };
 
 export type PrReviewState =

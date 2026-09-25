@@ -22,6 +22,7 @@ import type {
   GeneratedArtifactKind,
 } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
+import type { AgentKindRouting } from '../../../features/session/agent-kind';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -89,6 +90,7 @@ export type ResolveQueueView = {
   readonly detailFocus: 'heading' | 'primary';
   readonly isDeferredShown: boolean;
   readonly isCompletedShown: boolean;
+  readonly lastRouting: AgentKindRouting | null;
 };
 
 export type ResolvePublicationReturn = {
@@ -119,6 +121,7 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   detailFocus: 'primary',
   isDeferredShown: false,
   isCompletedShown: false,
+  lastRouting: null,
 };
 
 export type SessionStudio =

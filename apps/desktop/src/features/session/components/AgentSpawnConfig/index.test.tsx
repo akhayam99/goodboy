@@ -2,7 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from './defaultAgentSpawnConfig';
+
+const DEFAULT_CONFIG: AgentSpawnConfigValue = {
+  provider: 'anthropic',
+  model: 'claude-sonnet-5',
+  effort: 'medium',
+  hint: '',
+};
 
 type Store = {
   readonly providers: ReadonlyArray<{
@@ -32,7 +38,7 @@ describe('AgentSpawnConfig', () => {
   it('routes provider, model, effort and hint through one picker', () => {
     const onChange = vi.fn<(value: AgentSpawnConfigValue) => void>();
     const view = render(
-      <AgentSpawnConfig value={DEFAULT_AGENT_SPAWN_CONFIG} onChange={onChange} disabled={false} />,
+      <AgentSpawnConfig value={DEFAULT_CONFIG} onChange={onChange} disabled={false} />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
@@ -42,7 +48,7 @@ describe('AgentSpawnConfig', () => {
 
     view.rerender(<AgentSpawnConfig value={providerValue} onChange={onChange} disabled={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Luna' }));
-    expect(onChange.mock.calls[1]![0].model).toBe('gpt-5.6-luna');
+    expect(onChange.mock.calls.at(-1)?.[0].model).toBe('gpt-5.6-luna');
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: 'Emphasize the migration path.' },
@@ -63,7 +69,7 @@ describe('AgentSpawnConfig', () => {
   it('fixes the role read-only when the caller imposes one', () => {
     render(
       <AgentSpawnConfig
-        value={DEFAULT_AGENT_SPAWN_CONFIG}
+        value={DEFAULT_CONFIG}
         onChange={vi.fn()}
         disabled={false}
         role={{ label: 'Pull request author' }}
@@ -78,7 +84,7 @@ describe('AgentSpawnConfig', () => {
   it('orders role, then optional instructions, then routing', () => {
     const { container } = render(
       <AgentSpawnConfig
-        value={DEFAULT_AGENT_SPAWN_CONFIG}
+        value={DEFAULT_CONFIG}
         onChange={vi.fn()}
         disabled={false}
         role={{ label: 'Pull request author' }}

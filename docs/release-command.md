@@ -16,11 +16,16 @@ caught earlier runs.
 
 1. Find the current latest: `gh release list --limit 5` (the one tagged
    `Latest`) and `git tag | sort -V | tail`.
-2. Work out the next version from what the user asked. Patch is the default
-   (`0.1.11 -> 0.1.12`). "next minor" resets the patch (`0.1.11 -> 0.2.0`).
-   "next major" gives `1.0.0`. If the request is ambiguous, pick patch and say
-   so.
-3. Before bumping, confirm the target version with the user in one line.
+2. Run `node scripts/release-kind.mjs`. It prints `minor` or `patch` with the
+   reason, following [versioning.md](versioning.md). Patch is the default
+   (`0.1.11 -> 0.1.12`). Minor resets the patch (`0.1.11 -> 0.2.0`) and is
+   only for one-way doors, such as a new migration. `1.0.0` only when the
+   owner writes "major". Never propose it.
+3. If the user asked for a patch, run
+   `node scripts/release-kind.mjs --requested patch`. If it exits with an
+   error, stop and tell the user which migration or one-way door forces a
+   minor.
+4. Before bumping, confirm the target version with the user in one line.
 
 Below, `X` is the new version and `X-1` is the current latest.
 

@@ -21,6 +21,7 @@ type Options<T extends string> = {
   readonly containerRef: RefObject<HTMLElement | null>;
   readonly onSelect: (ids: ReadonlyArray<T>, mode: 'replace' | 'add') => void;
   readonly requireAlt?: boolean;
+  readonly ignoreSelector?: string;
 };
 
 type DragLasso = {
@@ -40,6 +41,7 @@ export const useDragLasso = <T extends string>({
   containerRef,
   onSelect,
   requireAlt = false,
+  ignoreSelector,
 }: Options<T>): DragLasso => {
   const [rect, setRect] = useState<LassoRect | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -65,6 +67,9 @@ export const useDragLasso = <T extends string>({
         return;
       }
       const target = event.target as HTMLElement;
+      if (ignoreSelector !== undefined && target.closest(ignoreSelector) != null) {
+        return;
+      }
       if (!event.altKey && (requireAlt || target.closest(ACTION_SELECTOR) != null)) {
         return;
       }
@@ -75,7 +80,7 @@ export const useDragLasso = <T extends string>({
         additive: event.shiftKey || event.altKey,
       };
     },
-    [containerRef, requireAlt],
+    [containerRef, ignoreSelector, requireAlt],
   );
 
   useEffect(() => {

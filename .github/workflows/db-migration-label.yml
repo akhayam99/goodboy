@@ -1,0 +1,38 @@
+name: db-migration label
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - 'packages/db/src/migrations/m*.ts'
+      - '!packages/db/src/migrations/*.test.ts'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  label:
+    name: label
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: add the db-migration label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          touched="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" \
+            --jq '.[].filename' \
+            | grep -E '^packages/db/src/migrations/m[0-9]+[^/]*\.ts$' \
+            | grep -vE '\.test\.ts$' || true)"
+          if [ -z "$touched" ]; then
+            echo "no migration file touched"
+            exit 0
+          fi
+          echo "$touched"
+          gh label create db-migration --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description "Adds a database migration: waits for the next minor release" \
+            2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label db-migration

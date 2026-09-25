@@ -53,8 +53,7 @@ pub fn open() -> Result<Db, DbError> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let conn = Connection::open(&path)?;
-    conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
+    let conn = open_connection(&path)?;
     Ok(Db(Mutex::new(conn), path))
 }
 
@@ -111,7 +110,7 @@ pub async fn db_remove_migration_snapshot(
     .map_err(|e| DbError::MigrationSnapshotFilesystem(e.to_string()))?
 }
 
-fn db_remove_migration_snapshot_blocking(db_path: PathBuf, path: String) -> Result<(), DbError> {
+fn validated_snapshot_path(db_path: &std::path::Path, path: String) -> Result<PathBuf, DbError> {
     let snapshot_path = PathBuf::from(path);
     let name = snapshot_path
         .file_name()
@@ -119,13 +118,86 @@ fn db_remove_migration_snapshot_blocking(db_path: PathBuf, path: String) -> Resu
         .to_string_lossy();
     let is_same_parent = snapshot_path.parent() == db_path.parent();
     let is_snapshot =
-        name.starts_with(&migration_snapshot_prefix(&db_path)) && name.ends_with(".bak");
+        name.starts_with(&migration_snapshot_prefix(db_path)) && name.ends_with(".bak");
     if !is_same_parent || !is_snapshot {
         return Err(DbError::InvalidSnapshotPath);
     }
+    Ok(snapshot_path)
+}
+
+fn db_remove_migration_snapshot_blocking(db_path: PathBuf, path: String) -> Result<(), DbError> {
+    let snapshot_path = validated_snapshot_path(&db_path, path)?;
     std::fs::remove_file(snapshot_path)
         .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?;
     Ok(())
+}
+
+fn open_connection(path: &std::path::Path) -> Result<Connection, DbError> {
+    let conn = Connection::open(path)?;
+    conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
+    Ok(conn)
+}
+
+fn with_suffix(path: &std::path::Path, suffix: &str) -> PathBuf {
+    let mut name = path.as_os_str().to_os_string();
+    name.push(suffix);
+    PathBuf::from(name)
+}
+
+fn move_if_present(from: &std::path::Path, to: &std::path::Path) -> Result<(), DbError> {
+    if !from.exists() {
+        return Ok(());
+    }
+    std::fs::rename(from, to)
+        .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))
+}
+
+fn swap_in_snapshot(
+    db_path: &std::path::Path,
+    snapshot_path: &std::path::Path,
+    stamp: u128,
+) -> Result<PathBuf, DbError> {
+    let kept_path = with_suffix(db_path, &format!(".newer-build-{stamp}.bak"));
+    move_if_present(db_path, &kept_path)?;
+    for suffix in ["-wal", "-shm"] {
+        move_if_present(
+            &with_suffix(db_path, suffix),
+            &with_suffix(&kept_path, suffix),
+        )?;
+    }
+    std::fs::copy(snapshot_path, db_path)
+        .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))?;
+    Ok(kept_path)
+}
+
+fn restore_migration_snapshot(
+    conn: &mut Connection,
+    db_path: &std::path::Path,
+    path: String,
+    stamp: u128,
+) -> Result<String, DbError> {
+    let snapshot_path = validated_snapshot_path(db_path, path)?;
+    if !snapshot_path.is_file() {
+        return Err(DbError::InvalidSnapshotPath);
+    }
+    let previous = std::mem::replace(conn, Connection::open_in_memory()?);
+    previous.close().map_err(|(_, error)| DbError::Sqlite(error))?;
+    let swapped = swap_in_snapshot(db_path, &snapshot_path, stamp);
+    *conn = open_connection(db_path)?;
+    Ok(swapped?.to_string_lossy().into_owned())
+}
+
+#[tauri::command(async)]
+pub fn db_restore_migration_snapshot(
+    state: State<'_, Db>,
+    path: String,
+) -> Result<String, DbError> {
+    let mut conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis())
+        .unwrap_or_default();
+    restore_migration_snapshot(&mut conn, &state.1, path, stamp)
 }
 
 /// Resolves the SQLite file. Precedence:
@@ -559,5 +631,71 @@ mod tests {
         assert!(matches!(parsed.abort_when, Some(StatementGuard::NoChanges)));
         assert_eq!(parsed.abort_code.as_deref(), Some("STALE"));
         assert_eq!(parsed.params.len(), 1);
+    }
+
+    fn scratch_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "goodboy-db-restore-{name}-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn marker(conn: &Connection) -> String {
+        conn.query_row("SELECT name FROM workspaces", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    fn seed_marker(conn: &Connection, name: &str) {
+        conn.execute_batch("CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT NOT NULL);")
+            .unwrap();
+        conn.execute(
+            "INSERT INTO workspaces (id, name) VALUES (?, ?)",
+            ["a", name],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn restoring_a_snapshot_swaps_the_live_file_and_keeps_the_newer_one() {
+        let dir = scratch_dir("swap");
+        let db_path = dir.join("data.db");
+        let snapshot_path = dir.join("data.db.pre-m9-from-m8-20260901T120000000Z.bak");
+        let snapshot = Connection::open(&snapshot_path).unwrap();
+        seed_marker(&snapshot, "older");
+        drop(snapshot);
+        let mut conn = open_connection(&db_path).unwrap();
+        seed_marker(&conn, "newer");
+
+        let kept = restore_migration_snapshot(
+            &mut conn,
+            &db_path,
+            snapshot_path.to_string_lossy().into_owned(),
+            42,
+        )
+        .unwrap();
+
+        assert_eq!(marker(&conn), "older");
+        assert!(kept.ends_with("data.db.newer-build-42.bak"));
+        assert_eq!(marker(&Connection::open(&kept).unwrap()), "newer");
+        assert!(snapshot_path.is_file());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn restoring_refuses_a_path_that_is_not_a_snapshot() {
+        let dir = scratch_dir("refuse");
+        let db_path = dir.join("data.db");
+        let mut conn = open_connection(&db_path).unwrap();
+        let outcome = restore_migration_snapshot(
+            &mut conn,
+            &db_path,
+            dir.join("other.db").to_string_lossy().into_owned(),
+            1,
+        );
+        assert!(matches!(outcome, Err(DbError::InvalidSnapshotPath)));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

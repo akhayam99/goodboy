@@ -94,6 +94,7 @@ export const formatCostRange = ({ lowUsd, highUsd }: CostRange): string => {
 
 const FALLBACK_TIERS: ReadonlySet<EstimateTier> = new Set<EstimateTier>([
   'model',
+  'modelAnyWorkspace',
   'provider',
   'role',
 ]);

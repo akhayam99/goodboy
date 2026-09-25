@@ -18,6 +18,8 @@ const h = vi.hoisted(() => {
     sessionResolveQueueItems: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
+    providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<unknown>,
     resolveQueueView: {} as Record<string, unknown>,
     activePublicationPreview: {} as Record<string, unknown>,
     reviewTargets: {} as Record<string, unknown>,
@@ -28,8 +30,11 @@ const h = vi.hoisted(() => {
     setResolveQueueView: vi.fn(),
     consumeReviewTarget: vi.fn(),
     openResolveDiff: vi.fn(),
-    spawnAgent: vi.fn(async () => 'agent-1'),
-    setAgentConfig: vi.fn(),
+    spawnAgent: vi.fn(
+      async (_sessionId: string, _args: { sourceThreadIds?: unknown }) => 'agent-1',
+    ),
+    setAgentConfig: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   };
   return {
     state,
@@ -590,8 +595,46 @@ describe('the shape of the queue surface', () => {
     expect(region.className).toContain('flex-1');
     expect(region.contains(screen.getByRole('heading', { name: 'Conversations' }))).toBe(false);
     expect(
-      screen.getByRole('button', { name: 'Start resolve run' }).closest('.overflow-y-auto'),
+      screen.getByRole('button', { name: 'Resolve 2 new' }).closest('.overflow-y-auto'),
     ).toBeNull();
+  });
+
+  it('starts one agent for the checked comments with a selection and Resolve N', async () => {
+    twoRows();
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(2);
+    for (const box of boxes) {
+      fireEvent.click(box);
+    }
+    const bar = screen.getByRole('toolbar', { name: '2 selected' });
+    fireEvent.click(within(bar).getByRole('button', { name: 'Resolve 2' }));
+
+    await vi.waitFor(() => expect(h.state.spawnAgent).toHaveBeenCalledTimes(1));
+    const args = h.state.spawnAgent.mock.calls[0]?.[1];
+    expect(args?.sourceThreadIds).toEqual(['PRRT_1', 'PRRT_2']);
+    await vi.waitFor(() =>
+      expect(h.state.setResolveQueueView).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId: SESSION_ID }),
+      ),
+    );
+  });
+
+  it('offers no checkbox on a comment an agent is already working on', () => {
+    twoRows();
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [
+        entryOf({ item: { id: 'item-1', threadId: 'PRRT_1' }, thread: { threadId: 'PRRT_1' } }),
+        entryOf({
+          item: { id: 'item-2', threadId: 'PRRT_2' },
+          thread: { threadId: 'PRRT_2', state: 'working' },
+        }),
+      ],
+    };
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
   });
 
   it('keeps the pull request header and the dock on the empty and error states', () => {

@@ -1053,8 +1053,8 @@ const HISTORY_ROLES: ReadonlyArray<DurationSample['role']> = [
   'report',
 ];
 
-const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => ({
-  steps: HISTORY_ROLES.flatMap((role, roleIndex) =>
+const historySamples = ({ nowMs }: { readonly nowMs: number }): ReadonlyArray<DurationSample> =>
+  HISTORY_ROLES.flatMap((role, roleIndex) =>
     [6, 7, 8, 9, 10, 11, 12, 13].map((minutes) => ({
       role,
       provider: 'anthropic',
@@ -1064,9 +1064,17 @@ const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory
       costUsd: (minutes + roleIndex) / 40,
       endedAtMs: nowMs - (minutes + 1) * 24 * 60 * MINUTE_MS,
     })),
-  ),
-  orchestratedRuns: [],
-});
+  );
+
+const durationHistory = ({ nowMs }: { readonly nowMs: number }): DurationHistory => {
+  const samples = historySamples({ nowMs });
+  return {
+    steps: samples,
+    turns: samples,
+    everyWorkspace: { steps: samples, turns: samples },
+    orchestratedRuns: [],
+  };
+};
 
 export const seedActivityRunScene = () => {
   useAppStore.setState({

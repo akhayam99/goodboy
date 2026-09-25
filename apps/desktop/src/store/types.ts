@@ -113,6 +113,7 @@ import type {
 } from './slices/session-view';
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
+import type { NewerDatabase } from '../shared/lib/newerDatabase';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
 import type { SessionArtifactDrafts } from './slices/artifactDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
@@ -277,6 +278,7 @@ export type AppState = AppSliceState & {
   readonly hydrated: boolean;
   readonly bootPhase: BootPhase;
   readonly bootFailedPhase: BootPhase | null;
+  readonly newerDatabase: NewerDatabase | null;
   readonly error: string | null;
   readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
   readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;

@@ -40,7 +40,7 @@ export const PrActivityMode = ({
         onFix={onFix}
         empty={{
           title: 'No general comments',
-          description: 'Review threads live in Conversations.',
+          description: 'Comments on the pull request itself show up here.',
           action: (
             <Button variant="ghost" size="sm" onClick={onOpenConversations}>
               Open conversations

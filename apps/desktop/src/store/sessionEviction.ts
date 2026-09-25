@@ -160,6 +160,7 @@ export const NON_SESSION_STATE_KEYS = [
   'hydrated',
   'bootPhase',
   'bootFailedPhase',
+  'newerDatabase',
   'error',
   'orphanWorktrees',
   'workspaceSummary',

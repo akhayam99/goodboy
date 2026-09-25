@@ -43,6 +43,10 @@ const {
     cliRequirements: ReadonlyArray<never>;
     skills: Record<string, never>;
     projectScripts: Record<string, never>;
+    scriptRuns: Record<string, never>;
+    sessionProjectMounts: Record<string, never>;
+    discoveredScripts: Record<string, never>;
+    discoveredScriptScans: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
     providerSpendBreakdown: ReadonlyArray<never>;
     selectedAgentId: Record<string, string>;
@@ -90,6 +94,10 @@ const {
     cliRequirements: [],
     skills: {},
     projectScripts: {},
+    scriptRuns: {},
+    sessionProjectMounts: {},
+    discoveredScripts: {},
+    discoveredScriptScans: {},
     sessionWorktrees: {},
     providerSpendBreakdown: [],
     selectedAgentId: { 'session-1': 'agent-1' },

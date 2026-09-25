@@ -304,6 +304,10 @@ describe('MrDetailPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Merge request' }));
+    expect(screen.getByText('Merge !4?')).toBeDefined();
+    expect(h.gitlabMergeMr).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm merge' }));
 
     await waitFor(() =>
       expect(h.gitlabMergeMr).toHaveBeenCalledWith(
@@ -315,6 +319,28 @@ describe('MrDetailPanel', () => {
     );
     expect(onRefresh).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['Merge request', 'Merge !4?'],
+    ['Close', 'Close !4?'],
+  ] as const)('backing out of the %s confirmation writes nothing', (label, question) => {
+    render(
+      <MrDetailPanel
+        mr={makeMr()}
+        workspaceId={WORKSPACE_ID}
+        host="https://gitlab.com"
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(screen.getByText(question)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByText(question)).toBeNull();
+    expect(h.gitlabMergeMr).not.toHaveBeenCalled();
+    expect(h.gitlabUpdateMrState).not.toHaveBeenCalled();
   });
 
   it('surfaces branches and the last update in the metadata rail', () => {
@@ -432,6 +458,10 @@ describe('MrDetailPanel', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.getByText('Close !4?')).toBeDefined();
+    expect(h.gitlabUpdateMrState).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm close' }));
 
     await waitFor(() =>
       expect(h.gitlabUpdateMrState).toHaveBeenCalledWith(

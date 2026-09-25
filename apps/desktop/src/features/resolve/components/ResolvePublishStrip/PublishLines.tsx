@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { CountToggle } from '@goodboy/ui';
-import type { ResolvePublicationPreview } from '@goodboy/types';
+import type { PrComment, ResolvePublicationPreview } from '@goodboy/types';
+import {
+  RESOLVE_ON_GITHUB_DEFAULT,
+  resolveStepPlan,
+} from '../../../../store/slices/resolve/resolveStepPlan';
 import { excludedLine, heldBackNote, publicationCountsLine } from '../../resolvePublishCopy';
-import { RESOLVE_DELIVERY_SUPPORT, RESOLVE_PUBLISH_REPLIES_LABEL } from '../../resolveQueueCopy';
+import { RESOLVE_PUBLISH_REPLIES_LABEL, RESOLVE_REPLY_PLAN } from '../../resolveQueueCopy';
 
 type Props = {
   readonly preview: ResolvePublicationPreview;
+  readonly comments: ReadonlyArray<PrComment>;
 };
 
-export const PublishLines = ({ preview }: Props) => {
+export const PublishLines = ({ preview, comments }: Props) => {
   const [areRepliesShown, setAreRepliesShown] = useState(false);
   const counts = publicationCountsLine({ preview });
   const held = heldBackNote({ preview });
@@ -42,9 +47,14 @@ export const PublishLines = ({ preview }: Props) => {
               {preview.replies.map((reply) => (
                 <li key={reply.threadId} className="flex min-w-0 flex-col gap-1">
                   <span className="text-3xs text-muted-foreground">
-                    {reply.closes
-                      ? RESOLVE_DELIVERY_SUPPORT.threadResolved
-                      : RESOLVE_DELIVERY_SUPPORT.threadLeftOpen}
+                    {reply.closes &&
+                    resolveStepPlan({
+                      threadId: reply.threadId,
+                      comments,
+                      shouldResolveOnGithub: RESOLVE_ON_GITHUB_DEFAULT,
+                    }) === 'resolve'
+                      ? RESOLVE_REPLY_PLAN.resolves
+                      : RESOLVE_REPLY_PLAN.leavesOpen}
                   </span>
                   <p className="whitespace-pre-wrap break-words text-2xs text-foreground">
                     {reply.body}

@@ -331,9 +331,19 @@ A **review conversation** is Goodboy's saved record of one review, issue or
 diff comment. It keeps its state, its verdict, its draft reply and the commits
 that answer it.
 
+Every open review thread on the pull request gets a conversation as soon as
+Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
+reads every page of threads GitHub returns. If the read fails, Conversations
+shows the error from `gh` instead of an empty list.
+
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 
+- Every start goes through one path (`startResolve`): `Resolve N new` in the
+  Conversations header, a selection with `Resolve N`, or the Activity
+  suggestion. Each carries the thread ids and the marker contract. The click
+  uses the last model picked in the session, or the resolver default; the
+  chevron opens the shared picker with every connected provider
 - Fixes run one at a time in the session worktree, so two fixes never fight
   over the same branch
 - After a restart, Goodboy rebuilds everything from its database, not from a
@@ -343,11 +353,15 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 
 1. Locks the conversations it will publish
 2. Pushes the branch once, if there is code to send
-3. Posts each reply and resolves each thread
+3. Posts each reply, then resolves each thread on GitHub when you are allowed
+   to resolve it there. Otherwise the thread stays open for the reviewer.
 
-Goodboy saves every step. If a publication stops halfway, it picks up where it
-left off and never posts twice. A publication is the only way a reply gets
-posted or a thread gets closed.
+Goodboy saves a receipt for every step, and the outcome it reports is read from
+those receipts: a thread shows as resolved only after GitHub confirmed it. If a
+publication stops halfway, it picks up at the first step without a receipt and
+never pushes or posts twice. Confirming the same publication twice runs it
+once. A publication is the only way a reply gets posted or a thread gets
+closed.
 
 ## Settings scopes
 
@@ -369,6 +383,8 @@ Settings can be set at four levels. The level closest to the work wins:
   it is what they change.
 - **Workflows, the step library and skills** belong to the workspace. A step
   library entry with no workspace is a built-in starter step for everyone.
+  Editing one saves a single copy in the workspace: later edits in the same
+  editor update that copy, and a blur with no change saves nothing.
 - **Project scripts** belong to the project, because only the project knows
   its root folder.
 - **Integration bindings** use the project's own connection first, then the
@@ -452,8 +468,8 @@ Merge and pull requests launch with their text as it is.
   comment, reply, resolve threads, merge, close). Read issues and comment on
   them.
 - **GitLab**: read merge requests and act on them (approve, change state,
-  comment, reply, resolve and reopen threads). Read, comment on and edit
-  issues.
+  comment, reply, resolve and reopen threads). Merge and Close ask for
+  confirmation first. Read, comment on and edit issues.
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
   revoke, request changes, withdraw, comment, reply, merge, decline. Issues go

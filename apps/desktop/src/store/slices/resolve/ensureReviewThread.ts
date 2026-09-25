@@ -5,21 +5,16 @@ import {
   listResolveThreads,
   upsertResolveThread,
 } from '@goodboy/db';
-import type { PrComment, ResolveQueueItem, SessionId } from '@goodboy/types';
+import type { PrComment } from '@goodboy/types';
 import { groupThreads } from '../../../features/github/comment-threads';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveThread } from './createResolveThread';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { newQueueItem } from './newQueueItem';
 import { projectResolveRows } from './projectResolveRows';
 import type { EnsureReviewThreadParams, EnsureReviewThreadResult, SliceParams } from './types';
 
 type Params = SliceParams & EnsureReviewThreadParams;
-
-type QueueItemParams = {
-  readonly sessionId: SessionId;
-  readonly threadId: string;
-  readonly candidateRevision: number;
-};
 
 type RemoteHeadParams = {
   readonly comments: ReadonlyArray<PrComment>;
@@ -31,31 +26,6 @@ const remoteHeadOf = ({ comments, threadId }: RemoteHeadParams): PrComment | nul
     (candidate) => candidate.head.threadId === threadId,
   );
   return thread?.head ?? null;
-};
-
-const queueItemFor = ({
-  sessionId,
-  threadId,
-  candidateRevision,
-}: QueueItemParams): ResolveQueueItem => {
-  const now = Date.now();
-  return {
-    id: crypto.randomUUID(),
-    sessionId,
-    threadId,
-    generation: 0,
-    reopenedFromItemId: null,
-    candidateRevision,
-    approvalState: 'none',
-    approvedRevision: null,
-    approvedReplyHash: null,
-    integratedSha: null,
-    deferredAt: null,
-    deliveredAt: null,
-    supersededAt: null,
-    createdAt: now,
-    updatedAt: now,
-  };
 };
 
 export const ensureReviewThread = async ({
@@ -113,7 +83,7 @@ export const ensureReviewThread = async ({
   }
   await insertResolveQueueItem({
     db,
-    item: queueItemFor({ sessionId, threadId, candidateRevision: row.revision }),
+    item: newQueueItem({ sessionId, threadId, candidateRevision: row.revision }),
   });
   await loadResolveQueueItemsInto({ set, sessionId });
   projectResolveRows({

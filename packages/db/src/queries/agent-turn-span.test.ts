@@ -15,6 +15,7 @@ import {
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
   listSessionTurnSpans,
+  listTurnSpans,
   listWorkspaceTurnSpans,
 } from './agent-turn-span';
 import { insertTelemetry } from './telemetry';
@@ -297,6 +298,32 @@ describe('agent turn span queries', () => {
 
     expect(inside.map((span) => span.agentId)).toEqual([agentId]);
     expect(outside).toEqual([]);
+  });
+
+  it('reads spans of every workspace inside the window', async () => {
+    const database = await databaseWithRun({});
+    const otherWorkspaceId = 'workspace-2' as WorkspaceId;
+    const now = Date.parse(startedAt);
+    await database.execute(
+      'INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+      [otherWorkspaceId, 'Northwind', 'northwind', now, now],
+    );
+    await insertAgentTurnSpan({ db: database, span: SPAN });
+    await insertAgentTurnSpan({
+      db: database,
+      span: { ...SPAN, runId: 'run-2' as ProviderRunId, workspaceId: otherWorkspaceId },
+    });
+
+    const inside = await listTurnSpans({ db: database, sinceMs: Date.parse(endedAt) });
+    const workspaceOnly = await listWorkspaceTurnSpans({
+      db: database,
+      workspaceId,
+      sinceMs: Date.parse(endedAt),
+    });
+
+    expect(inside).toHaveLength(2);
+    expect(workspaceOnly).toHaveLength(1);
+    expect(await listTurnSpans({ db: database, sinceMs: Date.parse(endedAt) + 1 })).toEqual([]);
   });
 
   it('lists what each run of the session was started with', async () => {

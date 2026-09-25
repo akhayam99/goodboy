@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { getDefaultTurnModel, clampEffortForModel } from '@goodboy/core';
+import { clampEffortForModel } from '@goodboy/core';
 import {
   AnchoredPopover,
   Button,
@@ -12,7 +12,7 @@ import {
   formatError,
   useDropdown,
 } from '@goodboy/ui';
-import type { ProviderId, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -27,7 +27,7 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
-import { AgentRoutingSections } from './AgentRoutingSections';
+import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 
@@ -76,16 +76,11 @@ export const CreateAgentPopover = ({
   const session = useAppStore((state) => state.sessions?.find((s) => s.id === sessionId) ?? null);
   const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleModels, session });
   const effective: AgentKindRouting = routing ?? spawnDefault;
-  const [viewProvider, setViewProvider] = useState<ProviderId>(spawnDefault.provider);
   const routingSummary = recommendationSummary({
     provider: effective.provider,
     model: effective.model,
     effort: effective.effort,
   });
-
-  useEffect(() => {
-    setViewProvider(routing?.provider ?? spawnDefault.provider);
-  }, [open, selectedKind, routing, spawnDefault.provider]);
 
   const onCreate = async () => {
     if (isSpawningRef.current) {
@@ -181,29 +176,34 @@ export const CreateAgentPopover = ({
           </div>
         </PickerSection>
         {isRoutingOpen && (
-          <div id={ROUTING_PANEL_ID} className="pt-1.5">
-            <AgentRoutingSections
+          <div id={ROUTING_PANEL_ID} className="flex flex-col pt-1.5">
+            <RoutingPickerBody
               connectedProviders={connectedProviders}
-              effective={effective}
-              viewProvider={viewProvider}
-              onViewProvider={setViewProvider}
-              onNavigateProviders={close}
-              onPickProvider={(provider) => {
-                const model = getDefaultTurnModel({ id: provider });
-                setRouting({
-                  provider,
-                  model,
-                  effort:
-                    clampEffortForModel({ model, effort: effective.effort }) ?? effective.effort,
-                });
+              provider={effective.provider}
+              model={effective.model}
+              effort={{
+                editable: true,
+                value: effective.effort,
+                onChange: (effort) =>
+                  setRouting((current) => ({ ...(current ?? spawnDefault), effort })),
               }}
-              onPickModel={(model, effort) => {
-                setRouting({
-                  provider: viewProvider,
-                  model,
-                  effort,
-                });
+              onClose={close}
+              onProvider={(provider) => {
+                if (provider === '') {
+                  return;
+                }
+                setRouting((current) => ({ ...(current ?? spawnDefault), provider }));
               }}
+              onModel={(model) =>
+                setRouting((current) => {
+                  const base = current ?? spawnDefault;
+                  return {
+                    ...base,
+                    model,
+                    effort: clampEffortForModel({ model, effort: base.effort }) ?? base.effort,
+                  };
+                })
+              }
             />
           </div>
         )}

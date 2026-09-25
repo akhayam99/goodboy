@@ -3,6 +3,7 @@ import { Button, GhostActionButton, InlineConfirm } from '@goodboy/ui';
 import { Activity, AlertTriangle, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
+  PrComment,
   ResolveAttempt,
   ResolvePublication,
   ResolveQueueItemWithThread,
@@ -15,13 +16,13 @@ import { isPublishIntentGuarded, publishIntent } from '../../publishIntent';
 import {
   CHECK_AND_RETRY,
   CLOSE_WITHOUT_FIX_CONFIRM,
-  PUBLICATION_COMPLETE,
   PUBLISH_INTENT_LABEL,
   REVIEW_PUBLICATION,
   UPDATE_AND_REVIEW,
   blockerCopy,
   driftSentence,
   frozenAtLabel,
+  publicationOutcomeSentence,
   publishIntentSummary,
 } from '../../resolvePublishCopy';
 import { PublishLines } from './PublishLines';
@@ -33,6 +34,7 @@ type Props = {
 const EMPTY_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
 const EMPTY_PUBLICATIONS: ReadonlyArray<ResolvePublication> = [];
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
+const EMPTY_COMMENTS: ReadonlyArray<PrComment> = [];
 
 type BlockerAction = 'open_diff' | 'view_work' | 'recheck_fix' | 'refresh';
 
@@ -59,6 +61,9 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
     (s) => s.sessionResolvePublications[sessionId] ?? EMPTY_PUBLICATIONS,
   );
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const comments = useAppStore(
+    (s) => s.sessionGithub[sessionId]?.detail?.comments ?? EMPTY_COMMENTS,
+  );
   const preparePublication = useAppStore((s) => s.preparePublication);
   const publishConversations = useAppStore((s) => s.publishConversations);
   const cancelPublication = useAppStore((s) => s.cancelPublication);
@@ -170,15 +175,16 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
         if (result.kind !== 'done') {
           return;
         }
+        const sentence = publicationOutcomeSentence({ outcome: result });
         if (result.failed > 0) {
           void reportError({
-            title: `Couldn't close ${result.failed} conversations`,
-            error: `${result.closed} done, ${result.failed} left open.`,
+            title: `${result.failed} of ${result.total} did not finish on GitHub`,
+            error: sentence,
             sessionId,
           });
           return;
         }
-        showToast({ kind: 'success', message: PUBLICATION_COMPLETE });
+        showToast({ kind: 'success', message: sentence });
       },
     });
   }, [preview, publishConversations, reportError, run, sessionId, showToast]);
@@ -241,7 +247,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2">
-      {preview !== null && <PublishLines preview={preview} />}
+      {preview !== null && <PublishLines preview={preview} comments={comments} />}
       {(blocker !== null || drift !== null) && (
         <div className="flex items-center gap-2">
           <span className="text-2xs text-warning">{blocker?.sentence ?? drift}</span>

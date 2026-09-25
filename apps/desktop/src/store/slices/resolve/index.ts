@@ -25,6 +25,7 @@ import { deferResolveQueueItem } from './deferResolveQueueItem';
 import { reopenResolveQueueItem } from './reopenResolveQueueItem';
 import { takeUpResolveQueueItem } from './takeUpResolveQueueItem';
 import { ensureReviewThread } from './ensureReviewThread';
+import { materializeReviewThreads } from './materializeReviewThreads';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -48,6 +49,7 @@ import type {
   CandidateCaptureParams,
   CheckRunParams,
   EnsureReviewThreadParams,
+  MaterializeParams,
 } from './types';
 
 export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions => {
@@ -164,6 +166,11 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({
         sessionId: params.sessionId,
         run: () => ensureReviewThread({ set, get, ...params }),
+      }),
+    materializeReviewThreads: (params: MaterializeParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => materializeReviewThreads({ set, get, ...params }),
       }),
     preparePublication: (params: PreparePublicationParams) =>
       preparePublication({ set, get, ...params }),

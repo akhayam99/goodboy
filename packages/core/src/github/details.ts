@@ -32,6 +32,7 @@ type RawReviewThreadNode = {
   id: string;
   isResolved: boolean;
   isOutdated: boolean;
+  viewerCanResolve?: boolean;
   path: string | null;
   line: number | null;
   comments: { nodes: ReadonlyArray<RawReviewThreadComment> } | null;
@@ -41,10 +42,14 @@ type RawReviewThreadsResponse = {
   data?: {
     repository?: {
       pullRequest?: {
-        reviewThreads?: { nodes?: ReadonlyArray<RawReviewThreadNode> } | null;
+        reviewThreads?: {
+          pageInfo?: { hasNextPage: boolean; endCursor: string | null } | null;
+          nodes?: ReadonlyArray<RawReviewThreadNode>;
+        } | null;
       } | null;
     } | null;
   };
+  errors?: ReadonlyArray<{ message: string }>;
 };
 
 type RawReview = {
@@ -192,17 +197,19 @@ async function fetchIssueComments(
   }
 }
 
-const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
+const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!,$after:String){
   repository(owner:$owner,name:$name){
     pullRequest(number:$pr){
-      reviewThreads(first:50){
+      reviewThreads(first:100,after:$after){
+        pageInfo{hasNextPage endCursor}
         nodes{
           id
           isResolved
           isOutdated
+          viewerCanResolve
           path
           line
-          comments(first:50){
+          comments(first:100){
             nodes{
               id
               databaseId
@@ -219,71 +226,129 @@ const REVIEW_THREADS_QUERY = `query($owner:String!,$name:String!,$pr:Int!){
   }
 }`;
 
+const MAX_REVIEW_THREAD_PAGES = 50;
+
+type ReviewThreadPageParams = {
+  readonly runner: GhRunner;
+  readonly owner: string;
+  readonly name: string;
+  readonly prNumber: number;
+  readonly after: string | null;
+  readonly opts: GhRunOptions;
+};
+
+const fetchReviewThreadPage = async ({
+  runner,
+  owner,
+  name,
+  prNumber,
+  after,
+  opts,
+}: ReviewThreadPageParams): Promise<RawReviewThreadsResponse> => {
+  const raw = await runJson<RawReviewThreadsResponse>({
+    runner,
+    args: [
+      'api',
+      'graphql',
+      '-f',
+      `query=${REVIEW_THREADS_QUERY}`,
+      '-F',
+      `owner=${owner}`,
+      '-F',
+      `name=${name}`,
+      '-F',
+      `pr=${prNumber}`,
+      ...(after === null ? [] : ['-f', `after=${after}`]),
+    ],
+    opts,
+    shape: 'object',
+  });
+  const firstError = raw.errors?.[0]?.message;
+  if (firstError !== undefined) {
+    throw new GhCliError(`review threads query failed: ${firstError}`, firstError, 1);
+  }
+  return raw;
+};
+
+type AllReviewThreadsParams = {
+  readonly runner: GhRunner;
+  readonly repo: string;
+  readonly prNumber: number;
+  readonly opts: GhRunOptions;
+};
+
+const fetchAllReviewThreads = async ({
+  runner,
+  repo,
+  prNumber,
+  opts,
+}: AllReviewThreadsParams): Promise<ReadonlyArray<RawReviewThreadNode>> => {
+  const [owner = '', name = ''] = repo.split('/');
+  if (owner === '' || name === '') {
+    return [];
+  }
+  const threads: Array<RawReviewThreadNode> = [];
+  let after: string | null = null;
+  for (let page = 0; page < MAX_REVIEW_THREAD_PAGES; page += 1) {
+    const raw = await fetchReviewThreadPage({ runner, owner, name, prNumber, after, opts });
+    const connection = raw.data?.repository?.pullRequest?.reviewThreads ?? null;
+    threads.push(...(connection?.nodes ?? []));
+    const next = connection?.pageInfo ?? null;
+    if (next === null || !next.hasNextPage) {
+      return threads;
+    }
+    if (next.endCursor === null || next.endCursor === after) {
+      throw new GhCliError(
+        'GitHub returned an incomplete page of review threads',
+        JSON.stringify(next),
+        1,
+      );
+    }
+    after = next.endCursor;
+  }
+  throw new GhCliError(
+    `This pull request has more than ${threads.length} review threads`,
+    'too many review threads',
+    1,
+  );
+};
+
 async function fetchReviewThreads(
   runner: GhRunner,
   repo: string,
   prNumber: number,
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<PrComment>> {
-  const [owner, name] = repo.split('/');
-  if (!owner || !name) {
-    return [];
+  const threads = await fetchAllReviewThreads({ runner, repo, prNumber, opts });
+  const out: Array<PrComment> = [];
+  const nodeIdToCommentId = new Map<string, string>();
+  for (const t of threads) {
+    for (const c of t.comments?.nodes ?? []) {
+      nodeIdToCommentId.set(c.id, `review-${c.databaseId}`);
+    }
   }
-  try {
-    const raw = await runJson<RawReviewThreadsResponse>({
-      runner,
-      args: [
-        'api',
-        'graphql',
-        '-f',
-        `query=${REVIEW_THREADS_QUERY}`,
-        '-F',
-        `owner=${owner}`,
-        '-F',
-        `name=${name}`,
-        '-F',
-        `pr=${prNumber}`,
-      ],
-      opts,
-      shape: 'object',
-    });
-    const threads = raw.data?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
-    const out: Array<PrComment> = [];
-    const nodeIdToCommentId = new Map<string, string>();
-    for (const t of threads) {
-      for (const c of t.comments?.nodes ?? []) {
-        nodeIdToCommentId.set(c.id, `review-${c.databaseId}`);
-      }
+  for (const t of threads) {
+    const nodes = t.comments?.nodes ?? [];
+    for (const c of nodes) {
+      out.push({
+        id: `review-${c.databaseId}`,
+        author: c.author?.login ?? 'unknown',
+        authorAvatarUrl: c.author?.avatarUrl ?? null,
+        body: c.body ?? '',
+        createdAt: c.createdAt,
+        url: c.url,
+        source: 'review',
+        path: t.path ?? undefined,
+        line: t.line ?? undefined,
+        resolved: t.isResolved,
+        outdated: t.isOutdated,
+        inReplyToId: c.replyTo?.id ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined) : undefined,
+        threadId: t.id,
+        ...(t.viewerCanResolve !== undefined && { canResolve: t.viewerCanResolve }),
+      });
     }
-    for (const t of threads) {
-      const nodes = t.comments?.nodes ?? [];
-      for (const c of nodes) {
-        out.push({
-          id: `review-${c.databaseId}`,
-          author: c.author?.login ?? 'unknown',
-          authorAvatarUrl: c.author?.avatarUrl ?? null,
-          body: c.body ?? '',
-          createdAt: c.createdAt,
-          url: c.url,
-          source: 'review',
-          path: t.path ?? undefined,
-          line: t.line ?? undefined,
-          resolved: t.isResolved,
-          outdated: t.isOutdated,
-          inReplyToId: c.replyTo?.id
-            ? (nodeIdToCommentId.get(c.replyTo.id) ?? undefined)
-            : undefined,
-          threadId: t.id,
-        });
-      }
-    }
-    return out;
-  } catch (err) {
-    if (err instanceof GhCliError) {
-      return [];
-    }
-    throw err;
   }
+  return out;
 }
 
 async function fetchPrViewDetail(

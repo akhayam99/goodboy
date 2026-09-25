@@ -8,6 +8,7 @@ import {
   sumEstimates,
   type DurationSample,
   type EstimateKey,
+  type SampleHistory,
 } from './durationEstimate';
 import { buildDurationHistory } from './durationHistory';
 
@@ -36,6 +37,21 @@ const KEY: EstimateKey = {
   effort: 'medium',
 };
 
+type HistoryParams = {
+  readonly steps?: ReadonlyArray<DurationSample>;
+  readonly turns?: ReadonlyArray<DurationSample>;
+  readonly elsewhere?: ReadonlyArray<DurationSample>;
+};
+
+const historyOf = ({ steps = [], turns = [], elsewhere = [] }: HistoryParams): SampleHistory => ({
+  steps,
+  turns,
+  everyWorkspace: { steps: [...steps, ...elsewhere], turns },
+});
+
+const stepEstimate = ({ samples }: { readonly samples: ReadonlyArray<DurationSample> }) =>
+  estimateDuration({ history: historyOf({ steps: samples }), unit: 'step', key: KEY, nowMs: NOW });
+
 type SizedParams = {
   readonly size: EstimateKey['size'];
 };
@@ -59,7 +75,7 @@ describe('estimateDuration', () => {
   it('uses the exact routing once it has five samples', () => {
     const samples = [4, 6, 8, 10, 12].map((minutes) => sample({ minutes }));
 
-    const estimate = estimateDuration({ samples, key: KEY, nowMs: NOW });
+    const estimate = stepEstimate({ samples });
 
     expect(estimate).toMatchObject({
       tier: 'exact',
@@ -76,7 +92,12 @@ describe('estimateDuration', () => {
       sample({ minutes, costUsd: minutes / 10 }),
     );
     const sized = ({ size }: SizedParams) =>
-      estimateDuration({ samples, key: { ...KEY, size }, nowMs: NOW });
+      estimateDuration({
+        history: historyOf({ steps: samples }),
+        unit: 'step',
+        key: { ...KEY, size },
+        nowMs: NOW,
+      });
 
     expect(sized({ size: null })).toMatchObject({
       size: null,
@@ -101,18 +122,53 @@ describe('estimateDuration', () => {
 
   it('falls back from effort to model, then provider and role with stricter minimums', () => {
     const otherEffort = [4, 6, 8, 10, 12].map((minutes) => sample({ minutes, effort: 'high' }));
-    expect(estimateDuration({ samples: otherEffort, key: KEY, nowMs: NOW })?.tier).toBe('model');
+    expect(stepEstimate({ samples: otherEffort })?.tier).toBe('model');
 
     const otherModel = [1, 2, 3, 4, 5, 6, 7].map((minutes) =>
       sample({ minutes, model: 'claude-opus-5-5' }),
     );
-    expect(estimateDuration({ samples: otherModel, key: KEY, nowMs: NOW })).toBeNull();
+    expect(stepEstimate({ samples: otherModel })).toBeNull();
 
     const eight = [...otherModel, sample({ minutes: 8, model: 'claude-opus-5-5' })];
-    expect(estimateDuration({ samples: eight, key: KEY, nowMs: NOW })?.tier).toBe('provider');
+    expect(stepEstimate({ samples: eight })?.tier).toBe('provider');
 
     const otherProvider = eight.map((entry) => ({ ...entry, provider: 'codex' }));
-    expect(estimateDuration({ samples: otherProvider, key: KEY, nowMs: NOW })?.tier).toBe('role');
+    expect(stepEstimate({ samples: otherProvider })?.tier).toBe('role');
+  });
+
+  it('leans on the same model and effort in other workspaces before other models here', () => {
+    const elsewhere = [4, 6, 8, 10, 12].map((minutes) => sample({ minutes }));
+    const otherModel = [1, 2, 3, 4, 5, 6, 7, 8].map((minutes) =>
+      sample({ minutes, model: 'claude-opus-5-5' }),
+    );
+
+    const estimate = estimateDuration({
+      history: historyOf({ steps: otherModel, elsewhere }),
+      unit: 'step',
+      key: KEY,
+      nowMs: NOW,
+    });
+
+    expect(estimate).toMatchObject({ tier: 'modelAnyWorkspace', sampleCount: 5 });
+    expect(
+      estimateDuration({
+        history: historyOf({ elsewhere: elsewhere.map((entry) => ({ ...entry, effort: 'high' })) }),
+        unit: 'step',
+        key: KEY,
+        nowMs: NOW,
+      }),
+    ).toBeNull();
+  });
+
+  it('estimates a turn from turns and a step from steps', () => {
+    const turns = [1, 2, 3, 4, 5].map((minutes) => sample({ minutes }));
+    const history = historyOf({ turns });
+
+    expect(estimateDuration({ history, unit: 'turn', key: KEY, nowMs: NOW })).toMatchObject({
+      tier: 'exact',
+      midMs: 3 * MINUTE,
+    });
+    expect(estimateDuration({ history, unit: 'step', key: KEY, nowMs: NOW })).toBeNull();
   });
 
   it('ignores samples older than the window and other roles', () => {
@@ -121,7 +177,7 @@ describe('estimateDuration', () => {
     );
     const planners = [4, 6, 8, 10, 12].map((minutes) => sample({ minutes, role: 'planner' }));
 
-    expect(estimateDuration({ samples: [...stale, ...planners], key: KEY, nowMs: NOW })).toBeNull();
+    expect(stepEstimate({ samples: [...stale, ...planners] })).toBeNull();
   });
 
   it('caps outliers at the 95th percentile', () => {
@@ -132,7 +188,7 @@ describe('estimateDuration', () => {
       }),
     ];
 
-    const estimate = estimateDuration({ samples, key: KEY, nowMs: NOW });
+    const estimate = stepEstimate({ samples });
 
     expect(estimate?.highMs).toBe(10 * MINUTE);
     expect(estimate?.sampleCount).toBe(20);
@@ -143,16 +199,14 @@ describe('estimateDuration', () => {
       sample({ minutes, costUsd: index === 0 ? null : 1 }),
     );
 
-    expect(estimateDuration({ samples, key: KEY, nowMs: NOW })?.cost).toBeNull();
+    expect(stepEstimate({ samples })?.cost).toBeNull();
   });
 });
 
 describe('sumEstimates', () => {
   it('adds the bands only when every step has an estimate', () => {
-    const estimate = estimateDuration({
+    const estimate = stepEstimate({
       samples: [4, 6, 8, 10, 12].map((minutes) => sample({ minutes })),
-      key: KEY,
-      nowMs: NOW,
     });
 
     expect(sumEstimates({ estimates: [estimate, estimate] })).toEqual({
@@ -192,6 +246,7 @@ const span = ({ agentId, from, to, ...rest }: SpanParams): MeasuredTurnSpan => (
 describe('buildDurationHistory', () => {
   it('measures a step as the union of its agent and subagents, keyed by its last turn', () => {
     const history = buildDurationHistory({
+      everyWorkspaceSpans: [],
       spans: [
         span({ agentId: 'step', from: 0, to: 4, model: 'claude-opus-5-5' }),
         span({ agentId: 'part-1', parentAgentId: 'step' as AgentId, from: 5, to: 9 }),
@@ -216,6 +271,7 @@ describe('buildDurationHistory', () => {
   it('skips agents that did not complete and collects finished orchestrated runs', () => {
     const runId = 'run-1' as WorkflowRunId;
     const history = buildDurationHistory({
+      everyWorkspaceSpans: [],
       spans: [
         span({ agentId: 'failed', from: 0, to: 3, agentStatus: 'failed' }),
         span({ agentId: 'a', from: 0, to: 2, workflowRunId: runId, isOrchestratedRunDone: true }),
@@ -230,5 +286,34 @@ describe('buildDurationHistory', () => {
     expect(
       estimateOrchestratedRun({ runs: history.orchestratedRuns, nowMs: 7 * MINUTE }),
     ).toBeNull();
+  });
+
+  it('keeps every succeeded turn of any agent, chat included, and every workspace apart', () => {
+    const chat = span({ agentId: 'chat', from: 0, to: 3, agentStatus: 'running' });
+    const history = buildDurationHistory({
+      spans: [
+        chat,
+        span({ agentId: 'chat', from: 5, to: 6, agentStatus: 'running', endReason: 'failed' }),
+      ],
+      everyWorkspaceSpans: [chat, span({ agentId: 'other', from: 0, to: 2 })],
+    });
+
+    expect(history.steps).toEqual([]);
+    expect(history.turns).toEqual([
+      {
+        role: 'implementer',
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: 'medium',
+        activeMs: 3 * MINUTE,
+        costUsd: 0.25,
+        endedAtMs: 3 * MINUTE,
+      },
+    ]);
+    expect(history.everyWorkspace.turns.map((entry) => entry.activeMs)).toEqual([
+      3 * MINUTE,
+      2 * MINUTE,
+    ]);
+    expect(history.everyWorkspace.steps.map((entry) => entry.activeMs)).toEqual([2 * MINUTE]);
   });
 });

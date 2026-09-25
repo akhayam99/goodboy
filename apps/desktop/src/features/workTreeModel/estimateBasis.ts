@@ -1,4 +1,4 @@
-import type { DurationEstimate, EstimateKey } from '@goodboy/core';
+import type { DurationEstimate, DurationUnit, EstimateKey } from '@goodboy/core';
 import { PROVIDER_IDS, type StepSize } from '@goodboy/types';
 import { EFFORT_LABEL, modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -34,17 +34,29 @@ const routeName = ({ key }: KeyParams): string | null => {
   return effort === null ? modelLabel(key.model) : `${modelLabel(key.model)} ${effort}`;
 };
 
-const stepsOf = ({ count, role }: { readonly count: number; readonly role: string }) =>
-  `${count} finished ${role} ${count === 1 ? 'step' : 'steps'}`;
+const UNIT_NAME: Record<DurationUnit, { readonly one: string; readonly many: string }> = {
+  step: { one: 'step', many: 'steps' },
+  turn: { one: 'turn', many: 'turns' },
+};
+
+type CountParams = {
+  readonly count: number;
+  readonly role: string;
+  readonly unit: DurationUnit;
+};
+
+const stepsOf = ({ count, role, unit }: CountParams) =>
+  `${count} finished ${role} ${count === 1 ? UNIT_NAME[unit].one : UNIT_NAME[unit].many}`;
 
 type Params = {
   readonly estimate: DurationEstimate;
   readonly key: EstimateKey;
+  readonly unit: DurationUnit;
 };
 
-const basisScope = ({ estimate, key }: Params): string => {
+const basisScope = ({ estimate, key, unit }: Params): string => {
   const role = ROLE_LABEL[key.role].toLowerCase();
-  const steps = stepsOf({ count: estimate.sampleCount, role });
+  const steps = stepsOf({ count: estimate.sampleCount, role, unit });
   const route = routeName({ key });
   const provider = providerName({ provider: key.provider }) ?? 'one provider';
   const model = key.model === null ? 'this model' : modelLabel(key.model);
@@ -53,6 +65,8 @@ const basisScope = ({ estimate, key }: Params): string => {
       return route === null ? steps : `${steps} on ${route}`;
     case 'model':
       return `${steps} on ${model} at any effort`;
+    case 'modelAnyWorkspace':
+      return `${steps} on ${route ?? model} across your workspaces`;
     case 'provider':
       return `${steps} on any ${provider} model`;
     case 'role':
@@ -72,28 +86,39 @@ const SIZE_BAND: Record<StepSize, string> = {
   large: 'the slower half of',
 };
 
-export const estimateBasis = ({ estimate, key }: Params): string => {
+const missingNote = ({ estimate, key }: Omit<Params, 'unit'>): string => {
   const route = routeName({ key });
-  const missing =
-    route === null || estimate.tier === 'exact' || estimate.tier === 'runs'
-      ? ''
-      : `Not enough runs on ${route} yet. `;
+  if (route === null || estimate.tier === 'exact' || estimate.tier === 'runs') {
+    return '';
+  }
+  return estimate.tier === 'modelAnyWorkspace'
+    ? `Not enough runs on ${route} in this workspace yet. `
+    : `Not enough runs on ${route} yet. `;
+};
+
+export const estimateBasis = ({ estimate, key, unit }: Params): string => {
+  const missing = missingNote({ estimate, key });
   const sized =
     estimate.size === null
       ? ''
       : `The planner sized this step ${estimate.size}, so this is ${SIZE_BAND[estimate.size]} past runs. `;
-  return `${sized}${missing}Based on ${basisScope({ estimate, key })}, ${WINDOW_NOTE}`;
+  return `${sized}${missing}Based on ${basisScope({ estimate, key, unit })}, ${WINDOW_NOTE}`;
 };
 
-export const estimateBasisShort = ({ estimate, key }: Params): string =>
+export const estimateBasisShort = ({ estimate, key, unit }: Params): string =>
   estimate.size === null
-    ? `based on ${basisScope({ estimate, key })}`
-    : `sized ${estimate.size}, based on ${basisScope({ estimate, key })}`;
+    ? `based on ${basisScope({ estimate, key, unit })}`
+    : `sized ${estimate.size}, based on ${basisScope({ estimate, key, unit })}`;
 
-export const unknownEstimateBasis = ({ key }: KeyParams): string => {
-  const role = ROLE_LABEL[key.role];
+type UnknownParams = KeyParams & {
+  readonly unit: DurationUnit;
+};
+
+export const unknownEstimateBasis = ({ key, unit }: UnknownParams): string => {
+  const role = ROLE_LABEL[key.role].toLowerCase();
   const route = routeName({ key });
+  const units = UNIT_NAME[unit].many;
   return route === null
-    ? `Not enough finished ${role.toLowerCase()} steps yet to estimate.`
-    : `Not enough finished ${role.toLowerCase()} steps on ${route} yet to estimate.`;
+    ? `Not enough finished ${role} ${units} yet to estimate.`
+    : `Not enough finished ${role} ${units} on ${route} yet to estimate.`;
 };

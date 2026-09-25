@@ -17,6 +17,11 @@ export {
   type MigrationSnapshotStorage,
 } from './migrations/runRuntimeMigrations';
 export { migrations, type Migration } from './migrations';
+export {
+  DatabaseFromNewerBuildError,
+  NEWER_BUILD_MESSAGE,
+  pickRestorableSnapshot,
+} from './migrations/downgradeGuard';
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
@@ -156,6 +161,7 @@ export {
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
   listSessionTurnSpans,
+  listTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
 export { getSetting, setSetting } from './queries/settings';

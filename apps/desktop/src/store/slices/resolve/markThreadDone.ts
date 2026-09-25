@@ -1,6 +1,8 @@
 import { upsertResolvePublicationThread } from '@goodboy/db';
 import type { ResolvePublicationThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { resolveThreadOnGithub } from '../github/resolveThreadOnGithub';
+import type { ResolveStepPlan } from './resolveStepPlan';
 import type { GetFn } from './types';
 
 type Params = {
@@ -8,6 +10,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly threadId: string;
   readonly frozen: ResolvePublicationThread;
+  readonly plan: ResolveStepPlan;
 };
 
 export const markThreadDone = async ({
@@ -15,25 +18,34 @@ export const markThreadDone = async ({
   sessionId,
   threadId,
   frozen,
-}: Params): Promise<void> => {
+  plan,
+}: Params): Promise<ResolvePublicationThread> => {
   await upsertResolvePublicationThread({
     db: tauriDatabase,
-    thread: { ...frozen, resolvePhase: 'resolving' },
+    thread: { ...frozen, resolvePhase: 'resolving', error: null },
   });
+  if (plan === 'resolve') {
+    await resolveThreadOnGithub({ get, sessionId, threadId });
+  }
   const closedAt = Date.now();
+  const isResolvedOnGithub = plan === 'resolve';
   await get().updateResolveThread({
     sessionId,
     threadId,
     patch: {
       state: 'closed',
-      githubResolved: false,
+      githubResolved: isResolvedOnGithub,
       closedAt,
       closedSource: 'goodboy',
       stateReason: null,
     },
   });
-  await upsertResolvePublicationThread({
-    db: tauriDatabase,
-    thread: { ...frozen, resolvePhase: 'resolved', resolvedAt: closedAt },
-  });
+  const receipt: ResolvePublicationThread = {
+    ...frozen,
+    resolvePhase: 'resolved',
+    resolvedAt: isResolvedOnGithub ? closedAt : null,
+    error: null,
+  };
+  await upsertResolvePublicationThread({ db: tauriDatabase, thread: receipt });
+  return receipt;
 };

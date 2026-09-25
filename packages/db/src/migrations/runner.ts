@@ -1,5 +1,6 @@
 import type { Database } from '../client';
 import { migrations as defaultMigrations, type Migration } from './index';
+import { assertKnownMigrations } from './downgradeGuard';
 
 const ENSURE_MIGRATION_TABLES = `
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -70,6 +71,7 @@ export const migrate = async (
 
   const rows = await db.select<{ version: number }>('SELECT version FROM schema_version');
   const applied = new Set(rows.map((row) => row.version));
+  assertKnownMigrations({ appliedVersions: [...applied], migrations });
 
   const ordered = [...migrations].sort((a, b) => a.version - b.version);
   const newlyApplied: number[] = [];

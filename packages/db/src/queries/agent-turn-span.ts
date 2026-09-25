@@ -122,6 +122,24 @@ export const listWorkspaceTurnSpans = async ({
   return rows.map((row) => toMeasuredSpan({ row }));
 };
 
+type WindowListParams = {
+  readonly db: Database;
+  readonly sinceMs: number;
+};
+
+export const listTurnSpans = async ({
+  db,
+  sinceMs,
+}: WindowListParams): Promise<ReadonlyArray<MeasuredTurnSpan>> => {
+  const rows = await db.select<MeasuredSpanRow>(
+    `${MEASURED_SPAN_SELECT}
+     WHERE s.ended_at >= ? AND s.agent_id IS NOT NULL
+     ORDER BY s.started_at`,
+    [sinceMs],
+  );
+  return rows.map((row) => toMeasuredSpan({ row }));
+};
+
 type SessionListParams = {
   readonly db: Database;
   readonly sessionId: SessionId;

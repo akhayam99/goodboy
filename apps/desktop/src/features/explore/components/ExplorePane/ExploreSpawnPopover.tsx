@@ -9,7 +9,6 @@ import { AGENT_KIND_META } from '../../../session/agent-kind';
 import { resolveSpawnRouting } from '../../../session/spawn-routing';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from '../../../session/components/AgentSpawnConfig/defaultAgentSpawnConfig';
 import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { type ExploreEntry } from '../../explore';
 import { buildExploreSpawnPrompt } from '../../buildExploreSpawnPrompt';
@@ -41,10 +40,10 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
     (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
   );
   const roleModels = useSessionRoleModels({ sessionId });
-  const spawnRouting = resolveSpawnRouting({ kind: 'generic', roleModels, session });
+  const spawnRouting = resolveSpawnRouting({ kind: 'scout', roleModels, session });
   const defaultConfig = useMemo<AgentSpawnConfigValue>(
     () => ({
-      ...DEFAULT_AGENT_SPAWN_CONFIG,
+      hint: '',
       provider: spawnRouting.provider,
       model: spawnRouting.model,
       effort:
