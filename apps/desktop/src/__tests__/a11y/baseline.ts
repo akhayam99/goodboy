@@ -37,7 +37,7 @@ export const A11Y_BASELINE = {
   'scene session-states': ['aria-allowed-role'],
   'scene workspace-states': ['aria-allowed-role', 'aria-prohibited-attr', 'nested-interactive'],
   'scene settings-providers': ['nested-interactive'],
-  'scene review-modes': ['heading-order'],
+  'scene review-modes': [],
   'scene workflow-studio': ['label'],
   'scene workflow-builder-modes': ['label'],
 } satisfies Record<string, ReadonlyArray<string>>;
