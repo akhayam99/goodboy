@@ -485,6 +485,11 @@ surface stays neutral, the title is `foreground` and the body is
   sentence or raw output.
 - **Actions stay neutral**: `Button variant="secondary"` for the recovery,
   `ghost` for an alternative. Never a tone-colored button.
+- **Actions follow the notice's own width.** The notice is an
+  `@container/notice`. From `@md` (28rem) the actions sit to the right of the
+  text, top-aligned with a multi-line notice and centred on a title-only one.
+  Below it they drop onto their own row under the body, aligned with the
+  title, and wrap. Text never shrinks to make room for a button.
 - **Children** render under the body at full width, for live work the notice
   owns, such as the terminal of a CLI update running inside the card.
 

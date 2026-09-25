@@ -83,4 +83,50 @@ describe('Notice', () => {
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
+
+  it('centres a title-only notice on its actions once wide, tops a multi-line one', () => {
+    const { rerender } = render(
+      <Notice
+        tone="warning"
+        placement="transcript"
+        role="status"
+        title="Claude is not signed in"
+        actions={<button type="button">Connect now</button>}
+      />,
+    );
+    const layout = () => screen.getByRole('status').querySelector('[data-notice-layout]');
+    expect(layout()?.className).toContain('@md/notice:items-center');
+
+    rerender(
+      <Notice
+        tone="warning"
+        placement="transcript"
+        role="status"
+        title="Claude is not signed in"
+        body="Sign in to keep this session running."
+        actions={<button type="button">Connect now</button>}
+      />,
+    );
+    expect(layout()?.className).toContain('items-start');
+    expect(layout()?.className).not.toContain('@md/notice:items-center');
+  });
+
+  it('moves the actions under the body when the notice is narrower than its row width', () => {
+    render(
+      <Notice
+        tone="warning"
+        placement="transcript"
+        role="status"
+        title="Opus 5.5 needs a newer Claude CLI"
+        body="You have Claude CLI 2.1.260."
+        actions={<button type="button">Update Claude CLI</button>}
+      />,
+    );
+    const root = screen.getByRole('status');
+    const actions = screen.getByRole('button', { name: 'Update Claude CLI' }).parentElement;
+    expect(root.className).toContain('@container/notice');
+    expect(actions?.className).toContain('col-start-2');
+    expect(actions?.className).toContain('@md/notice:col-start-3');
+    expect(actions?.className).toContain('@md/notice:row-start-1');
+  });
 });

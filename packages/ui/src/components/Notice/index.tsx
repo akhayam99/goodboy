@@ -80,6 +80,7 @@ export const Notice = ({
   const tint = tintClasses(tone);
   const Icon = TONE_ICON[tone];
   const hasDetail = detail !== null && detail.trim() !== '';
+  const isTitleOnly = !hasContent({ node: body }) && !hasDetail && !hasContent({ node: children });
 
   return (
     <div
@@ -87,7 +88,7 @@ export const Notice = ({
       data-tone={tone}
       data-placement={placement}
       className={cn(
-        'relative flex w-full min-w-0 items-start gap-2.5 overflow-hidden',
+        '@container/notice relative w-full min-w-0 overflow-hidden',
         PLACEMENT_SURFACE[placement],
         className,
       )}
@@ -97,56 +98,66 @@ export const Notice = ({
         data-notice-rail
         className={cn('absolute inset-y-0 left-0', PLACEMENT_RAIL[placement], tint.dot)}
       />
-      <Icon
-        size={PLACEMENT_ICON_SIZE[placement]}
-        aria-hidden
-        {...(iconTestId !== undefined ? { 'data-testid': iconTestId } : {})}
-        className={cn('mt-px shrink-0', tint.icon)}
-      />
-      <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
-        <p
-          className={cn(
-            'w-full break-words font-semibold text-foreground',
-            PLACEMENT_TITLE[placement],
-          )}
-        >
-          {title}
-        </p>
-        {hasContent({ node: body }) && (
-          <div className="w-full break-words text-xs leading-4 text-muted-foreground">{body}</div>
+      <div
+        data-notice-layout
+        className={cn(
+          'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2.5 gap-y-2 @md/notice:grid-cols-[auto_minmax(0,1fr)_auto]',
+          isTitleOnly && '@md/notice:items-center',
         )}
-        {hasDetail && (
-          <button
-            type="button"
-            aria-expanded={isDetailOpen}
-            aria-controls={isDetailOpen ? detailId : undefined}
-            onClick={() => setIsDetailOpen((open) => !open)}
+      >
+        <Icon
+          size={PLACEMENT_ICON_SIZE[placement]}
+          aria-hidden
+          {...(iconTestId !== undefined ? { 'data-testid': iconTestId } : {})}
+          className={cn('shrink-0', !isTitleOnly && 'mt-px', tint.icon)}
+        />
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          <p
             className={cn(
-              'inline-flex items-center gap-1 rounded-sm text-2xs text-faint-foreground hover:text-muted-foreground',
-              FOCUS_RING,
+              'w-full break-words font-semibold text-foreground',
+              PLACEMENT_TITLE[placement],
             )}
           >
-            <ChevronRight
-              size={10}
-              aria-hidden
-              className={cn('motion-safe:transition-transform', isDetailOpen && 'rotate-90')}
-            />
-            Details
-          </button>
+            {title}
+          </p>
+          {hasContent({ node: body }) && (
+            <div className="w-full break-words text-xs leading-4 text-muted-foreground">{body}</div>
+          )}
+          {hasDetail && (
+            <button
+              type="button"
+              aria-expanded={isDetailOpen}
+              aria-controls={isDetailOpen ? detailId : undefined}
+              onClick={() => setIsDetailOpen((open) => !open)}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-sm text-2xs text-faint-foreground hover:text-muted-foreground',
+                FOCUS_RING,
+              )}
+            >
+              <ChevronRight
+                size={10}
+                aria-hidden
+                className={cn('motion-safe:transition-transform', isDetailOpen && 'rotate-90')}
+              />
+              Details
+            </button>
+          )}
+          {hasDetail && isDetailOpen && (
+            <pre
+              id={detailId}
+              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-2.5 py-2 font-mono text-2xs text-muted-foreground"
+            >
+              {detail}
+            </pre>
+          )}
+          {hasContent({ node: children }) && <div className="w-full">{children}</div>}
+        </div>
+        {hasContent({ node: actions }) && (
+          <div className="col-start-2 flex flex-wrap items-center gap-2 @md/notice:col-start-3 @md/notice:row-start-1">
+            {actions}
+          </div>
         )}
-        {hasDetail && isDetailOpen && (
-          <pre
-            id={detailId}
-            className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-2.5 py-2 font-mono text-2xs text-muted-foreground"
-          >
-            {detail}
-          </pre>
-        )}
-        {hasContent({ node: children }) && <div className="w-full">{children}</div>}
       </div>
-      {hasContent({ node: actions }) && (
-        <div className="flex shrink-0 items-center gap-2">{actions}</div>
-      )}
     </div>
   );
 };
