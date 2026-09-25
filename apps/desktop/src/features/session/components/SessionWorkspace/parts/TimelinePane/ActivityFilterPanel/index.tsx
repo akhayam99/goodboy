@@ -147,7 +147,7 @@ export const ActivityFilterPanel = ({
             {`Showing ${visibleCount} of ${totalCount} rows`}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 @[34rem]:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 @[36rem]:grid-cols-[repeat(3,minmax(max-content,1fr))]">
           {ACTIVITY_GROUPS.map((group) => (
             <ActivityFilterGroup
               key={group.id}
