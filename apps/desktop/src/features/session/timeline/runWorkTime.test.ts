@@ -91,7 +91,8 @@ describe('runWorkTime', () => {
       ...ROUTING,
     });
 
-    expect(time?.label).toBe('7m of ~30m');
+    expect(time?.label).toBe('~14-20m left');
+    expect(time?.headline).toBe('7m · ~14-20m left');
     expect(time?.progress).toBeCloseTo(7 / 29);
   });
 

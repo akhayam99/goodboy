@@ -14,6 +14,7 @@ type Store = {
   readonly connectProvider: ReturnType<typeof vi.fn>;
   readonly cancelProviderConnect: ReturnType<typeof vi.fn>;
   readonly dismissProviderConnect: ReturnType<typeof vi.fn>;
+  readonly workspaceDurationHistory: Readonly<Record<string, unknown>>;
 };
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -54,6 +55,7 @@ const h = vi.hoisted(() => ({
   connectProvider: vi.fn(async () => undefined),
   cancelProviderConnect: vi.fn(async () => undefined),
   dismissProviderConnect: vi.fn(() => undefined),
+  workspaceDurationHistory: {} as Record<string, unknown>,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -68,6 +70,7 @@ vi.mock('../../../../store', () => ({
       connectProvider: h.connectProvider,
       cancelProviderConnect: h.cancelProviderConnect,
       dismissProviderConnect: h.dismissProviderConnect,
+      workspaceDurationHistory: h.workspaceDurationHistory,
     }),
 }));
 
@@ -99,6 +102,7 @@ afterEach(() => {
   vi.clearAllMocks();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
   h.sessions = [makeSession()];
+  h.workspaceDurationHistory = {};
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
 
@@ -424,6 +428,34 @@ describe('CreateAgentPopover', () => {
       initialPrompt: 'keep the diff small',
       focus: 'agent',
     });
+  });
+
+  it('gives the usual first-turn time only once the agent has instructions to start on', () => {
+    const turn = (minutes: number) => ({
+      role: 'custom',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: null,
+      activeMs: minutes * 60_000,
+      costUsd: null,
+      endedAtMs: Date.now() - 60_000,
+    });
+    h.workspaceDurationHistory = {
+      'workspace-1': {
+        steps: [],
+        turns: [6, 8, 9, 10, 11, 12, 14, 15].map(turn),
+        everyWorkspace: { steps: [], turns: [] },
+        orchestratedRuns: [],
+      },
+    };
+    renderControl();
+    openPopover();
+
+    expect(screen.queryByTestId('launch-estimate')).toBeNull();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
+      target: { value: 'keep the diff small' },
+    });
+    expect(screen.getByTestId('launch-estimate').textContent).toBe('Starts now · usually 9-13m');
   });
 
   it('places the role before the instructions and the instructions before routing', () => {

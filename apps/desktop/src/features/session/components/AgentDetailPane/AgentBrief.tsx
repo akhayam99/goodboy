@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
-import { Markdown, SectionSurface, StatusDot } from '@goodboy/ui';
+import { Markdown, SectionSurface, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -26,14 +26,17 @@ import { AgentFollowUps } from './AgentFollowUps';
 import { agentFollowUpMoves } from './followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
 import { agentNowState } from './agentNowState';
+import { AgentMuchLonger } from './AgentMuchLonger';
+import type { WorkTime } from '../../../workTreeModel/workTime';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 type Props = {
   readonly session: Session;
   readonly agent: Agent;
+  readonly time?: WorkTime | null;
 };
 
-export const AgentBrief = ({ session, agent }: Props) => {
+export const AgentBrief = ({ session, agent, time = null }: Props) => {
   const transcript = useTranscript(agent.id);
   const runs = useAppStore(
     (state) => state.sessionPhaseRuns[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -147,8 +150,19 @@ export const AgentBrief = ({ session, agent }: Props) => {
         <SectionSurface label="Now">
           <div className="flex items-center gap-2 text-xs text-foreground">
             <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
-            <span>{now.label}</span>
+            <span className="min-w-0 flex-1 truncate">{now.label}</span>
+            {time === null ? null : (
+              <Tooltip content={time.detail}>
+                <span
+                  data-testid="agent-now-time"
+                  className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+                >
+                  {time.headline}
+                </span>
+              </Tooltip>
+            )}
           </div>
+          {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
         </SectionSurface>
       ) : null}
       {expectedOutput != null && expectedOutput !== '' ? (

@@ -1,4 +1,4 @@
-import type { DurationEstimate, DurationUnit, EstimateKey } from '@goodboy/core';
+import type { DurationEstimate, DurationUnit, EstimateKey, EstimateProgress } from '@goodboy/core';
 import { PROVIDER_IDS, type StepSize } from '@goodboy/types';
 import { EFFORT_LABEL, modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
@@ -112,12 +112,42 @@ export const estimateBasisShort = ({ estimate, key, unit }: Params): string =>
 
 type UnknownParams = KeyParams & {
   readonly unit: DurationUnit;
+  readonly progress?: EstimateProgress | null;
 };
 
-export const unknownEstimateBasis = ({ key, unit }: UnknownParams): string => {
+type ScopeParams = KeyParams & {
+  readonly progress: EstimateProgress;
+};
+
+const progressScope = ({ key, progress }: ScopeParams): string => {
+  const route = routeName({ key });
+  const model = key.model === null ? 'this model' : modelLabel(key.model);
+  const provider = providerName({ provider: key.provider }) ?? 'one provider';
+  switch (progress.tier) {
+    case 'exact':
+      return route === null ? '' : ` on ${route}`;
+    case 'model':
+      return ` on ${model}`;
+    case 'modelAnyWorkspace':
+      return ` on ${route ?? model} across your workspaces`;
+    case 'provider':
+      return ` on any ${provider} model`;
+    case 'role':
+      return ' on any model';
+    default: {
+      const exhaustive: never = progress.tier;
+      return exhaustive;
+    }
+  }
+};
+
+export const unknownEstimateBasis = ({ key, unit, progress = null }: UnknownParams): string => {
   const role = ROLE_LABEL[key.role].toLowerCase();
   const route = routeName({ key });
   const units = UNIT_NAME[unit].many;
+  if (progress !== null) {
+    return `No estimate yet: ${progress.have} of ${progress.need} finished ${role} ${units}${progressScope({ key, progress })}.`;
+  }
   return route === null
     ? `Not enough finished ${role} ${units} yet to estimate.`
     : `Not enough finished ${role} ${units} on ${route} yet to estimate.`;

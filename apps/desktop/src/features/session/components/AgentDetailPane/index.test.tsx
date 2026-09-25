@@ -22,6 +22,23 @@ vi.mock('../../../../store', () => ({
   useExecutedAgentRouting: () => executedRouting.value,
 }));
 
+const detailTime = vi.hoisted(() => ({
+  value: undefined as
+    | {
+        label: string;
+        detail: string;
+        progress: number | null;
+        headline: string;
+        note: string | null;
+        isMuchLonger: boolean;
+      }
+    | undefined,
+}));
+
+vi.mock('../../hooks/useAgentDetailWorkTime', () => ({
+  useAgentDetailWorkTime: () => detailTime.value,
+}));
+
 vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
@@ -58,6 +75,7 @@ beforeEach(() => {
     sessionOpenQuestions: {},
   });
   executedRouting.value = null;
+  detailTime.value = undefined;
 });
 
 describe('AgentDetailPane', () => {
@@ -221,5 +239,27 @@ describe('AgentDetailPane', () => {
 
     expect(screen.getByText('Transcript body')).toBeDefined();
     expect(screen.getByText('Implement chat')).toBeDefined();
+  });
+
+  it('shows elapsed time and time left next to the status while running', () => {
+    detailTime.value = {
+      label: '~3-7m left',
+      detail: 'Running 4m 12s. Usually 6-9m.',
+      progress: 0.4,
+      headline: '4m · ~3-7m left',
+      note: null,
+      isMuchLonger: false,
+    };
+
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('agent-header-time').textContent).toBe('4m · ~3-7m left');
   });
 });

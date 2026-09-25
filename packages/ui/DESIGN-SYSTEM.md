@@ -425,7 +425,7 @@ The right end of a work row is `WorkMeta` in
 | column     | width | holds                                                        | in a narrow row                                             |
 | ---------- | ----- | ------------------------------------------------------------ | ----------------------------------------------------------- |
 | routing    | 136px | provider glyph, model, then one detail (`Sonnet 5 · High`)   | detail goes under 720px, name under 440px, gone under 360px |
-| time       | 96px  | measured time or estimate ("5m of ~9m", "12-20m")            | 80px under 640px, gone under 360px                          |
+| time       | 96px  | measured time or estimate ("~3-7m left", "~6-9m", "14m")     | 80px under 640px, gone under 360px                          |
 | cost       | 56px  | what the row has spent, empty before anything is spent       | under 560px it leaves the row                               |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 560px it leaves the row                               |
 | action     | 76px  | the one visible action, reserved even when empty             | never drops                                                 |

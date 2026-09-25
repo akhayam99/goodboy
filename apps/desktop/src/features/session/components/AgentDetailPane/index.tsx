@@ -10,7 +10,9 @@ import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
 import { AgentHeaderActions } from '../AgentHeaderActions';
+import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { AgentBrief } from './AgentBrief';
+import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
 
@@ -51,6 +53,13 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
   );
   const executed = useExecutedAgentRouting({ agent });
   const kind = classifyAgent({ agent, override: kindOverride });
+  const time = useAgentDetailWorkTime({
+    session,
+    agent,
+    kind,
+    status,
+    isWaitingOnYou: hasOpenQuestions,
+  });
 
   useEffect(() => {
     setTab(liveTab);
@@ -78,6 +87,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
           meta={
             <>
               <AgentStatusBadge status={status} />
+              {time == null ? null : <AgentHeaderTime time={time} />}
               <AgentKindChip kind={kind} />
               <RoutingLabel
                 provider={executed?.provider ?? providerOverride}
@@ -106,7 +116,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, eyebrow 
       {tab === 'transcript' ? (
         <ChatView session={session} isActive={isChatActive} />
       ) : (
-        <AgentBrief session={session} agent={agent} />
+        <AgentBrief session={session} agent={agent} time={time ?? null} />
       )}
     </StudioDetailLayout>
   );

@@ -9,9 +9,15 @@ type Props = {
   readonly entry: TimelineRunEntry;
   readonly rowState: RowState;
   readonly isLaneLit?: boolean;
+  readonly stateNote?: string | null;
 };
 
-export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) => {
+export const TimelineRunLabel = ({
+  entry,
+  rowState,
+  isLaneLit = false,
+  stateNote = null,
+}: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
   const title = entry.run.title ?? entry.workflow.name;
   return (
@@ -33,7 +39,7 @@ export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) 
       >
         {title}
       </span>
-      <TimelineRowStateLine state={rowState} />
+      <TimelineRowStateLine state={rowState} note={stateNote} />
     </>
   );
 };

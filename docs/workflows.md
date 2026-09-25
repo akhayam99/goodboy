@@ -255,18 +255,28 @@ run row shows which step it has reached ("Step 4 of 7", or "Step 4" for an
 orchestrated run, which has no total) and what the whole run has spent.
 
 The time column is measured machine time, never the wall clock between start
-and end. A finished row shows its active time ("8m 12s"). A running row with
-enough history reads "5m of ~9m" and its node fills an arc toward the usual
-time; past it the arc stays full and the row reads "11m, usually ~9m". While
-the row waits on you the arc freezes in amber and the time still reads "5m of
-~9m": the pause is said once, by the row state and the node, never again in
-the time column. A failed row drops the arc and reads "4m", next to its
-"Failed" state. Without
-enough history a running row shows only its active time and the node keeps
-the moving border. A queued step shows its usual range. The run row adds up
-finished steps and the usual time of the steps left, and shows a total only
-when every step left has an estimate; an orchestrated run shows only its
-active time. The workflow detail and a Brief's Subagents use the same column.
+and end. A `~` always marks an estimate; how sure it is lives in the tooltip
+with the sample count. A queued step shows its usual range ("~6-9m"). A
+running row with enough history shows the time left ("~3-7m left", a range
+until the low end of the band passes, then "~2m left") and its node fills an
+arc toward the usual time; the elapsed time moves to the tooltip and the agent
+header ("4m · ~3-7m left"). Past the top of the band the row shows the elapsed
+time ("14m"), the arc stays full and the state reads "Longer than usual" in
+faint, with no color. At twice the usual time the Brief's Now adds a line that
+points at the transcript; nothing stops the agent. While the row waits on you
+the arc freezes in amber and the time freezes too, never "left": the pause is
+said once, by the row state and the node. A failed row drops the arc and reads
+"4m", next to its "Failed" state. A finished row shows its active time ("8m
+12s"), plus "Longer than usual" when it ran past the band. Without enough
+history a running row shows only its elapsed time, the node keeps the moving
+border, and the tooltip counts what is missing ("No estimate yet: 3 of 5
+finished scout turns on 3.8 Flash"). The run row adds up finished steps and
+the usual time of the steps left, and shows a total only when every step left
+has an estimate. The workflow detail header adds what the run has left
+("~9-16m left", or "usually 20-35m" before any step starts) only when every
+step left has an estimate and none is past its band; an orchestrated run reads
+it from past orchestrated runs. The workflow detail and a Brief's Subagents
+use the same column.
 How the numbers are measured is in [turns.md](turns.md#measured-time-and-estimates).
 
 ### Next action

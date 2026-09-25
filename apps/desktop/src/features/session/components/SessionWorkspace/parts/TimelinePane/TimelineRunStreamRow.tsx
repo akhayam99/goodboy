@@ -70,6 +70,7 @@ export const TimelineRunStreamRow = ({
       diffStat={diffStat}
       meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
       progress={time?.progress ?? null}
+      stateNote={time?.note ?? null}
       menu={menu}
       lanes={lanes}
       runLane={runLane}

@@ -16,6 +16,7 @@ import {
   estimateRangeLabel,
   formatCostRange,
   isFallbackTier,
+  plainWorkTime,
   workEstimateOf,
   type WorkTime,
 } from '../../../workTreeModel/workTime';
@@ -103,7 +104,7 @@ export const planEstimates = ({
     estimates.push(estimate);
     if (estimate === null) {
       byKey.set(step.key, {
-        time: { label: '–', detail: unknownEstimateBasis({ key, unit: 'step' }), progress: null },
+        time: plainWorkTime({ label: '–', detail: unknownEstimateBasis({ key, unit: 'step' }) }),
         cost: null,
         note: null,
       });
@@ -116,7 +117,7 @@ export const planEstimates = ({
     const range = estimateRangeLabel({ estimate: work });
     const cost = costOf({ estimate });
     byKey.set(step.key, {
-      time: { label: range, detail: `Usually ${range}. ${work.basis}`, progress: null },
+      time: plainWorkTime({ label: range, detail: `Usually ${range}. ${work.basis}` }),
       cost,
       note: [range, cost, estimateBasisShort({ estimate, key, unit: 'step' })]
         .filter((part) => part !== null)

@@ -1,6 +1,8 @@
 import {
   clampEffortForModel,
   estimateDuration,
+  estimateProgress,
+  type DurationHistory,
   type DurationUnit,
   type EstimateKey,
 } from '@goodboy/core';
@@ -26,21 +28,35 @@ export const estimateKeyOf = ({ role, provider, model, effort, size }: KeyParams
   size,
 });
 
+type HistoryEstimateParams = {
+  readonly key: EstimateKey;
+  readonly unit: DurationUnit;
+  readonly history: DurationHistory;
+  readonly nowMs: number;
+};
+
+export const historyWorkEstimate = ({
+  key,
+  unit,
+  history,
+  nowMs,
+}: HistoryEstimateParams): WorkEstimate | null => {
+  const estimate = estimateDuration({ history, unit, key, nowMs });
+  return estimate === null
+    ? null
+    : workEstimateOf({ estimate, basis: estimateBasis({ estimate, key, unit }) });
+};
+
 type EstimateParams = {
   readonly key: EstimateKey;
   readonly unit: DurationUnit;
   readonly source: WorkTimeSource;
 };
 
-export const workEstimateFor = ({ key, unit, source }: EstimateParams): WorkEstimate | null => {
-  if (source.history === null) {
-    return null;
-  }
-  const estimate = estimateDuration({ history: source.history, unit, key, nowMs: source.nowMs });
-  return estimate === null
+export const workEstimateFor = ({ key, unit, source }: EstimateParams): WorkEstimate | null =>
+  source.history === null
     ? null
-    : workEstimateOf({ estimate, basis: estimateBasis({ estimate, key, unit }) });
-};
+    : historyWorkEstimate({ key, unit, history: source.history, nowMs: source.nowMs });
 
 type Params = {
   readonly agentId: AgentId;
@@ -85,7 +101,14 @@ const turnWorkTime = ({
 export const agentWorkTime = (params: Params): WorkTime | null => {
   const { agentId, key, unit, phase, source } = params;
   const estimate = workEstimateFor({ key, unit, source });
-  const unknownBasis = source.history === null ? null : unknownEstimateBasis({ key, unit });
+  const unknownBasis =
+    source.history === null || estimate !== null
+      ? null
+      : unknownEstimateBasis({
+          key,
+          unit,
+          progress: estimateProgress({ history: source.history, unit, key, nowMs: source.nowMs }),
+        });
   if (unit === 'turn') {
     return turnWorkTime({ ...params, estimate, unknownBasis });
   }

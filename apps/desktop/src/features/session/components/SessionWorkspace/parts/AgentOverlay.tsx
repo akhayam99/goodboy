@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button, LensEmptyState, PANE_RHYTHM, Skeleton, SkeletonText, cn } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { AgentDetailPane } from '../../AgentDetailPane';
+import { WorkTimeProvider } from '../../../../workTreeModel/components/WorkTimeProvider';
 import { ResolveAgentContext } from '../../../../resolve/components/ResolveAgentContext';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -67,13 +68,15 @@ export const AgentOverlay = ({
             <SkeletonText lines={3} />
           </div>
         ) : (
-          <AgentDetailPane
-            session={session}
-            agent={selectedAgent}
-            isChatActive={isChatActive}
-            onBack={onBack}
-            eyebrow={originEyebrow}
-          />
+          <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+            <AgentDetailPane
+              session={session}
+              agent={selectedAgent}
+              isChatActive={isChatActive}
+              onBack={onBack}
+              eyebrow={originEyebrow}
+            />
+          </WorkTimeProvider>
         )}
       </div>
     </div>

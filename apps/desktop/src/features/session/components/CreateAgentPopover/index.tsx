@@ -28,6 +28,7 @@ import { resolveSpawnRouting } from '../../spawn-routing';
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
+import { LaunchEstimateNote } from './LaunchEstimateNote';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
@@ -230,7 +231,14 @@ export const CreateAgentPopover = ({
       </PopoverBody>
       <Divider />
       <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
-        {spawnError === null ? null : (
+        {spawnError === null ? (
+          <LaunchEstimateNote
+            workspaceId={session?.workspaceId ?? null}
+            kind={selectedKind}
+            routing={effective}
+            isShown={open && instructions.trim() !== ''}
+          />
+        ) : (
           <span role="alert" className="min-w-0 flex-1 text-2xs text-danger">
             {spawnError}
           </span>
