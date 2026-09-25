@@ -2,13 +2,13 @@ import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from '../../../../permissions/components/DiffViewerDialog/DiffLineText';
-import type { SyntaxLang } from '../../../../permissions/components/DiffViewerDialog/highlight';
+import type { DiffTokenMap } from '../../../../diff/hooks/useDiffTokens';
 import { ReviewLineActions } from './ReviewLineActions';
 import type { ReviewLineTarget } from './ReviewFileDiff';
 
 type Props = {
   readonly pair: DiffLinePair;
-  readonly lang: SyntaxLang | null;
+  readonly tokens: DiffTokenMap | null;
   readonly oldTarget: ReviewLineTarget | null;
   readonly newTarget: ReviewLineTarget | null;
   readonly isOldActive: boolean;
@@ -59,7 +59,7 @@ const CONTENT_CLASS = 'whitespace-pre-wrap wrap-anywhere px-2.5 align-top text-f
 
 export const ReviewPairCells = ({
   pair,
-  lang,
+  tokens,
   oldTarget,
   newTarget,
   isOldActive,
@@ -92,7 +92,7 @@ export const ReviewPairCells = ({
         {pair.old?.oldLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, oldTone)}>
-        {pair.old === null ? '' : <DiffLineText line={pair.old} lang={lang} />}
+        {pair.old === null ? '' : <DiffLineText line={pair.old} tokens={tokens} />}
       </td>
       <td
         className={cn(
@@ -112,7 +112,7 @@ export const ReviewPairCells = ({
         {pair.new?.newLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, newTone)}>
-        {pair.new === null ? '' : <DiffLineText line={pair.new} lang={lang} />}
+        {pair.new === null ? '' : <DiffLineText line={pair.new} tokens={tokens} />}
       </td>
     </>
   );

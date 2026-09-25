@@ -41,7 +41,7 @@ import { DiffLineText } from './DiffLineText';
 import { DiffPairCells } from './DiffPairCells';
 import { SplitDiffColumns } from './SplitDiffColumns';
 import { ShowMoreBar } from './ShowMoreBar';
-import { languageForPath } from './highlight';
+import { useDiffTokens } from '../../../diff/hooks/useDiffTokens';
 
 type Props = {
   file: FileDiff;
@@ -256,7 +256,7 @@ export const FileDiffCard = ({
 
   const totalLines = useMemo(() => file.hunks.reduce((n, h) => n + h.lines.length, 0), [file]);
 
-  const lang = useMemo(() => languageForPath(file.path), [file.path]);
+  const tokens = useDiffTokens({ path: file.path, hunks: file.hunks, enabled: !collapsed });
 
   const [visibleLines, setVisibleLines] = useState(INITIAL_VISIBLE_LINES);
 
@@ -488,7 +488,7 @@ export const FileDiffCard = ({
                           <tr onMouseEnter={() => extendDrag({ oldAnchor, newAnchor })}>
                             <DiffPairCells
                               pair={pair}
-                              lang={lang}
+                              tokens={tokens}
                               canComment={canComment}
                               oldAnchor={oldAnchor}
                               newAnchor={newAnchor}
@@ -623,7 +623,7 @@ export const FileDiffCard = ({
                             {line.newLine ?? ''}
                           </td>
                           <td className="whitespace-pre px-2.5 text-foreground">
-                            <DiffLineText line={line} lang={lang} />
+                            <DiffLineText line={line} tokens={tokens} />
                           </td>
                         </tr>
                         {lineComments.length > 0 && (

@@ -2,11 +2,11 @@ import { cn, tintClasses } from '@goodboy/ui';
 import type { DiffCommentAnchor, DiffHunkLine } from '@goodboy/types';
 import type { DiffLinePair } from '../../../../shared/utils/diffLinePairs';
 import { DiffLineText } from './DiffLineText';
-import type { SyntaxLang } from './highlight';
+import type { DiffTokenMap } from '../../../diff/hooks/useDiffTokens';
 
 type Props = {
   pair: DiffLinePair;
-  lang: SyntaxLang | null;
+  tokens: DiffTokenMap | null;
   canComment: boolean;
   oldAnchor: DiffCommentAnchor | null;
   newAnchor: DiffCommentAnchor | null;
@@ -42,7 +42,7 @@ const sideTone = ({ line }: ToneParams): string => {
 
 export const DiffPairCells = ({
   pair,
-  lang,
+  tokens,
   canComment,
   oldAnchor,
   newAnchor,
@@ -98,7 +98,7 @@ export const DiffPairCells = ({
         {pair.old?.oldLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, oldTone, selectingOld && cn(tintClasses('primary').bg))}>
-        {pair.old === null ? '' : <DiffLineText line={pair.old} lang={lang} />}
+        {pair.old === null ? '' : <DiffLineText line={pair.old} tokens={tokens} />}
       </td>
       <td
         onPointerDown={
@@ -139,7 +139,7 @@ export const DiffPairCells = ({
         {pair.new?.newLine ?? ''}
       </td>
       <td className={cn(CONTENT_CLASS, newTone, selectingNew && cn(tintClasses('primary').bg))}>
-        {pair.new === null ? '' : <DiffLineText line={pair.new} lang={lang} />}
+        {pair.new === null ? '' : <DiffLineText line={pair.new} tokens={tokens} />}
       </td>
     </>
   );

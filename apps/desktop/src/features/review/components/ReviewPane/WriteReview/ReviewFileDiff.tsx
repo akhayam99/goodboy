@@ -19,11 +19,8 @@ import {
 } from '../../../../permissions/components/DiffViewerDialog/lib';
 import { ShowMoreBar } from '../../../../permissions/components/DiffViewerDialog/ShowMoreBar';
 import { SplitDiffColumns } from '../../../../permissions/components/DiffViewerDialog/SplitDiffColumns';
-import {
-  SYNTAX_CLASS,
-  highlightLine,
-  languageForPath,
-} from '../../../../permissions/components/DiffViewerDialog/highlight';
+import { SyntaxText } from '../../../../diff/components/SyntaxText';
+import { tokensForLine, useDiffTokens } from '../../../../diff/hooks/useDiffTokens';
 import { LineComposer } from './LineComposer';
 import { ReviewPairCells } from './ReviewPairCells';
 import {
@@ -125,7 +122,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
 
   const visibleRows = useMemo(() => visibleDiffRows({ rows, visibleLines }), [rows, visibleLines]);
 
-  const lang = useMemo(() => languageForPath(file.path), [file.path]);
+  const tokens = useDiffTokens({ path: file.path, hunks: file.hunks, enabled: !collapsed });
   const remaining = Math.max(0, totalLines - visibleLines);
 
   return (
@@ -239,7 +236,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                             <tr className="group">
                               <ReviewPairCells
                                 pair={pair}
-                                lang={lang}
+                                tokens={tokens}
                                 oldTarget={oldTarget}
                                 newTarget={newTarget}
                                 isOldActive={isTargetActive({ target: oldTarget })}
@@ -358,17 +355,7 @@ export const ReviewFileDiff = ({ file, layoutMode, drafts, onAddDraft, onAskAgen
                               >
                                 {LINE_PREFIX[line.kind]}
                               </span>
-                              {lang
-                                ? highlightLine(line.text, lang).map((token, ti) =>
-                                    token.kind === 'plain' ? (
-                                      <Fragment key={ti}>{token.text}</Fragment>
-                                    ) : (
-                                      <span key={ti} className={SYNTAX_CLASS[token.kind]}>
-                                        {token.text}
-                                      </span>
-                                    ),
-                                  )
-                                : line.text}
+                              <SyntaxText text={line.text} tokens={tokensForLine(tokens, line)} />
                             </td>
                           </tr>
                           {isActive && target != null && onAddDraft != null ? (

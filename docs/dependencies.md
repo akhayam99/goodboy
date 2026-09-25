@@ -37,6 +37,10 @@ This is the single source of truth for adding and checking dependencies. Every d
 - Approved core deps: `react`, `react-dom`, `typescript`, `vite`, `tailwindcss`, `@tauri-apps/*`, `zustand`.
 - Approved for code highlighting: `shiki`, with its JavaScript regex engine.
   That engine works under our content security policy with no WebAssembly.
+  It lives in `apps/desktop/src/features/diff/lib/highlight`, runs in a web
+  worker, and loads each grammar as its own chunk. Its theme paints sentinel
+  colours that map back to the `text-syntax-*` classes, so the app theme sets
+  the colours and no inline style is rendered.
 - Anything else needs a justification in the PR description.
 
 ## Rust crates audit

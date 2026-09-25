@@ -1,15 +1,15 @@
-import { Fragment } from 'react';
 import { cn } from '@goodboy/ui';
 import type { DiffHunkLine } from '@goodboy/types';
 import { LINE_PREFIX } from './lib';
-import { SYNTAX_CLASS, highlightLine, type SyntaxLang } from './highlight';
+import { SyntaxText } from '../../../diff/components/SyntaxText';
+import { tokensForLine, type DiffTokenMap } from '../../../diff/hooks/useDiffTokens';
 
 type Props = {
   line: DiffHunkLine;
-  lang: SyntaxLang | null;
+  tokens: DiffTokenMap | null;
 };
 
-export const DiffLineText = ({ line, lang }: Props) => (
+export const DiffLineText = ({ line, tokens }: Props) => (
   <>
     <span
       aria-hidden
@@ -24,16 +24,6 @@ export const DiffLineText = ({ line, lang }: Props) => (
     >
       {LINE_PREFIX[line.kind]}
     </span>
-    {lang
-      ? highlightLine(line.text, lang).map((token, ti) =>
-          token.kind === 'plain' ? (
-            <Fragment key={ti}>{token.text}</Fragment>
-          ) : (
-            <span key={ti} className={SYNTAX_CLASS[token.kind]}>
-              {token.text}
-            </span>
-          ),
-        )
-      : line.text}
+    <SyntaxText text={line.text} tokens={tokensForLine(tokens, line)} />
   </>
 );

@@ -16,7 +16,6 @@
     "apps/desktop/src/features/integrations/linear/LinearStudio/useLinearIssues.ts": 1,
     "apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffViewerContent.tsx": 3,
     "apps/desktop/src/features/permissions/components/DiffViewerDialog/FileDiffCard.tsx": 1,
-    "apps/desktop/src/features/permissions/components/DiffViewerDialog/highlight/index.ts": 19,
     "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/quick-actions/QuickActionsPopover/index.tsx": 3,
     "apps/desktop/src/features/resolve/components/ResolveItemView/ResolveItemContainer.tsx": 1,
