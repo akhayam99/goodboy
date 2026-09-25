@@ -38,6 +38,29 @@ export const locateArtifactMirror = async ({
 }: FolderParams): Promise<ArtifactMirrorLocation> =>
   invoke<ArtifactMirrorLocation>('artifact_mirror_locate', { workspaceSlug, folder });
 
+export type ArtifactMirrorRef = Readonly<{
+  workspaceSlug: string;
+  folder: string;
+}>;
+
+export type ArtifactMirrorSize = ArtifactMirrorRef &
+  Readonly<{
+    sizeBytes: number | null;
+  }>;
+
+export const measureArtifactMirrors = async ({
+  entries,
+}: {
+  readonly entries: ReadonlyArray<ArtifactMirrorRef>;
+}): Promise<ReadonlyArray<ArtifactMirrorSize>> =>
+  invoke<ReadonlyArray<ArtifactMirrorSize>>('artifact_mirror_measure', { entries });
+
+export const removeArtifactMirror = async ({
+  workspaceSlug,
+  folder,
+}: FolderParams): Promise<boolean> =>
+  invoke<boolean>('artifact_mirror_remove', { workspaceSlug, folder });
+
 export const revealArtifactMirror = async ({
   workspaceSlug,
   folder,

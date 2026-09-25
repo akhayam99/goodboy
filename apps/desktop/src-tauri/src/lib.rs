@@ -207,6 +207,8 @@ pub fn run() {
             artifact_mirror::artifact_mirror_pending,
             artifact_mirror::artifact_mirror_locate,
             artifact_mirror::artifact_mirror_reveal,
+            artifact_mirror::artifact_mirror_measure,
+            artifact_mirror::artifact_mirror_remove,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,

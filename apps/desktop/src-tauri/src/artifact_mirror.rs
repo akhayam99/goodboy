@@ -133,6 +133,72 @@ pub(crate) fn locate_mirror(
     })
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MirrorFolderRef {
+    pub workspace_slug: String,
+    pub folder: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MirrorSize {
+    pub workspace_slug: String,
+    pub folder: String,
+    pub size_bytes: Option<u64>,
+}
+
+pub(crate) fn measure_mirrors(home: &Path, refs: &[MirrorFolderRef]) -> Vec<MirrorSize> {
+    refs.iter()
+        .map(|entry| {
+            let size_bytes = mirror_folder(home, &entry.workspace_slug, &entry.folder)
+                .ok()
+                .filter(|path| path.is_dir())
+                .and_then(|path| crate::worktree::directory_size(&path).0);
+            MirrorSize {
+                workspace_slug: entry.workspace_slug.clone(),
+                folder: entry.folder.clone(),
+                size_bytes,
+            }
+        })
+        .collect()
+}
+
+pub(crate) fn remove_mirror(
+    home: &Path,
+    workspace_slug: &str,
+    folder: &str,
+) -> Result<bool, ArtifactExportError> {
+    let path = mirror_folder(home, workspace_slug, folder)?;
+    let Ok(meta) = std::fs::symlink_metadata(&path) else {
+        return Ok(false);
+    };
+    if !meta.is_dir() {
+        return Err(destination("the saved copy is not a folder"));
+    }
+    std::fs::remove_dir_all(&path)?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_measure(
+    entries: Vec<MirrorFolderRef>,
+) -> Result<Vec<MirrorSize>, ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || Ok(measure_mirrors(&home()?, &entries)))
+        .await
+        .map_err(|error| destination(&error.to_string()))?
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_remove(
+    workspace_slug: String,
+    folder: String,
+) -> Result<bool, ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || remove_mirror(&home()?, &workspace_slug, &folder))
+        .await
+        .map_err(|error| destination(&error.to_string()))?
+}
+
 #[tauri::command]
 pub async fn artifact_mirror_write(
     workspace_slug: String,
@@ -287,6 +353,55 @@ mod tests {
         assert!(pending_mirrors(&home, &[current]).is_empty());
         let located = locate_mirror(&home, "harborline", "report").expect("locate");
         assert!(located.exists);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn measures_a_mirror_and_reports_a_missing_one_as_unknown() {
+        let home = scratch_home();
+        write_mirror(
+            &home,
+            "harborline",
+            "report",
+            &[file("index.html", &"x".repeat(9000))],
+        )
+        .expect("write");
+        let sizes = measure_mirrors(
+            &home,
+            &[
+                MirrorFolderRef {
+                    workspace_slug: "harborline".into(),
+                    folder: "report".into(),
+                },
+                MirrorFolderRef {
+                    workspace_slug: "harborline".into(),
+                    folder: "gone".into(),
+                },
+                MirrorFolderRef {
+                    workspace_slug: "harborline".into(),
+                    folder: "..".into(),
+                },
+            ],
+        );
+        assert!(sizes[0].size_bytes.unwrap_or(0) >= 9000);
+        assert_eq!(sizes[1].size_bytes, None);
+        assert_eq!(sizes[2].size_bytes, None);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn removes_only_the_named_mirror_folder() {
+        let home = scratch_home();
+        let kept = write_mirror(&home, "harborline", "kept", &[file("meta.json", "{}")])
+            .expect("kept");
+        let gone = write_mirror(&home, "harborline", "gone", &[file("meta.json", "{}")])
+            .expect("gone");
+        assert!(remove_mirror(&home, "harborline", "gone").expect("remove"));
+        assert!(!gone.exists());
+        assert!(kept.is_dir());
+        assert!(!remove_mirror(&home, "harborline", "gone").expect("again"));
+        assert!(remove_mirror(&home, "harborline", "..").is_err());
+        assert!(remove_mirror(&home, "harborline", "a/b").is_err());
         let _ = std::fs::remove_dir_all(home);
     }
 }
