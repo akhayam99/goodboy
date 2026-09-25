@@ -1,36 +1,47 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
-import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
-import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
-import { DetailProperties } from '../../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
+import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
+import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
 import { useEffect, useState } from 'react';
-import { Markdown, Notice } from '@goodboy/ui';
-import { FileText, GitBranch, MessageSquare } from 'lucide-react';
+import { Notice, RefreshIconButton } from '@goodboy/ui';
+import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
-import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
-import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
-import { BranchPair } from '@goodboy/ui';
-import { RefreshIconButton } from '@goodboy/ui';
+import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,
   type GitlabMergeRequest,
+  type GitlabMrApprovalState,
   type GitlabMrStateEvent,
 } from '../../client';
 import { useGitlabMrApprovals } from '../../useGitlabMrApprovals';
 import { useGitlabMrDiscussions } from '../../useGitlabMrDiscussions';
 import { projectPathFromMrUrl } from '../useGitlabMrs';
 import { CreateMrForm } from './CreateMrForm';
-import { MrApprovalRail } from './MrApprovalRail';
+import { MrApprovals } from './MrApprovals';
 import { MrConversation } from './MrConversation';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
 
-type MrSection = 'overview' | 'conversation';
+type ApprovalSummaryParams = {
+  readonly approval: GitlabMrApprovalState;
+};
+
+const approvalSummary = ({ approval }: ApprovalSummaryParams): string => {
+  const given = approval.approvedBy.length;
+  if (approval.approvalsRequired > 0) {
+    return `${given} of ${approval.approvalsRequired}`;
+  }
+  return given === 1 ? '1 approval' : `${given} approvals`;
+};
 
 type UpdateParams = {
   readonly kind: Exclude<MrVerbBusy, 'merge' | null>;
@@ -48,11 +59,6 @@ type Props = {
   readonly onClose: () => void;
   readonly frame?: RecordFrame | null;
 };
-
-const SECTION_OPTIONS = [
-  { value: 'overview', label: 'Overview', icon: FileText },
-  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
-] as const;
 
 export const MrDetailPanel = ({
   sessionId = null,
@@ -88,7 +94,6 @@ export const MrDetailPanel = ({
   const reportError = useAppStore((s) => s.reportError);
 
   const [localMr, setLocalMr] = useState<GitlabMergeRequest | null>(null);
-  const [section, setSection] = useState<MrSection>('overview');
   const [busy, setBusy] = useState<MrVerbBusy>(null);
 
   const storeMr = mrState?.mr ?? null;
@@ -242,66 +247,37 @@ export const MrDetailPanel = ({
 
   if (mr != null) {
     const postNote = discussions.post;
-
-    return (
-      <PaneShell
-        scroll="body"
-        header={
-          <RecordHeader
-            provider="gitlab"
-            identifier={`!${mr.iid}`}
-            title={mr.title}
-            state={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
-            facts={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
-            externalRef={{ url: mr.webUrl, label: 'MR' }}
-            verbs={verbs}
-            frame={frame}
-            onRefresh={refresh}
-          />
-        }
-        tabs={
-          <StudioDetailTabs
-            ariaLabel="Merge request sections"
-            options={SECTION_OPTIONS}
-            value={section}
-            onChange={setSection}
-          />
-        }
-      >
-        {error != null ? (
-          <Notice
-            tone="warning"
-            placement="inline"
-            title="Couldn't refresh this merge request"
-            body={error}
-          />
-        ) : null}
-        <DetailProperties
-          entries={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
-        />
-        <MrApprovalRail
-          approval={approvals.approval}
-          isLoading={approvals.isLoading}
-          error={approvals.error}
-        />
-        {mr.hasConflicts ? (
-          <Notice
-            tone="warning"
-            placement="inline"
-            title="This merge request has conflicts"
-            body="Resolve them before merging."
-          />
-        ) : null}
-
-        {section === 'overview' ? (
-          <StudioWidget presentation="section" label="description" variant="frameless">
-            {mr.description != null && mr.description !== '' ? (
-              <Markdown text={mr.description} className="text-sm leading-relaxed" />
-            ) : (
-              <p className="text-sm italic text-faint-foreground">No description.</p>
-            )}
-          </StudioWidget>
-        ) : (
+    const approval = approvals.approval;
+    const sections: ReadonlyArray<RecordSection> = [
+      {
+        key: 'description',
+        kind: 'description',
+        label: 'Description',
+        isCollapsible: false,
+        defaultOpen: true,
+        content: <DescriptionSection text={mr.description ?? ''} />,
+      },
+      ...(approvals.isSupported && approval != null
+        ? [
+            {
+              key: 'approvals',
+              kind: 'tool' as const,
+              label: 'Approvals',
+              summary: approvalSummary({ approval }),
+              isCollapsible: true,
+              defaultOpen: false,
+              content: <MrApprovals approval={approval} />,
+            },
+          ]
+        : []),
+      {
+        key: 'conversation',
+        kind: 'conversation',
+        label: 'Conversation',
+        count: discussions.discussions.length,
+        isCollapsible: false,
+        defaultOpen: true,
+        content: (
           <MrConversation
             discussions={discussions.discussions}
             isLoading={discussions.isLoading}
@@ -312,7 +288,51 @@ export const MrDetailPanel = ({
             onResolve={discussions.resolve}
             resolveError={discussions.resolveError}
           />
-        )}
+        ),
+      },
+    ];
+
+    return (
+      <PaneShell
+        scroll="body"
+        header={
+          <RecordHeader
+            provider="gitlab"
+            identifier={`!${mr.iid}`}
+            title={mr.title}
+            state={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
+            facts={
+              <RecordFacts
+                facts={resolveFacts({
+                  registry: gitlabMergeRequestFields,
+                  entity: { mr, approval },
+                })}
+              />
+            }
+            externalRef={{ url: mr.webUrl, label: 'MR' }}
+            verbs={verbs}
+            frame={frame}
+            onRefresh={refresh}
+          />
+        }
+      >
+        {mr.hasConflicts ? (
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="This merge request has conflicts"
+            body="Resolve them before merging."
+          />
+        ) : null}
+        {error != null ? (
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="Couldn't refresh this merge request"
+            body={error}
+          />
+        ) : null}
+        <RecordSections sections={sections} />
       </PaneShell>
     );
   }

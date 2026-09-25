@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
-import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
-import { PaneShell } from '../../../../shared/components/PaneShell';
-import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
+import { resolveFacts, slackThreadFields } from '../../../../shared/detail-fields';
+import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import { slackGetPermalink, type SlackMessage } from '../client';
 import { buildThreadProperties } from '../buildThreadProperties';
 import { slackUserNames } from '../nameMaps';
@@ -60,9 +61,9 @@ export const SlackThreadDetail = ({
   const messages =
     thread.messages.length > 0 ? thread.messages : fallbackMessage == null ? [] : [fallbackMessage];
   const userNames = useMemo(() => slackUserNames({ users }), [users]);
-  const properties = useMemo(
+  const facts = useMemo(
     () =>
-      resolveDetailFields({
+      resolveFacts({
         registry: slackThreadFields,
         entity: buildThreadProperties({ channelName, messages, userNames }),
       }),
@@ -79,6 +80,7 @@ export const SlackThreadDetail = ({
           provider="slack"
           identifier={`#${channelName}`}
           title={title !== '' ? title : `#${channelName}`}
+          facts={<RecordFacts facts={facts} />}
           frame={frame}
           externalRef={
             permalink != null && permalink !== '' ? { url: permalink, label: 'thread' } : null
@@ -86,15 +88,28 @@ export const SlackThreadDetail = ({
         />
       }
     >
-      <DetailProperties entries={properties} />
-      <ThreadConversation
-        messages={messages}
-        users={users}
-        channels={thread.channels}
-        isLoading={thread.isLoading}
-        error={thread.error}
-        onRetry={thread.refetch}
-        actions={actions}
+      <RecordSections
+        sections={[
+          {
+            key: 'conversation',
+            kind: 'conversation',
+            label: 'Conversation',
+            count: messages.length,
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <ThreadConversation
+                messages={messages}
+                users={users}
+                channels={thread.channels}
+                isLoading={thread.isLoading}
+                error={thread.error}
+                onRetry={thread.refetch}
+                actions={actions}
+              />
+            ),
+          },
+        ]}
       />
     </PaneShell>
   );

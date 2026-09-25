@@ -459,6 +459,16 @@ one is open at a time.
   control that shows them (the Jira state opens its transitions). Launch
   session opens a popover with the goal and the brief; Enter from the inbox list
   opens it, or opens the linked session.
+- **Every record body has one order.** Under the header, facts sit as pills in
+  fixed slots (person, weight, place, labels, measure, links, time), each with
+  its field name in the tooltip and time as a relative age with the date in the
+  tooltip; a fact the tool does not have leaves no pill. The body is one scroll
+  with no tabs: Description (ten lines, then Show more), then the tool's own
+  sections closed behind a one-line summary (Checks, Changes and Approvals on
+  merge and pull requests, Stack trace open and Breadcrumbs on Sentry), then
+  Conversation with its count. `RecordSections` owns the order, the fact
+  registries in `shared/detail-fields` own the slots. A changed file opens its
+  diff in a full-screen dialog.
 
 ## Lens surfaces
 
@@ -545,3 +555,9 @@ trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
 new kind adds a variant to `DrawerContent` and a case to the host.
+
+A studio covers the whole window grid, so it cannot use that column. The inbox
+studio keeps the same contract inside itself (`InboxStudioLayout`): the record
+opens in a right column with the same width constants and the same saved width,
+resizes with the same handle, pushes the list while the list keeps 560px and
+lies over it otherwise. Escape closes the record before the studio.

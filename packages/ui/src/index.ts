@@ -17,6 +17,11 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
+  RIGHT_DRAWER_DEFAULT,
+  RIGHT_DRAWER_MAX,
+  RIGHT_DRAWER_MIN,
+  RIGHT_DRAWER_STORAGE_KEY,
+  canDrawerPush,
 } from './components/AppShell';
 export { DrawerFrame } from './components/DrawerFrame';
 export type { DrawerFrameProps } from './components/DrawerFrame';

@@ -1,20 +1,16 @@
-import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
-import { DetailProperties } from '../../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useState } from 'react';
-import { FileText, MessageSquare } from 'lucide-react';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StudioDetailTabs } from '@goodboy/ui';
-import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
-import { linearIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
+import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
 import type { LinearIssue } from '../client';
 import { LinearIssueComments } from '../LinearIssueComments';
 import { useLinearIssueComments } from '../useLinearIssueComments';
 import { useLinearIssueDescription } from '../useLinearIssueDescription';
-
-type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: LinearIssue;
@@ -24,7 +20,6 @@ type Props = {
 };
 
 export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null }: Props) => {
-  const [section, setSection] = useState<IssueSection>('overview');
   const { comments, isLoading, error, post } = useLinearIssueComments({
     workspaceId,
     issueId: issue.id,
@@ -41,40 +36,42 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           identifier={issue.identifier}
           title={issue.title}
           state={<StateBadge>{issue.state.name}</StateBadge>}
+          facts={
+            <RecordFacts facts={resolveFacts({ registry: linearIssueFields, entity: issue })} />
+          }
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />
       }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Issue sections"
-          value={section}
-          onChange={setSection}
-          options={[
-            { value: 'overview', label: 'Overview', icon: FileText },
-            {
-              value: 'conversation',
-              label: 'Conversation',
-              icon: MessageSquare,
-              ...(comments.length > 0 && { badge: String(comments.length) }),
-            },
-          ]}
-        />
-      }
     >
-      <DetailProperties
-        entries={resolveDetailFields({ registry: linearIssueFields, entity: issue })}
+      <RecordSections
+        sections={[
+          {
+            key: 'description',
+            kind: 'description',
+            label: 'Description',
+            isCollapsible: false,
+            defaultOpen: true,
+            content: <DescriptionSection text={description} onSave={save} />,
+          },
+          {
+            key: 'conversation',
+            kind: 'conversation',
+            label: 'Conversation',
+            count: comments.length,
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <LinearIssueComments
+                comments={comments}
+                isLoading={isLoading}
+                error={error}
+                onPost={post}
+              />
+            ),
+          },
+        ]}
       />
-      {section === 'overview' ? (
-        <DescriptionSection text={description} onSave={save} />
-      ) : (
-        <LinearIssueComments
-          comments={comments}
-          isLoading={isLoading}
-          error={error}
-          onPost={post}
-        />
-      )}
     </PaneShell>
   );
 };

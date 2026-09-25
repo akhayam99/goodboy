@@ -1,22 +1,27 @@
-import { Chip } from '@goodboy/ui';
+import { FolderGit2, Tag } from 'lucide-react';
 import type { GithubIssue } from '@goodboy/types';
-import { formatAbsoluteDateTime } from '../utils/relativeDate';
-import type { DetailFieldRegistry } from './types';
+import type { FactRegistry } from './factTypes';
+import { timeFact } from './timeFact';
 
-export const githubIssueFields: DetailFieldRegistry<GithubIssue> = [
-  {
-    kind: 'field',
-    key: 'labels',
-    label: 'Labels',
-    render: ({ entity }) =>
-      entity.labels.map((label) => (
-        <Chip key={label} tone="neutral" shape="badge" bordered={false} label={label} />
-      )),
-  },
-  {
-    kind: 'field',
-    key: 'updated',
-    label: 'Updated',
-    render: ({ entity }) => formatAbsoluteDateTime({ iso: entity.updatedAt }),
-  },
-];
+type RepoParams = {
+  readonly url: string;
+};
+
+const repoOf = ({ url }: RepoParams): string => /github\.com\/([^/]+\/[^/]+)/.exec(url)?.[1] ?? '';
+
+export const githubIssueFields: FactRegistry<GithubIssue> = {
+  place: ({ entity }) => ({
+    key: 'repo',
+    label: 'Repository',
+    icon: FolderGit2,
+    node: repoOf({ url: entity.url }),
+  }),
+  labels: ({ entity }) =>
+    entity.labels.map((label) => ({
+      key: `label-${label}`,
+      label: 'Label',
+      icon: Tag,
+      node: label,
+    })),
+  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updatedAt }),
+};

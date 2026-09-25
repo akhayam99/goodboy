@@ -297,24 +297,19 @@ export const InboxStudio = ({
               />
             </PaneShell>
           }
-          detail={
+          drawerRef={detailRef}
+          drawer={
             selectedRecord == null ? null : (
-              <aside
-                ref={detailRef}
-                aria-label="Inbox item"
-                className="flex min-h-0 w-[440px] shrink-0 flex-col"
-              >
-                <InboxDetail
-                  record={selectedRecord}
-                  workspaceId={workspaceId}
-                  rootPath={rootPath}
-                  errors={errors}
-                  onRefresh={refetch}
-                  onClose={requestClose}
-                  onDeselect={deselect}
-                  launchFocusRequest={launchFocusRequest}
-                />
-              </aside>
+              <InboxDetail
+                record={selectedRecord}
+                workspaceId={workspaceId}
+                rootPath={rootPath}
+                errors={errors}
+                onRefresh={refetch}
+                onClose={requestClose}
+                onDeselect={deselect}
+                launchFocusRequest={launchFocusRequest}
+              />
             )
           }
         />

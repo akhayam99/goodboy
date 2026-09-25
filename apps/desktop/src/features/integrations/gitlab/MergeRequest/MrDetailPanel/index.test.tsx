@@ -350,7 +350,7 @@ describe('MrDetailPanel', () => {
     expect(h.gitlabUpdateMrState).not.toHaveBeenCalled();
   });
 
-  it('surfaces branches and the last update in the metadata rail', () => {
+  it('says the branches once, as a fact, with the last update', () => {
     render(
       <MrDetailPanel
         mr={makeMr()}
@@ -360,9 +360,9 @@ describe('MrDetailPanel', () => {
       />,
     );
 
-    expect(screen.getByText('Source branch')).toBeDefined();
-    expect(screen.getByText('Target branch')).toBeDefined();
-    expect(screen.getByText('Updated')).toBeDefined();
+    expect(screen.getByText('ak/mr-dashboard → main')).toBeDefined();
+    expect(screen.queryByText('Source branch')).toBeNull();
+    expect(screen.getByRole('list', { name: 'Facts' }).querySelector('time')).not.toBeNull();
     expect(screen.getByText('No description.')).toBeDefined();
   });
 
@@ -418,8 +418,6 @@ describe('MrDetailPanel', () => {
         onClose={vi.fn()}
       />,
     );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
 
     await waitFor(() => expect(screen.getByText('This needs a guard clause')).toBeDefined());
     expect(screen.queryByText('changed title from foo to bar')).toBeNull();

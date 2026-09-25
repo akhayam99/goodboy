@@ -1,42 +1,31 @@
-import { Chip } from '@goodboy/ui';
-import { Milestone } from 'lucide-react';
+import { FolderGit2, Tag } from 'lucide-react';
 import type { GitlabIssue } from '../../features/integrations/gitlab/client';
-import { formatAbsoluteDateTime } from '../utils/relativeDate';
-import type { DetailFieldRegistry } from './types';
+import type { FactRegistry } from './factTypes';
+import { timeFact } from './timeFact';
 
-export const gitlabIssueFields: DetailFieldRegistry<GitlabIssue> = [
-  {
-    kind: 'field',
-    key: 'milestone',
-    label: 'Milestone',
-    render: ({ entity }) => {
-      if (entity.milestone == null) {
-        return null;
-      }
-      return (
-        <Chip
-          tone="primary"
-          shape="badge"
-          bordered={false}
-          icon={<Milestone size={10} aria-hidden />}
-          label={entity.milestone.title}
-        />
-      );
-    },
+type ProjectParams = {
+  readonly reference: string;
+};
+
+const projectOf = ({ reference }: ProjectParams): string => reference.split('#')[0] ?? '';
+
+export const gitlabIssueFields: FactRegistry<GitlabIssue> = {
+  place: ({ entity }) => {
+    const project = projectOf({ reference: entity.references.full });
+    const milestone = entity.milestone?.title ?? null;
+    return {
+      key: 'place',
+      label: 'Project and milestone',
+      icon: FolderGit2,
+      node: milestone == null ? project : `${project} › ${milestone}`,
+    };
   },
-  {
-    kind: 'field',
-    key: 'labels',
-    label: 'Labels',
-    render: ({ entity }) =>
-      entity.labels.map((label) => (
-        <Chip key={label} tone="neutral" shape="badge" bordered={false} label={label} />
-      )),
-  },
-  {
-    kind: 'field',
-    key: 'updated',
-    label: 'Updated',
-    render: ({ entity }) => formatAbsoluteDateTime({ iso: entity.updatedAt }),
-  },
-];
+  labels: ({ entity }) =>
+    entity.labels.map((label) => ({
+      key: `label-${label}`,
+      label: 'Label',
+      icon: Tag,
+      node: label,
+    })),
+  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updatedAt }),
+};

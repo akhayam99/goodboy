@@ -1,24 +1,21 @@
-import { RecordHeader } from '../../../shared/components/StudioDetail/RecordHeader';
-import type { RecordFrame } from '../../../shared/components/StudioDetail/RecordActions/types';
-import { DetailProperties } from '../../../shared/components/StudioDetail/DetailProperties';
 import { PaneShell } from '../../../shared/components/PaneShell';
-import { useMemo, useState } from 'react';
-import { FileText, MessageSquare } from 'lucide-react';
+import { RecordHeader } from '../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../shared/components/StudioDetail/RecordSections';
+import type { RecordSection } from '../../../shared/components/StudioDetail/RecordSections/types';
+import type { RecordFrame } from '../../../shared/components/StudioDetail/RecordActions/types';
+import { useMemo } from 'react';
 import type { GithubIssue } from '@goodboy/types';
-import type { SegmentedTabOption } from '@goodboy/ui';
-import { StudioDetailTabs } from '@goodboy/ui';
-import { githubIssueFields, resolveDetailFields } from '../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
-import { stateWord } from '../../inbox/stateWord';
+import { githubIssueFields, resolveFacts } from '../../../shared/detail-fields';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
+import { stateWord } from '../../inbox/stateWord';
 import { GithubIssueComments } from '../GithubIssueComments';
 import { useGithubIssueComments } from '../useGithubIssueComments';
 import {
   useGithubIssueDescription,
   type GithubIssueEditContext,
 } from '../useGithubIssueDescription';
-
-type IssueSection = 'overview' | 'conversation';
 
 type Props = {
   readonly issue: GithubIssue;
@@ -27,27 +24,43 @@ type Props = {
 };
 
 export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) => {
-  const [section, setSection] = useState<IssueSection>('overview');
   const { description, save } = useGithubIssueDescription({ issue, editContext });
   const { comments, isLoading, error, post } = useGithubIssueComments({
     workspaceId: editContext?.workspaceId ?? null,
     rootPath: editContext?.rootPath ?? null,
     issueNumber: issue.number,
   });
-  const properties = useMemo(
-    () => resolveDetailFields({ registry: githubIssueFields, entity: issue }),
+  const facts = useMemo(
+    () => resolveFacts({ registry: githubIssueFields, entity: issue }),
     [issue],
   );
 
-  const tabOptions: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
-    { value: 'overview', label: 'Overview', icon: FileText },
+  const sections: ReadonlyArray<RecordSection> = [
+    {
+      key: 'description',
+      kind: 'description',
+      label: 'Description',
+      isCollapsible: false,
+      defaultOpen: true,
+      content: <DescriptionSection text={description} onSave={save} />,
+    },
     ...(editContext != null
       ? [
           {
-            value: 'conversation' as const,
+            key: 'conversation',
+            kind: 'conversation' as const,
             label: 'Conversation',
-            icon: MessageSquare,
-            ...(comments.length > 0 && { badge: String(comments.length) }),
+            count: comments.length,
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <GithubIssueComments
+                comments={comments}
+                isLoading={isLoading}
+                error={error}
+                onPost={post}
+              />
+            ),
           },
         ]
       : []),
@@ -62,30 +75,13 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
           identifier={`#${issue.number}`}
           title={issue.title}
           state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
+          facts={<RecordFacts facts={facts} />}
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />
       }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Issue sections"
-          value={section}
-          onChange={setSection}
-          options={tabOptions}
-        />
-      }
     >
-      <DetailProperties entries={properties} />
-      {section === 'overview' ? (
-        <DescriptionSection text={description} onSave={save} />
-      ) : (
-        <GithubIssueComments
-          comments={comments}
-          isLoading={isLoading}
-          error={error}
-          onPost={post}
-        />
-      )}
+      <RecordSections sections={sections} />
     </PaneShell>
   );
 };

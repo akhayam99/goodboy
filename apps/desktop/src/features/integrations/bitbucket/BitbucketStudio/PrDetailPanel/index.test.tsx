@@ -151,7 +151,6 @@ const writeSpies = () => [
 ];
 
 const openConversation = async () => {
-  fireEvent.click(screen.getByRole('tab', { name: /conversation/i }));
   await waitFor(() => expect(screen.getByText(/one nit on the fuel constant/)).toBeTruthy());
 };
 
@@ -169,7 +168,7 @@ describe('PrDetailPanel', () => {
 
   it('rolls the bitbucket build statuses up into plain language above the check list', async () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('tab', { name: /checks/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Checks/ }));
     await waitFor(() =>
       expect(screen.getByTestId('checks-rollup').textContent).toBe('1 failed, 1 in progress'),
     );
@@ -178,8 +177,9 @@ describe('PrDetailPanel', () => {
 
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('tab', { name: /changes/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Changes/ }));
     await waitFor(() => expect(screen.getByText('src/rocket.ts')).toBeTruthy());
+    fireEvent.click(screen.getByText('src/rocket.ts'));
     const fileSection = document.querySelector('[data-file-path="src/rocket.ts"]');
     expect(fileSection?.textContent).toContain('const fuel = 100;');
     expect(fileSection?.textContent).toContain('const fuel = 0;');
@@ -257,7 +257,6 @@ describe('PrDetailPanel', () => {
 
   it('never paints the previous pull request conversation while the next one loads', async () => {
     const view = render(panel(PR));
-    fireEvent.click(screen.getByRole('tab', { name: /conversation/i }));
     await waitFor(() => expect(screen.getByText(/one nit on the fuel constant/)).toBeTruthy());
 
     view.rerender(panel({ ...PR, id: 43, title: 'Another one' }));

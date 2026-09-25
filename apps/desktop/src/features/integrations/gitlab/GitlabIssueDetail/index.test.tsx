@@ -68,7 +68,7 @@ describe('GitlabIssueDetail', () => {
     expect(screen.getByText('Fix the thing')).toBeDefined();
     expect(screen.getByText('Investigate the flaky request.')).toBeDefined();
     expect(screen.getByText('bug')).toBeDefined();
-    expect(screen.getByText('v1')).toBeDefined();
+    expect(screen.getByText('acme/web › v1')).toBeDefined();
     expect(screen.getByText('acme/web#7')).toBeDefined();
   });
 
@@ -151,8 +151,6 @@ describe('GitlabIssueDetail', () => {
     ]);
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
-
     await waitFor(() => expect(screen.getByText('This needs a repro')).toBeDefined());
     expect(screen.queryByText('changed the milestone to v1.4')).toBeNull();
     expect(screen.getByText('1 system event hidden')).toBeDefined();
@@ -160,7 +158,6 @@ describe('GitlabIssueDetail', () => {
 
   it('posts a note through the GitLab client and reloads the conversation', async () => {
     render(<GitlabIssueDetail issue={ISSUE} workspaceId={WORKSPACE_ID} />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
     await waitFor(() => expect(listIssueNotes).toHaveBeenCalledOnce());
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Write a note' }), {

@@ -154,7 +154,6 @@ describe('JiraIssueDetail', () => {
       updated: '2026-07-03T10:00:00.000Z',
     });
     mount();
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
 
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },
@@ -187,7 +186,6 @@ describe('JiraIssueDetail', () => {
       updated: '2026-07-03T10:00:00.000Z',
     });
     mount();
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
 
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },

@@ -1,49 +1,30 @@
+import { BadgeCheck, GitBranch, UserRound } from 'lucide-react';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
-import { BitbucketStateChip } from '../../features/integrations/bitbucket/BitbucketStateChip';
-import { formatAbsoluteDateTime } from '../utils/relativeDate';
-import type { DetailFieldRegistry } from './types';
+import type { FactRegistry } from './factTypes';
+import { timeFact } from './timeFact';
 
-export const bitbucketPullRequestFields: DetailFieldRegistry<BitbucketPullRequest> = [
-  {
-    kind: 'field',
-    key: 'state',
-    label: 'State',
-    render: ({ entity }) => <BitbucketStateChip state={entity.state} />,
+export const bitbucketPullRequestFields: FactRegistry<BitbucketPullRequest> = {
+  person: ({ entity }) =>
+    entity.author == null
+      ? null
+      : { key: 'author', label: 'Author', icon: UserRound, node: entity.author.displayName },
+  place: ({ entity }) => ({
+    key: 'branches',
+    label: 'Source and target branch',
+    icon: GitBranch,
+    node: (
+      <span className="font-mono">{`${entity.sourceBranch} → ${entity.destinationBranch}`}</span>
+    ),
+  }),
+  measure: ({ entity }) => {
+    const approved = entity.participants.filter((participant) => participant.approved).length;
+    const expected = Math.max(entity.reviewers.length, approved);
+    return {
+      key: 'approvals',
+      label: 'Approvals',
+      icon: BadgeCheck,
+      node: expected === 0 ? null : `${approved} of ${expected} approvals`,
+    };
   },
-  {
-    kind: 'field',
-    key: 'sourceBranch',
-    label: 'Source branch',
-    render: ({ entity }) => <span className="font-mono">{entity.sourceBranch}</span>,
-  },
-  {
-    kind: 'field',
-    key: 'destinationBranch',
-    label: 'Target branch',
-    render: ({ entity }) => <span className="font-mono">{entity.destinationBranch}</span>,
-  },
-  {
-    kind: 'field',
-    key: 'approvals',
-    label: 'Approvals',
-    render: ({ entity }) => {
-      const approved = entity.participants.filter((participant) => participant.approved).length;
-      if (approved === 0) {
-        return null;
-      }
-      return `${approved} of ${entity.reviewers.length > 0 ? entity.reviewers.length : approved}`;
-    },
-  },
-  {
-    kind: 'field',
-    key: 'comments',
-    label: 'Comments',
-    render: ({ entity }) => (entity.commentCount > 0 ? String(entity.commentCount) : null),
-  },
-  {
-    kind: 'field',
-    key: 'updated',
-    label: 'Updated',
-    render: ({ entity }) => formatAbsoluteDateTime({ iso: entity.updatedOn }),
-  },
-];
+  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updatedOn }),
+};

@@ -493,8 +493,8 @@ rail filters them by view (all, in progress, with a session, closed), by type
 and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the
-same one the record shows. A record opens beside the list with the source's
-own actions. From it you start a session, or open the session already linked
+same one the record shows. A record opens in a drawer beside the list, with the
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
 to it.
 
 ## Providers and routing

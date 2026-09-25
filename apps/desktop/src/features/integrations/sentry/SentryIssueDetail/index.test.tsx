@@ -25,16 +25,8 @@ const BASE_PROPS = {
   onRetrySummary: () => {},
 } as const;
 
-const termValuePairs = (panel: HTMLElement) => {
-  return Object.fromEntries(
-    within(panel)
-      .getAllByRole('term')
-      .map((term) => [term.textContent, term.nextElementSibling?.textContent ?? '']),
-  );
-};
-
 describe('SentryIssueDetail', () => {
-  it('surfaces the culprit, the status and the event tags, keeping breadcrumbs behind a tab', () => {
+  it('surfaces the culprit, the status and the event tags, keeping breadcrumbs closed and no composer', () => {
     render(
       <SentryIssueDetail
         {...BASE_PROPS}
@@ -59,24 +51,25 @@ describe('SentryIssueDetail', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'TypeError: request failed' })).toBeDefined();
-    expect(screen.getByText('api/items')).toBeDefined();
+    expect(screen.getAllByText('api/items').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Open in Sentry' })).toBeDefined();
     expect(screen.getByText(/desktop@1.2.3/)).toBeDefined();
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();
 
-    const panel = screen.getByTestId('detail-properties');
+    const facts = screen.getByRole('list', { name: 'Facts' });
     expect(
-      within(panel)
-        .getAllByRole('term')
-        .map((term) => term.textContent),
-    ).toEqual(['Culprit', 'Status', 'release', 'environment']);
+      within(facts)
+        .getAllByRole('listitem')
+        .map((item) => item.getAttribute('data-fact-slot')),
+    ).toEqual(['weight', 'place', 'labels', 'labels']);
+    expect(screen.queryByRole('textbox')).toBeNull();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Breadcrumbs 1' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Breadcrumbs/ }));
     expect(screen.getByText('GET /api/items')).toBeDefined();
   });
 
-  it('pins events, users, first seen and last seen to their own distinct values', () => {
+  it('folds events and users into one pill instead of stat cards', () => {
     render(
       <SentryIssueDetail
         {...BASE_PROPS}
@@ -87,14 +80,11 @@ describe('SentryIssueDetail', () => {
       />,
     );
 
-    const panel = screen.getByTestId('detail-properties');
-    const pairs = termValuePairs(panel);
-    expect(pairs.Events).toBe('128');
-    expect(pairs.Users).toBe('9');
-    expect(pairs['First seen']).toBe(formatAbsoluteDateTime({ iso: FIRST_SEEN }));
-    expect(pairs['Last seen']).toBe(formatAbsoluteDateTime({ iso: LAST_SEEN }));
-    expect(pairs.Events).not.toBe(pairs.Users);
-    expect(pairs['First seen']).not.toBe(pairs['Last seen']);
+    expect(screen.getByText('128 events · 9 users')).toBeDefined();
+    expect(screen.queryByText('First seen')).toBeNull();
+    expect(screen.getByRole('list', { name: 'Facts' }).textContent).not.toContain(
+      formatAbsoluteDateTime({ iso: LAST_SEEN }),
+    );
   });
 
   it('keeps the stack trace visible with a skeleton while the summary is still loading', () => {

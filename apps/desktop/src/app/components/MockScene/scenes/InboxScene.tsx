@@ -270,19 +270,17 @@ export const InboxScene = () => {
                   />
                 </PaneShell>
               }
-              detail={
-                <aside aria-label="Inbox item" className="flex min-h-0 w-[440px] shrink-0 flex-col">
-                  <InboxDetail
-                    record={SELECTED_RECORD}
-                    workspaceId={WORKSPACE_ID}
-                    rootPath={ROOT_PATH}
-                    errors={NO_ERRORS}
-                    onRefresh={noop}
-                    onClose={noop}
-                    onDeselect={noop}
-                    launchFocusRequest={0}
-                  />
-                </aside>
+              drawer={
+                <InboxDetail
+                  record={SELECTED_RECORD}
+                  workspaceId={WORKSPACE_ID}
+                  rootPath={ROOT_PATH}
+                  errors={NO_ERRORS}
+                  onRefresh={noop}
+                  onClose={noop}
+                  onDeselect={noop}
+                  launchFocusRequest={0}
+                />
               }
             />
           )}

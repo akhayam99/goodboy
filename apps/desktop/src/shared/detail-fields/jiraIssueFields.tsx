@@ -1,52 +1,36 @@
-import { Chip } from '@goodboy/ui';
+import { Flag, Shapes, Tag, UserRound } from 'lucide-react';
 import type { JiraIssue } from '../../features/integrations/jira/client';
-import { formatAbsoluteDateTime } from '../utils/relativeDate';
-import type { DetailFieldRegistry } from './types';
+import type { FactRegistry } from './factTypes';
+import { timeFact } from './timeFact';
 
-export const jiraIssueFields: DetailFieldRegistry<JiraIssue> = [
-  {
-    kind: 'field',
-    key: 'issueType',
-    label: 'Type',
-    render: ({ entity }) => entity.issueType,
-  },
-  {
-    kind: 'field',
+export const jiraIssueFields: FactRegistry<JiraIssue> = {
+  person: ({ entity }) =>
+    entity.assignee == null
+      ? null
+      : {
+          key: 'assignee',
+          label: 'Assignee',
+          icon: UserRound,
+          node: entity.assignee.displayName,
+        },
+  weight: ({ entity }) => ({
     key: 'priority',
     label: 'Priority',
-    render: ({ entity }) => entity.priority,
-  },
-  {
-    kind: 'field',
-    key: 'assignee',
-    label: 'Assignee',
-    render: ({ entity }) => entity.assignee?.displayName ?? null,
-  },
-  {
-    kind: 'field',
-    key: 'reporter',
-    label: 'Reporter',
-    render: ({ entity }) => entity.reporter?.displayName ?? null,
-  },
-  {
-    kind: 'field',
-    key: 'labels',
-    label: 'Labels',
-    render: ({ entity }) =>
-      entity.labels.map((label) => (
-        <Chip key={label} tone="neutral" shape="badge" bordered={false} label={label} />
-      )),
-  },
-  {
-    kind: 'field',
-    key: 'created',
-    label: 'Created',
-    render: ({ entity }) => formatAbsoluteDateTime({ iso: entity.created }),
-  },
-  {
-    kind: 'field',
-    key: 'updated',
-    label: 'Updated',
-    render: ({ entity }) => formatAbsoluteDateTime({ iso: entity.updated }),
-  },
-];
+    icon: Flag,
+    node: entity.priority,
+  }),
+  place: ({ entity }) => ({
+    key: 'type',
+    label: 'Issue type',
+    icon: Shapes,
+    node: entity.issueType,
+  }),
+  labels: ({ entity }) =>
+    entity.labels.map((label) => ({
+      key: `label-${label}`,
+      label: 'Label',
+      icon: Tag,
+      node: label,
+    })),
+  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updated }),
+};

@@ -84,12 +84,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
-    count: 2,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrChanges.tsx': {
     count: 1,
-    reason: 'debt',
+    reason: 'chrome',
   },
   'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrThreadCard.tsx':
     { count: 1, reason: 'debt' },
