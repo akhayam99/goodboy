@@ -4,6 +4,8 @@ import { cn, formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import type { ArtifactExport } from '../../hooks/useArtifactExport';
 import { useWireframeRespawn } from '../../../wireframes/useWireframeRespawn';
+import { useWireframeFolderExport } from '../../../wireframes/useWireframeFolderExport';
+import { folderExportNote } from '../../../wireframes/useWireframeFolderExport/folderExportNote';
 import {
   WIREFRAME_FIDELITY_VARIANT_LABEL,
   type WireframeFidelity,
@@ -32,6 +34,7 @@ export const WireframeShellActions = ({
   screenId,
 }: Props) => {
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
+  const folderExport = useWireframeFolderExport({ artifact });
   const [note, setNote] = useState<Note | null>(null);
   const other: WireframeFidelity = fidelity === 'low' ? 'high' : 'low';
   const screen = useMemo((): WireframeScreen | null => {
@@ -57,7 +60,8 @@ export const WireframeShellActions = ({
       .catch((cause: unknown) => setNote({ text: formatError(cause), isError: true }));
   };
 
-  const message = error === null ? note : { text: error, isError: true };
+  const folderNote = folderExportNote({ status: folderExport.status });
+  const message = error === null ? (note ?? folderNote) : { text: error, isError: true };
 
   return (
     <span className="flex min-w-0 items-center gap-2">
@@ -87,7 +91,11 @@ export const WireframeShellActions = ({
           id === 'export' ? (
             <WireframeExportMenu
               screen={screen}
-              isBusy={exporter.status.kind === 'busy'}
+              isBusy={exporter.status.kind === 'busy' || folderExport.status.kind === 'busy'}
+              onExportFolder={() => {
+                setNote(null);
+                void folderExport.exportFolder();
+              }}
               onSaveCopy={() => void exporter.saveSource()}
               onCopyJson={() => void exporter.copySource()}
               onCopyScreen={copyScreen}

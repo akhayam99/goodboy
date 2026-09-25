@@ -150,6 +150,10 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       },
     },
     edit: { onClick: startEditing },
+    openWindow: {
+      onClick: () => void exporter.openWindow(),
+      isDisabled: !exporter.canSavePdf || exporter.status.kind === 'busy',
+    },
     print: {
       onClick: () => void exporter.savePdf(),
       isDisabled: !exporter.canSavePdf || exporter.status.kind === 'busy',

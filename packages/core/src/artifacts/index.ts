@@ -22,6 +22,8 @@ export {
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
   WIREFRAME_SCHEMA_BRIEF,
+  WIREFRAME_JSON_SCHEMA_ID,
+  buildWireframeJsonSchema,
   WIREFRAME_SCHEMA_VERSION,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
@@ -66,4 +68,4 @@ export type {
   WireframeValidationResult,
   WireframeViewport,
 } from './wireframe';
-export { REPORT_KIT_GUIDE } from './reportKitGuide';
+export { PLAN_KIT_GUIDE, REPORT_KIT_GUIDE } from './reportKitGuide';

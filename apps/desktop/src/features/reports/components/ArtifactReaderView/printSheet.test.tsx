@@ -14,9 +14,9 @@ vi.mock('../../../artifacts/artifacts', () => ({
   listArtifactsForSession: (sessionId: string) => listSpy(sessionId),
 }));
 
-import { ArtifactPrintView } from './index';
+import { ArtifactReaderView } from './index';
 
-const SHEET_PATH = 'src/features/reports/components/ArtifactPrintView/printSheet.css';
+const SHEET_PATH = 'src/features/artifacts/components/ArtifactDocument/artifactDocument.css';
 
 const SHEET_CSS = readFileSync(resolve(process.cwd(), SHEET_PATH), 'utf8');
 
@@ -25,6 +25,7 @@ const APP_CSS = '.chip-background { background: rgb(210, 212, 216); }';
 const request = {
   sessionId: 'session-1' as SessionId,
   artifactId: 'report-1' as ArtifactId,
+  mode: 'print' as const,
 };
 
 const report = {
@@ -134,7 +135,7 @@ type RenderParams = Readonly<{
 
 const renderArtifact = async ({ artifact }: RenderParams) => {
   listSpy.mockResolvedValueOnce([artifact]);
-  const rendered = render(<ArtifactPrintView request={request} />);
+  const rendered = render(<ArtifactReaderView request={request} />);
   await waitFor(() => {
     expect(screen.getByRole('navigation', { name: 'Contents' })).toBeDefined();
   });
@@ -212,12 +213,12 @@ describe('print sheet styling', () => {
   it('widens the sheet for a landscape wireframe from the same stylesheet', async () => {
     adoptSheet({ css: SHEET_CSS });
     listSpy.mockResolvedValueOnce([wideWireframe]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
     });
 
-    expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('landscape');
+    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('landscape');
     expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe(A4_HEIGHT);
   });
 

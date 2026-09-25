@@ -1,4 +1,5 @@
 import {
+  AppWindow,
   ArchiveRestore,
   Bot,
   Copy,
@@ -29,6 +30,11 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   stop: { label: 'Stop', icon: Square },
   newVariant: { label: 'New variant', icon: RotateCcw },
   export: { label: 'Export', icon: Download },
+  openWindow: {
+    label: 'Open in window',
+    icon: AppWindow,
+    description: 'Reads it as a page in its own window',
+  },
   print: {
     label: 'Print',
     icon: Printer,

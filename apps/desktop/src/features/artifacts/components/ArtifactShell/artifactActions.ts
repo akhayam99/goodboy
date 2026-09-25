@@ -8,6 +8,7 @@ export type ArtifactActionId =
   | 'stop'
   | 'newVariant'
   | 'export'
+  | 'openWindow'
   | 'print'
   | 'copySource'
   | 'saveSource'
@@ -27,7 +28,12 @@ export type ArtifactActionSet = Readonly<{
   overflow: ReadonlyArray<ArtifactActionId>;
 }>;
 
-const DOCUMENT_EXPORTS: ReadonlyArray<ArtifactActionId> = ['print', 'copySource', 'saveSource'];
+const DOCUMENT_EXPORTS: ReadonlyArray<ArtifactActionId> = [
+  'openWindow',
+  'print',
+  'copySource',
+  'saveSource',
+];
 
 const planActions = ({
   status,
@@ -67,10 +73,14 @@ export const artifactActions = ({
       return {
         primary: null,
         secondary: 'edit',
-        overflow: ['print', 'regenerate', 'copySource', 'saveSource'],
+        overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource'],
       };
     case 'wireframe':
-      return { primary: null, secondary: 'export', overflow: ['newVariant', 'print'] };
+      return {
+        primary: null,
+        secondary: 'export',
+        overflow: ['newVariant', 'openWindow', 'print'],
+      };
     case 'generation':
       return {
         primary: null,

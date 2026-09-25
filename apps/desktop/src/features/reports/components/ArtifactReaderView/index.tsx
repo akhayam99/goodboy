@@ -1,17 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseWireframeSource, type WireframeDocument } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, WireframeArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
+import {
+  ArtifactDocument,
+  type ArtifactDocumentMedium,
+} from '../../../artifacts/components/ArtifactDocument';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
 import { artifactMetaFields } from './artifactMetaFields';
 import { closePrintWindow } from './closePrintWindow';
-import { PrintDocument } from './PrintDocument';
+import { openPrintDialog } from './openPrintDialog';
 import { PrintLetterhead } from './PrintLetterhead';
 import { PrintWireframeSheet } from './PrintWireframeSheet';
 import { printPage } from './printPage';
+import { ReaderToolbar } from './ReaderToolbar';
 import { removeBootShell } from './removeBootShell';
-import './printSheet.css';
 
 type Props = {
   readonly request: ArtifactPrintRequest;
@@ -26,6 +30,8 @@ type Status =
 
 const PRINT_UNSUPPORTED_COPY =
   'this wireframe does not match the schema, so the print sheet has no page to lay out';
+
+const SOURCE_IS_SAFE = 'the source is still available in the app, so nothing was lost.';
 
 type ArtifactStatusParams = {
   readonly artifact: SessionArtifact;
@@ -42,9 +48,21 @@ const artifactStatus = ({ artifact }: ArtifactStatusParams): Status => {
   return { kind: 'wireframe', artifact, document: parsed.document };
 };
 
-export const ArtifactPrintView = ({ request }: Props) => {
+const isPrintShortcut = (event: KeyboardEvent): boolean =>
+  (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'p';
+
+export const ArtifactReaderView = ({ request }: Props) => {
   const [status, setStatus] = useState<Status>({ kind: 'loading' });
+  const [printError, setPrintError] = useState<string | null>(null);
   const hasPrinted = useRef(false);
+  const isReading = request.mode === 'read';
+  const medium: ArtifactDocumentMedium = isReading ? 'window' : 'paper';
+  const canPrint = status.kind === 'ready' || status.kind === 'wireframe';
+
+  const print = useCallback(() => {
+    setPrintError(null);
+    openPrintDialog({ onFailure: setPrintError });
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'light');
@@ -75,53 +93,54 @@ export const ArtifactPrintView = ({ request }: Props) => {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') {
+      if (event.key === 'Escape') {
+        void closePrintWindow();
         return;
       }
-      void closePrintWindow();
+      if (!isReading || !canPrint || !isPrintShortcut(event)) {
+        return;
+      }
+      event.preventDefault();
+      print();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [canPrint, isReading, print]);
 
   useEffect(() => {
-    if ((status.kind !== 'ready' && status.kind !== 'wireframe') || hasPrinted.current) {
+    if (isReading || !canPrint || hasPrinted.current) {
       return;
     }
     hasPrinted.current = true;
-    const frame = globalThis.requestAnimationFrame(() => {
-      try {
-        const printed = window.print() as unknown;
-        if (printed instanceof Promise) {
-          printed.catch((cause: unknown) => {
-            setStatus({
-              kind: 'failed',
-              message: `this system could not open a print dialog: ${formatError(cause)}`,
-            });
-          });
-        }
-      } catch (cause) {
-        setStatus({
-          kind: 'failed',
-          message: `this system could not open a print dialog: ${formatError(cause)}`,
-        });
-      }
-    });
+    const frame = globalThis.requestAnimationFrame(print);
     return () => globalThis.cancelAnimationFrame(frame);
-  }, [status]);
+  }, [canPrint, isReading, print]);
 
   const page = printPage({ document: status.kind === 'wireframe' ? status.document : null });
 
   return (
-    <div data-testid="artifact-print-view" className="print-sheet" data-page={page}>
+    <div
+      data-testid="artifact-reader-view"
+      className="print-sheet"
+      data-page={page}
+      data-medium={medium}
+    >
+      {isReading && (status.kind === 'ready' || status.kind === 'wireframe') ? (
+        <ReaderToolbar artifact={status.artifact} onPrint={print} />
+      ) : null}
       {status.kind === 'loading' ? <p className="print-note">preparing the document</p> : null}
+      {printError === null ? null : (
+        <p role="alert" className="print-note">
+          {printError}. {SOURCE_IS_SAFE}
+        </p>
+      )}
       {status.kind === 'failed' ? (
         <p role="alert" className="print-note">
-          {status.message}. the source is still available in the app, so nothing was lost.
+          {status.message}. {SOURCE_IS_SAFE}
         </p>
       ) : null}
       {status.kind === 'unsupported' ? (
-        <article className="print-document">
+        <article className="print-document" data-medium={medium}>
           <PrintLetterhead
             kind={status.artifact.kind}
             title={status.artifact.title}
@@ -133,9 +152,16 @@ export const ArtifactPrintView = ({ request }: Props) => {
           </p>
         </article>
       ) : null}
-      {status.kind === 'ready' ? <PrintDocument artifact={status.artifact} /> : null}
+      {status.kind === 'ready' ? (
+        <ArtifactDocument artifact={status.artifact} medium={medium} />
+      ) : null}
       {status.kind === 'wireframe' ? (
-        <PrintWireframeSheet artifact={status.artifact} document={status.document} page={page} />
+        <PrintWireframeSheet
+          artifact={status.artifact}
+          document={status.document}
+          page={page}
+          medium={medium}
+        />
       ) : null}
     </div>
   );

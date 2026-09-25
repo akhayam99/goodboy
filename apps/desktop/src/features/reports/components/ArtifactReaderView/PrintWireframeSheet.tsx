@@ -1,5 +1,6 @@
 import type { WireframeDocument } from '@goodboy/core';
 import type { WireframeArtifact } from '@goodboy/types';
+import type { ArtifactDocumentMedium } from '../../../artifacts/components/ArtifactDocument';
 import { WireframeContactSheet } from '../../../wireframes/components/WireframeContactSheet';
 import { asWireframeFidelity } from '../../../wireframes/wireframeFidelity';
 import { wireframePalette } from '../../../wireframes/wireframePalette';
@@ -11,13 +12,19 @@ type Props = {
   readonly artifact: WireframeArtifact;
   readonly document: WireframeDocument;
   readonly page: PrintPage;
+  readonly medium: ArtifactDocumentMedium;
 };
 
-export const PrintWireframeSheet = ({ artifact, document, page }: Props) => {
+export const PrintWireframeSheet = ({ artifact, document, page, medium }: Props) => {
   const fidelity = asWireframeFidelity({ value: artifact.metadata.fidelity }) ?? 'low';
   const palette = wireframePalette({ theme: document.theme, fidelity });
   return (
-    <article className="print-document" data-testid="print-wireframe-sheet" data-page={page}>
+    <article
+      className="print-document"
+      data-testid="print-wireframe-sheet"
+      data-page={page}
+      data-medium={medium}
+    >
       <PrintLetterhead
         kind={artifact.kind}
         title={artifact.title}

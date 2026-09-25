@@ -67,6 +67,24 @@ on macOS and Linux.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
+### Document windows
+
+- **A document window loads only a route of the bundle.** `Open in window` and
+  `Print` open the same hash route (`#print=artifact&session=…&artifact=…`),
+  rendered by `ArtifactReaderView` with `ArtifactDocument`. `mode=read` shows
+  the document with a Print and Copy toolbar; without it the window opens the
+  print dialog once. Reader windows are labelled `win-reader-*` and print
+  windows `win-print-*`.
+- **Every `win-*` window gets the full IPC grant** of
+  `apps/desktop/src-tauri/capabilities/default.json`. So no `win-*` window may
+  ever load remote content or a file from disk. A future window that shows
+  remote pages needs its own label outside `win-*`, no capability, and its
+  own CSP.
+- **The document carries no runtime style.** No `<style>` element and no
+  `style` string built at runtime: Tauri adds a nonce to the CSP and the
+  webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
+  keyed on `data-medium` (`window` for the reader, `paper` for print).
+
 ### Git status reads
 
 - **A git read fails closed.** Distances and the working tree are `known` or

@@ -47,6 +47,37 @@ describe('parseLegacyPlanMarkers', () => {
       { title: 'move files', instructions: 'move them' },
     ]);
   });
+
+  it('carries doneWhen and touches from the clusters marker', () => {
+    const assistantText = [
+      '<<plan>>',
+      'Ship it',
+      'body',
+      '<</plan>>',
+      '<<clusters>>',
+      JSON.stringify([
+        {
+          title: 'move files',
+          instructions: 'move them',
+          doneWhen: ['run pnpm test'],
+          touches: ['src/ledger'],
+        },
+      ]),
+      '<</clusters>>',
+    ].join('\n');
+    const result = parseLegacyPlanMarkers({ assistantText, emittingProvider: null });
+    if (result.status !== 'captured' || result.artifact.kind !== 'plan') {
+      throw new Error('expected a captured plan');
+    }
+    expect(result.artifact.metadata.clusters).toEqual([
+      {
+        title: 'move files',
+        instructions: 'move them',
+        doneWhen: ['run pnpm test'],
+        touches: ['src/ledger'],
+      },
+    ]);
+  });
 });
 
 describe('captureArtifactFromTurnText', () => {

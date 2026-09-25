@@ -12,8 +12,8 @@ import { App } from './App';
 import { MockScene } from './app/components/MockScene';
 import { MOCK_ENABLED } from './store/mock-data';
 import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
-import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
-import { removeBootShell } from './features/reports/components/ArtifactPrintView/removeBootShell';
+import { ArtifactReaderView } from './features/reports/components/ArtifactReaderView';
+import { removeBootShell } from './features/reports/components/ArtifactReaderView/removeBootShell';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './features/diff/lib/highlight/codeHighlighter';
@@ -56,7 +56,7 @@ createRoot(container).render(
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           {printRequest !== null ? (
-            <ArtifactPrintView request={printRequest} />
+            <ArtifactReaderView request={printRequest} />
           ) : MOCK_ENABLED ? (
             <MockScene />
           ) : (

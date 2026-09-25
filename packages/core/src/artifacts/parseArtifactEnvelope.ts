@@ -5,6 +5,7 @@ import type {
   ReportArtifactMetadata,
   WireframeArtifactMetadata,
 } from '@goodboy/types';
+import { readClusterChecks } from '../context/clusterChecks';
 import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, extractArtifactBlocks } from './grammar';
 import type { ArtifactCaptureError, ArtifactCaptureResult, ParsedArtifact } from './types';
 import { parseWireframeSource, type WireframeIssue } from './wireframe';
@@ -42,6 +43,19 @@ const isCluster = (value: unknown): value is ImplementationCluster =>
   typeof value['title'] === 'string' &&
   typeof value['instructions'] === 'string';
 
+const cleanCluster = ({
+  title,
+  instructions,
+  routingProposal,
+  doneWhen,
+  touches,
+}: ImplementationCluster): ImplementationCluster => ({
+  title,
+  instructions,
+  ...(routingProposal !== undefined && { routingProposal }),
+  ...readClusterChecks({ doneWhen, touches }),
+});
+
 const planMetadata = (value: unknown): PlanArtifactMetadata => {
   if (!isRecord(value)) {
     return {};
@@ -50,7 +64,7 @@ const planMetadata = (value: unknown): PlanArtifactMetadata => {
   if (!Array.isArray(clusters)) {
     return {};
   }
-  const valid = clusters.filter(isCluster);
+  const valid = clusters.filter(isCluster).map(cleanCluster);
   return valid.length > 0 ? { clusters: valid } : {};
 };
 

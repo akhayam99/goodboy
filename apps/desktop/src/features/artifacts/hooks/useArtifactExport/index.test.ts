@@ -32,7 +32,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
   },
 }));
 
-import { PDF_BLOCKED_HINT, PDF_READY_HINT, useArtifactExport } from './index';
+import { PDF_BLOCKED_HINT, PDF_READY_HINT, useArtifactExport, WINDOW_BLOCKED_HINT } from './index';
 
 const artifact = JSON.parse(
   JSON.stringify({
@@ -154,6 +154,35 @@ describe('useArtifactExport', () => {
     expect(call.label.startsWith('win-print-')).toBe(true);
     expect(call.options.url).toBe('index.html#print=artifact&session=session-1&artifact=report-1');
     expect(result.current.status).toEqual({ kind: 'printing' });
+  });
+
+  it('opens a reader window on the same route in read mode, without printing', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact }));
+    await act(async () => {
+      await result.current.openWindow();
+    });
+    const call = windowSpy.mock.calls[0]?.[0] as {
+      readonly label: string;
+      readonly options: { readonly url: string };
+    };
+    expect(call.label.startsWith('win-reader-')).toBe(true);
+    expect(call.options.url).toBe(
+      'index.html#print=artifact&session=session-1&artifact=report-1&mode=read',
+    );
+    expect(result.current.status).toEqual({ kind: 'idle' });
+  });
+
+  it('opens no reader window for a wireframe it cannot read', async () => {
+    const { result } = renderHook(() => useArtifactExport({ artifact: wireframe }));
+    await act(async () => {
+      await result.current.openWindow();
+    });
+    expect(windowSpy).not.toHaveBeenCalled();
+    expect(result.current.status).toEqual({
+      kind: 'failed',
+      action: 'window',
+      message: WINDOW_BLOCKED_HINT,
+    });
   });
 
   it('offers markdown affordances for a markdown artifact', () => {

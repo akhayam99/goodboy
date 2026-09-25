@@ -1,6 +1,7 @@
 import type { ProviderId, TurnEvent, WorkflowRoutingProposal } from '@goodboy/types';
 import type { AgentKindLabel } from '../first-turn-classifier';
 import { parseWorkflowRoutingProposal } from '../orchestrator/parseWorkflowRoutingProposal';
+import { readClusterChecks } from './clusterChecks';
 
 export const extractFilesTouched = (events: ReadonlyArray<TurnEvent>): ReadonlyArray<string> => {
   const seen = new Set<string>();
@@ -584,6 +585,8 @@ export type ExtractedCluster = {
   readonly title: string;
   readonly instructions: string;
   readonly routingProposal?: WorkflowRoutingProposal | null;
+  readonly doneWhen?: ReadonlyArray<string>;
+  readonly touches?: ReadonlyArray<string>;
 };
 
 type ChildRoutingParams = {
@@ -661,7 +664,12 @@ export const extractClustersFromMarker = ({
       continue;
     }
     const routingProposal = childRoutingProposal({ entry: e, emittingProvider });
-    out.push({ title, instructions, ...(routingProposal !== null && { routingProposal }) });
+    out.push({
+      title,
+      instructions,
+      ...(routingProposal !== null && { routingProposal }),
+      ...readClusterChecks(e),
+    });
   }
   return out.length > 0 ? out : null;
 };

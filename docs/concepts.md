@@ -320,7 +320,10 @@ Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The Artifacts page lists plans, reports and wireframes as one
 list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
-for its details and for a chat with the agent that wrote it.
+for its details and for a chat with the agent that wrote it. **Open in
+window**, under `⋯`, shows the same document as a light page in its own
+window, with Print and Copy; **Print** opens that page straight in the print
+dialog, where the system saves the PDF.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its
@@ -328,12 +331,24 @@ checks, the files it touches and its model (`Auto` when the planner proposed
 none). Once the plan runs, each part takes the state of the subagent that
 carries it, matched by order under the agent that ran the plan.
 
+A plan follows one shape: a title, then Goal, Context, Approach, Risks, Done
+when and Out of scope. The planner writes each part with its own checks
+(`doneWhen`, at most 4) and the files it touches (`touches`, at most 12), and
+the subagent that carries a part receives both in its kickoff, so it knows
+when the part is done.
+
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
 colour) and the screens as a grid under it. A node or a tile opens
 **Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a JSON file, the JSON on the
-clipboard, or only the open screen.
+zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
+the clipboard, or only the open screen. **Export as a folder** writes, into a
+folder you pick, `index.html` with the flow and the screens, one page per
+screen under `screens/` linked by plain links, one `wireframe.css`, the
+validated `wireframe.json`, its `wireframe.schema.json` (built from the code
+constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
+rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
+style. Goodboy never reads that folder back.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.

@@ -206,7 +206,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/reports/components/ArtifactPrintView/PrintLetterhead.tsx': {
+  'apps/desktop/src/features/reports/components/ArtifactReaderView/PrintLetterhead.tsx': {
     count: 1,
     reason: 'chrome',
   },
