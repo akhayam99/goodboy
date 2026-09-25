@@ -142,26 +142,35 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers & models** → **Defaults** to choose how a workspace
-uses its providers.
+Go to **Settings** → **Providers & models** → **Defaults** to choose what a workspace
+uses when you leave a model on **Auto**. It is one page in three parts.
 
-- **Default provider**: the provider new sessions start on. Only connected providers
-  appear here
-- **Routing pool**: the providers Goodboy can move work between by itself
-- **Task models**: the provider and model for each small side job. Side jobs include
-  summaries, planning, prose polish, agent titles, issue briefs, the workflow
-  orchestrator, delegated answers, pull request drafts and rebases. Each one starts on **Auto**
-- **Agent roles**: the provider, model and effort for each role. Each one starts on
-  **Auto**. If you pin a model on an agent or a workflow step, that pin beats the role
+- **Providers**
+  - **Default provider**: where Auto starts. Only connected providers appear here
+  - **Fallback order**: the providers Auto moves through, in order, when one is not
+    connected or out of quota. Click a provider to stop or start using it. The
+    default provider is always first
+- **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
+  and Other. If you pin a model on an agent or a workflow step, that pin beats the role
+- **Background tasks**: one row per side job, grouped as Writing for you, Running
+  workflows, and Git
+
+Each row says what the role or job does and ends in a model picker. A row you have not
+pinned reads **Auto**. Open the picker to see what Auto picks right now. Pick a model to
+pin it: the picker then shows that model and an **x** that goes back to Auto. The page
+header counts the pinned rows. **Reset all to Auto**, in the menu at the top right,
+clears them after a confirm.
+
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old
-  for the first one, then the next provider in the routing pool when the default
+  for the first one, then the next provider in the fallback order when the default
   is not connected. On Claude, the Planner runs on Opus 5.5 (Opus 5 on an older CLI),
   the Debugger and the Reviewer on Sonnet 5 High, Docs on Sonnet 5 Low, Scout and
   the small writing jobs on Haiku 4.5, and plan drafting, Custom, Report and the
   other roles on Sonnet 5 Medium
-- **Fallback** on a role: the second choice Goodboy switches to when the first one
-  fails during a turn. **Automatic** lets Goodboy choose
+- **If unavailable**: a pinned row has this line at the bottom of its picker. It is
+  the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
+  ladder above choose
 
 ## Switching accounts
 
@@ -181,7 +190,7 @@ pays for every turn.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
-  reset (about 5 hours on Claude Max), or let the routing pool send the next turn to
+  reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
 - **Wrong account**: follow [Switching accounts](#switching-accounts), then check
   the account on the card before you continue

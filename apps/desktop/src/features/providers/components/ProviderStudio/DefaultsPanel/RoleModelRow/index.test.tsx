@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { resolveRoleRouting, resolveStoredModelSelection } from '@goodboy/core';
 import type { ProviderId, RoleModelPreference } from '@goodboy/types';
 import { RoleModelRow } from './index';
@@ -24,7 +24,7 @@ const row = ({ preference, connected, onChange }: RowParams) => (
     label="Planner"
     help="plans the work"
     preference={preference}
-    defaultProviderId="anthropic"
+    autoContext={{ defaultProvider: 'anthropic', connected }}
     connectedProviderIds={connected}
     disabled={false}
     onChange={onChange}
@@ -37,8 +37,12 @@ const renderRow = ({ preference, onChange }: RenderParams) =>
 const openPrimary = () =>
   fireEvent.click(screen.getByRole('button', { name: /^Planner routing:/ }));
 
-const openFallback = () =>
-  fireEvent.click(screen.getByRole('button', { name: /^Planner fallback routing:/ }));
+const openFallback = () => {
+  openPrimary();
+  fireEvent.click(screen.getByRole('button', { name: /^Planner if unavailable:/ }));
+};
+
+const fallbackGroup = () => within(screen.getByRole('group', { name: 'Planner fallback routing' }));
 
 const pickProvider = (label: string) =>
   fireEvent.click(screen.getByRole('button', { name: label }));
@@ -146,7 +150,7 @@ describe('RoleModelRow', () => {
     });
 
     openFallback();
-    pickProvider('Cursor');
+    fireEvent.click(fallbackGroup().getByRole('button', { name: 'Cursor' }));
 
     expect(onChange).not.toHaveBeenCalledWith(null);
     expect(onChange.mock.calls.at(-1)?.[0]?.fallback?.providerId).toBe('cursor');
@@ -185,9 +189,13 @@ describe('RoleModelRow', () => {
     const view = render(row({ preference, connected: ANTHROPIC_ONLY, onChange }));
 
     openFallback();
-    pickProvider('Cursor');
+    fireEvent.click(fallbackGroup().getByRole('button', { name: 'Cursor' }));
     view.rerender(row({ preference, connected: CONNECTED, onChange }));
-    pickChip('Auto');
+    const [autoChip] = fallbackGroup().getAllByRole('button', { name: 'Auto' });
+    if (autoChip === undefined) {
+      throw new Error('no Auto chip in the fallback picker');
+    }
+    fireEvent.click(autoChip);
 
     expect(onChange).not.toHaveBeenCalledWith(null);
     expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
@@ -280,7 +288,8 @@ describe('RoleModelRow', () => {
       onChange,
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset routing override' }));
+    openFallback();
+    fireEvent.click(fallbackGroup().getByRole('button', { name: /^Auto, now/ }));
 
     expect(onChange).not.toHaveBeenCalledWith(null);
     expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({

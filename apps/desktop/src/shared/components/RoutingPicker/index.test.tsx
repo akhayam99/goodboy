@@ -228,10 +228,49 @@ describe('RoutingPicker', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const row = screen.getByRole('button', { name: 'Recommended Claude · Sonnet 4.6' });
-    expect(row.querySelectorAll('svg')).toHaveLength(1);
+    expect(row.querySelectorAll('svg')).toHaveLength(2);
     expect(row.textContent).toBe('RecommendedSonnet 4.6');
     fireEvent.click(row);
     expect(onProvider).toHaveBeenCalledWith('');
+  });
+
+  it('says Auto on the closed trigger and shows what Auto picks now in the popover', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        ariaLabel="Scout routing"
+        provider="anthropic"
+        model=""
+        overridden={false}
+        recommendationKind="auto"
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'medium' }}
+      />,
+    );
+    const trigger = screen.getByRole('button', { name: /^Scout routing:/ });
+    expect(trigger.textContent).toBe('Auto');
+    fireEvent.click(trigger);
+    const row = screen.getByRole('button', { name: /^Auto, now/ });
+    expect(row.textContent).toBe('AutoNow: Claude · Sonnet 4.6 · Medium');
+  });
+
+  it('shows the pinned model with an x that goes back to Auto', () => {
+    const onReset = vi.fn();
+    render(
+      <RoutingPicker
+        {...baseProps}
+        ariaLabel="Scout routing"
+        provider="anthropic"
+        model="claude-haiku-4-5"
+        overridden
+        onReset={onReset}
+        resetLabel="Back to Auto"
+        recommendationKind="auto"
+        recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /^Scout routing:/ }).textContent).toContain('Haiku');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Auto' }));
+    expect(onReset).toHaveBeenCalled();
   });
 
   it('names the recommendation row with the label the caller gives it', () => {

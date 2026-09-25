@@ -23,7 +23,7 @@ import { verbosityTone } from './chipTone';
 import { PickerChip } from './PickerChip';
 import { PickerSection } from './PickerSection';
 import { ProviderGrid } from './ProviderGrid';
-import { RecommendationRow } from './RecommendationRow';
+import { RecommendationRow, type RecommendationKind } from './RecommendationRow';
 import { NoConnectedProviders } from './NoConnectedProviders';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { recommendationSummary, recommendedRoutingOf } from './recommendationSummary';
@@ -61,6 +61,7 @@ type Props = {
   readonly onModel: (model: string) => void;
   readonly onClose: () => void;
   readonly recommendation?: Recommendation;
+  readonly recommendationKind?: RecommendationKind;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
@@ -82,6 +83,7 @@ export const RoutingPickerBody = ({
   onModel,
   onClose,
   recommendation,
+  recommendationKind,
   verbosity,
   onVerbosity,
   onReset,
@@ -257,6 +259,7 @@ export const RoutingPickerBody = ({
               effort: recommendedEffort,
             })}
             active={isViewingAuto}
+            {...(recommendationKind != null && { kind: recommendationKind })}
             {...(recommendedReason != null && { reason: recommendedReason })}
             {...(recommendedLabel != null && { label: recommendedLabel })}
             onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}

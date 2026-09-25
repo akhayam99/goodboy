@@ -20,7 +20,8 @@ Rules that hold everywhere:
 - `Sparkles`, `Sparkle`, `Wand2` and `WandSparkles` are banned by
   `apps/desktop/src/__tests__/regressions/no-ai-sparkle-glyphs.test.ts`. An AI
   control uses the glyph of its concept (`orchestrator`, `enhance`,
-  `suggestion`, `autorun`, `agents`), not a vague sparkle.
+  `suggestion`, `autorun`, `agents`), not a vague sparkle. Auto in the model
+  picker uses `autoRouting` (`Route`).
 - Spinners are banned ([DESIGN.md](../DESIGN.md#motion) owns the rule). That
   is why the run-state family below has no glyph for `running`.
 - An icon-only control carries a `Tooltip`, enforced by

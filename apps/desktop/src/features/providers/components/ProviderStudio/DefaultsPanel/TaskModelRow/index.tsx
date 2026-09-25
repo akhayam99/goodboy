@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@goodboy/core';
 import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
-import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
-import { RoutingStatusControl } from '../RoutingStatusControl';
+import { DefaultRow } from '../DefaultRow';
+import { FallbackRow, type FallbackChoice } from '../FallbackRow';
 
 const DEFAULT_EFFORT: EffortLevel = 'medium';
 
@@ -14,6 +13,7 @@ type Props = {
   readonly help: string;
   readonly preference: TaskModelPreference | null;
   readonly defaultProviderId: ProviderId;
+  readonly fallbackOrder: ReadonlyArray<ProviderId>;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: TaskModelPreference | null) => void;
@@ -25,6 +25,7 @@ export const TaskModelRow = ({
   help,
   preference,
   defaultProviderId,
+  fallbackOrder,
   connectedProviderIds,
   disabled,
   onChange,
@@ -34,6 +35,8 @@ export const TaskModelRow = ({
     preferences: null,
     workspaceDefaultProviderId: defaultProviderId,
     sessionDefaultProviderId: defaultProviderId,
+    connectedProviders: connectedProviderIds,
+    fallbackOrder,
   });
   const preferredProviderId = preference?.providerId ?? automatic.providerId;
   const [providerId, setProviderId] = useState(preferredProviderId);
@@ -49,7 +52,7 @@ export const TaskModelRow = ({
     sessionDefaultProviderId: defaultProviderId,
   }).model;
   const effortModel = model === '' ? recommendedModel : model;
-  const effortValue = preference?.effort ?? DEFAULT_EFFORT;
+  const effortValue = preference?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
   const pendingModel = useRef(effortModel);
 
   useEffect(() => {
@@ -61,92 +64,108 @@ export const TaskModelRow = ({
     pendingModel.current = effortModel;
   }, [effortModel]);
 
+  const withFallback = (next: TaskModelPreference): TaskModelPreference =>
+    preference?.fallback == null ? next : { ...next, fallback: preference.fallback };
+
+  const onFallback = (fallback: FallbackChoice | null) => {
+    if (preference == null) {
+      return;
+    }
+    const pinned: TaskModelPreference = {
+      providerId: preference.providerId,
+      model: preference.model,
+      ...(preference.effort != null && { effort: preference.effort }),
+    };
+    onChange(fallback == null ? pinned : { ...pinned, fallback });
+  };
+
   return (
-    <FieldRow
-      label={label}
-      help={help}
-      layout="stacked"
-      className="@min-[36rem]:flex-row @min-[36rem]:items-center @min-[36rem]:justify-between @min-[36rem]:gap-6"
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <RoutingStatusControl
-          label={label}
-          isCustom={preference != null}
-          disabled={disabled}
-          onReset={() => onChange(null)}
-          idleLabel="Auto"
-          resetLabel="Back to auto"
-        />
-        <div className="w-80 min-w-0 max-w-full">
-          <RoutingPicker
-            ariaLabel={`${label} routing`}
-            connectedProviders={availableProviderIds}
-            provider={providerId}
-            model={model}
-            effort={{
-              editable: true,
-              value:
-                clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
-              onChange: (effort) => {
-                const applied = clampEffortForModel({ model: pendingModel.current, effort });
-                onChange({
-                  providerId: pendingProvider.current,
-                  model: pendingModel.current,
-                  ...(applied != null && { effort: applied }),
-                });
-              },
-            }}
-            recommendation={{
-              provider: automatic.providerId,
-              model: automatic.model,
-              ...AUTO_RECOMMENDATION_COPY,
-            }}
-            overridden={preference != null}
-            disabled={disabled}
-            onProvider={(next) => {
-              if (next === '') {
-                onChange(null);
-                return;
-              }
-              setProviderId(next);
-              pendingProvider.current = next;
-              pendingModel.current = resolveTaskModel({
-                task,
-                preferences: null,
-                workspaceDefaultProviderId: next,
-                sessionDefaultProviderId: defaultProviderId,
-              }).model;
-              if (preference == null) {
-                return;
-              }
-              onChange(
-                resolveTaskModel({
-                  task,
-                  preferences: null,
-                  workspaceDefaultProviderId: next,
-                  sessionDefaultProviderId: defaultProviderId,
-                }),
-              );
-            }}
-            onModel={(nextModel) => {
-              if (nextModel === '') {
-                onChange(null);
-                return;
-              }
-              const carried =
-                preference?.effort == null
-                  ? null
-                  : clampEffortForModel({ model: nextModel, effort: preference.effort });
-              pendingModel.current = nextModel;
-              onChange({
+    <DefaultRow label={label} summary={help}>
+      <RoutingPicker
+        ariaLabel={`${label} routing`}
+        connectedProviders={availableProviderIds}
+        provider={providerId}
+        model={model}
+        effort={{
+          editable: true,
+          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
+          onChange: (effort) => {
+            const applied = clampEffortForModel({ model: pendingModel.current, effort });
+            onChange(
+              withFallback({
                 providerId: pendingProvider.current,
-                model: nextModel,
-                ...(carried != null && { effort: carried }),
-              });
-            }}
-          />
-        </div>
-      </div>
-    </FieldRow>
+                model: pendingModel.current,
+                ...(applied != null && { effort: applied }),
+              }),
+            );
+          },
+        }}
+        recommendation={{
+          provider: automatic.providerId,
+          model: automatic.model,
+          ...(automatic.effort != null && { effort: automatic.effort }),
+        }}
+        recommendationKind="auto"
+        overridden={preference != null}
+        onReset={() => onChange(null)}
+        resetLabel="Back to Auto"
+        align="end"
+        disabled={disabled}
+        onProvider={(next) => {
+          if (next === '') {
+            onChange(null);
+            return;
+          }
+          setProviderId(next);
+          pendingProvider.current = next;
+          const switched = resolveTaskModel({
+            task,
+            preferences: null,
+            workspaceDefaultProviderId: next,
+            sessionDefaultProviderId: defaultProviderId,
+          });
+          pendingModel.current = switched.model;
+          if (preference == null) {
+            return;
+          }
+          onChange(withFallback(switched));
+        }}
+        onModel={(nextModel) => {
+          if (nextModel === '') {
+            onChange(null);
+            return;
+          }
+          const carried =
+            preference?.effort == null
+              ? null
+              : clampEffortForModel({ model: nextModel, effort: preference.effort });
+          pendingModel.current = nextModel;
+          onChange(
+            withFallback({
+              providerId: pendingProvider.current,
+              model: nextModel,
+              ...(carried != null && { effort: carried }),
+            }),
+          );
+        }}
+        {...(preference != null && {
+          footer: (
+            <FallbackRow
+              label={label}
+              fallback={
+                preference.fallback == null
+                  ? null
+                  : { provider: preference.fallback.providerId, model: preference.fallback.model }
+              }
+              auto={{ provider: automatic.providerId, model: automatic.model }}
+              effort={effortValue}
+              connectedProviders={availableProviderIds}
+              disabled={disabled}
+              onFallback={onFallback}
+            />
+          ),
+        })}
+      />
+    </DefaultRow>
   );
 };

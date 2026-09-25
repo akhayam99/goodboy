@@ -144,6 +144,7 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           model: automatic.model,
           ...AUTO_RECOMMENDATION_COPY,
         }}
+        recommendationKind="auto"
         disabled={disabled}
         overridden={pinned != null}
         defaultSummary={`${automatic.providerId} ${automatic.model}`}

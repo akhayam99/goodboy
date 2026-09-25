@@ -100,6 +100,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
             ...(automatic?.effort != null && { effort: automatic.effort }),
             ...(automaticReason !== '' && { reason: automaticReason }),
           }}
+          recommendationKind="auto"
           disabled={isPending}
           overridden={view.isLocked}
           onReset={reset}

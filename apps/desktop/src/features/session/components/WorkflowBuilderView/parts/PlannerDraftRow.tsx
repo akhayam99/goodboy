@@ -63,6 +63,8 @@ export const PlannerDraftRow = ({
         model={modelOverride}
         effort={{ editable: true, value: effort, onChange: onEffort }}
         recommendation={{ provider: recommendedProvider, model: recommendedModel }}
+        recommendationKind="auto"
+        overridden={providerOverride !== '' || modelOverride !== ''}
         disabled={disabled}
         onProvider={onProvider}
         onModel={onModel}

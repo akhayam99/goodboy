@@ -209,6 +209,7 @@ export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-prefer
 export { CLI_CREDENTIAL } from './providers/provider-credential';
 export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
 export { TASKS } from './settings/tasks';
+export { DEFAULT_GROUPS, type DefaultGroups, type DefaultsGroup } from './settings/defaultGroups';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {

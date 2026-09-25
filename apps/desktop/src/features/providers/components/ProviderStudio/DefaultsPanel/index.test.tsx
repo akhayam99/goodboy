@@ -1,4 +1,6 @@
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_GROUPS, ROLE_REGISTRY, TASKS } from '@goodboy/core';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { OverrideSettings, TaskModelPreference } from '@goodboy/types';
 import {
@@ -12,6 +14,7 @@ type SetWorkspaceOverrides = (workspaceId: string, overrides: OverrideSettings) 
 const { state } = vi.hoisted(() => ({
   state: {
     workspaceOverrides: {} as Record<string, OverrideSettings>,
+    workspaces: [{ id: 'ws-1', name: 'Harborline' }],
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'cursor', connection: 'connected' },
@@ -58,6 +61,8 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     onProvider,
     onModel,
     onReset,
+    overridden,
+    footer,
   }: {
     ariaLabel: string;
     provider: string;
@@ -67,6 +72,8 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
     onProvider: (provider: string) => void;
     onModel: (model: string) => void;
     onReset?: () => void;
+    overridden?: boolean;
+    footer?: ReactNode;
   }) => (
     <>
       <button
@@ -101,11 +108,12 @@ vi.mock('../../../../../shared/components/RoutingPicker', () => ({
       >
         {effort.value ?? ''}
       </button>
-      {onReset != null && (
+      {onReset != null && overridden === true && (
         <button type="button" aria-label={`${ariaLabel} reset`} onClick={onReset}>
           reset
         </button>
       )}
+      {footer}
     </>
   ),
 }));
@@ -178,8 +186,6 @@ const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
   'Rebase',
 ]);
 
-const openRolesTab = () => fireEvent.click(screen.getByRole('tab', { name: /Agent roles/ }));
-
 describe('DefaultsPanel', () => {
   it('uses connected providers as the routing pool and locks the default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
@@ -236,16 +242,14 @@ describe('DefaultsPanel', () => {
         SONNET_TASK_LABELS.has(label) ? 'sonnet-5' : 'haiku-4.5',
       );
     }
-    expect(screen.getByLabelText('Step summaries routing status: Auto').textContent).toBe('Auto');
-
-    openRolesTab();
-    expect(screen.queryByLabelText(/Planner routing status/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Planner routing reset' })).toBeNull();
   });
 
   it('marks a task override as custom and resets it to auto', async () => {
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByLabelText('Step summaries routing status: Auto')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
@@ -258,10 +262,8 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: Custom').textContent).toBe(
-      'Custom',
-    );
-    const reset = screen.getByRole('button', { name: 'Back to auto' });
+    expect(screen.getByText('1 pinned')).toBeDefined();
+    const reset = screen.getByRole('button', { name: 'Step summaries routing reset' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
 
@@ -271,7 +273,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.getByLabelText('Step summaries routing status: Auto')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
   });
 
   it('persists an effort for a task model', () => {
@@ -331,7 +333,6 @@ describe('DefaultsPanel', () => {
 
   it('renders a row per agent role', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     expect(screen.getByText('Scout')).toBeDefined();
     expect(screen.getByText('Debugger')).toBeDefined();
@@ -343,17 +344,15 @@ describe('DefaultsPanel', () => {
 
   it('reads the resolver role with no override as its compiled default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Resolver routing model' }).textContent).toBe(
       'sonnet-5',
     );
-    expect(screen.queryByLabelText(/Resolver routing status/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resolver routing reset' })).toBeNull();
   });
 
   it('persists a resolver role model of its own', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Resolver routing model' }));
 
@@ -369,7 +368,6 @@ describe('DefaultsPanel', () => {
 
   it('reads a role with no override as its compiled default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
       'opus-5.5',
@@ -378,7 +376,6 @@ describe('DefaultsPanel', () => {
 
   it('persists a role model with an effort the model supports', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Scout routing model' }));
 
@@ -394,7 +391,6 @@ describe('DefaultsPanel', () => {
 
   it('pins a role to a cheap model with no effort ladder instead of clearing it', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Debugger routing cheap model' }));
 
@@ -418,7 +414,6 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reviewer routing model' }));
 
@@ -434,9 +429,8 @@ describe('DefaultsPanel', () => {
 
   it('offers no fallback control while the role runs on its compiled default', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
-    expect(screen.queryByRole('button', { name: 'Planner fallback: automatic' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Planner if unavailable/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Planner fallback routing/ })).toBeNull();
   });
 
@@ -450,10 +444,9 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
-    expect(screen.getByRole('button', { name: 'Planner fallback: automatic' }).textContent).toBe(
-      'Automatic',
+    expect(screen.getByRole('button', { name: 'Planner if unavailable: Auto' }).textContent).toBe(
+      'Auto',
     );
   });
 
@@ -467,9 +460,8 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback: automatic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner if unavailable: Auto' }));
     fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing cheap model' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
@@ -502,8 +494,8 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
+    fireEvent.click(screen.getByRole('button', { name: /^Planner if unavailable:/ }));
     const effort = screen.getByRole('button', { name: 'Planner fallback routing high effort' });
     expect(effort.textContent).toBe('low');
     expect(effort.hasAttribute('disabled')).toBe(true);
@@ -524,7 +516,6 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     fireEvent.click(screen.getByRole('button', { name: 'Planner routing cheap model' }));
 
@@ -558,9 +549,9 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing reset' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Planner if unavailable:/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner fallback routing auto' }));
 
     expect(state.setWorkspaceOverrides).toHaveBeenCalledWith(
       'ws-1',
@@ -587,9 +578,8 @@ describe('DefaultsPanel', () => {
       },
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
-    expect(screen.getByRole('button', { name: 'Planner fallback: automatic' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Planner if unavailable: Auto' })).toBeDefined();
   });
 
   it('resets a stored role override to the selected default provider', async () => {
@@ -603,13 +593,11 @@ describe('DefaultsPanel', () => {
       },
     };
     const { rerender } = render(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Reviewer routing model' }).textContent).toBe(
       'opus-5',
     );
-    expect(screen.getByLabelText('Reviewer routing status: Custom')).toBeDefined();
-    const reset = screen.getByRole('button', { name: 'Reset to default' });
+    const reset = screen.getByRole('button', { name: 'Reviewer routing reset' });
     await waitFor(() => expect(reset.hasAttribute('disabled')).toBe(false));
     fireEvent.click(reset);
 
@@ -619,7 +607,7 @@ describe('DefaultsPanel', () => {
     );
 
     rerender(<DefaultsPanel workspaceId={'ws-1' as never} />);
-    expect(screen.queryByLabelText(/Reviewer routing status/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Reviewer routing reset' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Reviewer routing provider' }).textContent).toBe(
       'cursor',
     );
@@ -645,31 +633,41 @@ describe('DefaultsPanel', () => {
     );
   });
 
-  it('keeps the default provider and routing pool rows visible while switching groups', () => {
+  it('shows the providers, agents and background tasks on one page', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByText('Default provider')).toBeDefined();
-    expect(screen.getByText('Routing pool')).toBeDefined();
+    expect(screen.getByText('Fallback order')).toBeDefined();
     expect(screen.getByText('Step summaries')).toBeDefined();
-    expect(screen.queryByText('Scout')).toBeNull();
-
-    openRolesTab();
-
-    expect(screen.getByText('Default provider')).toBeDefined();
-    expect(screen.getByText('Routing pool')).toBeDefined();
     expect(screen.getByText('Scout')).toBeDefined();
-    expect(screen.queryByText('Summaries')).toBeNull();
+    expect(screen.queryByRole('tab')).toBeNull();
   });
 
-  it('bounds the default provider picker and routing pool without squeezing the label', () => {
+  it('renders 11 roles and 9 tasks inside their groups', () => {
+    render(<DefaultsPanel workspaceId={'ws-1' as never} />);
+
+    const agents = screen.getByRole('region', { name: 'Agents' });
+    const tasks = screen.getByRole('region', { name: 'Background tasks' });
+    expect(agents.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(11);
+    expect(tasks.querySelectorAll('[aria-label$=" routing model"]')).toHaveLength(9);
+    for (const group of DEFAULT_GROUPS.tasks) {
+      const node = screen.getByRole('group', { name: group.label });
+      for (const id of group.members) {
+        const task = TASKS.find((candidate) => candidate.id === id);
+        expect(node.textContent).toContain(task?.label);
+      }
+    }
+    const planner = screen.getByRole('group', { name: 'Explore and plan' });
+    expect(planner.textContent).toContain(ROLE_REGISTRY.planner.summary);
+  });
+
+  it('bounds the default provider picker to the row picker width', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(screen.getByRole('button', { name: 'Default provider' }).parentElement?.className).toBe(
-      'w-64',
+      'w-[220px]',
     );
-    expect(screen.getByRole('button', { name: 'anthropic' }).parentElement?.className).toContain(
-      'max-w-64',
-    );
+    expect(screen.getByRole('list', { name: 'Fallback order' })).toBeDefined();
   });
 
   it('clears a task override when auto is picked in the model picker', () => {
@@ -701,7 +699,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'Task models, 1 custom' })).toBeDefined();
+    expect(screen.getByText('1 pinned')).toBeDefined();
     expect(screen.queryByText('Branch naming')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Step summaries routing auto' }));
@@ -712,7 +710,7 @@ describe('DefaultsPanel', () => {
     );
   });
 
-  it('shows the override count for each group in its tab label', () => {
+  it('counts pins across roles and tasks and resets them all to Auto after a confirm', async () => {
     state.workspaceOverrides = {
       'ws-1': {
         ...EMPTY_OVERRIDES,
@@ -727,7 +725,17 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
-    expect(screen.getByRole('tab', { name: 'Task models, 1 custom' })).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Agent roles, 2 custom' })).toBeDefined();
+    expect(screen.getByText('3 pinned')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Defaults actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Reset all to Auto/ }));
+    expect(state.setWorkspaceOverrides).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all' }));
+
+    await waitFor(() =>
+      expect(state.setWorkspaceOverrides).toHaveBeenLastCalledWith(
+        'ws-1',
+        expect.objectContaining({ taskModels: null, roleModels: null }),
+      ),
+    );
   });
 });
