@@ -17,7 +17,7 @@ const { invokeMock, state } = vi.hoisted(() => ({
     workflowGenerations: {} as Record<string, unknown>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     loadStepLibrary: vi.fn(async () => undefined),
-    copyWorkflowFromWorkspace: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
+    copyWorkflowsFromWorkspaces: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
     savePhaseTemplate: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
     deleteWorkflow: vi.fn(async () => undefined),
     resetWorkflows: vi.fn(async () => undefined),
@@ -61,7 +61,7 @@ beforeEach(() => {
   state.workflowGenerations = {};
   state.loadPhaseTemplates = vi.fn(async () => undefined);
   state.loadStepLibrary = vi.fn(async () => undefined);
-  state.copyWorkflowFromWorkspace = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
+  state.copyWorkflowsFromWorkspaces = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
   state.savePhaseTemplate = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
   state.deleteWorkflow = vi.fn(async () => undefined);
   state.resetWorkflows = vi.fn(async () => undefined);
@@ -413,63 +413,118 @@ describe('WorkflowsPanel editor', () => {
 });
 
 describe('WorkflowsPanel import', () => {
-  const sourceProject = {
-    id: 'project-source',
-    workspaceId: 'ws-source',
-    name: 'ledger-core',
-    rootPath: '/source',
-    kind: 'repo',
-  };
+  const sourceRow = (overrides: Record<string, unknown> = {}) =>
+    makeWorkflow({ deletedAt: null, origin: 'custom', ...overrides });
 
-  const sourceRow = (overrides: Record<string, unknown> = {}) => ({
-    ...makeWorkflow({
-      id: 'wf-source',
-      workspaceId: 'ws-source',
-      name: 'Source review',
-      origin: 'custom',
-    }),
-    ...overrides,
-  });
+  const rowsByWorkspace: Record<string, ReadonlyArray<unknown> | Error> = {};
 
   const openImport = () => {
-    state.projects = [sourceProject];
-    state.workspaces = [{ id: 'ws-source', name: 'Northwind' }];
+    invokeMock.mockImplementation(async (_cmd: string, args?: unknown) => {
+      const workspaceId = (args as { workspaceId: string }).workspaceId;
+      const rows = rowsByWorkspace[workspaceId] ?? [];
+      if (rows instanceof Error) {
+        throw rows;
+      }
+      return rows;
+    });
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    return screen.getByRole('dialog', { name: 'Import workflows' });
   };
 
-  it('imports a workflow from another workspace and opens the copy', async () => {
-    invokeMock.mockResolvedValueOnce([sourceRow()]);
-    const imported = makeWorkflow({ id: 'wf-imported', name: 'Source review 2' });
-    state.copyWorkflowFromWorkspace = vi.fn(async () => imported);
-    openImport();
-
-    fireEvent.change(screen.getByLabelText('Project'), { target: { value: 'project-source' } });
-    await screen.findByRole('option', { name: 'Source review' });
-    fireEvent.change(screen.getByLabelText('Workflow'), { target: { value: 'wf-source' } });
-    fireEvent.click(
-      within(screen.getByRole('dialog', { name: 'Import workflows' })).getByRole('button', {
-        name: 'Import',
-      }),
-    );
-
-    await waitFor(() =>
-      expect(state.copyWorkflowFromWorkspace).toHaveBeenCalledWith({
-        sourceWorkspaceId: 'ws-source',
-        sourceWorkflowId: 'wf-source',
-        targetWorkspaceId: 'ws-1',
-      }),
-    );
-    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
-    expect(name.value).toBe('Source review 2');
+  beforeEach(() => {
+    for (const key of Object.keys(rowsByWorkspace)) {
+      delete rowsByWorkspace[key];
+    }
+    state.workspaces = [
+      { id: 'ws-1', name: 'Harborline' },
+      { id: 'ws-north', name: 'Northwind' },
+      { id: 'ws-acme', name: 'Acme' },
+      { id: 'ws-cascadia', name: 'Cascadia' },
+    ];
+    state.projects = [
+      { id: 'p-1', workspaceId: 'ws-north', name: 'ledger-core' },
+      { id: 'p-2', workspaceId: 'ws-north', name: 'notify-relay' },
+      { id: 'p-3', workspaceId: 'ws-acme', name: 'payments-api' },
+    ];
   });
 
-  it('excludes a seeded library preset from the import list', async () => {
-    invokeMock.mockResolvedValueOnce([sourceRow({ origin: 'library' })]);
-    openImport();
+  it('says so when there is no other workspace', () => {
+    state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
+    const dialog = openImport();
+    expect(within(dialog).getByText('No other workspaces yet')).toBeDefined();
+  });
 
-    fireEvent.change(screen.getByLabelText('Project'), { target: { value: 'project-source' } });
+  it('groups importable workflows per workspace and flags a name already used here', async () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Settlement replay' })] };
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+      sourceRow({ id: 'wf-n3', name: 'Refactor', origin: 'library' }),
+    ];
+    rowsByWorkspace['ws-acme'] = [sourceRow({ id: 'wf-a1', name: 'Hotfix lane' })];
+    rowsByWorkspace['ws-cascadia'] = [];
+    const dialog = openImport();
 
-    expect(await screen.findByText('No workflows to import')).toBeDefined();
+    const northwind = await within(dialog).findByRole('region', { name: 'Northwind' });
+    await waitFor(() => expect(within(northwind).getByText('Same name here')).toBeDefined());
+    expect(northwind.textContent).toContain('ledger-core, notify-relay');
+    expect(within(northwind).queryByText('Refactor')).toBeNull();
+    await within(dialog).findByRole('region', { name: 'Acme' });
+    await waitFor(() =>
+      expect(within(dialog).queryByRole('region', { name: 'Cascadia' })).toBeNull(),
+    );
+    expect(within(dialog).getByText('3 workflows in 2 workspaces')).toBeDefined();
+  });
+
+  it('imports every checked workflow in one go and closes', async () => {
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+    ];
+    state.copyWorkflowsFromWorkspaces = vi.fn(async () => []);
+    const dialog = openImport();
+
+    fireEvent.click(await within(dialog).findByRole('checkbox', { name: 'Settlement replay' }));
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Ledger migration' }));
+    expect(within(dialog).getByText('2 selected from Northwind')).toBeDefined();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Import 2' }));
+
+    await waitFor(() => expect(state.copyWorkflowsFromWorkspaces).toHaveBeenCalledOnce());
+    const input = state.copyWorkflowsFromWorkspaces.mock.calls[0]?.[0] as {
+      picks: ReadonlyArray<{ workflow: { id: string }; sourceWorkspaceName: string }>;
+      targetWorkspaceId: string;
+    };
+    expect(input.targetWorkspaceId).toBe('ws-1');
+    expect(input.picks.map((pick) => [pick.workflow.id, pick.sourceWorkspaceName])).toEqual([
+      ['wf-n1', 'Northwind'],
+      ['wf-n2', 'Northwind'],
+    ]);
+    expect(await screen.findByText('Imported 2 workflows from Northwind')).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Import workflows' })).toBeNull();
+  });
+
+  it('filters the list with the search field', async () => {
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+    ];
+    const dialog = openImport();
+    await within(dialog).findByRole('checkbox', { name: 'Ledger migration' });
+
+    fireEvent.change(within(dialog).getByPlaceholderText('Search workflows'), {
+      target: { value: 'ledger' },
+    });
+
+    expect(within(dialog).queryByRole('checkbox', { name: 'Settlement replay' })).toBeNull();
+    expect(within(dialog).getByRole('checkbox', { name: 'Ledger migration' })).toBeDefined();
+  });
+
+  it('keeps a workspace that failed to load visible with its error', async () => {
+    rowsByWorkspace['ws-north'] = new Error('source database unavailable');
+    const dialog = openImport();
+
+    const northwind = await within(dialog).findByRole('region', { name: 'Northwind' });
+    await waitFor(() => expect(northwind.textContent).toContain('source database unavailable'));
   });
 });

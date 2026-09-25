@@ -1,96 +1,132 @@
 import { useMemo, useRef, useState } from 'react';
-import type { ProjectId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
+import type { WorkflowImportPick } from '../../../../../store/slices/workflows/copyWorkflowsFromWorkspaces';
 import { isImportableWorkflow } from '../../../isImportableWorkflow';
 import { invokeWorkflowList } from '../../../workflows';
 
-type Params = {
+export type ImportGroup = {
   readonly workspaceId: WorkspaceId;
-  readonly onImported: (workflow: Workflow) => void;
+  readonly workspaceName: string;
+  readonly projectNames: ReadonlyArray<string>;
+  readonly status: 'loading' | 'ready' | 'failed';
+  readonly workflows: ReadonlyArray<Workflow>;
+  readonly error: string | null;
 };
 
-export const useWorkflowImport = ({ workspaceId, onImported }: Params) => {
+type LoadState = Pick<ImportGroup, 'status' | 'workflows' | 'error'>;
+
+type Params = {
+  readonly workspaceId: WorkspaceId;
+};
+
+const LOADING: LoadState = { status: 'loading', workflows: [], error: null };
+
+export const useWorkflowImport = ({ workspaceId }: Params) => {
   const projects = useAppStore((state) => state.projects);
   const workspaces = useAppStore((state) => state.workspaces);
-  const copyWorkflowFromWorkspace = useAppStore((state) => state.copyWorkflowFromWorkspace);
-  const [sourceProjectId, setSourceProjectId] = useState<ProjectId | null>(null);
-  const [sourceWorkflows, setSourceWorkflows] = useState<ReadonlyArray<Workflow>>([]);
-  const [sourceWorkflowId, setSourceWorkflowId] = useState<WorkflowId | null>(null);
-  const [isLoadingSource, setIsLoadingSource] = useState(false);
+  const copyWorkflowsFromWorkspaces = useAppStore((state) => state.copyWorkflowsFromWorkspaces);
+  const [loads, setLoads] = useState<Readonly<Record<string, LoadState>>>({});
+  const [selected, setSelected] = useState<ReadonlySet<WorkflowId>>(new Set());
   const [isImporting, setIsImporting] = useState(false);
-  const [sourceLoadError, setSourceLoadError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const sourceLoadRequest = useRef(0);
-  const sourceProjects = useMemo(
-    () => projects.filter((project) => project.workspaceId !== workspaceId),
-    [projects, workspaceId],
+  const request = useRef(0);
+
+  const sources = useMemo(
+    () => workspaces.filter((workspace) => workspace.id !== workspaceId),
+    [workspaceId, workspaces],
   );
 
-  const selectSourceProject = async (projectId: ProjectId) => {
-    const project = sourceProjects.find((candidate) => candidate.id === projectId);
-    if (project === undefined) {
-      return;
-    }
-    const requestId = sourceLoadRequest.current + 1;
-    sourceLoadRequest.current = requestId;
-    setSourceProjectId(project.id);
-    setSourceWorkflowId(null);
-    setSourceWorkflows([]);
-    setSourceLoadError(null);
+  const groups = useMemo<ReadonlyArray<ImportGroup>>(
+    () =>
+      sources.map((workspace) => ({
+        workspaceId: workspace.id,
+        workspaceName: workspace.name,
+        projectNames: projects
+          .filter((project) => project.workspaceId === workspace.id)
+          .map((project) => project.name),
+        ...(loads[workspace.id] ?? LOADING),
+      })),
+    [loads, projects, sources],
+  );
+
+  const load = () => {
+    const requestId = request.current + 1;
+    request.current = requestId;
+    setSelected(new Set());
     setImportError(null);
-    setIsLoadingSource(true);
-    try {
-      const loaded = await invokeWorkflowList(project.workspaceId);
-      if (sourceLoadRequest.current !== requestId) {
-        return;
-      }
-      setSourceWorkflows(loaded.filter(isImportableWorkflow));
-    } catch (error) {
-      if (sourceLoadRequest.current !== requestId) {
-        return;
-      }
-      setSourceLoadError(formatError(error));
-    } finally {
-      if (sourceLoadRequest.current === requestId) {
-        setIsLoadingSource(false);
-      }
+    setLoads(Object.fromEntries(sources.map((workspace) => [workspace.id, LOADING])));
+    for (const workspace of sources) {
+      void invokeWorkflowList(workspace.id)
+        .then((loaded): LoadState => ({
+          status: 'ready',
+          workflows: loaded.filter(isImportableWorkflow),
+          error: null,
+        }))
+        .catch((error: unknown): LoadState => ({
+          status: 'failed',
+          workflows: [],
+          error: formatError(error),
+        }))
+        .then((next) => {
+          if (request.current !== requestId) {
+            return;
+          }
+          setLoads((current) => ({ ...current, [workspace.id]: next }));
+        });
     }
   };
 
-  const importSelected = async () => {
-    const sourceProject = sourceProjects.find((project) => project.id === sourceProjectId);
-    if (sourceProject === undefined || sourceWorkflowId === null) {
-      return;
+  const toggle = (id: WorkflowId) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+        return next;
+      }
+      next.add(id);
+      return next;
+    });
+
+  const clear = () => setSelected(new Set());
+
+  const picks = groups.flatMap((group) =>
+    group.workflows
+      .filter((workflow) => selected.has(workflow.id))
+      .map((workflow): WorkflowImportPick => ({
+        workflow,
+        sourceWorkspaceName: group.workspaceName,
+      })),
+  );
+
+  const importSelected = async (): Promise<ReadonlyArray<WorkflowImportPick> | null> => {
+    if (picks.length === 0 || isImporting) {
+      return null;
     }
     setIsImporting(true);
     setImportError(null);
     try {
-      const saved = await copyWorkflowFromWorkspace({
-        sourceWorkspaceId: sourceProject.workspaceId,
-        sourceWorkflowId,
-        targetWorkspaceId: workspaceId,
-      });
-      onImported(saved);
+      await copyWorkflowsFromWorkspaces({ picks, targetWorkspaceId: workspaceId });
+      setSelected(new Set());
+      return picks;
     } catch (error) {
       setImportError(formatError(error));
+      return null;
     } finally {
       setIsImporting(false);
     }
   };
 
   return {
-    sourceProjects,
-    workspaces,
-    sourceProjectId,
-    sourceWorkflows,
-    sourceWorkflowId,
-    isLoadingSource,
+    groups,
+    selected,
+    picks,
     isImporting,
-    sourceLoadError,
     importError,
-    selectSourceProject,
-    setSourceWorkflowId,
+    load,
+    toggle,
+    clear,
     importSelected,
   };
 };

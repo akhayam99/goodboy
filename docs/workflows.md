@@ -94,9 +94,11 @@ later generated title never replaces it, and the preset keeps its own name.
 
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
-keep presets. Its home is one list: **New workflow**, **Import** to copy a
-custom workflow from another workspace, and a menu to restore the built-in
-workflows. Built-in rows say **Built in**, and **Edited** once you change them.
+keep presets. Its home is one list: **New workflow**, **Import**, and a menu to
+restore the built-in workflows. **Import** lists the custom presets of every
+other workspace, grouped by workspace, and copies all the checked ones at once.
+A copy whose name is taken here gets its workspace name added, for example
+`Settlement replay (Northwind)`. Built-in rows say **Built in**, and **Edited** once you change them.
 A row opens the editor: the builder without its launch bar, with the same step
 tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads

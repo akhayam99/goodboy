@@ -4,7 +4,7 @@ import { PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
-import { ImportControl } from '../WorkflowStudio/WorkflowImportSection/ImportControl';
+import { ImportPopover } from '../WorkflowStudio/ImportPopover';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
@@ -35,6 +35,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     () => templates.filter((template) => template.deletedAt == null && template.isPreset !== false),
     [templates],
   );
+  const takenNames = useMemo<ReadonlySet<string>>(
+    () =>
+      new Set(
+        templates.filter((template) => template.deletedAt == null).map((template) => template.name),
+      ),
+    [templates],
+  );
   const workspaceName = workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null;
   const editor = useWorkflowEditor({ workspaceId, presets, workingDir });
 
@@ -60,7 +67,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
             workflows={presets}
             workspaceName={workspaceName}
             isRestoring={isRestoring}
-            importControl={<ImportControl workspaceId={workspaceId} onImported={editor.open} />}
+            importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
             onOpen={editor.open}
             onNew={editor.openNew}
             onRestore={restore}

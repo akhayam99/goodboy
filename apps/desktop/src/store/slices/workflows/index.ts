@@ -17,7 +17,7 @@ import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
-import { copyWorkflowFromWorkspace } from './copyWorkflowFromWorkspace';
+import { copyWorkflowsFromWorkspaces } from './copyWorkflowsFromWorkspaces';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
@@ -42,7 +42,7 @@ import type { GetFn, SetFn } from './types';
 export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadPhaseTemplates: loadPhaseTemplates(set),
-    copyWorkflowFromWorkspace: copyWorkflowFromWorkspace({ set }),
+    copyWorkflowsFromWorkspaces: copyWorkflowsFromWorkspaces({ set }),
     savePhaseTemplate: savePhaseTemplate(set),
     deleteWorkflow: deleteWorkflow(set, get),
     makeWorkflowPreset: makeWorkflowPreset(set, get),
