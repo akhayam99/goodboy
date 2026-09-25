@@ -40,7 +40,10 @@ another pattern. A settings-style rail entry with an icon, a subtitle and a
 status dot is `StatusRailItem`. Its dot is optional: without a `tone` it draws
 none, so a rail shows tone only on the rows that need attention, and
 `statusLabel` names a dot that no subtitle explains. `density="compact"` is the
-indented child row under a rail heading.
+tighter child row under a rail heading. The row never indents itself: every
+child list under a rail heading takes `PANE_RHYTHM.navRail.nest`, so child
+icons line up under the parent label and every nested list indents by one
+step.
 
 ## Type scale
 

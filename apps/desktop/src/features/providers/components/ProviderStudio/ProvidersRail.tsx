@@ -1,5 +1,5 @@
 import { outdatedCliModels } from '@goodboy/core';
-import { SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
+import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
@@ -33,7 +33,10 @@ const STATUS_LABEL: Record<ProviderConnectionState, string> = {
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
   const learned = useAppStore((state) => state.cliRequirements);
   return (
-    <ul aria-label="Providers & models settings" className="flex flex-col gap-0.5 pl-6">
+    <ul
+      aria-label="Providers & models settings"
+      className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
+    >
       {onSelectDefaults !== undefined && (
         <li>
           <SelectableRow

@@ -6,7 +6,7 @@ import { StatusDot } from './StatusDot';
 
 const DENSITY_CLASSES = {
   row: 'gap-2.5 px-2.5 py-2',
-  compact: 'gap-2 py-1 pl-4 pr-2.5',
+  compact: 'gap-2 px-2.5 py-1',
 } as const satisfies Record<string, string>;
 
 export type StatusRailItemProps = {

@@ -71,7 +71,10 @@ export const SettingsRail = ({
           onClick={() => onSelect({ scope: 'app' })}
           className={cn(scope === 'app' && 'text-foreground')}
         />
-        <ul aria-label="App settings" className="flex flex-col gap-0.5">
+        <ul
+          aria-label="App settings"
+          className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
+        >
           {APP_SECTIONS.map((section) => {
             const Icon = CONCEPT_ICONS[section.concept];
             const isGeneralUpdate = section.id === 'general' && hasUpdate;
