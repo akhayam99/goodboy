@@ -137,12 +137,28 @@ describe('resolveAgentRowState', () => {
       { agent: { status: 'skipped' } },
       { node: 'skipped', sentence: 'Skipped', tone: 'neutral', ask: null },
     ],
+    [
+      'A14 blocked, alive but stuck',
+      { agent: { status: 'blocked' } },
+      {
+        node: 'question',
+        sentence: 'Blocked, tell the agent what to do next',
+        tone: 'warning',
+        ask: null,
+      },
+    ],
   ])('%s', (_name, input, expected) => {
     expect(read(agentState(input))).toEqual(expected);
   });
 
   it('puts failed above an open question on the same agent', () => {
     expect(agentState({ agent: { status: 'failed' }, isAsking: true }).phase).toBe('failed');
+  });
+
+  it('shows the open question of a blocked agent before the blocked reason', () => {
+    expect(agentState({ agent: { status: 'blocked' }, isAsking: true }).reason?.kind).toBe(
+      'question',
+    );
   });
 
   it('keeps a finished agent done when you also closed it', () => {
@@ -199,8 +215,18 @@ describe('resolveRunRowState', () => {
     ],
     [
       'R7 a step failed',
-      { failedStep: { stepLabel: '4.1' }, advance: blocked('failed-step') },
+      { failedStep: { stepLabel: '4.1', isBlocked: false }, advance: blocked('failed-step') },
       { node: 'failed', sentence: 'Step 4.1 failed', tone: 'danger', ask: 'restartStep' },
+    ],
+    [
+      'R7b a step is blocked, alive but stuck',
+      { failedStep: { stepLabel: '4.1', isBlocked: true }, advance: blocked('failed-step') },
+      {
+        node: 'question',
+        sentence: 'Step 4.1 is blocked, tell the agent what to do next',
+        tone: 'warning',
+        ask: 'restartStep',
+      },
     ],
     [
       'R8 the spend limit paused it',
@@ -250,7 +276,7 @@ describe('resolveRunRowState', () => {
           orchestrationStop: { kind: 'closed', message: 'Closed by you' },
         },
         isFinished: true,
-        failedStep: { stepLabel: '2' },
+        failedStep: { stepLabel: '2', isBlocked: false },
       },
       { node: 'closed', sentence: 'Closed by you', tone: 'neutral', ask: null },
     ],
@@ -267,7 +293,7 @@ describe('resolveRunRowState', () => {
   it('orders failed over waiting over running', () => {
     expect(
       runState({
-        failedStep: { stepLabel: '2' },
+        failedStep: { stepLabel: '2', isBlocked: false },
         question: { question: QUESTION, stepLabel: '3' },
         hasRunningStep: true,
       }).phase,

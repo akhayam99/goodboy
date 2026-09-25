@@ -117,6 +117,7 @@ Never build a colored role word or an outlined kind chip by hand.
 | running   | none           | pulsing dot    | info    | `StatusDot tone="info" pulsing`                      |
 | done      | `runDone`      | `CircleCheck`  | success | `AgentStatusIcon`, run status                        |
 | failed    | `runFailed`    | `CircleX`      | danger  | `AgentStatusIcon`                                    |
+| blocked   | `runBlocked`   | `CirclePause`  | warning | `AgentStatusIcon`                                    |
 | cancelled | `runCancelled` | `CircleSlash`  | neutral | `AgentStatusIcon` (skipped), discarded workflow runs |
 
 ## Projects, mounts and git objects

@@ -1,3 +1,4 @@
+import { isAgentStatusHalted } from '@goodboy/core';
 import type { Agent, TurnState } from '@goodboy/types';
 
 type AgentParams = {
@@ -50,5 +51,5 @@ export const isAgentClosable = ({
   if (isTurnLive || agent.status === 'running') {
     return false;
   }
-  return agent.status === 'failed' || hasOpenQuestion;
+  return isAgentStatusHalted({ status: agent.status }) || hasOpenQuestion;
 };

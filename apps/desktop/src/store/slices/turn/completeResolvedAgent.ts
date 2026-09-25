@@ -20,6 +20,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly resolvedAgentId: AgentId;
   readonly assistantText: string;
+  readonly didAgentDie?: boolean;
   readonly resolveAttemptId?: string;
   readonly now: () => IsoDateTime;
 };
@@ -30,6 +31,7 @@ export const completeResolvedAgent = async ({
   sessionId,
   resolvedAgentId,
   assistantText,
+  didAgentDie = false,
   resolveAttemptId,
   now,
 }: Params): Promise<boolean | null> => {
@@ -63,7 +65,9 @@ export const completeResolvedAgent = async ({
   }
 
   if (ranAgent?.parentAgentId) {
-    await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText);
+    await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText, {
+      didAgentDie,
+    });
     return null;
   }
 
@@ -78,6 +82,7 @@ export const completeResolvedAgent = async ({
       resolvedAgentId,
       assistantText,
       planCapturedThisTurn,
+      { didAgentDie },
     );
     return shouldAutoAdvance;
   }

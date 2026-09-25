@@ -46,8 +46,14 @@ const hoisted = vi.hoisted(() => {
     invokeWorkflowNodeRoutingUpdate: vi.fn(async () => undefined),
     invokeListConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
     summarizeAgentOutput: vi.fn(async () => ({ summary: 'model summary', degraded: false })),
+    insertOpenQuestion: vi.fn(async () => ({ inserted: true })),
   };
 });
+
+vi.mock('@goodboy/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/db')>()),
+  insertOpenQuestion: hoisted.insertOpenQuestion,
+}));
 
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsertBatch: hoisted.invokeAgentInsertBatch,
@@ -206,7 +212,8 @@ describe('composeClusterBoundary', () => {
     const text = composeClusterBoundary('child-7' as AgentId);
     expect(text).toContain('**Scope** this cluster only');
     expect(text).toContain('<<cluster-done id="child-7">>');
-    expect(text.split('\n')).toHaveLength(1);
+    expect(text).toContain('a question in plain prose never reaches the user');
+    expect(text).toContain('<<ctx-question blocking="true">>');
   });
 });
 
@@ -1035,7 +1042,7 @@ describe('advanceClusterImplementation', () => {
     expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
 
-  it('fails the child and notifies after exhausting continue attempts', async () => {
+  it('blocks the live child and notifies after exhausting continue attempts', async () => {
     const child = childAgent({ id: 'cont-b', ordinal: 0 });
     const p = plan({});
     const store = makeStore({
@@ -1051,14 +1058,99 @@ describe('advanceClusterImplementation', () => {
     await advance(SID, 'cont-b' as AgentId, 'no marker 2');
     expect(store.sendTurn).toHaveBeenCalledTimes(1);
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-b', {
-      status: 'failed',
+      status: 'blocked',
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalled();
     expect(store.refreshUnreadWorkspaces).toHaveBeenCalled();
   });
 
-  it('does not continue and pauses the child when hands-free is off', async () => {
+  it('fails the child only when its last turn died', async () => {
+    const child = childAgent({ id: 'cont-dead', ordinal: 0 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+    const advance = advanceClusterImplementation(store.set, store.get);
+
+    await advance(SID, 'cont-dead' as AgentId, '', { didAgentDie: true });
+    await advance(SID, 'cont-dead' as AgentId, '', { didAgentDie: true });
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-dead', {
+      status: 'failed',
+      completedAt: expect.any(String),
+    });
+  });
+
+  it('waits for the user on a question asked in prose instead of burning the re-kick', async () => {
+    const child = childAgent({
+      id: 'ask-prose',
+      ordinal: 0,
+      workflowRunId: 'wf-1' as WorkflowRunId,
+    });
+    const loadSessionOpenQuestions = vi.fn(async () => undefined);
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+      loadSessionOpenQuestions,
+    });
+    const advance = advanceClusterImplementation(store.set, store.get);
+    const text =
+      'Build green.\n\nConfermi il force-push? Dopo procedo con aggiornamento PR e re-review.';
+
+    await advance(SID, 'ask-prose' as AgentId, text);
+    await advance(SID, 'ask-prose' as AgentId, text);
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(store.emitNotification).not.toHaveBeenCalled();
+    expect(hoisted.insertOpenQuestion).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        sessionId: SID,
+        workflowRunId: 'wf-1',
+        createdByAgentId: 'ask-prose',
+        text: 'Confermi il force-push? Dopo procedo con aggiornamento PR e re-review.',
+        isBlocking: true,
+      }),
+    );
+    expect(loadSessionOpenQuestions).toHaveBeenCalledWith(SID);
+  });
+
+  it('waits for the user on a marker question in a subagent', async () => {
+    const child = childAgent({ id: 'ask-marker', ordinal: 0 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+
+    await advanceClusterImplementation(store.set, store.get)(
+      SID,
+      'ask-marker' as AgentId,
+      '<<ctx-question blocking="true">>Push with force?<</ctx-question>>',
+    );
+
+    expect(store.sendTurn).not.toHaveBeenCalled();
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(hoisted.insertOpenQuestion).not.toHaveBeenCalled();
+  });
+
+  it('carries the question protocol in the re-kick prompt', async () => {
+    const child = childAgent({ id: 'rekick', ordinal: 0 });
+    const store = makeStore({
+      sessionPhaseRuns: { [SID]: [container({ status: 'running' }), child] },
+      sessionPlans: { [SID]: [plan({})] },
+    });
+
+    await advanceClusterImplementation(store.set, store.get)(SID, 'rekick' as AgentId, 'working');
+
+    const call = (store.sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('**Questions**');
+    expect(call.content).toContain('<<ctx-question blocking="true">>');
+    expect(call.content).toContain('<<cluster-done id="rekick">>');
+  });
+
+  it('does not continue and blocks the child when hands-free is off', async () => {
     const child = childAgent({ id: 'cont-c', ordinal: 0 });
     const p = plan({});
     const store = makeStore({
@@ -1071,14 +1163,14 @@ describe('advanceClusterImplementation', () => {
 
     expect(store.sendTurn).not.toHaveBeenCalled();
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('cont-c', {
-      status: 'failed',
+      status: 'blocked',
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: expect.stringContaining('Subagent paused'),
+        title: expect.stringContaining('Subagent blocked'),
         body: expect.stringContaining('Autorun is off'),
         sessionId: SID,
       }),
@@ -1448,7 +1540,7 @@ describe('advanceClusterImplementation', () => {
 
     expect(store.sendTurn).not.toHaveBeenCalled();
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith('nb1', {
-      status: 'failed',
+      status: 'blocked',
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
@@ -1462,7 +1554,7 @@ describe('advanceClusterImplementation', () => {
     );
   });
 
-  it('fails the container and notifies when the plan has more clusters than children', async () => {
+  it('blocks the container and notifies when the plan has more clusters than children', async () => {
     const c0 = childAgent({ id: 'short-0', ordinal: 0, status: 'completed' });
     const c1 = childAgent({ id: 'short-1', ordinal: 1 });
     const store = makeStore({
@@ -1489,7 +1581,7 @@ describe('advanceClusterImplementation', () => {
 
     expect(store.sendTurn).not.toHaveBeenCalled();
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(PARENT, {
-      status: 'failed',
+      status: 'blocked',
       completedAt: expect.any(String),
     });
     expect(store.emitNotification).toHaveBeenCalledWith(
@@ -1729,7 +1821,7 @@ describe('resumeClusterChildren', () => {
     expect(sendTurn).not.toHaveBeenCalled();
   });
 
-  it('fails the child and warns when the plan no longer carries its instructions', async () => {
+  it('blocks the child and warns when the plan no longer carries its instructions', async () => {
     const c = container({ status: 'pending', workflowRunId: 'wf-1' as WorkflowRunId });
     const children = [childAgent({ id: 'c0', ordinal: 1, status: 'pending' })];
     const { get, set, sendTurn, emitNotification } = makeStore({
@@ -1744,7 +1836,7 @@ describe('resumeClusterChildren', () => {
     expect(sendTurn).not.toHaveBeenCalled();
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
       'c0',
-      expect.objectContaining({ status: 'failed' }),
+      expect.objectContaining({ status: 'blocked' }),
     );
     expect(emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({

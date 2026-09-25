@@ -1,4 +1,4 @@
-import { findReusableAgent } from '@goodboy/core';
+import { findReusableAgent, isAgentStatusHalted } from '@goodboy/core';
 import type { Agent, AgentId, OpenQuestion, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from './advanceGate';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
@@ -132,7 +132,7 @@ const recoverAction = ({
   }
   const stepAgents = agents.filter((agent) => agent.parentAgentId == null && agent.stepId != null);
   const failedAgent = findReusableAgent(stepAgents, step.id);
-  if (failedAgent == null || failedAgent.status !== 'failed') {
+  if (failedAgent == null || !isAgentStatusHalted({ status: failedAgent.status })) {
     return null;
   }
   if (subjectAgentId != null && subjectAgentId !== failedAgent.id) {
@@ -142,7 +142,10 @@ const recoverAction = ({
     kind: 'recover',
     subjectAgentId: failedAgent.id,
     step,
-    sentence: `${step.name} stopped before finishing.`,
+    sentence:
+      failedAgent.status === 'blocked'
+        ? `${step.name} stopped without finishing and without asking you anything. Tell it what to do next.`
+        : `${step.name} stopped before finishing.`,
     cause: waitingCause({ workflow, step, isDynamic: run.executionMode === 'dynamic' }),
   };
 };

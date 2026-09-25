@@ -34,8 +34,14 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
         : `Paused at the ${formatUsd(reason.limitUsd)} spend limit`;
     case 'failed':
       return 'Failed';
+    case 'blocked':
+      return 'Blocked, tell the agent what to do next';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
+    case 'stepBlocked':
+      return reason.stepLabel == null
+        ? 'A step is blocked, tell the agent what to do next'
+        : `Step ${reason.stepLabel} is blocked, tell the agent what to do next`;
     case 'orchestratorFailed':
       return 'The orchestrator failed';
     case 'stopped':
@@ -87,6 +93,10 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Chained';
     case 'awaitingFirstMessage':
       return 'Write to start';
+    case 'blocked':
+      return 'Blocked';
+    case 'stepBlocked':
+      return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
     case 'failed':
     case 'stepFailed':
     case 'skipped':
@@ -161,6 +171,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'discarded') {
     return { state: node, label: 'Discarded' };
+  }
+  if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
+    return { state: node, label: 'Blocked' };
   }
   return { state: node, label: ROW_NODE_LABEL[node] };
 };

@@ -1,3 +1,4 @@
+import { isAgentStatusHalted } from '@goodboy/core';
 import type { Agent } from '@goodboy/types';
 
 export type ArtifactCtaBlockReason = 'no-evidence' | 'run-active' | 'session-busy';
@@ -27,7 +28,7 @@ export const hasArtifactEvidence = ({ agents }: ArtifactEvidenceParams): boolean
   agents.some(
     (agent) =>
       agent.status === 'completed' ||
-      agent.status === 'failed' ||
+      isAgentStatusHalted({ status: agent.status }) ||
       (agent.outputSummary?.trim().length ?? 0) > 0,
   );
 

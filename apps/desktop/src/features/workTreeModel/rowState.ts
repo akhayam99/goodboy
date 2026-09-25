@@ -10,7 +10,9 @@ export type RowStateReason =
   | { readonly kind: 'question'; readonly stepLabel: string | null }
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
+  | { readonly kind: 'blocked' }
   | { readonly kind: 'stepFailed'; readonly stepLabel: string | null }
+  | { readonly kind: 'stepBlocked'; readonly stepLabel: string | null }
   | { readonly kind: 'orchestratorFailed' }
   | { readonly kind: 'stopped' }
   | { readonly kind: 'deciding' }
@@ -83,6 +85,8 @@ export const resolveAgentRowState = ({
       return DONE_ROW_STATE;
     case 'skipped':
       return { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
+    case 'blocked':
+      return { phase: 'waiting', reason: { kind: 'blocked' }, ask: null };
     default: {
       const exhaustive: never = agent.status;
       return exhaustive;
@@ -98,6 +102,7 @@ export type RowReadyStep = {
 
 export type RowFailedStep = {
   readonly stepLabel: string | null;
+  readonly isBlocked: boolean;
 };
 
 export type RowWaitingQuestion = {
@@ -129,6 +134,13 @@ const waitingRunState = ({
   const stop = run.orchestrationStop?.kind ?? null;
   if (stop === 'failure') {
     return { phase: 'failed', reason: { kind: 'orchestratorFailed' }, ask: null };
+  }
+  if (failedStep?.isBlocked === true) {
+    return {
+      phase: 'waiting',
+      reason: { kind: 'stepBlocked', stepLabel: failedStep.stepLabel },
+      ask: { kind: 'restartStep' },
+    };
   }
   if (failedStep != null || (advance?.kind === 'blocked' && advance.reason === 'failed-step')) {
     return {

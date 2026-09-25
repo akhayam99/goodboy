@@ -1,5 +1,5 @@
 import type { Step, Agent, Workflow, WorkflowRunId } from '@goodboy/types';
-import { isAgentStatusSettled } from './settled';
+import { isAgentStatusHalted, isAgentStatusSettled } from './settled';
 
 export const runsForWorkflowRun = (
   runs: ReadonlyArray<Agent>,
@@ -49,7 +49,7 @@ export const classifyWorkflowChain = (
     return { kind: 'complete' };
   }
   const latest = findReusableAgent(runs, pending.id);
-  if (latest?.status === 'failed') {
+  if (latest != null && isAgentStatusHalted({ status: latest.status })) {
     return { kind: 'blocked', failedStep: pending };
   }
   return { kind: 'step', step: pending };

@@ -32,7 +32,7 @@ export type AgentRole =
   | 'wireframe'
   | 'custom';
 
-export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+export type AgentStatus = 'pending' | 'running' | 'completed' | 'failed' | 'blocked' | 'skipped';
 
 export type AgentSourceKind = 'review_comment' | 'issue_comment' | 'diff_comment' | 'open_question';
 
