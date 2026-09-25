@@ -12,6 +12,7 @@ import { createSessionDir, createWorktree } from '../../../features/worktree/wor
 import { consumeAdoptionSeed, materializationSeedFor } from '../sessions/materializationSeeds';
 import { mountPlan } from '../sessions/mountPlan';
 import { branchInUseError } from './mountErrors';
+import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountDirName } from './mountDirName';
 import { mountViewPatch } from './mountViewPatch';
 import { withRepositoryAndMountLock } from './mountLocks';
@@ -115,6 +116,9 @@ export const createProjectMount = async ({
       const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
       const sessionSlug = plannedSlug ?? plan.slug;
       let created;
+      if (project.kind === 'repo') {
+        await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
+      }
       try {
         created =
           project.kind === 'repo'

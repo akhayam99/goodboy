@@ -23,11 +23,9 @@ const { state, toastMock } = vi.hoisted(() => ({
     }): Promise<void> => undefined,
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [] as ReadonlyArray<{ id: string; connection: string }>,
-    orphanWorktrees: {} as Record<
-      string,
-      ReadonlyArray<{ path: string; name: string; sizeBytes: number }>
-    >,
-    removeOrphanWorktrees: vi.fn(async () => [] as ReadonlyArray<unknown>),
+    orphanWorktrees: {} as Record<string, ReadonlyArray<{ path: string; name: string }>>,
+    retainedWorktreePaths: {} as Record<string, ReadonlyArray<unknown>>,
+    focusStorage: vi.fn(),
     currentWorkspaceId: null as string | null,
     sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
   },
@@ -35,7 +33,9 @@ const { state, toastMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+  }),
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -99,7 +99,8 @@ beforeEach(() => {
   state.workspaceIntegrations = {};
   state.providers = [];
   state.orphanWorktrees = {};
-  state.removeOrphanWorktrees = vi.fn(async () => [] as ReadonlyArray<unknown>);
+  state.retainedWorktreePaths = {};
+  state.focusStorage = vi.fn();
   state.currentWorkspaceId = null;
   state.sessions = [];
   toastMock.mockReset();
@@ -303,26 +304,24 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.getByRole('group', { name: 'Disconnect billing?' })).toBeDefined();
   });
 
-  it('hides the leftover folders section when there is nothing to clean', () => {
+  it('hides the leftover folders notice when there is nothing to clean', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    expect(screen.queryByText(/session folders left on disk/i)).toBeNull();
+    expect(screen.queryByText(/left on disk/i)).toBeNull();
   });
 
-  it('asks twice before removing the folders it found in safe mode', () => {
+  it('points the leftover folders to Storage filtered on this workspace', () => {
     state.orphanWorktrees = {
-      'ws-1': [{ path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost', sizeBytes: 2048 }],
+      'ws-1': [{ path: '/repo/.goodboy/worktrees/gb-ghost', name: 'gb-ghost' }],
     };
+    const opened = vi.fn();
+    window.addEventListener('goodboy:open-settings', opened);
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
-    expect(screen.getByText('gb-ghost')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /remove 1 folder \(2\.0 kb\)/i }));
+    expect(screen.getByText('1 session folder from this workspace is left on disk.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Review in Storage' }));
 
-    expect(state.removeOrphanWorktrees).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }));
-    expect(state.removeOrphanWorktrees).toHaveBeenCalledWith({
-      workspaceId: 'ws-1',
-      paths: ['/repo/.goodboy/worktrees/gb-ghost'],
-      mode: 'safe',
-    });
+    expect(state.focusStorage).toHaveBeenCalledWith({ filter: 'review', workspaceId: 'ws-1' });
+    expect(opened).toHaveBeenCalledTimes(1);
+    window.removeEventListener('goodboy:open-settings', opened);
   });
 });

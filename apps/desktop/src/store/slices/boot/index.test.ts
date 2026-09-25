@@ -441,7 +441,7 @@ describe('store contract', () => {
       expect(store.getState().orchestratingWorkflowRuns).toEqual({ 'run-qa-preview': true });
     });
 
-    it('offers to clean the session folders left behind on disk', async () => {
+    it('finds the session folders left behind on disk without a notification of its own', async () => {
       const store = useAppStore;
       storySpies.listWorkspaces.mockResolvedValueOnce([
         {
@@ -493,7 +493,6 @@ describe('store contract', () => {
         {
           path: '/repo/.goodboy/worktrees/gb-ghost',
           name: 'gb-ghost',
-          sizeBytes: 2048,
           isRegistered: false,
         },
       ]);
@@ -503,7 +502,10 @@ describe('store contract', () => {
       await vi.waitFor(() => {
         expect(store.getState().orphanWorktrees['ws-1']).toHaveLength(1);
       });
-      expect(storySpies.insertNotification).toHaveBeenCalled();
+      expect(storySpies.insertNotification).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ kind: 'orphan-worktrees' }),
+      );
     });
   });
 });

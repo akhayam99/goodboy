@@ -4,6 +4,7 @@ import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { nextAvailableSlug } from '../sessions/deriveBranchName';
+import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountDirName } from './mountDirName';
 import { branchInUseError, mountError, worktreeErrorKind } from './mountErrors';
 import { withMountLock, withRepositoryAndMountLock } from './mountLocks';
@@ -130,6 +131,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               ...(baseBranch !== undefined ? { baseBranch } : {}),
             };
             let created;
+            await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
             try {
               created = await createWorktree(
                 adopt ? { ...request, existingBranch: `${branchPrefix}/${branchSlug}` } : request,

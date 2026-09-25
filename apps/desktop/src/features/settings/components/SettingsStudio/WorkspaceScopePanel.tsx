@@ -7,7 +7,7 @@ import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceTitle } from './WorkspaceTitle';
-import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
+import { WorkspaceStorageNotice } from '../../../../features/storage/components/WorkspaceStorageNotice';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
 import { useSectionAnchors } from '../../hooks/useSectionAnchors';
@@ -88,9 +88,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
           </div>
         ) : null}
 
-        <div ref={anchor({ id: 'orphans' })}>
-          <OrphanWorktreesSection workspaceId={workspaceId} />
-        </div>
+        <WorkspaceStorageNotice workspaceId={workspaceId} />
 
         <section
           id="danger"

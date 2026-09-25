@@ -33,6 +33,8 @@ import { m171SessionEventWorkflowClosed } from './m171-session-event-workflow-cl
 import { m172StepSize } from './m172-step-size';
 import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-mounts';
 import { m176ProviderLimits } from './m176-provider-limits';
+import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
+import { m183WorktreeRoots } from './m183-worktree-roots';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -353,4 +355,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 172, sql: m172StepSize },
   { version: 173, sql: m173AgentTurnSpanTouchedMounts },
   { version: 176, sql: m176ProviderLimits },
+  { version: 182, sql: m182RetainedWorktreeLedger },
+  { version: 183, sql: m183WorktreeRoots },
 ];

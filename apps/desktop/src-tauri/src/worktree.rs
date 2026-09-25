@@ -910,7 +910,7 @@ fn registered_worktrees_with(
     Ok(parse_registered_worktrees(&output))
 }
 
-fn canonical_path(path: &Path) -> Option<PathBuf> {
+pub(crate) fn canonical_path(path: &Path) -> Option<PathBuf> {
     std::fs::canonicalize(path).ok()
 }
 
@@ -1255,7 +1255,7 @@ pub async fn worktree_detach_assessment(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn local_only_commit_count(cwd: &Path) -> Option<u32> {
+pub(crate) fn local_only_commit_count(cwd: &Path) -> Option<u32> {
     git(cwd, &["rev-list", "--count", "HEAD", "--not", "--remotes"])
         .ok()
         .and_then(|raw| raw.trim().parse::<u32>().ok())
@@ -1525,8 +1525,6 @@ const WORKTREE_PARENT: [&str; 2] = [".goodboy", "worktrees"];
 pub struct OrphanWorktree {
     pub path: String,
     pub name: String,
-    #[serde(rename = "sizeBytes")]
-    pub size_bytes: u64,
     #[serde(rename = "isRegistered")]
     pub is_registered: bool,
 }
@@ -1579,11 +1577,22 @@ fn directory_size(path: &Path) -> (Option<u64>, bool) {
             continue;
         }
         match entry.metadata() {
-            Ok(meta) => total = total.saturating_add(meta.len()),
+            Ok(meta) => total = total.saturating_add(allocated_bytes(&meta)),
             Err(_) => is_partial = true,
         }
     }
     (Some(total), is_partial)
+}
+
+#[cfg(unix)]
+pub(crate) fn allocated_bytes(meta: &std::fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    meta.blocks().saturating_mul(512)
+}
+
+#[cfg(not(unix))]
+pub(crate) fn allocated_bytes(meta: &std::fs::Metadata) -> u64 {
+    meta.len()
 }
 
 fn worktree_directory_size_blocking(path: String) -> WorktreeDirectorySize {
@@ -1679,7 +1688,6 @@ pub(crate) fn collect_orphans(
                 .file_name()
                 .map(|name| name.to_string_lossy().into_owned())
                 .unwrap_or_default(),
-            size_bytes: directory_size(&path).0.unwrap_or(0),
             is_registered: registered_keys.contains(&canonical_key(&path)),
             path: path.to_string_lossy().into_owned(),
         })
@@ -1722,7 +1730,7 @@ fn kept_folder(path: &Path, reason: WorktreeRemovalReason) -> WorktreeRemovalRes
     }
 }
 
-fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
+pub(crate) fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
     let repo = canonical_path(repo_path)?;
     let parent = canonical_path(&worktrees_parent(repo_path))?;
     parent.starts_with(&repo).then_some(parent)
@@ -1769,10 +1777,22 @@ fn unpushed_folder_kept_with(
     })
 }
 
+#[cfg(test)]
 pub(crate) fn remove_worktree_folder_with(
     repo_path: &Path,
     target: &Path,
     mode: WorktreeRemovalMode,
+    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    is_lease_live: &mut dyn FnMut(&Path) -> bool,
+) -> Result<WorktreeRemovalResult, WorktreeError> {
+    remove_worktree_folder_allowing(repo_path, target, mode, false, run_git, is_lease_live)
+}
+
+pub(crate) fn remove_worktree_folder_allowing(
+    repo_path: &Path,
+    target: &Path,
+    mode: WorktreeRemovalMode,
+    allow_local_commits: bool,
     run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
@@ -1819,7 +1839,7 @@ pub(crate) fn remove_worktree_folder_with(
     }
     match inspect_worktree_with(repo_path, &folder, run_git) {
         WorktreeInspection::Registered { .. } => {
-            if mode == WorktreeRemovalMode::Safe {
+            if mode == WorktreeRemovalMode::Safe && !allow_local_commits {
                 if let Some(kept) =
                     unpushed_folder_kept_with(repo_path, &folder, run_git, is_lease_live)
                 {
@@ -1866,14 +1886,16 @@ pub async fn worktree_folder_remove(
     repo_path: String,
     path: String,
     mode: Option<WorktreeRemovalMode>,
+    allow_local_commits: Option<bool>,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     let registry = leases.0.clone();
     let selected = mode.unwrap_or(WorktreeRemovalMode::Safe);
     tauri::async_runtime::spawn_blocking(move || {
-        remove_worktree_folder_with(
+        remove_worktree_folder_allowing(
             Path::new(&repo_path),
             Path::new(&path),
             selected,
+            allow_local_commits.unwrap_or(false),
             &mut |cwd, args| git(cwd, args),
             &mut |target| {
                 crate::worktree_writer::is_lease_live(&registry, target.to_string_lossy().as_ref())
@@ -3139,7 +3161,7 @@ pub(crate) fn read_working_tree(cwd: &Path) -> GitWorkingTree {
     parse_working_tree(&raw)
 }
 
-fn parse_working_tree(raw: &str) -> GitWorkingTree {
+pub(crate) fn parse_working_tree(raw: &str) -> GitWorkingTree {
     let mut staged = 0u32;
     let mut unstaged = 0u32;
     let mut untracked = 0u32;
@@ -3408,7 +3430,7 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     String::from_utf8(output.stdout).map_err(|_| WorktreeError::InvalidUtf8)
 }
 
-fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
+pub(crate) fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
     let mut entries = Vec::new();
     let mut is_first = true;
 
@@ -4799,7 +4821,7 @@ mod changed_files_tests {
 #[cfg(test)]
 mod teardown_tests {
     use super::{
-        collect_orphans, inspect_worktree_with, remove_worktree_checked_leased,
+        allocated_bytes, collect_orphans, inspect_worktree_with, remove_worktree_checked_leased,
         remove_worktree_checked_with, remove_worktree_folder_with,
         worktree_detach_assessment_blocking, worktree_directory_size_blocking, BranchIntegration,
         WorktreeDetachAssessment, WorktreeError, WorktreeInspection, WorktreeRemovalMode,
@@ -5194,7 +5216,7 @@ mod teardown_tests {
     }
 
     #[test]
-    fn a_folder_git_forgot_and_no_session_claims_is_reported_with_its_size() {
+    fn a_folder_git_forgot_and_no_session_claims_is_reported() {
         let root = temp_root("orphan-scan");
         let parent = root.join(".goodboy").join("worktrees");
         std::fs::create_dir_all(&parent).unwrap();
@@ -5212,7 +5234,6 @@ mod teardown_tests {
             found.iter().map(|o| o.name.as_str()).collect::<Vec<_>>(),
             vec!["gb-ghost", "gb-live"]
         );
-        assert_eq!(found[0].size_bytes, 4096);
         assert!(!found[0].is_registered);
         assert!(found[1].is_registered);
         assert!(orphan.exists());
@@ -5234,9 +5255,31 @@ mod teardown_tests {
 
         let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
 
-        assert_eq!(result.size_bytes, Some(35));
+        let expected = [
+            target.join("one.bin"),
+            target.join("nested").join("two.bin"),
+        ]
+        .iter()
+        .map(|file| allocated_bytes(&std::fs::metadata(file).unwrap()))
+        .sum::<u64>();
+        assert_eq!(result.size_bytes, Some(expected));
+        assert!(expected >= 35);
         assert!(!result.is_partial);
         assert!(result.exists);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn directory_size_counts_allocated_blocks_so_sparse_files_stay_small() {
+        let root = temp_root("directory-size-sparse");
+        let target = root.join("target");
+        std::fs::create_dir_all(&target).unwrap();
+        let sparse = std::fs::File::create(target.join("sparse.bin")).unwrap();
+        sparse.set_len(64 * 1024 * 1024).unwrap();
+
+        let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
+
+        assert!(result.size_bytes.unwrap() < 64 * 1024 * 1024);
     }
 
     #[test]
@@ -5290,7 +5333,8 @@ mod teardown_tests {
         let result = worktree_directory_size_blocking(target.to_string_lossy().into_owned());
 
         std::fs::set_permissions(&unreadable, std::fs::Permissions::from_mode(0o700)).unwrap();
-        assert_eq!(result.size_bytes, Some(17));
+        let readable = allocated_bytes(&std::fs::metadata(target.join("readable.bin")).unwrap());
+        assert_eq!(result.size_bytes, Some(readable));
         assert!(result.is_partial);
         assert!(result.exists);
     }
@@ -5368,6 +5412,57 @@ mod teardown_tests {
             "{confirmed:?}"
         );
         assert!(!target.exists());
+    }
+
+    #[test]
+    fn folder_removal_allowing_local_commits_removes_a_clean_folder_and_keeps_its_branch() {
+        let root = init_repo("folder-unpushed-allowed");
+        let target = add_goodboy_worktree(&root, "gb-allowed");
+        commit_in(&target, "local.txt");
+
+        let result = super::remove_worktree_folder_allowing(
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+            true,
+            &mut |cwd, args| super::git(cwd, args),
+            &mut |_| false,
+        )
+        .unwrap();
+
+        assert!(
+            matches!(result, WorktreeRemovalResult::Removed { .. }),
+            "{result:?}"
+        );
+        assert!(!target.exists());
+        assert_eq!(
+            git_ok(&root, &["rev-parse", "--verify", "goodboy/gb-allowed"]).len(),
+            40
+        );
+    }
+
+    #[test]
+    fn folder_removal_allowing_local_commits_still_keeps_uncommitted_work() {
+        let root = init_repo("folder-unpushed-allowed-dirty");
+        let target = add_goodboy_worktree(&root, "gb-allowed-dirty");
+        commit_in(&target, "local.txt");
+        std::fs::write(target.join("draft.txt"), "draft\n").unwrap();
+
+        let result = super::remove_worktree_folder_allowing(
+            &root,
+            &target,
+            WorktreeRemovalMode::Safe,
+            true,
+            &mut |cwd, args| super::git(cwd, args),
+            &mut |_| false,
+        )
+        .unwrap();
+
+        assert_eq!(
+            kept_reasons(result),
+            vec![WorktreeRemovalReason::UntrackedFiles]
+        );
+        assert!(target.exists());
     }
 
     #[test]

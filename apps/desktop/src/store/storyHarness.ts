@@ -123,7 +123,6 @@ export const storySpies = {
       [] as ReadonlyArray<{
         path: string;
         name: string;
-        sizeBytes: number;
         isRegistered: boolean;
       }>,
   ),
@@ -410,6 +409,14 @@ export const dbModuleMock = () => ({
   listAllRetainedWorktreePaths: vi.fn(async () => []),
   deleteRetainedWorktreePath: vi.fn(async () => undefined),
   markRetainedWorktreePathChecked: vi.fn(async () => undefined),
+  listWorktreeLedger: vi.fn(async () => []),
+  recordOrphanWorktrees: vi.fn(async () => undefined),
+  deleteWorktreeLedgerEntries: vi.fn(async () => undefined),
+  setWorktreeLedgerSize: vi.fn(async () => undefined),
+  setWorktreeLedgerKeep: vi.fn(async () => undefined),
+  listWorktreeRoots: vi.fn(async () => []),
+  registerWorktreeRoot: vi.fn(async () => undefined),
+  markWorktreeRootScanned: vi.fn(async () => undefined),
   upsertSessionExternalTask: storySpies.upsertSessionExternalTask,
   deleteSessionExternalTask: vi.fn(async () => undefined),
   listExternalTasksForWorkspace: vi.fn(async () => []),
@@ -613,6 +620,8 @@ export const worktreeModuleMock = () => ({
   inspectWorktree: (args: { readonly worktreePath: string }) => storySpies.inspectWorktree(args),
   invalidateLocalBranchesCache: vi.fn(),
   scanOrphanWorktrees: storySpies.scanOrphanWorktrees,
+  worktreeFolderFacts: vi.fn(async () => []),
+  diskFree: vi.fn(async () => ({ freeBytes: null, totalBytes: null })),
   removeWorktreeFolder: storySpies.removeWorktreeFolder,
   listBranchCommits: vi.fn(async () => []),
   worktreeIsAncestor: vi.fn(async () => true),

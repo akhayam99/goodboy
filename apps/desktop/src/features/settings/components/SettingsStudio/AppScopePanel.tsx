@@ -6,12 +6,18 @@ import { AppGeneralSection } from './AppGeneralSection';
 import { AppHelpSection } from './AppHelpSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
-import { StorageSection } from './StorageSection';
+import { StoragePage } from '../../../storage/components/StoragePage';
+import { StorageCheckAgain } from '../../../storage/components/StoragePage/StorageCheckAgain';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
   readonly section: AppSection;
   readonly requestClose: () => void;
+};
+
+const SECTION_META: Readonly<Partial<Record<AppSection, string>>> = {
+  shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
+  storage: 'What Goodboy keeps on this Mac.',
 };
 
 const SectionBody = ({ section, requestClose }: Props) => {
@@ -23,7 +29,7 @@ const SectionBody = ({ section, requestClose }: Props) => {
     case 'backup':
       return <AppBackupSection />;
     case 'storage':
-      return <StorageSection />;
+      return <StoragePage />;
     case 'help':
       return <AppHelpSection requestClose={requestClose} />;
     case 'danger':
@@ -42,7 +48,8 @@ export const AppScopePanel = ({ section, requestClose }: Props) => {
       key={section}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={label}
-      meta={section === 'shortcuts' ? `${SHORTCUT_ROW_COUNT} shortcuts` : undefined}
+      meta={SECTION_META[section]}
+      actions={section === 'storage' ? <StorageCheckAgain /> : undefined}
     >
       <SectionBody section={section} requestClose={requestClose} />
     </PaneShell>

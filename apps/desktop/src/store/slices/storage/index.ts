@@ -1,14 +1,24 @@
-import { loadStorageStats } from './loadStorageStats';
+import { checkStorageNudge } from './checkStorageNudge';
+import { keepStorageFolder } from './keepStorageFolder';
+import { loadStorage } from './loadStorage';
+import { measureStorageSizes } from './measureStorageSizes';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
-import { removeArchivedWorktrees } from './removeArchivedWorktrees';
-import type { GetFn, SetFn } from './types';
+import { removeStorageFolders } from './removeStorageFolders';
+import { scanStorageRepository } from './scanStorageRepository';
+import type { GetFn, SetFn, StorageFocus } from './types';
 
 export type { StorageStats } from './types';
 
 export const createStorageSlice = (set: SetFn, get: GetFn) => {
   return {
-    loadStorageStats: loadStorageStats(set, get),
+    loadStorage: loadStorage(set, get),
+    measureStorageSizes: measureStorageSizes(set, get),
     pruneArchivedTranscripts: pruneArchivedTranscripts(set, get),
-    removeArchivedWorktrees: removeArchivedWorktrees(set, get),
+    removeStorageFolders: removeStorageFolders(set, get),
+    keepStorageFolder: keepStorageFolder(set, get),
+    scanStorageRepository: scanStorageRepository(set, get),
+    checkStorageNudge: checkStorageNudge(set, get),
+    focusStorage: (focus: StorageFocus | null) => set({ storageFocus: focus }),
+    dismissStorageOutcome: () => set({ storageOutcome: null }),
   };
 };

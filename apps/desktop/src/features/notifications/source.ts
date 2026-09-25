@@ -53,6 +53,7 @@ export const notificationSource = ({
     case 'workspace-merged':
     case 'project-adopted':
     case 'orphan-worktrees':
+    case 'storage-reclaimable':
       return 'system';
     case 'error':
       return hasSession ? 'sessions' : 'system';

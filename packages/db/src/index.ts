@@ -239,6 +239,25 @@ export {
   markRetainedWorktreePathChecked,
   transferMountPathToRetained,
 } from './queries/retained-worktree-path';
+export {
+  deleteWorktreeLedgerEntries,
+  listWorktreeLedger,
+  recordOrphanWorktrees,
+  setWorktreeLedgerKeep,
+  setWorktreeLedgerSize,
+  type OrphanLedgerInput,
+} from './queries/worktree-ledger';
+export {
+  listStorageMounts,
+  listStorageSessionRefs,
+  type StorageMountRow,
+  type StorageSessionRef,
+} from './queries/storage-folders';
+export {
+  listWorktreeRoots,
+  markWorktreeRootScanned,
+  registerWorktreeRoot,
+} from './queries/worktree-root';
 export { insertSessionEvent, listSessionEvents } from './queries/session-event';
 export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
 export {

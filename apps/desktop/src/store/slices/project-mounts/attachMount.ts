@@ -8,6 +8,7 @@ import {
   listBranchNames,
   sessionDirExists,
 } from '../../../features/worktree/worktree';
+import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
 import { mountDirName } from './mountDirName';
 import { branchInUseError, mountError } from './mountErrors';
 import { withRepositoryAndMountLock } from './mountLocks';
@@ -104,6 +105,7 @@ export const attachMount = (set: SetFn, get: GetFn) => {
             session,
             prefix: prefixed.branchPrefix,
           });
+          await rememberWorktreeRoot({ repoRoot: view.repoRoot, addedBy: 'mount' });
           try {
             const created = await createWorktree({
               repoPath: view.repoRoot,

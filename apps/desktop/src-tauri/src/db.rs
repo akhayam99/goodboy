@@ -77,7 +77,9 @@ pub async fn db_list_migration_snapshots(state: State<'_, Db>) -> Result<Vec<Str
         .map_err(|e| DbError::MigrationSnapshotFilesystem(e.to_string()))?
 }
 
-fn db_list_migration_snapshots_blocking(db_path: PathBuf) -> Result<Vec<String>, DbError> {
+pub(crate) fn db_list_migration_snapshots_blocking(
+    db_path: PathBuf,
+) -> Result<Vec<String>, DbError> {
     let Some(parent) = db_path.parent() else {
         return Ok(Vec::new());
     };
