@@ -112,7 +112,10 @@ describe('m132 workspace profile bio', () => {
       notes: null,
     });
 
-    await migrate(db, migrations);
+    await migrate(
+      db,
+      migrations.filter((migration) => migration.version <= 132),
+    );
 
     const columns = await db.select<{ name: string }>(
       "SELECT name FROM pragma_table_info('workspace_profiles') ORDER BY cid ASC",

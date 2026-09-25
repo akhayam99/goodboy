@@ -24,7 +24,6 @@ mod path_env;
 mod permissions;
 mod planner;
 mod process_group;
-mod profile_file;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
@@ -201,7 +200,6 @@ pub fn run() {
             bridge::bridge_command_result,
             bridge::bridge_revoke,
             bridge::bridge_stop,
-            profile_file::workspace_profile_project,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,

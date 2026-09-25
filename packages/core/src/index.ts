@@ -180,6 +180,15 @@ export {
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
 export {
+  ROLE_LIBRARY,
+  ROLE_LIBRARY_GROUPS,
+  type RoleLibraryEntry,
+  type RoleLibraryGroup,
+} from './profile/roleLibrary';
+export { matchRoleLibrary } from './profile/matchRoleLibrary';
+export { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from './profile/profileAccess';
+
+export {
   sessionLanguageRule,
   sessionLanguageTurnRule,
   type SessionLanguageRuleParams,

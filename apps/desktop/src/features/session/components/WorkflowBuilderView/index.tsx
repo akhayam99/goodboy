@@ -40,6 +40,7 @@ import {
 } from '../../../workflows/workflows';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
+import { buildWorkspaceProjectsBlock } from '../../../../store/buildWorkspaceProjectsBlock';
 import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
@@ -741,14 +742,21 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
       });
+      const storeState = useAppStore.getState();
       const profileBlock = buildProfileGuard({
-        profile: useAppStore
-          .getState()
-          .workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+        profile: storeState.workspaces.find((candidate) => candidate.id === session.workspaceId)
+          ?.profile,
+        audience: 'planner',
       });
+      const projectsBlock = buildWorkspaceProjectsBlock({
+        projects: storeState.projects.filter(
+          (project) => project.workspaceId === session.workspaceId,
+        ),
+      });
+      const repoContext = [profileBlock, projectsBlock].filter((block) => block !== '').join('\n');
       const result = await client.plan({
         process,
-        ...(profileBlock.length > 0 && { repoContext: profileBlock }),
+        ...(repoContext.length > 0 && { repoContext }),
       });
       const planned = stepsFromPlan({ plan: result.output, roleModels });
       if (planned.length === 0) {

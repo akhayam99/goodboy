@@ -250,12 +250,12 @@ describe('mergeWorkspaces', () => {
   it('keeps the target profile and drops the source profile and branch prefix', async () => {
     const db = await seed();
     await db.execute(
-      `INSERT INTO workspace_profiles (workspace_id, bio, updated_at)
+      `INSERT INTO workspace_profiles (workspace_id, about_work, updated_at)
        VALUES (?, 'I write code.', ?)`,
       [target, NOW],
     );
     await db.execute(
-      `INSERT INTO workspace_profiles (workspace_id, bio, updated_at)
+      `INSERT INTO workspace_profiles (workspace_id, about_work, updated_at)
        VALUES (?, 'I do not write code.', ?)`,
       [source, NOW],
     );
@@ -272,10 +272,10 @@ describe('mergeWorkspaces', () => {
 
     await mergeWorkspaces({ db, sourceWorkspaceIds: [source], targetWorkspaceId: target });
 
-    const profiles = await db.select<{ workspace_id: string; bio: string }>(
-      'SELECT workspace_id, bio FROM workspace_profiles',
+    const profiles = await db.select<{ workspace_id: string; about_work: string }>(
+      'SELECT workspace_id, about_work FROM workspace_profiles',
     );
-    expect(profiles).toEqual([{ workspace_id: target, bio: 'I write code.' }]);
+    expect(profiles).toEqual([{ workspace_id: target, about_work: 'I write code.' }]);
     const settings = await db.select<{ key: string; value: string }>(
       "SELECT key, value FROM settings WHERE key LIKE '%.branch_prefix'",
     );

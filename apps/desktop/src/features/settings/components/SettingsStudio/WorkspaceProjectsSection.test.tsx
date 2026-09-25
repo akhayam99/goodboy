@@ -19,6 +19,9 @@ const { state, repoMocks } = vi.hoisted(() => ({
     })),
     previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
     removeProject: vi.fn(async () => undefined),
+    setProjectStarred: vi.fn(async () => undefined),
+    describeProject: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   },
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({
@@ -230,5 +233,102 @@ describe('WorkspaceProjectsSection', () => {
       expect(screen.queryByRole('group', { name: 'Unlink notify-relay?' })).toBeNull(),
     );
     expect(state.removeProject).not.toHaveBeenCalled();
+  });
+
+  it('stars a project from its row', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const star = screen.getByRole('button', { name: 'Starred: ledger-core' });
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(star);
+
+    await waitFor(() =>
+      expect(state.setProjectStarred).toHaveBeenCalledWith({
+        projectId: 'proj-ledger',
+        isStarred: true,
+      }),
+    );
+    expect(screen.getByText(/Starred projects come first for agents/)).toBeDefined();
+  });
+
+  it('shows a starred project as pressed and unstars it', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+        starredAt: '2026-09-25T09:00:00.000Z',
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    const star = screen.getByRole('button', { name: 'Starred: ledger-core' });
+    expect(star.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(star);
+
+    await waitFor(() =>
+      expect(state.setProjectStarred).toHaveBeenCalledWith({
+        projectId: 'proj-ledger',
+        isStarred: false,
+      }),
+    );
+  });
+
+  it('writes a one-line description in place and saves it on Enter', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add a description of ledger-core' }));
+    const field = screen.getByLabelText('Description of ledger-core');
+    fireEvent.change(field, { target: { value: 'Settles payments and writes the ledger' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(state.describeProject).toHaveBeenCalledWith({
+        projectId: 'proj-ledger',
+        description: 'Settles payments and writes the ledger',
+      }),
+    );
+  });
+
+  it('keeps the description when editing is cancelled with Escape', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'folder',
+        workspaceId: WORKSPACE_ID,
+        description: 'Settles payments',
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit the description of ledger-core' }));
+    const field = screen.getByLabelText('Description of ledger-core');
+    fireEvent.change(field, { target: { value: 'Something else' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    expect(screen.getByText('Settles payments')).toBeDefined();
+    expect(state.describeProject).not.toHaveBeenCalled();
   });
 });

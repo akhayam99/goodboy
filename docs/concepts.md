@@ -71,6 +71,15 @@ The new-workspace form offers **Single project**, **Multi project** and
 different kinds of workspace, and a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).
 
+You can **star** the projects you work on most and give each project a
+one-line **description**. Both live on the project row in workspace settings.
+
+- Every agent's project list puts starred projects first, marks them, shows each
+  description next to the name, and says to look in starred projects first when
+  a request names no project. The planner and the orchestrator get the same list
+- Project pickers and the Activity project filter put starred projects on top
+- A star never changes what an agent may mount or write
+
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
@@ -433,17 +442,26 @@ specific rule that fits wins.
 
 ## Workspace profile
 
-Each workspace can have one profile. It is a short bio you write in your own
-words, under the prompt "What agents should know about this workspace and you".
+Each workspace can have one profile, edited under "About you" on the workspace
+page and in onboarding. It has four fields:
 
-- The bio goes word for word into every agent's prompt, as what you say about
-  yourself
-- An empty bio adds nothing
-- When you save it, Goodboy also writes a plain copy to
-  `~/.goodboy/workspaces/<slug>/PROFILE.md`
+- **Your roles**: chips from a library of about 30 roles, or your own
+- **About your work**: what you do and for whom
+- **How agents should work with you**: your working rules
+- **Explain more when it touches**: topics where you want longer explanations
 
-The database holds the real copy. Goodboy writes the file but never reads it
-back.
+Each agent reads only the fields its job needs. The matrix is
+`PROFILE_ACCESS` in `packages/core/src/profile/profileAccess.ts`, and the form
+shows it under "See who reads what".
+
+- Planner, orchestrator and the question delegate read roles, work and rules
+- Scout, investigator, report and wireframe read roles, work and topics
+- Implementer, tester and docs read roles and rules
+- Reviewer and resolver read roles, rules and topics
+- A custom role reads every field
+- Task models read nothing, and the profile never goes into text Goodboy posts
+
+Empty fields add nothing. The profile lives only in the database.
 
 ## Integrations
 
@@ -680,6 +698,7 @@ An agent materializes a project through the query bridge like this:
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
 - `packages/core/src/skills/registry.ts`: finds skills
-- `apps/desktop/src-tauri/src/profile_file.rs`: writes `PROFILE.md`
+- `packages/core/src/profile/profileAccess.ts`: which profile fields each
+  role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb
 - `packages/db/src/queries/resolve-thread.ts`: review conversations

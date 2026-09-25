@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import type { Workspace } from '@goodboy/types';
+import type { Workspace, WorkspaceProfile } from '@goodboy/types';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
@@ -14,8 +14,8 @@ type Props = {
   readonly shapeStep: ComponentProps<typeof ShapeStep>;
   readonly workspace: Workspace | null;
   readonly pendingConflicts: ReadonlyArray<ProjectAttachConflict>;
-  readonly bio: string;
-  readonly onBioChange: (bio: string) => void;
+  readonly profile: WorkspaceProfile;
+  readonly onProfileChange: (profile: WorkspaceProfile) => void;
 };
 
 export const WizardStepBody = ({
@@ -23,8 +23,8 @@ export const WizardStepBody = ({
   shapeStep,
   workspace,
   pendingConflicts,
-  bio,
-  onBioChange,
+  profile,
+  onProfileChange,
 }: Props) => {
   switch (step) {
     case 'welcome':
@@ -40,7 +40,7 @@ export const WizardStepBody = ({
         )
       );
     case 'profile':
-      return <ProfileStep bio={bio} onBioChange={onBioChange} />;
+      return <ProfileStep profile={profile} onProfileChange={onProfileChange} />;
     case 'ready':
       return <ReadyStep />;
     default: {

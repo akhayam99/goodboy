@@ -35,7 +35,11 @@ export const SETTINGS_WORKSPACE: Workspace = {
   name: 'Harborline',
   slug: 'harborline',
   profile: {
-    bio: 'Payments platform team. ledger-core settles, notify-relay fans out receipts, payments-api fronts both.',
+    roles: ['Tech Lead', 'Backend Engineer'],
+    aboutWork:
+      'Leads the payments platform team. Owns settlement correctness and the ledger schema.',
+    workingRules: null,
+    explainMore: ['Rust'],
   },
   overrides: SETTINGS_OVERRIDES,
   createdAt: SETTINGS_NOW,
@@ -47,15 +51,26 @@ type ProjectParams = {
   readonly name: string;
   readonly rootPath: string;
   readonly kind: Project['kind'];
+  readonly description?: string;
+  readonly isStarred?: boolean;
 };
 
-const makeProject = ({ id, name, rootPath, kind }: ProjectParams): Project => ({
+const makeProject = ({
+  id,
+  name,
+  rootPath,
+  kind,
+  description,
+  isStarred = false,
+}: ProjectParams): Project => ({
   id: id as ProjectId,
   workspaceId: SETTINGS_WORKSPACE_ID,
   name,
   rootPath,
   kind,
   baseBranch: kind === 'repo' ? 'main' : null,
+  description: description ?? null,
+  ...(isStarred ? { starredAt: SETTINGS_NOW } : {}),
   overrides: SETTINGS_OVERRIDES,
   createdAt: SETTINGS_NOW,
   updatedAt: SETTINGS_NOW,
@@ -67,6 +82,8 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
     name: 'ledger-core',
     rootPath: '/mock/harborline/ledger-core',
     kind: 'repo',
+    description: 'Settles payments and writes the ledger',
+    isStarred: true,
   }),
   makeProject({
     id: 'mock-settings-relay',
@@ -79,12 +96,15 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
     name: 'payments-api',
     rootPath: '/mock/harborline/services/payments-api-with-a-long-folder-name',
     kind: 'repo',
+    description: 'Public API in front of ledger-core and notify-relay',
+    isStarred: true,
   }),
   makeProject({
     id: 'mock-settings-runbooks',
     name: 'runbooks',
     rootPath: '/mock/harborline/runbooks',
     kind: 'folder',
+    description: 'On-call runbooks, plain folder',
   }),
 ];
 

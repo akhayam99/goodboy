@@ -331,7 +331,10 @@ describe('workspace and project slices', () => {
   it('persists a container profile and updates the cached workspace', async () => {
     const store = harness({ workspaces: [workspace()] });
     const profile: WorkspaceProfile = {
-      bio: 'I keep the platform reliable.',
+      roles: ['Site Reliability Engineer'],
+      aboutWork: 'I keep the platform reliable.',
+      workingRules: null,
+      explainMore: [],
     };
 
     const result = await updateWorkspaceProfile(

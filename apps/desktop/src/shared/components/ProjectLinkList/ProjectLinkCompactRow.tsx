@@ -5,6 +5,8 @@ import { InlineConfirm, OverflowMenu, Tooltip } from '@goodboy/ui';
 import { openInEditor } from '../../lib/editor';
 import { useAppStore } from '../../../store';
 import { ICON_SIZE } from '../conceptIcons';
+import { ProjectDescriptionField } from './ProjectDescriptionField';
+import { ProjectStarToggle } from './ProjectStarToggle';
 
 type Props = {
   readonly project: Project;
@@ -38,17 +40,19 @@ export const ProjectLinkCompactRow = ({ project, busy, accessory, onUnlink }: Pr
   return (
     <li className="flex flex-col gap-1">
       <div className="flex h-9 min-w-0 items-center gap-2 rounded-md px-2 hover:bg-hover">
+        <ProjectStarToggle project={project} busy={busy} />
         <KindIcon
           size={ICON_SIZE.row}
           role="img"
           aria-label={isRepo ? 'Repository' : 'Folder'}
           className="shrink-0 text-muted-foreground"
         />
-        <Tooltip content={project.rootPath} anchorClassName="flex min-w-0 flex-1">
+        <Tooltip content={project.rootPath} anchorClassName="flex min-w-0 max-w-[40%] shrink-0">
           <span tabIndex={0} className="truncate text-sm font-medium text-foreground">
             {project.name}
           </span>
         </Tooltip>
+        <ProjectDescriptionField project={project} busy={busy} />
         {accessory}
         <OverflowMenu
           label={`Actions for ${project.name}`}

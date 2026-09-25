@@ -29,6 +29,7 @@ type FilterOption = {
   readonly id: string;
   readonly label: string;
   readonly count: number;
+  readonly isStarred?: boolean;
 };
 
 type UpdateOptionParams = {
@@ -91,8 +92,12 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
         id: project.id,
         label: project.name,
         count: counts.get(project.id) ?? 0,
+        isStarred: project.starredAt !== undefined,
       }))
-      .sort((left, right) => left.label.localeCompare(right.label));
+      .sort(
+        (left, right) =>
+          Number(right.isStarred) - Number(left.isStarred) || left.label.localeCompare(right.label),
+      );
     if (noProjectCount === 0) {
       return projectOptions;
     }

@@ -1,4 +1,5 @@
 import type { MountId, Project, SessionProjectMount } from '@goodboy/types';
+import { starredProjectLines } from './starredProjectLines';
 
 type ScopeGuardParams = {
   readonly workingDir: string;
@@ -12,6 +13,7 @@ type ScopeGuardParams = {
 
 type ProjectLineParams = {
   readonly project: Project;
+  readonly focus: string;
   readonly mounts: ReadonlyArray<SessionProjectMount>;
 };
 
@@ -20,9 +22,9 @@ const mountSummary = ({ mount }: { readonly mount: SessionProjectMount }): strin
   return `${mount.worktreePath} (${branch})`;
 };
 
-const projectLine = ({ project, mounts }: ProjectLineParams): string => {
+const projectLine = ({ project, focus, mounts }: ProjectLineParams): string => {
   const owned = mounts.filter((candidate) => candidate.projectId === project.id);
-  const identity = `- ${project.name} (${project.kind}) root: ${project.rootPath}`;
+  const identity = `- ${project.name} (${project.kind}) root: ${project.rootPath}${focus}`;
   if (owned.length === 0) {
     return `${identity} | NOT materialized: read it freely, mount it only to write`;
   }
@@ -137,7 +139,10 @@ const workspaceLines = ({ projects, mounts }: WorkspaceParams): ReadonlyArray<st
   }
   return [
     'This session belongs to a workspace with these projects:',
-    ...projects.map((project) => projectLine({ project, mounts })),
+    ...starredProjectLines({
+      projects,
+      line: ({ project, focus }) => projectLine({ project, focus, mounts }),
+    }),
     ...READING_LINES,
   ];
 };
