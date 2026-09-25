@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button, Markdown, Textarea, cn } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
@@ -8,8 +9,23 @@ type Props = {
   readonly onSave?: ((next: string) => Promise<void>) | null;
 };
 
+const CLAMP_LINES = 10;
+const CHARS_PER_LINE = 72;
+
+type OverflowParams = {
+  readonly text: string;
+};
+
+const overflowsClamp = ({ text }: OverflowParams): boolean =>
+  text
+    .split('\n')
+    .reduce((total, line) => total + Math.max(1, Math.ceil(line.length / CHARS_PER_LINE)), 0) >
+  CLAMP_LINES;
+
 export const DescriptionSection = ({ text, onSave }: Props) => {
   const edit = useInlineProseEdit({ value: text, onCommit: onSave });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isClamped = !isExpanded && overflowsClamp({ text });
 
   if (edit.isEditing) {
     return (
@@ -76,11 +92,22 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
         data-testid="description-body"
       >
         {text.trim() !== '' ? (
-          <Markdown text={text} className="text-sm leading-relaxed" />
+          <div className={cn('min-w-0', isClamped && 'line-clamp-[10] [&>*]:block')}>
+            <Markdown text={text} className="text-sm leading-relaxed" />
+          </div>
         ) : (
           <p className="text-sm italic text-faint-foreground">No description.</p>
         )}
       </div>
+      {overflowsClamp({ text }) ? (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="self-start text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          {isExpanded ? 'Show less' : 'Show more'}
+        </button>
+      ) : null}
     </StudioWidget>
   );
 };

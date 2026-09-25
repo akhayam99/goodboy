@@ -174,7 +174,7 @@ describe('InlineConfirm', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Go' }).className).toContain('bg-danger');
-    expect(screen.getByRole('button', { name: 'Cancel' }).className).toContain('bg-muted');
+    expect(screen.getByRole('button', { name: 'Cancel' }).className).toContain('bg-fill');
 
     rerender(
       <InlineConfirm

@@ -1,21 +1,11 @@
-import { useMemo } from 'react';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
-import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
-import { EMPTY_ARRAY, useAppStore, useSessionCost, useSessionStageInfo } from '../../../../store';
 import type { Session, SessionId } from '@goodboy/types';
-import {
-  PANE_RHYTHM,
-  StatusDot,
-  TERMINAL_DIM,
-  cn,
-  formatUsd,
-  tintClasses,
-  InlineMarkdown,
-  inlineMarkdownText,
-} from '@goodboy/ui';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { describeSessionStage } from '../../../../features/session/session-stage';
-import { stateDescription } from '../../../../shared/utils/statePresentation';
+import { PANE_RHYTHM, TERMINAL_DIM, cn, formatUsd, tintClasses, InlineMarkdown } from '@goodboy/ui';
+import { sessionRail } from '../../../session/components/sessionCardShell';
+import { useSessionSummary } from '../../hooks/useSessionSummary';
+import { SessionProgress } from '../SessionProgress';
+import { SessionRowMeta } from './SessionRowMeta';
+import { SessionRowNode } from './SessionRowNode';
 
 type SelectionClickEvent = {
   readonly shiftKey: boolean;
@@ -41,16 +31,9 @@ export const SessionActivityItem = ({
   onModifierClick,
   onClick,
 }: Props) => {
-  const stageInfo = useSessionStageInfo(session);
-  const { stage, reason } = stageInfo;
-  const prMeta = stageInfo.prState === null ? null : PULL_REQUEST_PRESENTATION[stageInfo.prState];
-  const stagePresentation = describeSessionStage(stageInfo);
-  const externalTasks = useAppStore(
-    (state) => state.sessionExternalTasks[session.id as SessionId] ?? EMPTY_ARRAY,
-  );
-  const sessionCost = useSessionCost(session.id as SessionId);
-  const age = formatRelativeAge({ fromIso: session.updatedAt });
-  const plainGoal = useMemo(() => inlineMarkdownText({ text: session.goal }), [session.goal]);
+  const summary = useSessionSummary({ session });
+  const rail = sessionRail({ stage: summary.stage, attention: summary.attention });
+  const hasCost = summary.cost > 0;
 
   return (
     <button
@@ -72,42 +55,55 @@ export const SessionActivityItem = ({
         event.preventDefault();
         onModifierClick(session.id as SessionId, event);
       }}
-      title={`${plainGoal} · ${stateDescription({ presentation: stagePresentation })}${prMeta != null ? ` · PR ${prMeta.label}` : ''}${externalTasks.length > 0 ? ` · ${externalTasks.map((task) => task.identifier).join(', ')}` : ''}`}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        '@container group/session-row flex w-full cursor-pointer items-start gap-2 rounded-md border-l-2 border-l-transparent text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         PANE_RHYTHM.navRail.row,
+        rail,
         isActive && 'bg-muted font-medium text-foreground',
         isSelected && cn(tintClasses('primary').bg, 'ring-1', tintClasses('primary').ring),
         isDimmed && TERMINAL_DIM,
       )}
     >
-      <span className="inline-flex h-5 shrink-0 items-center">
-        <StatusDot
-          tone={stagePresentation.tone}
-          size="sm"
-          pulsing={stage === 'running'}
-          ariaLabel={stateDescription({ presentation: stagePresentation })}
-        />
-      </span>
+      <SessionRowNode
+        stage={summary.stage}
+        attention={summary.attention}
+        tone={summary.tone}
+        prState={summary.prState}
+      />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <InlineMarkdown
-          text={session.goal}
-          className="min-w-0 truncate text-sm font-medium leading-5 text-foreground"
-        />
+        <span className="flex w-full min-w-0 items-baseline gap-2">
+          <InlineMarkdown
+            text={session.goal}
+            className="min-w-0 flex-1 truncate text-sm font-medium leading-5 text-foreground"
+          />
+          <span
+            data-testid="session-row-trailing"
+            className="w-12 shrink-0 text-right text-3xs tabular-nums text-faint-foreground"
+          >
+            <span className={cn(hasCost && 'group-hover/session-row:hidden')}>{summary.age}</span>
+            {hasCost ? (
+              <CostBadge
+                value={summary.cost}
+                title={`Session spend: ${formatUsd(summary.cost)} (excludes summarizer)`}
+                className="hidden font-sans text-3xs font-medium tabular-nums text-muted-foreground group-hover/session-row:inline"
+              />
+            ) : null}
+          </span>
+        </span>
         <span className="flex w-full min-w-0 items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">{reason}</span>
-          {sessionCost > 0 ? (
-            <CostBadge
-              value={sessionCost}
-              title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 font-sans text-3xs font-medium tabular-nums text-faint-foreground"
-            />
-          ) : null}
-          {age !== '' ? (
-            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
-          ) : null}
+          {summary.progress !== null ? (
+            <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
+          ) : (
+            <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+              {summary.reason}
+            </span>
+          )}
+          {summary.meta.map((item) => (
+            <SessionRowMeta key={item.kind} item={item} />
+          ))}
         </span>
       </span>
+      <span className="sr-only">{summary.description}</span>
     </button>
   );
 };

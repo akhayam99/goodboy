@@ -196,6 +196,12 @@ You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
 
+**Start agent** asks only for a role and its routing. The button says what
+happens next: an Implementer with an active plan starts on that plan right
+away, and every other role opens its chat with the cursor in the composer so
+you write the first message. Until you do, its row reads "Waiting for your
+first message" and does not count as needing you.
+
 An agent finishes on its own. Once its last turn succeeded, it has no open
 question of its own, no turn is starting or running and no child still works,
 it moves to the finished agents without a click. Sending it a new message
@@ -294,7 +300,23 @@ An artifact has a status:
 ### Open questions
 
 Planner agents write plans. Other agents use them, and Goodboy remembers who
-used which plan. The plans studio shows each plan as a tree.
+used which plan. The Artifacts page lists plans, reports and wireframes as one
+list, newest first, and opens each of them in the same page: a small header
+with at most one main action, the document at reading size, and a right panel
+for its details and for a chat with the agent that wrote it.
+
+The planner splits a plan into **parts** (the `clusters` of the plan). The plan
+page lists them after its goal, says who split them, and shows for each one its
+checks, the files it touches and its model (`Auto` when the planner proposed
+none). Once the plan runs, each part takes the state of the subagent that
+carries it, matched by order under the agent that ran the plan.
+
+A wireframe opens on its **Flow**: the graph of its screens, a one line legend
+(`next`, `back`, `same screen`, told apart by line style and glyph, never by
+colour) and the screens as a grid under it. A node or a tile opens
+**Screens**, the clickable canvas with a screen picker, previous and next, and
+zoom. **Export** says what each copy gives: a JSON file, the JSON on the
+clipboard, or only the open screen.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
@@ -342,8 +364,9 @@ with a local commit and never pushes.
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
   suggestion. Each carries the thread ids and the marker contract. The click
-  uses the last model picked in the session, or the resolver default; the
-  chevron opens the shared picker with every connected provider
+  uses the last model picked in the session, or the suggested resolver model;
+  the chevron opens the shared picker with every connected provider, a
+  **Suggested** row that says why, and **Last used here** when it differs
 - Fixes run one at a time in the session worktree, so two fixes never fight
   over the same branch
 - After a restart, Goodboy rebuilds everything from its database, not from a
@@ -447,7 +470,7 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the session kickoff, or opening the launch dock on an
+Picking an issue in the session kickoff, or opening Launch session on an
 inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
@@ -456,7 +479,7 @@ brief is only a proposal. In the overview you pick Use brief, Edit, Use issue
 text or Dismiss, and a failure stays inline in the card with Retry. The brief
 renames the session only when you have not renamed it yourself, and the goal it
 writes lands in the goal history, so the previous goal can be restored. In the
-launch dock the brief fills the goal only while you have not edited it, and
+Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.
@@ -487,10 +510,15 @@ Merge and pull requests launch with their text as it is.
 
 The inbox is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
-record each. Records are grouped by age (today, yesterday, this week, older),
-with alerts first in each group, and you can filter them by kind. A record
-opens in full with the source's own actions. From it you start a session, or
-open the session already linked to it.
+record each, one line per record. Records are grouped by day (today,
+yesterday, this week, older) and ordered by time only, newest first. A facet
+rail filters them by view (all, in progress, with a session, closed), by type
+and by source, one pick per section, with counts; only the types a connected
+tool can produce show. A tool that did not load says so in its source row and
+in one notice above the list. The state column uses the tool's own word, the
+same one the record shows. A record opens in a drawer beside the list, with the
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
+to it.
 
 ## Providers and routing
 
@@ -570,7 +598,7 @@ in Goodboy.
   | unmount             | Close worktree, and Reopen for a closed row       |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
   | handoff             | Suggested next: Implementer, the next brief       |
-  | cluster             | subagent                                          |
+  | cluster             | part (in a plan), subagent (once it runs)         |
   | lens                | tab                                               |
   | studio              | the page name alone: Workflows, Impact, Providers |
   | materialize         | add to this session                               |

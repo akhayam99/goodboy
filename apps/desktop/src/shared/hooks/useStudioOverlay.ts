@@ -4,6 +4,7 @@ const EXIT_MS = 200;
 
 type Params = {
   readonly onClose: () => void;
+  readonly isEscapeEnabled?: boolean;
 };
 
 type StudioOverlay = {
@@ -11,16 +12,18 @@ type StudioOverlay = {
   readonly requestClose: () => void;
 };
 
-export const useStudioOverlay = ({ onClose }: Params): StudioOverlay => {
+export const useStudioOverlay = ({ onClose, isEscapeEnabled = true }: Params): StudioOverlay => {
   const [closing, setClosing] = useState(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const isEscapeEnabledRef = useRef(isEscapeEnabled);
+  isEscapeEnabledRef.current = isEscapeEnabled;
 
   const requestClose = useCallback(() => setClosing(true), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && isEscapeEnabledRef.current) {
         requestClose();
       }
     };

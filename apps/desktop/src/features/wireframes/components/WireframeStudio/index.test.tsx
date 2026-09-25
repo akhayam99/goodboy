@@ -109,6 +109,15 @@ const renderStudio = (overrides: Record<string, unknown> = {}) =>
     />,
   );
 
+const renderScreens = (overrides: Record<string, unknown> = {}) => {
+  const view = renderStudio(overrides);
+  fireEvent.click(screen.getByRole('tab', { name: 'Screens' }));
+  return view;
+};
+
+const selectScreen = (screenId: string) =>
+  fireEvent.change(screen.getByTestId('wireframe-screen-select'), { target: { value: screenId } });
+
 const currentScreen = () => screen.getByTestId('wireframe-screen').getAttribute('data-screen-id');
 
 const PANE_WIDTH = 640;
@@ -141,11 +150,34 @@ afterEach(() => {
 });
 
 describe('WireframeStudio', () => {
-  it('renders the initial screen with its tabs', () => {
+  it('opens on the flow, with the screens as a grid under it', () => {
     renderStudio();
+    expect(screen.getByTestId('wireframe-studio').getAttribute('data-view')).toBe('flow');
+    expect(screen.getByTestId('wireframe-flow-overview')).toBeDefined();
+    expect(screen.getAllByTestId('wireframe-sheet-frame')).toHaveLength(3);
+    expect(screen.getByTestId('wireframe-flow-legend')).toBeDefined();
+    expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
+  });
+
+  it('offers two views, Flow and Screens, and no separate contact sheet', () => {
+    renderStudio();
+    const views = screen.getByRole('tablist', { name: 'Wireframe view' });
+    expect([...views.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual([
+      'Flow',
+      'Screens',
+    ]);
+  });
+
+  it('renders the initial screen with a screen select that counts its place', () => {
+    renderScreens();
     expect(currentScreen()).toBe('inbox');
-    expect(screen.getByRole('tab', { name: /Inbox/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /Archive/ })).toBeDefined();
+    const select = screen.getByTestId('wireframe-screen-select') as HTMLSelectElement;
+    expect([...select.options].map((option) => option.textContent)).toEqual([
+      'Inbox',
+      'Message',
+      'Archive',
+    ]);
+    expect(screen.getByText('1/3')).toBeDefined();
   });
 
   it('leaves provenance and fidelity to the detail band, not to the canvas column', () => {
@@ -156,30 +188,27 @@ describe('WireframeStudio', () => {
   });
 
   it('renders an image node as a labelled placeholder, never a remote asset', () => {
-    const { container } = renderStudio();
+    const { container } = renderScreens();
     expect(screen.getByRole('img', { name: 'chart placeholder (placeholder)' })).toBeDefined();
     expect(container.querySelectorAll('img')).toHaveLength(0);
   });
 
-  it('navigates through a hotspot and back and forward through the history', () => {
-    renderStudio();
+  it('navigates through a hotspot', () => {
+    renderScreens();
     fireEvent.click(screen.getByText('Open message'));
     expect(currentScreen()).toBe('message');
-    fireEvent.click(screen.getByTestId('wireframe-back'));
-    expect(currentScreen()).toBe('inbox');
-    fireEvent.click(screen.getByTestId('wireframe-forward'));
-    expect(currentScreen()).toBe('message');
+    expect(screen.getByText('2/3')).toBeDefined();
   });
 
   it('navigates from a node whose only action is a declared transition', () => {
-    renderStudio();
+    renderScreens();
     fireEvent.click(screen.getByText('Go to archive'));
     expect(currentScreen()).toBe('archive');
   });
 
   it('reserves the scroll box from the real height of the screen', () => {
     const restore = stubBox({ key: 'offsetHeight', value: 1200 });
-    renderStudio();
+    renderScreens();
     const box = screen.getByTestId('wireframe-screen').parentElement;
     expect(box?.style.height).toBe(`${1200 * 0.47}px`);
     restore();
@@ -187,31 +216,31 @@ describe('WireframeStudio', () => {
 
   it('fits a screen taller than the pane on its height, not on its width', () => {
     const restore = stubBox({ key: 'offsetHeight', value: 1200 });
-    renderStudio();
+    renderScreens();
     expect(screen.getByText(/%$/).textContent).toBe('47%');
     const canvas = screen.getByTestId('wireframe-canvas');
     expect(canvas.style.maxHeight).toBe('744px');
-    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    selectScreen('archive');
     expect(screen.getByText(/%$/).textContent).toBe('59%');
     const drawn = screen.getByTestId('wireframe-screen').parentElement;
     expect(Number.parseFloat(drawn?.style.height ?? '0')).toBeLessThanOrEqual(744);
     restore();
   });
 
-  it('keeps the screen tabs and the canvas controls on one toolbar band', () => {
-    renderStudio();
+  it('keeps the screen select and the canvas controls on one toolbar band', () => {
+    renderScreens();
     const toolbar = screen.getByTestId('wireframe-toolbar');
-    expect(toolbar.contains(screen.getByTestId('wireframe-screen-tabs'))).toBe(true);
+    expect(toolbar.contains(screen.getByTestId('wireframe-screen-select'))).toBe(true);
     expect(toolbar.contains(screen.getByTestId('wireframe-zoom-fit'))).toBe(true);
   });
 
   it('leaves the variant action to the identity band instead of the canvas controls', () => {
-    renderStudio();
+    renderScreens();
     expect(screen.queryByTestId('wireframe-convert-fidelity')).toBeNull();
   });
 
   it('opens on the toolbar, with the canvas as the first thing under it', () => {
-    renderStudio();
+    renderScreens();
     const canvas = screen.getByTestId('wireframe-canvas');
     const toolbar = screen.getByTestId('wireframe-toolbar');
     expect(canvas.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_PRECEDING).toBe(
@@ -221,7 +250,7 @@ describe('WireframeStudio', () => {
   });
 
   it('walks the screens in document order with previous and next', () => {
-    renderStudio();
+    renderScreens();
     expect(screen.getByTestId('wireframe-previous').hasAttribute('disabled')).toBe(true);
     fireEvent.click(screen.getByTestId('wireframe-next'));
     expect(currentScreen()).toBe('message');
@@ -232,49 +261,49 @@ describe('WireframeStudio', () => {
     expect(currentScreen()).toBe('message');
   });
 
-  it('jumps to a screen from the flow overview', () => {
+  it('opens a screen from a node of the flow', () => {
     renderStudio();
-    expect(screen.getByTestId('wireframe-flow-overview')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Go to Archive' }));
+    expect(screen.getByTestId('wireframe-studio').getAttribute('data-view')).toBe('screen');
     expect(currentScreen()).toBe('archive');
   });
 
   it('fits the desktop screen to the pane on mount and refits on a screen change', () => {
-    renderStudio();
+    renderScreens();
     expect(screen.getByText(/%$/).textContent).toBe('47%');
-    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    selectScreen('archive');
     expect(currentScreen()).toBe('archive');
     expect(screen.getByText(/%$/).textContent).toBe('110%');
   });
 
   it('keeps a manual zoom and the selection across a screen switch', () => {
-    renderStudio();
+    renderScreens();
     fireEvent.click(screen.getByText('Inbox', { selector: 'p' }));
     fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
     expect(screen.getByText(/%$/).textContent).toBe('57%');
-    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    selectScreen('archive');
     expect(currentScreen()).toBe('archive');
     expect(screen.getByText(/%$/).textContent).toBe('57%');
     fireEvent.click(screen.getByTestId('wireframe-zoom-out'));
     expect(screen.getByText(/%$/).textContent).toBe('47%');
-    fireEvent.click(screen.getByRole('tab', { name: /Inbox/ }));
+    selectScreen('inbox');
     const heading = screen.getByText('Inbox', { selector: 'p' });
     expect(heading.getAttribute('style')).toContain('outline');
   });
 
   it('returns to the fitted view when Fit is pressed after a manual zoom', () => {
-    renderStudio();
+    renderScreens();
     fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
     fireEvent.click(screen.getByTestId('wireframe-zoom-in'));
     expect(screen.getByText(/%$/).textContent).toBe('67%');
     fireEvent.click(screen.getByTestId('wireframe-zoom-fit'));
     expect(screen.getByText(/%$/).textContent).toBe('47%');
-    fireEvent.click(screen.getByRole('tab', { name: /Archive/ }));
+    selectScreen('archive');
     expect(screen.getByText(/%$/).textContent).toBe('110%');
   });
 
   it('toggles declared mock state instead of navigating', () => {
-    renderStudio();
+    renderScreens();
     expect(screen.queryByTestId('wireframe-mock-state')).toBeNull();
     fireEvent.click(screen.getByText('Filters'));
     expect(currentScreen()).toBe('inbox');
@@ -282,7 +311,7 @@ describe('WireframeStudio', () => {
   });
 
   it('keeps the mock state as a chip inside the toolbar', () => {
-    renderStudio();
+    renderScreens();
     expect(screen.queryByTestId('wireframe-mock-state')).toBeNull();
     fireEvent.click(screen.getByText('Filters'));
     const chip = screen.getByTestId('wireframe-mock-state');
@@ -346,7 +375,7 @@ describe('WireframeStudio', () => {
       ],
       transitions: [],
     };
-    renderStudio({ sourceText: JSON.stringify(drifted) });
+    renderScreens({ sourceText: JSON.stringify(drifted) });
     expect(screen.getByTestId('wireframe-canvas')).toBeDefined();
     expect(screen.queryByTestId('wireframe-issues')).toBeNull();
     const adjustments = screen.getByTestId('wireframe-adjustments');
@@ -575,7 +604,6 @@ describe('WireframeStudio', () => {
 
   it('follows a hotspot inside the sheet without leaving the sheet', () => {
     renderStudio();
-    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
     const frames = () =>
       screen
         .getAllByTestId('wireframe-sheet-frame')
@@ -585,30 +613,27 @@ describe('WireframeStudio', () => {
     fireEvent.click(screen.getByText('Open message'));
     expect(frames()).toEqual(['message']);
     expect(screen.getByTestId('wireframe-contact-sheet')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Screens' }));
     expect(currentScreen()).toBe('message');
-    expect(screen.getByTestId('wireframe-back').hasAttribute('disabled')).toBe(false);
   });
 
   it('opens one frame on its own from the sheet', () => {
     renderStudio();
-    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
     const opens = screen.getAllByTestId('wireframe-sheet-open');
     fireEvent.click(opens[2] as HTMLElement);
     expect(currentScreen()).toBe('archive');
     expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
   });
 
-  it('swaps the clickable screen for a contact sheet of every screen and back', () => {
+  it('swaps the flow and its grid for the clickable screen and back', () => {
     renderStudio();
-    expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Contact sheet' }));
-    expect(screen.getAllByTestId('wireframe-sheet-frame')).toHaveLength(3);
-    expect(screen.queryByTestId('wireframe-canvas')).toBeNull();
     expect(screen.queryByTestId('wireframe-zoom-fit')).toBeNull();
-    expect(screen.queryByTestId('wireframe-screen-tabs')).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Screen' }));
+    expect(screen.queryByTestId('wireframe-screen-select')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Screens' }));
     expect(currentScreen()).toBe('inbox');
     expect(screen.queryByTestId('wireframe-contact-sheet')).toBeNull();
+    expect(screen.queryByTestId('wireframe-flow-overview')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
+    expect(screen.getByTestId('wireframe-contact-sheet')).toBeDefined();
   });
 });

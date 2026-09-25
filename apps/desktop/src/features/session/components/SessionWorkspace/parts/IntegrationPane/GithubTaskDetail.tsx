@@ -1,9 +1,7 @@
-import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
-import type { ReactNode } from 'react';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
-import { HeaderBand } from '@goodboy/ui';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { GithubIssueDetail } from '../../../../../github/GithubIssueDetail';
 import { useGithubIssue } from '../../../../../github/useGithubIssue';
 
@@ -12,10 +10,9 @@ type Props = {
   readonly rootPath: string | null;
   readonly task?: SessionExternalTask;
   readonly issueNumber?: number;
-  readonly eyebrow?: ReactNode;
 };
 
-export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber, eyebrow }: Props) => {
+export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: Props) => {
   const resolvedIssueNumber = issueNumber ?? Number(task?.externalId);
   const { issue, isLoading, error, refetch } = useGithubIssue({
     workspaceId,
@@ -27,27 +24,16 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber, eye
     return (
       <GithubIssueDetail
         issue={issue}
-        fit="fill"
-        eyebrow={eyebrow}
         {...(rootPath != null && { editContext: { workspaceId, rootPath } })}
       />
     );
   }
 
   return (
-    <StudioDetailLayout
-      fit="fill"
-      eyebrow={eyebrow}
-      header={
-        <HeaderBand
-          title={task?.title ?? `#${resolvedIssueNumber}`}
-          meta={
-            <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-              {task?.identifier ?? `#${resolvedIssueNumber}`}
-            </span>
-          }
-        />
-      }
+    <PaneShell
+      scroll="body"
+      title={task?.title ?? `#${resolvedIssueNumber}`}
+      meta={<span className="font-mono">{task?.identifier ?? `#${resolvedIssueNumber}`}</span>}
     >
       {isLoading ? (
         <div role="status" aria-label="Loading GitHub issue" className="flex flex-col gap-3">
@@ -59,6 +45,6 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber, eye
       {error != null ? (
         <ErrorStrip label="the GitHub issue" error={new Error(error)} onRetry={refetch} />
       ) : null}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

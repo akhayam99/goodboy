@@ -18,13 +18,14 @@ type Store = {
   artifactConversationAgentId: Record<string, string | null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
+  sessionArtifacts: Record<string, ReadonlyArray<unknown>>;
+  focusedArtifactId: Record<string, string | null>;
   sessionTelemetry: Record<string, ReadonlyArray<never>>;
   messages: Record<string, ReadonlyArray<never>>;
   agentRunHistory: Record<string, ReadonlyArray<never>>;
   focusedWorkflowRunId: Record<string, string | null>;
   phaseTemplates: Record<string, ReadonlyArray<unknown>>;
   sessionWorkflows: Record<string, ReadonlyArray<unknown>>;
-  focusedPlanId: Record<string, string | null>;
   artifactCreation: Record<string, { readonly kind: string } | null>;
   focusedGithubIssueNumber: Record<string, number | null>;
   sessionExternalTasks: Record<string, ReadonlyArray<unknown>>;
@@ -34,18 +35,20 @@ type Store = {
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
+  reviewModes: Record<string, string>;
+  setReviewMode: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
-  setFocusedPlanId: ReturnType<typeof vi.fn>;
   reconcileSessionBranch: ReturnType<typeof vi.fn>;
   loadPhaseRunsForSession: ReturnType<typeof vi.fn>;
   loadSessionPlans: ReturnType<typeof vi.fn>;
 };
 
 type PaneShellMockProps = {
-  readonly title: string;
+  readonly title?: string;
+  readonly header?: React.ReactNode;
   readonly meta?: React.ReactNode;
   readonly children: React.ReactNode;
 };
@@ -65,13 +68,14 @@ const { store, hooks } = vi.hoisted(() => ({
     artifactConversationAgentId: {},
     sessionPhaseRuns: {},
     sessionPlans: {},
+    sessionArtifacts: {},
+    focusedArtifactId: {},
     sessionTelemetry: {},
     messages: {},
     agentRunHistory: {},
     focusedWorkflowRunId: {},
     phaseTemplates: {},
     sessionWorkflows: {},
-    focusedPlanId: {},
     artifactCreation: {},
     focusedGithubIssueNumber: {},
     sessionExternalTasks: {},
@@ -82,12 +86,13 @@ const { store, hooks } = vi.hoisted(() => ({
     agentKindOverride: {},
     sessionLoading: {},
     resolveAgentReturn: {},
+    reviewModes: {},
+    setReviewMode: vi.fn(),
     selectAgent: vi.fn(),
     setActiveLens: vi.fn(),
     returnFromResolveAgent: vi.fn(),
     setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
-    setFocusedPlanId: vi.fn(),
     reconcileSessionBranch: vi.fn(async () => undefined),
     loadPhaseRunsForSession: vi.fn(async () => undefined),
     loadSessionPlans: vi.fn(async () => undefined),
@@ -251,15 +256,23 @@ vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../shared/components/PaneShell', () => ({
-  PaneShell: ({ title, meta, children }: PaneShellMockProps) => (
-    <div>
-      <h1>{title}</h1>
-      {meta ? <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span> : null}
-      {children}
-    </div>
-  ),
-}));
+vi.mock('../../../../shared/components/PaneShell', async () => {
+  const { PageCrumbRow } = await vi.importActual<
+    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
+  >('../../../../shared/components/PaneShell/PageCrumbRow');
+  return {
+    PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
+      <div>
+        <PageCrumbRow />
+        {header ?? <h1>{title}</h1>}
+        {meta != null && title != null ? (
+          <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
+        ) : null}
+        {children}
+      </div>
+    ),
+  };
+});
 vi.mock('../../hooks/useSelectedAgentHome', () => ({
   useSelectedAgentHome: () => hooks.agentHome,
 }));
@@ -296,7 +309,6 @@ beforeEach(() => {
   store.focusedWorkflowRunId = {};
   store.phaseTemplates = {};
   store.sessionWorkflows = {};
-  store.focusedPlanId = {};
   store.artifactCreation = {};
   store.focusedGithubIssueNumber = {};
   store.sessionExternalTasks = {};

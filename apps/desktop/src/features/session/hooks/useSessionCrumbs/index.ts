@@ -21,6 +21,8 @@ import { openLens } from '../../openLens';
 import { resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
+import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
+import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
 
 type Params = {
   readonly session: Session;
@@ -33,7 +35,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const lens = supportedLens({ lens: storedActiveLens, isBranchless });
   const studio = useAppStore((s) => s.sessionStudio[sessionId] ?? null);
   const focusedWorkflowRunId = useAppStore((s) => s.focusedWorkflowRunId[sessionId] ?? null);
-  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
+  const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
   const artifactCreationKind = useAppStore((s) => s.artifactCreation[sessionId]?.kind ?? null);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[sessionId] ?? null);
   const phaseRuns = useAppStore(
@@ -44,8 +46,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const selectedWorkflowRun = useSelectedWorkflowRun({ session });
   const plans = useSessionPlans(sessionId);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
-  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
+  const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const selectAgent = useAppStore((s) => s.selectAgent);
+  const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
+  const setReviewMode = useAppStore((s) => s.setReviewMode);
+  const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -96,9 +101,10 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       : (focusedRun.run.title ?? workflowKindName(focusedRun.workflow));
   }, [focusedWorkflowRunId, attachedWorkflowRuns]);
 
-  const focusedPlanTitle = useMemo(
-    () => plans.find((p) => p.id === focusedPlanId)?.title ?? null,
-    [plans, focusedPlanId],
+  const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
+  const focusedArtifactTitle = useMemo(
+    () => focusedArtifactTitleOf({ plans, artifacts, artifactId: focusedArtifactId }),
+    [plans, artifacts, focusedArtifactId],
   );
 
   const artifactCreationLabel =
@@ -119,13 +125,14 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         studio,
         focusedWorkflowName,
         selectedChildWorkflowName,
-        focusedPlanTitle,
+        focusedArtifactTitle,
         artifactCreationLabel,
         selectedChildLabel,
         selectedChildHome,
         selectedParentLabel,
         selectedRootLabel,
         selectedQuestionLabel,
+        reviewModeLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -141,8 +148,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             setFocusedWorkflowRun(sessionId, selectedWorkflowRunId);
             openLens({ sessionId, lens: 'workflows' });
           },
-          toPlansList: () => {
-            setFocusedPlanId(sessionId, null);
+          toArtifactsList: () => {
+            setFocusedArtifactId(sessionId, null);
             openLens({ sessionId, lens: 'plans' });
           },
           toParentAgent: () => {
@@ -157,6 +164,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             }
             void selectAgent(sessionId, rootAgentId);
           },
+          toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
         },
       }),
     [
@@ -165,20 +173,22 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       focusedWorkflowName,
       selectedChildWorkflowName,
       selectedWorkflowRunId,
-      focusedPlanTitle,
+      focusedArtifactTitle,
       artifactCreationLabel,
       selectedChildLabel,
       selectedChildHome,
       selectedParentLabel,
       selectedRootLabel,
       selectedQuestionLabel,
+      reviewModeLabel,
       parentAgentId,
       rootAgentId,
       isBranchless,
       sessionId,
       setFocusedWorkflowRun,
-      setFocusedPlanId,
+      setFocusedArtifactId,
       selectAgent,
+      setReviewMode,
     ],
   );
 };

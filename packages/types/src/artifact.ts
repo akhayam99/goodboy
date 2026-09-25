@@ -13,6 +13,8 @@ export type ImplementationCluster = Readonly<{
   title: string;
   instructions: string;
   routingProposal?: WorkflowRoutingProposal | null;
+  doneWhen?: ReadonlyArray<string>;
+  touches?: ReadonlyArray<string>;
 }>;
 
 export type PlanArtifactMetadata = Readonly<{

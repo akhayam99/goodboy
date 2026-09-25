@@ -437,14 +437,16 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           data-block="callout"
           data-tone={label}
           data-color={style.tone}
-          className={cn('flex flex-col gap-1.5 rounded-md border p-3', style.calloutClass)}
+          className="relative flex flex-col gap-1.5 overflow-hidden rounded-md bg-subtle py-2.5 pl-3.5 pr-3"
         >
+          <span
+            aria-hidden
+            data-block="callout-rail"
+            className={cn('absolute inset-y-0 left-0 w-0.5', style.railClass)}
+          />
           <div
             data-block="callout-label"
-            className={cn(
-              'inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-eyebrow',
-              style.calloutLabelClass,
-            )}
+            className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground"
           >
             <Icon size={11} aria-hidden className={style.iconClass} />
             {label}

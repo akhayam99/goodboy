@@ -19,38 +19,35 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import {
   AGENT_KIND_META,
+  KIND_TO_ROLE,
   visibleAgentKinds,
   type AgentKind,
   type AgentKindRouting,
 } from '../../agent-kind';
 import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
 import { resolveSpawnRouting } from '../../spawn-routing';
-import { AgentInstructionsField } from '../AgentInstructionsField';
+import { useSuggestedRouting } from '../../hooks/useSuggestedRouting';
+import { isSameRouting } from '../../isSameRouting';
+import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
 import { LaunchEstimateNote } from './LaunchEstimateNote';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
-import { CreateAgentTrigger, type CreateAgentTriggerVariant } from './CreateAgentTrigger';
+import { CreateAgentTrigger } from './CreateAgentTrigger';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
 
+const CHAT_ROUTING_REASON = 'Same model as this chat.';
+
 type Props = {
   readonly sessionId: SessionId;
-  readonly variant?: CreateAgentTriggerVariant;
   readonly className?: string;
-  readonly description?: string;
   readonly onSpawned?: () => void;
 };
 
-export const CreateAgentPopover = ({
-  sessionId,
-  variant = 'tile',
-  className,
-  description,
-  onSpawned,
-}: Props) => {
+export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) => {
   const dropdown = useDropdown({
     align: 'center',
     expectedHeight: 460,
@@ -60,7 +57,6 @@ export const CreateAgentPopover = ({
   const { open, close, toggle } = dropdown;
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
-  const [instructions, setInstructions] = useState('');
   const [isRoutingOpen, setIsRoutingOpen] = useState(false);
   const [isSpawning, setIsSpawning] = useState(false);
   const [spawnError, setSpawnError] = useState<string | null>(null);
@@ -86,7 +82,49 @@ export const CreateAgentPopover = ({
     session,
     defaultProvider,
   });
-  const effective: AgentKindRouting = routing ?? spawnDefault;
+  const activePlan = useAppStore((state) => {
+    const plans = state.sessionPlans[sessionId] ?? [];
+    const latest = plans[plans.length - 1] ?? null;
+    return latest?.status === 'active' ? latest : null;
+  });
+  const kindLabel = AGENT_KIND_META[selectedKind].noun;
+  const planToStart = selectedKind === 'implementer' ? activePlan : null;
+  const actionLabel = planToStart == null ? `Open ${kindLabel}` : `Start ${kindLabel} on the plan`;
+  const actionNote =
+    planToStart == null
+      ? 'You write the first message in its chat.'
+      : `Starts now from plan: ${planToStart.title}`;
+  const suggested = useSuggestedRouting({ sessionId, role: KIND_TO_ROLE[selectedKind] });
+  const suggestion: AgentKindRouting = {
+    provider: spawnDefault.provider,
+    model: spawnDefault.model,
+    effort: spawnDefault.effort,
+  };
+  const suggestionReason = spawnDefault.origin === 'chat' ? CHAT_ROUTING_REASON : suggested.reason;
+  const lastAgent = useAppStore(
+    (state) =>
+      [...(state.sessionPhaseRuns[sessionId] ?? [])]
+        .reverse()
+        .find(
+          (agent) =>
+            agent.kind === selectedKind &&
+            agent.providerOverride != null &&
+            agent.modelOverride != null,
+        ) ?? null,
+  );
+  const lastRouting: AgentKindRouting | null =
+    lastAgent?.providerOverride == null || lastAgent.modelOverride == null
+      ? null
+      : {
+          provider: lastAgent.providerOverride,
+          model: lastAgent.modelOverride,
+          effort: lastAgent.effort ?? suggestion.effort,
+        };
+  const lastUsed =
+    lastRouting != null && !isSameRouting({ left: lastRouting, right: suggestion })
+      ? lastRouting
+      : null;
+  const effective: AgentKindRouting = routing ?? suggestion;
   const routingSummary = recommendationSummary({
     provider: effective.provider,
     model: effective.model,
@@ -100,19 +138,16 @@ export const CreateAgentPopover = ({
     isSpawningRef.current = true;
     setIsSpawning(true);
     setSpawnError(null);
-    const trimmedInstructions = instructions.trim();
     try {
       await spawnAgent(sessionId, {
         kindOverride: selectedKind,
         provider: effective.provider,
         model: effective.model,
         effort: effective.effort,
-        ...(trimmedInstructions !== '' && { initialPrompt: trimmedInstructions }),
         focus: 'agent',
       });
       setKind('generic');
       setRouting(null);
-      setInstructions('');
       setIsRoutingOpen(false);
       close();
       if (onSpawned != null) {
@@ -133,16 +168,8 @@ export const CreateAgentPopover = ({
       role="dialog"
       ariaLabel="Start agent"
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
-      anchorClassName={cn('min-w-0', variant === 'tile' && 'w-full')}
-      trigger={
-        <CreateAgentTrigger
-          variant={variant}
-          isOpen={open}
-          description={description}
-          className={cn(variant === 'tile' && 'w-full', className)}
-          onClick={toggle}
-        />
-      }
+      anchorClassName="min-w-0"
+      trigger={<CreateAgentTrigger isOpen={open} className={className} onClick={toggle} />}
     >
       <PopoverBody>
         {agentKinds.length > 1 ? (
@@ -158,12 +185,6 @@ export const CreateAgentPopover = ({
             className="px-2.5 py-1.5"
           />
         )}
-        <AgentInstructionsField
-          value={instructions}
-          onChange={setInstructions}
-          disabled={isSpawning}
-          className="px-2.5 py-1.5"
-        />
         <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
           <div className="px-2.5">
             <button
@@ -209,8 +230,18 @@ export const CreateAgentPopover = ({
                   setRouting((current) => ({ ...(current ?? spawnDefault), effort })),
               }}
               onClose={close}
+              recommendation={{ ...suggestion, label: SUGGESTED_LABEL, reason: suggestionReason }}
+              overridden={routing !== null}
+              {...(lastUsed != null && {
+                lastUsed: {
+                  routing: lastUsed,
+                  active: routing !== null && isSameRouting({ left: routing, right: lastUsed }),
+                  onSelect: () => setRouting(lastUsed),
+                },
+              })}
               onProvider={(provider) => {
                 if (provider === '') {
+                  setRouting(null);
                   return;
                 }
                 setRouting((current) => ({ ...(current ?? spawnDefault), provider }));
@@ -232,12 +263,15 @@ export const CreateAgentPopover = ({
       <Divider />
       <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
         {spawnError === null ? (
-          <LaunchEstimateNote
-            workspaceId={session?.workspaceId ?? null}
-            kind={selectedKind}
-            routing={effective}
-            isShown={open && instructions.trim() !== ''}
-          />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-2xs text-faint-foreground">{actionNote}</span>
+            <LaunchEstimateNote
+              workspaceId={session?.workspaceId ?? null}
+              kind={selectedKind}
+              routing={effective}
+              isShown={open && planToStart != null}
+            />
+          </span>
         ) : (
           <span role="alert" className="min-w-0 flex-1 text-2xs text-danger">
             {spawnError}
@@ -248,9 +282,9 @@ export const CreateAgentPopover = ({
           onClick={() => void onCreate()}
           disabled={isSpawning}
           isBusy={isSpawning}
-          busyLabel={`Starting ${AGENT_KIND_META[selectedKind].label}`}
+          busyLabel={`Starting ${kindLabel}`}
         >
-          Start {AGENT_KIND_META[selectedKind].label}
+          {actionLabel}
         </Button>
       </PopoverFooter>
     </AnchoredPopover>

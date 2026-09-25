@@ -30,7 +30,7 @@ export const Select = ({
       <select
         className={cn(
           'appearance-none rounded-md border border-border bg-background text-foreground',
-          'cursor-pointer transition-colors hover:border-foreground/30',
+          'cursor-pointer transition-colors hover:border-border-strong',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           'disabled:cursor-not-allowed disabled:opacity-50',
           SIZE[size],

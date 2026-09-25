@@ -1,20 +1,26 @@
 import { useState } from 'react';
-import type { AgentRole, OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
+import { RotateCcw } from 'lucide-react';
+import type { OverrideSettings, ProviderId, WorkspaceId } from '@goodboy/types';
 import {
-  ROLE_REGISTRY,
-  SELECTABLE_AGENT_ROLES,
+  DEFAULT_GROUPS,
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
+  ROLE_REGISTRY,
   TASKS,
+  type AutoContext,
 } from '@goodboy/core';
-import { EmptyState, FieldRow, SectionHeader, SegmentedTabs } from '@goodboy/ui';
+import { EmptyState, Eyebrow, FieldRow, InlineConfirm, OverflowMenu } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
-import { ProviderChip } from '../../ProviderChip';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
 import { RoleModelRow } from './RoleModelRow';
 import { TaskModelRow } from './TaskModelRow';
+import { FallbackOrder } from './FallbackOrder';
 import { useDefaultsPersistence } from './useDefaultsPersistence';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
@@ -27,9 +33,7 @@ type ProviderParams = {
   readonly providerId: ProviderId;
 };
 
-type DefaultsGroup = 'task' | 'role';
-
-const ROLES: ReadonlyArray<AgentRole> = SELECTABLE_AGENT_ROLES;
+const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
@@ -61,17 +65,24 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     overrides.defaultProviderId ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider;
   const providerPoolIds = new Set(overrides.providerPool ?? connectedProviderIds);
   providerPoolIds.add(defaultProviderId);
+  const orderedProviderIds = [
+    ...connectedProviderIds.filter((id) => id === defaultProviderId),
+    ...connectedProviderIds.filter((id) => id !== defaultProviderId),
+  ];
+  const fallbackOrder = orderedProviderIds.filter((id) => providerPoolIds.has(id));
+  const autoContext: AutoContext = {
+    defaultProvider: defaultProviderId,
+    connected: connectedProviderIds,
+    fallbackOrder,
+  };
 
   const { busy, error, persistOverrides, persistTaskModel, persistRoleModel } =
     useDefaultsPersistence({ workspaceId });
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
 
-  const [group, setGroup] = useState<DefaultsGroup>('task');
-  const taskOverrideCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
-  const roleOverrideCount = Object.keys(overrides.roleModels ?? {}).length;
-  const groupOptions = [
-    { value: 'task' as const, label: `Task models, ${taskOverrideCount} custom` },
-    { value: 'role' as const, label: `Agent roles, ${roleOverrideCount} custom` },
-  ];
+  const pinnedTaskCount = TASKS.filter((task) => overrides.taskModels?.[task.id] != null).length;
+  const pinnedRoleCount = Object.keys(overrides.roleModels ?? {}).length;
+  const pinnedCount = pinnedTaskCount + pinnedRoleCount;
 
   const onDefaultProvider = ({ providerId }: ProviderParams) => {
     const providerPool =
@@ -101,15 +112,52 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
     });
   };
 
+  const onResetAll = async () => {
+    await persistOverrides({ patch: { taskModels: null, roleModels: null } });
+    setIsConfirmingReset(false);
+  };
+
   return (
-    <PaneShell scroll="body" animationClassName={SETTINGS_PANE_ENTRY} title="Defaults">
-      <section className="flex flex-col gap-1">
-        <SectionHeader
-          label="Provider routing"
-          hint="Governs every task and role below unless it has its own override."
+    <PaneShell
+      scroll="body"
+      animationClassName={SETTINGS_PANE_ENTRY}
+      title="Defaults"
+      {...(pinnedCount > 0 && { meta: `${pinnedCount} pinned` })}
+      actions={
+        <OverflowMenu
+          label="Defaults actions"
+          disabled={busy}
+          items={[
+            {
+              kind: 'item',
+              key: 'reset-all',
+              label: 'Reset all to Auto',
+              icon: RotateCcw,
+              disabled: pinnedCount === 0,
+              destructive: true,
+              onClick: () => setIsConfirmingReset(true),
+            },
+          ]}
         />
-        <FieldRow label="Default provider" help="New sessions start on it and can override it.">
-          <div className="w-64">
+      }
+    >
+      {isConfirmingReset ? (
+        <InlineConfirm
+          role="danger"
+          icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
+          title={`Reset ${pinnedCount} pinned ${pinnedCount === 1 ? 'model' : 'models'} to Auto?`}
+          description="Every agent role and background task goes back to Auto."
+          confirmLabel="Reset all"
+          isBusy={busy}
+          onConfirm={onResetAll}
+          onCancel={() => setIsConfirmingReset(false)}
+        />
+      ) : null}
+
+      <section aria-label="Providers" className="flex flex-col gap-1">
+        <Eyebrow label="Providers" />
+        <FieldRow label="Default provider" help="Auto starts here.">
+          <div className="w-[220px]">
             <ProviderPicker
               connectedProviders={connectedProviderIds}
               provider={defaultProviderId}
@@ -121,8 +169,8 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
           </div>
         </FieldRow>
         <FieldRow
-          label="Routing pool"
-          help="Providers Goodboy can pick on its own. New sessions start with this pool."
+          label="Fallback order"
+          help="If a provider is not connected or out of quota, Auto moves to the next one."
         >
           {connectedProviderIds.length === 0 ? (
             <EmptyState
@@ -132,73 +180,66 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
               size="inline"
             />
           ) : (
-            <div className="flex max-w-64 flex-wrap justify-start gap-1">
-              {connectedProviderIds.map((providerId) => {
-                const isDefaultProvider = providerId === defaultProviderId;
-                return (
-                  <ProviderChip
-                    key={providerId}
-                    id={providerId}
-                    selected={providerPoolIds.has(providerId)}
-                    disabled={busy || isDefaultProvider}
-                    onClick={() => onToggleRoutingProvider({ providerId })}
-                    title={isDefaultProvider ? 'Default provider is always enabled' : undefined}
-                  />
-                );
-              })}
-            </div>
+            <FallbackOrder
+              providerIds={orderedProviderIds}
+              poolIds={providerPoolIds}
+              defaultProviderId={defaultProviderId}
+              disabled={busy}
+              onToggle={(providerId) => onToggleRoutingProvider({ providerId })}
+            />
           )}
         </FieldRow>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <SegmentedTabs
-          ariaLabel="Defaults group"
-          options={groupOptions}
-          value={group}
-          onChange={setGroup}
-          size="sm"
-          fill
-        />
-
-        {group === 'task' ? (
-          <div className="@container flex flex-col">
-            {TASKS.map((task) => (
-              <TaskModelRow
-                key={task.id}
-                task={task.id}
-                label={task.label}
-                help={task.description}
-                preference={overrides.taskModels?.[task.id] ?? null}
-                defaultProviderId={defaultProviderId}
+      <section aria-label="Agents" className="flex flex-col gap-3">
+        <Eyebrow label="Agents" />
+        {DEFAULT_GROUPS.agents.map((group) => (
+          <div key={group.id} role="group" aria-label={group.label} className="flex flex-col">
+            <Eyebrow label={group.label} muted />
+            {group.members.map((role) => (
+              <RoleModelRow
+                key={role}
+                role={role}
+                label={ROLE_LABEL[role]}
+                help={ROLE_REGISTRY[role].summary}
+                preference={overrides.roleModels?.[role] ?? null}
+                autoContext={autoContext}
                 connectedProviderIds={connectedProviderIds}
                 disabled={busy}
-                onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                onChange={(preference) => persistRoleModel({ role, preference })}
               />
             ))}
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <p className="text-2xs text-faint-foreground">
-              Applies to every agent started in this role unless pinned per agent or per step.
-            </p>
-            <div className="flex flex-col">
-              {ROLES.map((role) => (
-                <RoleModelRow
-                  key={role}
-                  role={role}
-                  label={ROLE_LABEL[role]}
-                  help={ROLE_REGISTRY[role].description}
-                  preference={overrides.roleModels?.[role] ?? null}
+        ))}
+      </section>
+
+      <section aria-label="Background tasks" className="flex flex-col gap-3">
+        <Eyebrow label="Background tasks" />
+        {DEFAULT_GROUPS.tasks.map((group) => (
+          <div key={group.id} role="group" aria-label={group.label} className="flex flex-col">
+            <Eyebrow label={group.label} muted />
+            {group.members.map((taskId) => {
+              const task = TASK_BY_ID.get(taskId);
+              if (task == null) {
+                return null;
+              }
+              return (
+                <TaskModelRow
+                  key={task.id}
+                  task={task.id}
+                  label={task.label}
+                  help={task.description}
+                  preference={overrides.taskModels?.[task.id] ?? null}
                   defaultProviderId={defaultProviderId}
+                  fallbackOrder={fallbackOrder}
                   connectedProviderIds={connectedProviderIds}
                   disabled={busy}
-                  onChange={(preference) => persistRoleModel({ role, preference })}
+                  onChange={(preference) => persistTaskModel({ task: task.id, preference })}
                 />
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
+        ))}
       </section>
 
       {error != null ? <p className="text-xs text-danger">{error}</p> : null}

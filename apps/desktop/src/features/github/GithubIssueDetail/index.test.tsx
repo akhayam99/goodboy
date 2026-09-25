@@ -81,8 +81,6 @@ describe('GithubIssueDetail', () => {
       .mockResolvedValueOnce([COMMENT, { ...COMMENT, id: '2', author: 'grace', body: 'On it.' }]);
     h.ghCreateIssueComment.mockResolvedValueOnce({ ...COMMENT, id: '2' });
     render(<GithubIssueDetail issue={ISSUE} editContext={EDIT_CONTEXT} />);
-
-    fireEvent.click(await screen.findByRole('tab', { name: /Conversation/ }));
     expect(await screen.findByText('Blocked on the migration.')).toBeDefined();
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {

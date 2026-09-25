@@ -82,7 +82,26 @@ const read = (state: RowState): Reading => ({
 
 describe('resolveAgentRowState', () => {
   it.each<[string, AgentCase, Reading]>([
-    ['A1 queued', {}, { node: 'queued', sentence: null, tone: 'neutral', ask: null }],
+    [
+      'A1 queued',
+      { agent: { stepId: STEP.id } },
+      { node: 'queued', sentence: null, tone: 'neutral', ask: null },
+    ],
+    [
+      'A1b opened by hand, no turn yet',
+      {},
+      { node: 'queued', sentence: 'Waiting for your first message', tone: 'neutral', ask: null },
+    ],
+    [
+      'A1c resolver waiting in the resolve queue',
+      { agent: { kind: 'resolver' } },
+      { node: 'queued', sentence: null, tone: 'neutral', ask: null },
+    ],
+    [
+      'A1d fan-out child',
+      { agent: { parentAgentId: 'agent-0' as Agent['id'] } },
+      { node: 'queued', sentence: null, tone: 'neutral', ask: null },
+    ],
     [
       'A2 ready, autorun off',
       { isReadyStep: true },
@@ -294,6 +313,7 @@ describe('rowStateShortSentence', () => {
     [{ kind: 'stepFailed', stepLabel: '4' }, 'Step 4 failed'],
     [{ kind: 'chained', afterTitle: 'Backfill the settled batches behind a flag' }, 'Chained'],
     [{ kind: 'deciding' }, 'Choosing next'],
+    [{ kind: 'awaitingFirstMessage' }, 'Write to start'],
   ])('keeps %o readable in a narrow row as %s', (reason, short) => {
     expect(rowStateShortSentence({ state: waiting(reason) })).toBe(short);
   });

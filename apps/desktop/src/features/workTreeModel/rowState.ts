@@ -19,6 +19,7 @@ export type RowStateReason =
   | { readonly kind: 'closed' }
   | { readonly kind: 'skipped' }
   | { readonly kind: 'chained'; readonly afterTitle: string }
+  | { readonly kind: 'awaitingFirstMessage' }
   | { readonly kind: 'discarded' };
 
 export type RowAsk =
@@ -40,6 +41,14 @@ type AgentParams = {
   readonly question: OpenQuestion | null;
   readonly isReadyStep: boolean;
 };
+
+const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =>
+  agent.stepId == null &&
+  agent.workflowRunId == null &&
+  agent.parentAgentId == null &&
+  agent.startedAt == null &&
+  agent.lastFinishedAt == null &&
+  agent.kind !== 'resolver';
 
 export const resolveAgentRowState = ({
   agent,
@@ -64,8 +73,11 @@ export const resolveAgentRowState = ({
     case 'running':
       return { phase: 'running', reason: null, ask: null };
     case 'pending':
-      return isReadyStep
-        ? { phase: 'waiting', reason: { kind: 'ready', stepLabel: null }, ask: null }
+      if (isReadyStep) {
+        return { phase: 'waiting', reason: { kind: 'ready', stepLabel: null }, ask: null };
+      }
+      return isAwaitingFirstMessage({ agent })
+        ? { phase: 'queued', reason: { kind: 'awaitingFirstMessage' }, ask: null }
         : { phase: 'queued', reason: null, ask: null };
     case 'completed':
       return DONE_ROW_STATE;

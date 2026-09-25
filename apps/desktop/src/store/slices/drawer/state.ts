@@ -1,7 +1,9 @@
 import type { SlotKey } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { ArtifactId, MountId, SessionId } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 import type { LensKind } from '../session-view/types';
+
+export type ArtifactDrawerTab = 'details' | 'chat';
 
 export type DrawerContent =
   | {
@@ -11,6 +13,18 @@ export type DrawerContent =
   | {
       readonly kind: 'explore-file';
       readonly payload: { readonly sessionDir: string; readonly entry: ExploreEntry };
+    }
+  | {
+      readonly kind: 'artifact';
+      readonly payload: { readonly artifactId: ArtifactId; readonly tab: ArtifactDrawerTab };
+    }
+  | {
+      readonly kind: 'plan-part';
+      readonly payload: { readonly planId: ArtifactId; readonly index: number };
+    }
+  | {
+      readonly kind: 'scriptRun';
+      readonly payload: { readonly scriptKey: string; readonly mountId: MountId | null };
     };
 
 export type DrawerRequest = DrawerContent & {

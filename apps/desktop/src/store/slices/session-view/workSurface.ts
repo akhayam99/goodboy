@@ -1,4 +1,4 @@
-import type { ArtifactId, PlanId, SessionExternalTask, SessionId } from '@goodboy/types';
+import type { ArtifactId, SessionExternalTask, SessionId } from '@goodboy/types';
 import type {
   DiffFocus,
   GetFn,
@@ -13,6 +13,7 @@ import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
 import { writePersistedLens } from './workSurfaceStorage';
 import { drawerAfterMove } from '../drawer/drawerAfterMove';
+import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
@@ -47,8 +48,6 @@ export const setActiveLens = (set: SetFn) => {
           lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
         terminalMountPath:
           lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
-        focusedPlanId:
-          lens === 'plans' ? s.focusedPlanId : { ...s.focusedPlanId, [sessionId]: null },
         focusedArtifactId:
           lens === 'plans' ? s.focusedArtifactId : { ...s.focusedArtifactId, [sessionId]: null },
         focusedGithubIssueNumber:
@@ -155,20 +154,11 @@ export const openMountTerminal = (set: SetFn, get: GetFn) => {
   };
 };
 
-export const setFocusedPlanId = (set: SetFn) => {
-  return (sessionId: SessionId, planId: PlanId | null): void => {
-    set((s) => ({
-      focusedPlanId: { ...s.focusedPlanId, [sessionId]: planId },
-      focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
-    }));
-  };
-};
-
 export const setFocusedArtifactId = (set: SetFn) => {
   return (sessionId: SessionId, artifactId: ArtifactId | null): void => {
     set((s) => ({
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: artifactId },
-      focusedPlanId: { ...s.focusedPlanId, [sessionId]: null },
+      drawer: drawerAfterArtifactFocus({ drawer: s.drawer, artifactId }),
     }));
   };
 };

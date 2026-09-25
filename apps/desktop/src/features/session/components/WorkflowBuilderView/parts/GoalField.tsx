@@ -4,20 +4,25 @@ import { Textarea, cn, tintClasses } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ATTACHMENT_ACCEPT } from '../../../../chat/attachment-kinds';
 
+type GoalFiles = {
+  readonly attachments: ReactNode;
+  readonly isDragging: boolean;
+  readonly composerRef: RefObject<HTMLDivElement | null>;
+  readonly fileInputRef: RefObject<HTMLInputElement | null>;
+  readonly onFiles: (event: ChangeEvent<HTMLInputElement>) => void;
+};
+
 type Props = {
   readonly value: string;
+  readonly placeholder?: string;
   readonly hasSessionGoal: boolean;
   readonly isSessionGoal: boolean;
   readonly canUndo: boolean;
   readonly isPolishing: boolean;
-  readonly isDragging: boolean;
   readonly disabled: boolean;
-  readonly attachments: ReactNode;
-  readonly composerRef: RefObject<HTMLDivElement | null>;
-  readonly fileInputRef: RefObject<HTMLInputElement | null>;
+  readonly files?: GoalFiles;
   readonly onChange: (value: string) => void;
   readonly onBlur: () => void;
-  readonly onFiles: (event: ChangeEvent<HTMLInputElement>) => void;
   readonly onUseSessionGoal: () => void;
   readonly onUndo: () => void;
   readonly onPolish: () => void;
@@ -26,30 +31,32 @@ type Props = {
 const TOOL_CLASS =
   'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
+const SESSION_PLACEHOLDER =
+  'what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…';
+
 export const GoalField = ({
   value,
+  placeholder = SESSION_PLACEHOLDER,
   hasSessionGoal,
   isSessionGoal,
   canUndo,
   isPolishing,
-  isDragging,
   disabled,
-  attachments,
-  composerRef,
-  fileInputRef,
+  files,
   onChange,
   onBlur,
-  onFiles,
   onUseSessionGoal,
   onUndo,
   onPolish,
 }: Props) => (
   <div
-    ref={composerRef}
+    ref={files?.composerRef}
     data-drop-composer
     className={cn(
       'flex flex-col gap-1 rounded-lg bg-subtle px-3 pb-1.5 pt-2 ring-1 transition-shadow focus-within:ring-foreground/15',
-      isDragging ? cn('ring-primary', tintClasses('primary').bgSoft) : 'ring-border-soft',
+      files?.isDragging === true
+        ? cn('ring-primary', tintClasses('primary').bgSoft)
+        : 'ring-border-soft',
     )}
   >
     <label htmlFor="workflow-goal" className="sr-only">
@@ -60,7 +67,7 @@ export const GoalField = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       onBlur={onBlur}
-      placeholder="what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…"
+      placeholder={placeholder}
       autoGrow
       minRows={2}
       maxRows={6}
@@ -69,23 +76,27 @@ export const GoalField = ({
     />
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ATTACHMENT_ACCEPT}
-          multiple
-          hidden
-          onChange={onFiles}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
-          className={TOOL_CLASS}
-        >
-          <Paperclip size={ICON_SIZE.row} aria-hidden /> Add files
-        </button>
-        {attachments}
+        {files === undefined ? null : (
+          <>
+            <input
+              ref={files.fileInputRef}
+              type="file"
+              accept={ATTACHMENT_ACCEPT}
+              multiple
+              hidden
+              onChange={files.onFiles}
+            />
+            <button
+              type="button"
+              onClick={() => files.fileInputRef.current?.click()}
+              disabled={disabled}
+              className={TOOL_CLASS}
+            >
+              <Paperclip size={ICON_SIZE.row} aria-hidden /> Add files
+            </button>
+            {files.attachments}
+          </>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {hasSessionGoal ? (

@@ -1,22 +1,27 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { Agent, AgentId, ArtifactId, IsoDateTime, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionOpenQuestions,
   useSessionPlans,
 } from '../../../../store';
-import { PlanStudio } from '../../../plans/components/PlanStudio';
-import { ArtifactCollection } from './ArtifactCollection';
-import { ArtifactDetail } from './ArtifactDetail';
-import { ArtifactRunDetail } from './ArtifactRunDetail';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ArtifactCreationPane } from '../ArtifactCreationPane';
+import { ArtifactList } from '../ArtifactList';
+import { ArtifactShell } from '../ArtifactShell';
+import type { ArtifactShellSubject } from '../ArtifactShell/artifactShellSubject';
 import { loadArtifactProvenance } from '../../artifactProvenance';
 import { ARTIFACT_RETRY_MISSING_BRIEF, artifactRetryDraft } from '../../artifactRetryDraft';
 import { resolveArtifactGenerations, type ArtifactGeneration } from '../../artifactCollection';
-import { standaloneArtifacts } from '../../standaloneArtifacts';
-import { artifactCounts, artifactGroups } from '../../artifactGroups';
+import {
+  buildArtifactListRows,
+  countArtifactRows,
+  filterArtifactRows,
+  type ArtifactListRow,
+} from '../../artifactListRows';
+import { planAsArtifact, planFromArtifact } from '../../../plans/planAsArtifact';
 import { useEscapeToList } from '../../hooks/useEscapeToList';
 
 type Props = {
@@ -31,10 +36,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const session = useAppStore((s) => s.sessions.find((entry) => entry.id === sessionId) ?? null);
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
-  const openQuestionCount = openQuestions.length;
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
-  const setFocusedPlanId = useAppStore((s) => s.setFocusedPlanId);
-  const focusedPlanId = useAppStore((s) => s.focusedPlanId[sessionId] ?? null);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const selectAgent = useAppStore((s) => s.selectAgent);
@@ -48,6 +50,10 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const setArtifactDraft = useAppStore((s) => s.setArtifactDraft);
   const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
   const verifications = useAppStore((s) => s.wireframeScoutVerification);
+  const isArtifactDrawerOpen = useAppStore((s) => {
+    const kind = selectOpenDrawer(s)?.kind ?? null;
+    return kind === 'artifact' || kind === 'plan-part';
+  });
   const turnKinds = useAppStore(
     useShallow((s) => agents.map((agent) => s.agentTurnState[agent.id]?.kind ?? null)),
   );
@@ -88,7 +94,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     setAwaitedAgentId(null);
     if (
       focusedArtifactId === null &&
-      focusedPlanId === null &&
       creation === null &&
       selectedAgentId === null &&
       sessionStudio === null
@@ -99,7 +104,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     artifacts,
     awaitedAgentId,
     focusedArtifactId,
-    focusedPlanId,
     creation,
     selectedAgentId,
     sessionId,
@@ -120,8 +124,6 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     [agents, artifacts, activeAgentIds, runningAgentIds, openQuestions, verifications],
   );
 
-  const standalone = standaloneArtifacts({ artifacts });
-  const selected = standalone.find((artifact) => artifact.id === focusedArtifactId) ?? null;
   const focusedRun =
     generations.find((generation) => generation.agentId === focusedRunAgentId) ?? null;
 
@@ -134,28 +136,44 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     }
     const produced = artifacts.find((artifact) => artifact.agentId === focusedRunAgentId) ?? null;
     setFocusedRunAgentId(null);
-    if (produced !== null && produced.kind !== 'plan') {
+    if (produced !== null) {
       setFocusedArtifactId(sessionId, produced.id);
     }
   }, [focusedRunAgentId, generations, artifacts, sessionId, setFocusedArtifactId]);
 
-  const groups = useMemo(
-    () => artifactGroups({ artifacts: standalone, generations }),
-    [standalone, generations],
-  );
-  const counts = useMemo(() => artifactCounts({ plans, groups }), [plans, groups]);
+  const subject = useMemo((): ArtifactShellSubject | null => {
+    if (focusedArtifactId !== null) {
+      const plan = plans.find((candidate) => candidate.id === focusedArtifactId) ?? null;
+      const stored = artifacts.find((candidate) => candidate.id === focusedArtifactId) ?? null;
+      if (plan !== null) {
+        return { kind: 'plan', plan, artifact: planAsArtifact({ plan, stored }) };
+      }
+      if (stored?.kind === 'plan') {
+        return { kind: 'plan', plan: planFromArtifact({ artifact: stored }), artifact: stored };
+      }
+      if (stored?.kind === 'report') {
+        return { kind: 'report', artifact: stored };
+      }
+      if (stored?.kind === 'wireframe') {
+        return { kind: 'wireframe', artifact: stored };
+      }
+    }
+    return focusedRun === null ? null : { kind: 'generation', generation: focusedRun };
+  }, [focusedArtifactId, plans, artifacts, focusedRun]);
 
-  const selectArtifact = (artifactId: ArtifactId) => {
-    const target = artifacts.find((artifact) => artifact.id === artifactId) ?? null;
-    if (target === null) {
-      return;
-    }
-    if (target.kind === 'plan') {
-      setFocusedPlanId(sessionId, target.id);
-      return;
-    }
-    setFocusedArtifactId(sessionId, target.id);
-  };
+  const rows = useMemo(
+    () =>
+      buildArtifactListRows({
+        plans,
+        artifacts,
+        generations,
+        agents,
+        openQuestionCount: openQuestions.length,
+      }),
+    [plans, artifacts, generations, agents, openQuestions.length],
+  );
+  const counts = useMemo(() => countArtifactRows({ rows }), [rows]);
+  const visibleRows = useMemo(() => filterArtifactRows({ rows, filter }), [rows, filter]);
 
   const retryGeneration = (generation: ArtifactGeneration) => {
     loadArtifactProvenance(generation.agentId)
@@ -175,7 +193,12 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       });
   };
 
-  const selectGeneration = (generation: ArtifactGeneration) => {
+  const openRow = (row: ArtifactListRow) => {
+    if (row.target.kind === 'artifact') {
+      setFocusedArtifactId(sessionId, row.target.artifactId);
+      return;
+    }
+    const { generation } = row.target;
     if (generation.state === 'unproduced') {
       void selectAgent(sessionId, generation.agentId);
       return;
@@ -196,12 +219,9 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   }, [sessionId, setFocusedArtifactId]);
 
   useEscapeToList({
-    isActive:
-      creation === null && focusedPlanId === null && (selected !== null || focusedRun !== null),
+    isActive: creation === null && subject !== null && !isArtifactDrawerOpen,
     onEscape: backToList,
   });
-
-  const changeFilter = (next: typeof filter) => setArtifactFilter({ sessionId, filter: next });
 
   if (creation !== null && session !== null) {
     return (
@@ -217,49 +237,21 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     );
   }
 
-  if (focusedPlanId !== null) {
-    return <PlanStudio sessionId={sessionId} />;
+  if (subject !== null) {
+    const key = subject.kind === 'generation' ? subject.generation.agentId : subject.artifact.id;
+    return <ArtifactShell key={key} sessionId={sessionId} subject={subject} agents={agents} />;
   }
 
-  if (selected === null && focusedRun === null) {
-    return (
-      <ArtifactCollection
-        sessionId={sessionId}
-        plans={plans}
-        groups={groups}
-        counts={counts}
-        openQuestionCount={openQuestionCount}
-        filter={filter}
-        onFilterChange={changeFilter}
-        onSelectPlan={(planId) => setFocusedPlanId(sessionId, planId)}
-        onSelectArtifact={selectArtifact}
-        onSelectGeneration={selectGeneration}
-        onStopGeneration={stopGeneration}
-        onRetryGeneration={retryGeneration}
-      />
-    );
-  }
-
-  if (selected !== null) {
-    return (
-      <ArtifactDetail
-        sessionId={sessionId}
-        artifact={selected}
-        agents={agents}
-        artifacts={artifacts}
-        onBack={() => setFocusedArtifactId(sessionId, null)}
-        onSelectArtifact={selectArtifact}
-      />
-    );
-  }
-
-  return focusedRun === null ? null : (
-    <ArtifactRunDetail
+  return (
+    <ArtifactList
       sessionId={sessionId}
-      generation={focusedRun}
-      onBack={() => setFocusedRunAgentId(null)}
-      onStop={() => stopGeneration(focusedRun)}
-      onOpenAgent={() => void selectAgent(sessionId, focusedRun.agentId)}
+      rows={visibleRows}
+      counts={counts}
+      filter={filter}
+      onFilterChange={(next) => setArtifactFilter({ sessionId, filter: next })}
+      onOpen={openRow}
+      onStop={stopGeneration}
+      onRetry={retryGeneration}
     />
   );
 };

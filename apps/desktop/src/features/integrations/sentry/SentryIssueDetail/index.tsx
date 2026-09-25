@@ -1,20 +1,17 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { useState, type ReactNode } from 'react';
-import { EmptyState, Skeleton, StatCard, type SegmentedTabOption } from '@goodboy/ui';
-import { Footprints, LayoutList, ListTree } from 'lucide-react';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordSection } from '../../../../shared/components/StudioDetail/RecordSections/types';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
+import { ErrorStrip, Skeleton, StateBadge } from '@goodboy/ui';
 import type { SentryIssueDetail as Detail } from '../client';
-import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
-import { resolveDetailFields, sentryIssueFields } from '../../../../shared/detail-fields';
-import { ErrorStrip } from '@goodboy/ui';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
+import { resolveFacts, sentryIssueFields } from '../../../../shared/detail-fields';
+import { stateWord } from '../../../inbox/stateWord';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
-import { SentryLevelBadge } from '../SentryLevelBadge';
 import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
-
-type IssueSection = 'overview' | 'stack' | 'breadcrumbs';
-type Fit = 'fill' | 'bleed' | 'flow';
 
 type Props = {
   readonly identifier: string;
@@ -33,10 +30,15 @@ type Props = {
   readonly summaryIsLoading?: boolean;
   readonly summaryError?: string | null;
   readonly onRetrySummary?: () => void;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
-  readonly fit?: Fit;
+  readonly frame?: RecordFrame | null;
 };
+
+type DescriptionParams = {
+  readonly culprit: string | null;
+};
+
+const descriptionOf = ({ culprit }: DescriptionParams): string =>
+  culprit == null || culprit.trim() === '' ? '' : `Raised in \`${culprit}\`.`;
 
 export const SentryIssueDetail = ({
   identifier,
@@ -55,11 +57,8 @@ export const SentryIssueDetail = ({
   summaryIsLoading = false,
   summaryError = null,
   onRetrySummary,
-  headerActions,
-  dock,
-  fit = 'fill',
+  frame = null,
 }: Props) => {
-  const [section, setSection] = useState<IssueSection>('overview');
   const view = sentryIssueView({
     identifier,
     title,
@@ -76,50 +75,58 @@ export const SentryIssueDetail = ({
     error,
   });
 
-  const options: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
-    { value: 'overview', label: 'Overview', icon: LayoutList },
-    { value: 'stack', label: 'Stack trace', icon: ListTree },
+  const sections: ReadonlyArray<RecordSection> = [
+    {
+      key: 'description',
+      kind: 'description',
+      label: 'Description',
+      isCollapsible: false,
+      defaultOpen: true,
+      content: <DescriptionSection text={descriptionOf({ culprit: view.culprit })} />,
+    },
+    {
+      key: 'stack',
+      kind: 'tool',
+      label: 'Stack trace',
+      summary: view.frames.length === 0 ? undefined : `${view.frames.length} frames`,
+      isCollapsible: true,
+      defaultOpen: true,
+      content: <SentryStackTrace frames={view.frames} isLoading={isLoading} error={error} />,
+    },
     ...(view.hasBreadcrumbs
       ? [
           {
-            value: 'breadcrumbs' as const,
+            key: 'breadcrumbs',
+            kind: 'tool' as const,
             label: 'Breadcrumbs',
-            icon: Footprints,
-            badge: String(view.breadcrumbCount),
+            count: view.breadcrumbCount,
+            isCollapsible: true,
+            defaultOpen: false,
+            content: (
+              <SentryBreadcrumbs
+                breadcrumbs={view.breadcrumbs}
+                isLoading={isLoading}
+                error={error}
+              />
+            ),
           },
         ]
       : []),
   ];
-  const selectedSection = options.some((option) => option.value === section) ? section : 'overview';
-  const activeSection =
-    selectedSection === 'overview' && (summaryIsLoading || summaryError != null)
-      ? 'stack'
-      : selectedSection;
-  const formattedFirstSeen =
-    view.firstSeen == null || view.firstSeen === ''
-      ? ''
-      : formatAbsoluteDateTime({ iso: view.firstSeen });
-  const formattedLastSeen =
-    view.lastSeen == null || view.lastSeen === ''
-      ? ''
-      : formatAbsoluteDateTime({ iso: view.lastSeen });
-  const stats = [
-    ...(view.count != null ? [{ label: 'Events', value: view.count }] : []),
-    ...(view.userCount != null ? [{ label: 'Users', value: String(view.userCount) }] : []),
-    ...(formattedFirstSeen !== '' ? [{ label: 'First seen', value: formattedFirstSeen }] : []),
-    ...(formattedLastSeen !== '' ? [{ label: 'Last seen', value: formattedLastSeen }] : []),
-  ];
 
   return (
-    <StudioDetailLayout
-      fit={fit}
+    <PaneShell
+      scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="sentry"
           identifier={view.identifier}
           title={view.title}
-          badge={<SentryLevelBadge level={view.level} />}
-          actions={headerActions}
+          state={<StateBadge>{stateWord({ value: view.status ?? 'unresolved' })}</StateBadge>}
+          facts={
+            <RecordFacts facts={resolveFacts({ registry: sentryIssueFields, entity: view })} />
+          }
+          frame={frame}
           externalRef={
             view.permalink != null && view.permalink !== ''
               ? { url: view.permalink, label: 'issue' }
@@ -127,16 +134,6 @@ export const SentryIssueDetail = ({
           }
         />
       }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Issue sections"
-          value={activeSection}
-          onChange={setSection}
-          options={options}
-        />
-      }
-      properties={resolveDetailFields({ registry: sentryIssueFields, entity: view })}
-      dock={dock}
     >
       {summaryIsLoading ? (
         <div
@@ -155,32 +152,7 @@ export const SentryIssueDetail = ({
           onRetry={onRetrySummary}
         />
       ) : null}
-      {activeSection === 'overview' ? (
-        stats.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <StatCard key={stat.label} label={stat.label} value={stat.value} valueSize="lg" />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={CONCEPT_ICONS.sentry}
-            tone={CONCEPT_TONE.sentry}
-            title="No event stats yet"
-            size="inline"
-          />
-        )
-      ) : null}
-      {activeSection === 'stack' ? (
-        <StudioWidget presentation="section" label="stack trace">
-          <SentryStackTrace frames={view.frames} isLoading={isLoading} error={error} />
-        </StudioWidget>
-      ) : null}
-      {activeSection === 'breadcrumbs' ? (
-        <StudioWidget presentation="section" label="breadcrumbs">
-          <SentryBreadcrumbs breadcrumbs={view.breadcrumbs} isLoading={isLoading} error={error} />
-        </StudioWidget>
-      ) : null}
-    </StudioDetailLayout>
+      <RecordSections sections={sections} />
+    </PaneShell>
   );
 };

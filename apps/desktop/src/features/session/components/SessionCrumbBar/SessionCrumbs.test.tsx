@@ -22,7 +22,6 @@ const h = vi.hoisted(() => ({
   selectAgent: vi.fn(),
   setActiveLens: vi.fn(),
   setScriptsLensScope: vi.fn(),
-  setFocusedPlanId: vi.fn(),
   setFocusedArtifactId: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
 }));
@@ -161,7 +160,6 @@ const resetState = () => {
     selectAgent: h.selectAgent,
     setActiveLens: h.setActiveLens,
     setScriptsLensScope: h.setScriptsLensScope,
-    setFocusedPlanId: h.setFocusedPlanId,
     setFocusedArtifactId: h.setFocusedArtifactId,
     setFocusedWorkflowRun: h.setFocusedWorkflowRun,
   });
@@ -354,7 +352,7 @@ describe('SessionCrumbs', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
       { id: 'plans', label: 'Artifacts', onClick: toPlans },
-      { id: 'plan', label: 'Rounding drift' },
+      { id: 'artifact', label: 'Rounding drift' },
     ];
     h.state.activeLens = { [SESSION_ID]: 'plans' };
     h.state.selectedAgentId = {};
@@ -372,7 +370,7 @@ describe('SessionCrumbs', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
       { id: 'plans', label: 'Artifacts', onClick: vi.fn() },
-      { id: 'plan', label: 'Rounding drift' },
+      { id: 'artifact', label: 'Rounding drift' },
     ];
     h.state.activeLens = { [SESSION_ID]: 'plans' };
     h.state.selectedAgentId = {};
@@ -382,7 +380,6 @@ describe('SessionCrumbs', () => {
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Artifacts/ }));
 
-    expect(h.setFocusedPlanId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');

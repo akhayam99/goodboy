@@ -20,7 +20,7 @@ export type ButtonProps = Omit<ComponentProps<'button'>, 'type'> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-on-tone hover:bg-primary/90',
-  secondary: 'bg-muted text-foreground hover:bg-hover border-border',
+  secondary: 'bg-fill text-foreground hover:bg-hover border-border',
   ghost: 'border-0 text-foreground hover:bg-hover',
   danger: 'bg-danger text-on-tone hover:bg-danger/90',
   warning: 'bg-warning text-on-tone hover:bg-warning/90',

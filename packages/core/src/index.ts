@@ -209,6 +209,7 @@ export { DEFAULT_SESSION_PROVIDER_PREFERENCE } from './providers/provider-prefer
 export { CLI_CREDENTIAL } from './providers/provider-credential';
 export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
 export { TASKS } from './settings/tasks';
+export { DEFAULT_GROUPS, type DefaultGroups, type DefaultsGroup } from './settings/defaultGroups';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 
 export {
@@ -241,6 +242,15 @@ export { parseLegacyId } from './providers/parseLegacyId';
 export { remapModelSelection } from './providers/remapModelSelection';
 export { resolveCursorCombo } from './providers/cursorCombo';
 export { modelAxes } from './providers/modelAxes';
+export {
+  isModelHidden,
+  legacyHiddenModels,
+  parseHiddenModels,
+  visibleCatalog,
+  visibleModelCount,
+  withModelsVisible,
+  type HiddenModels,
+} from './providers/modelVisibility';
 export { modelHasEffortAxis } from './providers/modelHasEffortAxis';
 export { clampEffortForModel, modelEffortLevels } from './providers/clampEffortForModel';
 export { resolveModelArgs } from './providers/resolveModelArgs';
@@ -277,7 +287,11 @@ export {
   type AutoSlot,
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
-export { AUTO_DEFAULTS, type CuratedProviderId } from './providers/autoRouting/defaults';
+export {
+  AUTO_DEFAULTS,
+  isCuratedProvider,
+  type CuratedProviderId,
+} from './providers/autoRouting/defaults';
 export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';

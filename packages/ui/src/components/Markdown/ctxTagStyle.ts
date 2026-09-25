@@ -24,22 +24,17 @@ type CtxTagStyle = {
   readonly tone: CtxTone;
   readonly iconClass: string;
   readonly chipClass: string;
-  readonly calloutClass: string;
-  readonly calloutLabelClass: string;
+  readonly railClass: string;
 };
 
-type ToneClasses = Pick<
-  CtxTagStyle,
-  'iconClass' | 'chipClass' | 'calloutClass' | 'calloutLabelClass'
->;
+type ToneClasses = Pick<CtxTagStyle, 'iconClass' | 'chipClass' | 'railClass'>;
 
 const tinted = (tone: Tone): ToneClasses => {
   const tint = tintClasses(tone);
   return {
     iconClass: tint.icon,
     chipClass: cn(tint.bg, tint.text),
-    calloutClass: cn(tint.borderSoft, tint.bgSoft),
-    calloutLabelClass: tint.text,
+    railClass: tint.dot,
   };
 };
 
@@ -52,8 +47,7 @@ const TONE_CLASSES: Record<CtxTone, ToneClasses> = {
   muted: {
     iconClass: 'text-muted-foreground',
     chipClass: 'bg-muted text-muted-foreground',
-    calloutClass: 'border-border-soft bg-subtle',
-    calloutLabelClass: 'text-muted-foreground',
+    railClass: 'bg-border',
   },
 };
 
@@ -65,16 +59,16 @@ type TagSpec = {
 };
 
 const TAG_SPECS: ReadonlyArray<TagSpec> = [
-  { match: /^goal$/i, icon: Target, label: 'goal', tone: 'primary' },
-  { match: /^(summary|tl-?dr)$/i, icon: TextQuote, label: 'summary', tone: 'primary' },
-  { match: /^(decision|decisions)$/i, icon: CheckCheck, label: 'decision', tone: 'success' },
+  { match: /^goal$/i, icon: Target, label: 'goal', tone: 'muted' },
+  { match: /^(summary|tl-?dr)$/i, icon: TextQuote, label: 'summary', tone: 'muted' },
+  { match: /^(decision|decisions)$/i, icon: CheckCheck, label: 'decision', tone: 'muted' },
   {
     match: /^(question|questions|open-?questions)$/i,
     icon: HelpCircle,
     label: 'question',
     tone: 'warning',
   },
-  { match: /^(risk|risks|warning)$/i, icon: TriangleAlert, label: 'risk', tone: 'danger' },
+  { match: /^(risk|risks|warning)$/i, icon: TriangleAlert, label: 'risk', tone: 'warning' },
   { match: /^(note|notes)$/i, icon: Info, label: 'note', tone: 'muted' },
   {
     match: /^(output|last-?output|last-?output-?summary)$/i,

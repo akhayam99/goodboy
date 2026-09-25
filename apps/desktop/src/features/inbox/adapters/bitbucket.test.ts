@@ -50,7 +50,8 @@ describe('adaptBitbucketPrs', () => {
       state: 'open',
       updatedAt: '2026-08-01T10:00:00Z',
       url: 'https://bitbucket.org/goodboy/goodboy/pull-requests/55',
-      meta: 'goodboy/goodboy',
+      stateLabel: 'Open',
+      context: 'goodboy/goodboy',
       payload: { provider: 'bitbucket', kind: 'pr', pullRequest: pullRequest(), repo },
     });
   });
@@ -62,7 +63,7 @@ describe('adaptBitbucketPrs', () => {
 
     const [record] = adaptBitbucketPrs({ groups, repo: null });
 
-    expect(record?.meta).toBe('goodboy/legacy');
+    expect(record?.context).toBe('goodboy/legacy');
   });
 
   it.each([

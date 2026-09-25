@@ -16,6 +16,7 @@ export type TintClasses = {
   readonly icon: string;
   readonly dot: string;
   readonly solid: string;
+  readonly rail: string;
 };
 
 const TINT: Record<Tone, TintClasses> = {
@@ -34,6 +35,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-success',
     dot: 'bg-success',
     solid: 'bg-success text-on-tone',
+    rail: 'border-l-success',
   },
   info: {
     bg: 'bg-info/10',
@@ -50,6 +52,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-info',
     dot: 'bg-info',
     solid: 'bg-info text-on-tone',
+    rail: 'border-l-info',
   },
   warning: {
     bg: 'bg-warning/10',
@@ -66,6 +69,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-warning',
     dot: 'bg-warning',
     solid: 'bg-warning text-on-tone',
+    rail: 'border-l-warning',
   },
   danger: {
     bg: 'bg-danger/10',
@@ -82,6 +86,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-danger',
     dot: 'bg-danger',
     solid: 'bg-danger text-on-tone',
+    rail: 'border-l-danger',
   },
   primary: {
     bg: 'bg-primary/10',
@@ -98,6 +103,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-primary',
     dot: 'bg-primary',
     solid: 'bg-primary text-on-tone',
+    rail: 'border-l-primary',
   },
   merged: {
     bg: 'bg-merged/10',
@@ -114,6 +120,7 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-merged',
     dot: 'bg-merged',
     solid: 'bg-merged text-on-tone',
+    rail: 'border-l-merged',
   },
   draft: {
     bg: 'bg-draft/10',
@@ -130,10 +137,11 @@ const TINT: Record<Tone, TintClasses> = {
     icon: 'text-draft',
     dot: 'bg-draft',
     solid: 'bg-draft text-on-tone',
+    rail: 'border-l-draft',
   },
   neutral: {
-    bg: 'bg-muted',
-    bgSoft: 'bg-muted',
+    bg: 'bg-fill',
+    bgSoft: 'bg-fill',
     ring: 'ring-border-soft',
     ringStrong: 'ring-border',
     border: 'border-border-soft',
@@ -145,7 +153,8 @@ const TINT: Record<Tone, TintClasses> = {
     text: 'text-muted-foreground',
     icon: 'text-muted-foreground',
     dot: 'bg-muted-foreground',
-    solid: 'bg-muted text-foreground',
+    solid: 'bg-fill text-foreground',
+    rail: 'border-l-border',
   },
 };
 

@@ -1,22 +1,28 @@
 import { useState } from 'react';
-import { ArrowRightLeft } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   AnchoredPopover,
-  Button,
   cn,
   Divider,
   formatError,
   ScrollFade,
+  tintClasses,
   useDropdown,
+  type StateTone,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+
+type CurrentState = {
+  readonly label: string;
+  readonly tone: StateTone;
+};
 
 type Props = {
   readonly issueKey: string;
   readonly workspaceId: WorkspaceId;
   readonly onTransition: (transitionId: string) => Promise<void>;
+  readonly state: CurrentState;
 };
 
 type ReasonParams = {
@@ -43,7 +49,7 @@ const blockReason = ({ isLoading, error, count }: ReasonParams): string | null =
   return null;
 };
 
-export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) => {
+export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: Props) => {
   const { transitions, isLoading, error, reload } = useJiraTransitions({ issueKey, workspaceId });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -79,21 +85,24 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition }: Props) =
       className="flex flex-col"
       hasBackdrop
       trigger={
-        <Button
-          size="sm"
-          variant="secondary"
+        <button
+          type="button"
           aria-haspopup="menu"
           aria-expanded={isOpen}
           aria-disabled={isBlocked}
+          aria-label={`${state.label}, move this issue`}
           title={reason ?? 'Move this issue through its Jira workflow'}
-          isBusy={busyId != null}
-          busyLabel="Moving"
-          className={cn(isBlocked && 'opacity-50')}
           onClick={toggle}
+          className={cn(
+            'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium',
+            tintClasses(state.tone).bg,
+            tintClasses(state.tone).text,
+            (isBlocked || busyId != null) && 'opacity-50',
+          )}
         >
-          <ArrowRightLeft size={ICON_SIZE.row} aria-hidden />
-          Move
-        </Button>
+          {state.label}
+          <ChevronDown size={10} aria-hidden />
+        </button>
       }
     >
       <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">

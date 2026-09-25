@@ -154,7 +154,6 @@ describe('JiraIssueDetail', () => {
       updated: '2026-07-03T10:00:00.000Z',
     });
     mount();
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
 
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },
@@ -187,7 +186,6 @@ describe('JiraIssueDetail', () => {
       updated: '2026-07-03T10:00:00.000Z',
     });
     mount();
-    fireEvent.click(screen.getByRole('tab', { name: 'Conversation' }));
 
     fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Moving this to review' },
@@ -208,7 +206,7 @@ describe('JiraIssueDetail', () => {
     getIssue.mockResolvedValue({ ...ISSUE, status: 'In Review' });
     mount();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: /Ready for review/ }));
 
     await waitFor(() =>
@@ -252,7 +250,7 @@ describe('JiraIssueDetail', () => {
     getIssue.mockResolvedValueOnce({ ...ISSUE, status: 'In Review' });
     const view = render(<JiraIssueDetail issue={ISSUE} workspaceId={WORKSPACE} />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
     expect(await screen.findByText('In Review')).toBeDefined();
 
@@ -270,7 +268,7 @@ describe('JiraIssueDetail', () => {
       ),
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+    fireEvent.click(screen.getByRole('button', { name: /move this issue/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
     await waitFor(() =>
       expect(transitionIssue).toHaveBeenCalledWith(
@@ -294,7 +292,7 @@ describe('JiraIssueDetail', () => {
       <JiraIssueDetail issue={ISSUE} workspaceId={WORKSPACE} onIssueWritten={onIssueWritten} />,
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Ready for review' }));
 
     await waitFor(() => expect(onIssueWritten).toHaveBeenCalled());

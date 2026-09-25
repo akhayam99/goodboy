@@ -1,23 +1,34 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { useEffect, useMemo, useState } from 'react';
-import { IconButton, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
-import { RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { inlineMarkdownText, useEscapeLayer } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { useListKeys } from '../../../../shared/hooks/useListKeys';
+import { openUrl } from '../../../../shared/lib/editor';
+import { groupByDay } from '../../../../shared/utils/groupByDay';
 import { useSessionById } from '../../../../store';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
-import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
-import { filterInboxRecords, type InboxKindFilter } from '../../kindFilter';
+import { orderInboxRecords } from '../../orderInboxRecords';
+import { INBOX_PROVIDERS, type InboxKind, type InboxProvider } from '../../types';
 import {
-  readInboxKindFilter,
-  readInboxProviders,
-  writeInboxKindFilter,
-  writeInboxProviders,
-} from '../../kindFilterStorage';
+  NO_INBOX_FILTERS,
+  activeFilterCount,
+  filterInboxRecords,
+  inboxFacetCounts,
+  type InboxFilters,
+  type InboxKindFilter,
+  type InboxView,
+} from '../../kindFilter';
+import { readInboxFilters, writeInboxFilters } from '../../kindFilterStorage';
 import { InboxDetail } from './InboxDetail';
-import { InboxRail } from './InboxRail';
+import { InboxFacetRail } from './InboxFacetRail';
+import { InboxList, type InboxLoadFailure } from './InboxList';
+import { InboxListHeader } from './InboxListHeader';
+import { InboxStudioLayout } from './InboxStudioLayout';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -28,6 +39,16 @@ type Props = {
   readonly initialSessionId?: SessionId | null;
   readonly onClose: () => void;
 };
+
+const FACET_RAIL_PX = 256;
+const COLUMN_FOLD_PX = 720;
+
+const VIEW_TITLE = {
+  all: 'All items',
+  'in-progress': 'In progress',
+  'with-session': 'With a session',
+  closed: 'Closed',
+} satisfies Record<InboxView, string>;
 
 type KindToFilterParams = {
   readonly kind: InboxKind;
@@ -51,6 +72,39 @@ const kindToFilter = ({ kind }: KindToFilterParams): InboxKindFilter => {
   }
 };
 
+type InitialFiltersParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly initialKind: InboxKind | null;
+  readonly initialProvider: InboxProvider | null;
+};
+
+const initialFilters = ({
+  workspaceId,
+  initialKind,
+  initialProvider,
+}: InitialFiltersParams): InboxFilters => {
+  const stored = readInboxFilters({ workspaceId });
+  return {
+    view: 'all',
+    kind: initialKind != null ? kindToFilter({ kind: initialKind }) : (stored?.kind ?? 'all'),
+    source: initialProvider ?? (initialKind != null ? null : (stored?.source ?? null)),
+  };
+};
+
+type SummaryParams = {
+  readonly total: number;
+  readonly visible: number;
+  readonly withSession: number;
+};
+
+const summary = ({ total, visible, withSession }: SummaryParams): string => {
+  if (visible !== total) {
+    return `${visible} of ${total}`;
+  }
+  const items = `${total} ${total === 1 ? 'item' : 'items'}`;
+  return withSession === 0 ? items : `${items} · ${withSession} with a session`;
+};
+
 export const InboxStudio = ({
   workspaceId,
   rootPath,
@@ -60,34 +114,26 @@ export const InboxStudio = ({
   initialSessionId = null,
   onClose,
 }: Props) => {
-  const { records, isLoading, errors, connected, refetch } = useInboxRecords({
+  const { records, isLoading, loading, errors, connected, refetch } = useInboxRecords({
     workspaceId,
     rootPath,
   });
   const [query, setQuery] = useState('');
-  const [kindFilter, setKindFilter] = useState<InboxKindFilter>(() => {
-    if (initialKind != null) {
-      return kindToFilter({ kind: initialKind });
-    }
-    return readInboxKindFilter({ workspaceId }) ?? 'all';
-  });
-  const [selectedProviders, setSelectedProviders] = useState<ReadonlySet<InboxProvider>>(() => {
-    if (initialProvider != null) {
-      return new Set([initialProvider]);
-    }
-    return new Set(readInboxProviders({ workspaceId }));
-  });
+  const [filters, setFilters] = useState<InboxFilters>(() =>
+    initialFilters({ workspaceId, initialKind, initialProvider }),
+  );
   const [selectedKey, setSelectedKey] = useState<string | null>(initialRecordKey);
   const [sessionFilter, setSessionFilter] = useState<SessionId | null>(initialSessionId);
+  const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
   const filteredSession = useSessionById(sessionFilter);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const detailRef = useRef<HTMLElement | null>(null);
+  const body = useElementWidth();
+  const isFacetFolded = body.width !== null && body.width - FACET_RAIL_PX < COLUMN_FOLD_PX;
 
   useEffect(() => {
-    writeInboxKindFilter({ workspaceId, kindFilter });
-  }, [workspaceId, kindFilter]);
-
-  useEffect(() => {
-    writeInboxProviders({ workspaceId, providers: selectedProviders });
-  }, [workspaceId, selectedProviders]);
+    writeInboxFilters({ workspaceId, kind: filters.kind, source: filters.source });
+  }, [workspaceId, filters.kind, filters.source]);
 
   const scopedRecords = useMemo(
     () =>
@@ -106,67 +152,97 @@ export const InboxStudio = ({
     return goal === '' ? 'Linked session' : goal;
   })();
 
-  const filteredRecords = useMemo(
+  const days = useMemo(
     () =>
-      filterInboxRecords({
-        records: scopedRecords,
-        query,
-        kindFilter,
-        providers: selectedProviders,
+      groupByDay({
+        items: orderInboxRecords({
+          records: filterInboxRecords({ records: scopedRecords, query, filters }),
+        }),
+        timestampOf: (record) => record.updatedAt,
+        now: new Date(),
       }),
-    [scopedRecords, query, kindFilter, selectedProviders],
+    [scopedRecords, query, filters],
   );
+  const orderedRecords = days.flatMap((day) => day.items);
+  const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
 
   const selectedRecord = useMemo(
     () => scopedRecords.find((record) => record.key === selectedKey) ?? null,
     [scopedRecords, selectedKey],
   );
 
-  const [launchFocusRequest, setLaunchFocusRequest] = useState(0);
-
-  const onSelect = (record: InboxRecord): void => {
-    setSelectedKey(record.key);
-  };
-
-  const onDeselect = (): void => {
+  const deselect = (): void => {
     setSelectedKey(null);
   };
 
-  const onActivate = (record: InboxRecord): void => {
-    setSelectedKey(record.key);
-    setLaunchFocusRequest((current) => current + 1);
-  };
+  useEscapeLayer(deselect, selectedRecord != null);
 
-  const onToggleProvider = (provider: InboxProvider): void => {
-    setSelectedProviders((prev) => {
-      const next = new Set(prev);
-      if (next.has(provider)) {
-        next.delete(provider);
-        return next;
-      }
-      next.add(provider);
-      return next;
+  const selectKey = (key: string): void => {
+    setSelectedKey(key);
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-inbox-key="${CSS.escape(key)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
     });
   };
 
-  const onClearFilters = (): void => {
-    setQuery('');
-    setKindFilter('all');
-    setSelectedProviders(new Set());
-    setSessionFilter(null);
+  const activate = (key: string): void => {
+    setSelectedKey(key);
+    setLaunchFocusRequest((current) => current + 1);
   };
 
-  const onClearSessionFilter = (): void => {
+  const openSelected = (key: string | null): void => {
+    const url = orderedRecords.find((record) => record.key === key)?.url ?? '';
+    if (url === '') {
+      return;
+    }
+    void openUrl(url);
+  };
+
+  const focusReply = (): void => {
+    const composer = detailRef.current?.querySelector('textarea');
+    composer?.focus();
+  };
+
+  useListKeys({
+    keys: orderedRecords.map((record) => record.key),
+    selectedKey,
+    onSelect: selectKey,
+    onActivate: activate,
+    extraKeys: {
+      o: openSelected,
+      r: focusReply,
+      '/': () => searchRef.current?.focus(),
+    },
+  });
+
+  const clearFilters = (): void => {
+    setQuery('');
+    setFilters(NO_INBOX_FILTERS);
     setSessionFilter(null);
   };
 
   const hasFiltersActive =
-    query.trim() !== '' ||
-    kindFilter !== 'all' ||
-    selectedProviders.size > 0 ||
-    sessionFilter != null;
+    query.trim() !== '' || activeFilterCount({ filters }) > 0 || sessionFilter != null;
 
-  const onOpenIntegrations = () => openToolSettings({});
+  const failures: ReadonlyArray<InboxLoadFailure> = INBOX_PROVIDERS.flatMap((provider) => {
+    const message = errors[provider];
+    return message == null ? [] : [{ provider, message }];
+  });
+
+  const openSettings = () => openToolSettings({});
+
+  const facets = (
+    <InboxFacetRail
+      filters={filters}
+      counts={counts}
+      connected={connected}
+      loading={loading}
+      errors={errors}
+      onFiltersChange={setFilters}
+      onClearFilters={clearFilters}
+    />
+  );
 
   return (
     <StudioShell
@@ -174,64 +250,67 @@ export const InboxStudio = ({
       tone={CONCEPT_TONE.inbox}
       title="Inbox"
       closeLabel="close inbox"
-      headerAccessory={
-        <IconButton
-          icon={RefreshCw}
-          label="Refresh inbox"
-          onClick={refetch}
-          disabled={isLoading}
-          busy={isLoading}
-        />
-      }
+      isEscapeEnabled={selectedRecord == null}
       onClose={onClose}
     >
       {(requestClose) => (
-        <StudioRailLayout
-          railLabel="Inbox"
-          railWidth="xwide"
-          rail={
-            <InboxRail
-              connected={connected}
-              records={filteredRecords}
-              allRecords={scopedRecords}
-              selectedProviders={selectedProviders}
-              onToggleProvider={onToggleProvider}
-              sessionFilterLabel={sessionFilterLabel}
-              onClearSessionFilter={onClearSessionFilter}
-              query={query}
-              onQueryChange={setQuery}
-              kindFilter={kindFilter}
-              onKindFilterChange={setKindFilter}
-              selectedKey={selectedKey}
-              onSelect={onSelect}
-              onActivate={onActivate}
-              onClearFilters={onClearFilters}
-              isLoading={isLoading}
-              errors={INBOX_PROVIDERS.flatMap((provider) => {
-                const message = errors[provider];
-                return message == null ? [] : [{ provider, message }];
+        <InboxStudioLayout
+          bodyRef={body.ref}
+          rail={isFacetFolded ? null : facets}
+          list={
+            <PaneShell
+              scroll="body"
+              title={VIEW_TITLE[filters.view]}
+              meta={summary({
+                total: scopedRecords.length,
+                visible: orderedRecords.length,
+                withSession: scopedRecords.filter((record) => recordSessionId({ record }) != null)
+                  .length,
               })}
-              onRefresh={refetch}
-            />
+              actions={
+                <InboxListHeader
+                  query={query}
+                  onQueryChange={setQuery}
+                  searchRef={searchRef}
+                  sessionLabel={sessionFilterLabel}
+                  onClearSession={() => setSessionFilter(null)}
+                  isRefreshing={isLoading}
+                  onRefresh={refetch}
+                  isFacetFolded={isFacetFolded}
+                  activeFilterCount={activeFilterCount({ filters })}
+                  facets={facets}
+                />
+              }
+            >
+              <InboxList
+                days={days}
+                totalCount={scopedRecords.length}
+                connectedCount={connected.length}
+                isLoading={isLoading}
+                failures={failures}
+                hasFiltersActive={hasFiltersActive}
+                selectedKey={selectedKey}
+                onSelect={(record) => selectKey(record.key)}
+                onRetry={refetch}
+                onOpenSettings={openSettings}
+                onClearFilters={clearFilters}
+              />
+            </PaneShell>
           }
-          detail={
-            <InboxDetail
-              record={selectedRecord}
-              records={scopedRecords}
-              hasVisibleRecords={filteredRecords.length > 0}
-              hasFiltersActive={hasFiltersActive}
-              workspaceId={workspaceId}
-              rootPath={rootPath}
-              isLoading={isLoading}
-              errors={errors}
-              connected={connected}
-              onRefresh={refetch}
-              onClose={requestClose}
-              onDeselect={onDeselect}
-              onClearFilters={onClearFilters}
-              onOpenIntegrations={onOpenIntegrations}
-              launchFocusRequest={launchFocusRequest}
-            />
+          drawerRef={detailRef}
+          drawer={
+            selectedRecord == null ? null : (
+              <InboxDetail
+                record={selectedRecord}
+                workspaceId={workspaceId}
+                rootPath={rootPath}
+                errors={errors}
+                onRefresh={refetch}
+                onClose={requestClose}
+                onDeselect={deselect}
+                launchFocusRequest={launchFocusRequest}
+              />
+            )
           }
         />
       )}

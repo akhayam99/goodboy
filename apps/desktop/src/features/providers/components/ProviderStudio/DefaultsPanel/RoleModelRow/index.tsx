@@ -3,9 +3,9 @@ import {
   PROVIDER_CAPABILITIES,
   clampEffortForModel,
   getModelProvider,
-  modelEffortLevels,
   recommendedModelForRole,
   resolveRoleRouting,
+  type AutoContext,
   type ResolvedRoleFallback,
   type ResolvedRoleRouting,
 } from '@goodboy/core';
@@ -16,19 +16,16 @@ import type {
   RoleModelPreference,
   RoleModelPreferences,
 } from '@goodboy/types';
-import { FieldRow } from '@goodboy/ui';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
-import { RoutingStatusControl } from '../RoutingStatusControl';
-import { recommendationSummary } from '../../../../../../shared/components/RoutingPicker/recommendationSummary';
-
-const AUTOMATIC_FALLBACK_SUMMARY = 'Automatic';
+import { DefaultRow } from '../DefaultRow';
+import { FallbackRow } from '../FallbackRow';
 
 type Props = {
   readonly role: AgentRole;
   readonly label: string;
   readonly help: string;
   readonly preference: RoleModelPreference | null;
-  readonly defaultProviderId: ProviderId;
+  readonly autoContext: AutoContext;
   readonly connectedProviderIds: ReadonlyArray<ProviderId>;
   readonly disabled: boolean;
   readonly onChange: (preference: RoleModelPreference | null) => void;
@@ -84,7 +81,7 @@ export const RoleModelRow = ({
   label,
   help,
   preference,
-  defaultProviderId,
+  autoContext,
   connectedProviderIds,
   disabled,
   onChange,
@@ -92,29 +89,19 @@ export const RoleModelRow = ({
   const compiled = resolveRoleRouting({
     role,
     prefs: null,
-    auto: { defaultProvider: defaultProviderId },
+    auto: autoContext,
   });
   const prefs: RoleModelPreferences | null = preference == null ? null : { [role]: preference };
   const resolved = resolveRoleRouting({ role, prefs });
-  const resolvedProviderId = resolved.isOverride ? resolved.provider : defaultProviderId;
-  const resolvedFallbackProviderId = resolved.fallback?.provider ?? defaultProviderId;
+  const resolvedProviderId = resolved.isOverride ? resolved.provider : compiled.provider;
   const [providerId, setProviderId] = useState(resolvedProviderId);
-  const [isChoosingFallback, setIsChoosingFallback] = useState(false);
   const pendingProvider = useRef(resolvedProviderId);
-  const pendingFallbackProvider = useRef(resolvedFallbackProviderId);
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
   const recommendedModel = recommendedModelForRole({ role, provider: providerId });
-  const defaultModel = recommendedModelForRole({ role, provider: defaultProviderId });
   const primaryModel = resolved.isOverride ? resolved.model : recommendedModel;
   const pendingModel = useRef(primaryModel);
-  const defaultSummary = recommendationSummary({
-    provider: defaultProviderId,
-    model: defaultModel,
-    effort: modelEffortLevels({ model: defaultModel }) === null ? null : compiled.effort,
-  });
-  const isFallbackPickerVisible = resolved.fallback != null || isChoosingFallback;
 
   useEffect(() => {
     setProviderId(resolvedProviderId);
@@ -124,10 +111,6 @@ export const RoleModelRow = ({
   useEffect(() => {
     pendingModel.current = primaryModel;
   }, [primaryModel]);
-
-  useEffect(() => {
-    pendingFallbackProvider.current = resolvedFallbackProviderId;
-  }, [resolvedFallbackProviderId]);
 
   const commit = ({ providerId: nextProvider, model, effort }: CommitParams) => {
     const carried = storedFallback({ resolved: resolved.fallback });
@@ -172,127 +155,84 @@ export const RoleModelRow = ({
     });
   };
 
-  const clearFallback = () => {
-    setIsChoosingFallback(false);
-    commitFallback({ fallback: null });
-  };
-
   return (
-    <FieldRow label={label} help={help}>
-      <div className="flex items-center gap-2">
-        <RoutingStatusControl
-          label={label}
-          isCustom={resolved.isOverride}
-          disabled={disabled}
-          onReset={() => onChange(null)}
-        />
-        <div className="flex w-80 flex-col gap-1">
-          <RoutingPicker
-            availability="setup"
-            ariaLabel={`${label} routing`}
-            connectedProviders={availableProviderIds}
-            provider={providerId}
-            model={resolved.isOverride ? resolved.model : ''}
-            effort={{
-              editable: true,
-              value: resolved.effort,
-              onChange: (effort) =>
-                commit({
-                  providerId: pendingProvider.current,
-                  model: pendingModel.current,
-                  effort,
-                }),
-            }}
-            recommendation={{ provider: defaultProviderId, model: recommendedModel }}
-            defaultSummary={defaultSummary}
-            overridden={resolved.isOverride}
-            disabled={disabled}
-            onProvider={(next) => {
-              if (next === '') {
-                onChange(null);
-                return;
+    <DefaultRow label={label} summary={help}>
+      <RoutingPicker
+        availability="setup"
+        ariaLabel={`${label} routing`}
+        connectedProviders={availableProviderIds}
+        provider={providerId}
+        model={resolved.isOverride ? resolved.model : ''}
+        effort={{
+          editable: true,
+          value: resolved.isOverride ? resolved.effort : compiled.effort,
+          onChange: (effort) =>
+            commit({
+              providerId: pendingProvider.current,
+              model: pendingModel.current,
+              effort,
+            }),
+        }}
+        recommendation={{
+          provider: compiled.provider,
+          model: compiled.model,
+          effort: compiled.effort,
+        }}
+        recommendationKind="auto"
+        overridden={resolved.isOverride}
+        onReset={() => onChange(null)}
+        resetLabel="Back to Auto"
+        align="end"
+        disabled={disabled}
+        onProvider={(next) => {
+          if (next === '') {
+            onChange(null);
+            return;
+          }
+          setProviderId(next);
+          pendingProvider.current = next;
+          const nextModel = recommendedModelForRole({ role, provider: next });
+          pendingModel.current = nextModel;
+          if (!resolved.isOverride) {
+            return;
+          }
+          commit({
+            providerId: next,
+            model: nextModel,
+            effort:
+              clampEffortForModel({ model: nextModel, effort: resolved.effort }) ?? resolved.effort,
+          });
+        }}
+        onModel={(nextModel) => {
+          if (nextModel === '') {
+            onChange(null);
+            return;
+          }
+          commit({
+            providerId: pendingProvider.current,
+            model: nextModel,
+            effort:
+              clampEffortForModel({ model: nextModel, effort: resolved.effort }) ?? resolved.effort,
+          });
+        }}
+        {...(resolved.isOverride && {
+          footer: (
+            <FallbackRow
+              label={label}
+              fallback={
+                resolved.fallback == null
+                  ? null
+                  : { provider: resolved.fallback.provider, model: resolved.fallback.model }
               }
-              setProviderId(next);
-              pendingProvider.current = next;
-              const nextModel = recommendedModelForRole({ role, provider: next });
-              pendingModel.current = nextModel;
-              if (!resolved.isOverride) {
-                return;
-              }
-              commit({
-                providerId: next,
-                model: nextModel,
-                effort:
-                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
-                  resolved.effort,
-              });
-            }}
-            onModel={(nextModel) => {
-              if (nextModel === '') {
-                onChange(null);
-                return;
-              }
-              commit({
-                providerId: pendingProvider.current,
-                model: nextModel,
-                effort:
-                  clampEffortForModel({ model: nextModel, effort: resolved.effort }) ??
-                  resolved.effort,
-              });
-            }}
-          />
-          {resolved.isOverride && (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-2xs text-muted-foreground">Fallback</span>
-              {isFallbackPickerVisible ? (
-                <RoutingPicker
-                  availability="setup"
-                  variant="pill"
-                  align="end"
-                  ariaLabel={`${label} fallback routing`}
-                  connectedProviders={availableProviderIds}
-                  provider={resolved.fallback?.provider ?? resolvedFallbackProviderId}
-                  model={resolved.fallback?.model ?? ''}
-                  effort={{ editable: false, value: resolved.effort }}
-                  defaultSummary={AUTOMATIC_FALLBACK_SUMMARY}
-                  overridden={resolved.fallback != null}
-                  disabled={disabled}
-                  onReset={clearFallback}
-                  onProvider={(next) => {
-                    if (next === '') {
-                      clearFallback();
-                      return;
-                    }
-                    pendingFallbackProvider.current = next;
-                  }}
-                  onModel={(nextModel) => {
-                    if (nextModel === '') {
-                      clearFallback();
-                      return;
-                    }
-                    commitFallback({
-                      fallback: {
-                        providerId: getModelProvider(nextModel) ?? pendingFallbackProvider.current,
-                        model: nextModel,
-                      },
-                    });
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setIsChoosingFallback(true)}
-                  aria-label={`${label} fallback: automatic`}
-                  className="rounded-full px-2 py-0.5 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {AUTOMATIC_FALLBACK_SUMMARY}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </FieldRow>
+              auto={{ provider: compiled.provider, model: compiled.model }}
+              effort={resolved.effort}
+              connectedProviders={availableProviderIds}
+              disabled={disabled}
+              onFallback={(fallback) => commitFallback({ fallback })}
+            />
+          ),
+        })}
+      />
+    </DefaultRow>
   );
 };

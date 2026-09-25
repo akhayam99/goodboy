@@ -1,7 +1,6 @@
 {
   "else-branch": {
     "apps/desktop/src/features/budget/components/spend/lib.ts": 1,
-    "apps/desktop/src/features/chat/components/ArtifactBlockCard/index.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 1,
     "apps/desktop/src/features/chat/components/ChatInput/lib.ts": 1,
     "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
@@ -72,7 +71,6 @@
     "apps/desktop/src/features/chat/components/ChatInput/hooks/useScopeNudge.ts": 2,
     "apps/desktop/src/features/chat/components/ChatInput/index.tsx": 9,
     "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
-    "apps/desktop/src/features/plans/components/PlanStudio/index.tsx": 4,
     "apps/desktop/src/features/session/components/SessionWorkspace/index.tsx": 2,
     "apps/desktop/src/features/session/components/SummarizerBadge/index.tsx": 1,
     "apps/desktop/src/store/slices/session-view/workSurface.ts": 3
@@ -98,7 +96,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 2,
     "apps/desktop/src/features/resolve/components/ResolveItemHeader/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ResolveQueueHome/ResolveQueueEmptyState.tsx": 3,
-    "apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx": 2,
     "apps/desktop/src/features/session/components/AgentTree/ContextWindowBar.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/AttentionChips.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ContextDigest.tsx": 1,
@@ -121,7 +118,6 @@
   },
   "function-component": {
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 1,
-    "apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 2
   },
   "comment": {

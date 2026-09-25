@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import {
   listenScriptExit,
   listenScriptOutput,
@@ -15,6 +15,7 @@ type Params = {
   readonly runId: string;
   readonly startedAt: number;
   readonly name?: string;
+  readonly mountId?: MountId;
 };
 
 type WriteRunParams = {
@@ -39,6 +40,7 @@ export const registerScriptRunListeners = async ({
   runId,
   startedAt,
   name,
+  mountId,
 }: Params): Promise<RegisteredScriptRun> => {
   const writeRun = ({ record }: WriteRunParams): void => {
     set((state) => ({
@@ -106,7 +108,9 @@ export const registerScriptRunListeners = async ({
         result: completed,
         runId,
         startedAt,
+        completedAt: Date.now(),
         ...(name === undefined ? {} : { name }),
+        ...(mountId === undefined ? {} : { mountId }),
       },
     });
     resolveResult?.(completed);

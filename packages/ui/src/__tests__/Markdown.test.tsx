@@ -459,7 +459,7 @@ describe('Markdown report kit', () => {
       />,
     );
     const callout = container.querySelector('[data-block="callout"]');
-    expect(callout?.getAttribute('data-color')).toBe('danger');
+    expect(callout?.getAttribute('data-color')).toBe('warning');
     expect(callout?.querySelectorAll('li')).toHaveLength(2);
   });
 
@@ -475,10 +475,32 @@ describe('Markdown report kit', () => {
     expect(chips[1]?.textContent).toBe('2 regions down');
   });
 
-  it('gives a summary callout its own tone instead of the output one', () => {
+  it('keeps a summary callout neutral, the primary tone belongs to the one call to action', () => {
     const { container } = render(<Markdown text="<<summary>>shipped<</summary>>" />);
     const callout = container.querySelector('[data-block="callout"]');
     expect(callout?.getAttribute('data-tone')).toBe('summary');
-    expect(callout?.getAttribute('data-color')).toBe('primary');
+    expect(callout?.getAttribute('data-color')).toBe('muted');
+  });
+
+  it('calls a decision neutral and a risk a warning, never success or danger', () => {
+    const { container } = render(
+      <Markdown text={'<<decision>>round once<</decision>>\n\n<<risk>>backfill<</risk>>'} />,
+    );
+    const colors = [...container.querySelectorAll('[data-block="callout"]')].map((node) =>
+      node.getAttribute('data-color'),
+    );
+    expect(colors).toEqual(['muted', 'warning']);
+  });
+
+  it('draws a callout as a neutral surface with a tone rail, never a tinted fill', () => {
+    const { container } = render(<Markdown text="<<risk>>stale key<</risk>>" />);
+    const callout = container.querySelector('[data-block="callout"]');
+    const rail = callout?.querySelector('[data-block="callout-rail"]');
+    expect(callout?.className).toContain('bg-subtle');
+    expect(callout?.className).not.toMatch(/bg-warning|border-warning/);
+    expect(rail?.className).toContain('bg-warning');
+    expect(callout?.querySelector('[data-block="callout-label"]')?.className).toContain(
+      'text-muted-foreground',
+    );
   });
 });

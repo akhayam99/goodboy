@@ -191,7 +191,7 @@ import { createOverridesSlice } from './slices/overrides';
 import type { WorkspaceOverridesPatch } from './slices/overrides/patchWorkspaceOverrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
-import type { CopyWorkflowFromWorkspaceParams } from './slices/workflows/copyWorkflowFromWorkspace';
+import type { CopyWorkflowsFromWorkspacesParams } from './slices/workflows/copyWorkflowsFromWorkspaces';
 import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
 import type { OrchestratorHintDraft } from './slices/workflows/addWorkflowOrchestratorHint';
 import type {
@@ -314,6 +314,7 @@ type RunDiscoveredScriptParams = {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
+  readonly mountId?: MountId;
   readonly cols?: number;
   readonly rows?: number;
 };
@@ -476,7 +477,7 @@ type AppActions = {
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
   createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
-  clearPendingTitleFocus(): void;
+  clearPendingKickoffFocus(): void;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
@@ -663,7 +664,9 @@ type AppActions = {
   reattachScriptRuns(): Promise<void>;
   cancelScript(sessionId: SessionId, scriptId: string): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
-  copyWorkflowFromWorkspace(params: CopyWorkflowFromWorkspaceParams): Promise<Workflow>;
+  copyWorkflowsFromWorkspaces(
+    params: CopyWorkflowsFromWorkspacesParams,
+  ): Promise<ReadonlyArray<Workflow>>;
   savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
   deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
   makeWorkflowPreset(workspaceId: WorkspaceId, workflowId: WorkflowId): Promise<void>;
@@ -950,7 +953,6 @@ type AppActions = {
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
-  setFocusedPlanId(sessionId: SessionId, planId: PlanId | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
   setArtifactFilter(params: {
     readonly sessionId: SessionId;
@@ -1056,7 +1058,7 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
-  pendingTitleFocusSessionId: null,
+  pendingKickoffFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,

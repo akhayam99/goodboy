@@ -1,5 +1,6 @@
 import { Square } from 'lucide-react';
 import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { formatScriptDuration } from '../../formatScriptDuration';
 import type { RunningScript } from '../../hooks/useRunningScripts';
 
 type Props = {
@@ -9,18 +10,6 @@ type Props = {
   readonly onStop: (run: RunningScript) => void;
 };
 
-const elapsed = (ms: number): string => {
-  const seconds = Math.max(0, Math.floor(ms / 1_000));
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) {
-    return `${minutes}m ${seconds % 60}s`;
-  }
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-};
-
 export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
   <li className="flex items-center gap-2 px-3 py-2">
     <StatusDot tone="info" size="sm" pulsing />
@@ -28,13 +17,13 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
       type="button"
       onClick={() => onOpen(run)}
       className="min-w-0 flex-1 text-left"
-      aria-label={`Go to ${run.scriptName} in ${run.sessionGoal}`}
+      aria-label={`Show ${run.scriptName} output from ${run.sessionGoal}`}
     >
       <span className="block truncate text-xs font-medium text-foreground">{run.scriptName}</span>
       <span className="block truncate text-2xs text-muted-foreground">{run.sessionGoal}</span>
     </button>
     <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
-      {elapsed(now - run.startedAt)}
+      {formatScriptDuration({ durationMs: now - run.startedAt })}
     </span>
     <Tooltip content={`Stop ${run.scriptName}`}>
       <button

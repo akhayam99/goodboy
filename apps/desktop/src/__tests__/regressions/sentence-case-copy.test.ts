@@ -10,7 +10,7 @@ import {
   RESOLVE_QUEUE_STATUS_LABEL,
   RESOLVE_QUEUE_TITLE,
 } from '../../features/resolve/resolveQueueCopy';
-import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/components/ScriptsPanel/scriptRunPresentation';
+import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/scriptRunPresentation';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import {
   ACTIVITY_CATEGORY_LABEL,
@@ -35,10 +35,9 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   RESOLVE_QUEUE_ACTION_LABEL: Object.values(RESOLVE_QUEUE_ACTION_LABEL),
   RESOLVE_QUEUE_FILTER_LABEL: Object.values(RESOLVE_QUEUE_FILTER_LABEL),
   RESOLVE_DELIVERY_SUPPORT: Object.values(RESOLVE_DELIVERY_SUPPORT),
-  SCRIPT_RUN_PRESENTATION: Object.values(SCRIPT_RUN_PRESENTATION).flatMap((presentation) => [
-    presentation.statusLabel,
-    presentation.dotLabel,
-  ]),
+  SCRIPT_RUN_PRESENTATION: Object.values(SCRIPT_RUN_PRESENTATION).map(
+    (presentation) => presentation.statusLabel,
+  ),
   LENS_LABEL: Object.values(LENS_LABEL),
   ACTIVITY_CATEGORY_LABEL: Object.values(ACTIVITY_CATEGORY_LABEL),
   ACTIVITY_PRESET_LABEL: Object.values(ACTIVITY_PRESET_LABEL),

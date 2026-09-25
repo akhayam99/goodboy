@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
   runAdhocScript,
@@ -14,6 +14,7 @@ type Params = {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
+  readonly mountId?: MountId;
   readonly cols?: number;
   readonly rows?: number;
 };
@@ -29,11 +30,13 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
     name,
     command,
     cwd,
+    mountId,
     cols = 220,
     rows = 50,
   }: Params): Promise<ScriptRunResult> => {
     const runId = crypto.randomUUID();
     const startedAt = Date.now();
+    const mountField = mountId === undefined ? {} : { mountId };
     const writeRun = ({ record }: WriteRunParams): void => {
       set((state) => ({
         scriptRuns: {
@@ -42,7 +45,9 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
         },
       }));
     };
-    writeRun({ record: { status: 'pending', result: null, runId, startedAt, name } });
+    writeRun({
+      record: { status: 'pending', result: null, runId, startedAt, name, ...mountField },
+    });
     const registered = await registerScriptRunListeners({
       set,
       get,
@@ -51,6 +56,7 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
       runId,
       startedAt,
       name,
+      ...mountField,
     });
     try {
       await runAdhocScript({
@@ -70,7 +76,17 @@ export const runDiscoveredScript = (set: SetFn, get: GetFn) => {
         stderr: formatError(caughtError),
         exitCode: -1,
       };
-      writeRun({ record: { status: 'error', result, runId, startedAt, name } });
+      writeRun({
+        record: {
+          status: 'error',
+          result,
+          runId,
+          startedAt,
+          completedAt: Date.now(),
+          name,
+          ...mountField,
+        },
+      });
       return result;
     }
     return registered.result;

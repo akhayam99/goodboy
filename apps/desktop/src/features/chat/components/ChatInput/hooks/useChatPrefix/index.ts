@@ -39,6 +39,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
   );
   const runScript = useAppStore((s) => s.runScript);
   const runDiscoveredScript = useAppStore((s) => s.runDiscoveredScript);
+  const openDrawer = useAppStore((s) => s.openDrawer);
   const scriptRuns = useAppStore((s) => s.scriptRuns[session.id] ?? NO_RUNS);
   const workspaceWorkflows = useAppStore(
     useShallow((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY),
@@ -78,6 +79,11 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     ({ script, group }: ScriptPick) => {
       setValue('');
       setShowPopover(false);
+      openDrawer({
+        kind: 'scriptRun',
+        sessionId: session.id,
+        payload: { scriptKey: script.key, mountId: group.mountId },
+      });
       if (script.savedId !== null) {
         void runScript({ sessionId: session.id, scriptId: script.savedId, mountId: group.mountId });
         return;
@@ -88,9 +94,10 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
         name: script.name,
         command: script.command,
         cwd: discoveredScriptCwd({ worktreePath: group.worktreePath, relDir: script.relDir }),
+        mountId: group.mountId,
       });
     },
-    [runDiscoveredScript, runScript, setValue, session.id],
+    [openDrawer, runDiscoveredScript, runScript, setValue, session.id],
   );
 
   const onPickSkill = useCallback(

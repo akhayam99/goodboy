@@ -3,15 +3,34 @@ import { Folder, FolderGit2, Unplug, X } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import { Chip, ConfirmPopover, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
+import { ProjectLinkCompactRow } from './ProjectLinkCompactRow';
+import type { ProjectLinkDensity } from './projectLinkDensity';
 
 type Props = {
   readonly project: Project;
   readonly busy: boolean;
   readonly accessory: ReactNode;
+  readonly density?: ProjectLinkDensity;
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
 };
 
-export const ProjectLinkRow = ({ project, busy, accessory, onUnlink }: Props) => {
+export const ProjectLinkRow = ({
+  project,
+  busy,
+  accessory,
+  density = 'comfortable',
+  onUnlink,
+}: Props) => {
+  if (density === 'compact') {
+    return (
+      <ProjectLinkCompactRow
+        project={project}
+        busy={busy}
+        accessory={accessory}
+        onUnlink={onUnlink}
+      />
+    );
+  }
   const isRepo = project.kind === 'repo';
   const KindIcon = isRepo ? FolderGit2 : Folder;
   return (

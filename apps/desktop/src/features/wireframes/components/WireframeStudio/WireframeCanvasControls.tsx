@@ -1,13 +1,5 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Minus,
-  Plus,
-  SkipBack,
-  SkipForward,
-} from 'lucide-react';
-import { Button, Divider, IconButton } from '@goodboy/ui';
+import { Maximize2, Minus, Plus, SkipBack, SkipForward } from 'lucide-react';
+import { Button, IconButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ZOOM_BOUNDS, type WireframeNavigation } from './useWireframeNavigation';
 
@@ -21,32 +13,12 @@ type Props = {
 };
 
 export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoomToFit }: Props) => (
-  <>
-    <Divider orientation="vertical" className="mx-1 h-4" />
-    <IconButton
-      variant="ghost"
-      icon={ChevronLeft}
-      label="Back"
-      tooltip="Back in the click history"
-      onClick={navigation.goBack}
-      disabled={!navigation.canGoBack}
-      data-testid="wireframe-back"
-    />
-    <IconButton
-      variant="ghost"
-      icon={ChevronRight}
-      label="Forward"
-      tooltip="Forward in the click history"
-      onClick={navigation.goForward}
-      disabled={!navigation.canGoForward}
-      data-testid="wireframe-forward"
-    />
-    <Divider orientation="vertical" className="mx-1 h-4" />
+  <span className="flex shrink-0 items-center gap-1">
     <IconButton
       variant="ghost"
       icon={SkipBack}
       label="Previous"
-      tooltip="Previous screen in document order"
+      tooltip="Previous screen"
       onClick={navigation.goPrevious}
       disabled={order <= 0}
       data-testid="wireframe-previous"
@@ -55,16 +27,16 @@ export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoom
       variant="ghost"
       icon={SkipForward}
       label="Next"
-      tooltip="Next screen in document order"
+      tooltip="Next screen"
       onClick={navigation.goNext}
       disabled={order < 0 || order >= screenCount - 1}
       data-testid="wireframe-next"
     />
-    <Divider orientation="vertical" className="mx-1 h-4" />
     <IconButton
       variant="ghost"
       icon={Minus}
       label="Zoom out"
+      tooltip="Zoom out"
       onClick={() => navigation.setZoom(navigation.zoom - ZOOM_STEP)}
       disabled={navigation.zoom <= ZOOM_BOUNDS.min}
       data-testid="wireframe-zoom-out"
@@ -76,6 +48,7 @@ export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoom
       variant="ghost"
       icon={Plus}
       label="Zoom in"
+      tooltip="Zoom in"
       onClick={() => navigation.setZoom(navigation.zoom + ZOOM_STEP)}
       disabled={navigation.zoom >= ZOOM_BOUNDS.max}
       data-testid="wireframe-zoom-in"
@@ -90,5 +63,5 @@ export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoom
       <Maximize2 size={ICON_SIZE.row} aria-hidden />
       Fit
     </Button>
-  </>
+  </span>
 );

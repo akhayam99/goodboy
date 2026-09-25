@@ -2,6 +2,9 @@ export const UNTITLED_BASE = 'Untitled session';
 
 const UNTITLED_PATTERN = /^untitled session(?: (\d+))?$/i;
 
+export const isUntitledSessionTitle = (title: string): boolean =>
+  title.trim() === '' || UNTITLED_PATTERN.test(title.trim());
+
 export const untitledSessionTitle = (titles: ReadonlyArray<string>): string => {
   let highest = 0;
   for (const title of titles) {

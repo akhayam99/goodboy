@@ -1,12 +1,13 @@
-import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { cn, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
+import { isUntitledSessionTitle } from '../../../../store/slices/sessions/untitledTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
+import { SessionActionsMenu } from './SessionActionsMenu';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { ContextDigest } from './ContextDigest';
@@ -21,49 +22,34 @@ type Props = {
   readonly onSelectLens: (lens: LensKind) => void;
   readonly goal: ReactNode;
   readonly titleAction?: ReactNode;
+  readonly isEmpty?: boolean;
 };
 
-export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: Props) => {
+export const HeaderBand = ({
+  session,
+  onSelectLens,
+  goal,
+  titleAction = null,
+  isEmpty = false,
+}: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
-  const pendingTitleFocus = useAppStore((s) => s.pendingTitleFocusSessionId);
-  const clearPendingTitleFocus = useAppStore((s) => s.clearPendingTitleFocus);
   const hasLinkedWork = useAppStore((s) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
     return linkedIssues.length > 0 || externalTasks.length > 0;
   });
-  const titleFieldRef = useRef<HTMLDivElement | null>(null);
-  const selectOnEditRef = useRef(false);
-  const startRenameRef = useRef(rename.start);
-  startRenameRef.current = rename.start;
-
-  useEffect(() => {
-    if (pendingTitleFocus !== sessionId) {
-      return;
-    }
-    clearPendingTitleFocus();
-    selectOnEditRef.current = true;
-    startRenameRef.current();
-  }, [pendingTitleFocus, sessionId, clearPendingTitleFocus]);
-
-  useEffect(() => {
-    if (!rename.editing || !selectOnEditRef.current) {
-      return;
-    }
-    selectOnEditRef.current = false;
-    titleFieldRef.current?.querySelector('input')?.select();
-  }, [rename.editing]);
 
   const titleText = sessionTitle({ session });
+  const isPlaceholderTitle = !session.titleUserEdited && isUntitledSessionTitle(session.goal);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           {rename.editing ? (
-            <div ref={titleFieldRef} className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
               <Input
                 autoFocus
                 value={rename.draft}
@@ -95,26 +81,37 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
                   rename.start();
                 }}
                 title={inlineMarkdownText({ text: titleText })}
-                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-xl font-semibold leading-snug text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className={cn(
+                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-xl font-semibold leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                  isPlaceholderTitle ? 'text-faint-foreground' : 'text-foreground',
+                )}
               >
                 <InlineMarkdown text={titleText} />
               </h1>
             </Tooltip>
           )}
           <div className="flex shrink-0 items-center gap-1">
-            {titleAction}
-            <SessionDestructiveActions session={session} />
+            {isEmpty ? (
+              <SessionActionsMenu session={session} />
+            ) : (
+              <>
+                {titleAction}
+                <SessionDestructiveActions session={session} />
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
-            <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
+            {isEmpty ? null : <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />}
             <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-            <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
+            {isEmpty ? null : (
+              <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
+            )}
             <SessionCostChip sessionId={sessionId} />
           </div>
         </div>

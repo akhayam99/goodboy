@@ -1,5 +1,4 @@
 import { useAppStore } from '../../store';
-import { openLens } from '../session/openLens';
 import type { RunningScript } from './hooks/useRunningScripts';
 
 type Params = {
@@ -8,5 +7,9 @@ type Params = {
 
 export const openRunningScript = async ({ run }: Params): Promise<void> => {
   await useAppStore.getState().setCurrentSession(run.sessionId);
-  openLens({ sessionId: run.sessionId, lens: 'scripts' });
+  useAppStore.getState().openDrawer({
+    kind: 'scriptRun',
+    sessionId: run.sessionId,
+    payload: { scriptKey: run.scriptId, mountId: run.mountId },
+  });
 };

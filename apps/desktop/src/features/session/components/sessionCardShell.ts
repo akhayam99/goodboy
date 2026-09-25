@@ -1,4 +1,4 @@
-import { cn, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
 import { ATTENTION_REASON_META } from '../session-stage';
 
@@ -10,15 +10,16 @@ type Params = {
   readonly dimmed?: boolean;
 };
 
-const RAIL: Record<Tone, string> = {
-  success: 'border-l-success',
-  info: 'border-l-info',
-  warning: 'border-l-warning',
-  danger: 'border-l-danger',
-  primary: 'border-l-primary',
-  merged: 'border-l-merged',
-  draft: 'border-l-draft',
-  neutral: 'border-l-border',
+type RailParams = Pick<Params, 'stage' | 'attention'>;
+
+export const sessionRail = ({ stage, attention = null }: RailParams): string | null => {
+  if (stage === 'running') {
+    return 'border-l-info/40 spin-rail spin-border-info';
+  }
+  if (stage === 'attention') {
+    return tintClasses(attention === null ? 'warning' : ATTENTION_REASON_META[attention].tone).rail;
+  }
+  return null;
 };
 
 type RestBorderParams = Pick<Params, 'stage' | 'attention' | 'selected'>;
@@ -27,16 +28,11 @@ const restBorder = ({ stage, attention = null, selected }: RestBorderParams): st
   if (selected === true) {
     return cn('border-primary', tintClasses('primary').bgSoft);
   }
-  if (stage === 'running') {
-    return 'border-border-soft border-l-info/40 spin-rail spin-border-info';
+  const rail = sessionRail({ stage, attention });
+  if (rail === null) {
+    return 'border-border-soft hover:border-border';
   }
-  if (stage === 'attention') {
-    return cn(
-      'border-border-soft',
-      RAIL[attention === null ? 'warning' : ATTENTION_REASON_META[attention].tone],
-    );
-  }
-  return 'border-border-soft hover:border-border';
+  return cn('border-border-soft', rail);
 };
 
 export const sessionCardShell = ({ stage, attention, selected, active, dimmed }: Params): string =>

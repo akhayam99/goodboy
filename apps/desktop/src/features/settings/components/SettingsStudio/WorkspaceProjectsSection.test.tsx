@@ -66,9 +66,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const addPath = async (path: string) => {
+  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
   fireEvent.change(screen.getByLabelText('Project path'), { target: { value: path } });
-  fireEvent.click(screen.getByRole('button', { name: /add/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
   await waitFor(() => expect(state.addProject).toHaveBeenCalled());
+};
+
+const armUnlink = (name: string) => {
+  fireEvent.click(screen.getByRole('button', { name: `Actions for ${name}` }));
+  fireEvent.click(screen.getByRole('menuitem', { name: /unlink/i }));
 };
 
 describe('WorkspaceProjectsSection', () => {
@@ -122,9 +128,40 @@ describe('WorkspaceProjectsSection', () => {
       rootPath: '/repos/api',
       requireRepo: true,
     });
+    await waitFor(() => expect(screen.queryByLabelText('Project path')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
     await waitFor(() =>
       expect((screen.getByLabelText('Project path') as HTMLInputElement).value).toBe(''),
     );
+  });
+
+  it('keeps paths out of the rows and the add controls behind one button', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByRole('heading', { level: 2, name: /projects/i }).textContent).toBe(
+      'Projects1',
+    );
+    expect(screen.queryByText('/repos/ledger-core')).toBeNull();
+    expect(screen.queryByText('Repository')).toBeNull();
+    expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
+    expect(screen.queryByLabelText('Project path')).toBeNull();
+    expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const popover = screen.getByRole('dialog', { name: 'Add project' });
+    expect(within(popover).getByLabelText('Project path')).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'New project' })).toBeDefined();
+    expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
   });
 
   it('shows the base branch field only on repository rows', () => {
@@ -151,7 +188,7 @@ describe('WorkspaceProjectsSection', () => {
     ]);
   });
 
-  it('unlinks a project only after its anchored confirm', async () => {
+  it('unlinks a project from its menu only after the inline confirm', async () => {
     state.projects = [
       {
         id: 'proj-docs',
@@ -163,10 +200,10 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    armUnlink('notify-relay');
     expect(state.removeProject).not.toHaveBeenCalled();
 
-    const confirm = screen.getByRole('dialog', { name: 'Unlink notify-relay?' });
+    const confirm = screen.getByRole('group', { name: 'Unlink notify-relay?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Unlink' }));
 
     await waitFor(() =>
@@ -186,10 +223,12 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
+    armUnlink('notify-relay');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('group', { name: 'Unlink notify-relay?' })).toBeNull(),
+    );
     expect(state.removeProject).not.toHaveBeenCalled();
   });
 });

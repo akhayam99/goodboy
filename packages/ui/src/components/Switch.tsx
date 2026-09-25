@@ -26,7 +26,7 @@ export const Switch = ({ label, checked, disabled, onChange, className }: Switch
     <span
       className={cn(
         'relative h-4 w-7 shrink-0 rounded-full transition-colors',
-        checked ? 'bg-primary' : 'bg-muted-foreground/25',
+        checked ? 'bg-primary' : 'bg-idle',
       )}
       aria-hidden
     >

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import type { ScriptRunRecord } from '../../../features/scripts/scripts';
 
 const handlers = vi.hoisted(() => ({
@@ -72,5 +72,27 @@ describe('registerScriptRunListeners', () => {
     expect(store.read()?.status).toBe('error');
     expect(store.read()?.result?.exitCode).toBe(1);
     expect(store.read()?.result?.stdout).toBe('checking 12 files\n2 warnings\n');
+  });
+
+  it('keeps the mount and stamps when the run finished, for the drawer and the row', async () => {
+    const store = makeStore();
+    vi.setSystemTime(12_000);
+    await registerScriptRunListeners({
+      set: store.set as never,
+      get: store.get as never,
+      sessionId: SESSION_ID,
+      scriptId: 'lint',
+      runId: 'run-1',
+      startedAt: 1,
+      mountId: 'mount-ledger' as MountId,
+    });
+
+    handlers.exit?.({ runId: 'run-1', exitCode: 0 });
+
+    expect(store.read()).toMatchObject({
+      status: 'ok',
+      mountId: 'mount-ledger',
+      completedAt: 12_000,
+    });
   });
 });

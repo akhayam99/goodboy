@@ -5,9 +5,8 @@ import type {
   ProjectId,
   WorkspaceId,
 } from '@goodboy/types';
-import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { openUrl } from '../../../../../../shared/lib/editor';
-import { HeaderBand } from '@goodboy/ui';
 import { ExternalTaskChip } from '../../../../../integrations/components/ExternalTaskChip';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { LinearTaskDetail } from './LinearTaskDetail';
@@ -58,18 +57,10 @@ export const FocusedTaskBody = ({
   }
 
   return (
-    <StudioDetailLayout
-      fit="fill"
-      header={
-        <HeaderBand
-          title={task.title}
-          meta={
-            <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-              {task.identifier}
-            </span>
-          }
-        />
-      }
+    <PaneShell
+      scroll="body"
+      title={task.title}
+      meta={<span className="font-mono">{task.identifier}</span>}
     >
       <ExternalTaskChip
         task={task}
@@ -78,6 +69,6 @@ export const FocusedTaskBody = ({
         ariaLabel={`Open ${task.identifier}`}
         onClick={() => void openUrl(task.url)}
       />
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

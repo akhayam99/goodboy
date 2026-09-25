@@ -1,0 +1,42 @@
+.artifact-prose {
+  --artifact-measure: 680px;
+  font-size: var(--text-base);
+  line-height: 24px;
+  color: var(--color-foreground);
+}
+.artifact-prose > div > div > :where(p, ul, ol, blockquote, dl, h1, h2, h3, h4, h5, h6) {
+  max-width: var(--artifact-measure);
+}
+.artifact-prose > div > div > :where([data-block]) {
+  max-width: var(--artifact-measure);
+}
+.artifact-prose > div > div > :where([data-block='metrics'], [data-block='timeline']) {
+  max-width: none;
+}
+.artifact-prose[data-lead='true'] > div > div:first-child > p:first-child {
+  font-size: var(--text-lg);
+  line-height: 28px;
+}
+.artifact-prose :where(h1, h2) {
+  font-size: var(--text-lg);
+  line-height: 24px;
+}
+.artifact-prose :where(h3) {
+  font-size: var(--text-base);
+  line-height: 24px;
+}
+.artifact-prose :where(table) {
+  font-size: 13px;
+  line-height: 20px;
+}
+.artifact-prose :where(pre) {
+  font-size: 12px;
+  line-height: 20px;
+}
+.artifact-prose-measure {
+  max-width: 680px;
+}
+.artifact-prose :where([data-tone='summary'], [data-tone='goal']) [data-block='callout-body'] {
+  font-size: var(--text-lg);
+  line-height: 28px;
+}

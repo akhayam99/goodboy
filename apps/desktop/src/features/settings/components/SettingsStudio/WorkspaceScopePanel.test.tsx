@@ -128,11 +128,13 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.queryByRole('button', { name: /^general$/i })).toBeNull();
   });
 
-  it('orders the sections projects, profile, session defaults, danger zone', () => {
+  it('orders the sections projects, about you, new sessions, disconnect', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
     const order = [
-      ...['Projects', 'Profile', 'Session defaults'].map((label) => screen.getByText(label)),
-      screen.getByRole('region', { name: 'Danger zone' }),
+      ...[/^projects/i, /^about you$/i, /^new sessions$/i].map((name) =>
+        screen.getByRole('heading', { level: 2, name }),
+      ),
+      screen.getByRole('region', { name: 'Disconnect workspace' }),
     ];
     for (let i = 0; i < order.length - 1; i += 1) {
       expect(
@@ -141,16 +143,21 @@ describe('WorkspaceScopePanel', () => {
     }
   });
 
-  it('folds parallel agents into the session defaults section', () => {
+  it('folds parallel agents into the new sessions grid with its help behind the info mark', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const section = screen.getByText('Session defaults').closest('section');
-    expect(section?.textContent).toContain('Parallel agents');
+    const section = screen.getByRole('region', { name: 'New sessions' });
+    expect(section.textContent).toContain('Parallel agents');
+    expect(
+      within(section).getByRole('img', {
+        name: 'Lets eligible agents split independent work and reconcile it in one output.',
+      }),
+    ).toBeDefined();
   });
 
   it('shows the attribution line as on until the workspace switches it off', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
-    const section = screen.getByText('Session defaults').closest('section');
-    expect(section?.textContent).toContain('Attribution line');
+    const section = screen.getByRole('region', { name: 'New sessions' });
+    expect(section.textContent).toContain('Attribution line');
     expect(attributionSwitch().getAttribute('aria-checked')).toBe('true');
   });
 
@@ -207,15 +214,15 @@ describe('WorkspaceScopePanel', () => {
     });
   });
 
-  it('renames the workspace on blur while keeping the folder name as the hint', () => {
+  it('renames the workspace in the title on blur', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
 
-    const input = screen.getByLabelText(/display name/i);
-    expect((input as HTMLInputElement).value).toBe('billing');
-    expect(
-      screen.getByText('Only the label changes. Project folders stay where they are.'),
-    ).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
+    expect(screen.queryByLabelText(/display name/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
 
+    const input = screen.getByLabelText('Workspace name');
+    expect((input as HTMLInputElement).value).toBe('billing');
     fireEvent.change(input, { target: { value: 'Billing platform' } });
     fireEvent.blur(input);
 
@@ -227,13 +234,26 @@ describe('WorkspaceScopePanel', () => {
 
   it('spends no write on a name that did not change', () => {
     render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
 
-    const input = screen.getByLabelText(/display name/i);
+    const input = screen.getByLabelText('Workspace name');
     fireEvent.change(input, { target: { value: '  billing  ' } });
     fireEvent.blur(input);
 
     expect(state.renameWorkspace).not.toHaveBeenCalled();
-    expect((input as HTMLInputElement).value).toBe('billing');
+    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
+  });
+
+  it('keeps the old name when the rename is escaped', () => {
+    render(<WorkspaceScopePanel workspaceId={'ws-1' as never} requestClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename billing' }));
+
+    const input = screen.getByLabelText('Workspace name');
+    fireEvent.change(input, { target: { value: 'Something else' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(state.renameWorkspace).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1, name: 'billing' })).toBeDefined();
   });
 
   it('disconnects only after the row confirm and closes settings', async () => {

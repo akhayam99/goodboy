@@ -143,7 +143,7 @@ describe('NowChip', () => {
     await act(async () => {
       fireEvent.click(
         within(panel).getByRole('button', {
-          name: 'Go to pnpm dev in Retry failed webhook deliveries',
+          name: 'Show pnpm dev output from Retry failed webhook deliveries',
         }),
       );
     });

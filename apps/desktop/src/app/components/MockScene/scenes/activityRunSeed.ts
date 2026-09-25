@@ -1129,7 +1129,6 @@ export const seedActivityRunScene = () => {
     sessionArtifacts: { [SESSION_ID]: [WIREFRAME_ARTIFACT, PLAN_ARTIFACT, REPORT_ARTIFACT] },
     sessionPlans: { [SESSION_ID]: PLANS },
     planConsumptions: {},
-    focusedPlanId: { [SESSION_ID]: null },
     focusedArtifactId: { [SESSION_ID]: null },
     sessionWorkflows: { [SESSION_ID]: [WORKFLOW, CONSOLE_WORKFLOW] },
     phaseTemplates: { [WORKSPACE_ID]: [WORKFLOW, CONSOLE_WORKFLOW] },
@@ -1249,6 +1248,5 @@ export const seedActivityRunScene = () => {
     setActiveLens: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
     selectAgent: async () => undefined,
-    setFocusedPlanId: () => undefined,
   });
 };

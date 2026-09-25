@@ -1,8 +1,7 @@
-import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
 import { Skeleton } from '@goodboy/ui';
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
-import { HeaderBand } from '@goodboy/ui';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { LinearIssueDetail } from '../../../../../integrations/linear/LinearIssueDetail';
 import { useLinearIssue } from '../../../../../integrations/linear/useLinearIssue';
 
@@ -20,24 +19,14 @@ export const LinearTaskDetail = ({ workspaceId, projectId, task }: Props) => {
   });
 
   if (issue != null) {
-    return (
-      <LinearIssueDetail issue={issue} workspaceId={workspaceId} projectId={projectId} fit="fill" />
-    );
+    return <LinearIssueDetail issue={issue} workspaceId={workspaceId} projectId={projectId} />;
   }
 
   return (
-    <StudioDetailLayout
-      fit="fill"
-      header={
-        <HeaderBand
-          title={task.title}
-          meta={
-            <span className="font-mono text-2xs tabular-nums text-muted-foreground">
-              {task.identifier}
-            </span>
-          }
-        />
-      }
+    <PaneShell
+      scroll="body"
+      title={task.title}
+      meta={<span className="font-mono">{task.identifier}</span>}
     >
       {isLoading ? (
         <div role="status" aria-label="Loading Linear issue" className="flex flex-col gap-3">
@@ -49,6 +38,6 @@ export const LinearTaskDetail = ({ workspaceId, projectId, task }: Props) => {
       {error != null ? (
         <ErrorStrip label="the Linear issue" error={new Error(error)} onRetry={refetch} />
       ) : null}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

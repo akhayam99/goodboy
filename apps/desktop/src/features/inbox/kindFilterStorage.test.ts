@@ -1,74 +1,59 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import type { InboxProvider } from './types';
-import {
-  readInboxKindFilter,
-  readInboxProviders,
-  writeInboxKindFilter,
-  writeInboxProviders,
-} from './kindFilterStorage';
+import { readInboxFilters, writeInboxFilters } from './kindFilterStorage';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
+const KEY = 'goodboy:inbox-kind-filter:workspace-1';
 
 afterEach(() => {
   localStorage.clear();
 });
 
-describe('inbox kind filter storage', () => {
+describe('inbox filter storage', () => {
   it('returns null when nothing was persisted yet', () => {
-    expect(readInboxKindFilter({ workspaceId })).toBeNull();
+    expect(readInboxFilters({ workspaceId })).toBeNull();
   });
 
-  it('round-trips a written kind filter', () => {
-    writeInboxKindFilter({ workspaceId, kindFilter: 'thread' });
+  it('round-trips the type and the single source', () => {
+    writeInboxFilters({ workspaceId, kind: 'thread', source: 'slack' });
 
-    expect(readInboxKindFilter({ workspaceId })).toBe('thread');
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'thread', source: 'slack' });
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '')).toEqual({
+      kindFilter: 'thread',
+      source: 'slack',
+    });
   });
 
-  it('scopes the persisted filter per workspace', () => {
-    const other = 'workspace-2' as WorkspaceId;
-    writeInboxKindFilter({ workspaceId, kindFilter: 'error' });
+  it('scopes the persisted filters per workspace', () => {
+    writeInboxFilters({ workspaceId, kind: 'error', source: null });
 
-    expect(readInboxKindFilter({ workspaceId: other })).toBeNull();
+    expect(readInboxFilters({ workspaceId: 'workspace-2' as WorkspaceId })).toBeNull();
   });
 
   it('ignores a corrupted value instead of throwing', () => {
-    localStorage.setItem('goodboy:inbox-kind-filter:workspace-1', 'not-a-real-filter');
+    localStorage.setItem(KEY, 'not-a-real-filter');
 
-    expect(readInboxKindFilter({ workspaceId })).toBeNull();
+    expect(readInboxFilters({ workspaceId })).toBeNull();
   });
 
-  it('reads a legacy bare kind filter written before providers were persisted', () => {
-    localStorage.setItem('goodboy:inbox-kind-filter:workspace-1', 'issue');
+  it('reads a legacy bare kind filter', () => {
+    localStorage.setItem(KEY, 'issue');
 
-    expect(readInboxKindFilter({ workspaceId })).toBe('issue');
-    expect(readInboxProviders({ workspaceId })).toEqual([]);
-  });
-});
-
-describe('inbox provider filter storage', () => {
-  it('returns an empty selection when nothing was persisted yet', () => {
-    expect(readInboxProviders({ workspaceId })).toEqual([]);
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'issue', source: null });
   });
 
-  it('round-trips a written provider selection', () => {
-    writeInboxProviders({ workspaceId, providers: new Set<InboxProvider>(['slack', 'github']) });
+  it('keeps the first provider of a legacy multi-select as the source', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ kindFilter: 'all', providers: ['slack', 'github'] }),
+    );
 
-    expect(readInboxProviders({ workspaceId })).toEqual(['github', 'slack']);
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'all', source: 'github' });
   });
 
-  it('keeps the kind filter and the providers side by side', () => {
-    writeInboxKindFilter({ workspaceId, kindFilter: 'thread' });
-    writeInboxProviders({ workspaceId, providers: new Set<InboxProvider>(['slack']) });
+  it('reads an empty legacy provider list as no source', () => {
+    localStorage.setItem(KEY, JSON.stringify({ kindFilter: 'error', providers: [] }));
 
-    expect(readInboxKindFilter({ workspaceId })).toBe('thread');
-    expect(readInboxProviders({ workspaceId })).toEqual(['slack']);
-  });
-
-  it('scopes the persisted providers per workspace', () => {
-    const other = 'workspace-2' as WorkspaceId;
-    writeInboxProviders({ workspaceId, providers: new Set<InboxProvider>(['jira']) });
-
-    expect(readInboxProviders({ workspaceId: other })).toEqual([]);
+    expect(readInboxFilters({ workspaceId })).toEqual({ kind: 'error', source: null });
   });
 });

@@ -31,15 +31,12 @@ export const ProjectBaseBranchInput = ({ project }: Props) => {
   };
 
   return (
-    <span className="flex min-w-36 flex-col gap-1">
-      <span className="flex items-center gap-2 text-2xs text-muted-foreground">
-        <span className="shrink-0">Base branch</span>
-        <BaseBranchSelect
-          repoPath={project.rootPath}
-          value={project.baseBranch ?? null}
-          onCommit={(candidate) => commit({ candidate })}
-        />
-      </span>
+    <span className="flex shrink-0 flex-col items-end gap-1">
+      <BaseBranchSelect
+        repoPath={project.rootPath}
+        value={project.baseBranch ?? null}
+        onCommit={(candidate) => commit({ candidate })}
+      />
       {error != null ? (
         <span role="alert" className="text-2xs text-danger">
           {error}

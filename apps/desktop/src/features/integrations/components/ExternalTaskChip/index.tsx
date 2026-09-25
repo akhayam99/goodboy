@@ -9,7 +9,8 @@ type ExternalTaskChipTask = Pick<SessionExternalTask, 'provider' | 'identifier' 
 
 type Props = {
   task: ExternalTaskChipTask;
-  variant?: 'full' | 'icon' | 'badge';
+  variant?: 'full' | 'icon' | 'badge' | 'compact';
+  identifierClassName?: string;
   onClick?: () => void;
   appearance?: 'chip' | 'row';
   ariaLabel?: string;
@@ -65,6 +66,7 @@ const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
 export const ExternalTaskChip = ({
   task,
   variant = 'full',
+  identifierClassName,
   onClick,
   appearance = 'chip',
   ariaLabel,
@@ -86,6 +88,23 @@ export const ExternalTaskChip = ({
         className="inline-flex shrink-0 items-center"
       >
         {glyph}
+      </span>
+    );
+  }
+
+  if (variant === 'compact') {
+    return (
+      <span
+        title={tooltip}
+        className="inline-flex min-w-0 shrink-0 items-center gap-1 text-2xs text-muted-foreground"
+      >
+        <span aria-hidden className="inline-flex">
+          {glyph}
+        </span>
+        <span aria-hidden className={cn('font-mono', identifierClassName)}>
+          {task.identifier}
+        </span>
+        <span className="sr-only">{`${task.identifier} from ${meta.label}`}</span>
       </span>
     );
   }

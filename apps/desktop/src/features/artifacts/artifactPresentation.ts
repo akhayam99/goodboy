@@ -4,9 +4,9 @@ import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 type Concept = keyof typeof CONCEPT_ICONS;
 
 export const ARTIFACT_KIND_CONCEPT: Record<ArtifactKind, Concept> = {
-  plan: 'plans',
-  report: 'sessionSummary',
-  wireframe: 'workflowPreset',
+  plan: 'plan',
+  report: 'report',
+  wireframe: 'wireframe',
 };
 
 export const ARTIFACT_KIND_MARKER_LABEL: Record<ArtifactKind, string> = {

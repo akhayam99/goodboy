@@ -1144,20 +1144,22 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 isSessionGoal={goalText === sessionGoal}
                 canUndo={goalHistory.length > 0}
                 isPolishing={polishing}
-                isDragging={isDraggingFiles}
                 disabled={busy}
-                composerRef={composerRef}
-                fileInputRef={fileInputRef}
-                attachments={attachments.map((a) => (
-                  <AttachmentChip
-                    key={a.id}
-                    {...pendingAttachmentProps(a)}
-                    onRemove={() => removeAttachment(a.id)}
-                  />
-                ))}
+                files={{
+                  isDragging: isDraggingFiles,
+                  composerRef,
+                  fileInputRef,
+                  onFiles: onFileInputChange,
+                  attachments: attachments.map((a) => (
+                    <AttachmentChip
+                      key={a.id}
+                      {...pendingAttachmentProps(a)}
+                      onRemove={() => removeAttachment(a.id)}
+                    />
+                  )),
+                }}
                 onChange={onGoalChange}
                 onBlur={() => requestTitleSuggestion(goalText)}
-                onFiles={onFileInputChange}
                 onUseSessionGoal={onUseSessionGoal}
                 onUndo={onUndoGoal}
                 onPolish={() => void onPolishGoal()}

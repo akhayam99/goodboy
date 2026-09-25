@@ -11,14 +11,9 @@ import {
   type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useNonResolverStandaloneAgents,
-  useSessionCost,
-  useSessionPrFetchState,
-  useSessionStageInfo,
-} from '../../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionPrFetchState } from '../../../../../store';
+import { useSessionSummary } from '../../../hooks/useSessionSummary';
+import { SessionProgress } from '../../SessionProgress';
 import { isPrReviewSession } from '../../../../../store/slices/session-view';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { ExternalTaskChip } from '../../../../integrations/components/ExternalTaskChip';
@@ -29,7 +24,6 @@ import {
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
-import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -72,15 +66,15 @@ export const StageBoardCard = memo(function StageBoardCard({
   onRestore,
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
-  const { stage, reason, attention } = useSessionStageInfo(session);
-  const isAutoMode =
-    stage === 'running' && session.workflowRuns.some((r) => r.autoRun && !r.discardedAt);
+  const summary = useSessionSummary({ session });
+  const { stage, reason, attention, progress, agentCount, age } = summary;
+  const externalTasks = summary.tasks;
+  const sessionCost = summary.cost;
+  const isAutoMode = summary.isAutorun;
 
   const pullRequest = useAppStore((s) => s.sessionGithub[id]?.pr ?? null);
   const prFetchState = useSessionPrFetchState(id);
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
-  const externalTasks = useAppStore((s) => s.sessionExternalTasks[id] ?? EMPTY_ARRAY);
-  const agentCount = useNonResolverStandaloneAgents(id).length;
   const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
   const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
@@ -91,7 +85,6 @@ export const StageBoardCard = memo(function StageBoardCard({
   );
   const showProjectChips = workspaceProjectCount > 1 && mounts.length > 0;
   const dynamicActions = useDynamicActions(session, nav, stage);
-  const sessionCost = useSessionCost(id);
   const phaseRuns = useAppStore((s) => s.sessionPhaseRuns[id] ?? EMPTY_ARRAY);
   const isPrReview = useMemo(() => isPrReviewSession({ agents: phaseRuns }), [phaseRuns]);
   const reviewDrafts = useAppStore((s) => s.reviewDrafts[id]);
@@ -109,7 +102,6 @@ export const StageBoardCard = memo(function StageBoardCard({
     ? (reviewDrafts ?? []).filter((draft) => draft.status === 'draft').length
     : 0;
 
-  const age = formatRelativeAge({ fromIso: session.updatedAt });
   const [visibleAction, ...revealedActions] = dynamicActions;
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
@@ -231,7 +223,11 @@ export const StageBoardCard = memo(function StageBoardCard({
           </button>
         </span>
 
-        {reason && <span className="truncate text-2xs text-muted-foreground">{reason}</span>}
+        {progress !== null ? (
+          <SessionProgress progress={progress} tone={summary.tone} />
+        ) : reason !== '' ? (
+          <span className="truncate text-2xs text-muted-foreground">{reason}</span>
+        ) : null}
       </span>
 
       <span className="col-start-2 row-start-1 flex items-center gap-1 self-start">

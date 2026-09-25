@@ -5,8 +5,7 @@ import type { DetailFieldRegistry } from '../../detail-fields/types';
 import { StudioWidget } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import { StudioDetailLayout } from './StudioDetailLayout';
+import { DetailProperties } from './DetailProperties';
 import { StudioDetailTabs } from '@goodboy/ui';
 
 beforeEach(() => {
@@ -26,18 +25,6 @@ type Entity = {
 
 const PROPERTY_ENTITY: Entity = { state: 'open', author: 'ada', milestone: null };
 
-const scrollAncestors = ({ node }: { readonly node: HTMLElement }) => {
-  const found: Array<HTMLElement> = [];
-  let current: HTMLElement | null = node;
-  while (current != null) {
-    if (current.className.includes('overflow-y-auto')) {
-      found.push(current);
-    }
-    current = current.parentElement;
-  }
-  return found;
-};
-
 const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
   { kind: 'field', key: 'state', label: 'State', render: ({ entity }) => entity.state },
   { kind: 'field', key: 'author', label: 'Author', render: ({ entity }) => entity.author },
@@ -49,221 +36,12 @@ const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
   },
 ];
 
-describe('StudioDetailLayout', () => {
-  it('renders the header band, main content, and metadata rail', () => {
-    render(
-      <StudioDetailLayout header={<span>Header slot</span>} rail={<span>Rail slot</span>}>
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    expect(screen.getByText('Header slot')).toBeDefined();
-    expect(screen.getByText('Main slot')).toBeDefined();
-    expect(screen.getByText('Rail slot')).toBeDefined();
-  });
-
-  it('renders the eyebrow above the header band', () => {
-    render(
-      <StudioDetailLayout
-        header={<h2>Header slot</h2>}
-        eyebrow={<span>Ship the lens eyebrow</span>}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
-    const header = screen.getByRole('heading', { name: 'Header slot' });
-    expect(eyebrow.compareDocumentPosition(header) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('renders the optional tab bar between the header and the body', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        rail={<span>Rail slot</span>}
-        tabs={<span>Tabs slot</span>}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    expect(screen.getByText('Tabs slot')).toBeDefined();
-  });
-
-  it('pins the banner in the header band, after the header and before the tabs', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        banner={<span>Banner slot</span>}
-        tabs={<span>Tabs slot</span>}
-        fit="bleed"
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const band = screen.getByTestId('detail-header-band');
-    const banner = within(band).getByText('Banner slot');
-    const header = within(band).getByText('Header slot');
-    const tabs = within(band).getByText('Tabs slot');
-    expect(header.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(banner.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(scrollAncestors({ node: banner })).toHaveLength(0);
-  });
-
-  it('lands every header and a fill body on the content column', () => {
-    const COLUMN = 'max-w-[var(--column-max)]';
-    const hasColumn = (node: Element) =>
-      [...node.querySelectorAll('div')].some((element) => element.className.includes(COLUMN));
-    const { unmount } = render(
-      <StudioDetailLayout header={<span>Header slot</span>} fit="fill">
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-    expect(hasColumn(screen.getByTestId('detail-header-band'))).toBe(true);
-    expect(screen.getByText('Main slot').parentElement?.className).toContain(COLUMN);
-    unmount();
-
-    render(
-      <StudioDetailLayout header={<span>Header slot</span>} fit="bleed">
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-    expect(hasColumn(screen.getByTestId('detail-header-band'))).toBe(true);
-    expect(screen.getByText('Main slot').closest('[class*="max-w-"]')).toBeNull();
-  });
-
-  it('uses the same 20px inset as pane bodies', () => {
-    render(
-      <StudioDetailLayout header={<span>Header slot</span>}>
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const headerInset = screen.getByText('Header slot').closest(`.${PANE_RHYTHM.inset}`);
-
-    expect(headerInset?.className).toContain(PANE_RHYTHM.body);
-    expect(headerInset?.className).not.toContain('py-4');
-  });
-
-  it('drops the rail and the scroll region for a full-bleed body', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        rail={<span>Rail slot</span>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-        fit="bleed"
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    expect(screen.getByText('Main slot')).toBeDefined();
-    expect(screen.queryByText('Rail slot')).toBeNull();
-    expect(screen.queryByTestId('detail-properties')).toBeNull();
-  });
-
-  it('docks the action below the body, outside every scroll region', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        dock={<button type="button">Launch session</button>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const action = screen.getByRole('button', { name: 'Launch session' });
-    const dock = screen.getByTestId('detail-dock');
-    const scroller = screen.getByText('Main slot').closest('.overflow-y-auto');
-
-    expect(scrollAncestors({ node: action })).toEqual([]);
-    expect(dock.contains(action)).toBe(true);
-    expect(scroller).not.toBeNull();
-    expect((dock.parentElement as HTMLElement).contains(scroller as HTMLElement)).toBe(true);
-  });
-
-  it('leaves the meta to the properties when the action is docked', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        dock={<button type="button">Launch session</button>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const meta = screen.getByTestId('detail-meta');
-
-    expect(meta.contains(screen.getByTestId('detail-properties'))).toBe(true);
-    expect(meta.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(false);
-    expect(meta.querySelector('[role="separator"]')).toBeNull();
-  });
-
-  it('carries the meta in the header band, never in a side column', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        rail={<button type="button">Launch session</button>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const band = screen.getByTestId('detail-header-band');
-    const meta = screen.getByTestId('detail-meta');
-    expect(band.contains(meta)).toBe(true);
-    expect(meta.contains(screen.getByTestId('detail-properties'))).toBe(true);
-    expect(meta.contains(screen.getByRole('button', { name: 'Launch session' }))).toBe(true);
-    expect(scrollAncestors({ node: meta })).toEqual([]);
-    expect(band.contains(screen.getByText('Main slot'))).toBe(false);
-  });
-
-  it('pins the header band while a flow body scrolls', () => {
-    render(
-      <StudioDetailLayout header={<span>Header slot</span>} fit="flow">
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const band = screen.getByTestId('detail-header-band');
-    expect(band.className).toContain('sticky');
-    expect(band.className).toContain('top-0');
-    expect(band.className).toContain('bg-background');
-  });
-
-  it('keeps the meta on the header measure in flow mode', () => {
-    render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-        fit="flow"
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const band = screen.getByTestId('detail-header-band');
-    const meta = screen.getByTestId('detail-meta');
-    expect(band.contains(meta)).toBe(true);
-    expect((meta.parentElement as HTMLElement).contains(screen.getByText('Header slot'))).toBe(
-      true,
-    );
-  });
-
+describe('DetailProperties', () => {
   it('renders the properties once, in one aligned grid of columns', () => {
     render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        rail={<span>Rail slot</span>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
+      <DetailProperties
+        entries={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
+      />,
     );
 
     const panels = screen.getAllByTestId('detail-properties');
@@ -278,41 +56,6 @@ describe('StudioDetailLayout', () => {
         .getAllByRole('term')
         .map((term) => term.textContent),
     ).toEqual(['State', 'Author']);
-  });
-
-  it('keeps the properties visible at every width', () => {
-    const { container } = render(
-      <StudioDetailLayout
-        header={<span>Header slot</span>}
-        properties={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      >
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    const panel = screen.getByTestId('detail-properties');
-    const hidden: Array<string> = [];
-    let node: HTMLElement | null = panel;
-    while (node != null && node !== container) {
-      const classes = node.className.split(' ');
-      hidden.push(...classes.filter((entry) => /^(?:[a-z]+:)?hidden$/.test(entry)));
-      node = node.parentElement;
-    }
-
-    expect(hidden).toEqual([]);
-  });
-
-  it('gives the body the full width, with no column to resize', () => {
-    render(
-      <StudioDetailLayout header={<span>Header slot</span>} rail={<span>Rail slot</span>}>
-        <span>Main slot</span>
-      </StudioDetailLayout>,
-    );
-
-    expect(screen.queryByRole('separator', { name: 'Resize studio detail rail' })).toBeNull();
-    const body = screen.getByText('Main slot').closest('.overflow-y-auto');
-    expect(body).not.toBeNull();
-    expect((body as HTMLElement).contains(screen.getByText('Rail slot'))).toBe(false);
   });
 });
 

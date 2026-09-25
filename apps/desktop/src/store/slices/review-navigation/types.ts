@@ -35,7 +35,13 @@ export type ConsumeReviewTargetParams = {
   readonly requestId: string;
 };
 
+export type SetReviewModeParams = {
+  readonly sessionId: SessionId;
+  readonly mode: ReviewMode;
+};
+
 export type ReviewNavigationSlice = ReviewNavigationState & {
   openReviewTarget(params: OpenReviewTargetParams): Promise<ReviewTargetOutcome>;
   consumeReviewTarget(params: ConsumeReviewTargetParams): void;
+  setReviewMode(params: SetReviewModeParams): void;
 };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WireframeAction, WireframeAdjustment, WireframeDocument } from '@goodboy/core';
-import { Divider, StudioDetailTabs, cn, Eyebrow } from '@goodboy/ui';
+import { Eyebrow, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import type { WireframeFidelity } from '../../wireframeFidelity';
 import {
@@ -16,14 +16,15 @@ import { WireframeAdjustments } from './WireframeAdjustments';
 import { WireframeCanvas } from './WireframeCanvas';
 import { WireframeCanvasControls } from './WireframeCanvasControls';
 import { WireframeFlowOverview } from './WireframeFlowOverview';
-import { WireframeScreenTabs } from './WireframeScreenTabs';
+import { WireframeFlowLegend } from './WireframeFlowLegend';
+import { WireframeScreenSelect } from './WireframeScreenSelect';
 import { useWireframeNavigation } from './useWireframeNavigation';
 
-type WireframeView = 'screen' | 'sheet';
+export type WireframeView = 'flow' | 'screen';
 
 const VIEW_OPTIONS = [
-  { value: 'screen', label: 'Screen' },
-  { value: 'sheet', label: 'Contact sheet' },
+  { value: 'flow', label: 'Flow' },
+  { value: 'screen', label: 'Screens' },
 ] satisfies ReadonlyArray<{ readonly value: WireframeView; readonly label: string }>;
 
 type Props = {
@@ -31,11 +32,18 @@ type Props = {
   readonly fidelity: WireframeFidelity;
   readonly document: WireframeDocument;
   readonly adjustments: ReadonlyArray<WireframeAdjustment>;
+  readonly onScreenChange?: (screenId: string | null) => void;
 };
 
-export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments }: Props) => {
+export const WireframeStudioBody = ({
+  artifact,
+  fidelity,
+  document,
+  adjustments,
+  onScreenChange,
+}: Props) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<WireframeView>('screen');
+  const [view, setView] = useState<WireframeView>('flow');
   const [canvasHeight, setCanvasHeight] = useState<number | null>(null);
   const [content, setContent] = useState<WireframeBox | null>(null);
   const index = useMemo(() => buildWireframeIndex({ document }), [document]);
@@ -136,10 +144,19 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
   }, [isZoomPinned, view, zoomToFit, measureCanvas, screen?.id]);
 
   const toggledOn = Object.entries(navigation.mockState).filter(([, value]) => value === true);
+  const openScreen = (screenId: string) => {
+    navigation.goTo(screenId);
+    setView('screen');
+  };
+  const currentScreenId = screen?.id ?? null;
+
+  useEffect(() => {
+    onScreenChange?.(view === 'screen' ? currentScreenId : null);
+  }, [onScreenChange, view, currentScreenId]);
 
   return (
-    <div data-testid="wireframe-studio" className="flex min-w-0 flex-col gap-2">
-      <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-1">
+    <div data-testid="wireframe-studio" data-view={view} className="flex min-w-0 flex-col gap-3">
+      <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-2">
         <StudioDetailTabs
           ariaLabel="Wireframe view"
           options={VIEW_OPTIONS}
@@ -148,8 +165,7 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
         />
         {view === 'screen' ? (
           <>
-            <Divider orientation="vertical" className="mx-1 h-4" />
-            <WireframeScreenTabs
+            <WireframeScreenSelect
               screens={document.screens}
               currentScreenId={navigation.currentScreenId}
               onSelect={navigation.goTo}
@@ -161,7 +177,9 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
               onZoomToFit={zoomToFit}
             />
           </>
-        ) : null}
+        ) : (
+          <WireframeFlowLegend />
+        )}
         {toggledOn.length === 0 ? null : (
           <span
             data-testid="wireframe-mock-state"
@@ -172,22 +190,33 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
           </span>
         )}
       </div>
-      {view === 'sheet' ? (
-        <WireframeContactSheet
-          document={document}
-          palette={palette}
-          interaction={{
-            currentScreenId: navigation.currentScreenId,
-            selectedNodeId: navigation.selectedNodeId,
-            hotspots: index.hotspots,
-            onSelect: navigation.select,
-            onAction: runAction,
-            onOpenScreen: (screenId) => {
-              navigation.goTo(screenId);
-              setView('screen');
-            },
-          }}
-        />
+      {view === 'flow' ? (
+        <>
+          <section aria-label="Flow" className="flex min-w-0 flex-col gap-2">
+            <h2>
+              <Eyebrow label="Flow" />
+            </h2>
+            <WireframeFlowOverview
+              document={document}
+              index={index}
+              currentScreenId={navigation.currentScreenId}
+              onSelectScreen={openScreen}
+            />
+          </section>
+          <WireframeContactSheet
+            document={document}
+            palette={palette}
+            density="grid"
+            interaction={{
+              currentScreenId: navigation.currentScreenId,
+              selectedNodeId: navigation.selectedNodeId,
+              hotspots: index.hotspots,
+              onSelect: navigation.select,
+              onAction: runAction,
+              onOpenScreen: openScreen,
+            }}
+          />
+        </>
       ) : null}
       {view === 'screen' && screen !== undefined ? (
         <>
@@ -209,18 +238,6 @@ export const WireframeStudioBody = ({ artifact, fidelity, document, adjustments 
         </>
       ) : null}
       <WireframeAdjustments adjustments={adjustments} />
-      <Divider />
-      <div className={cn('flex min-w-0 flex-col gap-2')}>
-        <h3>
-          <Eyebrow label="Flow" />
-        </h3>
-        <WireframeFlowOverview
-          document={document}
-          index={index}
-          currentScreenId={navigation.currentScreenId}
-          onSelectScreen={navigation.goTo}
-        />
-      </div>
     </div>
   );
 };

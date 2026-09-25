@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
-import { IconButton, StudioRailLayout } from '@goodboy/ui';
+import { IconButton } from '@goodboy/ui';
 import { RefreshCw } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/InboxDetail';
-import { InboxRail } from '../../../../features/inbox/components/InboxStudio/InboxRail';
+import { InboxFacetRail } from '../../../../features/inbox/components/InboxStudio/InboxFacetRail';
+import { InboxList } from '../../../../features/inbox/components/InboxStudio/InboxList';
+import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
+import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../features/inbox/kindFilter';
+import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { groupByDay } from '../../../../shared/utils/groupByDay';
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
 import type { LinearIssue } from '../../../../features/integrations/linear/client';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
@@ -27,6 +33,16 @@ const NO_ERRORS: Readonly<Record<InboxProvider, string | null>> = {
   sentry: null,
   slack: null,
   bitbucket: null,
+};
+
+const NOT_LOADING: Readonly<Record<InboxProvider, boolean>> = {
+  github: false,
+  gitlab: false,
+  linear: false,
+  jira: false,
+  sentry: false,
+  slack: false,
+  bitbucket: false,
 };
 
 const SELECTED_ISSUE: LinearIssue = {
@@ -61,10 +77,17 @@ type RecordParams = {
   readonly title: string;
   readonly state: InboxRecord['state'];
   readonly ago: number;
-  readonly meta: string;
+  readonly context: string;
 };
 
-const record = ({ provider, kind, identifier, title, state, ago, meta }: RecordParams) =>
+const STATE_WORD = {
+  open: 'Open',
+  active: 'In Progress',
+  done: 'Done',
+  alert: 'Unresolved',
+} satisfies Record<InboxRecord['state'], string>;
+
+const record = ({ provider, kind, identifier, title, state, ago, context }: RecordParams) =>
   ({
     key: `${provider}:${kind}:${identifier}`,
     provider,
@@ -72,9 +95,10 @@ const record = ({ provider, kind, identifier, title, state, ago, meta }: RecordP
     identifier,
     title,
     state,
+    stateLabel: STATE_WORD[state],
     updatedAt: isoAgo(ago),
     url: `https://example.invalid/${provider}/${identifier}`,
-    meta,
+    context,
     payload: { provider, kind, sessionId: null },
   }) as unknown as InboxRecord;
 
@@ -85,9 +109,10 @@ const SELECTED_RECORD: InboxRecord = {
   identifier: SELECTED_ISSUE.identifier,
   title: SELECTED_ISSUE.title,
   state: 'open',
+  stateLabel: 'Todo',
   updatedAt: SELECTED_ISSUE.updatedAt,
   url: SELECTED_ISSUE.url,
-  meta: 'Payments',
+  context: 'Payments',
   payload: { provider: 'linear', kind: 'issue', issue: SELECTED_ISSUE, sessionId: null },
 };
 
@@ -99,7 +124,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'DuplicateChargeError: charge already captured for order',
     state: 'alert',
     ago: 8 * MINUTE,
-    meta: 'core-api',
+    context: 'core-api',
   }),
   SELECTED_RECORD,
   record({
@@ -109,7 +134,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'The admin sessions table loads every row at once',
     state: 'open',
     ago: 50 * MINUTE,
-    meta: 'cascade/web-console',
+    context: 'cascade/web-console',
   }),
   record({
     provider: 'slack',
@@ -118,7 +143,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Anyone else seeing webhook retries pile up since the deploy?',
     state: 'open',
     ago: 2 * HOUR,
-    meta: 'payments-oncall',
+    context: 'payments-oncall',
   }),
   record({
     provider: 'jira',
@@ -127,7 +152,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Reconcile the nightly settlement export before the Monday close',
     state: 'active',
     ago: 3 * HOUR,
-    meta: 'Finance',
+    context: 'Finance',
   }),
   record({
     provider: 'linear',
@@ -136,7 +161,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Per-tenant rate limits on the public API',
     state: 'active',
     ago: 5 * HOUR,
-    meta: 'Platform',
+    context: 'Platform',
   }),
   record({
     provider: 'github',
@@ -145,7 +170,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Export button stays disabled after a failed export',
     state: 'open',
     ago: 9 * HOUR,
-    meta: 'cascade/web-console',
+    context: 'cascade/web-console',
   }),
   record({
     provider: 'sentry',
@@ -154,7 +179,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'LedgerSnapshotMismatch in nightly_reconcile',
     state: 'alert',
     ago: 26 * HOUR,
-    meta: 'reporting-warehouse',
+    context: 'reporting-warehouse',
   }),
   record({
     provider: 'linear',
@@ -163,7 +188,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Checkout retries charge twice',
     state: 'active',
     ago: 2 * DAY,
-    meta: 'Payments',
+    context: 'Payments',
   }),
   record({
     provider: 'jira',
@@ -172,7 +197,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Settlement export off by a few cents',
     state: 'active',
     ago: 3 * DAY,
-    meta: 'Finance',
+    context: 'Finance',
   }),
 ];
 
@@ -200,51 +225,60 @@ export const InboxScene = () => {
           tone={CONCEPT_TONE.inbox}
           title="Inbox"
           closeLabel="close inbox"
-          headerAccessory={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
           onClose={noop}
         >
           {() => (
-            <StudioRailLayout
-              railLabel="Inbox"
-              railWidth="xwide"
+            <InboxStudioLayout
               rail={
-                <InboxRail
-                  records={RECORDS}
-                  allRecords={RECORDS}
+                <InboxFacetRail
+                  filters={NO_INBOX_FILTERS}
+                  counts={inboxFacetCounts({
+                    records: RECORDS,
+                    query: '',
+                    filters: NO_INBOX_FILTERS,
+                  })}
                   connected={CONNECTED}
-                  selectedProviders={new Set()}
-                  onToggleProvider={noop}
-                  sessionFilterLabel={null}
-                  onClearSessionFilter={noop}
-                  query=""
-                  onQueryChange={noop}
-                  kindFilter="all"
-                  onKindFilterChange={noop}
-                  selectedKey={SELECTED_RECORD.key}
-                  onSelect={noop}
-                  onActivate={noop}
+                  loading={NOT_LOADING}
+                  errors={NO_ERRORS}
+                  onFiltersChange={noop}
                   onClearFilters={noop}
-                  isLoading={false}
-                  errors={[]}
-                  onRefresh={noop}
                 />
               }
-              detail={
+              list={
+                <PaneShell
+                  scroll="body"
+                  title="All items"
+                  meta={`${RECORDS.length} items`}
+                  actions={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
+                >
+                  <InboxList
+                    days={groupByDay({
+                      items: orderInboxRecords({ records: RECORDS }),
+                      timestampOf: (item) => item.updatedAt,
+                      now: new Date(),
+                    })}
+                    totalCount={RECORDS.length}
+                    connectedCount={CONNECTED.length}
+                    isLoading={false}
+                    failures={[]}
+                    hasFiltersActive={false}
+                    selectedKey={SELECTED_RECORD.key}
+                    onSelect={noop}
+                    onRetry={noop}
+                    onOpenSettings={noop}
+                    onClearFilters={noop}
+                  />
+                </PaneShell>
+              }
+              drawer={
                 <InboxDetail
                   record={SELECTED_RECORD}
-                  records={RECORDS}
-                  connected={CONNECTED}
-                  hasVisibleRecords
-                  hasFiltersActive={false}
                   workspaceId={WORKSPACE_ID}
                   rootPath={ROOT_PATH}
-                  isLoading={false}
                   errors={NO_ERRORS}
                   onRefresh={noop}
                   onClose={noop}
                   onDeselect={noop}
-                  onClearFilters={noop}
-                  onOpenIntegrations={noop}
                   launchFocusRequest={0}
                 />
               }

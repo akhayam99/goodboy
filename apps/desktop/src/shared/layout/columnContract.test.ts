@@ -22,7 +22,7 @@ type Root = {
 };
 
 const SHELL = /<PaneShell\b|<FocusedPane\b/;
-const LEGACY = /<StudioDetailLayout\b|<PageCrumbRow\b/;
+const LEGACY = /<PageCrumbRow\b/;
 
 const LENS_ROOTS: Readonly<Record<string, Root>> = {
   SessionOverviewPane: {
@@ -65,32 +65,32 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   ArtifactStudio: {
     kind: 'dispatch',
     files: [
-      'features/artifacts/components/ArtifactStudio/ArtifactCollection.tsx',
+      'features/artifacts/components/ArtifactList/index.tsx',
       'features/artifacts/components/ArtifactCreationPane/index.tsx',
-      'features/plans/components/PlanStudio/index.tsx',
-    ],
-  },
-  ArtifactStudioDetails: {
-    kind: 'legacy',
-    files: [
-      'features/artifacts/components/ArtifactStudio/ArtifactDetail.tsx',
-      'features/artifacts/components/ArtifactStudio/ArtifactRunDetail.tsx',
+      'features/artifacts/components/ArtifactShell/ArtifactDocumentShell.tsx',
+      'features/artifacts/components/ArtifactShell/ArtifactGenerationShell.tsx',
     ],
   },
   AgentOverlay: {
-    kind: 'legacy',
+    kind: 'shell',
     files: [
       'features/session/components/SessionWorkspace/parts/AgentOverlay.tsx',
       'features/session/components/AgentDetailPane/index.tsx',
     ],
   },
   PrPane: {
-    kind: 'legacy',
+    kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/PrPane.tsx'],
   },
-  ReviewPane: { kind: 'legacy', files: ['features/review/components/ReviewPane/index.tsx'] },
+  ReviewPane: {
+    kind: 'shell',
+    files: [
+      'features/review/components/ReviewPane/index.tsx',
+      'features/resolve/components/ResolveQueueHome/index.tsx',
+    ],
+  },
   GithubTaskDetail: {
-    kind: 'legacy',
+    kind: 'shell',
     files: [
       'features/session/components/SessionWorkspace/parts/IntegrationPane/GithubTaskDetail.tsx',
     ],
@@ -102,7 +102,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   PaneShell: { kind: 'helper', files: [] },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
-  ScriptsPanel: { kind: 'helper', files: [] },
+  ScriptsPanel: {
+    kind: 'shell',
+    files: ['features/scripts/components/ScriptsPanel/index.tsx'],
+  },
   LinkTicketPopover: { kind: 'helper', files: [] },
   LensEmptyState: { kind: 'helper', files: [] },
 };

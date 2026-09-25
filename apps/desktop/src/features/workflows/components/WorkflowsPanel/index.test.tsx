@@ -11,19 +11,19 @@ const { invokeMock, state } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<unknown>,
     projects: [] as ReadonlyArray<unknown>,
     workspaces: [] as ReadonlyArray<unknown>,
+    workspaceOverrides: {} as Record<string, unknown>,
+    cliRequirements: [] as ReadonlyArray<unknown>,
     workflowStudioDrafts: {} as Record<string, unknown>,
     workflowGenerations: {} as Record<string, unknown>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     loadStepLibrary: vi.fn(async () => undefined),
-    copyWorkflowFromWorkspace: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
+    copyWorkflowsFromWorkspaces: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
     savePhaseTemplate: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
     deleteWorkflow: vi.fn(async () => undefined),
-    saveStepDef: vi.fn(async () => undefined),
-    deleteStepDef: vi.fn(async () => undefined),
     resetWorkflows: vi.fn(async () => undefined),
     setWorkflowStudioDraft: vi.fn(),
     clearWorkflowStudioDraft: vi.fn(),
-    startWorkflowGeneration: vi.fn(async () => true),
+    startWorkflowGeneration: vi.fn(async (_input: unknown) => true),
     consumeWorkflowGeneration: vi.fn(),
   },
 }));
@@ -56,16 +56,19 @@ beforeEach(() => {
   state.providers = [];
   state.projects = [];
   state.workspaces = [];
+  state.workspaceOverrides = {};
   state.workflowStudioDrafts = {};
   state.workflowGenerations = {};
   state.loadPhaseTemplates = vi.fn(async () => undefined);
   state.loadStepLibrary = vi.fn(async () => undefined);
-  state.copyWorkflowFromWorkspace = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
+  state.copyWorkflowsFromWorkspaces = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
   state.savePhaseTemplate = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
   state.deleteWorkflow = vi.fn(async () => undefined);
-  state.saveStepDef = vi.fn(async () => undefined);
-  state.deleteStepDef = vi.fn(async () => undefined);
   state.resetWorkflows = vi.fn(async () => undefined);
+  state.setWorkflowStudioDraft = vi.fn();
+  state.clearWorkflowStudioDraft = vi.fn();
+  state.startWorkflowGeneration = vi.fn(async (_input: unknown) => true);
+  state.consumeWorkflowGeneration = vi.fn();
   invokeMock.mockReset();
   invokeMock.mockResolvedValue(undefined);
 });
@@ -93,190 +96,42 @@ const makeWorkflow = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const sourceProject = {
-  id: 'project-source',
-  workspaceId: 'ws-source',
-  name: 'Source project',
-  rootPath: '/source',
-  kind: 'repo',
-};
-
-const sourceWorkspace = {
-  id: 'ws-source',
-  name: 'Source workspace',
-};
-
-const makeWorkflowRow = (overrides: Record<string, unknown> = {}) => ({
-  id: 'wf-source',
-  workspaceId: 'ws-source',
-  name: 'Source review',
-  description: 'Review a change',
-  goal: 'Find regressions',
-  processText: 'Inspect the change and report findings.',
-  steps: [
-    {
-      id: 'step-source',
-      workflowId: 'wf-source',
-      libraryStepId: null,
-      role: 'reviewer',
-      ordinal: 0,
-      name: 'Review',
-      promptPrefix: 'Review the change.',
-      expectedOutput: 'Findings',
-      providerOverride: null,
-      modelOverride: null,
-      effort: 'high',
-      verbosity: 'verbose',
-      orchestratorReason: null,
-    },
-  ],
-  createdAt: '2026-09-07T12:00:00.000Z',
-  updatedAt: '2026-09-07T12:00:00.000Z',
-  deletedAt: null,
-  isPreset: true,
-  origin: 'custom',
+const draftStep = (overrides: Record<string, unknown> = {}) => ({
+  key: 'draft-step',
+  sourceStepId: 'step-1',
+  libraryStepId: null,
+  role: 'planner',
+  name: 'Plan',
+  prompt: 'Write the plan',
+  expectedOutput: '',
+  provider: '',
+  model: '',
+  effort: 'medium',
+  verbosity: 'normal',
+  size: null,
   ...overrides,
 });
 
-const configureSourceWorkspace = () => {
-  state.projects = [sourceProject];
-  state.workspaces = [sourceWorkspace];
+const connectProvider = () => {
+  state.providers = [{ id: 'anthropic', connection: 'connected' }];
 };
 
-describe('WorkflowsPanel', () => {
-  it('renders the empty-state copy when no workflows exist', () => {
-    renderPanel();
-    expect(screen.getByText(/no workflows yet/i)).toBeDefined();
-  });
+const openWorkflow = (name: string) => {
+  fireEvent.click(screen.getByRole('button', { name: `Open ${name}` }));
+};
 
-  it('renders a New workflow button', () => {
+const openMenuItem = (name: string) => {
+  fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+  fireEvent.click(screen.getByRole('menuitem', { name }));
+};
+
+describe('WorkflowsPanel home', () => {
+  it('shows one primary, one import and one menu in the header', () => {
     renderPanel();
     expect(screen.getByRole('button', { name: /new workflow/i })).toBeDefined();
-  });
-
-  it('shows the empty import state without another workspace', () => {
-    renderPanel();
-
-    expect(screen.getByText('No projects in other workspaces')).toBeDefined();
-  });
-
-  it('loads workflows after selecting a source project', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([makeWorkflowRow()]);
-    renderPanel();
-
-    expect(screen.getByRole('option', { name: 'Source project · Source workspace' })).toBeDefined();
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-
-    expect(screen.getByRole('status', { name: 'Loading workflows' })).toBeDefined();
-    expect(await screen.findByRole('option', { name: 'Source review' })).toBeDefined();
-    expect(invokeMock).toHaveBeenCalledWith('workflow_list', { workspaceId: 'ws-source' });
-  });
-
-  it('shows the empty import state when the source has no custom presets', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([]);
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-
-    expect(await screen.findByText('No workflows to import')).toBeDefined();
-  });
-
-  it('excludes a seeded library preset from the import list', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([makeWorkflowRow({ origin: 'library' })]);
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-
-    expect(await screen.findByText('No workflows to import')).toBeDefined();
-    expect(screen.queryByRole('option', { name: 'Source review' })).toBeNull();
-  });
-
-  it('includes a legacy workflow with no origin in the import list', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([makeWorkflowRow({ origin: undefined })]);
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-
-    expect(await screen.findByRole('option', { name: 'Source review' })).toBeDefined();
-  });
-
-  it('selects a source workflow and opens the imported copy', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([makeWorkflowRow()]);
-    const imported = makeWorkflow({
-      id: 'wf-imported',
-      name: 'Source review 2',
-      workspaceId: 'ws-1',
-      origin: 'custom',
-    });
-    state.copyWorkflowFromWorkspace = vi.fn(async () => imported);
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-    await screen.findByRole('option', { name: 'Source review' });
-    fireEvent.change(screen.getByLabelText('Workflow'), {
-      target: { value: 'wf-source' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
-
-    await waitFor(() =>
-      expect(state.copyWorkflowFromWorkspace).toHaveBeenCalledWith({
-        sourceWorkspaceId: 'ws-source',
-        sourceWorkflowId: 'wf-source',
-        targetWorkspaceId: 'ws-1',
-      }),
-    );
-    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLInputElement;
-    expect(name.value).toBe('Source review 2');
-  });
-
-  it('keeps the source selection visible when import fails', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockResolvedValueOnce([makeWorkflowRow()]);
-    state.copyWorkflowFromWorkspace = vi.fn(async () => {
-      throw new Error('target database unavailable');
-    });
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-    await screen.findByRole('option', { name: 'Source review' });
-    fireEvent.change(screen.getByLabelText('Workflow'), {
-      target: { value: 'wf-source' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
-
-    expect(await screen.findByText("Couldn't import workflow")).toBeDefined();
-    expect(screen.getByText('target database unavailable')).toBeDefined();
-    expect(screen.getByLabelText('Workflow')).toBeDefined();
-  });
-
-  it('shows a source loading failure inline', async () => {
-    configureSourceWorkspace();
-    invokeMock.mockRejectedValueOnce(new Error('source database unavailable'));
-    renderPanel();
-
-    fireEvent.change(screen.getByLabelText('Project'), {
-      target: { value: 'project-source' },
-    });
-
-    expect(await screen.findByText("Couldn't load workflows")).toBeDefined();
-    expect(screen.getByText('source database unavailable')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Workflow actions' })).toBeDefined();
+    expect(screen.getByText(/no workflows yet/i)).toBeDefined();
   });
 
   it('loads phase templates and step library on mount', () => {
@@ -285,66 +140,139 @@ describe('WorkflowsPanel', () => {
     expect(state.loadStepLibrary).toHaveBeenCalledWith('ws-1');
   });
 
-  it('renders preset workflow names when they exist', () => {
-    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
-    renderPanel();
-    expect(screen.getByText('Plan and build')).toBeDefined();
-  });
-
-  it('hides soft-deleted (deletedAt) workflows from the preset list', () => {
+  it('lists presets and hides deleted and unsaved workflows', () => {
     state.phaseTemplates = {
       'ws-1': [
         makeWorkflow({ name: 'Visible workflow' }),
-        makeWorkflow({
-          id: 'wf-2',
-          name: 'Deleted workflow',
-          deletedAt: '2024-06-01T00:00:00.000Z',
-        }),
-      ],
-    };
-    renderPanel();
-    expect(screen.getByText('Visible workflow')).toBeDefined();
-    expect(screen.queryByText('Deleted workflow')).toBeNull();
-  });
-
-  it('keeps a workflow the user declined to save out of the preset rail', () => {
-    state.phaseTemplates = {
-      'ws-1': [
-        makeWorkflow({ name: 'Approved preset' }),
+        makeWorkflow({ id: 'wf-2', name: 'Deleted workflow', deletedAt: '2024-06-01T00:00:00Z' }),
         makeWorkflow({ id: 'wf-3', name: 'Draft workflow', isPreset: false }),
       ],
     };
     renderPanel();
-    expect(screen.getByText('Approved preset')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open Visible workflow' })).toBeDefined();
+    expect(screen.queryByText('Deleted workflow')).toBeNull();
     expect(screen.queryByText('Draft workflow')).toBeNull();
   });
 
-  it('shows empty state when every template is soft-deleted', () => {
-    state.phaseTemplates = {
-      'ws-1': [
-        makeWorkflow({ id: 'wf-d', name: 'Gone', deletedAt: '2024-01-01T00:00:00.000Z' }),
-        makeWorkflow({ id: 'wf-d2', name: 'Also gone', deletedAt: '2024-01-02T00:00:00.000Z' }),
-      ],
-    };
+  it('restores built-in workflows after an inline confirm that names the workspace', async () => {
+    state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
     renderPanel();
-    expect(screen.getByText(/no workflows yet/i)).toBeDefined();
+    openMenuItem('Restore built-in workflows');
+    const confirm = screen.getByRole('group', {
+      name: 'Restore built-in workflows in Harborline?',
+    });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore' }));
+    await waitFor(() => expect(state.resetWorkflows).toHaveBeenCalledWith('ws-1'));
+  });
+});
+
+describe('WorkflowsPanel editor', () => {
+  it('opens a workflow in the editor and goes back with the breadcrumb', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
+    expect(name.value).toBe('Plan and build');
+    expect(screen.getByRole('button', { name: 'Step 1: Plan' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Redraft steps/ })).toBeDefined();
+
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('button', {
+        name: 'Workflows',
+      }),
+    );
+    expect(screen.getByRole('button', { name: 'Open Plan and build' })).toBeDefined();
   });
 
-  it('duplicates a workflow as an independent preset', async () => {
-    const original = makeWorkflow({
+  it('starts a new workflow on an empty plan with Draft steps', async () => {
+    connectProvider();
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: /new workflow/i }));
+
+    const draft = screen.getByRole('button', { name: /Draft steps/ }) as HTMLButtonElement;
+    expect(draft.disabled).toBe(true);
+    expect(screen.getByRole('button', { name: 'Add step' })).toBeDefined();
+
+    fireEvent.change(screen.getByLabelText('Goal'), {
+      target: { value: 'Replay settled batches behind a dry run flag' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Draft steps/ }));
+
+    await waitFor(() => expect(state.startWorkflowGeneration).toHaveBeenCalledOnce());
+    expect(state.startWorkflowGeneration.mock.calls[0]?.[0]).toMatchObject({
+      workspaceId: 'ws-1',
+      description: 'Replay settled batches behind a dry run flag',
+      workflow: null,
+    });
+  });
+
+  it('asks before redrafting existing steps', async () => {
+    connectProvider();
+    const original = makeWorkflow({ name: 'Plan and build', goal: 'Ship the ledger export' });
+    state.phaseTemplates = { 'ws-1': [original] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    fireEvent.click(screen.getByRole('button', { name: /Redraft steps/ }));
+    expect(state.startWorkflowGeneration).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Redraft these steps from the goal?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Redraft steps' }));
+
+    await waitFor(() => expect(state.startWorkflowGeneration).toHaveBeenCalledOnce());
+    expect(state.startWorkflowGeneration.mock.calls[0]?.[0]).toMatchObject({
+      description: 'Ship the ledger export',
+      workflow: original,
+    });
+  });
+
+  it('opens a redrafted workflow and offers an undo back to the previous steps', async () => {
+    const previous = makeWorkflow({ name: 'Plan and build' });
+    const redrafted = makeWorkflow({
       name: 'Plan and build',
       steps: [
         {
-          id: 'step-1',
-          role: 'planner',
+          id: 'step-new',
+          role: 'implementer',
           ordinal: 0,
-          name: 'Plan',
-          promptPrefix: 'Write the plan',
+          name: 'Implement',
+          promptPrefix: 'Write it',
           createdAt: '2024-01-01T00:00:00.000Z',
           updatedAt: '2024-01-01T00:00:00.000Z',
         },
       ],
     });
+    state.phaseTemplates = { 'ws-1': [redrafted] };
+    state.workflowGenerations = {
+      'ws-1': {
+        status: 'complete',
+        workspaceId: 'ws-1',
+        workflowId: 'wf-1',
+        notificationId: 'note-1',
+        undoSnapshot: previous,
+      },
+    };
+    renderPanel();
+
+    expect(await screen.findByRole('button', { name: 'Step 1: Implement' })).toBeDefined();
+    expect(state.consumeWorkflowGeneration).toHaveBeenCalledWith({ workspaceId: 'ws-1' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('button', { name: 'Step 1: Plan' })).toBeDefined();
+  });
+
+  it('adds a blank step at the tip and opens its editor', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
+
+    expect(screen.getByRole('button', { name: 'Step 2: Custom' })).toBeDefined();
+    expect(screen.getByLabelText('Title')).toBeDefined();
+  });
+
+  it('duplicates a workflow as an independent preset from the menu', async () => {
+    const original = makeWorkflow({ name: 'Plan and build' });
     state.phaseTemplates = { 'ws-1': [original] };
     state.savePhaseTemplate = vi.fn(async (input: unknown) => ({
       ...original,
@@ -353,101 +281,55 @@ describe('WorkflowsPanel', () => {
       steps: [],
     }));
     renderPanel();
-
-    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+    openWorkflow('Plan and build');
+    openMenuItem('Duplicate');
 
     await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce());
     const input = state.savePhaseTemplate.mock.calls[0]?.[0];
     expect(input).not.toHaveProperty('id');
-    expect(input).toMatchObject({ name: 'Plan and build copy', isPreset: true });
+    expect(input).toMatchObject({ name: 'Plan and build copy', isPreset: true, origin: 'custom' });
   });
 
-  it('restores an unnamed local draft and reset clears it', () => {
-    state.workflowStudioDrafts = {
-      'ws-1': {
-        workflowId: null,
-        agentPrompt: '',
-        form: {
-          name: '',
-          description: 'Half typed description',
-          goal: '',
-          steps: [
-            {
-              key: 'draft-step',
-              sourceStepId: null,
-              libraryStepId: null,
-              role: 'custom',
-              name: '',
-              prompt: '',
-              expectedOutput: '',
-              provider: '',
-              model: '',
-              effort: 'medium',
-              verbosity: 'normal',
-            },
-          ],
-          origin: 'custom',
-          isPreset: true,
-        },
-      },
-    };
+  it('undoes changes since the workflow was opened', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
     renderPanel();
+    openWorkflow('Plan and build');
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+    expect(screen.queryByRole('menuitem', { name: 'Undo changes since opened' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
 
-    const description = screen.getByRole('textbox', {
-      name: 'Workflow description',
-    }) as HTMLInputElement;
-    expect(description.value).toBe('Half typed description');
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Discard local changes?' })).getByRole('button', {
-        name: 'Reset',
-      }),
-    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
+      target: { value: 'Plan, build, review' },
+    });
+    openMenuItem('Undo changes since opened');
 
-    expect(state.clearWorkflowStudioDraft).toHaveBeenCalledWith({ workspaceId: 'ws-1' });
-    expect(screen.getByRole('heading', { name: 'Build a workflow' })).toBeDefined();
+    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
+    expect(name.value).toBe('Plan and build');
+  });
+
+  it('deletes a workflow after an inline confirm', async () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    renderPanel();
+    openWorkflow('Plan and build');
+    openMenuItem('Delete');
+    const confirm = screen.getByRole('group', { name: 'Delete Plan and build?' });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(state.deleteWorkflow).toHaveBeenCalledWith('wf-1', 'ws-1'));
+    expect(await screen.findByRole('button', { name: 'Open Plan and build' })).toBeDefined();
   });
 
   it('flushes a restored draft with unsaved edits without a further edit', async () => {
-    const original = makeWorkflow({
-      name: 'Plan and build',
-      steps: [
-        {
-          id: 'step-1',
-          role: 'planner',
-          ordinal: 0,
-          name: 'Plan',
-          promptPrefix: 'Write the plan',
-          createdAt: '2024-01-01T00:00:00.000Z',
-          updatedAt: '2024-01-01T00:00:00.000Z',
-        },
-      ],
-    });
+    const original = makeWorkflow({ name: 'Plan and build' });
     state.phaseTemplates = { 'ws-1': [original] };
     state.workflowStudioDrafts = {
       'ws-1': {
         workflowId: 'wf-1',
-        agentPrompt: '',
         form: {
           name: 'Plan and build, revised',
           description: '',
           goal: '',
-          steps: [
-            {
-              key: 'draft-step',
-              sourceStepId: 'step-1',
-              libraryStepId: null,
-              role: 'planner',
-              name: 'Plan',
-              prompt: 'Write the plan',
-              expectedOutput: '',
-              provider: '',
-              model: '',
-              effort: 'medium',
-              verbosity: 'normal',
-            },
-          ],
+          steps: [draftStep()],
           origin: 'custom',
           isPreset: true,
         },
@@ -459,14 +341,14 @@ describe('WorkflowsPanel', () => {
     }));
     renderPanel();
 
-    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLInputElement;
+    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
     expect(name.value).toBe('Plan and build, revised');
-
     await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce(), {
       timeout: 2_000,
     });
-    const input = state.savePhaseTemplate.mock.calls[0]?.[0];
-    expect(input).toMatchObject({ name: 'Plan and build, revised' });
+    expect(state.savePhaseTemplate.mock.calls[0]?.[0]).toMatchObject({
+      name: 'Plan and build, revised',
+    });
   });
 
   it('never reports saved while an autosave write is outstanding', async () => {
@@ -479,27 +361,26 @@ describe('WorkflowsPanel', () => {
         }),
     );
     renderPanel();
+    openWorkflow('Plan and build');
+    expect(screen.getByRole('status').textContent).toBe('Saved');
 
-    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
       target: { value: 'Plan, build, review' },
     });
 
     await waitFor(() => expect(state.savePhaseTemplate).toHaveBeenCalledOnce(), { timeout: 2_000 });
-    expect(screen.queryByText('Saved')).toBeNull();
-    expect(screen.getByText('Changes save automatically')).toBeDefined();
-
+    expect(screen.getByRole('status').textContent).toBe('Saving');
     finishSave(makeWorkflow({ name: 'Plan, build, review' }));
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Saved'));
   });
 
-  it('keeps an autosave failure visible in the editor header', async () => {
+  it('keeps an autosave failure visible in the editor', async () => {
     state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
     state.savePhaseTemplate = vi.fn(async () => {
       throw new Error('disk is read-only');
     });
     renderPanel();
-
-    fireEvent.click(screen.getByRole('button', { name: /Plan and build/ }));
+    openWorkflow('Plan and build');
     fireEvent.change(screen.getByRole('textbox', { name: 'Workflow name' }), {
       target: { value: 'Plan, build, review' },
     });
@@ -509,12 +390,10 @@ describe('WorkflowsPanel', () => {
   });
 
   it('refuses to save a named workflow without steps', async () => {
-    const original = makeWorkflow({ name: 'Plan and build' });
-    state.phaseTemplates = { 'ws-1': [original] };
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
     state.workflowStudioDrafts = {
       'ws-1': {
         workflowId: 'wf-1',
-        agentPrompt: '',
         form: {
           name: 'Plan and build, emptied',
           description: '',
@@ -530,5 +409,122 @@ describe('WorkflowsPanel', () => {
     const alert = await screen.findByRole('alert', {}, { timeout: 2_000 });
     expect(alert.textContent).toContain('Add at least one step');
     expect(state.savePhaseTemplate).not.toHaveBeenCalled();
+  });
+});
+
+describe('WorkflowsPanel import', () => {
+  const sourceRow = (overrides: Record<string, unknown> = {}) =>
+    makeWorkflow({ deletedAt: null, origin: 'custom', ...overrides });
+
+  const rowsByWorkspace: Record<string, ReadonlyArray<unknown> | Error> = {};
+
+  const openImport = () => {
+    invokeMock.mockImplementation(async (_cmd: string, args?: unknown) => {
+      const workspaceId = (args as { workspaceId: string }).workspaceId;
+      const rows = rowsByWorkspace[workspaceId] ?? [];
+      if (rows instanceof Error) {
+        throw rows;
+      }
+      return rows;
+    });
+    renderPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    return screen.getByRole('dialog', { name: 'Import workflows' });
+  };
+
+  beforeEach(() => {
+    for (const key of Object.keys(rowsByWorkspace)) {
+      delete rowsByWorkspace[key];
+    }
+    state.workspaces = [
+      { id: 'ws-1', name: 'Harborline' },
+      { id: 'ws-north', name: 'Northwind' },
+      { id: 'ws-acme', name: 'Acme' },
+      { id: 'ws-cascadia', name: 'Cascadia' },
+    ];
+    state.projects = [
+      { id: 'p-1', workspaceId: 'ws-north', name: 'ledger-core' },
+      { id: 'p-2', workspaceId: 'ws-north', name: 'notify-relay' },
+      { id: 'p-3', workspaceId: 'ws-acme', name: 'payments-api' },
+    ];
+  });
+
+  it('says so when there is no other workspace', () => {
+    state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
+    const dialog = openImport();
+    expect(within(dialog).getByText('No other workspaces yet')).toBeDefined();
+  });
+
+  it('groups importable workflows per workspace and flags a name already used here', async () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Settlement replay' })] };
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+      sourceRow({ id: 'wf-n3', name: 'Refactor', origin: 'library' }),
+    ];
+    rowsByWorkspace['ws-acme'] = [sourceRow({ id: 'wf-a1', name: 'Hotfix lane' })];
+    rowsByWorkspace['ws-cascadia'] = [];
+    const dialog = openImport();
+
+    const northwind = await within(dialog).findByRole('region', { name: 'Northwind' });
+    await waitFor(() => expect(within(northwind).getByText('Same name here')).toBeDefined());
+    expect(northwind.textContent).toContain('ledger-core, notify-relay');
+    expect(within(northwind).queryByText('Refactor')).toBeNull();
+    await within(dialog).findByRole('region', { name: 'Acme' });
+    await waitFor(() =>
+      expect(within(dialog).queryByRole('region', { name: 'Cascadia' })).toBeNull(),
+    );
+    expect(within(dialog).getByText('3 workflows in 2 workspaces')).toBeDefined();
+  });
+
+  it('imports every checked workflow in one go and closes', async () => {
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+    ];
+    state.copyWorkflowsFromWorkspaces = vi.fn(async () => []);
+    const dialog = openImport();
+
+    fireEvent.click(await within(dialog).findByRole('checkbox', { name: 'Settlement replay' }));
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Ledger migration' }));
+    expect(within(dialog).getByText('2 selected from Northwind')).toBeDefined();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Import 2' }));
+
+    await waitFor(() => expect(state.copyWorkflowsFromWorkspaces).toHaveBeenCalledOnce());
+    const input = state.copyWorkflowsFromWorkspaces.mock.calls[0]?.[0] as {
+      picks: ReadonlyArray<{ workflow: { id: string }; sourceWorkspaceName: string }>;
+      targetWorkspaceId: string;
+    };
+    expect(input.targetWorkspaceId).toBe('ws-1');
+    expect(input.picks.map((pick) => [pick.workflow.id, pick.sourceWorkspaceName])).toEqual([
+      ['wf-n1', 'Northwind'],
+      ['wf-n2', 'Northwind'],
+    ]);
+    expect(await screen.findByText('Imported 2 workflows from Northwind')).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Import workflows' })).toBeNull();
+  });
+
+  it('filters the list with the search field', async () => {
+    rowsByWorkspace['ws-north'] = [
+      sourceRow({ id: 'wf-n1', name: 'Settlement replay' }),
+      sourceRow({ id: 'wf-n2', name: 'Ledger migration' }),
+    ];
+    const dialog = openImport();
+    await within(dialog).findByRole('checkbox', { name: 'Ledger migration' });
+
+    fireEvent.change(within(dialog).getByPlaceholderText('Search workflows'), {
+      target: { value: 'ledger' },
+    });
+
+    expect(within(dialog).queryByRole('checkbox', { name: 'Settlement replay' })).toBeNull();
+    expect(within(dialog).getByRole('checkbox', { name: 'Ledger migration' })).toBeDefined();
+  });
+
+  it('keeps a workspace that failed to load visible with its error', async () => {
+    rowsByWorkspace['ws-north'] = new Error('source database unavailable');
+    const dialog = openImport();
+
+    const northwind = await within(dialog).findByRole('region', { name: 'Northwind' });
+    await waitFor(() => expect(northwind.textContent).toContain('source database unavailable'));
   });
 });

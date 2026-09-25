@@ -89,7 +89,7 @@ export const useTimelineOpen = ({
         return {
           label: 'Open plan',
           open: () => {
-            store.setFocusedPlanId(sessionId, entry.plan.id);
+            store.setFocusedArtifactId(sessionId, entry.plan.id);
             store.setActiveLens(sessionId, 'plans');
           },
         };

@@ -176,6 +176,15 @@ describe('tone is a rail, not a fill', () => {
     ).toEqual([]);
   });
 
+  it('draws the report kit callouts with a tone rail on a neutral surface', () => {
+    const kit = readFileSync(
+      join(REPO_ROOT, 'packages', 'ui', 'src', 'components', 'Markdown', 'ctxTagStyle.ts'),
+      'utf8',
+    );
+    expect(kit).not.toMatch(/\b(?:bgSoft|borderSoft|calloutClass)\b/);
+    expect(kit).toContain('railClass: tint.dot');
+  });
+
   it('shrinks the allowlist as fills go away', () => {
     const counts = measure();
     const stale = Object.entries(ALLOWED)

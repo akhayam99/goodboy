@@ -10,6 +10,7 @@ import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/works
 import { consumeReloadIntent } from '../../../features/workspace/windowView';
 import {
   SETTING_EDITOR_BINARY,
+  SETTING_HIDDEN_MODELS,
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
   SETTING_REOPEN_LAST,
@@ -64,12 +65,14 @@ export const hydrate = (set: SetFn, get: GetFn) => {
 
         const loadingSettingsAt = Date.now();
         set({ bootPhase: 'loading-settings' });
-        const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw] = await Promise.all([
-          getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
-          getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
-          getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
-          getSetting(tauriDatabase, SETTING_REOPEN_LAST),
-        ]);
+        const [editorBinary, lastWorkspaceRaw, lastSessionRaw, reopenLastRaw, hiddenModelsRaw] =
+          await Promise.all([
+            getSetting(tauriDatabase, SETTING_EDITOR_BINARY),
+            getSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID),
+            getSetting(tauriDatabase, SETTING_LAST_SESSION_ID),
+            getSetting(tauriDatabase, SETTING_REOPEN_LAST),
+            getSetting(tauriDatabase, SETTING_HIDDEN_MODELS),
+          ]);
         set((state) => {
           const next = { ...state.settings };
           if (editorBinary !== null) {
@@ -83,6 +86,9 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           }
           if (reopenLastRaw !== null) {
             next[SETTING_REOPEN_LAST] = reopenLastRaw;
+          }
+          if (hiddenModelsRaw !== null) {
+            next[SETTING_HIDDEN_MODELS] = hiddenModelsRaw;
           }
           return { settings: next };
         });

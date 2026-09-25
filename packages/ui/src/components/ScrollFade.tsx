@@ -1,4 +1,11 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { cn } from '../cn';
 
 const FADE_FROM = {
@@ -15,6 +22,8 @@ export type ScrollFadeProps = {
   readonly fadeFrom?: keyof typeof FADE_FROM;
   readonly fadeSize?: number | string;
   readonly orientation?: 'vertical' | 'horizontal';
+  readonly viewportRef?: RefObject<HTMLDivElement | null>;
+  readonly onViewportScroll?: () => void;
 };
 
 export const ScrollFade = ({
@@ -24,8 +33,11 @@ export const ScrollFade = ({
   fadeFrom = 'background',
   fadeSize = 'h-8',
   orientation = 'vertical',
+  viewportRef,
+  onViewportScroll,
 }: ScrollFadeProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ownRef = useRef<HTMLDivElement>(null);
+  const ref = viewportRef ?? ownRef;
   const [edges, setEdges] = useState({ start: false, end: false });
   const horizontal = orientation === 'horizontal';
 
@@ -70,7 +82,10 @@ export const ScrollFade = ({
     <div className={cn('relative min-h-0', className)}>
       <div
         ref={ref}
-        onScroll={sync}
+        onScroll={() => {
+          sync();
+          onViewportScroll?.();
+        }}
         className={cn(
           horizontal
             ? 'h-full max-w-[inherit] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'

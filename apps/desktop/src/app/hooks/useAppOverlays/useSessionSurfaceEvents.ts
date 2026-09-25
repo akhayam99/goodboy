@@ -44,7 +44,7 @@ export const useSessionSurfaceEvents = ({
       const planId = eventValue({ event, key: 'planId' });
       close();
       const state = useAppStore.getState();
-      state.setFocusedPlanId(sessionId, isPlanId(planId) ? planId : null);
+      state.setFocusedArtifactId(sessionId, isPlanId(planId) ? planId : null);
       state.setActiveLens(sessionId, 'plans');
     };
     const listeners: ReadonlyArray<Listener> = [

@@ -62,11 +62,8 @@ describe('LinearIssueDetail', () => {
     expect(screen.getByText('Urgent')).toBeDefined();
     expect(screen.queryByLabelText('Priority: Urgent')).toBeNull();
     expect(screen.getByText('Grace Hopper')).toBeDefined();
-    expect(screen.getByText('GB')).toBeDefined();
-    expect(screen.getByText('Desktop')).toBeDefined();
+    expect(screen.getByText('GB › Desktop')).toBeDefined();
     expect(screen.getByText('Full')).toBeDefined();
-
-    fireEvent.click(screen.getByRole('tab', { name: /Conversation/ }));
 
     expect(screen.getByText('Ada Lovelace')).toBeDefined();
     expect(screen.getByText('The fix is ready for review.')).toBeDefined();
@@ -74,8 +71,6 @@ describe('LinearIssueDetail', () => {
 
   it('sends a comment written in the conversation tab back to Linear', async () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
-
-    fireEvent.click(screen.getByRole('tab', { name: /Conversation/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'Merging this' },
     });
@@ -134,15 +129,14 @@ describe('LinearIssueDetail', () => {
     ).toBe('Body that fails');
   });
 
-  it('renders the properties in registry order, once', () => {
+  it('renders the facts in the canonical slot order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
-    const panels = screen.getAllByTestId('detail-properties');
-    expect(panels).toHaveLength(1);
+    const facts = screen.getByRole('list', { name: 'Facts' });
     expect(
-      within(panels[0] as HTMLElement)
-        .getAllByRole('term')
-        .map((term) => term.textContent),
-    ).toEqual(['Priority', 'Assignee', 'Team', 'Project', 'Labels', 'Updated']);
+      within(facts)
+        .getAllByRole('listitem')
+        .map((item) => item.getAttribute('data-fact-slot')),
+    ).toEqual(['person', 'weight', 'place', 'labels', 'time']);
   });
 });

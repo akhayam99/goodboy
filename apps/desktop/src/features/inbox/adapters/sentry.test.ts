@@ -36,7 +36,8 @@ describe('adaptSentryIssues', () => {
       state: 'alert',
       updatedAt: '2026-08-01T10:00:00Z',
       url: 'https://sentry.io/organizations/goodboy/issues/1/',
-      meta: 'launchSession',
+      stateLabel: 'Unresolved',
+      context: 'launchSession',
       payload: { provider: 'sentry', kind: 'error', issue: issue(), sessionId },
     });
   });
@@ -72,7 +73,7 @@ describe('adaptSentryIssues', () => {
 
     expect(record?.identifier).toBe('issue-1');
     expect(record?.updatedAt).toBe('2026-07-01T10:00:00Z');
-    expect(record?.meta).toBe('warning');
+    expect(record?.context).toBe('warning');
     expect(record?.url).toBe('');
   });
 });

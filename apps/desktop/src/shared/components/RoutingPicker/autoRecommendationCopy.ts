@@ -1,3 +1,5 @@
+export const SUGGESTED_LABEL = 'Suggested';
+
 type AutoRecommendationCopy = {
   readonly label: string;
   readonly reason: string;

@@ -486,7 +486,7 @@
   --print-tone: var(--color-info);
 }
 .print-sheet .print-body [data-block='callout'] {
-  background: color-mix(in srgb, var(--print-tone) 6%, var(--print-paper));
+  background: var(--print-wash);
   border: 0;
   border-left: 1.5pt solid var(--print-tone);
   border-radius: 0 4px 4px 0;
@@ -498,13 +498,15 @@
   padding: 8px 11px 9px;
 }
 .print-sheet .print-body [data-block='callout'][data-color='muted'] {
-  background: var(--print-wash);
   border-left-color: var(--print-rule);
+}
+.print-sheet .print-body [data-block='callout-rail'] {
+  display: none;
 }
 .print-sheet .print-body [data-block='callout-label'] {
   align-items: center;
   break-after: avoid;
-  color: var(--print-tone);
+  color: var(--print-muted);
   display: flex;
   font-size: var(--print-caption);
   font-weight: 600;
@@ -515,7 +517,7 @@
   text-transform: uppercase;
 }
 .print-sheet .print-body [data-block='callout-label'] svg {
-  color: inherit;
+  color: var(--print-tone);
   height: 1.1em;
   width: 1.1em;
 }

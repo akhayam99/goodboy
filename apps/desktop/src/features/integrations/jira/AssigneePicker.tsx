@@ -3,6 +3,7 @@ import { Check, UserRound } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
+  cn,
   Divider,
   formatError,
   Input,
@@ -75,19 +76,21 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
       className="flex flex-col"
       hasBackdrop
       trigger={
-        <Button
-          size="sm"
-          variant="secondary"
+        <button
+          type="button"
           aria-haspopup="menu"
           aria-expanded={isOpen}
           title="Change who owns this issue in Jira"
-          isBusy={busyId != null}
-          busyLabel="Assigning"
+          disabled={busyId != null}
           onClick={toggle}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground disabled:cursor-not-allowed',
+            busyId != null && 'animate-border-pulse',
+          )}
         >
           <UserRound size={ICON_SIZE.row} aria-hidden />
           {assignee?.displayName ?? 'Unassigned'}
-        </Button>
+        </button>
       }
     >
       <div className="p-1">

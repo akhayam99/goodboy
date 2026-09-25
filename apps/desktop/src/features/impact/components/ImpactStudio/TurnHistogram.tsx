@@ -16,7 +16,7 @@ export const TurnHistogram = ({ buckets, median, maxAgents }: Props) => (
         style={{ height: `${Math.max((bucket.agentCount / maxAgents) * 100, 6)}%` }}
         className={cn(
           'min-h-0.5 flex-1 rounded-lg',
-          bucket.turnCount === median ? tintClasses('primary').dot : 'bg-muted-foreground/25',
+          bucket.turnCount === median ? tintClasses('primary').dot : 'bg-idle',
         )}
       />
     ))}

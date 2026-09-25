@@ -13,6 +13,7 @@ type Props = {
   readonly closeLabel: string;
   readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
+  readonly isEscapeEnabled?: boolean;
   readonly variant?: 'fullscreen' | 'slot' | 'viewport';
   readonly children: (requestClose: () => void) => ReactNode;
 };
@@ -26,10 +27,11 @@ export const StudioShell = ({
   closeLabel,
   headerAccessory,
   onClose,
+  isEscapeEnabled = true,
   variant = 'fullscreen',
   children,
 }: Props) => {
-  const { closing, requestClose } = useStudioOverlay({ onClose });
+  const { closing, requestClose } = useStudioOverlay({ onClose, isEscapeEnabled });
 
   return (
     <div

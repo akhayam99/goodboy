@@ -15,7 +15,7 @@ import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
-import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
+import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import { CHAT_PLACEHOLDER, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
@@ -420,6 +420,19 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     : providerDisconnected
       ? 'Sign in first'
       : undefined;
+  const firstMessagePrompt =
+    isFirstTurnForAgent && activeAgentKind != null
+      ? AGENT_KIND_META[activeAgentKind].firstMessagePrompt
+      : null;
+  const shouldFocusFirstMessage = isFirstTurnForAgent && !isBlocked;
+
+  useEffect(() => {
+    if (selectedAgentId == null || !shouldFocusFirstMessage) {
+      return;
+    }
+    wrapperRef.current?.querySelector('textarea')?.focus();
+  }, [selectedAgentId, shouldFocusFirstMessage]);
+
   const overrideDisabledTitle = !routing.allowOverride
     ? 'this session was created without per-turn routing overrides'
     : undefined;
@@ -509,7 +522,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                       ? queue.length > 0
                         ? 'Type to queue another message'
                         : 'Turn running, type to queue the next message'
-                      : CHAT_PLACEHOLDER
+                      : (firstMessagePrompt ?? CHAT_PLACEHOLDER)
               }
               disabled={isBlocked}
               autoGrow

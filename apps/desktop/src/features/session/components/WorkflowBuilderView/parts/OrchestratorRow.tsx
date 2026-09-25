@@ -74,6 +74,7 @@ export const OrchestratorRow = ({
             model={modelOverride}
             effort={{ editable: true, value: effort, onChange: onEffort }}
             recommendation={{ provider: recommendedProvider, model: recommendedModel }}
+            recommendationKind="auto"
             disabled={disabled}
             overridden={isOverridden}
             onReset={onReset}

@@ -83,7 +83,8 @@ In the composer, `$` lists every script of the session's mounted projects
 `composer.json` scripts by category, each tagged with its source. Manifests are
 read from each mount the first time `$` is typed. With more than one mount a
 row names its project. An empty list says why: no project in the session, no
-script in the project, or no match for the filter.
+script in the project, or no match for the filter. Enter runs the row and opens
+its output in the right drawer; the composer text is cleared.
 
 ## Surfaces
 
@@ -140,6 +141,20 @@ reach them from rows and chips inside the overview (they expand in place or
 open a side panel) and from the trail's destination switcher, never from the
 sidebar. Board → session is the full depth of navigation.
 
+**A sidebar row and a board card read the same summary.** Both take
+`useSessionSummary`, so they say the same things in the same words. The row has
+two lines. The first is the goal, with the age on the right; on hover the age
+gives its column to the cost, and the column keeps its width. The second is the
+workflow progress when a run is active (one segment per step, then
+`Implement · 3 of 5`, counted from the steps that started, never estimated),
+otherwise the stage reason. At most two marks follow it, in this order: what
+waits on you (open questions, then review drafts), the first linked task with a
+`+n` for the rest, the agent count. The row starts with a 20px node: the pull
+request glyph in its state colour when there is a request, otherwise the stage
+icon, a ring while an agent runs, and `?` or `!` when the session needs you.
+Running and needs-you rows carry the same left rail as their card
+(`sessionRail`). Nothing the row knows hides in a tooltip.
+
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.
 Peek is wider than the pinned column. The extra width applies at read time, so
@@ -156,6 +171,27 @@ quiet action row (link an issue, start an agent, attach a workflow). So the
 empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
+
+**An empty session asks one question.** Until the session has any activity,
+the overview body is the kickoff: "How do you want to start?" with three
+options in a single-select list.
+
+- **Pick up a task** shows the open issues of the connected trackers with a
+  search field. Picking one and pressing **Pick up** links it and proposes the
+  brief, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Without a tracker it shows the connect links.
+- **Run a workflow** asks for the goal and a workflow, then **Run workflow**
+  starts it with that goal.
+- **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
+  that reads the project and suggests where to start.
+
+Only the selected option's primary shows. **Draw a wireframe**, and **Write a
+report** once an agent has finished, sit in a quiet **More ways to start**
+menu. The list preselects Pick up a task when a tracker has open issues and
+Run a workflow otherwise, and it remembers the last choice per workspace in
+local UI storage. A new session puts focus on the question, not on the title.
+The empty header keeps the title, faint while it is still the placeholder, and
+one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
 
 ## Breadcrumbs
 
@@ -234,8 +270,8 @@ covered.
   takes typing itself.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
-  three, and a group with no rows is not drawn. A script row hands its run to
-  the shell's script opener. Spend opens Impact; it is never merged with a
+  three, and a group with no rows is not drawn. A script row moves to its
+  session and opens that run's output in the right drawer. Spend opens Impact; it is never merged with a
   count. The bell opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -383,8 +419,14 @@ one is open at a time.
   j and k or the arrow keys move, Enter runs the row's action and e dismisses.
   The rail rows (`shared/components/FacetRail`), the list keys
   (`shared/hooks/useListKeys`) and the day grouping (`shared/utils/groupByDay`)
-  are shared primitives; the inbox already groups its records with the same
-  day buckets.
+  are shared primitives. The inbox uses all three: its rail filters by view,
+  type and source (one pick per section, a tool that did not load says so in
+  its row), its one-line rows are grouped by the same days in time order, and
+  j and k move the selection while the record follows beside the list. Enter
+  launches or opens the session, o opens the record in its tool, r focuses the
+  reply box, / focuses the search, and Escape closes the record before the
+  studio. Below a 720px list column the rail folds into a Filters button in
+  the list header.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
@@ -404,7 +446,14 @@ one is open at a time.
   the reason as the row subtitle), info on General while an app update is
   ready. Danger zone reads in `text-danger`. Panel sections sit on
   `SectionSurface` cards with gap between them and no `Divider`; a danger zone
-  is an inline danger `Notice`.
+  is an inline danger `Notice`. The workspace page is the exception: one
+  column of eyebrow sections 24px apart. Its title is the workspace name,
+  renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)
+  with the path in the name's tooltip, open, copy and unlink under `⋯`, and
+  adding behind one `Add project` popover. New session defaults sit in a
+  two-column grid with each help behind an info mark, and disconnecting is a
+  ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
+  comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
   beside a detail panel is fine. "no left panel and right panel at once" is
   about two sidebars on either side of the content, which the app does not do.
@@ -415,10 +464,33 @@ one is open at a time.
   `gh auth logout`. The control depends on credential state alone, not on the
   git remote. So a leftover scoped personal API key on a non-GitHub workspace
   can still be cleared.
-- **A code-host studio mounted outside a session is browse-and-launch only.**
-  The write verbs (approve, request changes, comment, merge, decline) belong to
-  a session and stay disabled. The mount reads through the workspace's first
-  repo project, so a workspace with no repo project stops at an empty state.
+- **A code-host record keeps its verbs outside a session.** A GitLab merge
+  request opened from the inbox approves, merges, closes and reopens through
+  the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
+  blocked with the reason until Goodboy has resolved it for a session. Merge
+  always asks first, and so does every destructive verb. The mount reads
+  through the workspace's first repo project, so a workspace with no repo
+  project stops at an empty state.
+- **Every record header has the same four places.** `RecordHeader` puts the
+  tool glyph, the identifier and the state on the identity line, with Open in
+  the tool, the `⋯` menu and, in the inbox, close at its end. Under the title
+  sits one action row: one primary (Launch session, or Open session once one is
+  linked) and at most two tool verbs picked by state. Everything else lives in
+  `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
+  then destructive verbs after a separator. Editable properties change from the
+  control that shows them (the Jira state opens its transitions). Launch
+  session opens a popover with the goal and the brief; Enter from the inbox list
+  opens it, or opens the linked session.
+- **Every record body has one order.** Under the header, facts sit as pills in
+  fixed slots (person, weight, place, labels, measure, links, time), each with
+  its field name in the tooltip and time as a relative age with the date in the
+  tooltip; a fact the tool does not have leaves no pill. The body is one scroll
+  with no tabs: Description (ten lines, then Show more), then the tool's own
+  sections closed behind a one-line summary (Checks, Changes and Approvals on
+  merge and pull requests, Stack trace open and Breadcrumbs on Sentry), then
+  Conversation with its count. `RecordSections` owns the order, the fact
+  registries in `shared/detail-fields` own the slots. A changed file opens its
+  diff in a full-screen dialog.
 
 ## Lens surfaces
 
@@ -443,7 +515,11 @@ one is open at a time.
   verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
   review. They are detail modes of that one surface, switched from its dock,
-  and each mode swaps in for the conversation list like any other detail. There
+  and each mode swaps in for the conversation list like any other detail. An
+  open mode is a child crumb (`Overview > Review > PR details`), and the Review
+  crumb is the way back to the conversations: there is no second back bar. The
+  mode lives in the store per session and drops back to the conversations when
+  the lens closes. There
   is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
   session lands on Review. The code-host lens still serves GitLab and
   Bitbucket, which open their own studios. Everything the lens shows comes from
@@ -500,4 +576,48 @@ or the session changes, with Escape, and with its X; focus then returns to the
 trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
-new kind adds a variant to `DrawerContent` and a case to the host.
+body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
+frame instead. A new kind adds a variant to `DrawerContent` and a case to the
+host.
+
+The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
+or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;
+the drawer header switches between the two. It also closes when the focused
+artifact changes. While it is open, Escape closes the drawer before it takes the
+artifact back to the list.
+
+A studio covers the whole window grid, so it cannot use that column. The inbox
+studio keeps the same contract inside itself (`InboxStudioLayout`): the record
+opens in a right column with the same width constants and the same saved width,
+resizes with the same handle, pushes the list while the list keeps 560px and
+lies over it otherwise. Escape closes the record before the studio.
+
+`scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
+`ScriptRunDrawer` reads the run from `scriptRuns`, where the one
+output subscription per run lives, so closing the drawer loses nothing. The
+header action is Stop while it runs and Run again after; the body is a status
+line (state, time, project, branch), a `Command` disclosure closed by default,
+and the log, which follows the tail until you scroll up and then offers
+`Jump to latest`. Error lines carry a danger bar and an `err` prefix. The dock
+says `Following output` while it runs and the exit, time and Copy output after.
+A run records the mount it ran in, so a project mounted twice reopens on the
+right branch.
+
+## The Scripts lens
+
+`ScriptsPanel` is one `PaneShell` (`Scripts`, meta `N projects · N running`,
+a `Filter scripts` field that `/` focuses and `New script`) over one list
+grouped by mount, project plus branch, from `useSessionScripts`. A project
+mounted twice is two groups, and its saved scripts show in both; you pick
+where a script runs by picking the row in the right group. A group header
+collapses it, and the collapsed set is kept per workspace
+(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`). Every row is the same
+`ScriptRow`: category node, name, command, Source (`Saved`, `package.json`,
+`composer.json`), Last run in glyph and word, one Run or Stop button and a `⋯`
+menu (saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
+script, Copy command). Clicking a row opens its output in the `scriptRun`
+drawer, and the row whose output is open is selected. New script and Edit open
+the same inline `ScriptEditor` card, at the top of the active mount's group or
+in place of the edited row. Saved scripts of workspace projects that are not in
+the session are named in one line under the groups. The session sidebar has no
+scripts section: `$` launches, the Now chip watches.

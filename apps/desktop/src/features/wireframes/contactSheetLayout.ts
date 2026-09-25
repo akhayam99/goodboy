@@ -14,6 +14,14 @@ const WIDE: ContactSheetPlates = {
   desktop: 880,
 };
 
+const GRID: ContactSheetPlates = {
+  mobile: 150,
+  tablet: 220,
+  desktop: 280,
+};
+
+export type ContactSheetDensity = 'sheet' | 'grid';
+
 export const isWideContactSheet = ({
   screens,
 }: {
@@ -22,6 +30,13 @@ export const isWideContactSheet = ({
 
 export const contactSheetPlates = ({
   screens,
+  density = 'sheet',
 }: {
   readonly screens: ReadonlyArray<WireframeScreen>;
-}): ContactSheetPlates => (isWideContactSheet({ screens }) ? WIDE : COMPACT);
+  readonly density?: ContactSheetDensity;
+}): ContactSheetPlates => {
+  if (density === 'grid') {
+    return GRID;
+  }
+  return isWideContactSheet({ screens }) ? WIDE : COMPACT;
+};

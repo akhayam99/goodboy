@@ -241,38 +241,36 @@ describe('TimelinePane under a full filter', () => {
 });
 
 describe('TimelinePane on an empty session', () => {
+  const onKickoffShownChange = vi.fn();
+
   const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
     return render(
       <TimelinePane
         session={SESSION}
-
         actions={<OverviewActions sessionId={SESSION.id} onOpenWorkflowBuilder={() => undefined} />}
-        kickoff={
-          <OverviewActions
-            sessionId={SESSION.id}
-            variant="tile"
-            onOpenWorkflowBuilder={() => undefined}
-          />
-        }
+        kickoff={<section aria-label="Kickoff" />}
+        onKickoffShownChange={onKickoffShownChange}
       />,
     );
   };
 
-  it('keeps every session action offered on the path production takes', () => {
+  it('shows the kickoff alone and tells the page the session is empty', () => {
+    onKickoffShownChange.mockClear();
     renderEmptySession();
 
-    for (const name of ['Start agent', 'Start a workflow', 'Create wireframe']) {
-      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
-    }
+    expect(screen.getByRole('region', { name: 'Kickoff' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Start agent' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
+    expect(onKickoffShownChange).toHaveBeenLastCalledWith(true);
   });
 
-  it('holds the report tile back until the session has run something', () => {
+  it('tells the page the session is no longer empty once a row lands', () => {
+    onKickoffShownChange.mockClear();
+    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     renderEmptySession();
 
-    expect(screen.queryByTestId('create-report-cta')).toBeNull();
-    expect(screen.getByTestId('create-wireframe-cta').hasAttribute('disabled')).toBe(false);
+    expect(onKickoffShownChange).toHaveBeenLastCalledWith(false);
   });
 
   it('folds every other way to start into the menu of one Start agent split', () => {

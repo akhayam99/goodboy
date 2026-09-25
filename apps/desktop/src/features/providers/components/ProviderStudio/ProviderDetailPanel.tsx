@@ -20,6 +20,7 @@ import { ProviderCredentialsSection } from './ProviderCredentialsSection';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ApiProviderDetail } from './ApiProviderDetail';
 import { CliUpdateNotice } from './CliUpdateNotice';
+import { ModelVisibilitySection } from './ModelVisibilitySection';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
@@ -28,9 +29,15 @@ type Props = {
   readonly info: ProviderDisplayInfo | null;
   readonly autoConnect: boolean;
   readonly autoUpdate: boolean;
+  readonly focusModels?: boolean;
 };
 
-export const ProviderDetailPanel = ({ info, autoConnect, autoUpdate }: Props) => {
+export const ProviderDetailPanel = ({
+  info,
+  autoConnect,
+  autoUpdate,
+  focusModels = false,
+}: Props) => {
   if (!info) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -48,17 +55,26 @@ export const ProviderDetailPanel = ({ info, autoConnect, autoUpdate }: Props) =>
   if (isApiProvider({ id: info.id })) {
     return <ApiProviderDetail info={info} />;
   }
-  return <Detail info={info} autoConnect={autoConnect} autoUpdate={autoUpdate} />;
+  return (
+    <Detail
+      info={info}
+      autoConnect={autoConnect}
+      autoUpdate={autoUpdate}
+      focusModels={focusModels}
+    />
+  );
 };
 
 function Detail({
   info,
   autoConnect,
   autoUpdate,
+  focusModels,
 }: {
   readonly info: ProviderDisplayInfo;
   readonly autoConnect: boolean;
   readonly autoUpdate: boolean;
+  readonly focusModels: boolean;
 }) {
   const id = info.id as ProviderId;
   const Icon: LucideIcon = PROVIDER_BRAND[id]?.icon ?? CONCEPT_ICONS.providers;
@@ -157,6 +173,8 @@ function Detail({
           />
         )}
       </section>
+
+      <ModelVisibilitySection providerId={id} isFocused={focusModels} />
 
       {info.connection !== 'missing' && info.connection !== 'unknown' && (
         <>

@@ -1,42 +1,50 @@
-import {
-  RecordDetailEmptyState,
-  RecordDetailHeader,
-  StudioDetailLayout,
-} from '../../../../../shared/components/StudioDetail';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Button, ConfirmPopover, Markdown, Notice } from '@goodboy/ui';
-import { FileText, GitBranch, GitMerge, MessageSquare } from 'lucide-react';
+import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
+import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
+import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
+import { useEffect, useState } from 'react';
+import { Notice, RefreshIconButton } from '@goodboy/ui';
+import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
-import { StudioWidget, HeaderBand, StudioDetailTabs } from '@goodboy/ui';
-import { gitlabMergeRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
-import { BranchPair } from '@goodboy/ui';
-import { RefreshIconButton } from '@goodboy/ui';
+import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,
   type GitlabMergeRequest,
+  type GitlabMrApprovalState,
   type GitlabMrStateEvent,
 } from '../../client';
 import { useGitlabMrApprovals } from '../../useGitlabMrApprovals';
 import { useGitlabMrDiscussions } from '../../useGitlabMrDiscussions';
 import { projectPathFromMrUrl } from '../useGitlabMrs';
 import { CreateMrForm } from './CreateMrForm';
-import { MrActionBar, type MrActionBusy } from './MrActionBar';
-import { MrApprovalRail } from './MrApprovalRail';
+import { MrApprovals } from './MrApprovals';
 import { MrConversation } from './MrConversation';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
 
-type MrSection = 'overview' | 'conversation';
+type ApprovalSummaryParams = {
+  readonly approval: GitlabMrApprovalState;
+};
 
-type Busy = 'merge' | MrActionBusy;
+const approvalSummary = ({ approval }: ApprovalSummaryParams): string => {
+  const given = approval.approvedBy.length;
+  if (approval.approvalsRequired > 0) {
+    return `${given} of ${approval.approvalsRequired}`;
+  }
+  return given === 1 ? '1 approval' : `${given} approvals`;
+};
 
 type UpdateParams = {
-  readonly kind: Exclude<MrActionBusy, null>;
+  readonly kind: Exclude<MrVerbBusy, 'merge' | null>;
   readonly toast: string;
   readonly stateEvent?: GitlabMrStateEvent;
   readonly title?: string;
@@ -49,14 +57,8 @@ type Props = {
   readonly host?: string | null;
   readonly onRefresh?: () => void;
   readonly onClose: () => void;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
-
-const SECTION_OPTIONS = [
-  { value: 'overview', label: 'Overview', icon: FileText },
-  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
-] as const;
 
 export const MrDetailPanel = ({
   sessionId = null,
@@ -65,8 +67,7 @@ export const MrDetailPanel = ({
   host,
   onRefresh,
   onClose,
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
   const session = useAppStore((s) =>
     sessionId == null ? null : (s.sessions.find((x) => x.id === sessionId) ?? null),
@@ -93,8 +94,7 @@ export const MrDetailPanel = ({
   const reportError = useAppStore((s) => s.reportError);
 
   const [localMr, setLocalMr] = useState<GitlabMergeRequest | null>(null);
-  const [section, setSection] = useState<MrSection>('overview');
-  const [busy, setBusy] = useState<Busy>(null);
+  const [busy, setBusy] = useState<MrVerbBusy>(null);
 
   const storeMr = mrState?.mr ?? null;
   const mr = localMr ?? selectedMr ?? storeMr;
@@ -129,26 +129,6 @@ export const MrDetailPanel = ({
   useEffect(() => {
     setLocalMr(null);
   }, [selectedMr, storeMr]);
-
-  if (sessionId != null && session == null) {
-    return (
-      <RecordDetailEmptyState
-        provider="gitlab"
-        title="No session selected"
-        description="Pick a session to manage its merge request."
-      />
-    );
-  }
-
-  if (sessionId == null && mr == null) {
-    return (
-      <RecordDetailEmptyState
-        provider="gitlab"
-        title="No merge request selected"
-        description="Pick a merge request to see its details."
-      />
-    );
-  }
 
   const onMerge = async () => {
     if (busy !== null) {
@@ -209,149 +189,95 @@ export const MrDetailPanel = ({
     }
   };
 
-  const refreshButton = (
-    <RefreshIconButton
-      label="refresh merge request"
-      iconSize={12}
-      isLoading={loading}
-      error={error}
-      onClick={() => {
-        discussions.reload();
-        if (sessionId != null) {
-          void refreshSessionMr(sessionId, { force: true });
-          return;
-        }
-        onRefresh?.();
-      }}
-    />
-  );
+  const refresh = () => {
+    discussions.reload();
+    if (sessionId != null) {
+      void refreshSessionMr(sessionId, { force: true });
+      return;
+    }
+    onRefresh?.();
+  };
+
+  const verbs = useMrVerbs({
+    mr,
+    busy,
+    approval: approvals.approval,
+    isApprovalBusy: approvals.isSubmitting,
+    isSupported: approvals.isSupported,
+    approvalError: approvals.error,
+    canAct,
+    canMerge: sessionId != null || projectPath != null,
+    onMerge,
+    onApprove: approvals.approve == null ? null : () => void approvals.approve?.(),
+    onUnapprove: approvals.unapprove == null ? null : () => void approvals.unapprove?.(),
+    onToggleDraft: () => {
+      if (mr == null) {
+        return;
+      }
+      void runUpdate({
+        kind: 'draft',
+        toast: mr.draft ? 'Merge request marked ready' : 'Merge request back to draft',
+        title: mrDraftTitle({ title: mr.title, isDraft: !mr.draft }),
+      });
+    },
+    onClose: () => runUpdate({ kind: 'close', toast: 'Merge request closed', stateEvent: 'close' }),
+    onReopen: () =>
+      void runUpdate({ kind: 'reopen', toast: 'Merge request reopened', stateEvent: 'reopen' }),
+  });
+
+  if (sessionId != null && session == null) {
+    return (
+      <RecordDetailEmptyState
+        provider="gitlab"
+        title="No session selected"
+        description="Pick a session to manage its merge request."
+      />
+    );
+  }
+
+  if (sessionId == null && mr == null) {
+    return (
+      <RecordDetailEmptyState
+        provider="gitlab"
+        title="No merge request selected"
+        description="Pick a merge request to see its details."
+      />
+    );
+  }
 
   if (mr != null) {
-    const actionBusy: MrActionBusy =
-      busy === 'draft' || busy === 'close' || busy === 'reopen' ? busy : null;
     const postNote = discussions.post;
-    const isMergeBlocked =
-      mr.hasConflicts ||
-      mr.mergeStatus === 'cannot_be_merged' ||
-      (sessionId == null && projectPath == null);
-
-    return (
-      <StudioDetailLayout
-        header={
-          <>
-            <RecordDetailHeader
-              provider="gitlab"
-              identifier={`!${mr.iid}`}
-              title={mr.title}
-              badge={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
-              subtitle={<BranchPair headBranch={mr.sourceBranch} baseBranch={mr.targetBranch} />}
-              actions={
-                <>
-                  {refreshButton}
-                  {mr.state === 'opened' ? (
-                    <ConfirmPopover
-                      role="danger"
-                      icon={<GitMerge size={ICON_SIZE.row} aria-hidden />}
-                      title={`Merge !${mr.iid}?`}
-                      description="GitLab merges it with the method the project is set to. It cannot be undone from here."
-                      confirmLabel={busy === 'merge' ? 'Merging' : 'Confirm merge'}
-                      onConfirm={onMerge}
-                      isBusy={busy === 'merge'}
-                      isConfirmDisabled={isMergeBlocked}
-                      trigger={({ isArmed, arm }) => (
-                        <Button
-                          onClick={arm}
-                          aria-expanded={isArmed}
-                          disabled={busy !== null || isMergeBlocked}
-                          className={busy === 'merge' ? 'animate-border-pulse' : undefined}
-                        >
-                          {busy === 'merge' ? (
-                            'Merging…'
-                          ) : (
-                            <>
-                              <GitMerge size={ICON_SIZE.row} aria-hidden />
-                              Merge request
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    />
-                  ) : null}
-                  {headerActions}
-                </>
-              }
-              externalRef={{ url: mr.webUrl, label: 'MR' }}
-            />
-            <MrActionBar
-              mr={mr}
-              busy={actionBusy}
-              approval={approvals.approval}
-              isApprovalBusy={approvals.isSubmitting}
-              isSupported={approvals.isSupported}
-              approvalError={approvals.error}
-              canAct={canAct}
-              onApprove={approvals.approve == null ? null : () => void approvals.approve?.()}
-              onUnapprove={approvals.unapprove == null ? null : () => void approvals.unapprove?.()}
-              onToggleDraft={() =>
-                void runUpdate({
-                  kind: 'draft',
-                  toast: mr.draft ? 'Merge request marked ready' : 'Merge request back to draft',
-                  title: mrDraftTitle({ title: mr.title, isDraft: !mr.draft }),
-                })
-              }
-              onClose={() =>
-                runUpdate({
-                  kind: 'close',
-                  toast: 'Merge request closed',
-                  stateEvent: 'close',
-                })
-              }
-              onReopen={() =>
-                void runUpdate({
-                  kind: 'reopen',
-                  toast: 'Merge request reopened',
-                  stateEvent: 'reopen',
-                })
-              }
-            />
-          </>
-        }
-        tabs={
-          <StudioDetailTabs
-            ariaLabel="Merge request sections"
-            options={SECTION_OPTIONS}
-            value={section}
-            onChange={setSection}
-          />
-        }
-        rail={
-          <MrApprovalRail
-            approval={approvals.approval}
-            isLoading={approvals.isLoading}
-            error={approvals.error}
-          />
-        }
-        properties={resolveDetailFields({ registry: gitlabMergeRequestFields, entity: mr })}
-        dock={dock}
-      >
-        {mr.hasConflicts ? (
-          <Notice
-            tone="warning"
-            placement="inline"
-            title="This merge request has conflicts"
-            body="Resolve them before merging."
-          />
-        ) : null}
-
-        {section === 'overview' ? (
-          <StudioWidget presentation="section" label="description" variant="frameless">
-            {mr.description != null && mr.description !== '' ? (
-              <Markdown text={mr.description} className="text-sm leading-relaxed" />
-            ) : (
-              <p className="text-sm italic text-faint-foreground">No description.</p>
-            )}
-          </StudioWidget>
-        ) : (
+    const approval = approvals.approval;
+    const sections: ReadonlyArray<RecordSection> = [
+      {
+        key: 'description',
+        kind: 'description',
+        label: 'Description',
+        isCollapsible: false,
+        defaultOpen: true,
+        content: <DescriptionSection text={mr.description ?? ''} />,
+      },
+      ...(approvals.isSupported && approval != null
+        ? [
+            {
+              key: 'approvals',
+              kind: 'tool' as const,
+              label: 'Approvals',
+              summary: approvalSummary({ approval }),
+              isCollapsible: true,
+              defaultOpen: false,
+              content: <MrApprovals approval={approval} />,
+            },
+          ]
+        : []),
+      {
+        key: 'conversation',
+        kind: 'conversation',
+        label: 'Conversation',
+        count: discussions.discussions.length,
+        isCollapsible: false,
+        defaultOpen: true,
+        content: (
           <MrConversation
             discussions={discussions.discussions}
             isLoading={discussions.isLoading}
@@ -362,30 +288,78 @@ export const MrDetailPanel = ({
             onResolve={discussions.resolve}
             resolveError={discussions.resolveError}
           />
-        )}
-      </StudioDetailLayout>
+        ),
+      },
+    ];
+
+    return (
+      <PaneShell
+        scroll="body"
+        header={
+          <RecordHeader
+            provider="gitlab"
+            identifier={`!${mr.iid}`}
+            title={mr.title}
+            state={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
+            facts={
+              <RecordFacts
+                facts={resolveFacts({
+                  registry: gitlabMergeRequestFields,
+                  entity: { mr, approval },
+                })}
+              />
+            }
+            externalRef={{ url: mr.webUrl, label: 'MR' }}
+            verbs={verbs}
+            frame={frame}
+            onRefresh={refresh}
+          />
+        }
+      >
+        {mr.hasConflicts ? (
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="This merge request has conflicts"
+            body="Resolve them before merging."
+          />
+        ) : null}
+        {error != null ? (
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="Couldn't refresh this merge request"
+            body={error}
+          />
+        ) : null}
+        <RecordSections sections={sections} />
+      </PaneShell>
     );
   }
 
   return (
-    <StudioDetailLayout
-      header={
-        <HeaderBand
-          title="New merge request"
-          meta={
-            <span className="inline-flex items-center gap-1.5 font-mono text-2xs text-muted-foreground">
-              <GitBranch size={11} aria-hidden />
-              {branch ?? 'no branch'}
-            </span>
-          }
-          actions={refreshButton}
+    <PaneShell
+      scroll="self"
+      title="New merge request"
+      meta={
+        <span className="inline-flex items-center gap-1.5 font-mono">
+          <GitBranch size={11} aria-hidden />
+          {branch ?? 'no branch'}
+        </span>
+      }
+      actions={
+        <RefreshIconButton
+          label="refresh merge request"
+          iconSize={12}
+          isLoading={loading}
+          error={error}
+          onClick={refresh}
         />
       }
-      fit="bleed"
     >
       {sessionId != null && (
         <CreateMrForm sessionId={sessionId} branch={branch} error={error} onClose={onClose} />
       )}
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

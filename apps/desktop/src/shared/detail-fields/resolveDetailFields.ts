@@ -1,33 +1,10 @@
-import { isValidElement, type ReactNode } from 'react';
+import { isPresentNode } from './isPresentNode';
 import type { DetailEntry, DetailFieldRegistry } from './types';
 
 const resolvedDetailFields: unique symbol = Symbol('resolvedDetailFields');
 
 export type ResolvedDetailFields = ReadonlyArray<DetailEntry> & {
   readonly [resolvedDetailFields]: boolean;
-};
-
-type ChildrenProps = {
-  readonly children?: ReactNode;
-};
-
-const isPresent = (node: ReactNode): boolean => {
-  if (node == null || typeof node === 'boolean') {
-    return false;
-  }
-  if (typeof node === 'string') {
-    return node.trim() !== '';
-  }
-  if (typeof node === 'number') {
-    return node !== 0;
-  }
-  if (Array.isArray(node)) {
-    return node.some((child: ReactNode) => isPresent(child));
-  }
-  if (isValidElement<ChildrenProps>(node) && node.props.children !== undefined) {
-    return isPresent(node.props.children);
-  }
-  return true;
 };
 
 type Params<T> = {
@@ -43,7 +20,7 @@ export const resolveDetailFields = <T>({ registry, entity }: Params<T>): Resolve
     return [{ key: field.key, label: field.label, node: field.render({ entity }) }];
   });
   return Object.assign(
-    entries.filter((entry) => isPresent(entry.node)),
+    entries.filter((entry) => isPresentNode({ node: entry.node })),
     {
       [resolvedDetailFields]: true,
     },

@@ -1,19 +1,16 @@
-import {
-  RecordDetailEmptyState,
-  RecordDetailHeader,
-  StudioDetailLayout,
-} from '../../../../../shared/components/StudioDetail';
-import { useMemo, useState, type ReactNode } from 'react';
-import { Markdown } from '@goodboy/ui';
-import { FileDiff, FileText, ListChecks, MessageSquare } from 'lucide-react';
-import type { BitbucketIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
-import { StudioWidget, StudioDetailTabs } from '@goodboy/ui';
-import {
-  bitbucketPullRequestFields,
-  resolveDetailFields,
-} from '../../../../../shared/detail-fields';
-import { BranchPair } from '@goodboy/ui';
-import { RefreshIconButton } from '@goodboy/ui';
+import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
+import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
+import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
+import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
+import { useMemo } from 'react';
+import { Notice } from '@goodboy/ui';
+import type { BitbucketIntegrationBinding, FileDiff, SessionId, WorkspaceId } from '@goodboy/types';
+import { bitbucketPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
+import { checksRollup } from '../../../../github/components/PullRequest/checksRollup';
 import { openUrl } from '../../../../../shared/lib/editor';
 import { PrChecks } from '../../../../github/components/PullRequest/PrChecks';
 import { bitbucketPrIdentifier } from '../../bitbucketPrIdentifier';
@@ -21,34 +18,36 @@ import { bitbucketPrUrl } from '../../bitbucketPrUrl';
 import { BitbucketStateChip } from '../../BitbucketStateChip';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
-import { PrActionBar } from '../PrActionBar';
+import { usePrVerbs } from '../usePrVerbs';
 import { PrChanges } from './PrChanges';
 import { PrConversation } from './PrConversation';
 import { useBitbucketPrDetail } from './useBitbucketPrDetail';
 import { useBitbucketPrDiff } from './useBitbucketPrDiff';
 import { usePrActions } from './usePrActions';
 
-type PrSection = 'overview' | 'changes' | 'checks' | 'conversation';
+type ChangesSummaryParams = {
+  readonly files: ReadonlyArray<FileDiff>;
+};
+
+const changesSummary = ({ files }: ChangesSummaryParams): string | undefined => {
+  if (files.length === 0) {
+    return undefined;
+  }
+  const added = files.reduce((sum, file) => sum + file.additions, 0);
+  const removed = files.reduce((sum, file) => sum + file.deletions, 0);
+  return `${files.length} ${files.length === 1 ? 'file' : 'files'} +${added} −${removed}`;
+};
 
 type Props = {
   readonly pullRequest: BitbucketPullRequest | null;
   readonly repo: BitbucketRepo | null;
   readonly sessionId: SessionId | null;
   readonly workspaceId: WorkspaceId;
-  readonly isLoading: boolean;
   readonly error: string | null;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
-
-const SECTION_OPTIONS = [
-  { value: 'overview', label: 'Overview', icon: FileText },
-  { value: 'changes', label: 'Changes', icon: FileDiff },
-  { value: 'checks', label: 'Checks', icon: ListChecks },
-  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
-] as const;
 
 const POST_BLOCKED =
   'Goodboy is still resolving this pull request on Bitbucket, so it cannot post a comment yet';
@@ -58,19 +57,16 @@ export const PrDetailPanel = ({
   repo,
   sessionId,
   workspaceId,
-  isLoading,
   error,
   onRefresh,
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
-  const [section, setSection] = useState<PrSection>('overview');
   const target = useMemo(
     () => (repo == null || pullRequest == null ? null : { ...repo, pullRequestId: pullRequest.id }),
     [pullRequest, repo],
   );
   const detail = useBitbucketPrDetail({ target });
-  const diff = useBitbucketPrDiff({ target, isEnabled: section === 'changes' });
+  const diff = useBitbucketPrDiff({ target, isEnabled: true });
   const config = useAppStore((state) => {
     const integration = (state.workspaceIntegrations[workspaceId] ?? []).find(
       (candidate): candidate is BitbucketIntegrationBinding => candidate.provider === 'bitbucket',
@@ -86,6 +82,19 @@ export const PrDetailPanel = ({
       onRefresh();
     },
   });
+  const verbs = usePrVerbs({
+    pullRequest,
+    accountId: config?.accountId ?? null,
+    displayName: config?.displayName ?? null,
+    busy: actions.busy,
+    canAct: actions.canAct,
+    onApprove: actions.approve,
+    onUnapprove: actions.unapprove,
+    onRequestChanges: actions.requestChanges,
+    onWithdrawChanges: actions.withdrawChanges,
+    onMerge: actions.merge,
+    onDecline: actions.decline,
+  });
 
   if (pullRequest == null || repo == null) {
     return (
@@ -100,96 +109,55 @@ export const PrDetailPanel = ({
   const webUrl = bitbucketPrUrl({ repo, pullRequest });
   const identifier = bitbucketPrIdentifier({ repo, pullRequest });
 
-  return (
-    <StudioDetailLayout
-      header={
-        <>
-          <RecordDetailHeader
-            provider="bitbucket"
-            identifier={identifier}
-            title={pullRequest.title}
-            badge={<BitbucketStateChip state={pullRequest.state} />}
-            subtitle={
-              <BranchPair
-                headBranch={pullRequest.sourceBranch}
-                baseBranch={pullRequest.destinationBranch}
-              />
-            }
-            actions={
-              <>
-                <RefreshIconButton
-                  label="refresh pull request"
-                  iconSize={12}
-                  isLoading={isLoading}
-                  error={error}
-                  onClick={() => {
-                    detail.reload();
-                    onRefresh();
-                  }}
-                />
-                {headerActions}
-              </>
-            }
-            externalRef={{ url: webUrl, label: 'pull request' }}
-          />
-          <PrActionBar
-            key={identifier}
-            pullRequest={pullRequest}
-            accountId={config?.accountId ?? null}
-            displayName={config?.displayName ?? null}
-            busy={actions.busy}
-            canAct={actions.canAct}
-            onApprove={actions.approve}
-            onUnapprove={actions.unapprove}
-            onRequestChanges={actions.requestChanges}
-            onWithdrawChanges={actions.withdrawChanges}
-            onMerge={actions.merge}
-            onDecline={actions.decline}
-          />
-        </>
-      }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Pull request sections"
-          options={SECTION_OPTIONS}
-          value={section}
-          onChange={setSection}
-        />
-      }
-      properties={resolveDetailFields({
-        registry: bitbucketPullRequestFields,
-        entity: pullRequest,
-      })}
-      dock={dock}
-    >
-      {section === 'overview' && (
-        <>
-          <StudioWidget presentation="section" label="description" variant="frameless">
-            {pullRequest.description !== '' ? (
-              <Markdown text={pullRequest.description} className="text-sm leading-relaxed" />
-            ) : (
-              <p className="text-sm italic text-faint-foreground">No description.</p>
-            )}
-          </StudioWidget>
-        </>
-      )}
-      {section === 'changes' && (
-        <PrChanges
-          files={diff.files}
-          isLoading={diff.isLoading}
-          error={diff.error}
-          onRetry={diff.reload}
-        />
-      )}
-      {section === 'checks' && (
+  const sections: ReadonlyArray<RecordSection> = [
+    {
+      key: 'description',
+      kind: 'description',
+      label: 'Description',
+      isCollapsible: false,
+      defaultOpen: true,
+      content: <DescriptionSection text={pullRequest.description} />,
+    },
+    {
+      key: 'checks',
+      kind: 'tool',
+      label: 'Checks',
+      summary: checksRollup({ checks: detail.checks }),
+      isCollapsible: true,
+      defaultOpen: false,
+      content: (
         <PrChecks
           checks={detail.checks}
           fallbackUrl={webUrl}
           hostLabel="Bitbucket"
           onOpenUrl={(url) => void openUrl(url)}
         />
-      )}
-      {section === 'conversation' && (
+      ),
+    },
+    {
+      key: 'changes',
+      kind: 'tool',
+      label: 'Changes',
+      summary: changesSummary({ files: diff.files }),
+      isCollapsible: true,
+      defaultOpen: false,
+      content: (
+        <PrChanges
+          files={diff.files}
+          isLoading={diff.isLoading}
+          error={diff.error}
+          onRetry={diff.reload}
+        />
+      ),
+    },
+    {
+      key: 'conversation',
+      kind: 'conversation',
+      label: 'Conversation',
+      count: detail.comments.length,
+      isCollapsible: false,
+      defaultOpen: true,
+      content: (
         <PrConversation
           comments={detail.comments}
           isLoading={detail.isLoading}
@@ -199,7 +167,43 @@ export const PrDetailPanel = ({
           onPost={actions.comment}
           onReply={actions.reply}
         />
-      )}
-    </StudioDetailLayout>
+      ),
+    },
+  ];
+
+  return (
+    <PaneShell
+      scroll="body"
+      header={
+        <RecordHeader
+          provider="bitbucket"
+          identifier={identifier}
+          title={pullRequest.title}
+          state={<BitbucketStateChip state={pullRequest.state} />}
+          facts={
+            <RecordFacts
+              facts={resolveFacts({ registry: bitbucketPullRequestFields, entity: pullRequest })}
+            />
+          }
+          externalRef={{ url: webUrl, label: 'pull request' }}
+          verbs={verbs}
+          frame={frame}
+          onRefresh={() => {
+            detail.reload();
+            onRefresh();
+          }}
+        />
+      }
+    >
+      {error != null ? (
+        <Notice
+          tone="warning"
+          placement="inline"
+          title="Couldn't refresh the pull requests"
+          body={error}
+        />
+      ) : null}
+      <RecordSections sections={sections} />
+    </PaneShell>
   );
 };

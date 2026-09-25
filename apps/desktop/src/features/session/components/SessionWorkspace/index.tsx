@@ -229,13 +229,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
               {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
               {lens === 'scripts' ? (
-                <PaneShell title="Scripts">
-                  <ScriptsPanel
-                    workspaceId={session.workspaceId}
-                    sessionId={sessionId}
-                    hasHostHeading
-                  />
-                </PaneShell>
+                <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
               ) : null}
               {surface === 'context' ? (
                 <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />

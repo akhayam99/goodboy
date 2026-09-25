@@ -17,10 +17,12 @@ import { useAppStore } from '../../../../store';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
 import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { CommentThread } from '../../../github/comment-threads';
-import { kindRouting, type AgentKindRouting } from '../../../session/agent-kind';
+import type { AgentKindRouting } from '../../../session/agent-kind';
+import { useSuggestedRouting } from '../../../session/hooks/useSuggestedRouting';
+import { isSameRouting } from '../../../session/isSameRouting';
 import { resolveAgentCount, startResolve } from '../../startResolve';
 import {
   RESOLVE_QUEUE_ACTION_LABEL,
@@ -67,13 +69,17 @@ export const ResolveWithPopover = ({
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
   const setResolveQueueView = useAppStore((state) => state.setResolveQueueView);
   const reportError = useAppStore((state) => state.reportError);
-  const roleModels = useSessionRoleModels({ sessionId });
-  const defaultRouting = lastRouting ?? kindRouting({ kind: 'resolver', roleModels });
+  const suggested = useSuggestedRouting({ sessionId, role: 'resolver' });
+  const defaultRouting = lastRouting ?? suggested.routing;
+  const lastUsed =
+    lastRouting != null && !isSameRouting({ left: lastRouting, right: suggested.routing })
+      ? lastRouting
+      : null;
   const [draft, setDraft] = useState<AgentKindRouting | null>(null);
   const [note, setNote] = useState('');
   const [isStarting, setIsStarting] = useState(false);
   const isStartingRef = useRef(false);
-  const chosen = draft ?? defaultRouting;
+  const chosen = draft ?? suggested.routing;
   const count = threads.length;
   const canStart = pr !== null && count > 0 && !isDisabled && !isStarting;
 
@@ -183,23 +189,37 @@ export const ResolveWithPopover = ({
           <RoutingPickerBody
             connectedProviders={connectedProviders}
             onClose={close}
+            recommendation={{
+              ...suggested.routing,
+              label: SUGGESTED_LABEL,
+              reason: suggested.reason,
+            }}
+            overridden={draft !== null}
+            {...(lastUsed != null && {
+              lastUsed: {
+                routing: lastUsed,
+                active: draft !== null && isSameRouting({ left: draft, right: lastUsed }),
+                onSelect: () => setDraft(lastUsed),
+              },
+            })}
             provider={chosen.provider}
             model={chosen.model}
             effort={{
               editable: true,
               value: chosen.effort,
               onChange: (effort) =>
-                setDraft((current) => ({ ...(current ?? defaultRouting), effort })),
+                setDraft((current) => ({ ...(current ?? suggested.routing), effort })),
             }}
             onProvider={(provider) => {
               if (provider === '') {
+                setDraft(null);
                 return;
               }
-              setDraft((current) => ({ ...(current ?? defaultRouting), provider }));
+              setDraft((current) => ({ ...(current ?? suggested.routing), provider }));
             }}
             onModel={(model) =>
               setDraft((current) => {
-                const base = current ?? defaultRouting;
+                const base = current ?? suggested.routing;
                 return {
                   ...base,
                   model,

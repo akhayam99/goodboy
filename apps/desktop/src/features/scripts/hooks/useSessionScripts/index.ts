@@ -5,7 +5,7 @@ import { buildSessionScripts, type SessionScriptGroup } from '../../buildSession
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
+  readonly workspaceId: WorkspaceId | null;
   readonly shouldScan: boolean;
 };
 
@@ -21,7 +21,9 @@ export const useSessionScripts = ({
 }: Params): SessionScripts => {
   const mounts = useAppStore((state) => state.sessionProjectMounts[sessionId] ?? EMPTY_ARRAY);
   const projects = useAppStore((state) => state.projects);
-  const saved = useAppStore((state) => state.projectScripts[workspaceId] ?? EMPTY_ARRAY);
+  const saved = useAppStore((state) =>
+    workspaceId === null ? EMPTY_ARRAY : (state.projectScripts[workspaceId] ?? EMPTY_ARRAY),
+  );
   const discovered = useAppStore((state) => state.discoveredScripts[sessionId]);
   const scans = useAppStore((state) => state.discoveredScriptScans[sessionId]);
   const loadDiscoveredScripts = useAppStore((state) => state.loadDiscoveredScripts);

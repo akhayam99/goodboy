@@ -10,7 +10,7 @@ import { resolveIntegrationConnection } from '../../connection';
 import type { BitbucketPullRequest } from '../client';
 import { focusedBitbucketPr } from './focusedBitbucketPr';
 import { PrDetailPanel } from './PrDetailPanel';
-import { LaunchedNotice } from '../../components/LaunchSessionPanel/LaunchedNotice';
+import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { PrInbox } from './PrInbox';
 import { useBitbucketPrs } from './useBitbucketPrs';
 
@@ -25,7 +25,6 @@ export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
   );
   const repo = useAppStore((state) => state.sessionBitbucketRepo[sessionId] ?? null);
   const sessionPr = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.pr ?? null);
-  const isLoading = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.loading ?? false);
   const error = useAppStore((state) => state.sessionBitbucketPr[sessionId]?.error ?? null);
   const refreshSessionBitbucketPr = useAppStore((state) => state.refreshSessionBitbucketPr);
   const selectSessionBitbucketPr = useAppStore((state) => state.selectSessionBitbucketPr);
@@ -115,13 +114,15 @@ export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
                 repo={repo}
                 sessionId={sessionId}
                 workspaceId={workspaceId}
-                isLoading={isLoading}
                 error={error}
                 onRefresh={pullRequests.refetch}
                 onClose={requestClose}
-                dock={
-                  <LaunchedNotice sessionId={sessionId} isLinkedToIssue onOpened={requestClose} />
-                }
+                frame={{
+                  primary: <OpenSessionButton sessionId={sessionId} onOpened={requestClose} />,
+                  sessionVerbs: [],
+                  onRefresh: null,
+                  onClose: null,
+                }}
               />
             }
           />

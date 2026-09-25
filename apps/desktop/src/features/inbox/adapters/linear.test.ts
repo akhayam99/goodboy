@@ -35,7 +35,8 @@ describe('adaptLinearIssues', () => {
       state: 'active',
       updatedAt: '2026-08-01T10:00:00Z',
       url: 'https://linear.app/goodboy/issue/ENG-42',
-      meta: 'Inbox',
+      stateLabel: 'In Progress',
+      context: 'Inbox',
       payload: { provider: 'linear', kind: 'issue', issue: issue(), sessionId },
     });
   });
@@ -51,7 +52,7 @@ describe('adaptLinearIssues', () => {
 
     const [record] = adaptLinearIssues({ groups });
 
-    expect(record?.meta).toBe('ENG');
+    expect(record?.context).toBe('ENG');
   });
 
   it.each([

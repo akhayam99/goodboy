@@ -17,6 +17,7 @@ type Props = {
   };
   readonly hasMaxModeAdvisory: boolean;
   readonly cliGate: CliGate | null;
+  readonly hiddenKeys?: ReadonlySet<ModelKey>;
   readonly onEffort: (level: EffortLevel) => void;
   readonly onModel: (modelKey: ModelKey) => void;
   readonly onVariant: (id: string) => void;
@@ -30,6 +31,7 @@ export const AxesSection = ({
   notice,
   hasMaxModeAdvisory,
   cliGate,
+  hiddenKeys,
   onEffort,
   onModel,
   onVariant,
@@ -52,6 +54,7 @@ export const AxesSection = ({
                 key={option.id}
                 label={option.label}
                 active={option.id === axis.activeId}
+                isHiddenInPicker={hiddenKeys?.has(option.modelKey) ?? false}
                 onSelect={() => onModel(option.modelKey)}
               />
             ))}

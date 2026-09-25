@@ -1,18 +1,12 @@
-import { LayoutTemplate } from 'lucide-react';
-import { ActionTile, Button, cn } from '@goodboy/ui';
+import { Button, cn } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { wireframeCreationAdapter } from '../../wireframeCreationAdapter';
-
-type CreateWireframeCtaVariant = 'compact' | 'tile';
-
-const WIREFRAME_TILE_DESCRIPTION = 'Draw the screen or flow you describe.';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly workflowRunId?: WorkflowRunId | null;
-  readonly variant?: CreateWireframeCtaVariant;
   readonly className?: string;
   readonly title?: string;
 };
@@ -20,25 +14,11 @@ type Props = {
 export const CreateWireframeCta = ({
   sessionId,
   workflowRunId = null,
-  variant = 'compact',
   className,
   title,
 }: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
   const open = () => openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId });
-
-  if (variant === 'tile') {
-    return (
-      <ActionTile
-        icon={<LayoutTemplate size={ICON_SIZE.hero} aria-hidden className="text-primary" />}
-        title="Create wireframe"
-        description={WIREFRAME_TILE_DESCRIPTION}
-        testId="create-wireframe-cta"
-        className={className}
-        onClick={open}
-      />
-    );
-  }
 
   return (
     <Button
@@ -49,7 +29,7 @@ export const CreateWireframeCta = ({
       title={title ?? wireframeCreationAdapter.ctaTitle}
       onClick={open}
     >
-      <LayoutTemplate size={ICON_SIZE.row} aria-hidden />
+      <CONCEPT_ICONS.wireframe size={ICON_SIZE.row} aria-hidden />
       Create wireframe
     </Button>
   );

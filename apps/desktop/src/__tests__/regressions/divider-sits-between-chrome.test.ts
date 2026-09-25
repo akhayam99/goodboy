@@ -42,14 +42,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactDetail.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactRunDetail.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/budget/components/spend/SessionBudgetContent.tsx': {
     count: 1,
@@ -83,17 +75,9 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/inbox/components/InboxStudio/InboxRail.tsx': {
+  'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
     count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrActionBar/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrChanges.tsx': {
-    count: 1,
-    reason: 'debt',
+    reason: 'chrome',
   },
   'apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/PrDetailPanel/PrThreadCard.tsx':
     { count: 1, reason: 'debt' },
@@ -143,11 +127,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/plans/components/PlanStudio/PlanProvenance.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/plans/components/PlanStudio/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {
     count: 1,
     reason: 'debt',
@@ -161,22 +140,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewFileDiff.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/review/components/ReviewPane/modes/ModeShell.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/scripts/components/ScriptsPanel/NewScriptCard.tsx': {
-    count: 3,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx': {
     count: 1,
     reason: 'debt',
   },
@@ -226,20 +189,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/wireframes/components/WireframeStudio/WireframeCanvasControls.tsx': {
-    count: 3,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/wireframes/components/WireframeStudio/WireframeStudioBody.tsx': {
-    count: 2,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workflows/components/RunSpendLimitPopover/index.tsx': {
     count: 2,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowComposer/index.tsx': {
-    count: 1,
     reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/ProjectFilter/index.tsx': {
@@ -276,19 +227,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioDetail/StudioDetailLayout.tsx': {
-    count: 2,
-    reason: 'chrome',
-  },
   'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
-  'apps/desktop/src/app/components/MockScene/scenes/ArtifactScenes.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,
     reason: 'debt',

@@ -5,6 +5,7 @@ export type { AgentEffort, AgentRole } from '@goodboy/types';
 
 export type RoleDefaults = {
   readonly description: string;
+  readonly summary: string;
   readonly fanOut: RoleFanOutCapability;
   readonly prompt?: string;
 };
@@ -50,6 +51,7 @@ export type RoleFanOutCapability = {
 export const ROLE_REGISTRY = {
   scout: {
     id: 'scout',
+    summary: 'Finds the files, callers and tests that matter. Never edits.',
     aliases: [],
     presentationKey: 'scout',
     defaultRoutingTaskType: 'exploration',
@@ -67,6 +69,7 @@ export const ROLE_REGISTRY = {
   },
   investigator: {
     id: 'investigator',
+    summary: 'Reproduces a failure and finds its root cause.',
     aliases: ['debugger'],
     presentationKey: 'debugger',
     defaultRoutingTaskType: 'debugging',
@@ -84,6 +87,7 @@ export const ROLE_REGISTRY = {
   },
   planner: {
     id: 'planner',
+    summary: 'Turns a goal into an ordered plan.',
     aliases: [],
     presentationKey: 'planner',
     defaultRoutingTaskType: 'planning',
@@ -101,6 +105,7 @@ export const ROLE_REGISTRY = {
   },
   implementer: {
     id: 'implementer',
+    summary: 'Writes the code for one part of the plan.',
     aliases: [],
     presentationKey: 'implementer',
     defaultRoutingTaskType: 'implementation',
@@ -118,6 +123,7 @@ export const ROLE_REGISTRY = {
   },
   reviewer: {
     id: 'reviewer',
+    summary: 'Reads the diff and reports problems. Never edits code.',
     aliases: [],
     presentationKey: 'reviewer',
     defaultRoutingTaskType: 'review',
@@ -135,6 +141,7 @@ export const ROLE_REGISTRY = {
   },
   tester: {
     id: 'tester',
+    summary: 'Writes and runs tests, reports failures.',
     aliases: [],
     presentationKey: 'tester',
     defaultRoutingTaskType: 'testing',
@@ -153,6 +160,7 @@ export const ROLE_REGISTRY = {
   },
   resolver: {
     id: 'resolver',
+    summary: 'Answers one review comment with one commit.',
     aliases: [],
     presentationKey: 'resolver',
     defaultRoutingTaskType: 'implementation',
@@ -170,6 +178,7 @@ export const ROLE_REGISTRY = {
   },
   docs: {
     id: 'docs',
+    summary: 'Updates repository documentation.',
     aliases: ['writer'],
     presentationKey: 'docs',
     defaultRoutingTaskType: 'writing',
@@ -189,6 +198,7 @@ export const ROLE_REGISTRY = {
   },
   report: {
     id: 'report',
+    summary: 'Writes a report you asked for from the evidence.',
     aliases: [],
     presentationKey: 'report',
     defaultRoutingTaskType: 'writing',
@@ -206,6 +216,7 @@ export const ROLE_REGISTRY = {
   },
   wireframe: {
     id: 'wireframe',
+    summary: 'Draws a wireframe from product evidence.',
     aliases: [],
     presentationKey: 'wireframe',
     defaultRoutingTaskType: 'planning',
@@ -223,6 +234,7 @@ export const ROLE_REGISTRY = {
   },
   custom: {
     id: 'custom',
+    summary: 'Any agent you start without a role.',
     aliases: ['generic'],
     presentationKey: 'generic',
     defaultRoutingTaskType: 'general',

@@ -126,10 +126,10 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             ) : (
               <li
                 key={c.id}
-                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-3 transition-colors hover:bg-hover"
+                className="group flex items-center gap-3 rounded-lg border border-border-soft bg-elevated p-3 transition-colors hover:border-border"
               >
                 <span
-                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md bg-fill text-muted-foreground"
                   aria-hidden
                 >
                   <KeyRound size={ICON_SIZE.control} />

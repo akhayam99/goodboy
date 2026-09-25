@@ -1,7 +1,6 @@
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
-import { StudioDetailLayout } from '../../../../../../shared/components/StudioDetail';
-import { HeaderBand } from '@goodboy/ui';
 import { LensEmptyState } from '@goodboy/ui';
+import { PaneShell } from '../../../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
 import { SlackThreadDetail } from '../../../../../integrations/slack/SlackThreadDetail';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
@@ -16,16 +15,10 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
 
   if (parsed == null) {
     return (
-      <StudioDetailLayout
-        fit="fill"
-        header={
-          <HeaderBand
-            title={task.title}
-            meta={
-              <span className="font-mono text-2xs text-muted-foreground">{task.identifier}</span>
-            }
-          />
-        }
+      <PaneShell
+        scroll="body"
+        title={task.title}
+        meta={<span className="font-mono">{task.identifier}</span>}
       >
         <LensEmptyState
           icon={CONCEPT_ICONS.slack}
@@ -33,7 +26,7 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
           title="This link no longer points at a thread"
           description="Unlink it and paste the Slack permalink again."
         />
-      </StudioDetailLayout>
+      </PaneShell>
     );
   }
 
@@ -45,7 +38,6 @@ export const SlackTaskDetail = ({ workspaceId, task }: Props) => {
       fallbackChannelName={task.identifier.replace(/^#/, '')}
       fallbackMessage={null}
       fallbackUrl={task.url}
-      fit="fill"
     />
   );
 };

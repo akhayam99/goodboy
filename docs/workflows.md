@@ -94,8 +94,15 @@ later generated title never replaces it, and the preset keeps its own name.
 
 A workflow you are still building stays there when you switch sessions. It
 goes away once you create it or discard it. **Workflow Studio** is where you
-keep presets and the step library. It can also import a custom workflow from
-another workspace.
+keep presets. Its home is one list: **New workflow**, **Import**, and a menu to
+restore the built-in workflows. **Import** lists the custom presets of every
+other workspace, grouped by workspace, and copies all the checked ones at once.
+A copy whose name is taken here gets its workspace name added, for example
+`Settlement replay (Northwind)`. Built-in rows say **Built in**, and **Edited** once you change them.
+A row opens the editor: the builder without its launch bar, with the same step
+tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
+agent to write the steps from the goal. With steps already there it reads
+**Redraft steps**, asks first, and offers an undo once the new steps land.
 
 ### When a run starts
 
@@ -361,6 +368,7 @@ Everything below is the code behind the sections above.
 - `apps/desktop/src/features/workflows/runProviderPool.ts`: reads the provider pool of the run an agent belongs to
 - `apps/desktop/src/features/session/components/WorkflowBuilderView/`: the builder. It draws the plan with the shared step tree
 - `apps/desktop/src/features/workflows/components/StepTree/`: the step tree (`StepTree`, `StepRow`, `StepEditor`). It draws steps with `WorkNode` and `WorkMeta`, and `StepEditor` mounts `RoutingPicker` with `presentation="inline"`. Polish and the estimate note are optional, so a host without a session leaves them out
+- `apps/desktop/src/features/workflows/components/WorkflowsPanel/`: the Studio. `useWorkflowEditor` owns the open workflow, autosave and Draft steps; `WorkflowStudio/WorkflowList` is the home and `WorkflowStudio/WorkflowEditor` the editor on the step tree. The Studio leaves the time and cost columns empty: a preset has no run to estimate from
 - `apps/desktop/src/store/slices/workflows/suggestWorkflowTitle.ts`: the name suggestion from the goal. It only returns text; `generateWorkflowTitle` renames a saved orchestrated run that started on the fallback name
 - `apps/desktop/src/store/slices/workflows/summarizeWorkflowAgentOutput.ts`: the summarizer that runs after each step
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows

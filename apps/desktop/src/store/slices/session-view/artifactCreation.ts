@@ -30,7 +30,6 @@ export const openArtifactCreation = (set: SetFn, get: GetFn) => {
     }
     get().setActiveLens(sessionId, 'plans');
     set((s) => ({
-      focusedPlanId: { ...s.focusedPlanId, [sessionId]: null },
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
       artifactCreation: { ...s.artifactCreation, [sessionId]: { kind, note } },
     }));

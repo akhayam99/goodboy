@@ -103,31 +103,6 @@ export const wireframeScoutProgress = ({
       };
     });
 
-const STATE_WORD: Record<WireframeScoutProgressState, string> = {
-  queued: 'queued',
-  running: 'running',
-  done: 'done',
-  skipped: 'skipped',
-  failed: 'failed',
-};
-
-export const wireframeScoutLine = ({
-  scout,
-}: Readonly<{ scout: WireframeScoutProgress }>): string => {
-  const state =
-    scout.state === 'done' || scout.detail === null
-      ? STATE_WORD[scout.state]
-      : `${STATE_WORD[scout.state]}: ${scout.detail}`;
-  const parts = [scout.name, state];
-  if (scout.state === 'done' && scout.detail !== null) {
-    parts.push(scout.detail);
-  }
-  if (scout.claims !== null) {
-    parts.push(scout.claims);
-  }
-  return parts.join(' \u00b7 ');
-};
-
 export const hasLiveWireframeScout = ({
   scouts,
 }: Readonly<{ scouts: ReadonlyArray<WireframeScoutProgress> }>): boolean =>

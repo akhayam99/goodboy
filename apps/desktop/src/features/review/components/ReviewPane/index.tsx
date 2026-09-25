@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PANE_RHYTHM, cn } from '@goodboy/ui';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   PrCheckRun,
   PrComment,
@@ -14,7 +13,8 @@ import { selectActiveProjectPrs } from '../../../../store/slices/github/activePr
 import { selectPrWrite } from '../../../../store/slices/pr-writes/selectPrWrite';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useToast } from '../../../../app/components/Toast';
-import { StudioDetailLayout } from '../../../../shared/components/StudioDetail';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -42,19 +42,25 @@ import { ChecksMode } from './modes/ChecksMode';
 import { CreatePrMode } from './modes/CreatePrMode';
 import { PrActivityMode } from './modes/PrActivityMode';
 import { PrDetailsMode } from './modes/PrDetailsMode';
-import { WriteReviewMode } from './modes/WriteReviewMode';
+import { WriteReview } from './WriteReview';
 import { PublishBar } from './WriteReview/PublishBar';
 
 type Props = {
   readonly session: Session;
-  readonly eyebrow?: ReactNode;
 };
 
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const EMPTY_PRS: ReadonlyArray<PullRequestState> = [];
-export const ReviewPane = ({ session, eyebrow }: Props) => {
+const REVIEW_TITLE = 'Review';
+
+export const ReviewPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const [mode, setMode] = useState<ReviewMode>('queue');
+  const mode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
+  const setReviewMode = useAppStore((s) => s.setReviewMode);
+  const setMode = useCallback(
+    (next: ReviewMode) => setReviewMode({ sessionId, mode: next }),
+    [sessionId, setReviewMode],
+  );
   const [isBusy, setIsBusy] = useState(false);
   const [lifecycleBusy, setLifecycleBusy] = useState<PrLifecycleBusy>(null);
   const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
@@ -113,6 +119,8 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
 
+  useEffect(() => () => setReviewMode({ sessionId, mode: 'queue' }), [sessionId, setReviewMode]);
+
   useEffect(() => {
     if (reviewTarget === null || reviewTarget.status === 'pending') {
       return;
@@ -122,7 +130,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
     if (reviewTarget.status === 'ready' && targetThreadId === null) {
       consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
     }
-  }, [consumeReviewTarget, reviewTarget, sessionId]);
+  }, [consumeReviewTarget, reviewTarget, sessionId, setMode]);
 
   const onMutated = useCallback(() => {
     void refreshSessionPr(sessionId, { force: true });
@@ -224,44 +232,43 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
 
   if (pr === null && (!isGithubConnected || repo === null)) {
     return (
-      <StudioDetailLayout header={<div />} eyebrow={eyebrow} fit="bleed">
-        <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
-          <GithubConnectionEmptyState
-            workspaceId={session.workspaceId}
-            isConnected={isGithubConnected}
-            onConnected={() => void githubConnection.refresh()}
-          />
-        </div>
-      </StudioDetailLayout>
+      <PaneShell title={REVIEW_TITLE} icon={CONCEPT_ICONS.review}>
+        <GithubConnectionEmptyState
+          workspaceId={session.workspaceId}
+          isConnected={isGithubConnected}
+          onConnected={() => void githubConnection.refresh()}
+        />
+      </PaneShell>
+    );
+  }
+
+  if (pr === null && mode === 'create_pr') {
+    return (
+      <PaneShell title="New pull request" icon={CONCEPT_ICONS.review}>
+        <CreatePrMode
+          sessionId={sessionId}
+          defaultTitle={session.goal}
+          closedPr={null}
+          onCreated={() => {
+            setMode('queue');
+            onMutated();
+          }}
+          onCancel={() => setMode('queue')}
+        />
+      </PaneShell>
     );
   }
 
   if (pr === null) {
     return (
-      <StudioDetailLayout header={<div />} eyebrow={eyebrow} fit="bleed">
-        {mode === 'create_pr' ? (
-          <CreatePrMode
-            sessionId={sessionId}
-            defaultTitle={session.goal}
-            closedPr={null}
-            onBack={() => setMode('queue')}
-            onCreated={() => {
-              setMode('queue');
-              onMutated();
-            }}
-            onCancel={() => setMode('queue')}
-          />
-        ) : (
-          <div className={cn('flex min-h-0 flex-1 flex-col', PANE_RHYTHM.body)}>
-            <NoPullRequestState
-              isDraftAgentRunning={isDraftAgentRunning}
-              onDraft={() =>
-                isDraftAgentRunning ? setActiveLens(sessionId, 'agents') : setMode('create_pr')
-              }
-            />
-          </div>
-        )}
-      </StudioDetailLayout>
+      <PaneShell title={REVIEW_TITLE} icon={CONCEPT_ICONS.review}>
+        <NoPullRequestState
+          isDraftAgentRunning={isDraftAgentRunning}
+          onDraft={() =>
+            isDraftAgentRunning ? setActiveLens(sessionId, 'agents') : setMode('create_pr')
+          }
+        />
+      </PaneShell>
     );
   }
 
@@ -303,15 +310,12 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
     />
   );
 
-  const backToQueue = () => setMode('queue');
-
   const surface =
     mode === 'pr_details' ? (
       <PrDetailsMode
         sessionId={sessionId}
         pr={pr}
         detail={github?.detail ?? null}
-        onBack={backToQueue}
         onSelectLens={(lens) => setActiveLens(sessionId, lens)}
         onMutated={onMutated}
       />
@@ -320,25 +324,18 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         pr={pr}
         comments={comments}
         localNotes={localNotes}
-        onBack={backToQueue}
         onOpenUrl={(url) => void openUrl(url)}
         onOpenConversations={() => setMode('queue')}
         onOpenLocalNotes={() => openDiffLens(sessionId, { kind: 'working', path: null })}
         onFix={startGeneralFix}
       />
     ) : mode === 'checks' ? (
-      <ChecksMode
-        checks={checks}
-        fallbackUrl={pr.url}
-        onBack={backToQueue}
-        onOpenUrl={(url) => void openUrl(url)}
-      />
+      <ChecksMode checks={checks} fallbackUrl={pr.url} onOpenUrl={(url) => void openUrl(url)} />
     ) : mode === 'create_pr' ? (
       <CreatePrMode
         sessionId={sessionId}
         defaultTitle={session.goal}
         closedPr={isClosed ? { number: pr.number, url: pr.url } : null}
-        onBack={backToQueue}
         onCreated={() => {
           setMode('queue');
           onMutated();
@@ -346,7 +343,7 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
         onCancel={() => setMode('pr_details')}
       />
     ) : mode === 'write_review' ? (
-      <WriteReviewMode session={session} listWidth={listWidth} onBack={backToQueue} />
+      <WriteReview session={session} listWidth={listWidth} />
     ) : null;
 
   const dock =
@@ -367,14 +364,12 @@ export const ReviewPane = ({ session, eyebrow }: Props) => {
     );
 
   if (mode === 'queue') {
-    return <ResolveQueueHome session={session} header={header} eyebrow={eyebrow} dock={dock} />;
+    return <ResolveQueueHome session={session} header={header} dock={dock} />;
   }
 
   return (
-    <StudioDetailLayout header={header} eyebrow={eyebrow} fit="bleed" dock={dock}>
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">{surface}</div>
-      </div>
-    </StudioDetailLayout>
+    <PaneShell header={header} scroll={mode === 'write_review' ? 'self' : 'body'} dock={dock}>
+      {surface}
+    </PaneShell>
   );
 };

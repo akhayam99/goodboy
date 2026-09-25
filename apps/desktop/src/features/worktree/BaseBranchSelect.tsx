@@ -33,7 +33,7 @@ export const BaseBranchSelect = ({
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'flex h-7 min-w-0 items-center gap-1 rounded-md border border-border-soft bg-background px-2 font-mono text-xs text-foreground hover:border-border-strong hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-7 min-w-0 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground hover:border-border-strong hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50',
             value == null && 'text-muted-foreground',
           )}
         >

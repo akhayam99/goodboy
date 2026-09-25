@@ -93,6 +93,7 @@ export const ANTHROPIC_CATALOG = [
   },
   {
     key: 'opus-4.7',
+    legacy: true,
     label: 'Opus 4.7',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -110,6 +111,7 @@ export const ANTHROPIC_CATALOG = [
   },
   {
     key: 'opus-4.6',
+    legacy: true,
     label: 'Opus 4.6',
     tier: 'turn',
     contextWindow: 200_000,
@@ -161,6 +163,7 @@ export const ANTHROPIC_CATALOG = [
   },
   {
     key: 'sonnet-4.5',
+    legacy: true,
     label: 'Sonnet 4.5',
     tier: 'turn',
     contextWindow: 200_000,

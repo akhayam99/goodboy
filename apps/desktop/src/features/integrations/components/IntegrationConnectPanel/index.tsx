@@ -23,7 +23,7 @@ export const IntegrationConnectPanel = ({
 }: Props) => {
   const Heading = headingLevel == null ? 'p' : HEADING_TAG[headingLevel];
   return (
-    <section className="m-auto flex w-full min-w-0 max-w-md flex-col gap-3 rounded-lg border border-border-soft bg-background p-5 shadow-sm">
+    <section className="m-auto flex w-full min-w-0 max-w-md flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-5">
       <div className="flex items-center gap-2.5">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />
         <Heading className="text-sm font-semibold text-foreground">

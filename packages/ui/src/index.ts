@@ -17,6 +17,11 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
+  RIGHT_DRAWER_DEFAULT,
+  RIGHT_DRAWER_MAX,
+  RIGHT_DRAWER_MIN,
+  RIGHT_DRAWER_STORAGE_KEY,
+  canDrawerPush,
 } from './components/AppShell';
 export { DrawerFrame } from './components/DrawerFrame';
 export type { DrawerFrameProps } from './components/DrawerFrame';
@@ -121,8 +126,6 @@ export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { InlineMarkdown } from './components/Markdown/InlineMarkdown';
 export { MetaRow } from './components/MetaRow';
 export type { MetaRowProps } from './components/MetaRow';
-export { ActionTile } from './components/ActionTile';
-export type { ActionTileProps } from './components/ActionTile';
 export { AnchoredPopover } from './components/AnchoredPopover';
 export type { AnchoredPopoverProps } from './components/AnchoredPopover';
 export { TermHint } from './components/TermHint';

@@ -122,7 +122,9 @@ describe('OrchestratorRoutingRow', () => {
 
     renderRow(run());
 
-    expect(screen.getByRole('button', { name: /^Orchestrator routing: Cursor/ })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /^Orchestrator routing: Auto, now Cursor/ }),
+    ).toBeTruthy();
   });
 
   it('shows automatic routing when the stored model is unknown', () => {
@@ -131,7 +133,7 @@ describe('OrchestratorRoutingRow', () => {
     const trigger = screen.getByRole('button', { name: /^Orchestrator routing:/ });
     expect(trigger.getAttribute('aria-label')).not.toContain('retired-model');
     openPicker();
-    screen.getByRole('button', { name: /^Auto / });
+    screen.getByRole('button', { name: /^Auto, now / });
     screen.getByText(
       'Follows the workspace default provider. Goodboy picks the model this task needs.',
     );

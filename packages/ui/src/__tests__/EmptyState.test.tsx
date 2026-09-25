@@ -21,7 +21,7 @@ describe('EmptyState', () => {
 
     expect(smallState?.className).toContain('gap-3 px-6 py-10');
     expect(smallState?.className).not.toContain('border-dashed');
-    expect(smallState?.querySelector('.bg-muted')).toBeTruthy();
+    expect(smallState?.querySelector('.bg-fill')).toBeTruthy();
     expect(largeState?.className).toContain('gap-6 px-8 py-10');
   });
 

@@ -13,9 +13,12 @@ import {
   gitlabMergeRequestFields,
   linearIssueFields,
   resolveDetailFields,
+  resolveFacts,
   sentryIssueFields,
+  slackThreadFields,
   type ResolvedDetailFields,
 } from '.';
+import type { ResolvedFact } from './factTypes';
 import type { SentryIssueProperties } from './sentryIssueFields';
 import type { DetailEntry } from './types';
 
@@ -31,10 +34,6 @@ const nodeText = (node: ReactNode): string => {
     return nodeText(node.props.children);
   }
   return '';
-};
-
-const entryTextByKey = (entries: ResolvedDetailFields): Record<string, string> => {
-  return Object.fromEntries(entries.map((entry) => [entry.key, nodeText(entry.node)]));
 };
 
 type ForgedDetailFields = ReadonlyArray<DetailEntry> & {
@@ -58,15 +57,16 @@ const LINEAR_ISSUE: LinearIssue = {
 };
 
 const SENTRY_ISSUE: SentryIssueProperties = {
+  level: 'error',
   culprit: 'api/items',
-  status: 'unresolved',
   count: '128',
   userCount: 9,
-  firstSeen: '2026-07-01T09:00:00Z',
   lastSeen: '2026-07-23T10:00:00Z',
   tags: [
     { key: 'release', value: 'desktop@1.2.3' },
     { key: 'environment', value: 'production' },
+    { key: 'os', value: 'macOS' },
+    { key: 'browser', value: 'Safari' },
   ],
 };
 
@@ -125,97 +125,133 @@ const GITLAB_MR: GitlabMergeRequest = {
   updatedAt: '2026-07-22T10:00:00Z',
 };
 
-describe('detail field registries', () => {
-  it('pins one ordered field set per entity type', () => {
-    expect(linearIssueFields.map((field) => field.key)).toEqual([
-      'priority',
-      'assignee',
-      'team',
-      'project',
+const factText = (facts: ReadonlyArray<ResolvedFact>): Record<string, string> =>
+  Object.fromEntries(facts.map((fact) => [fact.key, nodeText(fact.node)]));
+
+describe('fact registries', () => {
+  it('resolves every tool in the canonical slot order', () => {
+    const slotsOf = (facts: ReadonlyArray<ResolvedFact>) => facts.map((fact) => fact.slot);
+
+    expect(slotsOf(resolveFacts({ registry: linearIssueFields, entity: LINEAR_ISSUE }))).toEqual([
+      'person',
+      'weight',
+      'place',
       'labels',
-      'linkedPullRequests',
-      'updated',
+      'time',
     ]);
-    expect(sentryIssueFields.map((field) => field.key)).toEqual([
-      'culprit',
-      'status',
-      'events',
-      'users',
-      'firstSeen',
-      'lastSeen',
-      'tags',
+    expect(slotsOf(resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }))).toEqual([
+      'weight',
+      'place',
+      'labels',
+      'labels',
+      'labels',
+      'measure',
+      'time',
     ]);
-    expect(githubIssueFields.map((field) => field.key)).toEqual(['labels', 'updated']);
+    expect(slotsOf(resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }))).toEqual([
+      'place',
+      'labels',
+      'time',
+    ]);
+    expect(slotsOf(resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }))).toEqual([
+      'place',
+      'labels',
+      'time',
+    ]);
+    expect(
+      slotsOf(
+        resolveFacts({
+          registry: gitlabMergeRequestFields,
+          entity: { mr: GITLAB_MR, approval: null },
+        }),
+      ),
+    ).toEqual(['place', 'time']);
+  });
+
+  it('writes each fact once, in the words of the tool', () => {
+    const linear = factText(resolveFacts({ registry: linearIssueFields, entity: LINEAR_ISSUE }));
+    expect(linear.assignee).toBe('Grace Hopper');
+    expect(linear.place).toBe('GB › Desktop');
+
+    const sentry = factText(resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }));
+    expect(sentry.events).toBe('128 events · 9 users');
+    expect(sentry.culprit).toBe('api/items');
+
+    const gitlab = factText(resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }));
+    expect(gitlab.place).toBe('acme/web › v1.3');
+
+    const mr = factText(
+      resolveFacts({
+        registry: gitlabMergeRequestFields,
+        entity: {
+          mr: GITLAB_MR,
+          approval: {
+            approvalsRequired: 2,
+            approvalsLeft: 1,
+            userHasApproved: false,
+            userCanApprove: true,
+            approvedBy: [],
+          },
+        },
+      }),
+    );
+    expect(mr.branches).toBe('ak/fix-importer → main');
+    expect(mr.approvals).toBe('1 of 2 approvals');
+  });
+
+  it('never repeats the slack channel the identifier already names', () => {
+    expect(slackThreadFields.place).toBeUndefined();
+  });
+
+  it('keeps at most three sentry tags', () => {
+    const tags = resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }).filter(
+      (fact) => fact.slot === 'labels',
+    );
+
+    expect(tags.map((fact) => nodeText(fact.node))).toEqual([
+      'release: desktop@1.2.3',
+      'environment: production',
+      'os: macOS',
+    ]);
+  });
+
+  it('shows time as a relative age with the absolute date in the hint', () => {
+    const [time] = resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }).filter(
+      (fact) => fact.slot === 'time',
+    );
+
+    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITHUB_ISSUE.updatedAt })}`);
+  });
+
+  it('leaves no empty pill for a fact the payload does not carry', () => {
+    const sparse = resolveFacts({
+      registry: linearIssueFields,
+      entity: {
+        ...LINEAR_ISSUE,
+        assignee: null,
+        priority: 0,
+        project: null,
+        labels: { nodes: [] },
+        updatedAt: 'not-a-date',
+      },
+    });
+
+    expect(sparse.map((fact) => fact.key)).toEqual(['place']);
+  });
+});
+
+describe('detail field registries', () => {
+  it('pins the pull request fields in order', () => {
     expect(githubPullRequestFields.map((field) => field.key)).toEqual([
       'baseBranch',
       'review',
       'updated',
     ]);
-    expect(gitlabIssueFields.map((field) => field.key)).toEqual(['milestone', 'labels', 'updated']);
-    expect(gitlabMergeRequestFields.map((field) => field.key)).toEqual([
-      'sourceBranch',
-      'targetBranch',
-      'mergeStatus',
-      'draft',
-      'updated',
-    ]);
-  });
-
-  it('resolves every entity in registry order', () => {
-    expect(
-      resolveDetailFields({ registry: linearIssueFields, entity: LINEAR_ISSUE }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Priority', 'Assignee', 'Team', 'Project', 'Labels', 'Updated']);
-    expect(
-      resolveDetailFields({ registry: sentryIssueFields, entity: SENTRY_ISSUE }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual([
-      'Culprit',
-      'Status',
-      'Events',
-      'Users',
-      'First seen',
-      'Last seen',
-      'release',
-      'environment',
-    ]);
-    expect(
-      resolveDetailFields({ registry: githubIssueFields, entity: GITHUB_ISSUE }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Labels', 'Updated']);
     expect(
       resolveDetailFields({ registry: githubPullRequestFields, entity: GITHUB_PR }).map(
         (entry) => entry.label,
       ),
     ).toEqual(['Base branch', 'Review', 'Updated']);
-    expect(
-      resolveDetailFields({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Milestone', 'Labels', 'Updated']);
-    expect(
-      resolveDetailFields({ registry: gitlabMergeRequestFields, entity: GITLAB_MR }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Source branch', 'Target branch', 'Merge status', 'Updated']);
-  });
-
-  it('pins every sentry field to its own value, never a neighboring one', () => {
-    const text = entryTextByKey(
-      resolveDetailFields({ registry: sentryIssueFields, entity: SENTRY_ISSUE }),
-    );
-
-    expect(text.culprit).toBe(SENTRY_ISSUE.culprit);
-    expect(text.status).toBe(SENTRY_ISSUE.status);
-    expect(text.events).toBe(SENTRY_ISSUE.count);
-    expect(text.users).toBe(String(SENTRY_ISSUE.userCount));
-    expect(text.firstSeen).toBe(formatAbsoluteDateTime({ iso: SENTRY_ISSUE.firstSeen ?? '' }));
-    expect(text.lastSeen).toBe(formatAbsoluteDateTime({ iso: SENTRY_ISSUE.lastSeen ?? '' }));
-    expect(text.events).not.toBe(text.users);
-    expect(text.firstSeen).not.toBe(text.lastSeen);
   });
 
   it('only a resolver run carries the resolved brand', () => {
@@ -229,45 +265,12 @@ describe('detail field registries', () => {
     expect(resolvedIsAssignable).toBe(true);
   });
 
-  it('drops the fields a heterogeneous payload does not carry', () => {
-    const sparse = resolveDetailFields({
-      registry: linearIssueFields,
-      entity: { ...LINEAR_ISSUE, assignee: null, project: null, labels: { nodes: [] } },
-    });
-
-    expect(sparse.map((entry) => entry.label)).toEqual(['Priority', 'Team', 'Updated']);
-  });
-
-  it('drops a field whose value is an empty string', () => {
-    const sparse = resolveDetailFields({
-      registry: gitlabMergeRequestFields,
-      entity: { ...GITLAB_MR, updatedAt: 'not-a-date', state: 'merged' },
-    });
-
-    expect(sparse.map((entry) => entry.label)).toEqual(['Source branch', 'Target branch']);
-  });
-
   it('drops a blank value the registry wrapped in an element', () => {
-    expect(
-      resolveDetailFields({
-        registry: gitlabMergeRequestFields,
-        entity: { ...GITLAB_MR, sourceBranch: '', targetBranch: '   ' },
-      }).map((entry) => entry.label),
-    ).toEqual(['Merge status', 'Updated']);
     expect(
       resolveDetailFields({
         registry: githubPullRequestFields,
         entity: { ...GITHUB_PR, baseBranch: '' },
       }).map((entry) => entry.label),
     ).toEqual(['Review', 'Updated']);
-  });
-
-  it('keeps a draft merge request row only while it is a draft', () => {
-    expect(
-      resolveDetailFields({
-        registry: gitlabMergeRequestFields,
-        entity: { ...GITLAB_MR, draft: true },
-      }).map((entry) => entry.label),
-    ).toContain('Draft');
   });
 });

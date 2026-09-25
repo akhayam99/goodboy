@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyScript, groupScriptsByCategory, SCRIPT_CATEGORIES } from './classifyScript';
+import { classifyScript, SCRIPT_CATEGORIES } from './classifyScript';
 
 describe('classifyScript', () => {
   it.each([
@@ -52,19 +52,5 @@ describe('classifyScript', () => {
       'docs',
       'other',
     ]);
-  });
-
-  it('groups scripts by category in one pass and omits empty categories', () => {
-    const groups = groupScriptsByCategory({
-      scripts: [
-        { name: 'dev', command: 'vite' },
-        { name: 'test:unit', command: 'vitest' },
-        { name: 'test:e2e', command: 'playwright test' },
-      ],
-    });
-
-    expect(groups.get('dev')?.map((script) => script.name)).toEqual(['dev']);
-    expect(groups.get('test')?.map((script) => script.name)).toEqual(['test:unit', 'test:e2e']);
-    expect(groups.has('other')).toBe(false);
   });
 });

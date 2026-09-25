@@ -1,5 +1,6 @@
 import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
 import type { InboxRecord } from '../types';
+import { stateWord } from '../stateWord';
 
 type Params = { readonly groups: ReadonlyArray<GithubIssueGroup> };
 
@@ -20,10 +21,11 @@ export const adaptGithubIssues = ({ groups }: Params): InboxRecord[] =>
       kind: 'issue',
       identifier: `#${issue.number}`,
       title: issue.title,
-      state: 'open',
+      state: issue.state.toUpperCase() === 'CLOSED' ? 'done' : 'open',
+      stateLabel: stateWord({ value: issue.state }),
       updatedAt: issue.updatedAt,
       url: issue.url,
-      meta: repoOf({ url: issue.url }),
+      context: repoOf({ url: issue.url }),
       payload: { provider: 'github', kind: 'issue', issue, sessionId },
     })),
   );

@@ -1,6 +1,5 @@
 import { SectionHeader, cn } from '@goodboy/ui';
 import type { Session, WorkflowRunId } from '@goodboy/types';
-import { ScriptsSection } from '../../../scripts/components/ScriptsSection';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { StandaloneAgentsLane } from '../StandaloneAgentsLane';
@@ -128,7 +127,6 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
             <p className="px-2 text-2xs text-danger">{section.spawnError}</p>
           )}
           <PlanReadySuggestion task={task} />
-          <ScriptsSection sessionId={task.id} workspaceId={task.workspaceId} />
         </>
       )}
     </section>

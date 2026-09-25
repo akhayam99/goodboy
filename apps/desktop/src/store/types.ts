@@ -263,7 +263,7 @@ export type AppState = AppSliceState & {
   readonly sessions: ReadonlyArray<Session>;
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
-  readonly pendingTitleFocusSessionId: SessionId | null;
+  readonly pendingKickoffFocusSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
@@ -426,7 +426,6 @@ export type AppState = AppSliceState & {
   >;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
-  readonly focusedPlanId: Readonly<Record<SessionId, PlanId | null>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;

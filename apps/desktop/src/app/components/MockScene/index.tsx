@@ -31,7 +31,6 @@ import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
 import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
 import {
   ScriptsLensScene,
-  ScriptsSidebarScene,
   ResolveQueueShellScene,
   ResolvePublishBlockedScene,
   ArtifactsLensShellScene,
@@ -98,7 +97,6 @@ export const MOCK_SCENES = {
   transcript: TranscriptScene,
   'command-palette': CommandPaletteScene,
   'scripts-lens': ScriptsLensScene,
-  'scripts-sidebar': ScriptsSidebarScene,
   'resolve-queue-shell': ResolveQueueShellScene,
   'resolve-publish-blocked': ResolvePublishBlockedScene,
   'artifacts-lens-shell': ArtifactsLensShellScene,

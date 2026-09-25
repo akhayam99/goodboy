@@ -36,7 +36,7 @@ export const createSessionsSlice = (set: SetFn, get: GetFn) => {
     bulkUnarchiveTask: bulkUnarchiveTask(set, get),
     createSession: createSession(set, get),
     createUntitledSession: createUntitledSession(set, get),
-    clearPendingTitleFocus: () => set({ pendingTitleFocusSessionId: null }),
+    clearPendingKickoffFocus: () => set({ pendingKickoffFocusSessionId: null }),
     linkSessionExternalTask: linkSessionExternalTask({ set, get }),
     unlinkSessionExternalTask: unlinkSessionExternalTask({ set, get }),
     setCurrentSession: setCurrentSession(set, get),

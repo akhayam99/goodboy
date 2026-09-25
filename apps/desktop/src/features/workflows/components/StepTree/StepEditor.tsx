@@ -182,6 +182,7 @@ export const StepEditor = ({
             model={step.model}
             effort={{ editable: true, value: effort, onChange: onEffort }}
             recommendation={{ provider: recommendedProvider, model: recommendedModel }}
+            recommendationKind="auto"
             verbosity={step.verbosity}
             onVerbosity={onVerbosity}
             disabled={disabled}

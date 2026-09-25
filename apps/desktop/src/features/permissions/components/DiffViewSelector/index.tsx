@@ -322,7 +322,7 @@ export const DiffViewSelector = ({
           onClick={toggle}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs',
-            'hover:border-foreground/30 hover:bg-hover',
+            'hover:border-border-strong hover:bg-hover',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           )}
           title="Change diff view"

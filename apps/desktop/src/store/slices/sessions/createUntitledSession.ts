@@ -19,7 +19,7 @@ export const createUntitledSession = (set: SetFn, get: GetFn) => {
       goal: title,
       omitGoalSlot: true,
     });
-    set({ pendingTitleFocusSessionId: result.session.id });
+    set({ pendingKickoffFocusSessionId: result.session.id });
     return result;
   };
 };

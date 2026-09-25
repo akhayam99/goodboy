@@ -256,6 +256,30 @@ afterEach(() => {
   });
 });
 
+describe('ChatInput, first message', () => {
+  it('asks the role question and takes focus before an agent has any turn', () => {
+    mockStore.setState({
+      sessionPhaseRuns: { 'session-1': [{ id: 'agent-1', name: 'Scout', kind: 'scout' }] },
+    });
+    render(<ChatInput session={makeSession()} />);
+    const textarea = screen.getByRole('textbox');
+
+    expect(textarea.getAttribute('placeholder')).toBe('What should Scout look into?');
+    expect(document.activeElement).toBe(textarea);
+  });
+
+  it('keeps the general placeholder once the agent has a turn', () => {
+    mockStore.setState({
+      sessionPhaseRuns: { 'session-1': [{ id: 'agent-1', name: 'Scout', kind: 'scout' }] },
+      agentRunHistory: { 'agent-1': [{}] } as unknown as Record<string, never>,
+    });
+    render(<ChatInput session={makeSession()} />);
+
+    expect(screen.getByRole('textbox').getAttribute('placeholder')).toContain('Message Claude');
+    mockStore.setState({ agentRunHistory: {} });
+  });
+});
+
 describe('ChatInput, input wiring', () => {
   it('typed characters appear in the textarea', async () => {
     const user = userEvent.setup();

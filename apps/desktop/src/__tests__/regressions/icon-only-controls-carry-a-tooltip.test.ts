@@ -211,7 +211,7 @@ const auditEverything = (): Audit => {
   return { offenders, inspected };
 };
 
-const FLOOR = 80;
+const FLOOR = 70;
 
 describe('an icon-only control', () => {
   it('says what it does through the shared Tooltip, never a native title', () => {

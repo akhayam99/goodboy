@@ -134,6 +134,7 @@ vi.mock('../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,
 }));
 
+import { PageCrumbContext } from '../../../../../shared/components/PaneShell/PageCrumbContext';
 import { PrPane } from './PrPane';
 
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
@@ -247,14 +248,19 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
-  it('renders the session eyebrow above the host title', () => {
+  it('renders the session crumb above the host title, in the same column', () => {
     h.remoteKind = 'gitlab';
 
-    render(<PrPane session={session} eyebrow={<span>Ship the lens eyebrow</span>} />);
+    render(
+      <PageCrumbContext.Provider value={<span>Session crumb</span>}>
+        <PrPane session={session} />
+      </PageCrumbContext.Provider>,
+    );
 
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const crumb = screen.getByText('Session crumb');
     const title = screen.getByRole('heading', { level: 1 });
-    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(crumb.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(crumb.closest('[data-page-column]')).toBe(title.closest('[data-page-column]'));
   });
 
   it('names the host it is actually pointed at', () => {

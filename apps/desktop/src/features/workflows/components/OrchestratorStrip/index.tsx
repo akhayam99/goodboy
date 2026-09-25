@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Play, RotateCcw, Wallet } from 'lucide-react';
 import { ClampedProse, StatusDot, cn, tintClasses } from '@goodboy/ui';
-import type { Tone } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   Agent,
@@ -40,13 +39,6 @@ const EMPTY_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 const EMPTY_HINTS: ReadonlyArray<OrchestratorHint> = [];
 const EMPTY_READING: ReadonlyArray<string> = [];
-
-const RAIL: Partial<Record<Tone, string>> = {
-  info: 'border-l-info',
-  warning: 'border-l-warning',
-  danger: 'border-l-danger',
-  success: 'border-l-success',
-};
 
 export const OrchestratorStrip = ({
   sessionId,
@@ -203,7 +195,7 @@ export const OrchestratorStrip = ({
         data-testid="orchestrator-strip-row"
         className={cn(
           'flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-lg border border-l-2 border-border-soft bg-background py-1.5 pl-3 pr-1.5',
-          RAIL[state.tone] ?? 'border-l-border',
+          tintClasses(state.tone).rail,
         )}
       >
         <div className="flex min-w-0 max-w-full flex-auto items-center gap-2.5">

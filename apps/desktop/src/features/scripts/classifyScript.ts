@@ -43,10 +43,6 @@ type ClassifyScriptParams = {
   readonly command: string;
 };
 
-type GroupScriptsParams<T extends ClassifyScriptParams> = {
-  readonly scripts: ReadonlyArray<T>;
-};
-
 type CategoryRule = {
   readonly id: Exclude<ScriptCategory, 'other'>;
   readonly terms: ReadonlyArray<string>;
@@ -110,19 +106,3 @@ const categoryForValue = ({ value }: { readonly value: string }): ScriptCategory
 
 export const classifyScript = ({ name, command }: ClassifyScriptParams): ScriptCategory =>
   categoryForValue({ value: name }) ?? categoryForValue({ value: command }) ?? 'other';
-
-export const groupScriptsByCategory = <T extends ClassifyScriptParams>({
-  scripts,
-}: GroupScriptsParams<T>): ReadonlyMap<ScriptCategory, ReadonlyArray<T>> => {
-  const groups = new Map<ScriptCategory, Array<T>>();
-  for (const script of scripts) {
-    const category = classifyScript(script);
-    const bucket = groups.get(category);
-    if (bucket === undefined) {
-      groups.set(category, [script]);
-    } else {
-      bucket.push(script);
-    }
-  }
-  return groups;
-};

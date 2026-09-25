@@ -359,7 +359,7 @@ describe('buildFlowLayout', () => {
     expect(first.label?.y).not.toBe(second.label?.y);
   });
 
-  it('paints the main line as the spine and gives each other kind its own tone', () => {
+  it('finds the main line as the spine and gives each other kind its own role', () => {
     const layout = layoutOf({ document: HARD });
     const spine = layout.edges
       .filter((edge) => edge.role === 'spine')
@@ -420,7 +420,7 @@ describe('WireframeFlowOverview', () => {
     cleanup();
   });
 
-  it('keeps dash and routing alongside the tone so colour is never the only cue', () => {
+  it('tells edge kinds apart by line style and a label glyph, never by colour', () => {
     const { container } = render(
       <WireframeFlowOverview
         document={HARD}
@@ -433,11 +433,14 @@ describe('WireframeFlowOverview', () => {
     for (const role of ['spine', 'branch', 'skip', 'back', 'self']) {
       expect(markup).toContain(`wireframe-flow-arrow-${role}`);
     }
-    expect(markup).toContain('stroke-info/75');
-    expect(markup).toContain('stroke-warning/75');
-    expect(markup).toContain('stroke-merged/75');
-    const dashed = [...container.querySelectorAll('path[stroke-dasharray]')];
-    expect(dashed.length).toBe(1);
+    expect(markup).not.toMatch(/stroke-(?:info|warning|merged|danger)/);
+    expect(markup).not.toMatch(/fill-(?:info|warning|merged|danger)/);
+    const dashes = [...container.querySelectorAll('path[stroke-dasharray]')].map((path) =>
+      path.getAttribute('stroke-dasharray'),
+    );
+    expect([...new Set(dashes)].sort()).toEqual(['1.5 3', '4 4']);
+    expect(container.textContent).toContain('\u21a9 Back to queue');
+    expect(container.textContent).toContain('\u21bb Refresh batch');
     expect(/#[0-9a-fA-F]{3}\b/.test(markup)).toBe(false);
   });
 

@@ -5,7 +5,6 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { PaneShell } from './PaneShell';
 import { FocusedPane } from './PaneShell/FocusedPane';
-import { StudioDetailLayout } from './StudioDetail/StudioDetailLayout';
 
 afterEach(cleanup);
 
@@ -42,9 +41,9 @@ describe('pane rhythm', () => {
         <FocusedPane lens="Lens">
           <p>Focused body</p>
         </FocusedPane>
-        <StudioDetailLayout header={<span>Detail header</span>}>
+        <PaneShell header={<span>Detail header</span>} scroll="self">
           <p>Detail body</p>
-        </StudioDetailLayout>
+        </PaneShell>
       </>,
     );
 
@@ -54,27 +53,27 @@ describe('pane rhythm', () => {
       nearestClasses({ node: screen.getByText('Framed body'), pattern: GUTTER }),
       nearestClasses({ node: screen.getByText('Lens'), pattern: GUTTER }),
       nearestClasses({ node: screen.getByText('Detail header'), pattern: GUTTER }),
-      nearestClasses({ node: screen.getByText('Detail body'), pattern: GUTTER }),
     ];
     for (const gutter of gutters) {
       expect(gutter.split(' ')).toContain(PANE_RHYTHM.inset);
     }
   });
 
-  it('lands the detail header, its tabs, its body, and its dock on the content column', () => {
+  it('lands a custom header, its tabs, its body, and its dock on the page column', () => {
     render(
-      <StudioDetailLayout
+      <PaneShell
         header={<span>Detail header</span>}
         tabs={<span>Detail tabs</span>}
         dock={<span>Detail dock</span>}
+        scroll="body"
       >
         <p>Detail body</p>
-      </StudioDetailLayout>,
+      </PaneShell>,
     );
 
     for (const label of ['Detail header', 'Detail tabs', 'Detail body', 'Detail dock']) {
       expect(nearestClasses({ node: screen.getByText(label), pattern: WIDTH })).toBe(
-        'max-w-[var(--column-max)]',
+        'max-w-[var(--column-frame)]',
       );
     }
   });

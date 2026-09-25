@@ -1,12 +1,12 @@
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { useState, type ReactNode } from 'react';
-import { FileText, MessageSquare } from 'lucide-react';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import type { SegmentedTabOption } from '@goodboy/ui';
-import { StudioDetailTabs } from '@goodboy/ui';
-import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
-import { jiraIssueFields, resolveDetailFields } from '../../../../shared/detail-fields';
 import { StateBadge } from '@goodboy/ui';
+import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
+import { jiraIssueFields, resolveFacts } from '../../../../shared/detail-fields';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
 import { useJiraIssueActions } from '../useJiraIssueActions';
@@ -15,96 +15,105 @@ import { AssigneePicker } from '../AssigneePicker';
 import { TransitionMenu } from '../TransitionMenu';
 import { IssueConversation } from '../IssueConversation';
 
-type Fit = 'fill' | 'bleed' | 'flow';
-type IssueSection = 'overview' | 'conversation';
-
 type Props = {
   readonly issue: JiraIssue;
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
-  readonly fit?: Fit;
+  readonly frame?: RecordFrame | null;
   readonly onIssueWritten?: (() => void) | null;
 };
-
-const SECTION_OPTIONS: ReadonlyArray<SegmentedTabOption<IssueSection>> = [
-  { value: 'overview', label: 'Overview', icon: FileText },
-  { value: 'conversation', label: 'Conversation', icon: MessageSquare },
-];
 
 export const JiraIssueDetail = ({
   issue,
   workspaceId,
   projectId,
-  headerActions,
-  dock,
-  fit = 'fill',
+  frame = null,
   onIssueWritten,
 }: Props) => {
-  const [section, setSection] = useState<IssueSection>('overview');
   const actions = useJiraIssueActions({ issue, workspaceId, projectId, onWritten: onIssueWritten });
   const live = actions.issue;
   const conversation = useJiraIssueComments({ issue: live, workspaceId, projectId });
+  const tone = statusCategoryTone({ statusCategory: live.statusCategory });
+  const assign = actions.assign;
+  const facts = resolveFacts({ registry: jiraIssueFields, entity: live });
+  const withPicker =
+    assign == null
+      ? facts
+      : [
+          {
+            slot: 'person' as const,
+            key: 'assignee',
+            label: 'Assignee',
+            icon: null,
+            node: (
+              <AssigneePicker
+                issueKey={live.key}
+                workspaceId={workspaceId}
+                assignee={live.assignee}
+                onAssign={assign}
+              />
+            ),
+          },
+          ...facts.filter((fact) => fact.slot !== 'person'),
+        ];
 
   return (
-    <StudioDetailLayout
-      fit={fit}
-      dock={dock}
+    <PaneShell
+      scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="jira"
           identifier={live.key}
           title={live.summary}
-          badge={
-            <StateBadge tone={statusCategoryTone({ statusCategory: live.statusCategory })}>
-              {live.status}
-            </StateBadge>
+          state={
+            actions.transition != null ? (
+              <TransitionMenu
+                issueKey={live.key}
+                workspaceId={workspaceId}
+                onTransition={actions.transition}
+                state={{ label: live.status, tone }}
+              />
+            ) : (
+              <StateBadge tone={tone}>{live.status}</StateBadge>
+            )
           }
-          actions={
-            <>
-              {actions.assign != null && (
-                <AssigneePicker
-                  issueKey={live.key}
-                  workspaceId={workspaceId}
-                  assignee={live.assignee}
-                  onAssign={actions.assign}
-                />
-              )}
-              {actions.transition != null && (
-                <TransitionMenu
-                  issueKey={live.key}
-                  workspaceId={workspaceId}
-                  onTransition={actions.transition}
-                />
-              )}
-              {headerActions}
-            </>
-          }
+          facts={<RecordFacts facts={withPicker} />}
           externalRef={{ url: live.url, label: 'issue' }}
+          frame={frame}
         />
       }
-      tabs={
-        <StudioDetailTabs
-          ariaLabel="Issue sections"
-          options={SECTION_OPTIONS}
-          value={section}
-          onChange={setSection}
-        />
-      }
-      properties={resolveDetailFields({ registry: jiraIssueFields, entity: live })}
     >
-      {section === 'overview' ? (
-        <DescriptionSection text={live.description} onSave={actions.saveDescription} />
-      ) : (
-        <IssueConversation
-          comments={conversation.comments}
-          isLoading={conversation.isLoading}
-          error={conversation.error}
-          onRetry={conversation.reload}
-          onPost={conversation.post}
-        />
-      )}
-    </StudioDetailLayout>
+      <RecordSections
+        sections={[
+          {
+            key: 'description',
+            kind: 'description',
+            label: 'Description',
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <DescriptionSection text={live.description} onSave={actions.saveDescription} />
+            ),
+          },
+          {
+            key: 'conversation',
+            kind: 'conversation',
+            label: 'Conversation',
+            count: conversation.comments.length,
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <IssueConversation
+                comments={conversation.comments}
+                isLoading={conversation.isLoading}
+                error={conversation.error}
+                onRetry={conversation.reload}
+                onPost={conversation.post}
+              />
+            ),
+          },
+        ]}
+      />
+    </PaneShell>
   );
 };

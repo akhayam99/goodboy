@@ -4,13 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 
-const { state, viewPrefs, stageInfo } = vi.hoisted(() => ({
+const { state, viewPrefs, stageInfo, cost } = vi.hoisted(() => ({
+  cost: { current: 0 },
   state: {
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
     projects: [] as ReadonlyArray<unknown>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,
+    reviewDrafts: {} as Record<string, ReadonlyArray<{ status: string }>>,
+    phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     bulkUnarchiveTask: vi.fn(async (_ids: ReadonlyArray<string>) => undefined),
     bulkArchiveTask: vi.fn(async (_ids: ReadonlyArray<string>) => undefined),
     bulkDeleteTask: vi.fn(async () => undefined),
@@ -40,7 +46,8 @@ vi.mock('../../../session/hooks/useSessionArchive', () => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-  useSessionCost: () => 0,
+  useSessionCost: () => cost.current,
+  useNonResolverStandaloneAgents: () => [],
   useSessionHasUnread: () => false,
   useSessionStageInfo: () => stageInfo.current,
   useSessionViewPrefs: () => viewPrefs.current,
@@ -64,6 +71,7 @@ vi.mock('../../../../features/github/components/PullRequestChip', () => ({
   pullRequestMeta: () => null,
 }));
 
+import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
 import { SessionActivityBar } from './index';
 
 const WS_ID = 'ws-1' as WorkspaceId;
@@ -123,6 +131,8 @@ beforeEach(() => {
   state.bulkDeleteTask.mockClear();
   state.sessionExternalTasks = {};
   state.sessionProjectMounts = {};
+  state.sessionOpenQuestions = {};
+  cost.current = 0;
   stageInfo.current = { stage: 'done', reason: 'idle', attention: null, prState: null };
   state.projects = [];
   viewPrefs.current = { group: 'none', sort: 'recent' };
@@ -396,14 +406,14 @@ describe('SessionActivityBar, external task chip', () => {
     expect(screen.queryByRole('button', { name: /studio/i })).toBeNull();
   });
 
-  it('appends the identifier to the item title without rendering a task glyph', () => {
+  it('draws the linked task on the row instead of hiding it in a tooltip', () => {
     state.sessionExternalTasks = {
       'a-1': [
         {
           sessionId: 'a-1',
           provider: 'linear',
           externalId: 'ext-1',
-          identifier: 'GB-7',
+          identifier: 'NW-142',
           url: 'https://linear.app/x',
           title: 'mapped task',
           createdAt: '2026-06-22T00:00:00.000Z',
@@ -411,34 +421,41 @@ describe('SessionActivityBar, external task chip', () => {
       ],
     };
     renderBar([], [makeSession('a-1', 'active one')]);
-    expect(screen.queryByLabelText(/GB-7 from Linear/i)).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Linear' })).toBeNull();
-    expect(screen.getByTitle(/active one · done, idle · GB-7/)).toBeDefined();
+
+    const row = rowAt(0);
+    expect(within(row).getByText('NW-142')).toBeDefined();
+    expect(within(row).getByText('NW-142 from Linear')).toBeDefined();
+    expect(row.getAttribute('title')).toBeNull();
   });
 
-  it('retains a non-linear identifier in the item title without a glyph', () => {
+  it('counts the linked tasks past the first one', () => {
+    const task = {
+      sessionId: 'a-1',
+      externalId: 'ext-2',
+      url: 'https://sentry.io/x',
+      title: 'crash',
+      createdAt: '2026-06-22T00:00:00.000Z',
+    };
     state.sessionExternalTasks = {
       'a-1': [
-        {
-          sessionId: 'a-1',
-          provider: 'sentry',
-          externalId: 'ext-2',
-          identifier: 'SENTRY-9',
-          url: 'https://sentry.io/x',
-          title: 'crash',
-          createdAt: '2026-06-22T00:00:00.000Z',
-        },
+        { ...task, provider: 'sentry', identifier: 'CAS-88' },
+        { ...task, provider: 'jira', identifier: 'CAS-71' },
       ],
     };
     renderBar([], [makeSession('a-1', 'crashy')]);
-    expect(screen.queryByRole('img', { name: 'Sentry' })).toBeNull();
-    expect(screen.queryByLabelText(/SENTRY-9 from Sentry/i)).toBeNull();
-    expect(screen.getByTitle(/crashy · done, idle · SENTRY-9/)).toBeDefined();
+
+    const row = rowAt(0);
+    expect(within(row).getByText('CAS-88')).toBeDefined();
+    expect(within(row).getByText('+1')).toBeDefined();
+    expect(within(row).getByText('1 more task')).toBeDefined();
   });
 });
 
-describe('SessionActivityBar, settled request state', () => {
-  it('marks a session whose merge request was closed as abandoned, not integrated', () => {
+describe('SessionActivityBar, row node', () => {
+  const nodeOf = (row: HTMLElement) =>
+    row.querySelector<HTMLElement>('[data-testid="session-row-node"]') as HTMLElement;
+
+  it('draws a closed request as the pull request glyph in the closed tint', () => {
     stageInfo.current = {
       stage: 'done',
       reason: 'MR !7 closed',
@@ -447,12 +464,15 @@ describe('SessionActivityBar, settled request state', () => {
     };
     renderBar([], [makeSession('a-1', 'abandoned one')]);
 
-    const dot = screen.getByRole('img', { name: 'done, MR !7 closed' });
-    expect(dot.className).not.toContain('bg-merged');
-    expect(dot.className).toContain('bg-muted-foreground');
+    const node = nodeOf(rowAt(0));
+    expect(node.dataset.node).toBe('pr');
+    expect(node.querySelector('svg')?.getAttribute('class')).toContain(
+      PULL_REQUEST_PRESENTATION.closed.textClass,
+    );
+    expect(within(rowAt(0)).getByText('done, MR !7 closed')).toBeDefined();
   });
 
-  it('still marks a merged request as integrated', () => {
+  it('keeps the merged tint on a merged request', () => {
     stageInfo.current = {
       stage: 'done',
       reason: 'MR !7 merged',
@@ -461,20 +481,71 @@ describe('SessionActivityBar, settled request state', () => {
     };
     renderBar([], [makeSession('a-1', 'landed one')]);
 
-    expect(screen.getByRole('img', { name: 'done, MR !7 merged' }).className).toContain(
-      'bg-merged',
+    expect(nodeOf(rowAt(0)).querySelector('svg')?.getAttribute('class')).toContain(
+      PULL_REQUEST_PRESENTATION.merged.textClass,
     );
   });
 
-  it('names the request in the row title from the resolved state, gitlab included', () => {
-    stageInfo.current = {
-      stage: 'done',
-      reason: 'MR !7 closed',
-      attention: null,
-      prState: 'closed',
-    };
-    renderBar([], [makeSession('a-1', 'abandoned one')]);
+  it('falls back to the stage icon when the session has no request', () => {
+    stageInfo.current = { stage: 'building', reason: 'no PR yet', attention: null, prState: null };
+    renderBar([], [makeSession('a-1', 'fresh one')]);
 
-    expect(screen.getByTitle(/abandoned one · done, MR !7 closed · PR Closed/)).toBeDefined();
+    expect(nodeOf(rowAt(0)).dataset.node).toBe('stage');
+    expect(within(rowAt(0)).getByText('no PR yet')).toBeDefined();
+  });
+
+  it('rings a running session and gives its row the running rail', () => {
+    stageInfo.current = {
+      stage: 'running',
+      reason: 'agent working',
+      attention: null,
+      prState: null,
+    };
+    renderBar([], [makeSession('a-1', 'busy one')]);
+
+    const row = rowAt(0);
+    expect(nodeOf(row).querySelector('[data-testid="session-row-ring"]')?.className).toContain(
+      'animate-soft-pulse',
+    );
+    expect(row.className).toContain('spin-rail');
+  });
+
+  it('marks a question with ? and counts what is waiting on you', () => {
+    stageInfo.current = {
+      stage: 'attention',
+      reason: '1 open question',
+      attention: 'open-question',
+      prState: null,
+    };
+    state.sessionOpenQuestions = { 'a-1': [{ status: 'open' }] };
+    renderBar([], [makeSession('a-1', 'asking one')]);
+
+    const row = rowAt(0);
+    expect(nodeOf(row).textContent).toBe('?');
+    expect(row.className).toContain('border-l-warning');
+    expect(within(row).getByText('1 question to answer')).toBeDefined();
+  });
+
+  it('marks an errored agent with !', () => {
+    stageInfo.current = {
+      stage: 'attention',
+      reason: 'agent errored on step 2',
+      attention: 'agent-error',
+      prState: null,
+    };
+    renderBar([], [makeSession('a-1', 'broken one')]);
+
+    expect(nodeOf(rowAt(0)).textContent).toBe('!');
+  });
+
+  it('keeps the age at rest and trades it for the cost on hover in the same column', () => {
+    cost.current = 0.75;
+    renderBar([], [makeSession('a-1', 'spendy one')]);
+
+    const trailing = rowAt(0).querySelector<HTMLElement>(
+      '[data-testid="session-row-trailing"]',
+    ) as HTMLElement;
+    expect(trailing.className).toContain('w-12');
+    expect(trailing.firstElementChild?.className).toContain('group-hover/session-row:hidden');
   });
 });

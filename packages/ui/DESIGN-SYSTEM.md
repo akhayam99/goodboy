@@ -29,7 +29,7 @@ between them instead of mixing one surface through opacity.
 | 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
 | 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
-| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`, `ActionTile`            |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                          |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
 | 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
 
@@ -66,7 +66,8 @@ instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is 
 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
-`SelectableRow` and `RailCard isSelected`). No ring and no primary tint mark a
+`SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
+hairline track, `bg-selected` on the active segment, no raised pill. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -185,8 +186,11 @@ Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
 - Tone variants have fixed names, all owned by `tintClasses`: `solid` (full
   fill plus `on-tone`, only the primary CTA and confirmed destructive buttons),
   `bg` (10% wash, never a signal on its own), `text` (tone text, readable on its
-  own wash), `border` (40%, decoration, never the only signal) and `bgSoft`
-  (5%, only for washing a whole card).
+  own wash), `border` (40%, decoration, never the only signal), `rail` (full
+  tone left border, for a card or strip whose edge carries meaning; neutral is
+  `border-l-border`) and `bgSoft` (5%, only for washing a whole card). The
+  neutral `bg`, `bgSoft` and `solid` sit on `fill`, so a neutral chip sinks one
+  step into any parent.
 
 ## Icon and tone vocabulary
 
@@ -204,6 +208,13 @@ concept cannot get an icon without a tone, or a tone without an icon.
   is `danger` because it is errors. `terminal` and `settings` are `neutral`
   because they are plumbing. Giving a concept a new color changes what it
   claims.
+- **On an artifact, colour says the state, never the kind.** `plan`, `report`
+  and `wireframe` are `neutral`: the glyph and the word name the kind. A plan
+  nobody ran is `warning` (the next click is yours), one that ran is `success`,
+  a replaced or discarded one is `neutral`, and `merged` never appears on an
+  artifact. In the report kit, `decision`, `summary`, `goal` and `note` are
+  neutral structure, `risk` and `question` are `warning`. A kit callout is a
+  neutral surface with a tone rail and a toned icon, never a tinted fill.
 
 Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `draft`, `neutral`). Each one resolves through the single accessor
@@ -614,8 +625,20 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
+- The empty session follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. Rarer starts sit in a quiet `More ways to start` menu, and an item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
+
+**Record actions.** A record from a connected tool (issue, merge or pull request, thread, error) has four fixed places, whatever the tool:
+
+| Place     | What goes there                                                                               | Shape                                              |
+| --------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Primary   | Launch session, or Open session once one is linked                                            | one filled button, first in the action row         |
+| Secondary | at most two tool verbs that move the record forward, picked by state                          | neutral `secondary` buttons, tone only in the icon |
+| Overflow  | rare tool verbs, Refresh, Copy link, Unlink session, then destructive verbs after a separator | the `⋯` menu on the identity line                  |
+| Utilities | Open in the tool, `⋯`, close                                                                  | icon buttons at the end of the identity line       |
+
+A verb blocked for a moment stays visible with its reason in the tooltip; a verb the tool refuses is not shown. Merge confirms under the action row, and a destructive verb confirms in its menu with a plain menu swap. Properties that can change (state, assignee) change from the control that shows them, never from a button. `RecordHeader` and the `RecordVerbs` type own the contract.
 
 `InlineConfirm` stays attached to a destructive trigger in its action region. A confirmation detached in the body, or a destructive footer dock, is not another zone. It is the only confirmation body, and it shows in exactly one of three placements, picked by how much room the trigger has:
 
@@ -706,11 +729,12 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-The empty Activity of a new session is the kickoff. It leads with "No activity
-yet", then a ghost run: three `WorkNode`s in the `queued` state on a dashed
-spine, at reduced opacity, each with its role chip and one line of what it
-does, and no meta column, because no provider or model is chosen yet. The ways
-to start follow it.
+The empty Activity of a new session is the kickoff. It asks "How do you want to
+start?" and answers with a single-select list of three rows, each a concept
+glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
+selected row reveals its fields and its one primary under the list. Arrow keys
+move between rows and Enter moves into the selected row's fields. There is no
+example run and no grid of tiles.
 
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses

@@ -14,9 +14,10 @@ export const adaptLinearIssues = ({ groups }: Params): InboxRecord[] =>
       identifier: issue.identifier,
       title: issue.title,
       state: normalize({ value: issue.state.type }),
+      stateLabel: issue.state.name,
       updatedAt: issue.updatedAt,
       url: issue.url,
-      meta: issue.project?.name ?? issue.team.key,
+      context: issue.project?.name ?? issue.team.key,
       payload: { provider: 'linear', kind: 'issue', issue, sessionId },
     })),
   );

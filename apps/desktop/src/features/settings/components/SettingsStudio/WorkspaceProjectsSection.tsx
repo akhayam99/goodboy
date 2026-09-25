@@ -1,26 +1,24 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { SectionSurface } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
+import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
 export const WorkspaceProjectsSection = ({ workspaceId }: Props) => (
-  <SectionSurface
-    label="Projects"
-    hint="The repositories and folders this workspace works on."
-    icon={<CONCEPT_ICONS.projectRepo size={ICON_SIZE.row} aria-hidden />}
-    headingLevel={2}
-  >
+  <section aria-labelledby="workspace-projects" className="flex flex-col">
     <ProjectLinkList
       workspaceId={workspaceId}
-      emptyHint="No projects linked yet. Add a repository below."
+      density="compact"
+      heading={({ count }) => (
+        <WorkspaceEyebrow id="workspace-projects" label="Projects" count={count} />
+      )}
+      emptyHint="No projects linked yet. Add a repository or a folder."
       rowAccessory={({ project }) =>
         project.kind === 'repo' && <ProjectBaseBranchInput project={project} />
       }
     />
-  </SectionSurface>
+  </section>
 );

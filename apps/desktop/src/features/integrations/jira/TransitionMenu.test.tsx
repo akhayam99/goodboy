@@ -26,7 +26,14 @@ const listTransitions = vi.mocked(jiraListTransitions);
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
 const mount = ({ onTransition }: { onTransition: (id: string) => Promise<void> }) =>
-  render(<TransitionMenu issueKey="ENG-142" workspaceId={WORKSPACE} onTransition={onTransition} />);
+  render(
+    <TransitionMenu
+      issueKey="ENG-142"
+      workspaceId={WORKSPACE}
+      onTransition={onTransition}
+      state={{ label: 'To Do', tone: 'neutral' }}
+    />,
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,7 +49,7 @@ describe('TransitionMenu', () => {
     ]);
     mount({ onTransition: vi.fn(async () => {}) });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
 
     expect(listTransitions).toHaveBeenCalledWith(
       expect.objectContaining({ issueKey: 'ENG-142', siteUrl: 'https://acme.atlassian.net' }),
@@ -55,7 +62,7 @@ describe('TransitionMenu', () => {
     listTransitions.mockRejectedValue(new Error('403 Forbidden'));
     mount({ onTransition: vi.fn(async () => {}) });
 
-    const trigger = await screen.findByRole('button', { name: 'Move' });
+    const trigger = await screen.findByRole('button', { name: /move this issue/ });
     await waitFor(() => expect(trigger.getAttribute('aria-disabled')).toBe('true'));
 
     expect(trigger.getAttribute('title')).toContain('403 Forbidden');
@@ -73,7 +80,7 @@ describe('TransitionMenu', () => {
       }),
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Move' }));
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Ready for review' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('Reviewer');

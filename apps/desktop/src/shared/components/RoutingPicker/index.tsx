@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { withShortcutHint, type ShortcutId } from '../../keyboard/registry';
-import { ChevronDown, RotateCcw } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { MODEL_CATALOGS } from '@goodboy/core';
 import { AnchoredPopover, cn, Tooltip, useDropdown, tintClasses } from '@goodboy/ui';
 import type { ProviderId, VerbosityLevel } from '@goodboy/types';
 import { TriggerLabel } from './TriggerLabel';
+import { AUTO_LABEL, AutoTriggerLabel } from './AutoTriggerLabel';
+import type { RecommendationKind } from './RecommendationRow';
+import { recommendationSummary } from './recommendationSummary';
 import { ROUTING_PICKER_CONSTANTS } from './constants';
 import { routingSummary, routingTriggerLabel } from './routingSummary';
 import { resolveRouting, type Recommendation } from './resolveRouting';
@@ -19,6 +22,8 @@ export type Props = {
   readonly onProvider: (provider: ProviderId | '') => void;
   readonly onModel: (model: string) => void;
   readonly recommendation?: Recommendation;
+  readonly recommendationKind?: RecommendationKind;
+  readonly footer?: ReactNode;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
@@ -44,6 +49,8 @@ export const RoutingPicker = ({
   onProvider,
   onModel,
   recommendation,
+  recommendationKind,
+  footer,
   verbosity,
   onVerbosity,
   onReset,
@@ -94,7 +101,19 @@ export const RoutingPicker = ({
     showEffort,
     ...(verbosity != null && { verbosity }),
   });
-  const summary = routingSummary({ provider: routing.provider, label: triggerLabel });
+  const isAuto = recommendationKind === 'auto' && recommendation?.provider != null && !isOverridden;
+  const autoSummary =
+    recommendation?.provider == null
+      ? null
+      : recommendationSummary({
+          provider: recommendation.provider,
+          model: recommendation.model,
+          effort: recommendation.effort,
+        });
+  const summary =
+    isAuto && autoSummary != null
+      ? `${AUTO_LABEL}, now ${autoSummary}`
+      : routingSummary({ provider: routing.provider, label: triggerLabel });
 
   const body = (
     <RoutingPickerBody
@@ -111,6 +130,7 @@ export const RoutingPicker = ({
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
       {...(recommendation != null && { recommendation })}
+      {...(recommendationKind != null && { recommendationKind })}
       {...(verbosity != null && { verbosity })}
       {...(onVerbosity != null && { onVerbosity })}
       {...(onReset != null && { onReset })}
@@ -128,6 +148,7 @@ export const RoutingPicker = ({
         className={cn('flex min-w-0 flex-col', disabled && 'pointer-events-none opacity-60')}
       >
         {body}
+        {footer}
       </div>
     );
   }
@@ -151,7 +172,7 @@ export const RoutingPicker = ({
                 aria-label={resetAriaLabel}
                 className="shrink-0 rounded-full p-1 text-faint-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
-                <RotateCcw size={10} aria-hidden />
+                <X size={10} aria-hidden />
               </button>
             </Tooltip>
           )}
@@ -194,7 +215,11 @@ export const RoutingPicker = ({
               )}
             >
               <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                <TriggerLabel provider={routing.provider} label={triggerLabel} />
+                {isAuto ? (
+                  <AutoTriggerLabel />
+                ) : (
+                  <TriggerLabel provider={routing.provider} label={triggerLabel} />
+                )}
               </span>
               <ChevronDown
                 size={11}
@@ -210,6 +235,7 @@ export const RoutingPicker = ({
       }
     >
       {body}
+      {footer}
     </AnchoredPopover>
   );
 };

@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { RecordDetailHeader, StudioDetailLayout } from '../../../../shared/components/StudioDetail';
-import { resolveDetailFields, slackThreadFields } from '../../../../shared/detail-fields';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
+import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
+import { resolveFacts, slackThreadFields } from '../../../../shared/detail-fields';
+import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import { slackGetPermalink, type SlackMessage } from '../client';
 import { buildThreadProperties } from '../buildThreadProperties';
 import { slackUserNames } from '../nameMaps';
@@ -10,8 +14,6 @@ import { ThreadConversation } from '../ThreadConversation';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
 
-type Fit = 'fill' | 'bleed' | 'flow';
-
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly channelId: string;
@@ -19,9 +21,7 @@ type Props = {
   readonly fallbackChannelName: string;
   readonly fallbackMessage: SlackMessage | null;
   readonly fallbackUrl?: string | null;
-  readonly fit?: Fit;
-  readonly headerActions?: ReactNode;
-  readonly dock?: ReactNode;
+  readonly frame?: RecordFrame | null;
 };
 
 export const SlackThreadDetail = ({
@@ -31,9 +31,7 @@ export const SlackThreadDetail = ({
   fallbackChannelName,
   fallbackMessage,
   fallbackUrl = null,
-  fit = 'fill',
-  headerActions,
-  dock,
+  frame = null,
 }: Props) => {
   const [permalink, setPermalink] = useState<string | null>(fallbackUrl);
   const isEnabled = channelId !== '' && threadTs !== '';
@@ -63,9 +61,9 @@ export const SlackThreadDetail = ({
   const messages =
     thread.messages.length > 0 ? thread.messages : fallbackMessage == null ? [] : [fallbackMessage];
   const userNames = useMemo(() => slackUserNames({ users }), [users]);
-  const properties = useMemo(
+  const facts = useMemo(
     () =>
-      resolveDetailFields({
+      resolveFacts({
         registry: slackThreadFields,
         entity: buildThreadProperties({ channelName, messages, userNames }),
       }),
@@ -75,34 +73,44 @@ export const SlackThreadDetail = ({
   const title = slackThreadTitle({ text: rootText });
 
   return (
-    <StudioDetailLayout
-      fit={fit}
-      dock={dock}
+    <PaneShell
+      scroll="body"
       header={
-        <RecordDetailHeader
+        <RecordHeader
           provider="slack"
           identifier={`#${channelName}`}
           title={title !== '' ? title : `#${channelName}`}
-          subtitle={
-            <span className="font-mono text-2xs text-muted-foreground">#{channelName}</span>
-          }
-          actions={headerActions}
+          facts={<RecordFacts facts={facts} />}
+          frame={frame}
           externalRef={
             permalink != null && permalink !== '' ? { url: permalink, label: 'thread' } : null
           }
         />
       }
-      properties={properties}
     >
-      <ThreadConversation
-        messages={messages}
-        users={users}
-        channels={thread.channels}
-        isLoading={thread.isLoading}
-        error={thread.error}
-        onRetry={thread.refetch}
-        actions={actions}
+      <RecordSections
+        sections={[
+          {
+            key: 'conversation',
+            kind: 'conversation',
+            label: 'Conversation',
+            count: messages.length,
+            isCollapsible: false,
+            defaultOpen: true,
+            content: (
+              <ThreadConversation
+                messages={messages}
+                users={users}
+                channels={thread.channels}
+                isLoading={thread.isLoading}
+                error={thread.error}
+                onRetry={thread.refetch}
+                actions={actions}
+              />
+            ),
+          },
+        ]}
       />
-    </StudioDetailLayout>
+    </PaneShell>
   );
 };

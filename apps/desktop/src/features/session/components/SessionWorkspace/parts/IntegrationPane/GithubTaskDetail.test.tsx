@@ -8,6 +8,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useGithubIssue } from '../../../../../github/useGithubIssue';
+import { PageCrumbContext } from '../../../../../../shared/components/PaneShell/PageCrumbContext';
 import { GithubTaskDetail } from './GithubTaskDetail';
 
 vi.mock('../../../../../github/useGithubIssue', () => ({
@@ -88,7 +89,7 @@ describe('GithubTaskDetail', () => {
     expect(screen.getByText('feature')).toBeDefined();
   });
 
-  it('renders the session eyebrow above the loaded issue title', () => {
+  it('renders the session crumb above the loaded issue title, in the same column', () => {
     useGithubIssueMock.mockReturnValue({
       issue: ISSUE,
       isLoading: false,
@@ -97,17 +98,15 @@ describe('GithubTaskDetail', () => {
     });
 
     render(
-      <GithubTaskDetail
-        workspaceId={WORKSPACE_ID}
-        rootPath="/repo"
-        task={TASK}
-        eyebrow={<span>Ship the lens eyebrow</span>}
-      />,
+      <PageCrumbContext.Provider value={<span>Session crumb</span>}>
+        <GithubTaskDetail workspaceId={WORKSPACE_ID} rootPath="/repo" task={TASK} />
+      </PageCrumbContext.Provider>,
     );
 
-    const eyebrow = screen.getByText('Ship the lens eyebrow');
+    const crumb = screen.getByText('Session crumb');
     const title = screen.getByRole('heading', { level: 1, name: 'Add issue dashboard' });
-    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(crumb.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(crumb.closest('[data-page-column]')).toBe(title.closest('[data-page-column]'));
   });
 
   it('falls back to the linked task number when no issue number is given', () => {

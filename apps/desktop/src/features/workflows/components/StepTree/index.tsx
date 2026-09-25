@@ -21,6 +21,7 @@ type Props = {
   readonly dropIndex: number | null;
   readonly disabled: boolean;
   readonly banner?: ReactNode;
+  readonly action?: ReactNode;
   readonly renderStep: (slot: StepSlot) => ReactNode;
   readonly onAddStep: () => void;
 };
@@ -40,6 +41,7 @@ export const StepTree = ({
   dropIndex,
   disabled,
   banner = null,
+  action = null,
   renderStep,
   onAddStep,
 }: Props) => {
@@ -49,12 +51,15 @@ export const StepTree = ({
     <section aria-label="Plan" className="flex min-w-0 flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow label="Plan" muted />
-        {count > 0 ? (
-          <span className="flex items-center gap-1 text-2xs tabular-nums text-faint-foreground">
-            <span>{`${count} step${count === 1 ? '' : 's'}`}</span>
-            {editedCount > 0 ? <span>{`· ${editedCount} edited`}</span> : null}
-          </span>
-        ) : null}
+        <span className="flex min-w-0 items-center gap-2">
+          {count > 0 ? (
+            <span className="flex items-center gap-1 text-2xs tabular-nums text-faint-foreground">
+              <span>{`${count} step${count === 1 ? '' : 's'}`}</span>
+              {editedCount > 0 ? <span>{`· ${editedCount} edited`}</span> : null}
+            </span>
+          ) : null}
+          {action}
+        </span>
       </div>
       {banner}
       {isDrafting ? (

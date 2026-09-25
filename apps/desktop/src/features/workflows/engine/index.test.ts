@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { StepDef, Workflow } from '@goodboy/types';
+import type { Workflow } from '@goodboy/types';
 import {
   addStep,
   draftFromPlannerSteps,
-  draftFromStepDef,
   draftFromWorkflow,
   duplicateStep,
   removeStep,
@@ -68,24 +67,6 @@ describe('workflow authoring engine', () => {
         { id: 'step-1', ordinal: 0, name: 'Review', promptPrefix: 'Review it' },
         { id: 'step-2', ordinal: 1, name: 'Publish', promptPrefix: 'Publish it' },
       ],
-    });
-  });
-
-  it('creates a draft from a library definition', () => {
-    const def = {
-      id: 'def-1',
-      workspaceId: null,
-      role: 'reviewer',
-      name: 'Review',
-      promptPrefix: 'Review carefully',
-      createdAt: workflow.createdAt,
-      updatedAt: workflow.updatedAt,
-    } as StepDef;
-    expect(draftFromStepDef({ def })).toMatchObject({
-      libraryStepId: 'def-1',
-      sourceStepId: null,
-      name: 'Review',
-      prompt: 'Review carefully',
     });
   });
 

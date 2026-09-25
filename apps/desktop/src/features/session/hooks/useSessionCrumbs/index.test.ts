@@ -24,8 +24,9 @@ const { store, actions } = vi.hoisted(() => {
     setActiveLens: vi.fn(),
     setScriptsLensScope: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
-    setFocusedPlanId: vi.fn(),
+    setFocusedArtifactId: vi.fn(),
     selectAgent: vi.fn(),
+    setReviewMode: vi.fn(),
   };
   return { store, actions };
 });
@@ -125,7 +126,8 @@ beforeEach(() => {
     activeLens: {},
     sessionStudio: {},
     focusedWorkflowRunId: {},
-    focusedPlanId: {},
+    focusedArtifactId: {},
+    sessionArtifacts: {},
     artifactCreation: {},
     selectedAgentId: {},
     sessionPhaseRuns: {
@@ -136,6 +138,7 @@ beforeEach(() => {
     sessionWorkflows: {},
     sessionBranches: { [SESSION_ID]: 'feature/one' },
     workspaces: [{ id: 'workspace-1', kind: 'repo' }],
+    reviewModes: {},
     ...actions,
   };
   store.openQuestions = [];

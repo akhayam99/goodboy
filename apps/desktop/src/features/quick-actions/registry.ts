@@ -1,17 +1,8 @@
 import type { Agent, AgentId, Skill, Workflow } from '@goodboy/types';
-import type {
-  RunnableScript,
-  RunnableScriptSource,
-  SessionScriptGroup,
-} from '../scripts/buildSessionScripts';
+import type { RunnableScript, SessionScriptGroup } from '../scripts/buildSessionScripts';
+import { SCRIPT_SOURCE_LABEL } from '../scripts/scriptSourceLabel';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
-
-const SOURCE_LABEL: Record<RunnableScriptSource, string> = {
-  saved: 'Saved',
-  'package-json': 'package.json',
-  composer: 'composer.json',
-};
 
 export type ScriptPick = {
   readonly script: RunnableScript;
@@ -50,7 +41,7 @@ export const buildScriptActions = ({
       label: script.name,
       sublabel: showsMount ? `${mount} · ${script.command}` : script.command,
       trailing: {
-        label: runningKeys.has(script.key) ? 'Running' : SOURCE_LABEL[script.source],
+        label: runningKeys.has(script.key) ? 'Running' : SCRIPT_SOURCE_LABEL[script.source],
       },
       group: 'script',
       perform: () => onPick({ script, group }),

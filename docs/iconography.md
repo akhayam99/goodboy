@@ -20,7 +20,8 @@ Rules that hold everywhere:
 - `Sparkles`, `Sparkle`, `Wand2` and `WandSparkles` are banned by
   `apps/desktop/src/__tests__/regressions/no-ai-sparkle-glyphs.test.ts`. An AI
   control uses the glyph of its concept (`orchestrator`, `enhance`,
-  `suggestion`, `autorun`, `agents`), not a vague sparkle.
+  `suggestion`, `autorun`, `agents`), not a vague sparkle. Auto in the model
+  picker uses `autoRouting` (`Route`).
 - Spinners are banned ([DESIGN.md](../DESIGN.md#motion) owns the rule). That
   is why the run-state family below has no glyph for `running`.
 - An icon-only control carries a `Tooltip`, enforced by
@@ -223,6 +224,9 @@ Script categories own their glyphs in `SCRIPT_CATEGORIES`
 `Rocket`, `clean` `Trash2`, `docs` `BookOpen`, `other` `Terminal`. Import that
 list, never restate it.
 
-Inbox row kinds set theirs in `InboxRow.tsx`: `issue` `CircleDot`, `pr` and
-`mr` `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. Each one is
-drawn at `ICON_SIZE.control` with the state tone.
+Inbox rows lead with the tool's brand glyph, never a kind icon. The kind icons
+live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
+requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
+column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`
+`CircleCheck`, `alert` `TriangleAlert`, each in the state tone, always next to
+the tool's own state word.
