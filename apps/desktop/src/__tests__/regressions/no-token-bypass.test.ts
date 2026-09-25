@@ -75,6 +75,15 @@ const RULES = [
     why: 'floating layers sit on the floating surface',
   },
   {
+    pattern: /(?<![\w-])(?:bg|from|via|to)-chrome(?![\w-])/,
+    allow: [
+      'packages/ui/src/components/AppShell.tsx',
+      'apps/desktop/src/app/components/AppTopBar/index.tsx',
+      'apps/desktop/src/app/components/AppFooter/index.tsx',
+    ],
+    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar and the footer',
+  },
+  {
     pattern: /\bduration-\[/,
     allow: NO_ALLOW,
     why: 'durations use the numeric scale, never an arbitrary value',

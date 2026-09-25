@@ -17,7 +17,7 @@ export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript }: Props) => (
   <>
     <div
       data-tauri-drag-region="deep"
-      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background pl-(--titlebar-inset) pr-3"
+      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-chrome pl-(--titlebar-inset) pr-3"
     >
       <div className="col-start-1 flex min-w-0 items-center gap-1">
         <SidebarToggle sidebar={sidebar} />

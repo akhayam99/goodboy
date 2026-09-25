@@ -32,6 +32,18 @@ describe('AppShell', () => {
     expect(aside?.hasAttribute('inert')).toBe(true);
   });
 
+  it('frames the window and the sidebar column on chrome, one step behind the main pane', () => {
+    const { container } = render(
+      <AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />,
+    );
+
+    expect((container.firstElementChild as HTMLElement).className).toContain('bg-chrome');
+    expect(screen.getByText('sessions').closest('aside')?.className).toContain('bg-chrome');
+    const main = screen.getByText('main').closest('main');
+    expect(main?.className).toContain('bg-background');
+    expect(main?.className).not.toContain('bg-chrome');
+  });
+
   it('renders the left overlay over the first grid row', () => {
     render(
       <AppShell

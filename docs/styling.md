@@ -94,6 +94,11 @@ and the contrast floors are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#surface-ladder). A colour
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
+`bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
+window and the sidebar column, and `AppTopBar` and `AppFooter` paint their
+bars with it. The main pane stays on `bg-background`, one step in front.
+`no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
+
 ## The window grid
 
 Columns, resize handles and the footer are areas of **one** CSS grid. Their

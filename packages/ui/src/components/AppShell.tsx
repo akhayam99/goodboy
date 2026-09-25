@@ -235,7 +235,7 @@ export const AppShell = ({
   );
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-background">
+    <div className="flex h-screen w-screen flex-col bg-chrome">
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
         ref={grid.ref}
@@ -248,7 +248,7 @@ export const AppShell = ({
         {hasLeftSidebar ? (
           <aside
             className={cn(
-              'flex min-h-0 min-w-0 flex-col overflow-hidden bg-background motion-safe:transition-[opacity,transform] duration-200 ease-out',
+              'flex min-h-0 min-w-0 flex-col overflow-hidden bg-chrome motion-safe:transition-[opacity,transform] duration-200 ease-out',
               leftHidden
                 ? 'pointer-events-none -translate-x-2 opacity-0'
                 : 'translate-x-0 opacity-100',

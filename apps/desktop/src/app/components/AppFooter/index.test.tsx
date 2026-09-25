@@ -189,6 +189,7 @@ describe('AppFooter', () => {
 
     expect(row?.className).toContain('grid');
     expect(row?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
+    expect(row?.className).toContain('bg-chrome');
     expect(screen.getByTestId('goodboy-chip').className).not.toContain('absolute');
     expect(row?.children.length).toBe(3);
   });
