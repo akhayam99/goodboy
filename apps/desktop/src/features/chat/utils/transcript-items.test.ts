@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { encodeCliTooOldMessage } from '../turn';
 import { reduceTranscript, type TranscriptItem } from './transcript-items';
 import { reduceTranscriptTrace, resetReduceTranscriptTrace } from './transcript-items-trace';
@@ -601,5 +601,53 @@ describe('reduceTranscript cli refusals', () => {
       { kind: 'error', runId: RUN, message: encodeCliTooOldMessage(payload), at: AT },
     ]);
     expect(items).toEqual([{ kind: 'cli_too_old', key: 'cli-0', runId: RUN, payload }]);
+  });
+});
+
+describe('reduceTranscript handoff', () => {
+  const AGENT = 'agent-4' as AgentId;
+
+  it('turns the user text that carries a handoff into the handoff block', () => {
+    const items = reduceTranscript([
+      {
+        kind: 'user_text',
+        runId: RUN,
+        text: '**Goal** settle\n\nRound once per batch.',
+        handoffId: AGENT,
+        at: AT,
+      },
+      assistantText({ delta: 'On it.' }),
+      userText({ text: 'Also cover refunds.' }),
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual(['handoff', 'assistant_text', 'user_text']);
+    expect(items[0]).toMatchObject({ kind: 'handoff', handoffId: AGENT });
+  });
+
+  it('shows the first message of an older agent as a handoff in the older format', () => {
+    const items = reduceTranscript([
+      userText({ text: 'Which services read the per-line totals?' }),
+      assistantText({ delta: 'Two of them.' }),
+      userText({ text: 'Which two?' }),
+    ]);
+
+    expect(items[0]).toMatchObject({
+      kind: 'handoff',
+      handoffId: null,
+      text: 'Which services read the per-line totals?',
+    });
+    expect(items[2]).toMatchObject({ kind: 'user_text', text: 'Which two?' });
+  });
+
+  it('keeps the first message rule across an incremental resume', () => {
+    const events: TurnEvent[] = [userText({ text: 'Trace the rounding.' })];
+    reduceTranscript(events);
+    events.push(assistantText({ delta: 'Done.' }), userText({ text: 'Now fix it.' }));
+
+    expect(reduceTranscript(events).map((item) => item.kind)).toEqual([
+      'handoff',
+      'assistant_text',
+      'user_text',
+    ]);
   });
 });

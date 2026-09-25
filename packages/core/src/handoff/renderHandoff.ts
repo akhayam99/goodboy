@@ -1,4 +1,4 @@
-import type { ProviderName } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 
 export type HandoffClusterBoundary = Readonly<{
   marker: string;
@@ -17,7 +17,7 @@ export type HandoffBodyLayers = Readonly<{
 
 export type HandoffLayers = HandoffBodyLayers &
   Readonly<{
-    provider: ProviderName;
+    provider: ProviderId;
     guards: string;
     roleInstructions: string;
   }>;
@@ -58,7 +58,7 @@ const composeSystem = ({ guards, roleInstructions }: SystemParams): string =>
   roleInstructions.length > 0 ? `${guards}\n\n${roleInstructions}` : guards;
 
 type MessageParams = {
-  readonly provider: ProviderName;
+  readonly provider: ProviderId;
   readonly body: string;
   readonly guards: string;
   readonly roleInstructions: string;
@@ -88,7 +88,7 @@ export const renderHandoff = (layers: HandoffLayers): RenderedHandoff => {
 };
 
 type ProviderParams = {
-  readonly provider: ProviderName;
+  readonly provider: ProviderId;
 };
 
 export const hasSeparateSystemPrompt = ({ provider }: ProviderParams): boolean =>

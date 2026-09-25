@@ -237,9 +237,9 @@ describe('reduceTranscript, open-question answer boundary', () => {
   });
 
   it('keeps ordinary user_text turns', () => {
-    const items = reduceTranscript([userTextEvent('a normal message')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
+    const items = reduceTranscript([userTextEvent('first'), userTextEvent('a normal message')]);
+    expect(items).toHaveLength(2);
+    expect(items[1]!.kind).toBe('user_text');
   });
 
   it('detects the oq-answers wrapper despite leading whitespace', () => {
@@ -251,9 +251,12 @@ describe('reduceTranscript, open-question answer boundary', () => {
   });
 
   it('does not treat an inline mention of the marker as an answer', () => {
-    const items = reduceTranscript([userTextEvent('here is text then <<oq-answers>> later')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
+    const items = reduceTranscript([
+      userTextEvent('first'),
+      userTextEvent('here is text then <<oq-answers>> later'),
+    ]);
+    expect(items).toHaveLength(2);
+    expect(items[1]!.kind).toBe('user_text');
   });
 
   it('carries no answer text on the oq_answer marker (pure boundary)', () => {
@@ -285,7 +288,7 @@ describe('reduceTranscript, open-question answer boundary', () => {
     ];
     const items = reduceTranscript(events);
     expect(items.map((i) => i.kind)).toEqual([
-      'user_text',
+      'handoff',
       'assistant_text',
       'oq_answer',
       'assistant_text',
@@ -317,9 +320,9 @@ describe('reduceTranscript, workflow kickoff boundary', () => {
   });
 
   it('keeps ordinary user_text turns that are not kickoffs', () => {
-    const items = reduceTranscript([userTextEvent('fix the login bug')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
+    const items = reduceTranscript([userTextEvent('first'), userTextEvent('fix the login bug')]);
+    expect(items).toHaveLength(2);
+    expect(items[1]!.kind).toBe('user_text');
   });
 
   it('emits a workflow_kickoff even when parsed:false (malformed goal)', () => {

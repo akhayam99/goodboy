@@ -93,6 +93,20 @@ record a live turn already wrote wins.
   orchestrator on a dynamic run and by the workflow otherwise, and anything
   else by you. The visible `user_text` keeps the full composed text, because
   the prior turns block replays it for Codex, Cursor and Antigravity.
+- The transcript draws that first message as one handoff block
+  (`features/chat/components/HandoffBlock`), the same for every provider: who
+  sent it, the ask in one line, the why, and a chip per section; a chip opens
+  the block on its section. It opens by itself only while the agent has not
+  answered yet. Earlier steps open their agent, the plan is a title and Open
+  plan (never its body), and **View as sent** shows the exact text in mono, in
+  two parts for Claude and one for the others with a line that says why. When
+  you wrote the first message yourself, your bubble stays and a one-line
+  **Also received** strip sits above it.
+- On screen the block never says "handoff" (an internal word,
+  `jargon-copy.test.ts`): its eyebrow is "sent by". An agent from before m185
+  has no handoff row: its first message shows closed as "first message · older
+  format", the original text clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes the `handoff` item and
+  `TranscriptRows` counts it as the first user turn.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and

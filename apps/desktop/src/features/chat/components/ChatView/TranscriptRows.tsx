@@ -131,7 +131,7 @@ export const TranscriptRows = ({
       userTurnOrdinal += 1;
       return;
     }
-    if (row.kind === 'item' && row.item.kind === 'user_text') {
+    if (row.kind === 'item' && (row.item.kind === 'user_text' || row.item.kind === 'handoff')) {
       flushOrdinal(userTurnOrdinal);
       userTurnOrdinal += 1;
       const at = row.item.at;

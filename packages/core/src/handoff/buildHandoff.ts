@@ -6,7 +6,7 @@ import type {
   HandoffSender,
   IsoDateTime,
   PlanId,
-  ProviderName,
+  ProviderId,
 } from '@goodboy/types';
 
 export type HandoffEarlierStep = Readonly<{
@@ -42,7 +42,7 @@ export type HandoffRole = Readonly<{
 
 export type BuildHandoffParams = Readonly<{
   agentId: AgentId;
-  provider: ProviderName;
+  provider: ProviderId;
   createdAt: IsoDateTime;
   sender: HandoffSender;
   instruction: string;

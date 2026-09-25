@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderName } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import { composeHandoffBody, hasSeparateSystemPrompt, renderHandoff } from './renderHandoff';
 
-const layers = ({ provider }: { readonly provider: ProviderName }) => ({
+const layers = ({ provider }: { readonly provider: ProviderId }) => ({
   provider,
   message: 'Move rounding from post_line to settle_batch.',
   contextPreamble: '## shared context',

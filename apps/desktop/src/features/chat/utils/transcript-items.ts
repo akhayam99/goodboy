@@ -27,6 +27,16 @@ export type TranscriptItem =
       model?: string;
       at: IsoDateTime;
     }
+  | {
+      kind: 'handoff';
+      key: string;
+      handoffId: AgentId | null;
+      text: string;
+      attachments?: ReadonlyArray<MessageAttachment>;
+      provider?: ProviderId;
+      model?: string;
+      at: IsoDateTime;
+    }
   | { kind: 'assistant_text'; key: string; text: string }
   | {
       kind: 'artifact_block';
@@ -144,6 +154,7 @@ type ReduceSnapshot = {
   readonly textKey: string | null;
   readonly textScan: ArtifactScanState | null;
   readonly textRunId: ProviderRunId | null;
+  readonly hasUserText: boolean;
 };
 
 const snapshots = new WeakMap<TurnEvent, ReduceSnapshot>();
@@ -207,6 +218,23 @@ const assistantTextItems = ({
   return { items: out, scan: split.scan };
 };
 
+type HandoffItemParams = {
+  readonly event: Extract<TurnEvent, { kind: 'user_text' }>;
+  readonly index: number;
+  readonly handoffId: AgentId | null;
+};
+
+const handoffItem = ({ event, index, handoffId }: HandoffItemParams): TranscriptItem => ({
+  kind: 'handoff',
+  key: `handoff-${index}`,
+  handoffId,
+  text: event.text,
+  ...(event.attachments && event.attachments.length > 0 ? { attachments: event.attachments } : {}),
+  ...(event.provider ? { provider: event.provider } : {}),
+  ...(event.model ? { model: event.model } : {}),
+  at: event.at,
+});
+
 export const reduceTranscript = (
   events: ReadonlyArray<TurnEvent>,
 ): ReadonlyArray<TranscriptItem> => {
@@ -227,6 +255,7 @@ export const reduceTranscript = (
   let textKey: string | null = resumed !== null ? resumed.textKey : null;
   let textScan: ArtifactScanState | null = resumed !== null ? resumed.textScan : null;
   let textRunId: ProviderRunId | null = resumed !== null ? resumed.textRunId : null;
+  let hasUserText = resumed !== null ? resumed.hasUserText : false;
 
   const flushText = () => {
     if (textBuffer.length > 0 && textKey !== null) {
@@ -262,7 +291,14 @@ export const reduceTranscript = (
           items.push({ kind: 'oq_answer', key: `oq-answer-${i}` });
           break;
         }
+        if (event.handoffId !== undefined) {
+          hasUserText = true;
+          items.push(handoffItem({ event, index: i, handoffId: event.handoffId }));
+          break;
+        }
         {
+          const isFirstUserText = !hasUserText;
+          hasUserText = true;
           const resolverKickoff = parseResolverKickoff({ text: event.text });
           if (resolverKickoff !== null) {
             items.push({
@@ -275,20 +311,24 @@ export const reduceTranscript = (
             });
             break;
           }
-        }
-        if (isWorkflowKickoff(event.text)) {
-          const parsed = parseWorkflowKickoff(event.text);
-          items.push({
-            kind: 'workflow_kickoff',
-            key: `kickoff-${i}`,
-            goal: parsed.goal,
-            instructions: parsed.instructions,
-            marker: parsed.marker,
-            raw: event.text,
-            parsed: parsed.parsed,
-            at: event.at,
-          });
-          break;
+          if (isWorkflowKickoff(event.text)) {
+            const parsed = parseWorkflowKickoff(event.text);
+            items.push({
+              kind: 'workflow_kickoff',
+              key: `kickoff-${i}`,
+              goal: parsed.goal,
+              instructions: parsed.instructions,
+              marker: parsed.marker,
+              raw: event.text,
+              parsed: parsed.parsed,
+              at: event.at,
+            });
+            break;
+          }
+          if (isFirstUserText) {
+            items.push(handoffItem({ event, index: i, handoffId: null }));
+            break;
+          }
         }
         items.push({
           kind: 'user_text',
@@ -475,6 +515,7 @@ export const reduceTranscript = (
       textKey,
       textScan,
       textRunId,
+      hasUserText,
     });
   }
 

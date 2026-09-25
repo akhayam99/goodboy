@@ -1,6 +1,6 @@
 import type { AgentId, IsoDateTime, OpenQuestionId, WorkflowRunId } from './ids';
 import type { PlanId } from './plan';
-import type { ProviderName } from './provider';
+import type { ProviderId } from './provider-registry';
 
 export type HandoffSender =
   | Readonly<{ kind: 'you' }>
@@ -74,6 +74,6 @@ export type AgentHandoff = Readonly<{
   sections: ReadonlyArray<HandoffSection>;
   sentSystem: string | null;
   sentMessage: string;
-  provider: ProviderName;
+  provider: ProviderId;
   createdAt: IsoDateTime;
 }>;

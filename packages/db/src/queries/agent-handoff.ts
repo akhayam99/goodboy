@@ -5,7 +5,7 @@ import {
   type HandoffSection,
   type HandoffSender,
   type IsoDateTime,
-  type ProviderName,
+  type ProviderId,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import { isJsonArray, isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -87,7 +87,7 @@ const toHandoff = ({ row }: RowParams): AgentHandoff => ({
   sections: parseJsonColumn({ value: row.sections_json, isValid: isSections, fallback: [] }),
   sentSystem: row.sent_system,
   sentMessage: row.sent_message,
-  provider: row.provider as ProviderName,
+  provider: row.provider as ProviderId,
   createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
 });
 
