@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DurationHistory, DurationSample } from '@goodboy/core';
+import { EMPTY_DURATION_HISTORY, type DurationHistory, type DurationSample } from '@goodboy/core';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import type { WorkTimeSource } from '../../workTreeModel/workTimeSource';
 import type { TimelineRunEntry } from './buildTimelineGroups';
@@ -46,6 +46,7 @@ const sample = (minutes: number): DurationSample => ({
 });
 
 const HISTORY: DurationHistory = {
+  ...EMPTY_DURATION_HISTORY,
   steps: [6, 8, 10, 12, 14].map(sample),
   orchestratedRuns: [],
 };
@@ -99,7 +100,7 @@ describe('runWorkTime', () => {
       entry: entryOf({ statuses: ['completed', 'running'] }),
       phase: 'running',
       source: source({
-        history: { steps: [], orchestratedRuns: [] },
+        history: EMPTY_DURATION_HISTORY,
         spans: [span('agent-0', 5, 1)],
       }),
       ...ROUTING,

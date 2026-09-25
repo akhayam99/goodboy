@@ -83,6 +83,7 @@ const runEstimate = ({
         effort: routing.effort,
         size: step.size ?? null,
       }),
+      unit: 'step',
       source,
     });
     if (estimate === null) {

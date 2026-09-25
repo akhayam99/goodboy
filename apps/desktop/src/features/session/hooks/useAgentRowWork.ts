@@ -58,6 +58,7 @@ export const useAgentRowWork = ({
     model: routing.model,
     effort: routing.effort,
     size: step?.size ?? null,
+    unit: step === null ? 'turn' : 'step',
     phase,
   });
   return { routing, time };

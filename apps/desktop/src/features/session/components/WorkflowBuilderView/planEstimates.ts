@@ -20,8 +20,6 @@ import {
   type WorkTime,
 } from '../../../workTreeModel/workTime';
 
-const PLAN_ESTIMATE_MIN_STEPS = 10;
-
 export type PlanStepInput = {
   readonly key: string;
   readonly role: AgentRole;
@@ -97,33 +95,36 @@ export const planEstimates = ({
   if (isOrchestrated) {
     return { steps: new Map(), total: orchestratedTotal({ history, nowMs }) };
   }
-  if (history.steps.length < PLAN_ESTIMATE_MIN_STEPS) {
-    return null;
-  }
   const byKey = new Map<string, PlanStepEstimate>();
   const estimates: Array<DurationEstimate | null> = [];
   for (const step of steps) {
     const key = estimateKeyOf(step);
-    const estimate = estimateDuration({ samples: history.steps, key, nowMs });
+    const estimate = estimateDuration({ history, unit: 'step', key, nowMs });
     estimates.push(estimate);
     if (estimate === null) {
       byKey.set(step.key, {
-        time: { label: '–', detail: unknownEstimateBasis({ key }), progress: null },
+        time: { label: '–', detail: unknownEstimateBasis({ key, unit: 'step' }), progress: null },
         cost: null,
         note: null,
       });
       continue;
     }
-    const work = workEstimateOf({ estimate, basis: estimateBasis({ estimate, key }) });
+    const work = workEstimateOf({
+      estimate,
+      basis: estimateBasis({ estimate, key, unit: 'step' }),
+    });
     const range = estimateRangeLabel({ estimate: work });
     const cost = costOf({ estimate });
     byKey.set(step.key, {
       time: { label: range, detail: `Usually ${range}. ${work.basis}`, progress: null },
       cost,
-      note: [range, cost, estimateBasisShort({ estimate, key })]
+      note: [range, cost, estimateBasisShort({ estimate, key, unit: 'step' })]
         .filter((part) => part !== null)
         .join(' · '),
     });
+  }
+  if (estimates.every((estimate) => estimate === null)) {
+    return null;
   }
   const sum = sumEstimates({ estimates });
   if (sum === null) {
@@ -147,7 +148,7 @@ export const planEstimates = ({
     steps: byKey,
     total: {
       label: parts.join(' · '),
-      detail: `Adds the usual time of each step, from finished steps in this workspace over the last 90 days. Machine time only${isReviewed ? ': the time you take to review each step is not included' : ''}.`,
+      detail: `Adds the usual time of each step, from finished steps over the last 90 days, in this workspace first. Machine time only${isReviewed ? ': the time you take to review each step is not included' : ''}.`,
     },
   };
 };

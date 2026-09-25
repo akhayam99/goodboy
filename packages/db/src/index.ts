@@ -161,6 +161,7 @@ export {
   insertAgentTurnSpan,
   listAgentTurnSpanRoutes,
   listSessionTurnSpans,
+  listTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
 export { getSetting, setSetting } from './queries/settings';

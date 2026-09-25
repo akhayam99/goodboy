@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+import type { DurationUnit } from '@goodboy/core';
 import type { AgentId, AgentRole, EffortLevel, StepSize } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from '../agentWorkTime';
 import type { RowPhase } from '../rowState';
@@ -12,6 +13,7 @@ type Params = {
   readonly model: string | null;
   readonly effort: EffortLevel | null;
   readonly size: StepSize | null;
+  readonly unit: DurationUnit;
   readonly phase: RowPhase;
 };
 
@@ -22,6 +24,7 @@ export const useAgentWorkTime = ({
   model,
   effort,
   size,
+  unit,
   phase,
 }: Params): WorkTime | null | undefined => {
   const source = useContext(WorkTimeContext);
@@ -31,6 +34,7 @@ export const useAgentWorkTime = ({
   return agentWorkTime({
     agentId,
     key: estimateKeyOf({ role, provider, model, effort, size }),
+    unit,
     phase,
     source,
   });

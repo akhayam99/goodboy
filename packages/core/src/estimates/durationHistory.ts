@@ -1,13 +1,23 @@
 import type { AgentId, MeasuredTurnSpan, WorkflowRunId } from '@goodboy/types';
 import { unionDurationMs } from './activeTime';
-import type { DurationSample, RunDurationSample } from './durationEstimate';
+import type {
+  DurationSample,
+  DurationSamples,
+  RunDurationSample,
+  SampleHistory,
+} from './durationEstimate';
 
-export type DurationHistory = {
-  readonly steps: ReadonlyArray<DurationSample>;
+export type DurationHistory = SampleHistory & {
   readonly orchestratedRuns: ReadonlyArray<RunDurationSample>;
 };
 
-export const EMPTY_DURATION_HISTORY: DurationHistory = { steps: [], orchestratedRuns: [] };
+const EMPTY_DURATION_SAMPLES: DurationSamples = { steps: [], turns: [] };
+
+export const EMPTY_DURATION_HISTORY: DurationHistory = {
+  ...EMPTY_DURATION_SAMPLES,
+  everyWorkspace: EMPTY_DURATION_SAMPLES,
+  orchestratedRuns: [],
+};
 
 type SpansParams = {
   readonly spans: ReadonlyArray<MeasuredTurnSpan>;
@@ -66,7 +76,24 @@ const rootOf = ({ agentId, parentOf }: RootParams): AgentId => {
   }
 };
 
-export const buildDurationHistory = ({ spans }: SpansParams): DurationHistory => {
+const turnSamples = ({ spans }: SpansParams): ReadonlyArray<DurationSample> =>
+  spans.flatMap((span) =>
+    span.endReason === 'succeeded'
+      ? [
+          {
+            activeMs: span.endedAtMs - span.startedAtMs,
+            costUsd: span.costUsd,
+            endedAtMs: span.endedAtMs,
+            role: span.stepRole,
+            provider: span.provider,
+            model: span.model,
+            effort: span.effort,
+          },
+        ]
+      : [],
+  );
+
+const stepSamples = ({ spans }: SpansParams): ReadonlyArray<DurationSample> => {
   const parentOf = new Map<AgentId, AgentId | null>();
   for (const span of spans) {
     parentOf.set(span.agentId, span.parentAgentId);
@@ -92,10 +119,29 @@ export const buildDurationHistory = ({ spans }: SpansParams): DurationHistory =>
       effort: latest.effort,
     });
   }
+  return steps;
+};
+
+const durationSamples = ({ spans }: SpansParams): DurationSamples => ({
+  steps: stepSamples({ spans }),
+  turns: turnSamples({ spans }),
+});
+
+type HistoryParams = SpansParams & {
+  readonly everyWorkspaceSpans: ReadonlyArray<MeasuredTurnSpan>;
+};
+
+export const buildDurationHistory = ({
+  spans,
+  everyWorkspaceSpans,
+}: HistoryParams): DurationHistory => {
   const byRun = groupSpans<WorkflowRunId>({
     spans,
     keyOf: (span) => (span.isOrchestratedRunDone ? span.workflowRunId : null),
   });
-  const orchestratedRuns = [...byRun.values()].map((group) => runSample({ spans: group }));
-  return { steps, orchestratedRuns };
+  return {
+    ...durationSamples({ spans }),
+    everyWorkspace: durationSamples({ spans: everyWorkspaceSpans }),
+    orchestratedRuns: [...byRun.values()].map((group) => runSample({ spans: group })),
+  };
 };

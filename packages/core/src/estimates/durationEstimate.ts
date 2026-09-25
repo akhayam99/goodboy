@@ -21,7 +21,18 @@ export type EstimateKey = {
   readonly size?: StepSize | null;
 };
 
-export type EstimateTier = 'exact' | 'model' | 'provider' | 'role' | 'runs';
+export type DurationUnit = 'step' | 'turn';
+
+export type DurationSamples = {
+  readonly steps: ReadonlyArray<DurationSample>;
+  readonly turns: ReadonlyArray<DurationSample>;
+};
+
+export type SampleHistory = DurationSamples & {
+  readonly everyWorkspace: DurationSamples;
+};
+
+export type EstimateTier = 'exact' | 'model' | 'modelAnyWorkspace' | 'provider' | 'role' | 'runs';
 
 export type CostRange = {
   readonly lowUsd: number;
@@ -51,6 +62,7 @@ const ESTIMATE_MAX_SAMPLES = 50;
 const ESTIMATE_MIN_SAMPLES: Record<EstimateTier, number> = {
   exact: 5,
   model: 5,
+  modelAnyWorkspace: 5,
   provider: 8,
   role: 8,
   runs: 5,
@@ -142,6 +154,7 @@ const inWindow = <T extends RunDurationSample>({ samples, nowMs }: WindowParams<
 
 type KeyTier = {
   readonly tier: Exclude<EstimateTier, 'runs'>;
+  readonly isEveryWorkspace: boolean;
   readonly matches: (sample: DurationSample) => boolean;
 };
 
@@ -150,32 +163,44 @@ const keyTiers = ({ key }: { readonly key: EstimateKey }): ReadonlyArray<KeyTier
   const sameProvider = (sample: DurationSample) =>
     sameRole(sample) && sample.provider === key.provider;
   const sameModel = (sample: DurationSample) => sameProvider(sample) && sample.model === key.model;
+  const sameRoute = (sample: DurationSample) => sameModel(sample) && sample.effort === key.effort;
   const tiers: Array<KeyTier> = [];
   if (key.provider !== null && key.model !== null) {
-    tiers.push({
-      tier: 'exact',
-      matches: (sample) => sameModel(sample) && sample.effort === key.effort,
-    });
-    tiers.push({ tier: 'model', matches: sameModel });
+    tiers.push({ tier: 'exact', isEveryWorkspace: false, matches: sameRoute });
+    tiers.push({ tier: 'model', isEveryWorkspace: false, matches: sameModel });
+    tiers.push({ tier: 'modelAnyWorkspace', isEveryWorkspace: true, matches: sameRoute });
   }
   if (key.provider !== null) {
-    tiers.push({ tier: 'provider', matches: sameProvider });
+    tiers.push({ tier: 'provider', isEveryWorkspace: false, matches: sameProvider });
   }
-  tiers.push({ tier: 'role', matches: sameRole });
+  tiers.push({ tier: 'role', isEveryWorkspace: false, matches: sameRole });
   return tiers;
 };
 
+type UnitParams = {
+  readonly samples: DurationSamples;
+  readonly unit: DurationUnit;
+};
+
+const samplesOf = ({ samples, unit }: UnitParams): ReadonlyArray<DurationSample> =>
+  unit === 'step' ? samples.steps : samples.turns;
+
 type EstimateParams = {
-  readonly samples: ReadonlyArray<DurationSample>;
+  readonly history: SampleHistory;
+  readonly unit: DurationUnit;
   readonly key: EstimateKey;
   readonly nowMs: number;
 };
 
-export const estimateDuration = ({ samples, key, nowMs }: EstimateParams) => {
-  const recent = inWindow({ samples, nowMs });
-  for (const { tier, matches } of keyTiers({ key })) {
+export const estimateDuration = ({ history, unit, key, nowMs }: EstimateParams) => {
+  const workspace = inWindow({ samples: samplesOf({ samples: history, unit }), nowMs });
+  const everyWorkspace = inWindow({
+    samples: samplesOf({ samples: history.everyWorkspace, unit }),
+    nowMs,
+  });
+  for (const { tier, isEveryWorkspace, matches } of keyTiers({ key })) {
     const estimate = estimateFrom({
-      samples: recent.filter(matches),
+      samples: (isEveryWorkspace ? everyWorkspace : workspace).filter(matches),
       tier,
       size: key.size ?? null,
     });

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, MeasuredTurnSpan, SessionId, WorkspaceId } from '@goodboy/types';
 
-const { listWorkspaceSpy, listSessionSpy } = vi.hoisted(() => ({
+const { listWorkspaceSpy, listSessionSpy, listEverySpy } = vi.hoisted(() => ({
   listWorkspaceSpy: vi.fn(),
   listSessionSpy: vi.fn(),
+  listEverySpy: vi.fn(),
 }));
 
 vi.mock('@goodboy/db', async (importOriginal) => {
@@ -12,6 +13,7 @@ vi.mock('@goodboy/db', async (importOriginal) => {
     ...actual,
     listWorkspaceTurnSpans: listWorkspaceSpy,
     listSessionTurnSpans: listSessionSpy,
+    listTurnSpans: listEverySpy,
   };
 });
 
@@ -55,28 +57,31 @@ const harness = () => {
 beforeEach(() => {
   listWorkspaceSpy.mockReset();
   listSessionSpy.mockReset();
+  listEverySpy.mockReset();
 });
 
 describe('duration estimates slice', () => {
-  it('turns workspace spans into step samples for the estimator', async () => {
+  it('turns workspace and app-wide spans into step and turn samples', async () => {
     listWorkspaceSpy.mockResolvedValue([SPAN]);
+    listEverySpy.mockResolvedValue([SPAN, { ...SPAN, agentId: 'agent-2' as AgentId }]);
     const { slice, read } = harness();
 
     await slice.loadWorkspaceDurationHistory({ workspaceId: WORKSPACE_ID });
 
+    const sample = {
+      role: 'implementer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: 'medium',
+      activeMs: 240_000,
+      costUsd: 0.4,
+      endedAtMs: 240_000,
+    };
     expect(read().workspaceDurationHistory).toEqual({
       [WORKSPACE_ID]: {
-        steps: [
-          {
-            role: 'implementer',
-            provider: 'anthropic',
-            model: 'claude-sonnet-5',
-            effort: 'medium',
-            activeMs: 240_000,
-            costUsd: 0.4,
-            endedAtMs: 240_000,
-          },
-        ],
+        steps: [sample],
+        turns: [sample],
+        everyWorkspace: { steps: [sample, sample], turns: [sample, sample] },
         orchestratedRuns: [],
       },
     });

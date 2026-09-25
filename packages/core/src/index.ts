@@ -482,6 +482,7 @@ export {
   type DurationEstimate,
   type DurationHistory,
   type DurationSample,
+  type DurationUnit,
   type EstimateKey,
   type EstimateTier,
   type EstimateTotal,

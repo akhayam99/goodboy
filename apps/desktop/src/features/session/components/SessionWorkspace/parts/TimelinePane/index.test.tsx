@@ -1136,7 +1136,14 @@ describe('TimelinePane row meta', () => {
 
     it('shows a finished step in machine time, not the wall clock between start and end', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
-      storeState.workspaceDurationHistory = { 'ws-1': { steps: [], orchestratedRuns: [] } };
+      storeState.workspaceDurationHistory = {
+        'ws-1': {
+          steps: [],
+          turns: [],
+          everyWorkspace: { steps: [], turns: [] },
+          orchestratedRuns: [],
+        },
+      };
       render(<TimelinePane session={SESSION} actions={null} />);
 
       const time = within(rowOf('Plan the fix')).getByTestId('work-time');
@@ -1163,6 +1170,8 @@ describe('TimelinePane row meta', () => {
             costUsd: 0.3,
             endedAtMs: now - MINUTE,
           })),
+          turns: [],
+          everyWorkspace: { steps: [], turns: [] },
           orchestratedRuns: [],
         },
       };

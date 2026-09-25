@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { DurationHistory, DurationSample, RunDurationSample } from '@goodboy/core';
+import {
+  EMPTY_DURATION_HISTORY,
+  type DurationHistory,
+  type DurationSample,
+  type RunDurationSample,
+} from '@goodboy/core';
 import { planEstimates, type PlanStepInput } from './planEstimates';
 
 const MINUTE = 60_000;
@@ -22,6 +27,7 @@ const run = (minutes: number): RunDurationSample => ({
 });
 
 const WARM: DurationHistory = {
+  ...EMPTY_DURATION_HISTORY,
   steps: [6, 8, 10, 12, 14, 6, 8, 10, 12, 14].map((minutes) => sample(minutes)),
   orchestratedRuns: [30, 40, 50, 60, 70].map(run),
 };
@@ -36,12 +42,21 @@ const step = (key: string, role: PlanStepInput['role'] = 'implementer'): PlanSte
 });
 
 describe('planEstimates', () => {
-  it('stays hidden until the workspace measured ten steps', () => {
-    const cold: DurationHistory = { steps: WARM.steps.slice(0, 9), orchestratedRuns: [] };
+  it('estimates as soon as one tier has enough samples, and stays hidden without history', () => {
+    const early: DurationHistory = { ...EMPTY_DURATION_HISTORY, steps: WARM.steps.slice(0, 5) };
 
     expect(
       planEstimates({
-        history: cold,
+        history: early,
+        steps: [step('a')],
+        isOrchestrated: false,
+        isReviewed: false,
+        nowMs: NOW,
+      })?.steps.get('a')?.time.label,
+    ).toBe('8-12m');
+    expect(
+      planEstimates({
+        history: EMPTY_DURATION_HISTORY,
         steps: [step('a')],
         isOrchestrated: false,
         isReviewed: false,

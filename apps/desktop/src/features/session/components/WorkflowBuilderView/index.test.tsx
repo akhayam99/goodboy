@@ -556,6 +556,8 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
           sample('scout', minutes),
           sample('custom', minutes * 2),
         ]),
+        turns: [],
+        everyWorkspace: { steps: [], turns: [] },
         orchestratedRuns: [],
       },
     };
@@ -574,7 +576,15 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     );
   });
 
-  it('hides every estimate while the workspace has measured too few steps', async () => {
+  it('hides every estimate while no step of the plan can be estimated', async () => {
+    storeState.workspaceDurationHistory = {
+      [session.workspaceId]: {
+        steps: [],
+        turns: [],
+        everyWorkspace: { steps: [], turns: [] },
+        orchestratedRuns: [],
+      },
+    };
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     await draftPlan();
 

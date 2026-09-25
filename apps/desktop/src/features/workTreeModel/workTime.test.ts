@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DurationHistory } from '@goodboy/core';
+import { EMPTY_DURATION_HISTORY, type DurationHistory } from '@goodboy/core';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 import { agentWorkTime, estimateKeyOf } from './agentWorkTime';
 import { estimateBasis } from './estimateBasis';
@@ -171,6 +171,7 @@ describe('familyActiveTime', () => {
 describe('agentWorkTime', () => {
   it('estimates from the workspace history and names the basis', () => {
     const history: DurationHistory = {
+      ...EMPTY_DURATION_HISTORY,
       steps: [4, 6, 8, 10, 12].map((minutes) => ({
         role: 'implementer',
         provider: 'anthropic',
@@ -193,6 +194,7 @@ describe('agentWorkTime', () => {
     const time = agentWorkTime({
       agentId: 'step' as AgentId,
       key,
+      unit: 'step',
       phase: 'running',
       source: source({ history, spans: [span('step', 0, 5)] }),
     });
@@ -200,6 +202,47 @@ describe('agentWorkTime', () => {
     expect(time?.label).toBe('5m of ~10m');
     expect(time?.detail).toContain('Based on 5 finished implementer steps on Sonnet 5');
     expect(time?.detail).toContain('Machine time only.');
+  });
+
+  it('measures a chat turn against past turns, from any workspace when this one has none', () => {
+    const turns = [2, 3, 4, 5, 6].map((minutes) => ({
+      role: 'implementer' as const,
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: null,
+      activeMs: minutes * MINUTE,
+      costUsd: null,
+      endedAtMs: 29 * MINUTE,
+    }));
+    const history: DurationHistory = {
+      ...EMPTY_DURATION_HISTORY,
+      everyWorkspace: { steps: [], turns },
+    };
+    const key = estimateKeyOf({
+      role: 'implementer',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: null,
+      size: null,
+    });
+    const chat = (phase: 'running' | 'waiting') =>
+      agentWorkTime({
+        agentId: 'chat' as AgentId,
+        key,
+        unit: 'turn',
+        phase,
+        source: source({
+          history,
+          spans: [span('chat', 0, 20)],
+          liveStartMs: phase === 'running' ? new Map([['chat', 28 * MINUTE]]) : new Map(),
+        }),
+      });
+
+    expect(chat('running')?.label).toBe('2m of ~5m');
+    expect(chat('running')?.detail).toContain(
+      'Based on 5 finished implementer turns on Sonnet 5 across your workspaces',
+    );
+    expect(chat('waiting')).toMatchObject({ label: '20m', progress: null });
   });
 
   it('says which history a fallback estimate leans on', () => {
@@ -214,6 +257,7 @@ describe('agentWorkTime', () => {
         cost: null,
       },
       key: { role: 'planner', provider: 'anthropic', model: 'claude-opus-5-5', effort: 'high' },
+      unit: 'step',
     });
 
     expect(basis).toMatch(
