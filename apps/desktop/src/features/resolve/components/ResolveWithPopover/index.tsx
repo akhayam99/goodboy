@@ -15,7 +15,7 @@ import {
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
-import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
 import { recommendationSummary } from '../../../../shared/components/RoutingPicker/recommendationSummary';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -180,10 +180,9 @@ export const ResolveWithPopover = ({
           <p className="px-2.5 pb-1 pt-2 text-xs font-medium text-foreground">
             {resolvePopoverHeading({ count })}
           </p>
-          <RoutingPicker
-            presentation="inline"
-            ariaLabel="Resolve model"
+          <RoutingPickerBody
             connectedProviders={connectedProviders}
+            onClose={close}
             provider={chosen.provider}
             model={chosen.model}
             effort={{
@@ -192,7 +191,6 @@ export const ResolveWithPopover = ({
               onChange: (effort) =>
                 setDraft((current) => ({ ...(current ?? defaultRouting), effort })),
             }}
-            disabled={isStarting}
             onProvider={(provider) => {
               if (provider === '') {
                 return;

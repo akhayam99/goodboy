@@ -1,7 +1,7 @@
 import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
+import { kindRouting } from '../../agent-kind';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
-import { DEFAULT_AGENT_SPAWN_CONFIG } from './defaultAgentSpawnConfig';
 
 type Params = {
   readonly task: AuxTaskId;
@@ -22,9 +22,9 @@ export const taskModelAgentSpawnConfig = ({
     workspaceDefaultProviderId,
     sessionDefaultProviderId,
   });
-  const requestedEffort = taskModel.effort ?? DEFAULT_AGENT_SPAWN_CONFIG.effort;
+  const requestedEffort = taskModel.effort ?? kindRouting({ kind: 'generic' }).effort;
   return {
-    ...DEFAULT_AGENT_SPAWN_CONFIG,
+    hint: '',
     provider: taskModel.providerId,
     model: taskModel.model,
     effort:

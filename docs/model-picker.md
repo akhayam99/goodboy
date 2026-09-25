@@ -20,6 +20,12 @@ forks it. A surface that needs a different arrangement puts the same parts
 together differently. It never grows its own model list, its own effort
 control, or a native `select`.
 
+The body lives in `RoutingPickerBody`. `RoutingPicker` wraps it in a trigger
+and a popover, or mounts it inline. Start agent and Resolve mount the body
+straight inside their own popovers, so both list every connected provider and
+the same Model, Version, Variant and Effort rows. A launching popover seeds it
+from its role: Resolve from `resolver`, Explore from `scout`.
+
 ## What a catalog entry declares
 
 Grouping, ordering and chip text come from the `presentation` object on the
