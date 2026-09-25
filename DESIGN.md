@@ -234,7 +234,9 @@ about its effect is a worse defect than one that reads badly.
   [packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Notices.
 
 - **The element is the signal.** A running session shows a moving border, not a
-  spinner placed beside it.
+  spinner placed beside it. On a board card the border that moves is the left
+  rail, because that is where a card keeps its tone: a light runs down the info
+  rail. A card never gets a tinted box around it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
 - **A toast says what already happened.** `success` means finished. `info`

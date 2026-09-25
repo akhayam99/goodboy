@@ -514,6 +514,48 @@ dialog[open]::backdrop {
   }
 }
 
+.spin-rail {
+  position: relative;
+}
+
+.spin-rail::before {
+  content: '';
+  position: absolute;
+  inset: -1px -1px -1px -2px;
+  border-radius: inherit;
+  padding-left: 2px;
+  background: var(--spin-border-color, var(--color-info));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes spin-rail {
+  from {
+    background-position: 0 -150%;
+  }
+  to {
+    background-position: 0 250%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spin-rail::before {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--spin-border-color, var(--color-info)),
+        transparent
+      )
+      no-repeat;
+    background-size: 100% 60%;
+    animation: spin-rail 2.4s ease-in-out infinite;
+  }
+}
+
 .spin-border-info {
   --spin-border-color: var(--color-info);
 }

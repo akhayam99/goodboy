@@ -699,7 +699,9 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
-- `spin-border`: working.
+- `spin-border`: working. A card that carries its tone on a left rail runs the
+  same signal down that rail instead (`spin-rail`), so the tone never wraps the
+  box. Under reduced motion the rail holds still at full tone.
 - `border-pulse`: a warning-stage card needs you.
 - `attention-ring`: something new arrived. It is a short outward breath (three
   cycles, then rest) on an element that now needs the user, never one that
