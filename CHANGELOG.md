@@ -7,6 +7,41 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.5.3
+
+Every screen now reads the same way: one column, one header, one main action, and details in a side drawer.
+
+### [#1882] Start a session your way
+
+An empty session asks how you want to start: pick up a task from your tracker, run a workflow with a goal, or let a Scout look around when you are not sure yet. Goodboy remembers your last choice for each workspace.
+
+### [#1882] One home for every artifact
+
+Plans, reports and wireframes open in the same view, with details and the chat in a drawer at the side. A plan lists its parts, with what done means and which files each one touches, and each part follows its run. A wireframe opens on its flow, and Export sits in one popover.
+
+### [#1882] An inbox you can scan
+
+The inbox lists items by day, newest first, with filters in a side rail and keyboard shortcuts. Every record has the same header, one main action and the rest under `⋯`. Merge, Close and Decline ask before acting everywhere.
+
+### [#1882] Workflows built on steps
+
+The Workflows studio shows each workflow as a tree of steps you edit in place. You can import several workflows from other workspaces at once.
+
+### [#1882] Models you choose to see
+
+The picker says Auto when Goodboy picks for you, and a Suggested row explains why, next to the model you last used here. You choose which models show in the picker.
+
+### [#1882] Scripts in a drawer
+
+Script output opens in a drawer from the top bar or from `$`, with Stop, Run again and the exit code. The Scripts page lists every script grouped by project, with an inline editor.
+
+### Fixes
+
+- Start agent no longer asks for instructions and opens the agent's chat. [#1882]
+- Sidebar rows and board cards show the same step progress and marks. [#1882]
+- The workspace page is denser: rename it in place and add projects from one popover. [#1882]
+- Chips, idle states and control borders are easier to tell apart. [#1882]
+
 ## Goodboy v0.5.2
 
 A new top bar and footer, one reading column for every pane, and time left on everything that runs.
