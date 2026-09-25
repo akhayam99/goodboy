@@ -6,6 +6,8 @@ import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel'
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
+import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
+import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 import { WorkspaceTitle } from './WorkspaceTitle';
 import { OrphanWorktreesSection } from '../../../../features/worktree/components/OrphanWorktreesSection';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
@@ -80,6 +82,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
         <div id="general" ref={anchor({ id: 'general' })}>
           <WorkspaceDefaultsGrid workspaceId={workspaceId} />
+        </div>
+
+        <div ref={anchor({ id: REVIEW_REPLIES_SECTION_ID })}>
+          <WorkspaceReviewRepliesSection workspaceId={workspaceId} />
         </div>
 
         {WORKSPACE_FEATURES.skills ? (

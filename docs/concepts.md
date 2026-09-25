@@ -399,6 +399,22 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
 
+How a reply reads is set in Settings, Workspace, **Review replies**:
+
+- **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
+  follows a style note you can edit. The voice goes into the agent's prompt
+- **Templates**: When fixed and When not changing. Goodboy fills them in code,
+  the agent writes only `{reason}`. The other variables are `{commit}`,
+  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
+  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+- **Sign replies** is the attribution line switch, so one value signs
+  everything Goodboy posts
+- **Resolve the thread after replying** (on by default) and **Commits** (new
+  commit, or fixup of the commit that added the line)
+
+The drawer shows these under the reply in one line, with a link to the
+section.
+
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a
 publication stops halfway, it picks up at the first step without a receipt and
