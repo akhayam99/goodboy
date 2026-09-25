@@ -1,6 +1,6 @@
-import { useEffect, useId, useState } from 'react';
+import { useState } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm, Markdown, SegmentedTabs, Switch, Textarea } from '@goodboy/ui';
+import { Button, InlineConfirm, Markdown, SegmentedTabs, Switch } from '@goodboy/ui';
 import { RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
@@ -18,6 +18,7 @@ import {
   VOICE_LABEL,
   VOICE_SAMPLE,
 } from '../../../resolve/replySettingsCopy';
+import { ReplyStyleNoteField } from './ReplyStyleNoteField';
 import { ReplyTemplateField } from './ReplyTemplateField';
 import { WorkspaceDefaultRow } from './WorkspaceDefaultRow';
 import { WorkspaceEyebrow } from './WorkspaceEyebrow';
@@ -45,12 +46,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const [isBusy, setIsBusy] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const settings = replySettingsOf({ layers: [overrides] });
-  const [styleNote, setStyleNote] = useState(settings.styleNote ?? '');
-  const noteId = useId();
-
-  useEffect(() => {
-    setStyleNote(settings.styleNote ?? '');
-  }, [settings.styleNote]);
 
   const persist = async ({ patch }: { readonly patch: WorkspaceOverridesPatch }) => {
     setIsBusy(true);
@@ -110,28 +105,12 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             <p className="text-2xs text-muted-foreground">{VOICE_HELP[settings.voice]}</p>
           </div>
           {settings.voice === 'mine' && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={noteId} className="text-xs font-medium text-foreground">
-                Style note
-              </label>
-              <Textarea
-                id={noteId}
-                value={styleNote}
-                autoGrow
-                minRows={2}
-                disabled={isBusy}
-                placeholder="Short. Starts lowercase. Never thanks."
-                onChange={(event) => setStyleNote(event.target.value)}
-                onBlur={() => {
-                  if (styleNote !== (settings.styleNote ?? '')) {
-                    void persist({ patch: { replyStyleNote: styleNote.trim() || null } });
-                  }
-                }}
-              />
-              <p className="text-2xs text-muted-foreground">
-                Agents follow this note instead of a preset. Until it has text, replies stay terse.
-              </p>
-            </div>
+            <ReplyStyleNoteField
+              workspaceId={workspaceId}
+              value={settings.styleNote}
+              isDisabled={isBusy}
+              onSave={(note) => void persist({ patch: { replyStyleNote: note } })}
+            />
           )}
           <ReplyTemplateField
             label="When fixed"

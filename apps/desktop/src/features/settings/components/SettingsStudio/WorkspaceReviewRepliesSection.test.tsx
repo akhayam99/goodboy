@@ -9,14 +9,27 @@ import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 
 const WORKSPACE = 'workspace-1' as WorkspaceId;
 
-const { state } = vi.hoisted(() => ({
+const { state, learn } = vi.hoisted(() => ({
   state: {
     workspaceOverrides: {} as Record<string, OverrideSettings>,
     patchWorkspaceOverrides: vi.fn(
       async (_params: { workspaceId: string; patch: WorkspaceOverridesPatch }) => undefined,
     ),
     reportError: vi.fn(async () => undefined),
+    projects: [
+      { id: 'p1', workspaceId: 'workspace-1', kind: 'repo', rootPath: '/repos/ledger-core' },
+      { id: 'p2', workspaceId: 'workspace-2', kind: 'repo', rootPath: '/repos/notify-relay' },
+    ],
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'disconnected' },
+    ],
   },
+  learn: vi.fn(),
+}));
+
+vi.mock('../../../resolve/learnWorkspaceReplyStyle', () => ({
+  learnWorkspaceReplyStyle: learn,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -32,6 +45,7 @@ const renderWith = (patch: Partial<OverrideSettings> = {}) => {
 
 beforeEach(() => {
   state.patchWorkspaceOverrides.mockClear();
+  learn.mockReset();
 });
 
 afterEach(() => {
@@ -64,6 +78,42 @@ describe('WorkspaceReviewRepliesSection', () => {
       workspaceId: WORKSPACE,
       patch: { replyVoice: 'formal' },
     });
+  });
+
+  it('learns a style note from my replies in this workspace and saves it', async () => {
+    learn.mockResolvedValue('Short.\nSays "done in" before the sha.');
+    renderWith({ replyVoice: 'mine' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Learn from my replies/ }));
+
+    await waitFor(() =>
+      expect(state.patchWorkspaceOverrides).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE,
+        patch: { replyStyleNote: 'Short.\nSays "done in" before the sha.' },
+      }),
+    );
+    expect(learn).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE,
+      projectRoots: ['/repos/ledger-core'],
+      overrides: state.workspaceOverrides[WORKSPACE],
+      connectedProviders: ['anthropic'],
+    });
+    expect(screen.getByLabelText('Style note')).toHaveProperty(
+      'value',
+      'Short.\nSays "done in" before the sha.',
+    );
+  });
+
+  it('says why no note could be learned and saves nothing', async () => {
+    learn.mockRejectedValue(new Error("Couldn't find review replies you wrote in this workspace."));
+    renderWith({ replyVoice: 'mine' });
+
+    fireEvent.click(screen.getByRole('button', { name: /Learn from my replies/ }));
+
+    expect(
+      await screen.findByText("Couldn't find review replies you wrote in this workspace."),
+    ).toBeDefined();
+    expect(state.patchWorkspaceOverrides).not.toHaveBeenCalled();
   });
 
   it('flags a template without {reason} or with an unknown variable, and does not save it', () => {

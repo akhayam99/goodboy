@@ -402,7 +402,9 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 How a reply reads is set in Settings, Workspace, **Review replies**:
 
 - **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
-  follows a style note you can edit. The voice goes into the agent's prompt
+  follows a style note you can edit. **Learn from my replies** reads your last
+  20 review replies in the workspace's repositories and writes that note. The
+  voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
   `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
