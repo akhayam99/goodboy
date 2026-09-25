@@ -102,7 +102,10 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
   PaneShell: { kind: 'helper', files: [] },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
-  ScriptsPanel: { kind: 'helper', files: [] },
+  ScriptsPanel: {
+    kind: 'shell',
+    files: ['features/scripts/components/ScriptsPanel/index.tsx'],
+  },
   LinkTicketPopover: { kind: 'helper', files: [] },
   LensEmptyState: { kind: 'helper', files: [] },
 };

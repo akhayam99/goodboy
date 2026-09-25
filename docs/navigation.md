@@ -602,3 +602,22 @@ and the log, which follows the tail until you scroll up and then offers
 says `Following output` while it runs and the exit, time and Copy output after.
 A run records the mount it ran in, so a project mounted twice reopens on the
 right branch.
+
+## The Scripts lens
+
+`ScriptsPanel` is one `PaneShell` (`Scripts`, meta `N projects · N running`,
+a `Filter scripts` field that `/` focuses and `New script`) over one list
+grouped by mount, project plus branch, from `useSessionScripts`. A project
+mounted twice is two groups, and its saved scripts show in both; you pick
+where a script runs by picking the row in the right group. A group header
+collapses it, and the collapsed set is kept per workspace
+(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`). Every row is the same
+`ScriptRow`: category node, name, command, Source (`Saved`, `package.json`,
+`composer.json`), Last run in glyph and word, one Run or Stop button and a `⋯`
+menu (saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
+script, Copy command). Clicking a row opens its output in the `scriptRun`
+drawer, and the row whose output is open is selected. New script and Edit open
+the same inline `ScriptEditor` card, at the top of the active mount's group or
+in place of the edited row. Saved scripts of workspace projects that are not in
+the session are named in one line under the groups. The session sidebar has no
+scripts section: `$` launches, the Now chip watches.

@@ -185,9 +185,6 @@ vi.mock('../../../workflows/components/RunTree', () => ({
 vi.mock('../../../workflows/components/NextActionStrip', () => ({
   NextActionStrip: () => null,
 }));
-vi.mock('../../../scripts/components/ScriptsSection', () => ({
-  ScriptsSection: () => <div data-testid="scripts" />,
-}));
 vi.mock('../../../context/components/ContextPanel/strips/GoalAttachmentsStrip', () => ({
   GoalAttachmentsStrip: () => null,
 }));

@@ -17,10 +17,8 @@ import type {
 } from '@goodboy/types';
 import { ToastProvider } from '../../Toast';
 import { ScriptsPanel } from '../../../../features/scripts/components/ScriptsPanel';
-import { ScriptsSection } from '../../../../features/scripts/components/ScriptsSection';
 import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';
-import { writeScriptsProject } from '../../../../features/scripts/projectSelectionStorage';
 import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/scripts';
 import { discoveredScriptId } from '../../../../features/scripts/scripts';
 import { useAppStore } from '../../../../store';
@@ -388,6 +386,7 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
     result: { stdout: DRIFT_OUTPUT, stderr: '', exitCode: 1 },
     runId: 'mock-scripts-run-posting-drift',
     startedAt: Date.parse('2026-09-16T11:06:12.000Z'),
+    completedAt: Date.parse('2026-09-16T11:06:24.000Z'),
     name: 'Check posting drift',
   },
   [LEDGER_TEST_SCRIPT_ID]: {
@@ -406,6 +405,7 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
     },
     runId: 'mock-scripts-run-ledger-test',
     startedAt: Date.parse('2026-09-16T10:41:03.000Z'),
+    completedAt: Date.parse('2026-09-16T10:41:45.000Z'),
     name: 'test',
   },
   [LEDGER_DEV_SCRIPT_ID]: {
@@ -420,7 +420,6 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
 const READY_SCAN: DiscoveredScriptScan = { status: 'ready', error: null };
 
 const seedScriptsScene = (): void => {
-  writeScriptsProject({ workspaceId: SCRIPTS_WORKSPACE_ID, projectId: LEDGER_PROJECT_ID });
   useAppStore.setState({
     workspaces: [SCRIPTS_WORKSPACE],
     currentWorkspaceId: SCRIPTS_WORKSPACE_ID,
@@ -446,7 +445,6 @@ const seedScriptsScene = (): void => {
         [PAYMENTS_WORKTREE]: READY_SCAN,
       },
     },
-    sessionPanelExpanded: { [SCRIPTS_SESSION_ID]: { scripts: true } },
     scriptsLensScope: null,
     loadScripts: async () => undefined,
     saveScript: async () => undefined,
@@ -457,12 +455,9 @@ const seedScriptsScene = (): void => {
     refreshDiscoveredScripts: async () => undefined,
     runDiscoveredScript: async () => STUB_RUN_RESULT,
     setScriptsLensScope: noop,
-    setPanelSectionExpanded: noop,
     setActiveLens: noop,
   });
 };
-
-const AUTO_EXPANDED_ROWS: ReadonlyArray<string> = ['Replay settlement batch', 'test'];
 
 export const ScriptsLensScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -472,28 +467,6 @@ export const ScriptsLensScene = () => {
     setIsReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!isReady) {
-      return;
-    }
-    const interval = window.setInterval(() => {
-      const missing = AUTO_EXPANDED_ROWS.filter((name) => {
-        const button = window.document.querySelector<HTMLButtonElement>(
-          `button[aria-label="Expand ${name}"]`,
-        );
-        if (button === null) {
-          return true;
-        }
-        button.click();
-        return false;
-      });
-      if (missing.length === 0) {
-        window.clearInterval(interval);
-      }
-    }, 120);
-    return () => window.clearInterval(interval);
-  }, [isReady]);
-
   if (!isReady) {
     return null;
   }
@@ -502,33 +475,6 @@ export const ScriptsLensScene = () => {
     <ToastProvider>
       <main className="h-screen overflow-hidden bg-background p-4 text-foreground">
         <ScriptsPanel workspaceId={SCRIPTS_WORKSPACE_ID} sessionId={SCRIPTS_SESSION_ID} />
-      </main>
-    </ToastProvider>
-  );
-};
-
-export const ScriptsSidebarScene = () => {
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    seedScriptsScene();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  return (
-    <ToastProvider>
-      <main className="flex h-screen overflow-hidden bg-background text-foreground">
-        <div className="flex w-80 shrink-0 flex-col overflow-y-auto border-r border-border-soft px-3 py-4">
-          <ScriptsSection
-            sessionId={SCRIPTS_SESSION_ID}
-            workspaceId={SCRIPTS_WORKSPACE_ID}
-            forceExpanded
-          />
-        </div>
       </main>
     </ToastProvider>
   );

@@ -143,18 +143,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/scripts/components/ScriptsPanel/NewScriptCard.tsx': {
-    count: 3,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/scripts/components/ScriptsPanel/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
     count: 1,
     reason: 'chrome',

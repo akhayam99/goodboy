@@ -96,7 +96,6 @@
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 2,
     "apps/desktop/src/features/resolve/components/ResolveItemHeader/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ResolveQueueHome/ResolveQueueEmptyState.tsx": 3,
-    "apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx": 2,
     "apps/desktop/src/features/session/components/AgentTree/ContextWindowBar.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/AttentionChips.tsx": 1,
     "apps/desktop/src/features/session/components/SessionOverviewPane/ContextDigest.tsx": 1,
@@ -119,7 +118,6 @@
   },
   "function-component": {
     "apps/desktop/src/features/providers/components/ProviderStudio/ProviderDetailPanel.tsx": 1,
-    "apps/desktop/src/features/scripts/components/ScriptsSection/index.tsx": 2,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx": 2
   },
   "comment": {

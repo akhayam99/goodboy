@@ -7,6 +7,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { classifyScript, type ScriptCategory } from './classifyScript';
+import { extractPreviewLine } from './extractPreviewLine';
 import { discoveredScriptId, type ScriptGroup, type ScriptSource } from './scripts';
 
 export type RunnableScriptSource = 'saved' | ScriptSource;
@@ -71,9 +72,6 @@ const compareSaved = (left: ProjectScript, right: ProjectScript): number =>
     ? left.name.localeCompare(right.name, undefined, { sensitivity: 'base' })
     : left.sortOrder - right.sortOrder;
 
-const firstLine = ({ body }: { readonly body: string }): string =>
-  body.trim().split('\n', 1)[0]?.trim() ?? '';
-
 type SavedParams = {
   readonly saved: ReadonlyArray<ProjectScript>;
   readonly projectId: ProjectId;
@@ -84,7 +82,7 @@ const savedScriptsOf = ({ saved, projectId }: SavedParams): ReadonlyArray<Runnab
     .filter((script) => script.projectId === projectId)
     .sort(compareSaved)
     .map((script): RunnableScript => {
-      const command = firstLine({ body: script.body });
+      const command = extractPreviewLine({ body: script.body });
       return {
         key: script.id,
         kind: 'saved',

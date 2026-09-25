@@ -1,7 +1,7 @@
 import { StatusDot, cn } from '@goodboy/ui';
 import { formatScriptDuration } from '../../formatScriptDuration';
 import type { ScriptRunStatus } from '../../scripts';
-import { SCRIPT_RUN_PRESENTATION } from '../ScriptsPanel/scriptRunPresentation';
+import { SCRIPT_RUN_PRESENTATION } from '../../scriptRunPresentation';
 
 type Props = {
   readonly status: ScriptRunStatus;
