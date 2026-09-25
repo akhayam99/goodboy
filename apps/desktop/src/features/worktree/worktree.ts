@@ -412,6 +412,36 @@ export const worktreeIsAncestor = async ({
   return invoke<boolean>('worktree_is_ancestor', { worktreePath, sha, head });
 };
 
+export type RangeCommit = { readonly sha: string; readonly subject: string };
+
+export type CommitRangeParams = {
+  readonly worktreePath: string;
+  readonly base: string;
+  readonly head: string;
+};
+
+export const worktreeCommitRange = async ({
+  worktreePath,
+  base,
+  head,
+}: CommitRangeParams): Promise<ReadonlyArray<RangeCommit>> => {
+  return invoke<ReadonlyArray<RangeCommit>>('worktree_commit_range', { worktreePath, base, head });
+};
+
+export type BlameLineParams = {
+  readonly worktreePath: string;
+  readonly path: string;
+  readonly line: number;
+};
+
+export const worktreeBlameLine = async ({
+  worktreePath,
+  path,
+  line,
+}: BlameLineParams): Promise<string | null> => {
+  return invoke<string | null>('worktree_blame_line', { worktreePath, path, line });
+};
+
 export type RemoteHeadParams = { readonly worktreePath: string; readonly branch: string };
 
 export const worktreeRemoteHead = async ({
