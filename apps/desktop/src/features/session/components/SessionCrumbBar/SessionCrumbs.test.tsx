@@ -67,9 +67,11 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-import { SessionCrumbBar } from './index';
+import { SessionCrumbs } from './SessionCrumbs';
 
 const SESSION_ID = 'session-1' as SessionId;
+
+const renderCrumbs = () => render(<SessionCrumbs session={h.currentSession as Session} />);
 
 const buildAgent = (overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent =>
   ({
@@ -205,9 +207,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe('SessionCrumbBar', () => {
+describe('SessionCrumbs', () => {
   it('renders the ladder without a divider or bordered bar', () => {
-    render(<SessionCrumbBar />);
+    renderCrumbs();
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(nav.className).not.toContain('border-b');
     expect(nav.className).not.toContain('border-border-soft');
@@ -216,7 +218,7 @@ describe('SessionCrumbBar', () => {
 
   it('carries the stage label and reason as a tooltip on the crumb dot', () => {
     h.stage = { ...h.stage, reason: 'PR needs review' };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const anchor = nav.querySelector('[data-tooltip="running, PR needs review"]');
@@ -226,7 +228,7 @@ describe('SessionCrumbBar', () => {
 
   it('marks a session whose pull request was closed as abandoned, not integrated', () => {
     h.stage = { stage: 'done', reason: 'PR #12 closed', attention: null, prState: 'closed' };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     const dot = within(nav).getByRole('img', { name: 'done, PR #12 closed' });
@@ -236,7 +238,7 @@ describe('SessionCrumbBar', () => {
 
   it('still marks a merged session as integrated', () => {
     h.stage = { stage: 'done', reason: 'PR #12 merged', attention: null, prState: 'merged' };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(within(nav).getByRole('img', { name: 'done, PR #12 merged' }).className).toContain(
@@ -246,7 +248,7 @@ describe('SessionCrumbBar', () => {
 
   it('falls back to the stage explanation when the caller has no reason', () => {
     h.stage = { ...h.stage, reason: '' };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(
@@ -255,14 +257,14 @@ describe('SessionCrumbBar', () => {
   });
 
   it('lists the crumbs from useSessionCrumbs in order', () => {
-    render(<SessionCrumbBar />);
+    renderCrumbs();
     expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Agents' })).toBeDefined();
     expect(screen.getByRole('button', { name: /scout one/ })).toBeDefined();
   });
 
   it('shows the selected agent live status after its label', () => {
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const selectedCrumb = screen.getByRole('button', { name: /scout one/ });
     expect(
@@ -284,13 +286,13 @@ describe('SessionCrumbBar', () => {
         { id: 'a3', phase: 'running' },
       ],
     };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     expect(screen.queryByText('2 queued')).toBeNull();
   });
 
   it('turns the last crumb into a sibling switcher when peers exist in the same home', () => {
-    render(<SessionCrumbBar />);
+    renderCrumbs();
     const last = screen.getByRole('button', { name: /scout one/ });
     expect(last.getAttribute('title')).toBe('scout one. Switch agent.');
 
@@ -305,7 +307,7 @@ describe('SessionCrumbBar', () => {
 
   it('seals the last crumb when the selected agent has no peers in its home lens', () => {
     h.state.sessionPhaseRuns = { [SESSION_ID]: [scout] };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     expect(screen.queryByRole('button', { name: /scout one/ })).toBeNull();
     const scoutSpan = screen.getByText('scout one');
@@ -318,7 +320,7 @@ describe('SessionCrumbBar', () => {
       { id: 'lens-agents', label: 'Agents' },
     ];
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const last = screen.getByRole('button', { name: /Agents/ });
     expect(last.getAttribute('title')).toBe('Agents. Switch page.');
@@ -332,7 +334,7 @@ describe('SessionCrumbBar', () => {
       { id: 'lens-agents', label: 'Agents' },
     ];
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -356,7 +358,7 @@ describe('SessionCrumbBar', () => {
     ];
     h.state.activeLens = { [SESSION_ID]: 'plans' };
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: 'Artifacts. Switch page.' }));
     expect(toPlans).not.toHaveBeenCalled();
@@ -374,7 +376,7 @@ describe('SessionCrumbBar', () => {
     ];
     h.state.activeLens = { [SESSION_ID]: 'plans' };
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: 'Artifacts. Switch page.' }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -393,7 +395,7 @@ describe('SessionCrumbBar', () => {
     ];
     h.state.activeLens = { [SESSION_ID]: 'decisions' };
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Decisions/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -413,7 +415,7 @@ describe('SessionCrumbBar', () => {
     h.state.sessionBranches = { [SESSION_ID]: '' };
     h.state.activeLens = { [SESSION_ID]: 'review' };
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -432,7 +434,7 @@ describe('SessionCrumbBar', () => {
       { id: 'lens-agents', label: 'Agents' },
     ];
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -453,7 +455,7 @@ describe('SessionCrumbBar', () => {
         { id: 'q2', status: 'open' },
       ],
     };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -475,7 +477,7 @@ describe('SessionCrumbBar', () => {
         { id: 'q2', status: 'answered' },
       ],
     };
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
@@ -490,17 +492,17 @@ describe('SessionCrumbBar', () => {
     h.crumbs = [{ id: 'overview', label: 'Overview' }];
     h.state.activeLens = { [SESSION_ID]: null };
     h.state.selectedAgentId = {};
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /Overview/ }));
     expect(screen.getByRole('menu', { name: 'Switch page' }).textContent).toContain('Terminal');
   });
 });
 
-describe('SessionCrumbBar on a workflow step', () => {
+describe('SessionCrumbs on a workflow step', () => {
   it('is the only breadcrumb on the surface, and it names all four levels', () => {
     openStepSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     expect(screen.getAllByRole('navigation', { name: 'Breadcrumb' })).toHaveLength(1);
     expect(screen.queryByRole('navigation', { name: 'Workflow breadcrumb' })).toBeNull();
@@ -513,7 +515,7 @@ describe('SessionCrumbBar on a workflow step', () => {
 
   it('switches between the started steps of the open run, not across runs', () => {
     openStepSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /workflow step/ }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
@@ -525,10 +527,10 @@ describe('SessionCrumbBar on a workflow step', () => {
   });
 });
 
-describe('SessionCrumbBar on a cluster child', () => {
+describe('SessionCrumbs on a cluster child', () => {
   it('names the father level between the run and the child', () => {
     openClusterSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(nav.textContent).toContain('Overview');
@@ -540,7 +542,7 @@ describe('SessionCrumbBar on a cluster child', () => {
 
   it('navigates to the father when its label is clicked', () => {
     openClusterSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: 'workflow step' }));
     const parentCrumb = h.crumbs.find((crumb) => crumb.id === 'selected-parent');
@@ -550,7 +552,7 @@ describe('SessionCrumbBar on a cluster child', () => {
 
   it('keeps the step switcher on the father crumb, scoped to the run steps', () => {
     openClusterSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: 'workflow step. Switch agent.' }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
@@ -564,7 +566,7 @@ describe('SessionCrumbBar on a cluster child', () => {
 
   it('scopes the child dropdown to the cluster siblings only', () => {
     openClusterSurface();
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /area alpha/ }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
@@ -590,7 +592,7 @@ describe('SessionCrumbBar on a cluster child', () => {
       },
       { id: 'selected-child', label: 'an even longer cluster child area description name' },
     ];
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' });
     expect(nav.className).not.toContain('flex-wrap');
@@ -613,7 +615,7 @@ type OpenAtParams = {
 const openMenuAt = ({ top }: OpenAtParams): HTMLElement => {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
-  render(<SessionCrumbBar />);
+  renderCrumbs();
   const trigger = screen.getByRole('button', { name: /scout one/ });
   const container = trigger.parentElement as HTMLElement;
   container.getBoundingClientRect = () =>
@@ -623,7 +625,7 @@ const openMenuAt = ({ top }: OpenAtParams): HTMLElement => {
   return screen.getByRole('menu', { name: 'Switch agent' });
 };
 
-describe('SessionCrumbBar switcher popover', () => {
+describe('SessionCrumbs switcher popover', () => {
   it('gives the scrolling viewport the whole popover, so nothing is cut early', () => {
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: Array.from({ length: 20 }, (_, index) =>
@@ -636,7 +638,7 @@ describe('SessionCrumbBar switcher popover', () => {
       { id: 'lens-agents', label: 'Agents', onClick: vi.fn() },
       { id: 'selected-child', label: 'agent 0' },
     ];
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /agent 0/ }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
@@ -665,7 +667,7 @@ describe('SessionCrumbBar switcher popover', () => {
   });
 
   it('escapes the crumb row so the trigger height never caps the menu', () => {
-    render(<SessionCrumbBar />);
+    renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /scout one/ }));
     const menu = screen.getByRole('menu', { name: 'Switch agent' });

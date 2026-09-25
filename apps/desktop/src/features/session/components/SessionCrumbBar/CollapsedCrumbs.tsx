@@ -1,8 +1,8 @@
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly crumbs: ReadonlyArray<BreadcrumbCrumb>;
@@ -41,7 +41,7 @@ export const CollapsedCrumbs = ({ crumbs, className }: Props) => {
               aria-expanded={open}
               className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
             >
-              <MoreHorizontal size={ICON_SIZE.row} aria-hidden />
+              <CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />
             </button>
           </Tooltip>
         }

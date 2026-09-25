@@ -13,8 +13,6 @@ export type DrawerContent =
       readonly payload: { readonly sessionDir: string; readonly entry: ExploreEntry };
     };
 
-export type DrawerKind = DrawerContent['kind'];
-
 export type DrawerRequest = DrawerContent & {
   readonly sessionId: SessionId;
 };
