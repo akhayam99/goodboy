@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, ROLE_REGISTRY } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, PLAN_KIT_GUIDE, ROLE_REGISTRY } from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
 import { EFFORT_LEVELS } from '../chat/utils/chat-constants';
 import {
@@ -696,6 +696,25 @@ describe('boundary systemPrompts', () => {
 
   it('generic prompt has no restrictions', () => {
     expect(AGENT_KIND_DEFAULTS['generic'].systemPrompt).toContain('no role restrictions');
+  });
+
+  it('planner prompt defines the plan sections, the parts and the plan kit', () => {
+    const prompt = AGENT_KIND_DEFAULTS.planner.systemPrompt ?? '';
+    for (const section of [
+      '## Goal',
+      '## Context',
+      '## Approach',
+      '## Risks',
+      '## Done when',
+      '## Out of scope',
+    ]) {
+      expect(prompt).toContain(section);
+    }
+    expect(prompt).toContain('"doneWhen": 1 to 4 checks');
+    expect(prompt).toContain('"touches": the files or folders this part changes, at most 12');
+    expect(prompt).toContain('never more than 5');
+    expect(prompt).toContain(PLAN_KIT_GUIDE);
+    expect(prompt).toContain('use one form or the other, never both');
   });
 });
 

@@ -66,4 +66,4 @@ export type {
   WireframeValidationResult,
   WireframeViewport,
 } from './wireframe';
-export { REPORT_KIT_GUIDE } from './reportKitGuide';
+export { PLAN_KIT_GUIDE, REPORT_KIT_GUIDE } from './reportKitGuide';

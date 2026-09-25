@@ -68,6 +68,40 @@ describe('parseArtifactEnvelope', () => {
     expect(result.artifact.metadata.clusters).toHaveLength(1);
   });
 
+  it('cleans the doneWhen and touches of each plan cluster', () => {
+    const result = parseArtifactEnvelope(
+      envelope(
+        'v=1 kind=plan',
+        JSON.stringify({
+          title: 'Ship it',
+          format: 'markdown',
+          content: 'step one',
+          metadata: {
+            clusters: [
+              {
+                title: 'move files',
+                instructions: 'do it',
+                doneWhen: [' run the suite ', 3, '', 'open the page'],
+                touches: 'src/a.ts',
+                extra: true,
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    if (result.status !== 'captured' || result.artifact.kind !== 'plan') {
+      throw new Error('expected a captured plan');
+    }
+    expect(result.artifact.metadata.clusters).toEqual([
+      {
+        title: 'move files',
+        instructions: 'do it',
+        doneWhen: ['run the suite', 'open the page'],
+      },
+    ]);
+  });
+
   it('captures a wireframe envelope and defaults its metadata', () => {
     const document = wireframeDocument();
     const result = parseArtifactEnvelope(

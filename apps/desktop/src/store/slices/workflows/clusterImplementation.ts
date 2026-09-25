@@ -58,6 +58,18 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
 export const composeClusterBoundary = (childId: AgentId): string =>
   composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
 
+type ClusterChecksParams = {
+  readonly label: string;
+  readonly items: ReadonlyArray<string> | undefined;
+};
+
+const composeClusterChecks = ({ label, items }: ClusterChecksParams): string => {
+  if (items === undefined || items.length === 0) {
+    return '';
+  }
+  return [`**${label}**`, ...items.map((item) => `- ${item}`)].join('\n');
+};
+
 function composeClusterKickoff(
   childId: AgentId,
   goalTitle: string,
@@ -75,6 +87,8 @@ function composeClusterKickoff(
     priorBlock,
     `**Cluster ${index + 1}/${clusters.length}** ${cluster?.title ?? ''}`,
     cluster?.instructions ?? '',
+    composeClusterChecks({ label: 'Done when', items: cluster?.doneWhen }),
+    composeClusterChecks({ label: 'Touches', items: cluster?.touches }),
     composeClusterBoundary(childId),
   );
 }

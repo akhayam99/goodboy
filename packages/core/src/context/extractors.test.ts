@@ -676,6 +676,22 @@ describe('extractClustersFromMarker', () => {
     ]);
   });
 
+  it('keeps doneWhen and touches, trimmed, deduped and capped', () => {
+    const text = `<<clusters>>${JSON.stringify([
+      {
+        title: 'move allocation',
+        instructions: 'x',
+        doneWhen: [' run pnpm test ', '', 7, 'run pnpm test', 'a', 'b', 'c', 'd'],
+        touches: Array.from({ length: 14 }, (_, i) => `src/f${i}.ts`),
+      },
+      { title: 'plain', instructions: 'y', doneWhen: 'not a list', touches: [] },
+    ])}<</clusters>>`;
+    const clusters = extractClustersFromMarker({ assistantText: text, emittingProvider: null });
+    expect(clusters?.[0]?.doneWhen).toEqual(['run pnpm test', 'a', 'b', 'c']);
+    expect(clusters?.[0]?.touches).toHaveLength(12);
+    expect(clusters?.[1]).toEqual({ title: 'plain', instructions: 'y' });
+  });
+
   it('returns null on malformed json', () => {
     expect(
       extractClustersFromMarker({

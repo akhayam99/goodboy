@@ -311,6 +311,12 @@ checks, the files it touches and its model (`Auto` when the planner proposed
 none). Once the plan runs, each part takes the state of the subagent that
 carries it, matched by order under the agent that ran the plan.
 
+A plan follows one shape: a title, then Goal, Context, Approach, Risks, Done
+when and Out of scope. The planner writes each part with its own checks
+(`doneWhen`, at most 4) and the files it touches (`touches`, at most 12), and
+the subagent that carries a part receives both in its kickoff, so it knows
+when the part is done.
+
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
 colour) and the screens as a grid under it. A node or a tile opens

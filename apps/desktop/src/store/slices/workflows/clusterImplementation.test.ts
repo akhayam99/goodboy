@@ -722,6 +722,27 @@ describe('fanOutClusters', () => {
     expect(turnState['child-1']?.kind).toBe('idle');
   });
 
+  it('puts the part checks and touched paths in the kickoff', async () => {
+    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
+    const c = container();
+    const { get, set, sendTurn } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
+    const checked: ReadonlyArray<ImplementationCluster> = [
+      {
+        title: 'c0',
+        instructions: 'do 0',
+        doneWhen: ['run pnpm test', 'open the ledger'],
+        touches: ['packages/ledger-core/src'],
+      },
+      { title: 'c1', instructions: 'do 1' },
+    ];
+
+    await fanOutClusters(set, get, SID, c, checked, 'goal');
+
+    const call = (sendTurn.mock.calls[0]! as unknown[])[0] as { content: string };
+    expect(call.content).toContain('**Done when**\n- run pnpm test\n- open the ledger');
+    expect(call.content).toContain('**Touches**\n- packages/ledger-core/src');
+  });
+
   it('keeps the parent selected: starting the first child never reassigns selectedAgentId', async () => {
     const c = container();
     const { get, set, state } = makeStore({
