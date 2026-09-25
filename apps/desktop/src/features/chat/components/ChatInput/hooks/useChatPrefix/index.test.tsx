@@ -197,6 +197,11 @@ describe('useChatPrefix, script quick action', () => {
         }),
       ),
     );
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'scriptRun',
+      sessionId: SESSION_ID,
+      payload: { mountId: LEDGER_MOUNT.mountId },
+    });
 
     const { result: missed } = renderScripts('$zz');
     expect(missed.current.filteredQuickItems).toEqual([]);

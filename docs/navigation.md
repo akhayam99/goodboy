@@ -83,7 +83,8 @@ In the composer, `$` lists every script of the session's mounted projects
 `composer.json` scripts by category, each tagged with its source. Manifests are
 read from each mount the first time `$` is typed. With more than one mount a
 row names its project. An empty list says why: no project in the session, no
-script in the project, or no match for the filter.
+script in the project, or no match for the filter. Enter runs the row and opens
+its output in the right drawer; the composer text is cleared.
 
 ## Surfaces
 
@@ -269,8 +270,8 @@ covered.
   takes typing itself.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
-  three, and a group with no rows is not drawn. A script row hands its run to
-  the shell's script opener. Spend opens Impact; it is never merged with a
+  three, and a group with no rows is not drawn. A script row moves to its
+  session and opens that run's output in the right drawer. Spend opens Impact; it is never merged with a
   count. The bell opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -590,3 +591,14 @@ studio keeps the same contract inside itself (`InboxStudioLayout`): the record
 opens in a right column with the same width constants and the same saved width,
 resizes with the same handle, pushes the list while the list keeps 560px and
 lies over it otherwise. Escape closes the record before the studio.
+
+`scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
+`ScriptRunDrawer` reads the run from `scriptRuns`, where the one
+output subscription per run lives, so closing the drawer loses nothing. The
+header action is Stop while it runs and Run again after; the body is a status
+line (state, time, project, branch), a `Command` disclosure closed by default,
+and the log, which follows the tail until you scroll up and then offers
+`Jump to latest`. Error lines carry a danger bar and an `err` prefix. The dock
+says `Following output` while it runs and the exit, time and Copy output after.
+A run records the mount it ran in, so a project mounted twice reopens on the
+right branch.

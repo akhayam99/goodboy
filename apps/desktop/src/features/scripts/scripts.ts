@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { ProjectScriptId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectScriptId, SessionId } from '@goodboy/types';
 
 export type ScriptRunResult = {
   readonly stdout: string;
@@ -17,6 +17,8 @@ export type ScriptRunRecord = {
   readonly startedAt: number;
   readonly name?: string;
   readonly output?: string;
+  readonly mountId?: MountId;
+  readonly completedAt?: number;
 };
 
 export type ScriptSource = 'package-json' | 'composer';

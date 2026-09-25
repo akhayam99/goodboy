@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ScriptRunRecord } from '../../scripts';
 
@@ -8,6 +8,7 @@ export type RunningScript = {
   readonly sessionId: SessionId;
   readonly sessionGoal: string;
   readonly scriptId: string;
+  readonly mountId: MountId | null;
   readonly scriptName: string;
   readonly startedAt: number;
 };
@@ -15,6 +16,7 @@ export type RunningScript = {
 type PendingScriptRun = {
   readonly sessionId: SessionId;
   readonly scriptId: string;
+  readonly mountId: MountId | null;
   readonly runId: string;
   readonly name: string | null;
   readonly startedAt: number;
@@ -43,6 +45,7 @@ const collectPendingRuns = ({
         kept ?? {
           sessionId: sessionId as SessionId,
           scriptId,
+          mountId: record.mountId ?? null,
           runId: record.runId,
           name: record.name ?? null,
           startedAt: record.startedAt,
@@ -96,6 +99,7 @@ export const useRunningScripts = (): ReadonlyArray<RunningScript> => {
         sessionId: run.sessionId,
         sessionGoal: session.goal,
         scriptId: run.scriptId,
+        mountId: run.mountId,
         scriptName,
         startedAt: run.startedAt,
       });

@@ -184,7 +184,9 @@ mask.
 
 Every scroll region is wrapped in `ScrollFade` from `@goodboy/ui`. Raw
 `overflow-y-auto` is forbidden. The viewport hides its native scrollbar, so the
-fade is the only sign that a region scrolls.
+fade is the only sign that a region scrolls. A region that must drive its own
+scroll (a log that follows its tail) passes `viewportRef` and
+`onViewportScroll` instead of reaching for a raw scroller.
 
 **Give it a bounded height**: `min-h-0 flex-1` inside a flex column, or a
 `max-h-*` on the root. A root with no height limit does not throw an error. It

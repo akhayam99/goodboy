@@ -4,6 +4,8 @@ import { SlotHistoryDrawer } from '../../../features/session/components/SessionW
 import { ExploreFileDrawer } from '../../../features/explore/components/ExploreFileDrawer';
 import { ArtifactShellDrawer } from '../../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { PlanPartDrawer } from '../../../features/plans/components/PlanParts/PlanPartDrawer';
+import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunDrawer';
+import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
 export const DrawerHost = () => {
   const drawer = useAppStore(selectOpenDrawer);
@@ -44,6 +46,16 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           planId={drawer.payload.planId}
           index={drawer.payload.index}
+          onClose={closeDrawer}
+        />
+      );
+    case 'scriptRun':
+      return (
+        <ScriptRunDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          scriptKey={drawer.payload.scriptKey}
+          mountId={drawer.payload.mountId}
           onClose={closeDrawer}
         />
       );

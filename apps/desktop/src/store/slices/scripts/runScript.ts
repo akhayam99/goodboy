@@ -25,6 +25,11 @@ type WriteRunParams = {
   readonly record: ScriptRunRecord;
 };
 
+type ResolvedMount = {
+  readonly cwd: string;
+  readonly mountId: MountId;
+};
+
 export const runScript = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, scriptId, mountId, cols = 220, rows = 50 }: Params) => {
     const runId = crypto.randomUUID();
@@ -38,7 +43,8 @@ export const runScript = (set: SetFn, get: GetFn) => {
         },
       }));
 
-    writeRun({ record: { status: 'pending', result: null, runId, startedAt } });
+    const mountField = mountId === undefined ? {} : { mountId };
+    writeRun({ record: { status: 'pending', result: null, runId, startedAt, ...mountField } });
 
     const state = get();
     const session = state.sessions.find((candidate) => candidate.id === sessionId);
@@ -48,20 +54,23 @@ export const runScript = (set: SetFn, get: GetFn) => {
         : (state.projectScripts[session.workspaceId] ?? []).find(
             (candidate) => candidate.id === scriptId,
           );
-    const resolveCwd = (): string | null => {
+    const resolveMount = (): ResolvedMount | null => {
       if (script === undefined) {
         return null;
       }
       if (mountId !== undefined) {
-        return selectWritableMountPath({ state, sessionId, mountId });
+        const cwd = selectWritableMountPath({ state, sessionId, mountId });
+        return cwd === null ? null : { cwd, mountId };
       }
-      return (
-        selectUnambiguousProjectMount({ state, sessionId, projectId: script.projectId })
-          ?.worktreePath ?? null
-      );
+      const mount = selectUnambiguousProjectMount({
+        state,
+        sessionId,
+        projectId: script.projectId,
+      });
+      return mount === null ? null : { cwd: mount.worktreePath, mountId: mount.mountId };
     };
-    const cwd = resolveCwd();
-    if (script === undefined || cwd === null) {
+    const resolved = resolveMount();
+    if (script === undefined || resolved === null) {
       const project =
         script === undefined
           ? undefined
@@ -78,8 +87,22 @@ export const runScript = (set: SetFn, get: GetFn) => {
       const message =
         script === undefined ? 'Script is not available in this session' : unmountedMessage;
       const result: ScriptRunResult = { stdout: '', stderr: message, exitCode: -1 };
-      writeRun({ record: { status: 'error', result, runId, startedAt } });
+      writeRun({
+        record: {
+          status: 'error',
+          result,
+          runId,
+          startedAt,
+          completedAt: Date.now(),
+          ...mountField,
+        },
+      });
       return result;
+    }
+
+    const record = get().scriptRuns[sessionId]?.[scriptId];
+    if (record !== undefined && record.runId === runId) {
+      writeRun({ record: { ...record, name: script.name, mountId: resolved.mountId } });
     }
 
     const registered = await registerScriptRunListeners({
@@ -90,10 +113,11 @@ export const runScript = (set: SetFn, get: GetFn) => {
       runId,
       startedAt,
       name: script.name,
+      mountId: resolved.mountId,
     });
 
     try {
-      await invokeScriptRun({ scriptId, runId, sessionId, cwd, cols, rows });
+      await invokeScriptRun({ scriptId, runId, sessionId, cwd: resolved.cwd, cols, rows });
     } catch (caughtError) {
       registered.dispose();
       const result: ScriptRunResult = {
@@ -101,7 +125,17 @@ export const runScript = (set: SetFn, get: GetFn) => {
         stderr: formatError(caughtError),
         exitCode: -1,
       };
-      writeRun({ record: { status: 'error', result, runId, startedAt } });
+      writeRun({
+        record: {
+          status: 'error',
+          result,
+          runId,
+          startedAt,
+          completedAt: Date.now(),
+          name: script.name,
+          mountId: resolved.mountId,
+        },
+      });
       return result;
     }
 

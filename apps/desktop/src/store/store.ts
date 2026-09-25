@@ -314,6 +314,7 @@ type RunDiscoveredScriptParams = {
   readonly name: string;
   readonly command: string;
   readonly cwd: string;
+  readonly mountId?: MountId;
   readonly cols?: number;
   readonly rows?: number;
 };
