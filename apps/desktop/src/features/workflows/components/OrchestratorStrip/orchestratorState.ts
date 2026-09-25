@@ -196,6 +196,17 @@ export const resolveOrchestratorState = ({
       sentence: `Paused on ${isBlocked ? 'blocked' : 'failed'} step ${haltedIndex + 1}`,
     };
   }
+  const stoppedIndex = ordered.findIndex((agent) => agent.status === 'stopped');
+  if (stoppedIndex >= 0) {
+    const agent = ordered[stoppedIndex]!;
+    const by = agent.stoppedBy === 'app' ? 'when Goodboy quit' : 'by you';
+    return {
+      ...base,
+      phase: 'waiting',
+      tone: 'neutral',
+      sentence: `Step ${stoppedIndex + 1} stopped ${by} · ${agent.name}`,
+    };
+  }
   const pendingIndex = ordered.findIndex((agent) => agent.status === 'pending');
   if (pendingIndex >= 0) {
     const agent = ordered[pendingIndex]!;

@@ -42,13 +42,15 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
   if (action.kind === 'none') {
     return null;
   }
-  const tint = tintClasses(TONE[action.kind]);
+  const isBlocked = action.kind === 'recover' && action.isBlocked;
+  const tint = tintClasses(isBlocked ? 'warning' : TONE[action.kind]);
 
   return (
     <section
       aria-label={LABEL[action.kind]}
       data-testid="next-action-strip"
       data-kind={action.kind}
+      data-blocked={isBlocked || undefined}
       className={cn(
         'flex min-w-0 flex-wrap items-start gap-x-2.5 gap-y-2 rounded-lg border border-l-2 border-border-soft bg-background px-3 py-2.5',
         tint.rail,
@@ -59,9 +61,10 @@ export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, clas
         {action.kind === 'answer' && (
           <CONCEPT_ICONS.questions size={ICON_SIZE.control} className={tint.icon} />
         )}
-        {action.kind === 'recover' && (
+        {action.kind === 'recover' && !isBlocked && (
           <CircleAlert size={ICON_SIZE.control} className={tint.icon} />
         )}
+        {isBlocked && <CONCEPT_ICONS.runBlocked size={ICON_SIZE.control} className={tint.icon} />}
         {action.kind === 'summarizing' && <StatusDot tone="info" size="sm" pulsing />}
       </span>
       <div className="flex min-w-48 flex-1 flex-col gap-0.5">

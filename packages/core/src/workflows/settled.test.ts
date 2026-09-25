@@ -24,6 +24,7 @@ describe('isAgentStatusSettled', () => {
     ['skipped', true],
     ['failed', false],
     ['blocked', false],
+    ['stopped', false],
     ['pending', false],
     ['running', false],
   ] as const)('treats %s as settled: %s', (status, expected) => {
@@ -35,6 +36,7 @@ describe('isAgentStatusHalted', () => {
   it.each([
     ['failed', true],
     ['blocked', true],
+    ['stopped', false],
     ['completed', false],
     ['skipped', false],
     ['pending', false],

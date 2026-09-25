@@ -141,6 +141,23 @@ describe('NextActionStrip', () => {
     expect(within(strip).getByRole('button', { name: 'Skip step' })).toBeDefined();
   });
 
+  it('puts a blocked step on the warning rail, never the danger one', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'blocked')] };
+    renderStrip({ subjectAgentId: 'agent-1' as AgentId });
+
+    const strip = screen.getByRole('region', { name: 'Next action: recover the step' });
+    expect(strip.className).toContain('border-l-warning');
+    expect(strip.className).not.toContain('border-l-danger');
+    expect(within(strip).getByRole('button', { name: 'Check completion' })).toBeDefined();
+  });
+
+  it('draws nothing for a step you stopped', () => {
+    store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'stopped')] };
+    const { container } = renderStrip({ subjectAgentId: 'agent-1' as AgentId });
+
+    expect(container.innerHTML).toBe('');
+  });
+
   it('asks the failed agent to check its work without skipping it', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'failed')] };
     renderStrip();

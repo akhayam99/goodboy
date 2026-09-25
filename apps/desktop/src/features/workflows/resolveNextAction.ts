@@ -16,6 +16,7 @@ export type NextAction =
       readonly kind: 'recover';
       readonly subjectAgentId: AgentId;
       readonly step: Step;
+      readonly isBlocked: boolean;
       readonly sentence: string;
       readonly cause: string;
     }
@@ -138,14 +139,15 @@ const recoverAction = ({
   if (subjectAgentId != null && subjectAgentId !== failedAgent.id) {
     return null;
   }
+  const isBlocked = failedAgent.status === 'blocked';
   return {
     kind: 'recover',
     subjectAgentId: failedAgent.id,
     step,
-    sentence:
-      failedAgent.status === 'blocked'
-        ? `${step.name} stopped without finishing and without asking you anything. Tell it what to do next.`
-        : `${step.name} stopped before finishing.`,
+    isBlocked,
+    sentence: isBlocked
+      ? `${step.name} stopped without finishing and without asking you anything. Tell it what to do next.`
+      : `${step.name} stopped before finishing.`,
     cause: waitingCause({ workflow, step, isDynamic: run.executionMode === 'dynamic' }),
   };
 };

@@ -385,6 +385,18 @@ describe('stopped agents', () => {
     expect(isRowNeedingYou({ state })).toBe(false);
   });
 
+  it('puts a blocked step ahead of a stopped one and keeps it a warning', () => {
+    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
+    const state = runState({
+      failedStep: { stepLabel: '3', isBlocked: true },
+      stoppedStep: { agent, stepLabel: '4' },
+    });
+
+    expect(state.reason?.kind).toBe('stepBlocked');
+    expect(rowStateTone({ state })).toBe('warning');
+    expect(rowStateNode({ state }).label).toBe('Blocked');
+  });
+
   it('still counts an open question as needing you', () => {
     expect(isRowNeedingYou({ state: agentState({ isAsking: true }) })).toBe(true);
   });

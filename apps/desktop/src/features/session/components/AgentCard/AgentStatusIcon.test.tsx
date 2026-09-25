@@ -14,7 +14,9 @@ const STATUSES: ReadonlyArray<AgentStatus> = [
   'running',
   'completed',
   'failed',
+  'blocked',
   'skipped',
+  'stopped',
 ];
 
 describe('AgentStatusIcon', () => {
@@ -31,5 +33,13 @@ describe('AgentStatusIcon', () => {
     const name = screen.getByRole('img').getAttribute('aria-label') ?? '';
     expect(name).toContain('Skipped');
     expect(name).toContain('nothing ran for this step');
+  });
+
+  it('keeps a stopped agent calm and a blocked agent a warning', () => {
+    expect(describeAgentStatus({ status: 'stopped' }).tone).toBe('neutral');
+    expect(describeAgentStatus({ status: 'blocked' }).tone).toBe('warning');
+    expect(describeAgentStatus({ status: 'stopped' }).icon).not.toBe(
+      describeAgentStatus({ status: 'blocked' }).icon,
+    );
   });
 });

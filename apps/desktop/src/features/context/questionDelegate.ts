@@ -23,7 +23,13 @@ export const QUESTION_DELEGATE_COPY = {
 
 const NAME_BUDGET = 48;
 
-const TERMINAL_STATUSES: ReadonlyArray<AgentStatus> = ['completed', 'failed', 'blocked', 'skipped'];
+const TERMINAL_STATUSES: ReadonlyArray<AgentStatus> = [
+  'completed',
+  'failed',
+  'blocked',
+  'skipped',
+  'stopped',
+];
 
 type AgentParam = {
   readonly agent: Agent;

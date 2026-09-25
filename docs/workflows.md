@@ -306,7 +306,8 @@ repeat it at the bottom. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
-- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Check completion** and **Skip step**. Writing to the agent in its chat also resumes it
+- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Check completion** and **Skip step**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
+- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrator strip says "Step 2 stopped by you" in a neutral tone
 - An open question: "Implement asks: ..." with the step that waits on it, or "This step waits on your answer." when the agent that asked is that step, and **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
