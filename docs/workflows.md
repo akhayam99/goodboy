@@ -151,7 +151,9 @@ of its left rail, never with a filled background. It shows at most one action:
 stopped it, **Retry** after a failed decision, **Continue the run** once it is
 complete, or the spend limit on a budget pause. A failed step and an open
 question are left to the Next action strip, so the row only says the run is
-paused. **Stop now** and **Model per step** (the model each step runs on, and
+paused, on a neutral rail: the strip above carries the tone. When the pane is
+too narrow for the sentence and the controls on one line, the controls wrap to
+a second line on the right instead of cutting the sentence. **Stop now** and **Model per step** (the model each step runs on, and
 why) sit in the menu. The hint field sits under the row, always open.
 
 ### Why each step
@@ -269,7 +271,7 @@ repeat it at the bottom. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
-- An open question: "Implement asks: ..." with **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
+- An open question: "Implement asks: ..." with the step that waits on it, or "This step waits on your answer." when the agent that asked is that step, and **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
 In the agent detail, the strip shows only on the agent the failed step is

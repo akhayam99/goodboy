@@ -181,6 +181,18 @@ describe('resolveNextAction', () => {
       kind: 'answer',
       subjectAgentId: 'a-1',
       sentence: 'Implement agent asks: Keep the legacy validateCart export?',
+      cause: 'This step waits on your answer.',
+    });
+  });
+
+  it('names the waiting step when another agent asks', () => {
+    const action = resolve({
+      agents: stepAgents('completed', 'failed'),
+      questions: [question({ createdByAgentId: 'a-0' as AgentId })],
+    });
+
+    expect(action).toMatchObject({
+      kind: 'answer',
       cause: 'Implement waits on your answer.',
     });
   });
@@ -202,7 +214,7 @@ describe('resolveNextAction', () => {
     });
 
     expect(action).toMatchObject({
-      cause: 'Implement waits on your answer. 2 questions are open.',
+      cause: 'This step waits on your answer. 2 questions are open.',
     });
   });
 

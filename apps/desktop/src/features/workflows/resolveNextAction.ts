@@ -87,10 +87,13 @@ const answerAction = ({
     question.createdByAgentId != null
       ? (agents.find((agent) => agent.id === question.createdByAgentId) ?? null)
       : null;
+  const waitingStep = advance.kind === 'complete' ? null : advance.step;
   const waiting =
-    advance.kind === 'complete'
+    waitingStep === null
       ? 'The orchestrator waits on your answer.'
-      : `${advance.step.name} waits on your answer.`;
+      : asker?.stepId === waitingStep.id
+        ? 'This step waits on your answer.'
+        : `${waitingStep.name} waits on your answer.`;
   const more = questions.length > 1 ? ` ${questions.length} questions are open.` : '';
   return {
     kind: 'answer',

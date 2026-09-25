@@ -204,13 +204,14 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed')], hasOpenQuestions: true });
 
     expect(state.phase).toBe('needs-answer');
-    expect(state.tone).toBe('warning');
+    expect(state.tone).toBe('neutral');
   });
 
   it('reports a failed step ahead of a pending one', () => {
     const state = resolve({ agents: [makeAgent(0, 'failed'), makeAgent(1, 'pending')] });
 
     expect(state.phase).toBe('step-failed');
+    expect(state.tone).toBe('neutral');
     expect(state.sentence).toBe('Paused on failed step 1');
     expect(state.detail).toBeNull();
   });

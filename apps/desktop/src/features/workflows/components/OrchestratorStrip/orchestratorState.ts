@@ -58,7 +58,7 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   },
   questions: {
     phase: 'needs-answer',
-    tone: 'warning',
+    tone: 'neutral',
     sentence: 'Paused for your answer',
     showsMessage: false,
   },
@@ -182,7 +182,7 @@ export const resolveOrchestratorState = ({
     return {
       ...base,
       phase: 'needs-answer',
-      tone: 'warning',
+      tone: 'neutral',
       sentence: 'Paused for your answer',
     };
   }
@@ -191,7 +191,7 @@ export const resolveOrchestratorState = ({
     return {
       ...base,
       phase: 'step-failed',
-      tone: 'danger',
+      tone: 'neutral',
       sentence: `Paused on failed step ${failedIndex + 1}`,
     };
   }

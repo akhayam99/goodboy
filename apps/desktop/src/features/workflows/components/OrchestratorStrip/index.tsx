@@ -219,7 +219,7 @@ export const OrchestratorStrip = ({
             />
           )}
         </span>
-        <p className="flex min-w-0 flex-1 items-baseline gap-2">
+        <p className="flex min-w-0 flex-1 basis-80 items-baseline gap-2">
           <span
             data-testid="orchestrator-state"
             className="min-w-0 truncate text-xs font-medium text-foreground"
@@ -238,7 +238,7 @@ export const OrchestratorStrip = ({
         </p>
         <div
           data-testid="orchestrator-controls"
-          className="flex shrink-0 flex-wrap items-center justify-end gap-1.5"
+          className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1.5"
         >
           {primaryAction}
           <OrchestratorRoutingRow
