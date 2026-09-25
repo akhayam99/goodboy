@@ -194,7 +194,8 @@ diff). Every row action lives in the always visible row menu
 terminal, scripts, editors, copy path, then close (unmount) or remove. A
 closed row offers Reopen in its action cell. The terminal and scripts icons on the row are
 hover accelerators, shown at rest only while something runs there; a hover
-icon is never the only way to an action. The project menu holds Detach
+icon is never the only way to an action. Below a 28rem container the idle
+accelerators take no room and New worktree shows its icon only. The project menu holds Detach
 project and renders nothing when the project has no mount to detach.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the

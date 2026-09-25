@@ -63,7 +63,9 @@ export const NewBranchMountAction = ({
             )}
           >
             <GitFork size={ICON_SIZE.row} aria-hidden />
-            {presentation === 'button' ? <span>New worktree</span> : null}
+            {presentation === 'button' ? (
+              <span className="@max-md:hidden">New worktree</span>
+            ) : null}
           </button>
         </Tooltip>
       }

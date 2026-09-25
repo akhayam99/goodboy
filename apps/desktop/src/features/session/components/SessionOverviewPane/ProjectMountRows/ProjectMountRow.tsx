@@ -45,7 +45,7 @@ type Props = {
 };
 
 const UTILITY_REVEAL =
-  'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100';
+  'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100 @max-md:hidden';
 
 const CELL = 'flex items-center px-1';
 const NARROW_HIDDEN = '@max-[36rem]:px-0 @max-[36rem]:*:hidden';
