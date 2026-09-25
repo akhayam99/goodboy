@@ -97,6 +97,7 @@ export const App = () => {
     openShortcutHelp,
     openSpend,
     openWorkflows,
+    settingsProviderId,
     studio,
     layers,
   } = useAppOverlays({
@@ -218,6 +219,7 @@ export const App = () => {
             }}
             onOpenSpend={openSpend}
             onOpenScript={openScript}
+            openProviderId={settingsProviderId}
           />
         }
         footer={

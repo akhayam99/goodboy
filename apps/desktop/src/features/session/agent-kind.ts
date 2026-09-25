@@ -7,7 +7,9 @@ import {
   resolveRoleRouting,
   WIREFRAME_SCHEMA_BRIEF,
   type AgentKindLabel,
+  type AutoContext,
 } from '@goodboy/core';
+import type { AutoLimitContext } from '../../store/slices/providerLimits/autoLimitContext';
 import type {
   Agent,
   AgentEffort,
@@ -401,17 +403,33 @@ type KindRoutingParams = {
   readonly kind: AgentKind;
   readonly roleModels?: RoleModelPreferences | null;
   readonly defaultProvider?: ProviderId | null;
+  readonly limitContext?: AutoLimitContext | null;
+};
+
+type KindAutoParams = Pick<KindRoutingParams, 'defaultProvider' | 'limitContext'>;
+
+const kindAutoContext = ({ defaultProvider, limitContext }: KindAutoParams): AutoContext | null => {
+  if (limitContext != null) {
+    return {
+      defaultProvider: defaultProvider ?? 'anthropic',
+      connected: limitContext.connected,
+      atLimit: limitContext.atLimit,
+    };
+  }
+  return defaultProvider == null ? null : { defaultProvider };
 };
 
 export const kindRouting = ({
   kind,
   roleModels,
   defaultProvider,
+  limitContext,
 }: KindRoutingParams): AgentKindRouting => {
+  const auto = kindAutoContext({ defaultProvider, limitContext });
   const role = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,
-    ...(defaultProvider != null && { auto: { defaultProvider } }),
+    ...(auto !== null && { auto }),
   });
   return { provider: role.provider, model: role.model, effort: role.effort };
 };

@@ -1,4 +1,6 @@
-import { devWarn, resolveTaskModel } from '@goodboy/core';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { devWarn } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateGeneratedWorkflowRunTitle } from '@goodboy/db';
@@ -46,7 +48,8 @@ export const generateWorkflowRunTitle = async ({
       return;
     }
     const settings = selectResolvedSettings({ state: get(), sessionId });
-    const taskModel = resolveTaskModel({
+    const taskModel = resolveLimitedTaskModel({
+      limitContext: autoLimitContext({ state: get() }),
       task: 'agent_naming',
       preferences: settings?.taskModels,
       workspaceDefaultProviderId: settings?.defaultProviderOverride,

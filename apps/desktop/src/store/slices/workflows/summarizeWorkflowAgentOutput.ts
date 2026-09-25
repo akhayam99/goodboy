@@ -1,4 +1,6 @@
-import { fallbackStepOutputSummary, planTaskModelFallback, resolveTaskModel } from '@goodboy/core';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
+import { fallbackStepOutputSummary, planTaskModelFallback } from '@goodboy/core';
 import type { Agent, AgentId, SessionId, TaskModelPreference } from '@goodboy/types';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import {
@@ -96,7 +98,8 @@ export const summarizeWorkflowAgentOutput = async ({
     .providers.filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
   const enabledProviders = session.providerPreference.enabledProviders ?? null;
-  const resolved = resolveTaskModel({
+  const resolved = resolveLimitedTaskModel({
+    limitContext: autoLimitContext({ state: get() }),
     task: 'summarizer',
     preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
     workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })

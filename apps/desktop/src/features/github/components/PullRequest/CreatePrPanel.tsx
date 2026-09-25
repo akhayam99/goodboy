@@ -22,6 +22,7 @@ import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes'
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -65,6 +66,7 @@ export const CreatePrPanel = ({
   const workspaceOverrides = useAppStore((s) =>
     workspaceId == null ? null : (s.workspaceOverrides?.[workspaceId] ?? null),
   );
+  const limitContext = useAutoLimitContext();
   const resolvedAgentConfig = useMemo(
     () =>
       taskModelAgentSpawnConfig({
@@ -72,8 +74,9 @@ export const CreatePrPanel = ({
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+        limitContext,
       }),
-    [workspaceOverrides, session?.providerPreference?.defaultProvider],
+    [limitContext, workspaceOverrides, session?.providerPreference?.defaultProvider],
   );
 
   const [mode, setMode] = useState<CreateMode>('manual');

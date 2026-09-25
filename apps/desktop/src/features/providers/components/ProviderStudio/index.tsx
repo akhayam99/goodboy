@@ -9,6 +9,7 @@ import { ProviderDetailPanel } from './ProviderDetailPanel';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
 import { MODELS_SECTION } from './ModelVisibilitySection/constants';
+import { USAGE_SECTION } from './UsageSection/usageSectionId';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -90,6 +91,7 @@ export const ProviderSettingsScope = ({
           autoConnect={autoConnect && selected?.id === initialFocus}
           autoUpdate={autoUpdate && selected?.id === initialFocus}
           focusModels={initialSection === MODELS_SECTION && selected?.id === initialFocus}
+          isUsageFocused={initialSection === USAGE_SECTION && selected?.id === initialFocus}
         />
       ),
   });

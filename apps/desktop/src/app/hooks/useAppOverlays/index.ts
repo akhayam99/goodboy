@@ -191,6 +191,10 @@ export const useAppOverlays = ({
 
   return {
     footer: footerTarget({ overlay, connected }),
+    settingsProviderId:
+      overlay?.kind === 'settings' && overlay.focus.scope === 'providers'
+        ? (overlay.focus.provider ?? null)
+        : null,
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,

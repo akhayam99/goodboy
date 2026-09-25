@@ -1,8 +1,10 @@
 import { Divider } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { CommandCenter } from './CommandCenter';
+import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
 import { SidebarToggle, type TopBarSidebar } from './SidebarToggle';
 import { SpendButton } from './SpendButton';
@@ -11,9 +13,10 @@ type Props = {
   readonly sidebar: TopBarSidebar;
   readonly onOpenSpend: () => void;
   readonly onOpenScript: (run: RunningScript) => void;
+  readonly openProviderId?: ProviderId | null;
 };
 
-export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript }: Props) => (
+export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript, openProviderId = null }: Props) => (
   <>
     <div
       data-tauri-drag-region="deep"
@@ -35,6 +38,8 @@ export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript }: Props) => (
           <NowChip onOpenScript={onOpenScript} />
           <SpendButton onOpenSpend={onOpenSpend} />
         </div>
+
+        <LimitsStrip openProviderId={openProviderId} />
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 

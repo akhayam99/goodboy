@@ -58,6 +58,10 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         void get()
           .loadNotifications()
           .catch(() => {});
+        void get()
+          .loadProviderLimits()
+          .then(() => get().refreshCodexLimits())
+          .catch(() => {});
         recordBootBreadcrumb({
           phase: 'migrating',
           detail: `ms=${Date.now() - migratingAt}`,

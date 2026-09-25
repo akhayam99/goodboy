@@ -272,4 +272,17 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({ providerId: 'anthropic', model: 'sonnet-5', effort: 'medium' });
   });
+
+  it('moves an automatic task off a default provider at its usage limit', () => {
+    expect(
+      resolveTaskModel({
+        task: 'summarizer',
+        preferences: null,
+        workspaceDefaultProviderId: 'anthropic',
+        sessionDefaultProviderId: 'anthropic',
+        connectedProviders: ['anthropic', 'codex'],
+        atLimitProviders: ['anthropic'],
+      }).providerId,
+    ).toBe('codex');
+  });
 });

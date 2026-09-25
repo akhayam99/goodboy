@@ -17,9 +17,10 @@ import {
   clampEffortForModel,
   recommendedModelForRole,
   resolveRoleRouting,
-  resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type {
   EffortLevel,
   ProviderId,
@@ -270,26 +271,30 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     [providers],
   );
 
+  const limitContext = useAutoLimitContext();
+
   const resolvedPlanTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'plan_generation',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const resolvedProsePolishTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'prose_polish',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const plannerEffectiveProviderId: ProviderId =
@@ -298,7 +303,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const plannerRecommendedModel = useMemo(
     () =>
       plannerProviderOverride !== ''
-        ? resolveTaskModel({
+        ? resolveLimitedTaskModel({
+            limitContext: null,
             task: 'plan_generation',
             preferences: null,
             workspaceDefaultProviderId: plannerProviderOverride,
@@ -312,13 +318,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const resolvedOrchestratorTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'workflow_orchestrator',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
@@ -339,7 +346,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const recommendedOrchestratorModel = useMemo(
     () =>
       orchestratorProviderOverride !== ''
-        ? resolveTaskModel({
+        ? resolveLimitedTaskModel({
+            limitContext: null,
             task: 'workflow_orchestrator',
             preferences: null,
             workspaceDefaultProviderId: orchestratorProviderOverride,

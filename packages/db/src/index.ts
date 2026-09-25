@@ -164,6 +164,8 @@ export {
   listTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
+export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
+export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,

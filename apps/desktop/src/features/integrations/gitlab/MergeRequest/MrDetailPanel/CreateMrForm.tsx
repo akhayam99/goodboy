@@ -17,6 +17,7 @@ import { appendOperatorNotes } from '../../../../session/utils/appendOperatorNot
 import { AgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
 import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
@@ -42,6 +43,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
   const { showToast } = useToast();
   const announceAgentStarted = useAgentStartedToast();
 
+  const limitContext = useAutoLimitContext();
   const resolvedAgentConfig = useMemo(
     () =>
       taskModelAgentSpawnConfig({
@@ -49,8 +51,9 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: session?.providerPreference?.defaultProvider ?? 'anthropic',
+        limitContext,
       }),
-    [workspaceOverrides, session?.providerPreference?.defaultProvider],
+    [limitContext, workspaceOverrides, session?.providerPreference?.defaultProvider],
   );
 
   const [mode, setMode] = useState<CreateMode>('manual');

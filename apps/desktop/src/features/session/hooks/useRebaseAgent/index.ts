@@ -13,6 +13,7 @@ import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../app/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -117,6 +118,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
+  const limitContext = useAutoLimitContext();
   const config = useMemo(
     () =>
       taskModelAgentSpawnConfig({
@@ -124,8 +126,9 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
+        limitContext,
       }),
-    [session?.providerPreference.defaultProvider, workspaceOverrides],
+    [limitContext, session?.providerPreference.defaultProvider, workspaceOverrides],
   );
   const isAgentRunning =
     phaseRuns?.some(

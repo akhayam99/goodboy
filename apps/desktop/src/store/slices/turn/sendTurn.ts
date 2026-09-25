@@ -1088,25 +1088,29 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       });
 
     try {
-      for await (const rawEvent of runTurn({
-        runId,
-        provider,
-        model: spawnModel,
-        workingDir,
-        writableRoots,
-        prompt: resolvedPrompt,
-        binary: providerInfo?.binary,
-        workspaceId: session.workspaceId,
-        sessionId,
-        ...(turnMountId !== null && { mountId: turnMountId }),
-        ...(resumeSessionId !== undefined && { resumeSessionId }),
-        systemPrompt: fullSystemPrompt,
-        ...(effortFlag !== undefined && { effort: effortFlag }),
-        ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
-        ...(writerLease !== undefined && { writerLease }),
-        ...(apiKeyBinding ?? {}),
-        ...claudeFlags,
-      })) {
+      for await (const rawEvent of runTurn(
+        {
+          runId,
+          provider,
+          model: spawnModel,
+          workingDir,
+          writableRoots,
+          prompt: resolvedPrompt,
+          binary: providerInfo?.binary,
+          workspaceId: session.workspaceId,
+          sessionId,
+          ...(turnMountId !== null && { mountId: turnMountId }),
+          ...(resumeSessionId !== undefined && { resumeSessionId }),
+          systemPrompt: fullSystemPrompt,
+          ...(effortFlag !== undefined && { effort: effortFlag }),
+          ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
+          ...(writerLease !== undefined && { writerLease }),
+          ...(apiKeyBinding ?? {}),
+          ...claudeFlags,
+        },
+        now,
+        { onProviderLimits: (limits) => void get().recordProviderLimits({ limits }) },
+      )) {
         const maxModeFailure =
           provider === 'cursor' && rawEvent.kind === 'error'
             ? matchCursorMaxModeFailure({ message: rawEvent.message })
@@ -1200,6 +1204,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             sessionId,
             now,
           });
+          if (provider === 'codex') {
+            void get().refreshCodexLimits();
+          }
         }
 
         const currentAgentState = get().agentTurnState[activeAgentId];

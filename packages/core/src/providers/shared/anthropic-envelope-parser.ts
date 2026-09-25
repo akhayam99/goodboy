@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type { IsoDateTime, ProviderLimits, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { devWarn } from '../../dev-log';
 import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
 import { createPermissionRequestEvent } from '../../permissions/events';
@@ -8,6 +8,7 @@ export type ParseContext = {
   readonly runId: ProviderRunId;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
+  readonly onProviderLimits?: (limits: ProviderLimits) => void;
   lastAssistantContextTokens?: number;
 };
 

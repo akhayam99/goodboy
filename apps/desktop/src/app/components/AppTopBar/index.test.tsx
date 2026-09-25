@@ -43,6 +43,8 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       scriptRuns: {} as Record<string, never>,
       sessions: [] as ReadonlyArray<Session>,
       archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
+      providers: [] as ReadonlyArray<never>,
+      providerLimits: {},
     },
   };
 });

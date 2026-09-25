@@ -211,6 +211,18 @@ export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
 export { TASKS } from './settings/tasks';
 export { DEFAULT_GROUPS, type DefaultGroups, type DefaultsGroup } from './settings/defaultGroups';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
+export { parseCodexRateLimits } from './providers/limits/parseCodexRateLimits';
+export { mergeProviderLimits } from './providers/limits/mergeProviderLimits';
+export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './providers/limits/constants';
+export {
+  PROVIDERS_REPORTING_LIMITS,
+  limitsChipOf,
+  selectLimitsChips,
+  worstLimitsChip,
+  type LimitsChip,
+  type LimitsChipState,
+} from './providers/limits/selectLimitsChips';
+export { providersAtLimit } from './providers/limits/providersAtLimit';
 
 export {
   PROVIDER_CAPABILITIES,

@@ -13,6 +13,7 @@ import {
   PROVIDER_IDS,
   type IsoDateTime,
   type ProviderId,
+  type ProviderLimits,
   type ProviderRunId,
   type TurnEvent,
 } from '@goodboy/types';
@@ -156,11 +157,20 @@ type RawTurnEnvelope =
   | { runId: string; type: 'end'; exit_code: number | null; stderr: string }
   | { runId: string; type: 'error'; message: string };
 
+export type RunTurnHooks = {
+  readonly onProviderLimits?: (limits: ProviderLimits) => void;
+};
+
 export async function* runTurn(
   args: SpawnArgs,
   now: () => IsoDateTime = () => new Date().toISOString() as IsoDateTime,
+  hooks: RunTurnHooks = {},
 ): AsyncIterable<TurnEvent> {
-  const ctx = { runId: args.runId, now };
+  const ctx: ParseContext = {
+    runId: args.runId,
+    now,
+    ...(hooks.onProviderLimits !== undefined && { onProviderLimits: hooks.onProviderLimits }),
+  };
   const queue: TurnEvent[] = [];
   let resolver: ((value: IteratorResult<TurnEvent>) => void) | null = null;
   let rejector: ((err: unknown) => void) | null = null;

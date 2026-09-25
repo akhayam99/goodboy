@@ -4,8 +4,11 @@ import { cn } from '../cn';
 
 export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
 
+export type TooltipVariant = 'label' | 'card';
+
 export type TooltipProps = {
-  content: string;
+  content: React.ReactNode;
+  variant?: TooltipVariant;
   side?: TooltipSide;
   anchorClassName?: string;
   children: React.ReactElement<{
@@ -101,7 +104,13 @@ const positionFor = (anchor: DOMRect, tip: DOMRect, side: TooltipSide): Coords =
   return { top, left, side: chosen };
 };
 
-export const Tooltip = ({ content, side = 'top', anchorClassName, children }: TooltipProps) => {
+export const Tooltip = ({
+  content,
+  variant = 'label',
+  side = 'top',
+  anchorClassName,
+  children,
+}: TooltipProps) => {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -228,7 +237,11 @@ export const Tooltip = ({ content, side = 'top', anchorClassName, children }: To
                 visibility: coords ? 'visible' : 'hidden',
               }}
               className={cn(
-                'pointer-events-none z-tooltip whitespace-nowrap rounded-sm bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
+                'pointer-events-none z-tooltip',
+                variant === 'label' &&
+                  'whitespace-nowrap rounded-sm bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
+                variant === 'card' &&
+                  'w-65 rounded-md border border-border-soft bg-elevated p-2.5 text-xs text-foreground shadow-md',
               )}
             >
               {content}

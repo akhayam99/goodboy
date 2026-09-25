@@ -186,6 +186,22 @@ pinned models keep working.
 - In the picker, the settings icon next to **Provider** opens this section for the
   provider you are looking at
 
+## Usage and spend
+
+Each provider page in **Settings > Providers & models** opens on **Usage**:
+
+- **Usage limits**: one row per window the provider reported (5 hours, the
+  week, a model's week), with the share used and the reset. A notice says when
+  the provider is about to run out or is out. Cursor and Gemini report nothing
+  Goodboy can read, and an API key provider is billed per token, so neither
+  shows windows
+- **Spend in Goodboy**: today, the last 7 days and this month for the current
+  workspace, counted by Goodboy at API prices, and the provider's budget when
+  you set one in Impact. On a plan this is what the same tokens would cost on
+  the API, not what you pay
+- The provider's row in the rail turns warning from 80% of a window and danger
+  when the provider is out, with the reason under its name
+
 ## Switching accounts
 
 Each provider uses one account at a time, and the card shows which one. That account
@@ -203,6 +219,9 @@ pays for every turn.
 - **Browser sign-in stuck**: click **Show details**, then **Open the link again**.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
+- **How close am I to a limit?** The Limits chips in the top bar show a bar per
+  provider. Hover one for every window and its reset, click it for the provider
+  page. Claude updates its numbers only while a Claude agent runs
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
@@ -479,8 +498,17 @@ When a provider ships or retires a model, update three files under
   skips a model the installed CLI is too old for (`cliGate`) or a Cursor combo that
   needs Max Mode when Max Mode is off. A provider with no column (OpenCode,
   OpenRouter, Moonshot) falls back to `strongestModelForTier`, after every curated
-  provider. `AUTO_PROVIDER_GATES` is the list of provider checks (today: connected);
-  a new check, like a provider at its usage limit, is one more entry there. No
+  provider. `AUTO_PROVIDER_GATES` is the list of provider checks: connected, and not
+  at its usage limit (`atLimit`, from `providersAtLimit`: a provider whose last
+  observation says a window is out and has not reset). A pick that passed a
+  provider for its limit carries `skippedAtLimit`. The desktop fills `atLimit`
+  through `autoLimitContext` only while some provider is out, for agent spawns
+  and every task. The desktop resolves a task model only through
+  `resolveLimitedTaskModel` (a test fails on a direct `resolveTaskModel` call),
+  and a lookup for a provider the user picked passes `limitContext: null`. The
+  Auto row of the Defaults
+  task pickers and the orchestrator picker then says which provider it left and
+  why, and a provider's Usage notice says where Auto sends new agents. No
   Cursor default needs Max Mode, and `defaults.test.ts` validates every cell against
   the catalogs and snapshots the table
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
@@ -512,6 +540,31 @@ When a provider ships or retires a model, update three files under
   and uses the heuristic if it names an unknown provider or model, a disconnected
   provider, or the same pair that failed on this turn. There is one fallback entry,
   then the heuristic
+
+### Usage limits
+
+Goodboy reads the usage limits a provider reports on its own. It never makes a
+network call for them and never reads a sign-in token or the keychain.
+
+- **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
+  stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
+  of the transcript. Each event names one window (`five_hour`, `seven_day`,
+  `seven_day_opus`, `seven_day_sonnet`) and a status (`allowed`,
+  `allowed_warning`, `rejected`). Only `allowed_warning` carries `utilization`, so a
+  plain `allowed` window has no percentage. Claude reports only the window that
+  limits you right now, so `mergeProviderLimits` keeps the other windows it saw
+  until their reset. The numbers change only while a Claude agent runs
+- **Codex**: the `token_count` lines of the rollout files under
+  `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
+  `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
+  `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
+  also sees Codex use outside Goodboy. The desktop asks for it at boot and after
+  every Codex usage event
+- **Antigravity and Cursor** report nothing Goodboy can read
+- The last observation per provider lives in `provider_limits` (m176) and in the
+  `providerLimits` store slice. A write never replaces a newer observation.
+  Thresholds are in `packages/core/src/providers/limits/constants.ts`: warning from
+  80%, old data after 30 minutes
 
 ### Source map
 

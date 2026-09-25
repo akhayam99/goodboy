@@ -29,6 +29,11 @@ vi.mock('../../../../app/components/Toast', () => ({
 
 vi.mock('./ProviderCredentialsSection', () => ({ ProviderCredentialsSection: () => null }));
 vi.mock('./ProviderBindingsSection', () => ({ ProviderBindingsSection: () => null }));
+vi.mock('./UsageSection', () => ({
+  UsageSection: ({ providerId }: { readonly providerId: string }) => (
+    <section aria-label={`Usage for ${providerId}`} />
+  ),
+}));
 
 import { ProviderDetailPanel } from './ProviderDetailPanel';
 
@@ -58,6 +63,26 @@ describe('ProviderDetailPanel', () => {
     const confirm = screen.getByRole('group', { name: 'Disconnect Claude?' });
     fireEvent.click(within(confirm).getByRole('button', { name: 'Disconnect' }));
     expect(state.logoutProvider).toHaveBeenCalledWith('anthropic');
+  });
+
+  it('opens a connected provider on its usage, above the account', () => {
+    render(<ProviderDetailPanel info={info} autoConnect={false} autoUpdate={false} />);
+
+    const usage = screen.getByRole('region', { name: 'Usage for anthropic' });
+    const account = screen.getByText('Account');
+    expect(usage.compareDocumentPosition(account) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('leaves usage out while the provider is not connected', () => {
+    render(
+      <ProviderDetailPanel
+        info={{ ...info, connection: 'missing' } as ProviderDisplayInfo}
+        autoConnect={false}
+        autoUpdate={false}
+      />,
+    );
+
+    expect(screen.queryByRole('region', { name: 'Usage for anthropic' })).toBeNull();
   });
 
   it('cancels back to the account actions', () => {

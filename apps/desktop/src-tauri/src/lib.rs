@@ -282,6 +282,7 @@ pub fn run() {
             summarize::summarize_cancel,
             planner::planner_run,
             codex_rollout::codex_rollout_context,
+            codex_rollout::codex_rate_limits_latest,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,
