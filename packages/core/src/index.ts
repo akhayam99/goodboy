@@ -528,6 +528,24 @@ export {
 } from './estimates';
 
 export {
+  buildHandoff,
+  composeHandoffBody,
+  handoffLine,
+  hasSeparateSystemPrompt,
+  renderHandoff,
+  type BuildHandoffParams,
+  type HandoffBodyLayers,
+  type HandoffClusterBoundary,
+  type HandoffEarlierStep,
+  type HandoffFile,
+  type HandoffLayers,
+  type HandoffRole,
+  type HandoffRule,
+  type HandoffThread,
+  type RenderedHandoff,
+} from './handoff';
+
+export {
   formatWorkflowModelMenu,
   hintedRoutingOutcome,
   parseOrchestratorDecision,

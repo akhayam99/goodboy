@@ -43,6 +43,7 @@ import type {
   SkillId,
   TurnEvent,
   TurnProviderOverride,
+  HandoffDraft,
   SessionExternalTaskProvider,
   SessionExternalTask,
   SessionMountView,
@@ -221,6 +222,8 @@ import { createDurationEstimatesSlice } from './slices/durationEstimates';
 import { durationEstimatesInitialState } from './slices/durationEstimates/state';
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
+import { createHandoffsSlice } from './slices/handoffs';
+import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
   LoadPrSeriesInput,
@@ -631,6 +634,7 @@ type AppActions = {
     override?: TurnProviderOverride;
     force?: boolean;
     origin?: 'operator' | 'workflow';
+    handoff?: HandoffDraft;
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
@@ -1029,7 +1033,8 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
-  ReturnType<typeof createStorageSlice>;
+  ReturnType<typeof createStorageSlice> &
+  ReturnType<typeof createHandoffsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1093,6 +1098,7 @@ export const initialState: AppState = {
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
+  ...handoffsInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
@@ -1247,6 +1253,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
+  ...createHandoffsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

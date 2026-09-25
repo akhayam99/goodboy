@@ -8,7 +8,7 @@ type Params = {
   readonly threadId: string | null;
 };
 
-export const useKickoffDockedThread = ({ sessionId, threadId }: Params): CommentThread | null => {
+export const useDockedReviewThread = ({ sessionId, threadId }: Params): CommentThread | null => {
   const comments = useAppStore((state) =>
     sessionId === null
       ? (EMPTY_ARRAY as ReadonlyArray<PrComment>)

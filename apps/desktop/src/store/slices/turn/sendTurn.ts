@@ -18,7 +18,11 @@ import {
   type ClaudeFlagSet,
   CLI_CREDENTIAL,
   PROVIDER_API_KEY_ENV,
+  composeHandoffBody,
   isApiProvider,
+  renderHandoff,
+  type HandoffBodyLayers,
+  type HandoffEarlierStep,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import {
@@ -36,6 +40,7 @@ import type {
   AgentTurnSpan,
   AttachmentInput,
   EffortLevel,
+  HandoffDraft,
   IsoDateTime,
   Message,
   MessageAttachment,
@@ -161,6 +166,7 @@ import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMa
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { collectTouchedMounts } from './collectTouchedMounts';
 import { recordTurnSpan } from './recordTurnSpan';
+import { composeAgentHandoff } from './composeAgentHandoff';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import { turnSpanEndReason } from './turnSpanEndReason';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -180,6 +186,7 @@ type Input = {
   override?: TurnProviderOverride;
   force?: boolean;
   origin?: 'operator' | 'workflow' | 'mount-continuation';
+  handoff?: HandoffDraft;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -221,6 +228,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       override,
       force,
       origin,
+      handoff,
       retry,
     }: Input,
     lease: TurnLease,
@@ -361,6 +369,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let phaseWorkflowRunId: WorkflowRunId | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
+    let handoffEarlierSteps: ReadonlyArray<HandoffEarlierStep> = [];
     if (session.workflowRuns.length > 0) {
       const freshRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -416,6 +425,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                   new Date(immediatePredecessor.startedAt).getTime()
                 : null;
             phasePromptCarryForward = carryForwardContext;
+            handoffEarlierSteps = completedPredecessors.map((agent) => ({
+              agentId: agent.id,
+              ordinal: agent.ordinal,
+              name: agent.name,
+              summary: agent.outputSummary ?? null,
+            }));
             phaseTransitionEvent = {
               kind: 'step_transition',
               runId: 'pending' as ProviderRunId,
@@ -683,6 +698,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const runId = crypto.randomUUID() as ProviderRunId;
     const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
+    const isHandoffTurn = retry == null && isFirstTurn && activeAgent?.startedAt == null;
 
     set((state) => {
       const prev = state.agentRunHistory[activeAgentId] ?? [];
@@ -718,6 +734,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
         provider,
         model,
+        ...(isHandoffTurn && { handoffId: activeAgentId }),
         at: userMessage.createdAt,
       });
     }
@@ -834,36 +851,34 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const earlyAgentKind = turnAgentKind;
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
-    if (contextPreamble.length > 0) {
-      resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
-    }
 
-    if (workflowRoutingFlags().isChildModelSelectionEnabled === true) {
-      const childRoutingBlock = composeChildRoutingPrompt({
-        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
-        availability: workflowAvailabilitySnapshot({
-          providers: get().providers,
-          cooldowns: get().providerCooldowns,
-          alerts: get().budgetAlerts ?? [],
-          sessionId,
-          isRunBudgetBlocked: false,
-          nowMs: Date.now(),
-          providerPool: runProviderPool({
-            sessions: get().sessions,
-            sessionId,
-            workflowRunId: agentRowEarly?.workflowRunId,
-          }),
-        }),
-      });
-      if (childRoutingBlock.length > 0) {
-        resolvedPrompt = `${childRoutingBlock}\n\n${resolvedPrompt}`;
-      }
-    }
+    const childRoutingBlock =
+      workflowRoutingFlags().isChildModelSelectionEnabled === true
+        ? composeChildRoutingPrompt({
+            role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+            availability: workflowAvailabilitySnapshot({
+              providers: get().providers,
+              cooldowns: get().providerCooldowns,
+              alerts: get().budgetAlerts ?? [],
+              sessionId,
+              isRunBudgetBlocked: false,
+              nowMs: Date.now(),
+              providerPool: runProviderPool({
+                sessions: get().sessions,
+                sessionId,
+                workflowRunId: agentRowEarly?.workflowRunId,
+              }),
+            }),
+          })
+        : '';
 
     const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
-    if (isClusterChild && !resolvedPrompt.includes(clusterBoundaryMarker(activeAgentId))) {
-      resolvedPrompt = `${composeClusterBoundary(activeAgentId)}\n\n${resolvedPrompt}`;
-    }
+    const clusterBoundary = isClusterChild
+      ? {
+          marker: clusterBoundaryMarker(activeAgentId),
+          block: composeClusterBoundary(activeAgentId),
+        }
+      : null;
 
     const isKickoff =
       agentRowEarly?.providerSessionId === undefined &&
@@ -877,18 +892,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const goalAttachmentsBlock = buildGoalAttachmentsBlock(earlyAgentKind, goalAttachments, {
       isKickoff,
     });
-    if (goalAttachmentsBlock.length > 0) {
-      resolvedPrompt = `${goalAttachmentsBlock}\n\n${resolvedPrompt}`;
-    }
 
     const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';
-    if (needsTextHistory) {
-      const priorTranscripts = get().transcripts[activeAgentId] ?? [];
-      const priorTurns = buildPriorTurnsBlock(priorTranscripts, 8000);
-      if (priorTurns.length > 0) {
-        resolvedPrompt = `${priorTurns}\n\n${resolvedPrompt}`;
-      }
-    }
+    const priorTurns = needsTextHistory
+      ? buildPriorTurnsBlock(get().transcripts[activeAgentId] ?? [], 8000)
+      : '';
 
     const agentRowForVerbosity =
       (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === activeAgentId) ?? null;
@@ -898,7 +906,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       selectResolvedSettings({ state: get(), sessionId })?.defaultVerbosity ??
       'normal';
     const verbosityHint = verbosityDirective(effectiveVerbosity);
-    resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
+    const handoffMessage = resolvedPrompt;
+    const handoffBodyLayers: HandoffBodyLayers = {
+      message: handoffMessage,
+      contextPreamble,
+      childRouting: childRoutingBlock,
+      clusterBoundary,
+      goalAttachments: goalAttachmentsBlock,
+      priorTurns,
+      verbosity: verbosityHint,
+    };
+    resolvedPrompt = composeHandoffBody(handoffBodyLayers);
 
     const estimated = estimateTokens(resolvedPrompt);
     const ctxWindow = getModelContextWindow(model);
@@ -1041,7 +1059,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
       .filter((block) => block.length > 0)
       .join('\n\n');
-    const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
+    const renderedHandoff = renderHandoff({
+      ...handoffBodyLayers,
+      provider,
+      guards,
+      roleInstructions: kindSystemPrompt ?? '',
+    });
+    const fullSystemPrompt = renderedHandoff.system;
     const gitDirs = await resolveGitCommonDirs({
       repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
     });
@@ -1051,10 +1075,43 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       gitDirs,
     });
 
-    if (provider !== 'anthropic') {
-      resolvedPrompt = `${guards}\n\n${
-        kindSystemPrompt ? `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n` : ''
-      }${resolvedPrompt}`;
+    resolvedPrompt = renderedHandoff.message;
+
+    if (isHandoffTurn) {
+      try {
+        await get().recordAgentHandoff({
+          handoff: composeAgentHandoff({
+            get,
+            session,
+            sessionId,
+            agentId: activeAgentId,
+            agentKind: earlyAgentKind,
+            draft: handoff,
+            content: userTurnText,
+            step: phaseDefinition,
+            workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
+            earlierSteps: handoffEarlierSteps,
+            attachments: attachmentRefs,
+            goalAttachments,
+            mounts: scopeMounts,
+            rules: {
+              scope: scopeGuard,
+              language: languageGuard,
+              integrations: integrationsGuard,
+              replies: verbosityHint,
+              routing: childRoutingBlock,
+              cluster: clusterBoundary === null ? '' : clusterBoundary.block,
+            },
+            profile: profileGuard,
+            roleInstructions: kindSystemPrompt ?? '',
+            rendered: renderedHandoff,
+            provider,
+            createdAt: now(),
+          }),
+        });
+      } catch (error) {
+        console.warn(`[handoff] ${activeAgentId}: ${formatError(error)}`);
+      }
     }
 
     if (isFirstTurn && !agentRowEarly?.parentAgentId) {

@@ -66,15 +66,21 @@ afterEach(cleanup);
 
 const RUN_ID = 'run-1' as ProviderRunId;
 
-const kickoff = (key: string): TranscriptItem => ({
-  kind: 'workflow_kickoff',
+const transition = (key: string): TranscriptItem => ({
+  kind: 'step_transition',
   key,
-  at: new Date(2026, 4, 15, 9, 0, 0).toISOString() as IsoDateTime,
-  goal: 'ship it',
-  instructions: '',
-  marker: '',
-  raw: 'raw',
-  parsed: true,
+  fromStep: { ordinal: 0, name: 'Trace the rounding' },
+  toStep: { ordinal: 1, name: 'Round once per batch' },
+  carryForwardContext: '',
+  at: new Date(2026, 4, 15, 9, 0, 0).toISOString(),
+});
+
+const handoff = (key: string, at: Date): TranscriptItem => ({
+  kind: 'handoff',
+  key,
+  handoffId: 'a1' as AgentId,
+  text: 'Round once per batch.',
+  at: at.toISOString() as IsoDateTime,
 });
 
 const decision = (key: string): TranscriptItem => ({
@@ -88,7 +94,7 @@ const decision = (key: string): TranscriptItem => ({
 describe('TranscriptRows', () => {
   it('renders adjacent workflow rows as one continuous rail group', () => {
     const { container } = renderRows([
-      itemRow(kickoff('k1')),
+      itemRow(transition('k1')),
       itemRow(decision('d1')),
       itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
     ]);
@@ -100,11 +106,29 @@ describe('TranscriptRows', () => {
 
   it('breaks the rail group when a non-workflow row interrupts it', () => {
     const { container } = renderRows([
-      itemRow(kickoff('k1')),
+      itemRow(transition('k1')),
       itemRow({ kind: 'assistant_text', key: 'a1', text: 'hi' }),
       itemRow(decision('d1')),
     ]);
     expect(container.querySelectorAll('li')).toHaveLength(3);
+  });
+
+  it('counts the handoff as the first turn, with its day chip and the questions it raised', () => {
+    const oqByTurnOrdinal = new Map([[1, [{ id: 'first-turn' }]]]) as unknown as ReadonlyMap<
+      number | null,
+      ReadonlyArray<never>
+    >;
+    const { container } = renderRows(
+      [
+        itemRow(handoff('h1', new Date(2026, 4, 15, 9, 0, 0))),
+        itemRow({ kind: 'assistant_text', key: 'a1', text: 'which one?' }),
+        itemRow(userText('u2', new Date(2026, 4, 15, 9, 5, 0))),
+      ],
+      oqByTurnOrdinal,
+    );
+    const rows = [...container.querySelectorAll('li')];
+    expect(rows).toHaveLength(5);
+    expect(rows[3]!.querySelector('[data-testid="oq"]')?.textContent).toBe('first-turn');
   });
 
   it('renders no separator for a run completion', () => {

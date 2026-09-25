@@ -35,6 +35,8 @@ import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-m
 import { m176ProviderLimits } from './m176-provider-limits';
 import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
 import { m183WorktreeRoots } from './m183-worktree-roots';
+import { m184TurnSpansBackfill } from './m184-turn-spans-backfill';
+import { m185AgentHandoffs } from './m185-agent-handoffs';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -357,4 +359,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 176, sql: m176ProviderLimits },
   { version: 182, sql: m182RetainedWorktreeLedger },
   { version: 183, sql: m183WorktreeRoots },
+  { version: 184, sql: m184TurnSpansBackfill },
+  { version: 185, sql: m185AgentHandoffs },
 ];

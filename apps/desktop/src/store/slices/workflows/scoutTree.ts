@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentRole,
   AgentId,
+  HandoffDraft,
   IsoDateTime,
   SessionId,
   WorkflowRoutingProposal,
@@ -201,6 +202,7 @@ const activateAgent = ({
   sessionId,
   agentId,
   content,
+  handoff,
   select,
 }: {
   readonly set: SetFn;
@@ -208,6 +210,7 @@ const activateAgent = ({
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly content: string;
+  readonly handoff?: HandoffDraft;
   readonly select: boolean;
 }): void => {
   set((s) => ({
@@ -218,7 +221,13 @@ const activateAgent = ({
     },
   }));
   openTurnStartWindow({ agentId });
-  void get().sendTurn({ sessionId, agentId, content, origin: 'workflow' });
+  void get().sendTurn({
+    sessionId,
+    agentId,
+    content,
+    origin: 'workflow',
+    ...(handoff !== undefined && { handoff }),
+  });
 };
 
 const areDisjointModules = (modules: ReadonlyArray<string>): boolean => {
@@ -430,6 +439,7 @@ export const startFanOutChildren = async ({
       sessionId,
       agentId: childIds[i]!,
       content: specs[i]!.kickoff,
+      handoff: { instruction: specs[i]!.promptText },
       select: false,
     });
   }

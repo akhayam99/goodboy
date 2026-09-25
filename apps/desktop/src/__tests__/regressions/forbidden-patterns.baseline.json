@@ -6,7 +6,6 @@
     "apps/desktop/src/features/chat/components/ChatView/index.tsx": 1,
     "apps/desktop/src/features/chat/turn.ts": 1,
     "apps/desktop/src/features/chat/utils/cluster-operations.ts": 2,
-    "apps/desktop/src/features/chat/utils/parse-workflow-kickoff.ts": 2,
     "apps/desktop/src/features/chat/utils/transcript-items.ts": 1,
     "apps/desktop/src/features/context/questionDelegate.ts": 1,
     "apps/desktop/src/features/github/comment-threads.ts": 1,

@@ -20,6 +20,7 @@ export type TurnEvent =
       attachments?: ReadonlyArray<MessageAttachment>;
       provider?: ProviderId;
       model?: string;
+      handoffId?: AgentId;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }
