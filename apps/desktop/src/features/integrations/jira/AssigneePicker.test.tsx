@@ -94,4 +94,25 @@ describe('AssigneePicker', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('cannot be assigned');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Grace Hopper' })).toBeDefined());
   });
+
+  it('disables the trigger while an assignment is in flight', async () => {
+    const pending: { resolve: () => void } = { resolve: () => {} };
+    mount({
+      assignee: GRACE,
+      onAssign: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            pending.resolve = resolve;
+          }),
+      ),
+    });
+
+    const trigger = screen.getByRole<HTMLButtonElement>('button', { name: 'Grace Hopper' });
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+
+    await waitFor(() => expect(trigger.disabled).toBe(true));
+    pending.resolve();
+    await waitFor(() => expect(trigger.disabled).toBe(false));
+  });
 });

@@ -81,9 +81,10 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           aria-haspopup="menu"
           aria-expanded={isOpen}
           title="Change who owns this issue in Jira"
+          disabled={busyId != null}
           onClick={toggle}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground',
+            'inline-flex items-center gap-1.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground disabled:cursor-not-allowed',
             busyId != null && 'animate-border-pulse',
           )}
         >
