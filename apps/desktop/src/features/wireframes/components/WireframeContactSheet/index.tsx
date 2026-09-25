@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { WireframeDocument } from '@goodboy/core';
 import { Button, cn, Eyebrow } from '@goodboy/ui';
-import { contactSheetPlates } from '../../contactSheetLayout';
+import { contactSheetPlates, type ContactSheetDensity } from '../../contactSheetLayout';
 import type { WireframePalette } from '../../wireframePalette';
 import type { WireframeSheetInteraction } from './interaction';
 import type { WireframeSheetSurface } from './surface';
@@ -12,6 +12,7 @@ type Props = {
   readonly palette: WireframePalette;
   readonly surface?: WireframeSheetSurface;
   readonly interaction?: WireframeSheetInteraction | null;
+  readonly density?: ContactSheetDensity;
 };
 
 export const WireframeContactSheet = ({
@@ -19,20 +20,21 @@ export const WireframeContactSheet = ({
   palette,
   surface = 'app',
   interaction = null,
+  density = 'sheet',
 }: Props) => {
   const plates = useMemo(
-    () => contactSheetPlates({ screens: document.screens }),
-    [document.screens],
+    () => contactSheetPlates({ screens: document.screens, density }),
+    [document.screens, density],
   );
   const currentRef = useRef<HTMLLIElement>(null);
   const currentScreenId = interaction?.currentScreenId ?? null;
 
   useEffect(() => {
-    if (currentScreenId === null) {
+    if (currentScreenId === null || density === 'grid') {
       return;
     }
     currentRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [currentScreenId]);
+  }, [currentScreenId, density]);
 
   return (
     <section

@@ -20,7 +20,7 @@ import { useReportRegenerate } from '../../../reports/useReportRegenerate';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
 import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
-import { WireframeVariantAction } from '../../../wireframes/components/WireframeVariantAction';
+import { WireframeShellActions } from './WireframeShellActions';
 import { ArtifactPlanBody } from './ArtifactPlanBody';
 import { artifactActions, type ArtifactActionSubject } from './artifactActions';
 import type { ArtifactDocumentSubject } from './artifactShellSubject';
@@ -61,6 +61,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const [isSpawning, setIsSpawning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wireframeScreenId, setWireframeScreenId] = useState<string | null>(null);
   const partRows = usePlanPartRows({ sessionId, plan, agents });
   const hasRun = plan !== null && plan.consumptionCount > 0;
   const progress = planPartsProgress({ rows: partRows, hasRun });
@@ -226,15 +227,18 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       (confirm ?? (
         <span className="flex min-w-0 items-center gap-2">
           <ArtifactExportStatus status={exporter.status} />
-          <ArtifactShellActions
-            set={set}
-            handles={handles}
-            renderSecondary={(id) =>
-              id === 'newVariant' && subject.kind === 'wireframe' ? (
-                <WireframeVariantAction sessionId={sessionId} artifact={subject.artifact} />
-              ) : null
-            }
-          />
+          {subject.kind === 'wireframe' ? (
+            <WireframeShellActions
+              sessionId={sessionId}
+              artifact={subject.artifact}
+              set={set}
+              handles={handles}
+              exporter={exporter}
+              screenId={wireframeScreenId}
+            />
+          ) : (
+            <ArtifactShellActions set={set} handles={handles} />
+          )}
         </span>
       ))
     );
@@ -336,7 +340,11 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           <ReportStudio artifact={subject.artifact} />
         ) : null}
         {subject.kind === 'wireframe' ? (
-          <WireframeStudio sessionId={sessionId} artifact={subject.artifact} />
+          <WireframeStudio
+            sessionId={sessionId}
+            artifact={subject.artifact}
+            onScreenChange={setWireframeScreenId}
+          />
         ) : null}
       </div>
     </PaneShell>

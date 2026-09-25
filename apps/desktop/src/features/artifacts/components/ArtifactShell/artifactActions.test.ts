@@ -58,11 +58,11 @@ describe('artifactActions', () => {
     });
   });
 
-  it('keeps the wireframe variant as the secondary', () => {
+  it('gives a wireframe Export as its secondary and the variant under More', () => {
     expect(actionsOf({ kind: 'wireframe', status: 'active' })).toEqual({
       primary: null,
-      secondary: 'newVariant',
-      overflow: ['print', 'copySource', 'saveSource'],
+      secondary: 'export',
+      overflow: ['newVariant', 'print'],
     });
   });
 

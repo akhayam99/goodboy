@@ -49,4 +49,10 @@ describe('contactSheetLayout', () => {
     expect(plates.tablet).toBeLessThan(VIEWPORT_WIDTH.tablet);
     expect(plates.desktop).toBeLessThan(VIEWPORT_WIDTH.desktop);
   });
+
+  it('shrinks every screen to a tile when the sheet sits under the flow as a grid', () => {
+    const plates = contactSheetPlates({ screens: [], density: 'grid' });
+    expect(plates.desktop * 3 + 48).toBeLessThanOrEqual(960);
+    expect(plates.mobile).toBeLessThan(plates.desktop);
+  });
 });

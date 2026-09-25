@@ -10,9 +10,10 @@ import { WireframeStudioBody } from './WireframeStudioBody';
 type Props = {
   readonly sessionId: SessionId;
   readonly artifact: WireframeArtifact;
+  readonly onScreenChange?: (screenId: string | null) => void;
 };
 
-export const WireframeStudio = ({ sessionId, artifact }: Props) => {
+export const WireframeStudio = ({ sessionId, artifact, onScreenChange }: Props) => {
   const parsed = useMemo(
     () => parseWireframeSource({ source: artifact.sourceText }),
     [artifact.sourceText],
@@ -45,6 +46,7 @@ export const WireframeStudio = ({ sessionId, artifact }: Props) => {
       fidelity={fidelity}
       document={parsed.document}
       adjustments={parsed.adjustments}
+      {...(onScreenChange === undefined ? {} : { onScreenChange })}
     />
   );
 };

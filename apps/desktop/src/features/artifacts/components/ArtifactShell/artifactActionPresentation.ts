@@ -2,6 +2,7 @@ import {
   ArchiveRestore,
   Bot,
   Copy,
+  Download,
   FileDown,
   Pencil,
   Play,
@@ -27,6 +28,7 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   edit: { label: 'Edit', icon: Pencil },
   stop: { label: 'Stop', icon: Square },
   newVariant: { label: 'New variant', icon: RotateCcw },
+  export: { label: 'Export', icon: Download },
   print: {
     label: 'Print',
     icon: Printer,
