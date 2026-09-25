@@ -4,6 +4,10 @@ import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
+import {
+  selectStorageAttention,
+  selectStorageAttentionTone,
+} from '../../../../store/slices/storage/selectStorageAttention';
 
 export type NestedScope = 'providers' | 'tools';
 
@@ -60,6 +64,8 @@ export const SettingsRail = ({
 }: Props) => {
   const providerAttention = useAppStore((state) => selectProviderAttention({ state }));
   const hasUpdate = useAppStore((state) => state.updaterStatus === 'available');
+  const storageAttention = useAppStore((state) => selectStorageAttention({ state }));
+  const storageTone = useAppStore((state) => selectStorageAttentionTone({ state }));
 
   return (
     <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
@@ -78,13 +84,15 @@ export const SettingsRail = ({
           {APP_SECTIONS.map((section) => {
             const Icon = CONCEPT_ICONS[section.concept];
             const isGeneralUpdate = section.id === 'general' && hasUpdate;
+            const isStorageNudge = section.id === 'storage' && storageTone !== null;
             return (
               <li key={section.id}>
                 <StatusRailItem
                   icon={<Icon size={ICON_SIZE.row} />}
                   label={section.label}
                   density="compact"
-                  tone={isGeneralUpdate ? 'info' : undefined}
+                  subtitle={isStorageNudge ? (storageAttention ?? undefined) : undefined}
+                  tone={isGeneralUpdate ? 'info' : isStorageNudge ? storageTone : undefined}
                   statusLabel={isGeneralUpdate ? 'Update available' : undefined}
                   selected={scope === 'app' && appSection === section.id}
                   onClick={() => onSelect({ scope: 'app', section: section.id })}

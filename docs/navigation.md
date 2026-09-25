@@ -406,12 +406,21 @@ one is open at a time.
   (`openStorage`). The only bulk action removes clean folders idle past "Suggest
   cleanup after"; a folder with changes, an operation in progress, a writer
   lease or no git registration never joins it and says why on its row.
+  Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
+  sends a `storage-reclaimable` notification (action `open-storage`) when that
+  amount passes 10 GB, then stays quiet for 14 days and speaks again only after
+  it grew by another 10 GB. The thresholds and the last nudge live in the
+  settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
+  `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
+  boot, never on the boot path. The worktree scan itself sends nothing.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
   doing: warning on Providers & models when a connected CLI is too old for a
   model it serves or no provider is connected (`selectProviderAttention`, with
   the reason as the row subtitle), info on General while an app update is
-  ready. Danger zone reads in `text-danger`. Panel sections sit on
+  ready, info on Storage with "N GB can go" as its subtitle once clean idle
+  folders pass 10 GB (warning when the disk has under 10 GB free and at least
+  1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
   `SectionSurface` cards with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail

@@ -1,3 +1,4 @@
+import { checkStorageNudge } from './checkStorageNudge';
 import { keepStorageFolder } from './keepStorageFolder';
 import { loadStorage } from './loadStorage';
 import { measureStorageSizes } from './measureStorageSizes';
@@ -16,6 +17,7 @@ export const createStorageSlice = (set: SetFn, get: GetFn) => {
     removeStorageFolders: removeStorageFolders(set, get),
     keepStorageFolder: keepStorageFolder(set, get),
     scanStorageRepository: scanStorageRepository(set, get),
+    checkStorageNudge: checkStorageNudge(set, get),
     focusStorage: (focus: StorageFocus | null) => set({ storageFocus: focus }),
     dismissStorageOutcome: () => set({ storageOutcome: null }),
   };

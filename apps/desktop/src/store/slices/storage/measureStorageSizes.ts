@@ -72,6 +72,9 @@ const runMeasure = async ({ set, get, isForced }: RunParams): Promise<void> => {
     }
   }
   set({ storageMeasuringPath: null });
+  await get()
+    .checkStorageNudge()
+    .catch(() => undefined);
 };
 
 export const measureStorageSizes = (set: SetFn, get: GetFn) => {

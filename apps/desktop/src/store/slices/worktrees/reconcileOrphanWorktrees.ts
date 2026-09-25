@@ -10,12 +10,6 @@ import type { GetFn, SetFn } from './types';
 let inFlight: Promise<void> | null = null;
 let queued = false;
 
-const signature = (orphans: ReadonlyArray<OrphanWorktree>): string =>
-  orphans
-    .map((orphan) => orphan.path)
-    .sort()
-    .join('\n');
-
 const listRoots = async (): Promise<ReadonlyArray<WorktreeRoot>> => {
   try {
     return await listWorktreeRoots({ db: tauriDatabase });
@@ -92,12 +86,6 @@ const runReconcile = async (set: SetFn, get: GetFn): Promise<void> => {
       found[existingIndex] = [existing[0], [...existing[1], ...scanned]];
     }
   }
-  const previous = new Map<string, string>(
-    found.map(([workspaceId]) => [
-      workspaceId,
-      signature(get().orphanWorktrees[workspaceId] ?? []),
-    ]),
-  );
   set((state) => {
     const next = { ...state.orphanWorktrees };
     for (const [workspaceId, orphans] of found) {
@@ -105,19 +93,6 @@ const runReconcile = async (set: SetFn, get: GetFn): Promise<void> => {
     }
     return { orphanWorktrees: next };
   });
-  for (const [workspaceId, orphans] of found) {
-    if (orphans.length === 0 || previous.get(workspaceId) === signature(orphans)) {
-      continue;
-    }
-    await get().emitNotification({
-      kind: 'orphan-worktrees',
-      severity: 'info',
-      title: `${orphans.length} session folders left on disk`,
-      body: 'They belong to no session any more. Review them in workspace settings and remove them when you want the space back.',
-      workspaceId,
-      action: { kind: 'open-orphan-worktrees', workspaceId },
-    });
-  }
 };
 
 export const reconcileOrphanWorktrees = (set: SetFn, get: GetFn) => {

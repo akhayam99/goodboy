@@ -136,6 +136,13 @@ export const mapNotificationAction = (
       onClick: () => openStorage({ workspaceId }),
     };
   }
+  if (action.kind === 'open-storage') {
+    const { filter, workspaceId } = action;
+    return {
+      label: 'Review storage',
+      onClick: () => openStorage({ filter: filter ?? 'review', workspaceId: workspaceId ?? null }),
+    };
+  }
   if (action.kind === 'retry-update') {
     return {
       label: 'Retry',

@@ -161,30 +161,13 @@ describe('reconciling the worktrees folder', () => {
     });
   });
 
-  it('offers the cleanup instead of running it', async () => {
-    const store = makeStore('repo');
-
-    await run(store);
-
-    expect(emitNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'orphan-worktrees',
-        severity: 'info',
-        title: expect.stringContaining('1 session folders left on disk'),
-        body: expect.any(String),
-        workspaceId: 'ws-1',
-        action: { kind: 'open-orphan-worktrees', workspaceId: 'ws-1' },
-      }),
-    );
-  });
-
-  it('announces the same orphan set only once across repeated scans', async () => {
+  it('never notifies by itself, the storage nudge owns that', async () => {
     const store = makeStore('repo');
 
     await run(store);
     await run(store);
 
-    expect(emitNotification).toHaveBeenCalledTimes(1);
+    expect(emitNotification).not.toHaveBeenCalled();
   });
 
   it('transfers a real folder of a deleted session to retained ownership', async () => {
