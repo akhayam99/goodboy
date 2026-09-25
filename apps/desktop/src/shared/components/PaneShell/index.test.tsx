@@ -107,6 +107,13 @@ describe('PaneShell', () => {
 
     const host = closestWith({ node: region, pattern: /^p[xy]-/ }) as HTMLElement;
     expect(host.className).toContain(PANE_RHYTHM.body);
+
+    const headerBand = closestWith({
+      node: screen.getByRole('heading', { name: 'Resolve' }),
+      pattern: /^\[scrollbar-gutter:stable\]$/,
+    });
+    expect(headerBand).not.toBeNull();
+    expect(viewport.className).toContain('[scrollbar-gutter:stable]');
   });
 
   it('keeps one scroller for the whole pane by default', () => {
