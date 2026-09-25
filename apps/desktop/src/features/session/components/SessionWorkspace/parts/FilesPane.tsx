@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { BranchCommit, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { DiffViewerPane } from '../../../../permissions/components/DiffViewerDialog';
-import { DIFF_VIEWER_PANE_COPY } from '../../../../permissions/components/DiffViewerDialog/diffViewerPaneCopy';
+import { DIFF_PANE_TITLE, SessionDiffPane } from '../../../../diff/components/SessionDiffPane';
 import { ResolveReturnPill } from '../../../../resolve/components/ResolveReturnPill';
 import { DiffMountSwitcher } from './DiffMountSwitcher';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { PageCrumbRow } from '../../../../../shared/components/PaneShell/PageCrumbRow';
 import { listBranchCommits } from '../../../../worktree/worktree';
 import { BranchSurgeryMenu } from './BranchSurgeryMenu';
 
@@ -79,7 +77,7 @@ export const FilesPane = ({
   }
   if (worktreePath == null) {
     return (
-      <PaneShell title={DIFF_VIEWER_PANE_COPY.title}>
+      <PaneShell title={DIFF_PANE_TITLE}>
         <LensEmptyState
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
@@ -91,42 +89,40 @@ export const FilesPane = ({
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
-      <PageCrumbRow />
-      <ResolveReturnPill sessionId={sessionId} />
-      {mounts.length > 1 ? (
-        <DiffMountSwitcher
-          sessionId={sessionId}
-          mounts={mounts}
-          selectedWorktreePath={worktreePath}
-          isDiffEmpty={isDiffEmpty}
-        />
-      ) : null}
-      <div className="min-h-0 flex-1">
-        <DiffViewerPane
-          sessionId={sessionId}
-          workingDir={sessionDir ?? undefined}
-          worktreePath={worktreePath}
-          diffFocus={diffFocus}
-          onClose={onClose}
-          onContentEmptyChange={setIsDiffEmpty}
-          branchRevision={branchRevision}
-          headerActions={
-            <BranchSurgeryMenu
-              commits={commits}
-              headSha={commits[0]?.sha ?? null}
-              onAmend={async (sha, message) => {
-                await amendSessionCommit(sessionId, { sha, message });
-                reloadChanges();
-              }}
-              onSquash={async (sha, message) => {
-                await squashSessionCommits(sessionId, { sha, message });
-                reloadChanges();
-              }}
+    <SessionDiffPane
+      sessionId={sessionId}
+      workingDir={sessionDir}
+      worktreePath={worktreePath}
+      diffFocus={diffFocus}
+      branchRevision={branchRevision}
+      onContentEmptyChange={setIsDiffEmpty}
+      aboveBody={
+        <>
+          <ResolveReturnPill sessionId={sessionId} />
+          {mounts.length > 1 ? (
+            <DiffMountSwitcher
+              sessionId={sessionId}
+              mounts={mounts}
+              selectedWorktreePath={worktreePath}
+              isDiffEmpty={isDiffEmpty}
             />
-          }
+          ) : null}
+        </>
+      }
+      headerActions={
+        <BranchSurgeryMenu
+          commits={commits}
+          headSha={commits[0]?.sha ?? null}
+          onAmend={async (sha, message) => {
+            await amendSessionCommit(sessionId, { sha, message });
+            reloadChanges();
+          }}
+          onSquash={async (sha, message) => {
+            await squashSessionCommits(sessionId, { sha, message });
+            reloadChanges();
+          }}
         />
-      </div>
-    </div>
+      }
+    />
   );
 };

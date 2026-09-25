@@ -103,30 +103,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffToolbar.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffViewerContent.tsx': {
-    count: 3,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/FileDiffCard.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/FileTree/FileRail.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/NotesFooter.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/ShowMoreBar.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {
     count: 1,
     reason: 'debt',
@@ -136,10 +112,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/resolve/components/ResolveItemView/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewFileDiff.tsx': {
     count: 1,
     reason: 'debt',
   },

@@ -627,7 +627,9 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write review (1)' }));
     expect(screen.getByTestId('write-review')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Submit review (1)' }));
+    expect(screen.getByRole('button', { name: '1 draft' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
 
     act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));

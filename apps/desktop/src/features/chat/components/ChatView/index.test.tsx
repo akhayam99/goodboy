@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 
-const diffViewerMock = vi.hoisted(() => vi.fn());
+const transcriptRowsMock = vi.hoisted(() => vi.fn());
 const workflowAdvance = vi.hoisted(() => ({ visible: false }));
 
 const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(() => ({
@@ -44,6 +44,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     openQuestionScrollTarget: null as { agentId: string; questionId: string } | null,
     clearOpenQuestionScroll: vi.fn(() => undefined),
     requestOpenQuestionScroll: vi.fn(() => undefined),
+    openDrawer: vi.fn((_request: unknown) => undefined),
   },
 }));
 
@@ -97,12 +98,16 @@ vi.mock('./parts/WorkflowAdvanceRow', () => ({
     ) : null,
 }));
 
-vi.mock('../../../../features/permissions/components/DiffViewerDialog', () => ({
-  DiffViewerDialog: (props: { loader?: () => Promise<string> }) => {
-    diffViewerMock(props);
-    return null;
-  },
-}));
+vi.mock('./TranscriptRows', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./TranscriptRows')>();
+  const { createElement } = await import('react');
+  return {
+    TranscriptRows: (props: Parameters<typeof actual.TranscriptRows>[0]) => {
+      transcriptRowsMock(props);
+      return createElement(actual.TranscriptRows, props);
+    },
+  };
+});
 
 vi.mock('../../../../features/worktree/worktree', () => ({
   worktreeDiff: vi.fn(async () => ''),
@@ -152,7 +157,8 @@ beforeEach(() => {
   state.selectAgent.mockClear();
   state.loadSessionArtifacts.mockClear();
   state.advanceClusterImplementation.mockClear();
-  diffViewerMock.mockClear();
+  transcriptRowsMock.mockClear();
+  state.openDrawer.mockClear();
   openQuestions.current = [];
   answeredQuestions.current = [];
   transcriptItems.current = [];
@@ -178,17 +184,34 @@ describe('ChatView', () => {
       ],
     } as never;
     state.sessionActiveProject = { 'sess-1': 'project-1' };
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
     render(<ChatView session={session} />);
-    const props = diffViewerMock.mock.calls.at(-1)?.[0] as { loader?: unknown };
-    expect(props.loader).toBeTypeOf('function');
+    const props = transcriptRowsMock.mock.calls.at(-1)?.[0] as {
+      onOpenDiff: (path: string) => void;
+    };
+    props.onOpenDiff('src/ledger.ts');
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'file-diff',
+      sessionId: 'sess-1',
+      payload: {
+        source: { kind: 'worktree', worktreePath: '/repo/.goodboy/worktrees/gb-1' },
+        path: 'src/ledger.ts',
+      },
+    });
   });
 
   it('offers no worktree diff to a branchless session in a repo workspace', () => {
     state.sessionWorktrees = { 'sess-1': ['/repo/sessions/study-plan'] };
     state.sessionBranches = { 'sess-1': '' };
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
     render(<ChatView session={session} />);
-    const props = diffViewerMock.mock.calls.at(-1)?.[0] as { loader?: unknown };
-    expect(props.loader).toBeUndefined();
+    const props = transcriptRowsMock.mock.calls.at(-1)?.[0] as {
+      onOpenDiff: (path: string) => void;
+    };
+    props.onOpenDiff('src/ledger.ts');
+    expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
   it('renders without throwing on an empty session', () => {

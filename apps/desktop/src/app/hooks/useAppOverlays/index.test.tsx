@@ -60,9 +60,6 @@ vi.mock('../../../features/workspace/components/ConvertWorkspaceDialog', () => (
 vi.mock('../../../features/workspace/components/WorkspaceLauncher', () => ({
   WorkspaceLauncher: () => <div data-testid="launcher" />,
 }));
-vi.mock('../../../features/permissions/components/DiffViewerDialog', () => ({
-  DiffViewerDialog: () => null,
-}));
 vi.mock('../../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: ({ focus }: { focus: { scope: string; section?: string } }) => (
     <div

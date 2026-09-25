@@ -1,35 +1,29 @@
-import { useCallback } from 'react';
-import { ghCommitDiff } from '../../../features/github/github';
-import { worktreeDiffCommit } from '../../../features/worktree/worktree';
+import { useEffect } from 'react';
 import { useCommitLinkInterceptor } from '../../../shared/hooks/useCommitLinkInterceptor';
+import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
-import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 
 export const useCommitDiff = () => {
   const { commitDiff, setCommitDiff } = useCommitLinkInterceptor();
-  const currentSessionWorktree = useAppStore((state) =>
-    state.currentSessionId === null
-      ? null
-      : (resolveSessionRepo({ state, sessionId: state.currentSessionId })?.worktreePath ?? null),
-  );
+  const currentSessionId = useAppStore((state) => state.currentSessionId);
+  const openDrawer = useAppStore((state) => state.openDrawer);
 
-  const commitDiffLoader = useCallback(async () => {
+  useEffect(() => {
     if (commitDiff === null) {
-      return '';
+      return;
     }
-    if (currentSessionWorktree !== null) {
-      try {
-        return await worktreeDiffCommit(currentSessionWorktree, commitDiff.sha);
-      } catch (error) {
-        if (commitDiff.repo === '') {
-          throw error;
-        }
-      }
+    setCommitDiff(null);
+    if (currentSessionId === null) {
+      void openUrl(`https://github.com/${commitDiff.repo}/commit/${commitDiff.sha}`);
+      return;
     }
-    return ghCommitDiff(commitDiff.repo, commitDiff.sha);
-  }, [commitDiff, currentSessionWorktree]);
-
-  const closeCommitDiff = useCallback(() => setCommitDiff(null), [setCommitDiff]);
-
-  return { commitDiff, commitDiffLoader, closeCommitDiff };
+    openDrawer({
+      kind: 'file-diff',
+      sessionId: currentSessionId,
+      payload: {
+        source: { kind: 'commit', repo: commitDiff.repo, sha: commitDiff.sha },
+        path: null,
+      },
+    });
+  }, [commitDiff, currentSessionId, openDrawer, setCommitDiff]);
 };

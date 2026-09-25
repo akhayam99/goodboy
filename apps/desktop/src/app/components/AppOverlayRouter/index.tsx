@@ -5,7 +5,6 @@ import { ConvertWorkspaceDialog } from '../../../features/workspace/components/C
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
-import type { CommitDiffTarget } from '../../../shared/hooks/useCommitLinkInterceptor';
 import { isAppScopeOverlay, type Overlay } from '../../hooks/useAppOverlays/overlayState';
 import { AppScopeOverlays } from './AppScopeOverlays';
 
@@ -54,11 +53,6 @@ const NotificationsStudio = lazy(() =>
     default: module.NotificationsStudio,
   })),
 );
-const DiffViewerDialog = lazy(() =>
-  import('../../../features/permissions/components/DiffViewerDialog').then((module) => ({
-    default: module.DiffViewerDialog,
-  })),
-);
 const CompanionStudio = lazy(() =>
   import('../../../features/companion/components/CompanionStudio').then((module) => ({
     default: module.CompanionStudio,
@@ -76,12 +70,9 @@ type Props = {
   readonly paletteOpen: boolean;
   readonly palettePrefix: string;
   readonly convertWorkspaceOpen: boolean;
-  readonly commitDiff: CommitDiffTarget | null;
-  readonly commitDiffLoader: () => Promise<string>;
   readonly closePalette: () => void;
   readonly offerWorkspaceRepo: () => void;
   readonly closeConvertWorkspace: () => void;
-  readonly closeCommitDiff: () => void;
   readonly closeDeleteConfirm: () => void;
 };
 
@@ -197,12 +188,9 @@ export const AppOverlayRouter = ({
   paletteOpen,
   palettePrefix,
   convertWorkspaceOpen,
-  commitDiff,
-  commitDiffLoader,
   closePalette,
   offerWorkspaceRepo,
   closeConvertWorkspace,
-  closeCommitDiff,
   closeDeleteConfirm,
 }: Props) => {
   if (isWorkspaceLauncherBranch) {
@@ -251,14 +239,6 @@ export const AppOverlayRouter = ({
           open={convertWorkspaceOpen}
           workspace={currentWorkspace}
           onClose={closeConvertWorkspace}
-        />
-      ) : null}
-      {commitDiff !== null ? (
-        <DiffViewerDialog
-          open
-          onClose={closeCommitDiff}
-          title={`Commit ${commitDiff.sha.slice(0, 7)}`}
-          loader={commitDiffLoader}
         />
       ) : null}
       {deleteTargetSession !== null && deleteOpen ? (

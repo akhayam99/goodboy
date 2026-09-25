@@ -202,9 +202,6 @@ vi.mock('../features/impact/components/ImpactStudio', () => ({
 vi.mock('../features/changelog/components/ChangelogStudio', () => ({
   ChangelogStudio: () => <div data-testid="changelog-studio">Changelog</div>,
 }));
-vi.mock('../features/permissions/components/DiffViewerDialog', () => ({
-  DiffViewerDialog: () => null,
-}));
 vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));

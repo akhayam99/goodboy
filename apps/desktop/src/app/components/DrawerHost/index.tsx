@@ -5,6 +5,9 @@ import { ExploreFileDrawer } from '../../../features/explore/components/ExploreF
 import { ArtifactShellDrawer } from '../../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { PlanPartDrawer } from '../../../features/plans/components/PlanParts/PlanPartDrawer';
 import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunDrawer';
+import { DiffNotesDrawer } from '../../../features/diff/components/DiffNotesDrawer';
+import { FileDiffDrawer } from '../../../features/diff/components/FileDiffDrawer';
+import { ReviewDraftsDrawer } from '../../../features/review/components/ReviewDraftsDrawer';
 import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
 export const DrawerHost = () => {
@@ -56,6 +59,20 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
           mountId={drawer.payload.mountId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'diff-notes':
+      return <DiffNotesDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'review-drafts':
+      return <ReviewDraftsDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'file-diff':
+      return (
+        <FileDiffDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          source={drawer.payload.source}
+          path={drawer.payload.path}
           onClose={closeDrawer}
         />
       );

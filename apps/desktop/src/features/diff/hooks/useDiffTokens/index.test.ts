@@ -30,7 +30,7 @@ describe('buildDiffStreams', () => {
 describe('useDiffTokens', () => {
   it('tokenizes deleted lines with the old side state', async () => {
     const hunks = [HUNK];
-    const { result } = renderHook(() => useDiffTokens({ path: 'ledger-core/rate.ts', hunks }));
+    const { result } = renderHook(() => useDiffTokens({ path: 'ledger-core/rate.js', hunks }));
     await waitFor(() => expect(result.current).not.toBeNull(), { timeout: 10000 });
     const deleted = tokensForLine(result.current, HUNK.lines[1]!);
     expect(deleted?.find((token) => token.text.includes('old'))?.kind).toBe('comment');
