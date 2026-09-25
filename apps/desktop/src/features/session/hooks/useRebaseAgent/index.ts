@@ -210,7 +210,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     }
     const target = targetFor({ id: targetMountId });
     if (target === null) {
-      const message = 'this branch mount is no longer in the session';
+      const message = 'this worktree is no longer in the session';
       setError(message);
       onError?.(message);
       return;

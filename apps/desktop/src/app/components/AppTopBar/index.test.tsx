@@ -223,7 +223,7 @@ describe('AppTopBar', () => {
     const onOpenSpend = vi.fn();
     renderBar({ onOpenSpend });
 
-    fireEvent.click(screen.getByTitle("Today's spend across providers, open the impact studio"));
+    fireEvent.click(screen.getByTitle("Today's spend across providers, open Impact"));
     expect(onOpenSpend).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: '1 session needs you' }));

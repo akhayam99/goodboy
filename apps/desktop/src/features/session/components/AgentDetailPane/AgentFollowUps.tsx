@@ -70,7 +70,7 @@ export const AgentFollowUps = ({
       label="Continue"
       hint={
         pending.length > 0
-          ? "Spawn a follow-up seeded with this agent's output."
+          ? "Start a follow-up seeded with this agent's output."
           : "Follow-ups already picked up this agent's output."
       }
     >

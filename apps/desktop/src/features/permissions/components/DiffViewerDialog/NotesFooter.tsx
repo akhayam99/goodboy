@@ -15,7 +15,7 @@ export const NotesFooter = ({ openCount, spawning, routing, onPropose }: Props) 
       <Divider className="shrink-0" />
       <div className="flex shrink-0 items-center justify-between gap-3 bg-subtle px-4 py-2.5">
         <span className="text-xs text-muted-foreground">
-          {openCount} open {openCount === 1 ? 'note' : 'notes'} · spawn a reviewer to propose fixes
+          {openCount} open {openCount === 1 ? 'note' : 'notes'} · start a reviewer to propose fixes
         </span>
         <div className="flex shrink-0 items-center gap-2">
           <div className="w-60">{routing}</div>
@@ -27,7 +27,7 @@ export const NotesFooter = ({ openCount, spawning, routing, onPropose }: Props) 
               'inline-flex items-center gap-1.5 rounded-sm border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-hover disabled:opacity-50',
               spawning && 'animate-border-pulse',
             )}
-            title="Spawn a reviewer agent that proposes fixes without touching code"
+            title="Start a reviewer agent that proposes fixes without touching code"
           >
             <CONCEPT_ICONS.agents size={11} aria-hidden />
             Propose fixes

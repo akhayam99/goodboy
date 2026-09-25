@@ -209,7 +209,7 @@ describe('TimelineRowLabel', () => {
     for (const value of ['storefront-web', 'goodboy/untitled']) {
       expect(screen.getByText(value).className).toContain('font-mono');
     }
-    expect(screen.getByText('Mounted').className).not.toContain('font-mono');
+    expect(screen.getByText('Added').className).not.toContain('font-mono');
   });
 
   it('leaves the mount rationale off the row entirely', () => {
@@ -267,7 +267,7 @@ describe('TimelineRowLabel', () => {
     for (const value of ['api', 'storefront-web', 'infra']) {
       expect(screen.getByText(value).className).toContain('font-mono');
     }
-    expect(screen.getByText('Mounted').className).not.toContain('font-mono');
+    expect(screen.getByText('Added').className).not.toContain('font-mono');
     expect(screen.getByText(', detached')).toBeDefined();
   });
 

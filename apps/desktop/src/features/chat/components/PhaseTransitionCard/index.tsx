@@ -56,7 +56,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
               <span
                 className={`shrink-0 rounded-md px-1 py-px text-2xs font-medium ${warningTint.bg} ${warningTint.text}`}
               >
-                degraded handoff
+                partial brief
               </span>
             )
           }

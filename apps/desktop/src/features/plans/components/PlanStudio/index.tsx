@@ -177,7 +177,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                       role="alert"
                       icon={<RotateCw size={ICON_SIZE.row} aria-hidden />}
                       title="Replay this plan?"
-                      description="It already ran once. Replaying spawns a new agent to execute it again."
+                      description="It already ran once. Replaying starts a new agent to execute it again."
                       confirmLabel="Replay"
                       autoDisarmMs={4000}
                       isBusy={spawning}
@@ -213,7 +213,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
                             className={cn(spawning && 'cursor-not-allowed animate-border-pulse')}
                             title={
                               selected.status === 'active'
-                                ? 'Spawn new agent to execute this plan'
+                                ? 'Start a new agent to execute this plan'
                                 : 'Replay this plan'
                             }
                           >
@@ -330,7 +330,7 @@ export const PlanStudio = ({ sessionId, eyebrow }: Props) => {
   return (
     <PaneShell
       title="Plans"
-      description="Plans agents drafted for this session. Run one to spawn an executor."
+      description="Plans agents drafted for this session. Run one to start an agent that carries it out."
       meta={plans.length > 0 ? plans.length : undefined}
       eyebrow={eyebrow}
     >

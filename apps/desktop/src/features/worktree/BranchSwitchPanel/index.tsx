@@ -129,9 +129,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
     <div className="flex w-96 flex-col gap-3 p-4">
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-foreground">Switch branch</span>
-        <span className="text-2xs text-muted-foreground">
-          Move this branch mount to another branch
-        </span>
+        <span className="text-2xs text-muted-foreground">Move this worktree to another branch</span>
       </div>
 
       {branch === null ? null : (

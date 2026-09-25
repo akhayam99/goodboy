@@ -76,7 +76,7 @@ export const ClusterChildRow = ({
             tintClasses('warning').bg,
             'px-1 py-0.5 text-2xs font-normal text-warning',
           )}
-          title={`this cluster agent failed to start and is on attempt ${startAttempt}`}
+          title={`This subagent failed to start and is on attempt ${startAttempt}`}
         >
           attempt {startAttempt}
         </span>

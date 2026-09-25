@@ -34,7 +34,7 @@ export const reportCreationAdapter: ArtifactCreationAdapter = {
     REPORT_DEFAULT_REQUEST({ reportType: asReportType({ value: choice }) ?? 'session-summary' }),
   repoLine: ({ repo }) => {
     if (repo === null) {
-      return 'No mounted project, so no local change evidence.';
+      return 'No project in this session, so no local change evidence.';
     }
     const branch = repo.branch === null ? 'a detached head' : repo.branch;
     return `Local change evidence from ${repo.mountName} on ${branch}, against ${repo.baseBranch}.`;

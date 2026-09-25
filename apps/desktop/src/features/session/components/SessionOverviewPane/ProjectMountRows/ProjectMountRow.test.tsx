@@ -275,7 +275,7 @@ describe('ProjectMountRow availability', () => {
     renderRow({ row: detached });
 
     expect(screen.getByText('Files kept')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Mount API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen API' }));
 
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
@@ -404,7 +404,7 @@ describe('ProjectMountRow column grammar', () => {
     renderRow({ row: detached });
     const slots = slotsOf();
 
-    expect(slots[5]?.textContent).toBe('Mount');
+    expect(slots[5]?.textContent).toBe('Reopen');
     expect(slots.at(-1)?.querySelector('[data-testid="detach-menu"]')).not.toBeNull();
   });
 

@@ -143,7 +143,7 @@ describe('deriveSessionSuggestions', () => {
       mountEvents: [mountEvent({ id: 'event-1', kind: 'proposed' })],
     }).find((candidate) => candidate.kind === 'mount-project');
 
-    expect(suggestion?.title).toBe('Mount web');
+    expect(suggestion?.title).toBe('Add web');
     expect(suggestion?.detail).toBe('needs the router');
     expect(suggestion?.payload).toEqual({
       projectId: webId,

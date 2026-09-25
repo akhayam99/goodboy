@@ -109,9 +109,11 @@ export const MountActionsMenu = ({
   const detachProject = useAppStore((state) => state.detachProject);
   const unmountMount = useAppStore((state) => state.unmountMount);
   const reportError = useAppStore((state) => state.reportError);
-  const isRepoProject = useAppStore(
-    (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind === 'repo',
+  const projectKind = useAppStore(
+    (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind ?? null,
   );
+  const isRepoProject = projectKind === 'repo';
+  const noun = projectKind === 'folder' ? 'folder' : 'worktree';
   const projectBaseBranch = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.baseBranch ?? null,
   );
@@ -296,11 +298,11 @@ export const MountActionsMenu = ({
         kind: 'info',
         message:
           result.keptPath === null
-            ? `Removed ${branch === '' ? 'the mount' : branch} from this session.`
-            : `Removed ${branch === '' ? 'the mount' : branch} from this session. Files remain at ${result.keptPath}.`,
+            ? `Removed ${branch === '' ? `the ${noun}` : branch} from this session.`
+            : `Removed ${branch === '' ? `the ${noun}` : branch} from this session. Files remain at ${result.keptPath}.`,
       });
     } catch (error) {
-      fail({ title: "Couldn't remove the mount", error });
+      fail({ title: `Couldn't remove the ${noun}`, error });
     } finally {
       setIsBusy(false);
     }
@@ -319,7 +321,7 @@ export const MountActionsMenu = ({
         showToast({ kind: 'info', message: `Worktree kept at ${worktreePath}` });
       }
     } catch (error) {
-      fail({ title: "Couldn't unmount the branch", error });
+      fail({ title: `Couldn't close the ${noun}`, error });
     } finally {
       setIsBusy(false);
     }
@@ -379,11 +381,11 @@ export const MountActionsMenu = ({
         <InlineConfirm
           role="alert"
           icon={<WorktreeIcon size={ICON_SIZE.row} />}
-          title={branch === '' ? 'Unmount this branch?' : `Unmount ${branch}?`}
+          title={branch === '' ? `Close this ${noun}?` : `Close ${branch}?`}
           {...(isClean
             ? { description: 'Its worktree is removed. The branch and any pull request stay.' }
             : {})}
-          confirmLabel={isClean ? 'Unmount' : 'Unmount, keep changes'}
+          confirmLabel={isClean ? 'Close' : 'Close, keep changes'}
           surface="plain"
           isBusy={isBusy}
           onConfirm={() => void unmount()}
@@ -396,7 +398,7 @@ export const MountActionsMenu = ({
         <InlineConfirm
           role="alert"
           icon={<WorktreeIcon size={ICON_SIZE.row} />}
-          title={branch === '' ? 'Remove this mount?' : `Remove ${branch}?`}
+          title={branch === '' ? `Remove this ${noun}?` : `Remove ${branch}?`}
           confirmLabel="Remove"
           surface="plain"
           isBusy={isBusy}
@@ -451,7 +453,7 @@ export const MountActionsMenu = ({
               onClick={() => setConfirming('unmount')}
               className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
             >
-              Unmount branch
+              {`Close ${noun}`}
             </button>
           ) : (
             <button

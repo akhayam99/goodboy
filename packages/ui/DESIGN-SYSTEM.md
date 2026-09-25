@@ -487,7 +487,7 @@ surface stays neutral, the title is `foreground` and the body is
 
 Every message shape in the desktop app renders through it. `ErrorStrip` is a
 thin `Notice placement="banner"` for a failed load with Retry. Budget alerts
-and the unpriced-turns warning are banners. Guide tips, the degraded handoff,
+and the unpriced-turns warning are banners. Guide tips, the partial brief after a step,
 the branch switch confirmation and merge conflicts are `inline`. The sign-in
 prompt in the chat is `transcript`. Toasts are `floating`: the toast card owns
 only its timer, hover pause and dismiss, and passes its action and a ghost
@@ -569,6 +569,18 @@ the same slot `SectionHeader` gives it, at the row icon size.
 
 Artifacts exempted by `DESIGN.md`, including the text of an open question, never use `ClampedProse`.
 
+## Term hints
+
+`TermHint` explains a word that stays on screen but still needs a sentence. The
+word keeps its surrounding type and gets a dotted underline. A click or
+keyboard focus opens an `AnchoredPopover` with the term, one sentence and an
+optional action; hover never opens it and it never opens on its own. Escape,
+an outside click or moving focus away closes it. The anchor is a block `div`,
+so the sentence around a hint is a `div` or a `span`, never a `p`. A hint
+never sits inside another button or tab: put it in the line under the control.
+The desktop app reaches it only through `GlossaryTerm`, which reads the one
+definition table and adds Open the guide.
+
 ## Card action grammar and creation grammar
 
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
@@ -614,6 +626,12 @@ that fixes `bordered` and `size="inline"`, and makes `description` required.
 Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
+
+The empty Activity of a new session is the kickoff. It leads with "No activity
+yet", then a ghost run: three `WorkNode`s in the `queued` state on a dashed
+spine, at reduced opacity, each with its role chip and one line of what it
+does, and no meta column, because no provider or model is chosen yet. The ways
+to start follow it.
 
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses

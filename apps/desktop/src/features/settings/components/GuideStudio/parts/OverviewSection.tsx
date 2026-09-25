@@ -20,8 +20,8 @@ export const OverviewSection = ({ onJump }: Props) => (
       label="What is Goodboy?"
       hint={
         SESSION_FEATURES.budget
-          ? 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with budget caps and audit logs along the way.'
-          : 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the studios are destinations you navigate to from there, with audit logs along the way.'
+          ? 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the full-screen pages are destinations you navigate to from there, with budget caps and audit logs along the way.'
+          : 'A builder cockpit for running coding agents in parallel. The home screen is a cross-session stage board: every piece of work in a workspace, grouped by what it needs from you. Chat, diff, terminal, IDE, and the full-screen pages are destinations you navigate to from there, with audit logs along the way.'
       }
     />
 
@@ -29,7 +29,7 @@ export const OverviewSection = ({ onJump }: Props) => (
       tone="info"
       placement="inline"
       title="Goodboy runs each provider's own CLI"
-      body="It never talks to providers directly. It spawns each CLI as a subprocess and streams its events. Your login, usage, and quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on top, provider-neutral by design."
+      body="It never talks to providers directly. It runs each CLI as a subprocess and streams its events. Your login, usage, and quotas stay inside that CLI. Goodboy adds the workspace, board, and orchestration layer on top, provider-neutral by design."
     />
 
     <div>
@@ -46,14 +46,14 @@ export const OverviewSection = ({ onJump }: Props) => (
           icon={<GitBranch size={ICON_SIZE.control} aria-hidden />}
           tone="success"
           label="Session"
-          body="One goal, on its own git worktree and branch. It opens on its overview, then the lens switcher reaches diff, terminal, IDE, or a studio."
+          body="One goal, on its own git worktree and branch. It opens on its overview, then its tabs reach diff, terminal, IDE, or a full-screen page."
           onClick={() => onJump('session')}
         />
         <ConceptCard
           icon={<DogMascot size={ICON_SIZE.control} />}
           tone="warning"
           label="Agent"
-          body="One CLI invocation inside a session. Spawn several; subagents render as a tree under their parent."
+          body="One CLI invocation inside a session. Start several; subagents render as a tree under their parent."
           onClick={() => onJump('agents')}
         />
         <ConceptCard

@@ -6,7 +6,7 @@ type Params = {
 
 export const REVIEW_TARGET_REASON_COPY: Record<ReviewTargetReason, string> = {
   no_session: 'That session is no longer available',
-  no_mount: 'Materialize the project before opening Review',
+  no_mount: 'Add the project to this session before opening Review',
   no_pull_request: 'The pull request is not available',
   no_thread: 'That comment is no longer in the selected pull request',
   thread_closed: 'That comment is already closed',

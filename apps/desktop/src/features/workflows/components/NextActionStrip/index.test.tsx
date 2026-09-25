@@ -240,8 +240,8 @@ describe('NextActionStrip', () => {
     store.summarizerStatus = { [SESSION_ID]: { status: 'running' } };
     renderStrip();
 
-    const strip = screen.getByRole('region', { name: 'Next action: waiting on the handoff' });
-    expect(within(strip).getByText('Writing the handoff from Plan.')).toBeDefined();
+    const strip = screen.getByRole('region', { name: 'Next action: waiting on the next brief' });
+    expect(within(strip).getByText('Writing the next brief from Plan.')).toBeDefined();
     expect(within(strip).queryByRole('button')).toBeNull();
   });
 });

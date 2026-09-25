@@ -100,7 +100,7 @@ export const ProjectMountGroup = ({
         </div>
       </div>
       <ul
-        aria-label={`${group.projectName} branch mounts`}
+        aria-label={`${group.projectName} worktrees`}
         className="grid grid-cols-[minmax(10rem,1fr)_repeat(6,auto)] gap-y-0.5 pl-2"
       >
         {group.rows.map(renderRow)}

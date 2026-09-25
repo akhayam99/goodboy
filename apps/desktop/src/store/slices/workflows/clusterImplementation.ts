@@ -128,8 +128,8 @@ const failChildStart = async ({
   void get().emitNotification({
     kind: 'error',
     severity: 'warning',
-    title: `Cluster ${name} couldn't start`,
-    body: `${reason} open the agent and continue it manually. the step stays open until this cluster finishes.`,
+    title: `Subagent ${name} couldn't start`,
+    body: `${reason} open the agent and continue it manually. the step stays open until this subagent finishes.`,
     sessionId,
   });
 };
@@ -262,7 +262,7 @@ export const fanOutClusters = async (
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${container.name} is blocked`,
+      title: `Subagent ${container.name} is blocked`,
       body: batch.reason,
       sessionId,
     });
@@ -520,8 +520,8 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${next.name} is blocked`,
-      body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+      title: `Subagent ${next.name} is blocked`,
+      body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
       sessionId,
     });
     return false;
@@ -538,7 +538,7 @@ export const resumeClusterChildren = async ({
     void get().emitNotification({
       kind: 'error',
       severity: 'warning',
-      title: `Cluster ${next.name} is blocked`,
+      title: `Subagent ${next.name} is blocked`,
       body: revalidated.reason,
       sessionId,
     });
@@ -671,8 +671,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: 'This cluster has no implementer',
-        body: 'the resolved plan has more clusters than this implementation contains, so the next cluster cannot start. open the plan and re-run the implementer.',
+        title: 'This subagent has no implementer',
+        body: 'the resolved plan has more parts than this implementation has subagents, so the next one cannot start. open the plan and re-run the implementer.',
         sessionId,
       });
       return;
@@ -685,8 +685,8 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Cluster ${next.name} is blocked`,
-        body: 'the plan that defines this cluster is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
+        title: `Subagent ${next.name} is blocked`,
+        body: 'the plan that defines this subagent is no longer readable, so there are no instructions to send. open the plan and re-run the implementer.',
         sessionId,
       });
       return;
@@ -705,7 +705,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: `Cluster ${next.name} is blocked`,
+        title: `Subagent ${next.name} is blocked`,
         body: revalidated.reason,
         sessionId,
       });

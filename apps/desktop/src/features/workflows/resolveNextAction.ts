@@ -158,7 +158,9 @@ const summarizingAction = ({
     kind: 'summarizing',
     subjectAgentId: null,
     sentence:
-      previous != null ? `Writing the handoff from ${previous.name}.` : 'Writing the handoff.',
+      previous != null
+        ? `Writing the next brief from ${previous.name}.`
+        : 'Writing the next brief.',
     cause: `${advance.step.name} starts from it once it is ready.`,
   };
 };

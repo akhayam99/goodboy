@@ -100,7 +100,7 @@ export const ArtifactRunDetail = ({
           <ArtifactScouts
             sessionId={sessionId}
             agentId={generation.agentId}
-            emptyLine="no scout was spawned for this one, the agent writes it from the session alone"
+            emptyLine="no scout ran for this one, the agent writes it from the session alone"
           />
         </div>
       </ScrollFade>

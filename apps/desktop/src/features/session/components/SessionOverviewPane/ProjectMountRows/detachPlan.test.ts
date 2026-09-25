@@ -571,7 +571,7 @@ describe('detach outcomes', () => {
     expect(
       detachOutcomeMessage({ kind: 'failed', projectName: 'api', worktreePath: '/worktrees/api' }),
     ).toBe(
-      'Could not finish removing the worktree. The mount is retained; check again before retrying.',
+      'Could not finish removing the worktree. It stays in the session; check again before retrying.',
     );
   });
 
@@ -584,7 +584,7 @@ describe('detach outcomes', () => {
         ],
       }),
     ).toBe(
-      'Detached 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. Its mount stays; check again before retrying.',
+      'Detached 1 of 2 worktrees. Could not remove /worktrees/api-b: an agent is running. It stays in the session; check again before retrying.',
     );
   });
 
@@ -597,7 +597,7 @@ describe('detach outcomes', () => {
         ],
       }),
     ).toBe(
-      'Could not remove 2 worktrees, starting with /worktrees/api-a. Their mounts stay; check again before retrying.',
+      'Could not remove 2 worktrees, starting with /worktrees/api-a. They stay in the session; check again before retrying.',
     );
   });
 });

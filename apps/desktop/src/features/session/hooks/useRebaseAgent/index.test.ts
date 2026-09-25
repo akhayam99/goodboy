@@ -300,7 +300,7 @@ describe('useRebaseAgent', () => {
     await act(() => result.current.run({ mountId: 'mount-gone' as MountId }));
 
     expect(state.spawnAgent).not.toHaveBeenCalled();
-    expect(result.current.error).toBe('this branch mount is no longer in the session');
+    expect(result.current.error).toBe('this worktree is no longer in the session');
   });
 
   it('carries the mount into the canned push command and the working instruction', () => {

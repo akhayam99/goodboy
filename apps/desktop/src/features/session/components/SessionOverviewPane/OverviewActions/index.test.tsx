@@ -36,7 +36,7 @@ describe('OverviewActions', () => {
     render(<OverviewActions sessionId={SESSION_ID} onOpenWorkflowBuilder={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    for (const name of ['Add workflow', 'Create report', 'Create wireframe']) {
+    for (const name of ['Start a workflow', 'Create report', 'Create wireframe']) {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
     fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
@@ -85,7 +85,7 @@ describe('OverviewActions', () => {
     render(
       <OverviewActions sessionId={SESSION_ID} variant="tile" onOpenWorkflowBuilder={vi.fn()} />,
     );
-    for (const name of ['Start agent', 'Add workflow', 'Create report', 'Create wireframe']) {
+    for (const name of ['Start agent', 'Start a workflow', 'Create report', 'Create wireframe']) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
     }
   });
@@ -141,7 +141,7 @@ describe('OverviewActions', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Add workflow/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Start a workflow/ }));
     expect(onOpenWorkflowBuilder).toHaveBeenCalledOnce();
   });
 });

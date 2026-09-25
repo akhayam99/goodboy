@@ -29,7 +29,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     <p
       class="text-sm leading-relaxed text-muted-foreground"
     >
-      What you type becomes the shared brief every spawned agent starts from.
+      What you type becomes the shared brief every new agent starts from.
     </p>
   </div>
   <ul

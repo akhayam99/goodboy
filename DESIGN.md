@@ -46,7 +46,10 @@ two share the same look.
 ## Voice & copy
 
 - **Speak the domain language.** Agent, session, workspace, workflow, plan. No
-  synonyms, no aliases.
+  synonyms, no aliases. Internal words (mount, spawn, cluster, lens, studio,
+  handoff, materialize) never reach the screen: the table of what the screen
+  says instead lives in [docs/concepts.md](./docs/concepts.md) → Vocabulary
+  rules.
 - [docs/tone-of-voice.md](./docs/tone-of-voice.md) owns the language of
   product copy. [CONVENTIONS.md](./CONVENTIONS.md) owns the language of the
   repository.
@@ -312,7 +315,11 @@ second home for them.
   builder, the first-run wizard and the question answer flow have one.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
-  Never a dead end, never a "start chatting" prompt.
+  Never a dead end, never a "start chatting" prompt. An empty Activity shows
+  the shape work will take: a ghost run of three queued nodes (Scout, Plan,
+  Implement), no model and no estimate, because nothing is chosen yet. No tour
+  and no onboarding popup: an empty state teaches every time it is needed and
+  leaves on its own.
 - **A card in a collection keeps that grammar. The sole occupant of a pane gets
   a header toolbar.** When a record is shown alone, it is a pane, not a card.
   Its lifecycle and destructive actions move up beside the title.

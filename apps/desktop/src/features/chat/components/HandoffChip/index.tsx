@@ -5,7 +5,7 @@ import { cn } from '@goodboy/ui';
 import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { AGENT_KIND_META } from '../../../session/agent-kind';
+import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -66,6 +66,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   }
 
   const meta = AGENT_KIND_META[handoff.kind];
+  const roleLabel = ROLE_LABEL[KIND_TO_ROLE[handoff.kind]];
   const isActiveNudge =
     sessionNudge?.kind === 'handoff-suggested' &&
     sessionNudge.agentId === sourceAgentId &&
@@ -122,7 +123,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       variant="leftBorder"
       className="flex w-full max-w-xl flex-col gap-1.5 text-xs"
     >
-      <span className="font-medium text-foreground">spawn {handoff.kind}</span>
+      <span className="font-medium text-foreground">{`Suggested next: ${roleLabel}`}</span>
       {handoff.reason != null && handoff.reason.length > 0 ? (
         <span className="text-muted-foreground">{handoff.reason}</span>
       ) : null}
@@ -140,7 +141,9 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
           >
             <ArrowRight size={10} aria-hidden />
             <span className={cn(isPending && 'text-shimmer')}>
-              {isPending ? `Spawning ${handoff.kind}` : `Spawn ${handoff.kind}`}
+              {isPending
+                ? `Starting ${roleLabel.toLowerCase()}`
+                : `Start ${roleLabel.toLowerCase()}`}
             </span>
           </button>
         ) : (

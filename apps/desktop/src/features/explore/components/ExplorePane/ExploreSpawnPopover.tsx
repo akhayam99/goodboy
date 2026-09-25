@@ -144,7 +144,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       <Divider />
       <div className="flex items-center justify-end">
         <Button size="sm" onClick={() => void spawnFromFile()} disabled={!canSpawn}>
-          {isSpawning ? 'Spawning…' : 'Spawn agent'}
+          {isSpawning ? 'Starting…' : 'Start agent'}
         </Button>
       </div>
     </AnchoredPopover>

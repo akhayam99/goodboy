@@ -284,7 +284,7 @@ describe('ExplorePane', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Spawn agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
 
     await waitFor(() => expect(h.spawnAgent).toHaveBeenCalled());
     const spawnArgs = h.spawnAgent.mock.calls.at(-1)?.[1] as
@@ -323,7 +323,7 @@ describe('ExplorePane', () => {
 
     await waitFor(() => expect(screen.getByText('notes.txt')).toBeDefined());
     fireEvent.click(screen.getByRole('button', { name: 'Ask an agent to work on notes.txt' }));
-    expect(screen.getByRole('button', { name: 'Spawn agent' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Start agent' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('hides row actions until hover or keyboard focus, but keeps them focusable and working', async () => {

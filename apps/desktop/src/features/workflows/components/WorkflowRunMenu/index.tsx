@@ -38,7 +38,7 @@ const MENU_ITEMS: Record<MenuItemKind, MenuItemSpec> = {
     role: 'alert',
     title: 'Discard workflow?',
     description:
-      'Moves the run to Discarded, where you can restore it. Agents already spawned stay in the session.',
+      'Moves the run to Discarded, where you can restore it. Agents already started stay in the session.',
     confirmLabel: 'Discard',
   },
   delete: {

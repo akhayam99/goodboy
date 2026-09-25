@@ -432,7 +432,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Mount project');
+    expect(actions.primary?.label).toBe('Add project');
     actions.primary?.onAct();
 
     expect(spies.ensureProjectMounted).toHaveBeenCalledWith({

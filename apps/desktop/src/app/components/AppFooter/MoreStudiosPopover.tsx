@@ -10,8 +10,8 @@ type Props = {
 
 const PANEL_WIDTH = 208;
 const PANEL_MAX_HEIGHT = 200;
-const PANEL_LABEL = 'More studios';
-const TRIGGER_LABEL = 'More studios: impact and changelog';
+const PANEL_LABEL = 'More pages';
+const TRIGGER_LABEL = 'More pages: impact and changelog';
 
 export const MoreStudiosPopover = ({ target, openers }: Props) => {
   const dropdown = useDropdown({

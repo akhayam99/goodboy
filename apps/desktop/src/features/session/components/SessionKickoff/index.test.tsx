@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
@@ -64,10 +64,6 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   ),
 }));
 
-vi.mock('../SessionOverviewPane/ProjectMountRows/MountProjectAction', () => ({
-  MountProjectAction: () => <button type="button">Mount project</button>,
-}));
-
 vi.mock('../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <div data-testid="create-agent-tile" />,
 }));
@@ -119,9 +115,9 @@ describe('SessionKickoff', () => {
     const onOpenWorkflowBuilder = vi.fn();
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
-    expect(screen.getByText('How do you want to start?')).toBeDefined();
+    expect(screen.getByText('No activity yet')).toBeDefined();
     expect(screen.getByTestId('create-agent-tile')).toBeDefined();
-    expect(screen.getByRole('button', { name: /Add workflow/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Start a workflow/ })).toBeDefined();
     expect(screen.queryByTestId('create-report-cta')).toBeNull();
     expect(screen.getByTestId('create-wireframe-cta')).toBeDefined();
     expect(screen.getByText('Or pick up an issue')).toBeDefined();
@@ -181,25 +177,43 @@ describe('SessionKickoff', () => {
     const onOpenWorkflowBuilder = vi.fn();
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={onOpenWorkflowBuilder} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Add workflow/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Start a workflow/ }));
     expect(onOpenWorkflowBuilder).toHaveBeenCalledTimes(1);
   });
 
-  it('leads with mounting a project when the session has none', () => {
-    store.sessionProjectMounts = {};
+  it('shows the shape of a run before any activity, without inventing a model', () => {
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
 
-    const mount = screen.getByRole('button', { name: 'Mount project' });
-    const workflow = screen.getByRole('button', { name: /Add workflow/ });
-    expect(mount.compareDocumentPosition(workflow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    store.sessionProjectMounts = { 'sess-kickoff': [{ projectId: 'project-1' }] };
+    const run = screen.getByRole('list', { name: 'Example run' });
+    const rows = within(run).getAllByRole('listitem');
+    expect(rows.map((row) => row.textContent)).toEqual([
+      '3ImplementMakes the change',
+      '2PlanWrites a plan you approve',
+      '1ScoutReads the code first',
+    ]);
+    expect(run.querySelectorAll('[data-node-state="queued"]')).toHaveLength(3);
+    expect(
+      screen.getByText('Each agent you start shows up here as a row, newest on top.'),
+    ).toBeDefined();
+  });
+
+  it('explains a workflow in place, on click and never on its own', () => {
+    render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
+
+    expect(screen.queryByRole('dialog', { name: 'Workflow' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'workflow' }));
+
+    expect(
+      within(screen.getByRole('dialog', { name: 'Workflow' })).getByText(
+        /Several agents that run in order/,
+      ),
+    ).toBeDefined();
   });
 
   it('holds the report back until there is something to report, and offers the wireframe', () => {
     render(<SessionKickoff session={session} onOpenWorkflowBuilder={vi.fn()} />);
 
     expect(screen.queryByTestId('create-report-cta')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mount project' })).toBeNull();
 
     fireEvent.click(screen.getByTestId('create-wireframe-cta'));
     expect(store.openArtifactCreation).toHaveBeenCalledWith({

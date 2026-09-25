@@ -123,6 +123,8 @@ export { ActionTile } from './components/ActionTile';
 export type { ActionTileProps } from './components/ActionTile';
 export { AnchoredPopover } from './components/AnchoredPopover';
 export type { AnchoredPopoverProps } from './components/AnchoredPopover';
+export { TermHint } from './components/TermHint';
+export type { TermHintAction, TermHintProps } from './components/TermHint';
 export { Popover, PopoverBody, PopoverFooter } from './components/Popover';
 export type { PopoverBodyProps, PopoverFooterProps, PopoverProps } from './components/Popover';
 export { RemoteImage } from './components/RemoteImage';

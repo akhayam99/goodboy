@@ -24,11 +24,11 @@ const PAUSE_COPY = {
       'Autorun is off, so this step will not continue on its own. Open the agent and continue manually, or turn on autorun.',
   },
   cluster: {
-    title: 'Cluster paused',
+    title: 'Subagent paused',
     handsFree:
-      'The implementer stopped before completing this cluster. Open the agent and continue manually.',
+      "The implementer stopped before completing this subagent's part. Open the agent and continue manually.",
     manual:
-      'Autorun is off, so this cluster will not continue on its own. Open the agent and continue manually, or turn on autorun.',
+      'Autorun is off, so this subagent will not continue on its own. Open the agent and continue manually, or turn on autorun.',
   },
 } as const satisfies Record<ContinueUnit, PauseCopy>;
 

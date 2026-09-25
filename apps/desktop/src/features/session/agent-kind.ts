@@ -194,7 +194,7 @@ export const AGENT_KIND_META: Record<
   resolver: {
     label: 'Resolve',
     pluralLabel: 'resolvers',
-    hint: 'Addresses one comment with a local commit. Spawned by the resolve UI',
+    hint: 'Addresses one comment with a local commit. Started from a review comment',
     persona: 'patches',
     expectedOutput: 'one local commit answering the comment',
   },

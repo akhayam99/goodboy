@@ -25,7 +25,7 @@ export const DiffMountSwitcher = ({
       <div className={cn(isDiffEmpty && DIFF_CAPPED_COLUMN_CLASS)}>
         <div
           role="group"
-          aria-label="Project mounts"
+          aria-label="Worktrees"
           data-testid="diff-mount-switcher"
           className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-lg border border-border-soft bg-subtle p-1"
         >

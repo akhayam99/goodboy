@@ -239,7 +239,7 @@ describe('resolveNextAction', () => {
     expect(action).toEqual({
       kind: 'summarizing',
       subjectAgentId: null,
-      sentence: 'Writing the handoff from Plan.',
+      sentence: 'Writing the next brief from Plan.',
       cause: 'Implement starts from it once it is ready.',
     });
   });

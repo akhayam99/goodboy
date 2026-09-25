@@ -3,6 +3,7 @@ import { ListChecks, PenLine } from 'lucide-react';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { Mode } from '../../../../../store/slices/workflowDrafts/types';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { GlossaryTerm } from '../../GlossaryTerm';
 
 type Props = {
   readonly mode: Mode;
@@ -11,8 +12,13 @@ type Props = {
   readonly onChange: (mode: Mode) => void;
 };
 
-const MODE_HINT: Record<Mode, string> = {
-  dynamic: 'An orchestrator picks each next agent after the previous one finishes.',
+const MODE_HINT: Record<Mode, ReactNode> = {
+  dynamic: (
+    <>
+      <GlossaryTerm term="orchestrated">Orchestrated</GlossaryTerm>: an orchestrator picks each next
+      agent after the previous one finishes.
+    </>
+  ),
   custom: 'You set every step. Click a step to edit it.',
   preset: 'A saved sequence. Edit any step before starting.',
 };
@@ -33,6 +39,6 @@ export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) 
       />
       {control}
     </div>
-    <p className="text-2xs text-faint-foreground">{MODE_HINT[mode]}</p>
+    <div className="text-2xs text-faint-foreground">{MODE_HINT[mode]}</div>
   </div>
 );

@@ -123,7 +123,7 @@ export const ProjectMountRow = ({
     try {
       await attachMount({ sessionId, mountId: row.mountId });
     } catch (error) {
-      void reportError({ title: `Couldn't mount ${label}`, error, sessionId });
+      void reportError({ title: `Couldn't reopen ${label}`, error, sessionId });
     } finally {
       setIsAttaching(false);
     }
@@ -263,8 +263,8 @@ export const ProjectMountRow = ({
               label={row.isOnDisk ? 'Files kept' : 'Files gone'}
               title={
                 row.isOnDisk
-                  ? 'Not mounted. Its files are still on disk.'
-                  : 'Not mounted. Its files were removed.'
+                  ? 'Closed. Its files are still on disk.'
+                  : 'Closed. Its files were removed.'
               }
               className="shrink-0"
             />
@@ -285,14 +285,14 @@ export const ProjectMountRow = ({
             <button
               type="button"
               disabled={isAttaching}
-              aria-label={`Mount ${label}`}
+              aria-label={`Reopen ${label}`}
               onClick={() => void mount()}
               className={cn(
                 'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}
             >
-              {isAttaching ? 'Mounting…' : 'Mount'}
+              {isAttaching ? 'Reopening…' : 'Reopen'}
             </button>
           )}
         </div>

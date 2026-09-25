@@ -15,11 +15,16 @@ type Props = {
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
+const NO_PROJECT_HINT = 'No project yet. Turns run in the session folder until you add one.';
+
 export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   const groups = useMountRows({ sessionId: session.id });
   const loadSessionMounts = useAppStore((state) => state.loadSessionMounts);
   const loadPrSeries = useAppStore((state) => state.loadPrSeries);
   const diffStats = useMountDiffStats(session.id);
+  const areMountsLoaded = useAppStore(
+    (state) => state.sessionProjectMounts[session.id] !== undefined,
+  );
   const worktreeTargets = useMemo(
     () =>
       groups.flatMap((group) =>
@@ -40,9 +45,10 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   }, [session.id]);
 
   return (
-    <section aria-label="Mounted projects" className="flex min-w-0 flex-col gap-2">
+    <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">
       <SectionHeader
         label="Projects"
+        {...(areMountsLoaded && groups.length === 0 ? { hint: NO_PROJECT_HINT } : {})}
         action={
           <ArchivedGate isArchived={session.archivedAt != null}>
             <MountProjectAction

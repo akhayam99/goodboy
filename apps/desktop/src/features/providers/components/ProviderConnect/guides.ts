@@ -125,7 +125,7 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     subscription: 'Your Claude Pro or Max account.',
     steps: [
       {
-        title: 'Browser handoff',
+        title: 'Sign in in the browser',
         body: 'The CLI opens your default browser. Sign in with your Anthropic account and approve the CLI prompt.',
       },
       {
@@ -141,7 +141,7 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     subscription: 'Your Cursor Pro account.',
     steps: [
       {
-        title: 'Browser handoff',
+        title: 'Sign in in the browser',
         body: 'A browser tab opens to cursor.com. Sign in and approve the CLI request.',
       },
       {
@@ -271,11 +271,11 @@ const API_PROVIDER_GUIDE: ProviderGuide = {
   steps: [
     {
       title: 'Install the runtime',
-      body: 'Install OpenCode first, then return to Provider Studio.',
+      body: 'Install OpenCode first, then return to Providers.',
     },
     {
       title: 'Add an API key',
-      body: 'Paste a key in Provider Studio to link the provider.',
+      body: 'Paste a key in Providers to link the provider.',
     },
   ],
   docsUrl: OPENROUTER_DOCS,

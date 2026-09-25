@@ -19,8 +19,8 @@ const emptyPickerMessage = ({
   readonly hasWorkspaceProjects: boolean;
 }): string =>
   hasWorkspaceProjects
-    ? 'Every workspace project is mounted here.'
-    : 'Add a project in workspace settings to mount it here.';
+    ? 'Every workspace project is already in this session.'
+    : 'Add a project in workspace settings to use it here.';
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
   const dropdown = useDropdown({ width: 'w-80', expectedHeight: 320 });
@@ -38,7 +38,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
   const hasWorkspaceProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
-  const label = 'Mount project';
+  const label = 'Add project';
 
   return (
     <AnchoredPopover

@@ -32,7 +32,7 @@ const RAIL = {
 const LABEL = {
   answer: 'Next action: answer',
   recover: 'Next action: recover the step',
-  summarizing: 'Next action: waiting on the handoff',
+  summarizing: 'Next action: waiting on the next brief',
 } as const satisfies Record<ShownKind, string>;
 
 export const NextActionStrip = ({ sessionId, run, workflow, subjectAgentId, className }: Props) => {

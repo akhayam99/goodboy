@@ -35,7 +35,7 @@ export const NewBranchMountAction = ({
       dropdown.close();
     } catch (error) {
       void reportError({
-        title: `Couldn't mount a new branch of ${projectName}`,
+        title: `Couldn't create a new worktree of ${projectName}`,
         error,
         sessionId,
       });
@@ -48,12 +48,12 @@ export const NewBranchMountAction = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`New branch mount in ${projectName}`}
+      ariaLabel={`New worktree in ${projectName}`}
       trigger={
-        <Tooltip content={`Add another branch mount of ${projectName}`}>
+        <Tooltip content={`Add another worktree of ${projectName} on its own branch`}>
           <button
             type="button"
-            aria-label={`New branch mount in ${projectName}`}
+            aria-label={`New worktree in ${projectName}`}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
             onClick={() => dropdown.toggle()}
@@ -63,7 +63,7 @@ export const NewBranchMountAction = ({
             )}
           >
             <GitFork size={ICON_SIZE.row} aria-hidden />
-            {presentation === 'button' ? <span>New branch mount</span> : null}
+            {presentation === 'button' ? <span>New worktree</span> : null}
           </button>
         </Tooltip>
       }
@@ -71,10 +71,11 @@ export const NewBranchMountAction = ({
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-foreground">
-            {`New branch mount in ${projectName}`}
+            {`New worktree in ${projectName}`}
           </span>
           <span className="text-2xs text-muted-foreground">
-            It gets its own worktree. The mounts already here keep their branches and requests.
+            It gets its own branch. The worktrees already here keep their branches and pull
+            requests.
           </span>
         </div>
         <Input
@@ -98,7 +99,7 @@ export const NewBranchMountAction = ({
             Cancel
           </Button>
           <Button size="sm" disabled={isBusy} onClick={() => void create()}>
-            {isBusy ? 'Creating…' : 'Create mount'}
+            {isBusy ? 'Creating…' : 'Create worktree'}
           </Button>
         </div>
       </div>

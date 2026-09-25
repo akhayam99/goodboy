@@ -14,8 +14,8 @@ import { FinishedRegister } from '../../../../shared/components/FinishedRegister
 const VISIBLE_FINISHED_COUNT = 30;
 
 const NO_AGENTS_DESCRIPTION =
-  'Spawn an agent to start working on this session, or kick off a workflow to run a sequence of agents toward the goal.';
-const ALL_DONE_DESCRIPTION = 'Every agent here is marked done. Spawn a new one to keep going.';
+  'Start an agent to work on this session, or kick off a workflow to run a sequence of agents toward the goal.';
+const ALL_DONE_DESCRIPTION = 'Every agent here is marked done. Start a new one to keep going.';
 
 type Props = {
   readonly session: Session;
@@ -101,7 +101,7 @@ export const StandaloneAgentsLane = ({
     return (
       <div className="flex flex-col gap-1.5">
         {isLoadingEmpty && <AgentListSkeleton />}
-        {!isLoadingEmpty && hasNoAgents && <AgentLaneNote text="No agents yet. Spawn one below." />}
+        {!isLoadingEmpty && hasNoAgents && <AgentLaneNote text="No agents yet. Start one below." />}
         {!isLoadingEmpty && !hasNoAgents && list}
         {showCreateControl && <CreateAgentPopover sessionId={sessionId} variant="compact" />}
         {error}

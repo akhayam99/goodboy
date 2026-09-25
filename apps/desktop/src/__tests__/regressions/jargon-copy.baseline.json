@@ -1,0 +1,50 @@
+{
+  "features/artifacts/artifactScoutSection.ts": {
+    "count": 1,
+    "reason": "agent-facing: scout prompt text"
+  },
+  "features/companion/commandExecutor.ts": {
+    "count": 2,
+    "reason": "agent-facing: bridge verb errors returned to the CLI"
+  },
+  "features/context/questionDelegate.ts": {
+    "count": 1,
+    "reason": "agent-facing: delegate prompt names the marker"
+  },
+  "features/reports/buildReportContext.ts": {
+    "count": 4,
+    "reason": "agent-facing: report prompt context"
+  },
+  "features/session/agent-kind.ts": {
+    "count": 4,
+    "reason": "agent-facing: role system prompts"
+  },
+  "features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx": {
+    "count": 1,
+    "reason": "technical: exhaustive-check error"
+  },
+  "features/session/hooks/useRebaseAgent/index.ts": {
+    "count": 1,
+    "reason": "agent-facing: rebase agent prompt"
+  },
+  "features/session/mountQueryBridge/index.ts": {
+    "count": 8,
+    "reason": "agent-facing: bridge mount verb errors returned to the CLI"
+  },
+  "features/session/projectMaterializeBridge.ts": {
+    "count": 3,
+    "reason": "agent-facing: bridge materialize verb errors returned to the CLI"
+  },
+  "features/wireframes/buildWireframeContext.ts": {
+    "count": 5,
+    "reason": "agent-facing: wireframe prompt context"
+  },
+  "features/wireframes/collectDesignProfile.ts": {
+    "count": 2,
+    "reason": "agent-facing: design evidence notes for the wireframe prompt"
+  },
+  "features/wireframes/wireframeFidelity.ts": {
+    "count": 1,
+    "reason": "agent-facing: wireframe prompt fidelity note"
+  }
+}

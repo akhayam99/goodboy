@@ -38,7 +38,7 @@ export const OverviewActions = ({
           icon={
             <CONCEPT_ICONS.workflows size={ICON_SIZE.hero} aria-hidden className="text-primary" />
           }
-          title="Add workflow"
+          title="Start a workflow"
           description={`${WORKFLOW_DESCRIPTION}.`}
           onClick={onOpenWorkflowBuilder}
         />

@@ -155,7 +155,7 @@ describe('useDynamicActions', () => {
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'building'));
 
     const action = result.current.find((a) => a.key === 'mount:project-web');
-    expect(action?.label).toBe('Mount web');
+    expect(action?.label).toBe('Add web');
     expect(action?.icon).toBe(SUGGESTION_ICONS['mount-project']);
     expect(action?.tone).toBe('warning');
 

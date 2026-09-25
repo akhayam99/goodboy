@@ -20,7 +20,7 @@ export const AgentsPane = ({ session, meta, eyebrow }: Props) => {
   return (
     <PaneShell
       title="Agents"
-      description="Agents you spawn by hand to work this session."
+      description="Agents you start by hand to work this session."
       meta={meta}
       eyebrow={eyebrow}
       actions={

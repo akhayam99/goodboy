@@ -135,7 +135,8 @@ its own worktree, its own current branch and its own pull request history.
   mismatch. It waits for you to pick switch or fork, because the checkout
   alone does not say what you wanted.
 
-**Unmount** takes one mount out of the session and keeps its history.
+**Unmount** takes one mount out of the session and keeps its history. The
+screen calls it **Close worktree**, and a closed row offers **Reopen**.
 **Cleanup** deletes the worktree and keeps its local branch. Goodboy does not
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
@@ -539,6 +540,32 @@ in Goodboy.
 - Each word has one meaning. **workspace** is the container, **project** is
   the repo or folder, **session** is the goal, **agent** is the chat.
 - No screen may use a different word for any of these four
+- Internal words stay in code and technical docs. The screen says the word the
+  user already knows from git, the file system or the rest of the app:
+
+  | Internal word       | On screen                                         |
+  | ------------------- | ------------------------------------------------- |
+  | mount, branch mount | worktree (repo), folder (folder project), project |
+  | mount a project     | Add project                                       |
+  | fork a mount        | New worktree                                      |
+  | unmount             | Close worktree, and Reopen for a closed row       |
+  | spawn               | Start (an agent, a reviewer, an implementer)      |
+  | handoff             | Suggested next: Implementer, the next brief       |
+  | cluster             | subagent                                          |
+  | lens                | tab                                               |
+  | studio              | the page name alone: Workflows, Impact, Providers |
+  | materialize         | add to this session                               |
+
+  `jargon-copy.test.ts` fails when rendered copy under `features/`,
+  `app/components/` or `shared/components/` uses one of the internal words.
+  Its baseline lists only text that agents read (prompts, bridge errors) and
+  can only shrink.
+
+- A word that stays and still needs a sentence (workflow, orchestrated,
+  artifact) gets a `TermHint`: the word is underlined with dots and opens a
+  one-line definition on click or keyboard focus, never on hover and never on
+  its own. The definitions live once, in `GLOSSARY`
+  (`apps/desktop/src/features/session/glossary.ts`).
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.
 - Integrations share the layout, never the logic. A Sentry issue and a GitHub

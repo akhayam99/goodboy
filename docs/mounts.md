@@ -190,7 +190,8 @@ action, menu. A column no row fills takes no width, and below a 36rem
 container the sync and diff cells empty out (the Changes lens still has the
 diff). Every row action lives in the always visible row menu
 (`MountActionsMenu`): start new turns here (only with two or more mounts),
-terminal, scripts, editors, copy path, then unmount or remove. The terminal and scripts icons on the row are
+terminal, scripts, editors, copy path, then close (unmount) or remove. A
+closed row offers Reopen in its action cell. The terminal and scripts icons on the row are
 hover accelerators, shown at rest only while something runs there; a hover
 icon is never the only way to an action. The project menu holds Detach
 project and renders nothing when the project has no mount to detach.

@@ -160,7 +160,9 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
       <Divider />
       <div className="flex max-h-64 flex-col overflow-y-auto p-1">
         {options.length === 0 ? (
-          <span className="px-2 py-3 text-xs text-muted-foreground">No mounted projects</span>
+          <span className="px-2 py-3 text-xs text-muted-foreground">
+            No projects in any session
+          </span>
         ) : (
           options.map((option) => (
             <ProjectFilterOption

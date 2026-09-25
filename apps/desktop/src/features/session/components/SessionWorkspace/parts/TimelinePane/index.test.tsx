@@ -262,7 +262,7 @@ describe('TimelinePane on an empty session', () => {
   it('keeps every session action offered on the path production takes', () => {
     renderEmptySession();
 
-    for (const name of ['Start agent', 'Add workflow', 'Create wireframe']) {
+    for (const name of ['Start agent', 'Start a workflow', 'Create wireframe']) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDefined();
     }
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
@@ -280,7 +280,7 @@ describe('TimelinePane on an empty session', () => {
     renderEmptySession();
 
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    for (const name of ['Add workflow', 'Create report', 'Create wireframe']) {
+    for (const name of ['Start a workflow', 'Create report', 'Create wireframe']) {
       expect(screen.queryByRole('button', { name: new RegExp(name) })).toBeNull();
     }
     fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
@@ -417,7 +417,7 @@ describe('TimelinePane suggestions', () => {
   const MOUNT: FakeSuggestion = {
     id: 'mount-project:project-web',
     kind: 'mount-project',
-    title: 'Mount web',
+    title: 'Add web',
     detail: 'needs the router',
     payload: { projectId: 'project-web' },
   };

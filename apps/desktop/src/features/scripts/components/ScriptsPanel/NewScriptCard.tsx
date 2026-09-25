@@ -25,7 +25,7 @@ type ScopeParams = {
 
 const scopeHelp = ({ projectName, mountPath }: ScopeParams): string =>
   mountPath === null
-    ? `${projectName} is not mounted in this session yet, so this script has nowhere to run until it is.`
+    ? `${projectName} is not in this session yet, so this script has nowhere to run until it is.`
     : `Runs in ${projectName} at ${mountPath}.`;
 
 export const NewScriptCard = ({

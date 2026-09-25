@@ -157,7 +157,7 @@ export const useDynamicActions = (
         key: `mount:${proposal.projectId}`,
         icon: SUGGESTION_ICONS['mount-project'],
         tone: 'warning',
-        label: `Mount ${proposal.projectName}`,
+        label: `Add ${proposal.projectName}`,
         onClick: () => {
           void ensureProjectMounted({
             sessionId: id,
@@ -167,7 +167,7 @@ export const useDynamicActions = (
             void emitNotification({
               kind: 'error',
               severity: 'error',
-              title: "Couldn't mount the project",
+              title: "Couldn't add the project",
               body: formatError(error),
               sessionId: id,
             });

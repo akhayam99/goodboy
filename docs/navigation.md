@@ -112,9 +112,10 @@ grid, so no column resize, hide animation or overlay can move it.
 mounts editors and takes a title.
 
 **The projects section shows which projects a session has materialized.** It
-lives in the session overview and always has the Mount project action, even
+lives in the session overview and always has the Add project action, even
 before the first mount. Mounted projects show as dense rows. The empty section
-is one quiet action row with a short explanation. Sessions are created lazily
+is its header with a one-line hint: turns run in the session folder until you
+add a project. Sessions are created lazily
 on the workspace ([concepts.md](concepts.md) → Lazy sessions), and this section
 is where a session's footprint grows. The session header has no second mount
 control.
