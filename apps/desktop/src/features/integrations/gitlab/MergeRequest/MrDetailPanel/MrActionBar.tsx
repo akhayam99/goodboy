@@ -1,4 +1,5 @@
-import { Button } from '@goodboy/ui';
+import { useState } from 'react';
+import { Button, InlineConfirm } from '@goodboy/ui';
 import { GitPullRequestDraft, RotateCcw, Send, ThumbsDown, ThumbsUp, XCircle } from 'lucide-react';
 import type { GitlabMergeRequest, GitlabMrApprovalState } from '../../client';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -39,7 +40,7 @@ type Props = {
   readonly onApprove: (() => void) | null;
   readonly onUnapprove: (() => void) | null;
   readonly onToggleDraft: () => void;
-  readonly onClose: () => void;
+  readonly onClose: () => Promise<void>;
   readonly onReopen: () => void;
 };
 
@@ -57,6 +58,7 @@ export const MrActionBar = ({
   onClose,
   onReopen,
 }: Props) => {
+  const [isConfirmingClose, setIsConfirmingClose] = useState(false);
   const isOpen = mr.state === 'opened';
   const isClosed = mr.state === 'closed';
   const hasApproved = approval?.userHasApproved === true;
@@ -120,14 +122,31 @@ export const MrActionBar = ({
         </Button>
       )}
 
-      {isOpen && (
+      {isOpen && isConfirmingClose && (
+        <InlineConfirm
+          role="danger"
+          icon={<XCircle size={ICON_SIZE.row} aria-hidden />}
+          title={`Close !${mr.iid}?`}
+          description="GitLab closes it without merging. You can reopen it from here."
+          confirmLabel={busy === 'close' ? 'Closing' : 'Confirm close'}
+          onConfirm={async () => {
+            await onClose();
+            setIsConfirmingClose(false);
+          }}
+          onCancel={() => setIsConfirmingClose(false)}
+          isBusy={busy === 'close'}
+          isConfirmDisabled={!canAct}
+          className="w-72"
+        />
+      )}
+
+      {isOpen && !isConfirmingClose && (
         <Button
           variant="danger"
           emphasis="outline"
           size="sm"
-          onClick={onClose}
+          onClick={() => setIsConfirmingClose(true)}
           disabled={isDisabled}
-          isBusy={busy === 'close'}
         >
           <XCircle size={ICON_SIZE.row} aria-hidden />
           Close

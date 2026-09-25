@@ -454,8 +454,8 @@ Merge and pull requests launch with their text as it is.
   comment, reply, resolve threads, merge, close). Read issues and comment on
   them.
 - **GitLab**: read merge requests and act on them (approve, change state,
-  comment, reply, resolve and reopen threads). Read, comment on and edit
-  issues.
+  comment, reply, resolve and reopen threads). Merge and Close ask for
+  confirmation first. Read, comment on and edit issues.
 - **Bitbucket**: pull requests from start to finish, with description, diff,
   build results in plain words and review threads. Eight actions: approve,
   revoke, request changes, withdraw, comment, reply, merge, decline. Issues go
