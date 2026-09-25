@@ -15,6 +15,8 @@ type ProjectRow = OverrideRow & {
   readonly root_path: string;
   readonly kind: 'repo' | 'folder';
   readonly base_branch: string | null;
+  readonly description: string | null;
+  readonly starred_at: number | null;
   readonly created_at: number;
   readonly updated_at: number;
   readonly disconnected_at: number | null;
@@ -32,6 +34,7 @@ const toDomain = ({ row }: ToDomainParams): Project => ({
   rootPath: row.root_path,
   kind: row.kind,
   baseBranch: row.base_branch,
+  description: row.description,
   overrides: overridesFromRow({ row }),
   createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
@@ -41,6 +44,9 @@ const toDomain = ({ row }: ToDomainParams): Project => ({
   ...(row.last_accessed_at === null
     ? {}
     : { lastAccessedAt: new Date(row.last_accessed_at).toISOString() as IsoDateTime }),
+  ...(row.starred_at === null
+    ? {}
+    : { starredAt: new Date(row.starred_at).toISOString() as IsoDateTime }),
 });
 
 const serializeObject = ({ value }: { readonly value: object | null }): string | null =>
@@ -67,8 +73,9 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        id, workspace_id, name, root_path, default_provider_id, default_workflow_id,
        default_branch_prefix, parallel_enabled, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
-       task_models, role_models, provider_pool, base_branch, attribution_footer
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       task_models, role_models, provider_pool, base_branch, attribution_footer,
+       description, starred_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -95,6 +102,8 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
         : project.overrides.attributionFooter
           ? 1
           : 0,
+      project.description ?? null,
+      project.starredAt === undefined ? null : Date.parse(project.starredAt),
     ],
   );
 };
@@ -220,6 +229,42 @@ export const updateProjectBaseBranch = async ({
 }: UpdateProjectBaseBranchParams): Promise<void> => {
   await db.execute('UPDATE projects SET base_branch = ?, updated_at = ? WHERE id = ?', [
     baseBranch,
+    Date.now(),
+    projectId,
+  ]);
+};
+
+type UpdateProjectStarParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly starredAt: IsoDateTime | null;
+};
+
+export const updateProjectStar = async ({
+  db,
+  projectId,
+  starredAt,
+}: UpdateProjectStarParams): Promise<void> => {
+  await db.execute('UPDATE projects SET starred_at = ?, updated_at = ? WHERE id = ?', [
+    starredAt === null ? null : Date.parse(starredAt),
+    Date.now(),
+    projectId,
+  ]);
+};
+
+type UpdateProjectDescriptionParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly description: string | null;
+};
+
+export const updateProjectDescription = async ({
+  db,
+  projectId,
+  description,
+}: UpdateProjectDescriptionParams): Promise<void> => {
+  await db.execute('UPDATE projects SET description = ?, updated_at = ? WHERE id = ?', [
+    description,
     Date.now(),
     projectId,
   ]);

@@ -71,6 +71,15 @@ The new-workspace form offers **Single project**, **Multi project** and
 different kinds of workspace, and a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).
 
+You can **star** the projects you work on most and give each project a
+one-line **description**. Both live on the project row in workspace settings.
+
+- Every agent's project list puts starred projects first, marks them, shows each
+  description next to the name, and says to look in starred projects first when
+  a request names no project. The planner and the orchestrator get the same list
+- Project pickers and the Activity project filter put starred projects on top
+- A star never changes what an agent may mount or write
+
 A repo project needs a working git setup before a session can make a worktree
 in it.
 

@@ -40,6 +40,8 @@ export type Project = Readonly<{
   rootPath: string;
   kind: 'repo' | 'folder';
   baseBranch?: string | null;
+  description?: string | null;
+  starredAt?: IsoDateTime;
   overrides: OverrideSettings;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;

@@ -387,6 +387,8 @@ type AppActions = {
     projectId: ProjectId;
     baseBranch: string | null;
   }): Promise<void>;
+  setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
+  describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;

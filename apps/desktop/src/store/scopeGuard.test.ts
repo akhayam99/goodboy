@@ -198,6 +198,30 @@ describe('buildScopeGuard write boundary', () => {
 });
 
 describe('buildScopeGuard', () => {
+  it('lists starred projects first with their description and the starred-first rule', () => {
+    const starredWeb = {
+      ...web,
+      starredAt: NOW,
+      description: 'Checkout pages for Harborline',
+    };
+    const guard = buildScopeGuard({ ...base, projects: [app, starredWeb], mounts: [appMount] });
+    const lines = guard.split('\n');
+    const webLine = lines.findIndex((line) => line.startsWith('- web '));
+    const appLine = lines.findIndex((line) => line.startsWith('- app '));
+
+    expect(webLine).toBeGreaterThan(-1);
+    expect(webLine).toBeLessThan(appLine);
+    expect(lines[webLine]).toBe(
+      '- web (repo) root: /tmp/web | starred, the owner works here most | Checkout pages for Harborline | NOT materialized: read it freely, mount it only to write',
+    );
+    expect(guard).toContain('When a request names no project, look in starred projects first.');
+  });
+
+  it('leaves the starred-first rule out when nothing is starred', () => {
+    const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [appMount] });
+    expect(guard).not.toContain('starred');
+  });
+
   it('teaches the inventory and the marker while another project stays unmounted', () => {
     const guard = buildScopeGuard({ ...base, projects: [app, web], mounts: [appMount] });
 

@@ -55,6 +55,7 @@ vi.mock('../../../../store', () => {
   const getState = () => ({
     sessions: [session],
     workspaces: [{ id: session.workspaceId, rootPath: '/tmp/repo', kind: 'repo' }],
+    projects: [],
     sessionProjectMounts: {},
     sessionActiveProject: {},
     sessionWorktrees: { [session.id]: ['/tmp/worktree'] },

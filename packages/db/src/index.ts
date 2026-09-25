@@ -47,6 +47,8 @@ export {
   reconnectProject,
   updateProjectKind,
   updateProjectBaseBranch,
+  updateProjectStar,
+  updateProjectDescription,
 } from './queries/project';
 export {
   describeProjectAdoption,

@@ -65,6 +65,7 @@ import {
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { buildProfileGuard } from '../../profileGuard';
+import { buildWorkspaceProjectsBlock } from '../../buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
@@ -632,6 +633,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
       });
+      const projectsBlock = buildWorkspaceProjectsBlock({
+        projects: get().projects.filter((project) => project.workspaceId === session.workspaceId),
+      });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
       markHintsReading({
@@ -643,7 +647,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints })]
+      const hints = [profileBlock, projectsBlock, formatOrchestratorHints({ hints: readHints })]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');

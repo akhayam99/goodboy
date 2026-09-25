@@ -14,6 +14,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     saveSetting: vi.fn(async () => undefined),
     disconnectWorkspace: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ id: string; name: string; rootPath: string }>,
+    projects: [] as ReadonlyArray<{ id: string; workspaceId: string }>,
     renameWorkspace: vi.fn(async () => undefined),
     workspaceOverrides: {} as Record<string, OverrideSettings>,
     setWorkspaceOverrides: vi.fn(async (_workspaceId: string, _overrides: unknown) => undefined),
