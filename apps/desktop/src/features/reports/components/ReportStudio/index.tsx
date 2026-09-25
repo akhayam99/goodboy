@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import type { ReportArtifact } from '@goodboy/types';
 import { buildReportOutline } from '../../reportOutline';
-import { dropLeadingTitleHeading } from '../ArtifactPrintView/dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../ArtifactReaderView/dropLeadingTitleHeading';
 import { ArtifactProse } from '../../../artifacts/components/ArtifactProse';
 import { ReportContentsMenu } from './ReportContentsMenu';
 import { ReportOutlineNav } from './ReportOutlineNav';

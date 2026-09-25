@@ -5,16 +5,19 @@ import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
-import { artifactPrintHash } from '../../../reports/artifactPrintRequest';
+import { artifactPrintHash, type ArtifactWindowMode } from '../../../reports/artifactPrintRequest';
 import { artifactFileSlug } from './artifactFileSlug';
 import { artifactExportContents, artifactSourceExport } from './artifactSourceExport';
 
-export type ArtifactExportAction = 'copy' | 'source' | 'pdf';
+export type ArtifactExportAction = 'copy' | 'source' | 'pdf' | 'window';
 
 export const PDF_READY_HINT = 'Open a print window and save as PDF';
 
 export const PDF_BLOCKED_HINT =
   'This wireframe does not match the schema, so the print sheet has no page to lay out';
+
+export const WINDOW_BLOCKED_HINT =
+  'This wireframe does not match the schema, so the window has no page to show';
 
 export type ArtifactExportStatus =
   | Readonly<{ kind: 'idle' }>
@@ -33,15 +36,17 @@ export type ArtifactExport = Readonly<{
   copySource: () => Promise<void>;
   saveSource: () => Promise<void>;
   savePdf: () => Promise<void>;
+  openWindow: () => Promise<void>;
 }>;
 
 type Params = {
   readonly artifact: SessionArtifact;
 };
 
-const printWindowLabel = (): string => {
+const documentWindowLabel = ({ mode }: { readonly mode: ArtifactWindowMode }): string => {
   const raw = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
-  return `win-print-${raw.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
+  const prefix = mode === 'read' ? 'win-reader' : 'win-print';
+  return `${prefix}-${raw.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
 };
 
 export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
@@ -109,17 +114,14 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
     run,
   ]);
 
-  const savePdf = useCallback(async () => {
-    if (!canSavePdf) {
-      setStatus({ kind: 'failed', action: 'pdf', message: PDF_BLOCKED_HINT });
-      return;
-    }
-    await run('pdf', async () => {
+  const openDocumentWindow = useCallback(
+    async ({ mode }: { readonly mode: ArtifactWindowMode }): Promise<void> => {
       const hash = artifactPrintHash({
         sessionId: artifact.sessionId,
         artifactId: artifact.id,
+        mode,
       });
-      const win = new WebviewWindow(printWindowLabel(), {
+      const win = new WebviewWindow(documentWindowLabel({ mode }), {
         url: `index.html#${hash}`,
         title: artifact.title,
         width: 820,
@@ -129,9 +131,31 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
         void win.once('tauri://created', () => resolve());
         void win.once('tauri://error', (event) => reject(new Error(String(event.payload))));
       });
+    },
+    [artifact.id, artifact.sessionId, artifact.title],
+  );
+
+  const savePdf = useCallback(async () => {
+    if (!canSavePdf) {
+      setStatus({ kind: 'failed', action: 'pdf', message: PDF_BLOCKED_HINT });
+      return;
+    }
+    await run('pdf', async () => {
+      await openDocumentWindow({ mode: 'print' });
       return { kind: 'printing' };
     });
-  }, [artifact.id, artifact.sessionId, artifact.title, canSavePdf, run]);
+  }, [canSavePdf, openDocumentWindow, run]);
+
+  const openWindow = useCallback(async () => {
+    if (!canSavePdf) {
+      setStatus({ kind: 'failed', action: 'window', message: WINDOW_BLOCKED_HINT });
+      return;
+    }
+    await run('window', async () => {
+      await openDocumentWindow({ mode: 'read' });
+      return { kind: 'idle' };
+    });
+  }, [canSavePdf, openDocumentWindow, run]);
 
   return {
     status,
@@ -141,5 +165,6 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
     copySource,
     saveSource,
     savePdf,
+    openWindow,
   };
 };

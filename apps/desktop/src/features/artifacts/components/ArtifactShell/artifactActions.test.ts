@@ -16,7 +16,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'active', isRunning: false })).toEqual({
       primary: 'runPlan',
       secondary: 'edit',
-      overflow: ['print', 'copySource', 'saveSource', 'discard'],
+      overflow: ['openWindow', 'print', 'copySource', 'saveSource', 'discard'],
     });
   });
 
@@ -24,7 +24,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: false })).toEqual({
       primary: null,
       secondary: 'runAgain',
-      overflow: ['print', 'copySource', 'saveSource'],
+      overflow: ['openWindow', 'print', 'copySource', 'saveSource'],
     });
   });
 
@@ -38,7 +38,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: true })).toEqual({
       primary: null,
       secondary: null,
-      overflow: ['print', 'copySource', 'saveSource'],
+      overflow: ['openWindow', 'print', 'copySource', 'saveSource'],
     });
   });
 
@@ -54,7 +54,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'report', status: 'active' })).toEqual({
       primary: null,
       secondary: 'edit',
-      overflow: ['print', 'regenerate', 'copySource', 'saveSource'],
+      overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource'],
     });
   });
 
@@ -62,7 +62,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'wireframe', status: 'active' })).toEqual({
       primary: null,
       secondary: 'export',
-      overflow: ['newVariant', 'print'],
+      overflow: ['newVariant', 'openWindow', 'print'],
     });
   });
 

@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ArtifactId, SessionId } from '@goodboy/types';
 
 const { listSpy, closeSpy } = vi.hoisted(() => ({
@@ -19,11 +19,12 @@ vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ close: () => closeSpy() }),
 }));
 
-import { ArtifactPrintView } from './index';
+import { ArtifactReaderView } from './index';
 
 const request = {
   sessionId: 'session-1' as SessionId,
   artifactId: 'report-1' as ArtifactId,
+  mode: 'print' as const,
 };
 
 const report = {
@@ -87,7 +88,7 @@ const wireframe = {
 
 afterEach(cleanup);
 
-describe('ArtifactPrintView', () => {
+describe('ArtifactReaderView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.print = vi.fn();
@@ -105,7 +106,7 @@ describe('ArtifactPrintView', () => {
   it('removes the boot shell so the splash never prints over the document', async () => {
     listSpy.mockResolvedValueOnce([report]);
     expect(document.getElementById('boot-shell')).not.toBeNull();
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(document.getElementById('boot-shell')).toBeNull();
     });
@@ -115,7 +116,7 @@ describe('ArtifactPrintView', () => {
     listSpy.mockResolvedValueOnce([
       { ...report, sourceText: '#  session report!\n\nwhat landed this week' },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByText('what landed this week')).toBeDefined();
     });
@@ -130,7 +131,7 @@ describe('ArtifactPrintView', () => {
         sourceText: '# ACME-412 checkout card missing on /start\n\nwhat landed',
       },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByText('what landed')).toBeDefined();
     });
@@ -155,7 +156,7 @@ describe('ArtifactPrintView', () => {
         ].join('\n'),
       },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByText('the key expired')).toBeDefined();
     });
@@ -169,7 +170,7 @@ describe('ArtifactPrintView', () => {
 
   it('keeps a leading heading that is not the title', async () => {
     listSpy.mockResolvedValueOnce([{ ...report, sourceText: '# Outcome\n\nwhat landed' }]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: 'Outcome' })).toBeDefined();
     });
@@ -178,7 +179,7 @@ describe('ArtifactPrintView', () => {
 
   it('prints the mark as a plain image, since WebKit drops a css mask on paper', async () => {
     listSpy.mockResolvedValueOnce([report]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'Goodboy' })).toBeDefined();
     });
@@ -189,7 +190,7 @@ describe('ArtifactPrintView', () => {
 
   it('lays the facts out as labelled fields, with a human date and no raw timestamp', async () => {
     listSpy.mockResolvedValueOnce([report]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByText('September 15, 2026 at 10:00 AM')).toBeDefined();
     });
@@ -207,7 +208,7 @@ describe('ArtifactPrintView', () => {
         sourceText: '## What shipped\n\ntext\n\n## Checks\n\ntext\n\n## Risk\n\ntext',
       },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     const contents = await waitFor(() => screen.getByRole('navigation', { name: 'Contents' }));
     expect(contents.textContent).toContain('What shipped');
     expect(contents.textContent).toContain('Checks');
@@ -233,7 +234,7 @@ describe('ArtifactPrintView', () => {
         ].join('\n'),
       },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     const contents = await waitFor(() => screen.getByRole('navigation', { name: 'Contents' }));
     const headings = screen.getAllByRole('heading', { level: 2 });
     expect(headings.map((heading) => heading.textContent)).toEqual([
@@ -253,7 +254,7 @@ describe('ArtifactPrintView', () => {
     listSpy.mockResolvedValueOnce([
       { ...report, sourceText: '## Only section\n\ntext\n\n## Second\n\ntext' },
     ]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 2, name: 'Only section' })).toBeDefined();
     });
@@ -262,7 +263,7 @@ describe('ArtifactPrintView', () => {
 
   it('renders the report in a light print sheet and triggers the print dialog once', async () => {
     listSpy.mockResolvedValueOnce([report]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: 'Session report' })).toBeDefined();
     });
@@ -271,6 +272,60 @@ describe('ArtifactPrintView', () => {
     await waitFor(() => {
       expect(window.print).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('reads without printing, with a toolbar that prints and copies on demand', async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    listSpy.mockResolvedValueOnce([report]);
+    render(<ArtifactReaderView request={{ ...request, mode: 'read' }} />);
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Session report' })).toBeDefined();
+    });
+    expect(window.print).not.toHaveBeenCalled();
+    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-medium')).toBe('window');
+    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('window');
+    const toolbar = screen.getByRole('toolbar', { name: 'Document' });
+    expect(toolbar.textContent).toContain('Print');
+
+    fireEvent.click(screen.getByRole('button', { name: /Print/ }));
+    expect(window.print).toHaveBeenCalledTimes(1);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', metaKey: true }));
+    expect(window.print).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => {
+      expect(screen.getByRole('status').textContent).toBe('Copied to the clipboard');
+    });
+    expect(writeText).toHaveBeenCalledWith('# Outcome');
+  });
+
+  it('prints on paper without a toolbar', async () => {
+    listSpy.mockResolvedValueOnce([report]);
+    render(<ArtifactReaderView request={request} />);
+    await waitFor(() => {
+      expect(window.print).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('paper');
+  });
+
+  it('keeps the document on screen when a reader print fails', async () => {
+    listSpy.mockResolvedValueOnce([report]);
+    window.print = vi.fn(() => {
+      throw new Error('print is not implemented');
+    });
+    render(<ArtifactReaderView request={{ ...request, mode: 'read' }} />);
+    await waitFor(() => {
+      expect(screen.getByRole('toolbar', { name: 'Document' })).toBeDefined();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Print/ }));
+    expect(screen.getByRole('alert').textContent).toContain('could not open a print dialog');
+    expect(screen.getByTestId('artifact-document')).toBeDefined();
   });
 
   it('unclamps the window it marks so a tall sheet scrolls on screen', () => {
@@ -282,7 +337,7 @@ describe('ArtifactPrintView', () => {
   it('closes the print window on escape and stops listening once it is gone', async () => {
     Reflect.set(window, '__TAURI_INTERNALS__', {});
     listSpy.mockResolvedValueOnce([report]);
-    const { unmount } = render(<ArtifactPrintView request={request} />);
+    const { unmount } = render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: 'Session report' })).toBeDefined();
     });
@@ -309,7 +364,7 @@ describe('ArtifactPrintView', () => {
     window.print = vi.fn(() => {
       throw new Error('print is not implemented');
     });
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('could not open a print dialog');
     });
@@ -318,7 +373,7 @@ describe('ArtifactPrintView', () => {
 
   it('lays a wireframe out as a contact sheet under the same letterhead', async () => {
     listSpy.mockResolvedValueOnce([wireframe]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(
         screen.getByRole('heading', { level: 1, name: 'Harborline onboarding' }),
@@ -338,7 +393,7 @@ describe('ArtifactPrintView', () => {
 
   it('refuses a wireframe it cannot read instead of dumping its source', async () => {
     listSpy.mockResolvedValueOnce([{ ...wireframe, sourceText: '{"screens":[]}' }]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('does not match the schema');
     });
@@ -349,7 +404,7 @@ describe('ArtifactPrintView', () => {
 
   it('reports a missing artifact instead of printing an empty page', async () => {
     listSpy.mockResolvedValueOnce([]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toContain('no longer in the session');
     });
@@ -363,22 +418,22 @@ describe('ArtifactPrintView', () => {
       screens: [wireframeDocument.screens[1]],
     };
     listSpy.mockResolvedValueOnce([{ ...wireframe, sourceText: JSON.stringify(desktopOnly) }]);
-    const { container } = render(<ArtifactPrintView request={request} />);
+    const { container } = render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
     });
     expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('landscape');
-    expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('landscape');
+    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('landscape');
     expect(container.querySelectorAll('[inert]')).toHaveLength(1);
   });
 
   it('keeps a mixed wireframe on the portrait page the report uses', async () => {
     listSpy.mockResolvedValueOnce([wireframe]);
-    render(<ArtifactPrintView request={request} />);
+    render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
       expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
     });
     expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('portrait');
-    expect(screen.getByTestId('artifact-print-view').getAttribute('data-page')).toBe('portrait');
+    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('portrait');
   });
 });

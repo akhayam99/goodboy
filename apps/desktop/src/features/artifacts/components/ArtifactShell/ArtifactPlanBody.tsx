@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { PlanWithCount } from '@goodboy/types';
-import { dropLeadingTitleHeading } from '../../../reports/components/ArtifactPrintView/dropLeadingTitleHeading';
+import { dropLeadingTitleHeading } from '../../../reports/components/ArtifactReaderView/dropLeadingTitleHeading';
 import { splitPlanBody } from '../../../plans/splitPlanBody';
 import { PlanParts } from '../../../plans/components/PlanParts';
 import type { PlanPartRow } from '../../../plans/components/PlanParts/planPartRows';

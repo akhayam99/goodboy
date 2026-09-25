@@ -303,7 +303,10 @@ Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The Artifacts page lists plans, reports and wireframes as one
 list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
-for its details and for a chat with the agent that wrote it.
+for its details and for a chat with the agent that wrote it. **Open in
+window**, under `⋯`, shows the same document as a light page in its own
+window, with Print and Copy; **Print** opens that page straight in the print
+dialog, where the system saves the PDF.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its

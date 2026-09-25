@@ -11,8 +11,8 @@ import { App } from './App';
 import { MockScene } from './app/components/MockScene';
 import { MOCK_ENABLED } from './store/mock-data';
 import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
-import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
-import { removeBootShell } from './features/reports/components/ArtifactPrintView/removeBootShell';
+import { ArtifactReaderView } from './features/reports/components/ArtifactReaderView';
+import { removeBootShell } from './features/reports/components/ArtifactReaderView/removeBootShell';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { openUrl } from './shared/lib/editor';
@@ -53,7 +53,7 @@ createRoot(container).render(
     <ErrorBoundary onReport={reportCrash} reportSummary={REPORT_SUMMARY}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         {printRequest !== null ? (
-          <ArtifactPrintView request={printRequest} />
+          <ArtifactReaderView request={printRequest} />
         ) : MOCK_ENABLED ? (
           <MockScene />
         ) : (

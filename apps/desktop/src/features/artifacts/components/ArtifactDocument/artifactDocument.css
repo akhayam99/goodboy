@@ -786,3 +786,40 @@
     vertical-align: top;
   }
 }
+.print-sheet .reader-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--print-rule);
+  background: var(--print-paper);
+  font-size: var(--text-xs);
+}
+.print-sheet .reader-toolbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--print-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.print-sheet .reader-toolbar-note {
+  color: var(--print-muted);
+  white-space: nowrap;
+}
+.print-sheet[data-medium='window'] {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+@media print {
+  .print-sheet .reader-toolbar {
+    display: none;
+  }
+  .print-sheet[data-medium='window'] {
+    display: block;
+  }
+}
