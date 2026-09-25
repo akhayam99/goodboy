@@ -1,4 +1,5 @@
 mod artifact_folder;
+mod artifact_mirror;
 mod artifacts;
 mod attachment;
 mod aux_spawn;
@@ -203,6 +204,10 @@ pub fn run() {
             bridge::bridge_stop,
             profile_file::workspace_profile_project,
             artifact_folder::export_artifact_folder,
+            artifact_mirror::artifact_mirror_write,
+            artifact_mirror::artifact_mirror_pending,
+            artifact_mirror::artifact_mirror_locate,
+            artifact_mirror::artifact_mirror_reveal,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,

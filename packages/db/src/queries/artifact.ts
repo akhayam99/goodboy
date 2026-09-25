@@ -338,6 +338,56 @@ export const listArtifactsForSession = async ({
   return rows.map(toDomain);
 };
 
+export type ArtifactMirrorCursor = Readonly<{ createdAt: number; id: string }>;
+
+export type ArtifactMirrorRow = Readonly<{
+  artifact: SessionArtifact;
+  workspaceSlug: string;
+}>;
+
+export type ArtifactMirrorPage = Readonly<{
+  rows: ReadonlyArray<ArtifactMirrorRow>;
+  next: ArtifactMirrorCursor | null;
+}>;
+
+type ArtifactMirrorPageParams = DatabaseParams & {
+  readonly after: ArtifactMirrorCursor | null;
+  readonly limit: number;
+};
+
+const MIRROR_SELECT = `SELECT a.id, a.session_id, a.agent_id, a.workflow_run_id, a.kind,
+  a.schema_version, a.title, a.source_format, a.source_text, a.metadata_json, a.status,
+  a.revision, a.source_turn_id, a.created_at, a.updated_at, w.slug AS workspace_slug
+  FROM session_artifacts a
+  JOIN sessions s ON s.id = a.session_id
+  JOIN workspaces w ON w.id = s.workspace_id`;
+
+export const listArtifactMirrorPage = async ({
+  db,
+  after,
+  limit,
+}: ArtifactMirrorPageParams): Promise<ArtifactMirrorPage> => {
+  const rows =
+    after === null
+      ? await db.select<ArtifactRow & { readonly workspace_slug: string }>(
+          `${MIRROR_SELECT} ORDER BY a.created_at ASC, a.id ASC LIMIT ?`,
+          [limit],
+        )
+      : await db.select<ArtifactRow & { readonly workspace_slug: string }>(
+          `${MIRROR_SELECT} WHERE a.created_at > ? OR (a.created_at = ? AND a.id > ?)
+            ORDER BY a.created_at ASC, a.id ASC LIMIT ?`,
+          [after.createdAt, after.createdAt, after.id, limit],
+        );
+  const last = rows[rows.length - 1];
+  return {
+    rows: rows.map((row) => ({ artifact: toDomain(row), workspaceSlug: row.workspace_slug })),
+    next:
+      last === undefined || rows.length < limit
+        ? null
+        : { createdAt: last.created_at, id: last.id },
+  };
+};
+
 const ARTIFACT_GONE = 'ARTIFACT_GONE';
 
 export const updateArtifactSource = async ({

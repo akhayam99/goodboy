@@ -12,6 +12,7 @@ export type ArtifactActionId =
   | 'print'
   | 'copySource'
   | 'saveSource'
+  | 'showInFinder'
   | 'regenerate'
   | 'discard'
   | 'openAgent';
@@ -33,6 +34,7 @@ const DOCUMENT_EXPORTS: ReadonlyArray<ArtifactActionId> = [
   'print',
   'copySource',
   'saveSource',
+  'showInFinder',
 ];
 
 const planActions = ({
@@ -73,13 +75,13 @@ export const artifactActions = ({
       return {
         primary: null,
         secondary: 'edit',
-        overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource'],
+        overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource', 'showInFinder'],
       };
     case 'wireframe':
       return {
         primary: null,
         secondary: 'export',
-        overflow: ['newVariant', 'openWindow', 'print'],
+        overflow: ['newVariant', 'openWindow', 'print', 'showInFinder'],
       };
     case 'generation':
       return {

@@ -10,6 +10,7 @@ export default defineConfig({
     passWithNoTests: true,
     testTimeout: 15000,
     hookTimeout: 15000,
+    css: { include: [/\.css\?raw$/] },
     projects: [
       {
         extends: true,

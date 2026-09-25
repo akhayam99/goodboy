@@ -154,6 +154,18 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
 - `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
+- `workspaces/<slug>/artifacts/<date>-<title>-<id>/`: a copy of each plan,
+  report and wireframe of that workspace (`artifacts-dev/` for debug builds).
+  A plan or a report gets `index.html`, `document.css`, `source.md` and
+  `meta.json`; a wireframe gets the folder its export writes. The folder is
+  keyed by the last 6 characters of the artifact id and keeps its name when
+  the title changes; `meta.json` holds the id, kind, title, status, revision,
+  session, workspace and dates. It is a mirror: the database is the truth, the
+  app never reads these files back except `meta.json` to skip a copy that is
+  already current, and deleting a folder breaks nothing. The copy is written
+  when an artifact reaches the store and again at each new revision, and
+  after boot the main window walks every artifact in pages of 25 to write the
+  ones missing on disk.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.

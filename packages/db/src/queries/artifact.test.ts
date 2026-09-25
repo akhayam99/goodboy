@@ -6,6 +6,7 @@ import {
   deleteArtifact,
   getArtifact,
   insertArtifact,
+  listArtifactMirrorPage,
   listArtifactsForSession,
   removeArtifact,
   restoreArtifact,
@@ -164,5 +165,34 @@ describe('artifact queries', () => {
     await expect(
       setArtifactStatus({ db, artifactId: 'report-1' as ArtifactId, status: 'consumed' }),
     ).rejects.toThrow();
+  });
+});
+
+describe('listArtifactMirrorPage', () => {
+  it('walks every artifact once, in pages, with its workspace slug', async () => {
+    const db = await seed();
+    for (const id of ['report-1', 'report-2', 'report-3', 'report-4', 'report-5']) {
+      await insertReport(db, id);
+    }
+    const seen: string[] = [];
+    let page = await listArtifactMirrorPage({ db, after: null, limit: 2 });
+    const sizes = [page.rows.length];
+    seen.push(...page.rows.map((row) => row.artifact.id));
+    while (page.next !== null) {
+      page = await listArtifactMirrorPage({ db, after: page.next, limit: 2 });
+      sizes.push(page.rows.length);
+      seen.push(...page.rows.map((row) => row.artifact.id));
+    }
+    expect(sizes).toEqual([2, 2, 1]);
+    expect([...seen].sort()).toEqual(['report-1', 'report-2', 'report-3', 'report-4', 'report-5']);
+    expect(page.rows[0]?.workspaceSlug).toBe('workspace');
+  });
+
+  it('ends at once on an empty database', async () => {
+    const db = await seed();
+    expect(await listArtifactMirrorPage({ db, after: null, limit: 10 })).toEqual({
+      rows: [],
+      next: null,
+    });
   });
 });

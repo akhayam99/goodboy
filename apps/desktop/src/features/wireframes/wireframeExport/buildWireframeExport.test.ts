@@ -151,6 +151,7 @@ describe('buildWireframeExport', () => {
 
   it('takes the palette of a high fidelity wireframe into the stylesheet', () => {
     expect(fileOf('wireframe.css')).toContain('--wf-accent: #1f6feb;');
+    expect(fileOf('wireframe.css')).toContain('.wf-button-primary {');
   });
 
   it('lists the mock state toggles in the readme and records the revision in meta', () => {

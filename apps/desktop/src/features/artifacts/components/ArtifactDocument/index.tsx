@@ -11,7 +11,7 @@ import { PrintLetterhead } from '../../../reports/components/ArtifactReaderView/
 import { splitLead } from '../../../reports/components/ArtifactReaderView/splitLead';
 import './artifactDocument.css';
 
-export type ArtifactDocumentMedium = 'window' | 'paper';
+export type ArtifactDocumentMedium = 'window' | 'paper' | 'file';
 
 type Props = {
   readonly artifact: SessionArtifact;
@@ -31,6 +31,7 @@ export const ArtifactDocument = ({ artifact, medium }: Props) => {
         kind={artifact.kind}
         title={artifact.title}
         fields={artifactMetaFields({ artifact })}
+        hasMark={medium !== 'file'}
       />
       {lead.length > 0 ? (
         <div className="print-body print-lead">
