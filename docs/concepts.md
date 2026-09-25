@@ -364,8 +364,9 @@ with a local commit and never pushes.
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
   suggestion. Each carries the thread ids and the marker contract. The click
-  uses the last model picked in the session, or the resolver default; the
-  chevron opens the shared picker with every connected provider
+  uses the last model picked in the session, or the suggested resolver model;
+  the chevron opens the shared picker with every connected provider, a
+  **Suggested** row that says why, and **Last used here** when it differs
 - Fixes run one at a time in the session worktree, so two fixes never fight
   over the same branch
 - After a restart, Goodboy rebuilds everything from its database, not from a

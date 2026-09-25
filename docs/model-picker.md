@@ -26,6 +26,22 @@ straight inside their own popovers, so both list every connected provider and
 the same Model, Version, Variant and Effort rows. A launching popover seeds it
 from its role: Resolve from `resolver`, Explore from `scout`.
 
+## Auto and Suggested
+
+The row above the provider chips is one component with two meanings.
+
+- **Configuring surfaces** (Defaults, the workflow builder, the Studio) call it
+  **Auto**. Saving Auto means "follow the ladder", not a model. The closed
+  trigger reads `Auto` and the open row says what Auto picks right now
+  (`Now: Claude · Sonnet 5 · Medium`). A pinned trigger shows the model and an
+  x back to Auto
+- **Launching popovers** (Start agent, Resolve) call it **Suggested**. It fixes a
+  concrete model at launch and says why in one line, from the ladder step that
+  decided (`suggestedRouting`): the role default on the default provider, a pin
+  from Defaults, a CLI too old for the first choice, or the next provider in the
+  fallback order. It never guesses from the task content. **Last used here**
+  follows when it differs from the suggestion
+
 ## Models in the picker
 
 Which models the list shows is a per app choice, stored in the settings key

@@ -48,6 +48,12 @@ type PickSelectionParams = {
   readonly provider: ProviderId;
 };
 
+export type LastUsedRouting = {
+  readonly routing: Recommendation;
+  readonly active: boolean;
+  readonly onSelect: () => void;
+};
+
 export type EffortSetting =
   | { readonly editable: false; readonly value?: EffortLevel }
   | {
@@ -66,6 +72,7 @@ type Props = {
   readonly onClose: () => void;
   readonly recommendation?: Recommendation;
   readonly recommendationKind?: RecommendationKind;
+  readonly lastUsed?: LastUsedRouting;
   readonly verbosity?: VerbosityLevel;
   readonly onVerbosity?: (verbosity: VerbosityLevel) => void;
   readonly onReset?: () => void;
@@ -88,6 +95,7 @@ export const RoutingPickerBody = ({
   onClose,
   recommendation,
   recommendationKind,
+  lastUsed,
   verbosity,
   onVerbosity,
   onReset,
@@ -279,6 +287,23 @@ export const RoutingPickerBody = ({
             {...(recommendedLabel != null && { label: recommendedLabel })}
             onSelect={() => onPickProvider({ next: '', viewedProvider: routing.provider })}
           />
+          {lastUsed?.routing.provider != null && (
+            <RecommendationRow
+              label="Last used here"
+              routing={recommendedRoutingOf({
+                provider: lastUsed.routing.provider,
+                model: lastUsed.routing.model,
+                effort: lastUsed.routing.effort,
+              })}
+              summary={recommendationSummary({
+                provider: lastUsed.routing.provider,
+                model: lastUsed.routing.model,
+                effort: lastUsed.routing.effort,
+              })}
+              active={lastUsed.active}
+              onSelect={lastUsed.onSelect}
+            />
+          )}
           {separator}
         </>
       )}

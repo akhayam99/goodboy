@@ -18,6 +18,8 @@ type Store = {
   readonly sessionPlans: Readonly<
     Record<string, ReadonlyArray<{ readonly title: string; readonly status: string }>>
   >;
+  readonly sessionPhaseRuns: Record<string, ReadonlyArray<unknown>>;
+  readonly workspaces: ReadonlyArray<{ readonly id: string; readonly name: string }>;
 };
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -62,6 +64,7 @@ const h = vi.hoisted(() => ({
   cancelProviderConnect: vi.fn(async () => undefined),
   dismissProviderConnect: vi.fn(() => undefined),
   workspaceDurationHistory: {} as Record<string, unknown>,
+  sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -78,6 +81,8 @@ vi.mock('../../../../store', () => ({
       dismissProviderConnect: h.dismissProviderConnect,
       workspaceDurationHistory: h.workspaceDurationHistory,
       sessionPlans: h.sessionPlans,
+      sessionPhaseRuns: h.sessionPhaseRuns,
+      workspaces: [{ id: 'workspace-1', name: 'Harborline' }],
     }),
 }));
 
@@ -185,6 +190,33 @@ describe('CreateAgentPopover', () => {
       effort: 'high',
       focus: 'agent',
     });
+  });
+
+  it('explains the Suggested routing and offers the last model used for that kind', () => {
+    h.sessions = [makeSession()];
+    h.sessionPhaseRuns = {
+      [SID]: [
+        { kind: 'scout', providerOverride: 'codex', modelOverride: 'gpt-5.6-luna', effort: 'low' },
+      ],
+    };
+    renderControl();
+    openPopover();
+    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
+    expandRouting();
+
+    expect(screen.getByRole('button', { name: /^Suggested / }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      screen.getByText('Scout default on Claude, the default provider in Harborline.'),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /^Last used here / }));
+    confirm();
+    expect(h.spawnAgent).toHaveBeenCalledWith(
+      SID,
+      expect.objectContaining({ kindOverride: 'scout', provider: 'codex', model: 'gpt-5.6-luna' }),
+    );
+    h.sessionPhaseRuns = {};
   });
 
   it('keeps a scout on its smaller model even when the chat is on opus', () => {

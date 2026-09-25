@@ -134,4 +134,41 @@ describe('ResolveWithPopover', () => {
     await vi.waitFor(() => expect(h.state.spawnAgent).toHaveBeenCalledTimes(1));
     expect(h.state.spawnAgent.mock.calls[0]?.[1].provider).toBe('opencode');
   });
+
+  it('opens on a Suggested row that says why, checked by default', () => {
+    renderPopover();
+    const dialog = openPopover();
+
+    const suggested = within(dialog).getByRole('button', { name: /^Suggested / });
+    expect(suggested.getAttribute('aria-pressed')).toBe('true');
+    expect(
+      within(dialog).getByText(
+        'Resolver default on Claude, the default provider in this workspace.',
+      ),
+    ).toBeDefined();
+    expect(within(dialog).queryByRole('button', { name: /^Last used here / })).toBeNull();
+  });
+
+  it('offers Last used here only when it differs from the suggestion', async () => {
+    h.state.resolveQueueView = {
+      [SESSION_ID]: {
+        lastRouting: { provider: 'codex', model: 'gpt-5.6-terra', effort: 'medium' },
+      },
+    };
+    renderPopover();
+    const dialog = openPopover();
+
+    const lastUsed = within(dialog).getByRole('button', { name: /^Last used here / });
+    expect(lastUsed.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(lastUsed);
+    expect(
+      within(dialog)
+        .getByRole('button', { name: /^Suggested / })
+        .getAttribute('aria-pressed'),
+    ).toBe('false');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Resolve 2' }));
+
+    await vi.waitFor(() => expect(h.state.spawnAgent).toHaveBeenCalledTimes(1));
+    expect(h.state.spawnAgent.mock.calls[0]?.[1].provider).toBe('codex');
+  });
 });

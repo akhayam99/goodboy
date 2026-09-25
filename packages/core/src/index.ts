@@ -287,7 +287,11 @@ export {
   type AutoSlot,
   type AutoStep,
 } from './providers/autoRouting/resolveAuto';
-export { AUTO_DEFAULTS, type CuratedProviderId } from './providers/autoRouting/defaults';
+export {
+  AUTO_DEFAULTS,
+  isCuratedProvider,
+  type CuratedProviderId,
+} from './providers/autoRouting/defaults';
 export { workflowModelProfile } from './providers/workflowModelProfiles';
 
 export { getCheapModel, getDefaultBinary } from './providers/cli-defaults';

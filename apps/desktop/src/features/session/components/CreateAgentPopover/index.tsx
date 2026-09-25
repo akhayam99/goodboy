@@ -19,12 +19,16 @@ import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleMod
 import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import {
   AGENT_KIND_META,
+  KIND_TO_ROLE,
   visibleAgentKinds,
   type AgentKind,
   type AgentKindRouting,
 } from '../../agent-kind';
 import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
 import { resolveSpawnRouting } from '../../spawn-routing';
+import { useSuggestedRouting } from '../../hooks/useSuggestedRouting';
+import { isSameRouting } from '../../isSameRouting';
+import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
 import { LaunchEstimateNote } from './LaunchEstimateNote';
@@ -34,6 +38,8 @@ import { recommendationSummary } from '../../../../shared/components/RoutingPick
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 
 const ROUTING_PANEL_ID = 'create-agent-routing';
+
+const CHAT_ROUTING_REASON = 'Same model as this chat.';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -76,7 +82,6 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) =
     session,
     defaultProvider,
   });
-  const effective: AgentKindRouting = routing ?? spawnDefault;
   const activePlan = useAppStore((state) => {
     const plans = state.sessionPlans[sessionId] ?? [];
     const latest = plans[plans.length - 1] ?? null;
@@ -89,6 +94,37 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) =
     planToStart == null
       ? 'You write the first message in its chat.'
       : `Starts now from plan: ${planToStart.title}`;
+  const suggested = useSuggestedRouting({ sessionId, role: KIND_TO_ROLE[selectedKind] });
+  const suggestion: AgentKindRouting = {
+    provider: spawnDefault.provider,
+    model: spawnDefault.model,
+    effort: spawnDefault.effort,
+  };
+  const suggestionReason = spawnDefault.origin === 'chat' ? CHAT_ROUTING_REASON : suggested.reason;
+  const lastAgent = useAppStore(
+    (state) =>
+      [...(state.sessionPhaseRuns[sessionId] ?? [])]
+        .reverse()
+        .find(
+          (agent) =>
+            agent.kind === selectedKind &&
+            agent.providerOverride != null &&
+            agent.modelOverride != null,
+        ) ?? null,
+  );
+  const lastRouting: AgentKindRouting | null =
+    lastAgent?.providerOverride == null || lastAgent.modelOverride == null
+      ? null
+      : {
+          provider: lastAgent.providerOverride,
+          model: lastAgent.modelOverride,
+          effort: lastAgent.effort ?? suggestion.effort,
+        };
+  const lastUsed =
+    lastRouting != null && !isSameRouting({ left: lastRouting, right: suggestion })
+      ? lastRouting
+      : null;
+  const effective: AgentKindRouting = routing ?? suggestion;
   const routingSummary = recommendationSummary({
     provider: effective.provider,
     model: effective.model,
@@ -194,8 +230,18 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) =
                   setRouting((current) => ({ ...(current ?? spawnDefault), effort })),
               }}
               onClose={close}
+              recommendation={{ ...suggestion, label: SUGGESTED_LABEL, reason: suggestionReason }}
+              overridden={routing !== null}
+              {...(lastUsed != null && {
+                lastUsed: {
+                  routing: lastUsed,
+                  active: routing !== null && isSameRouting({ left: routing, right: lastUsed }),
+                  onSelect: () => setRouting(lastUsed),
+                },
+              })}
               onProvider={(provider) => {
                 if (provider === '') {
+                  setRouting(null);
                   return;
                 }
                 setRouting((current) => ({ ...(current ?? spawnDefault), provider }));
