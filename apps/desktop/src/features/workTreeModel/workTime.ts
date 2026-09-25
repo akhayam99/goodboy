@@ -157,22 +157,6 @@ const runningTime = ({
   };
 };
 
-const pausedTime = ({
-  activeMs,
-  estimate,
-  unknownBasis,
-}: Omit<Params, 'phase' | 'hasStarted'>): WorkTime => {
-  const running = runningTime({ activeMs, estimate, unknownBasis });
-  const active = formatActiveTime({ ms: activeMs });
-  if (estimate === null || activeMs > estimate.highMs) {
-    return { ...running, label: `Paused, ${active}` };
-  }
-  return {
-    ...running,
-    label: `Paused, ${active} of ~${formatEstimateTime({ ms: estimate.highMs })}`,
-  };
-};
-
 const queuedTime = ({ estimate }: { readonly estimate: WorkEstimate | null }): WorkTime | null => {
   if (estimate === null) {
     return null;
@@ -196,12 +180,12 @@ export const workTime = ({
       return runningTime({ activeMs, estimate, unknownBasis });
     case 'waiting':
       return hasStarted
-        ? pausedTime({ activeMs, estimate, unknownBasis })
+        ? runningTime({ activeMs, estimate, unknownBasis })
         : queuedTime({ estimate });
     case 'failed':
       return hasStarted
         ? {
-            label: `Failed after ${formatActiveTime({ ms: activeMs })}`,
+            label: formatActiveTime({ ms: activeMs }),
             detail: exact,
             progress: null,
           }

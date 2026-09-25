@@ -258,8 +258,10 @@ The time column is measured machine time, never the wall clock between start
 and end. A finished row shows its active time ("8m 12s"). A running row with
 enough history reads "5m of ~9m" and its node fills an arc toward the usual
 time; past it the arc stays full and the row reads "11m, usually ~9m". While
-the row waits on you the arc freezes in amber and the row reads "Paused, 5m
-of ~9m". A failed row drops the arc and reads "Failed after 4m". Without
+the row waits on you the arc freezes in amber and the time still reads "5m of
+~9m": the pause is said once, by the row state and the node, never again in
+the time column. A failed row drops the arc and reads "4m", next to its
+"Failed" state. Without
 enough history a running row shows only its active time and the node keeps
 the moving border. A queued step shows its usual range. The run row adds up
 finished steps and the usual time of the steps left, and shows a total only

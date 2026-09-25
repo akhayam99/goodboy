@@ -173,11 +173,13 @@ describe('TimelineStreamRow', () => {
     expect(screen.getByText('Implement the parser')).toBeDefined();
   });
 
-  it('hides the open hint until the row is hovered or focused', () => {
+  it('keeps the open hint out of the row until it is hovered or focused in a wide row', () => {
     renderRow();
 
-    expect(screen.getByText('Open chat ↵').className).toContain('opacity-0');
-    expect(screen.getByText('Open chat ↵').className).toContain('group-hover:opacity-100');
+    const hint = screen.getByText('Open chat ↵').className;
+    expect(hint).toContain('hidden');
+    expect(hint).toContain('@min-[640px]:group-hover:inline');
+    expect(hint).toContain('@min-[640px]:group-focus-within:inline');
   });
 
   it('renders a plain row when it has no open target', () => {
@@ -345,7 +347,7 @@ describe('TimelineStreamRow', () => {
         runLane={runLane}
       />,
     );
-    const chip = () => screen.getByText('Workflow');
+    const chip = () => screen.getByText('Workflow').parentElement ?? document.body;
 
     expect(chip().className).toContain(identity.chip);
 

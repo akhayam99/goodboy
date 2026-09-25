@@ -379,11 +379,11 @@ The right end of a work row is `WorkMeta` in
 `WORK_META_COLUMN`, so every row reads down the same columns and a cost of
 `$12.40` never pushes the model of the row above out of line.
 
-| column     | width | holds                                                        | in a narrow pane                 |
+| column     | width | holds                                                        | in a narrow row                  |
 | ---------- | ----- | ------------------------------------------------------------ | -------------------------------- |
-| model      | 96px  | provider glyph, then the model label                         | under 600px only the glyph stays |
-| effort     | 52px  | the effort label, faint until the run reports its own        | under 720px it leaves the row    |
-| time       | 128px | measured time or estimate ("5m of ~9m", "12-20m")            | never drops                      |
+| model      | 96px  | provider glyph, then the model label                         | under 640px only the glyph stays |
+| effort     | 52px  | the effort label, faint until the run reports its own        | under 760px it leaves the row    |
+| time       | 96px  | measured time or estimate ("5m of ~9m", "12-20m")            | under 640px it narrows to 80px   |
 | cost       | 56px  | what the row has spent, empty before anything is spent       | under 520px a step row drops it  |
 | cost range | 72px  | an estimated cost range before a step starts (`isCostRange`) | under 520px a step row drops it  |
 | action     | 76px  | the one visible action, reserved even when empty             | never drops                      |
@@ -393,9 +393,18 @@ A row inside a `WorkTimeProvider` always renders the time column, empty when
 it has nothing to say, so the columns stay in line. A run row has no routing:
 its step progress sits in the model column and its time in the time column.
 
-The narrow rules are container queries on the panel (`@container`), never
-window breakpoints, because the same feed sits in a wide overview and in a
-split pane. What leaves the row stays in the model tooltip, which always
+The narrow rules are container queries, never window breakpoints, because
+the same feed sits in a wide overview and in a split pane. The activity feed
+puts the container on each row's content box (`WORK_ROW.container`, right of
+the time gutter and the rail), so the widths above are the room the label and
+the meta share, not the width of the panel. The label always gets what the
+meta leaves: below 520px a role chip hugs its word and a run chip keeps only
+its glyph, and the row state after the title reads its short form ("Needs
+you", "Step 3 ready") under 880px, with the full sentence in its tooltip. The
+state never shrinks; the title truncates first. Label segments keep their
+leading words and tokens whole ("Opened #612:") and only the last segment
+truncates. The "Open ↵" hint takes room only while a row of 640px or more is
+hovered or focused. What leaves the row stays in the model tooltip, which always
 reads the whole route ("Opus 5.5 High on Claude"). The model and effort
 columns come from `RoutingBadge variant="bare"`, the dense form of the one
 routing badge, with no fill and no chip. Planned routing (a step that has not

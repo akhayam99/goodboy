@@ -61,6 +61,40 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
   }
 };
 
+const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
+  switch (reason.kind) {
+    case 'ready':
+      return reason.stepLabel == null ? 'Ready' : `Step ${reason.stepLabel} ready`;
+    case 'question':
+      return 'Needs you';
+    case 'budget':
+      return 'At spend limit';
+    case 'orchestratorFailed':
+      return 'Orchestrator failed';
+    case 'stopped':
+      return 'Stopped';
+    case 'deciding':
+      return 'Choosing next';
+    case 'briefing':
+      return 'Briefing';
+    case 'chatTurn':
+      return 'Waits on chat';
+    case 'closed':
+      return 'Closed';
+    case 'chained':
+      return 'Chained';
+    case 'failed':
+    case 'stepFailed':
+    case 'skipped':
+    case 'discarded':
+      return reasonSentence({ reason });
+    default: {
+      const exhaustive: never = reason;
+      return exhaustive;
+    }
+  }
+};
+
 type StateParams = {
   readonly state: RowState;
 };
@@ -77,6 +111,9 @@ const PHASE_TONE: Record<RowPhase, Tone> = {
   closed: 'neutral',
   skipped: 'neutral',
 };
+
+export const rowStateShortSentence = ({ state }: StateParams): string | null =>
+  state.reason == null ? null : reasonShortSentence({ reason: state.reason });
 
 export const rowStateTone = ({ state }: StateParams): Tone =>
   state.reason?.kind === 'discarded' ? 'neutral' : PHASE_TONE[state.phase];

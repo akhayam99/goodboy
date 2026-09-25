@@ -179,7 +179,11 @@ describe('TimelineRunLabel', () => {
       />,
     );
 
-    expect(screen.getByText('Needs your answer in step 2').className).toContain('text-warning');
+    expect(screen.getByTestId('timeline-row-state').className).toContain('text-warning');
+    expect(screen.getByText('Needs your answer in step 2').className).toContain(
+      '@max-[880px]:hidden',
+    );
+    expect(screen.getByText('Needs you').className).toContain('@min-[880px]:hidden');
   });
 
   it('names the step of the oldest open question, nested steps included', () => {
@@ -241,9 +245,8 @@ describe('TimelineRunLabel', () => {
 
   it('says what the orchestrator is doing while it chooses the next step', () => {
     render(<Label entry={entryOf({ kind: 'orchestrator' })} isDeciding />);
-    const sentence = screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE);
-
-    expect(sentence.className).toContain('text-muted-foreground');
+    expect(screen.getByText(ORCHESTRATOR_DECIDING_SENTENCE)).toBeDefined();
+    expect(screen.getByTestId('timeline-row-state').className).toContain('text-muted-foreground');
     expect(screen.getByText('Refactor (example)')).toBeDefined();
   });
 

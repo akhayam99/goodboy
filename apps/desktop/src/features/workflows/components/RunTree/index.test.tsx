@@ -350,7 +350,7 @@ describe('RunTree', () => {
     expect(
       within(rowOf('agent-2')).getByRole('img', { name: 'Waiting on your answer' }),
     ).toBeDefined();
-    expect(within(rowOf('agent-2')).getByTestId('timeline-row-state').textContent).toBe(
+    expect(within(rowOf('agent-2')).getByTestId('timeline-row-state').getAttribute('title')).toBe(
       'Needs your answer',
     );
     const answers = screen.getAllByRole('button', { name: 'Answer' });

@@ -26,7 +26,7 @@ export const TimelineRunLabel = ({ entry, rowState, isLaneLit = false }: Props) 
       <span
         title={title}
         className={cn(
-          'min-w-24 truncate text-sm leading-5',
+          'min-w-12 truncate text-sm leading-5',
           isDiscarded ? 'text-muted-foreground' : 'text-foreground',
         )}
       >

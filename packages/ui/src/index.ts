@@ -168,7 +168,7 @@ export type { TooltipProps, TooltipSide } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
-export { WORK_META_COLUMN } from './components/WorkTree/workMetaSpec';
+export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
 export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
 export type { WorkNodeMark, WorkNodeState } from './components/WorkTree/workNodeSpec';

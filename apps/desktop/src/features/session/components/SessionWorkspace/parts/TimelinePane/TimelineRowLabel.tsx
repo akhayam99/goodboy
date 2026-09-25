@@ -1,4 +1,4 @@
-import { ValueToken, cn } from '@goodboy/ui';
+import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../AgentKindChip';
@@ -125,12 +125,12 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     return null;
   }
   if (!isChained) {
-    return <AgentKindChip kind={entry.agentKind} />;
+    return <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />;
   }
   return (
     <span className="inline-flex shrink-0 items-center gap-1">
       <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
-      <AgentKindChip kind={entry.agentKind} />
+      <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
     </span>
   );
 };
@@ -176,11 +176,18 @@ export const TimelineRowLabel = ({
       >
         {segments.map((segment, index) =>
           segment.kind === 'value' ? (
-            <ValueToken key={`${segment.variant}:${index}`} value={segment.text} />
+            <ValueToken
+              key={`${segment.variant}:${index}`}
+              value={segment.text}
+              className={cn(index < segments.length - 1 && 'shrink-0')}
+            />
           ) : (
             <span
               key={`text:${index}`}
-              className="min-w-0 overflow-hidden text-ellipsis whitespace-pre"
+              className={cn(
+                'min-w-0 overflow-hidden text-ellipsis whitespace-pre',
+                index < segments.length - 1 && 'shrink-0',
+              )}
             >
               {segment.text}
             </span>

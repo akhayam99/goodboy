@@ -39,7 +39,7 @@ describe('workTime', () => {
     expect(over).toMatchObject({ label: '11m, usually ~9m', progress: 1 });
   });
 
-  it('freezes the arc while waiting on you and names where it stopped', () => {
+  it('freezes the arc while waiting on you and leaves the pause to the row state', () => {
     const paused = workTime({
       phase: 'waiting',
       activeMs: 4 * MINUTE,
@@ -48,11 +48,11 @@ describe('workTime', () => {
       unknownBasis: null,
     });
 
-    expect(paused?.label).toBe('Paused, 4m of ~9m');
+    expect(paused?.label).toBe('4m of ~9m');
     expect(paused?.progress).toBeCloseTo(4 / 9);
   });
 
-  it('drops the arc on failure and shows only active time without an estimate', () => {
+  it('drops the arc on failure, leaves the failure to the row state, and shows only active time without an estimate', () => {
     expect(
       workTime({
         phase: 'failed',
@@ -61,7 +61,7 @@ describe('workTime', () => {
         estimate: ESTIMATE,
         unknownBasis: null,
       }),
-    ).toMatchObject({ label: 'Failed after 4m', progress: null });
+    ).toMatchObject({ label: '4m', progress: null });
     expect(
       workTime({
         phase: 'running',

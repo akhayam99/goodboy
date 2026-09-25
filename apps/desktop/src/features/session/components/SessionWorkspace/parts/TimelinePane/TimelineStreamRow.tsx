@@ -1,5 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Button, WORK_META_COLUMN, cn, tintClasses } from '@goodboy/ui';
+import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { formatCardTime } from '../../../../../chat/utils/format-card-time';
@@ -92,7 +92,7 @@ export const TimelineStreamRow = ({
         />
       </span>
       {openTarget == null ? null : (
-        <span className="shrink-0 text-3xs text-muted-foreground opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <span className={cn('shrink-0 text-3xs text-muted-foreground', WORK_ROW.hint)}>
           {`${openTarget.label} ↵`}
         </span>
       )}
@@ -130,7 +130,13 @@ export const TimelineStreamRow = ({
           </span>
         )}
       </span>
-      <div className={cn('flex min-w-0 flex-1 items-end gap-1', item.grade !== 'entry' && 'pr-1')}>
+      <div
+        className={cn(
+          WORK_ROW.container,
+          'flex min-w-0 flex-1 items-end gap-1',
+          item.grade !== 'entry' && 'pr-1',
+        )}
+      >
         {openTarget == null ? (
           <div className={contentClassName} style={{ height: boxHeight }}>
             {content}

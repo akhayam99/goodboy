@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { Agent, IsoDateTime, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
-import { resolveAgentRowState, resolveRunRowState, type RowState } from './rowState';
-import { rowStateNode, rowStateSentence, rowStateTone } from './rowStateCopy';
+import {
+  resolveAgentRowState,
+  resolveRunRowState,
+  type RowState,
+  type RowStateReason,
+} from './rowState';
+import {
+  rowStateNode,
+  rowStateSentence,
+  rowStateShortSentence,
+  rowStateTone,
+} from './rowStateCopy';
 
 const agentOf = (overrides: Partial<Agent> = {}): Agent =>
   ({
@@ -271,5 +281,25 @@ describe('rowStateNode', () => {
     expect(rowStateNode({ state: runState({ isDeciding: true }) }).label).toBe(
       'Choosing the next step',
     );
+  });
+});
+
+describe('rowStateShortSentence', () => {
+  const waiting = (reason: RowStateReason): RowState => ({ phase: 'waiting', reason, ask: null });
+
+  it.each<[RowStateReason, string]>([
+    [{ kind: 'question', stepLabel: '2' }, 'Needs you'],
+    [{ kind: 'ready', stepLabel: '3' }, 'Step 3 ready'],
+    [{ kind: 'budget', limitUsd: 12 }, 'At spend limit'],
+    [{ kind: 'stepFailed', stepLabel: '4' }, 'Step 4 failed'],
+    [{ kind: 'chained', afterTitle: 'Backfill the settled batches behind a flag' }, 'Chained'],
+    [{ kind: 'deciding' }, 'Choosing next'],
+  ])('keeps %o readable in a narrow row as %s', (reason, short) => {
+    expect(rowStateShortSentence({ state: waiting(reason) })).toBe(short);
+  });
+
+  it('has nothing to say when the full sentence has nothing to say', () => {
+    expect(rowStateShortSentence({ state: { phase: 'done', reason: null, ask: null } })).toBeNull();
+    expect(rowStateShortSentence({ state: waiting({ kind: 'discarded' }) })).toBeNull();
   });
 });
