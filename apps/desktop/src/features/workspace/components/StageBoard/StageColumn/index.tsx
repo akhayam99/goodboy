@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { cn, Eyebrow, ScrollFade, tintClasses } from '@goodboy/ui';
+import { cn, Eyebrow, LensEmptyState, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -16,8 +16,43 @@ import { PANE_RHYTHM } from '@goodboy/ui';
 export type ColumnSpec =
   { readonly kind: 'stage'; readonly stage: SessionStage } | { readonly kind: 'archived' };
 
+type ColumnKey = SessionStage | 'archived';
+
+type EmptyCopy = {
+  readonly title: string;
+  readonly description: string;
+};
+
+const EMPTY_COPY: Record<ColumnKey, EmptyCopy> = {
+  building: {
+    title: 'Nothing in progress',
+    description: 'A session waits here between agent runs, until it opens a pull request.',
+  },
+  running: {
+    title: 'No agent running',
+    description: 'A session moves here while an agent works on it.',
+  },
+  attention: {
+    title: 'Nothing needs you',
+    description:
+      'A session lands here when an agent asks you something, stops on an error, or a check fails.',
+  },
+  review: {
+    title: 'Nothing in review',
+    description: 'A session moves here once its pull request is open.',
+  },
+  done: {
+    title: 'Nothing done yet',
+    description: 'Merged and closed sessions end up here.',
+  },
+  archived: {
+    title: 'Nothing archived',
+    description: 'Archived sessions wait here in case you need them back.',
+  },
+};
+
 type ColumnView = {
-  readonly key: SessionStage | 'archived';
+  readonly key: ColumnKey;
   readonly presentation: StatePresentation;
   readonly collapsible: boolean;
   readonly archived: boolean;
@@ -120,6 +155,14 @@ export const StageColumn = ({
         </button>
       ) : (
         <div className="shrink-0">{header}</div>
+      )}
+
+      {!collapsed && empty && (
+        <LensEmptyState
+          icon={view.presentation.icon}
+          title={EMPTY_COPY[view.key].title}
+          description={EMPTY_COPY[view.key].description}
+        />
       )}
 
       {!collapsed && !empty && (
