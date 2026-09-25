@@ -10,7 +10,7 @@ import {
   type Database as DbInterface,
 } from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
-import { restoreWorkflowLibrary, seedWorkflowLibrary } from './seeder';
+import { restoreWorkflowLibrary, seedMissingBuiltinWorkflows, seedWorkflowLibrary } from './seeder';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
@@ -108,6 +108,66 @@ describe('seedWorkflowLibrary', () => {
       'Plan and ship',
       'Fix a bug',
     ]);
+  });
+
+  describe('seedMissingBuiltinWorkflows', () => {
+    const upgradedWorkspace = async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+      for (const slug of ['plan-and-ship', 'fix-a-bug']) {
+        await db.execute('DELETE FROM steps WHERE workflow_id = ?', [
+          `wf_seed_${slug}_${workspaceId}`,
+        ]);
+        await db.execute('DELETE FROM workflows WHERE id = ?', [`wf_seed_${slug}_${workspaceId}`]);
+      }
+      return { db, workspaceId };
+    };
+
+    it('adds the built-ins an upgraded workspace never had', async () => {
+      const { db, workspaceId } = await upgradedWorkspace();
+
+      const result = await seedMissingBuiltinWorkflows({ db });
+
+      expect(result.seeded.map((seeded) => seeded.workflowId)).toEqual([
+        `wf_seed_plan-and-ship_${workspaceId}`,
+        `wf_seed_fix-a-bug_${workspaceId}`,
+      ]);
+      const names = (await listWorkflows(db, workspaceId)).map((workflow) => workflow.name);
+      expect(names).toEqual(['Refactor', 'Plan and ship', 'Fix a bug']);
+    });
+
+    it('does nothing on a second run and never brings back a built-in the user removed', async () => {
+      const { db, workspaceId } = await upgradedWorkspace();
+      await seedMissingBuiltinWorkflows({ db });
+      await deleteWorkflow(db, `wf_seed_fix-a-bug_${workspaceId}` as WorkflowId);
+
+      const again = await seedMissingBuiltinWorkflows({ db });
+
+      expect(again.seeded).toEqual([]);
+      const names = (await listWorkflows(db, workspaceId)).map((workflow) => workflow.name);
+      expect(names).toEqual(['Refactor', 'Plan and ship']);
+    });
+
+    it('skips a built-in whose name the user already holds', async () => {
+      const { db, workspaceId } = await upgradedWorkspace();
+      await upsertWorkflow(db, {
+        id: 'wf-own-fix' as WorkflowId,
+        workspaceId,
+        name: 'Fix a bug',
+        description: '',
+        steps: [],
+        origin: 'custom',
+        createdAt: now(),
+        updatedAt: now(),
+      });
+
+      const result = await seedMissingBuiltinWorkflows({ db });
+
+      expect(result.seeded.map((seeded) => seeded.workflowId)).toEqual([
+        `wf_seed_plan-and-ship_${workspaceId}`,
+      ]);
+      expect(await getWorkflow(db, `wf_seed_fix-a-bug_${workspaceId}` as WorkflowId)).toBeNull();
+    });
   });
 
   describe('restoreWorkflowLibrary', () => {

@@ -22,7 +22,9 @@ export {
 } from './builtinSteps';
 export {
   restoreWorkflowLibrary,
+  seedMissingBuiltinWorkflows,
   seedWorkflowLibrary,
+  type SeedMissingResult,
   type RestoreWorkflowLibraryParams,
   type SeedResult,
   type SeedWorkflowLibraryDeps,

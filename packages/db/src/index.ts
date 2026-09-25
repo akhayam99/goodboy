@@ -180,6 +180,10 @@ export {
   upsertWorkflow,
   deleteWorkflow,
   restoreSeededWorkflow,
+  readBuiltinSeedState,
+  listRemovedSeededWorkflowIds,
+  takenNameKey,
+  type BuiltinSeedState,
 } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,

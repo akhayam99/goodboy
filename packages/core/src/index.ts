@@ -401,6 +401,8 @@ export {
   type WorkflowLibraryStep,
   seedWorkflowLibrary,
   restoreWorkflowLibrary,
+  seedMissingBuiltinWorkflows,
+  type SeedMissingResult,
   type RestoreWorkflowLibraryParams,
   type SeedResult,
   type SeedWorkflowLibraryDeps,

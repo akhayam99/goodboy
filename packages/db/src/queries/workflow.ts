@@ -265,6 +265,58 @@ export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): P
   });
 };
 
+const SEEDED_WORKFLOW_ID = `id LIKE 'wf\\_seed\\_%' ESCAPE '\\'`;
+
+export type BuiltinSeedState = {
+  readonly workspaceIds: ReadonlyArray<WorkspaceId>;
+  readonly seededIds: ReadonlySet<string>;
+  readonly takenNames: ReadonlySet<string>;
+};
+
+type IdRow = {
+  readonly id: string;
+};
+
+type NameRow = {
+  readonly workspace_id: string;
+  readonly name: string;
+};
+
+type TakenNameKeyParams = {
+  readonly workspaceId: string;
+  readonly name: string;
+};
+
+export const takenNameKey = ({ workspaceId, name }: TakenNameKeyParams): string =>
+  `${workspaceId}\n${name}`;
+
+export const readBuiltinSeedState = async (db: Database): Promise<BuiltinSeedState> => {
+  const workspaces = await db.select<IdRow>('SELECT id FROM workspaces WHERE deleted_at IS NULL');
+  const seeded = await db.select<IdRow>(`SELECT id FROM workflows WHERE ${SEEDED_WORKFLOW_ID}`);
+  const names = await db.select<NameRow>(
+    'SELECT workspace_id, name FROM workflows WHERE deleted_at IS NULL AND is_preset = 1',
+  );
+  return {
+    workspaceIds: workspaces.map((row) => row.id as WorkspaceId),
+    seededIds: new Set(seeded.map((row) => row.id)),
+    takenNames: new Set(
+      names.map((row) => takenNameKey({ workspaceId: row.workspace_id, name: row.name })),
+    ),
+  };
+};
+
+export const listRemovedSeededWorkflowIds = async (
+  db: Database,
+  workspaceId: WorkspaceId,
+): Promise<ReadonlyArray<WorkflowId>> => {
+  const rows = await db.select<IdRow>(
+    `SELECT id FROM workflows
+     WHERE workspace_id = ? AND ${SEEDED_WORKFLOW_ID} AND deleted_at IS NOT NULL`,
+    [workspaceId],
+  );
+  return rows.map((row) => row.id as WorkflowId);
+};
+
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
 };

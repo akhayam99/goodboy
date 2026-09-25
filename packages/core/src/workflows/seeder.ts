@@ -7,7 +7,13 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { restoreSeededWorkflow, upsertWorkflow, type Database } from '@goodboy/db';
+import {
+  readBuiltinSeedState,
+  restoreSeededWorkflow,
+  takenNameKey,
+  upsertWorkflow,
+  type Database,
+} from '@goodboy/db';
 import { normalizeAgentRole } from '../roles';
 import { builtinStepForRole } from './builtinSteps';
 import { WORKFLOW_LIBRARY, type WorkflowLibraryEntry } from './library';
@@ -77,6 +83,39 @@ export const seedWorkflowLibrary = async (
     const workflow = seededWorkflow({ entry, workspaceId, now });
     await upsertWorkflow(deps.db, workflow);
     seeded.push({ slug: entry.slug, workflowId: workflow.id });
+  }
+
+  return { seeded };
+};
+
+export type SeedMissingResult = {
+  readonly seeded: ReadonlyArray<{ workspaceId: WorkspaceId; workflowId: WorkflowId }>;
+};
+
+export const seedMissingBuiltinWorkflows = async (
+  deps: SeedWorkflowLibraryDeps,
+): Promise<SeedMissingResult> => {
+  const now = (deps.now ?? isoNow)();
+  const { workspaceIds, seededIds, takenNames } = await readBuiltinSeedState(deps.db);
+  const seeded: Array<{ workspaceId: WorkspaceId; workflowId: WorkflowId }> = [];
+
+  for (const workspaceId of workspaceIds) {
+    for (const entry of WORKFLOW_LIBRARY) {
+      const workflow = seededWorkflow({ entry, workspaceId, now });
+      if (
+        seededIds.has(workflow.id) ||
+        takenNames.has(takenNameKey({ workspaceId, name: entry.name }))
+      ) {
+        continue;
+      }
+      const inserted = await upsertWorkflow(deps.db, workflow).then(
+        () => true,
+        () => false,
+      );
+      if (inserted) {
+        seeded.push({ workspaceId, workflowId: workflow.id });
+      }
+    }
   }
 
   return { seeded };
