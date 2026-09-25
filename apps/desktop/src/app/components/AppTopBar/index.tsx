@@ -22,8 +22,8 @@ export const AppTopBar = ({ onOpenSpend }: Props) => {
   return (
     <>
       <div
-        data-tauri-drag-region
-        className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background pl-1.5 pr-3"
+        data-tauri-drag-region="deep"
+        className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-background pl-(--titlebar-inset) pr-3"
       >
         <div className="col-start-1 flex min-w-0 max-w-56 items-center">
           <WorkspaceIdentityRow />

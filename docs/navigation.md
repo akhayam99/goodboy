@@ -221,6 +221,11 @@ slides off the midpoint instead of being covered. The identity has a size limit
 and truncates, with the full name in its tooltip. No control ever moves into an
 overflow menu.
 
+On macOS the window has no native title bar: the traffic lights sit inside the
+top bar, which carries a 78px inset (12px in full screen and on other systems).
+The bar is a deep drag region: any spot that is not a control moves the window,
+and a double click zooms it. Controls never drag.
+
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 

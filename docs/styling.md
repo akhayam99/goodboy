@@ -113,6 +113,13 @@ column slides and stays centred. When pushing would leave the column under
 560px, the drawer moves onto the `main` area instead as an overlay.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
+The top bar's left padding is `--titlebar-inset`. It defaults to 12px in
+`styles.css`; on macOS `useTitlebarInset` raises it to 78px so the traffic
+lights, drawn inside the bar by the overlay title bar, never sit on a control,
+and drops it back to 12px in full screen. A window without a top bar (the
+workspace launcher) keeps a 36px drag strip at its top edge instead. The
+artifact print window keeps its native title bar.
+
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
 `pointer-events-none` at its root, then turns events back on for the panel

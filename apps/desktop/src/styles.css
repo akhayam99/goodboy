@@ -377,6 +377,10 @@ html[data-theme='light'] {
   color-scheme: light;
 }
 
+:root {
+  --titlebar-inset: 12px;
+}
+
 html,
 body,
 #root {

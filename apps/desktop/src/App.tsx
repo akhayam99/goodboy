@@ -29,6 +29,7 @@ import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWr
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
+import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import {
   useAppStore,
@@ -117,6 +118,7 @@ export const App = () => {
   useUpdaterPolling();
   useWindowPresence();
   useWindowShortcuts();
+  useTitlebarInset();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });
