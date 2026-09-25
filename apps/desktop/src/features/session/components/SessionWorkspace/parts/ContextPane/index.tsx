@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { CopyButton, Divider, GhostActionButton } from '@goodboy/ui';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { CopyButton, GhostActionButton } from '@goodboy/ui';
 import { Code, History } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -144,7 +144,7 @@ export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
         tone={CONCEPT_TONE.context}
         eyebrow={eyebrow}
       >
-        {REGION_ORDER.map((slotKey, index) => {
+        {REGION_ORDER.map((slotKey) => {
           const value = valueFor({ slots, slotKey });
           const title = REGION_TITLE[slotKey];
           const historyCount = historyCounts[slotKey];
@@ -157,77 +157,75 @@ export const ContextPane = ({ session, initialRegion, eyebrow }: Props) => {
           };
 
           return (
-            <Fragment key={slotKey}>
-              {index > 0 ? <Divider /> : null}
-              <ContextSection
-                concept={REGION_CONCEPT[slotKey]}
-                sectionId={`context-${slotKey}`}
-                title={title}
-                description={REGION_DESCRIPTION[slotKey]}
-                actions={
-                  <div className="flex shrink-0 items-center gap-1">
+            <ContextSection
+              key={slotKey}
+              concept={REGION_CONCEPT[slotKey]}
+              sectionId={`context-${slotKey}`}
+              title={title}
+              description={REGION_DESCRIPTION[slotKey]}
+              actions={
+                <div className="flex shrink-0 items-center gap-1">
+                  <GhostActionButton
+                    icon={Code}
+                    label={isRawEditing ? 'Done' : 'Edit source'}
+                    pressed={isRawEditing}
+                    highlighted={isRawEditing}
+                    disabled={isLocked}
+                    onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                  />
+                  {historyCount > 0 ? (
                     <GhostActionButton
-                      icon={Code}
-                      label={isRawEditing ? 'Done' : 'Edit source'}
-                      pressed={isRawEditing}
-                      highlighted={isRawEditing}
-                      disabled={isLocked}
-                      onClick={() => setRawKey(isRawEditing ? null : slotKey)}
+                      icon={History}
+                      label={`${historyCount} ${historyCount === 1 ? 'version' : 'versions'}`}
+                      ariaLabel={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
+                      onClick={() => {
+                        void loadSlotHistory(sessionId, slotKey);
+                        setHistoryKey(slotKey);
+                      }}
                     />
-                    {historyCount > 0 ? (
-                      <GhostActionButton
-                        icon={History}
-                        label={`${historyCount} ${historyCount === 1 ? 'version' : 'versions'}`}
-                        ariaLabel={`View ${historyCount} previous ${historyCount === 1 ? 'version' : 'versions'} of ${title}`}
-                        onClick={() => {
-                          void loadSlotHistory(sessionId, slotKey);
-                          setHistoryKey(slotKey);
-                        }}
-                      />
-                    ) : null}
-                    {value.length > 0 ? (
-                      <CopyButton
-                        presentation="icon"
-                        value={slotKey === 'last_output_summary' ? shareableSummary : value}
-                        label={
-                          slotKey === 'last_output_summary'
-                            ? 'copy shareable summary'
-                            : `copy ${title.toLowerCase()}`
-                        }
-                        size={ICON_SIZE.row}
-                      />
-                    ) : null}
-                  </div>
-                }
-              >
-                {hasFailed ? (
-                  <ContextLoadFailure
-                    title={title}
-                    onRetry={() => {
-                      void loadSessionSlots(sessionId);
-                    }}
-                  />
-                ) : slotKey === 'last_output_summary' ? (
-                  <SummarySection
-                    value={value}
-                    isLoading={isLoading}
-                    isLocked={isLocked}
-                    isRawEditing={isRawEditing}
-                    onWrite={onWrite}
-                    onCloseRawEditor={() => setRawKey(null)}
-                  />
-                ) : (
-                  <DecisionsSection
-                    value={value}
-                    isLoading={isLoading}
-                    isLocked={isLocked}
-                    isRawEditing={isRawEditing}
-                    onWrite={onWrite}
-                    onCloseRawEditor={() => setRawKey(null)}
-                  />
-                )}
-              </ContextSection>
-            </Fragment>
+                  ) : null}
+                  {value.length > 0 ? (
+                    <CopyButton
+                      presentation="icon"
+                      value={slotKey === 'last_output_summary' ? shareableSummary : value}
+                      label={
+                        slotKey === 'last_output_summary'
+                          ? 'copy shareable summary'
+                          : `copy ${title.toLowerCase()}`
+                      }
+                      size={ICON_SIZE.row}
+                    />
+                  ) : null}
+                </div>
+              }
+            >
+              {hasFailed ? (
+                <ContextLoadFailure
+                  title={title}
+                  onRetry={() => {
+                    void loadSessionSlots(sessionId);
+                  }}
+                />
+              ) : slotKey === 'last_output_summary' ? (
+                <SummarySection
+                  value={value}
+                  isLoading={isLoading}
+                  isLocked={isLocked}
+                  isRawEditing={isRawEditing}
+                  onWrite={onWrite}
+                  onCloseRawEditor={() => setRawKey(null)}
+                />
+              ) : (
+                <DecisionsSection
+                  value={value}
+                  isLoading={isLoading}
+                  isLocked={isLocked}
+                  isRawEditing={isRawEditing}
+                  onWrite={onWrite}
+                  onCloseRawEditor={() => setRawKey(null)}
+                />
+              )}
+            </ContextSection>
           );
         })}
       </PaneShell>

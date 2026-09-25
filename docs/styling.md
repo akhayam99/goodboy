@@ -138,12 +138,33 @@ because the overlay paints over the header, not under it. The fix is in the
 structure. Titles, breadcrumbs, toolbars and error banners live in a
 `shrink-0` zone outside. Only the body is wrapped.
 
-## Dividers between regions, never container borders
+## Dividers separate chrome from content, never content from content
 
-Separators between regions (panes, sidebar sections, toolbar groups, dialog
-blocks) use `<Divider>` from `@goodboy/ui`, placed as a sibling. Never use a
-`border-t/-r/-b/-l` on a container as a divider. Borders that draw a control's
-own shape are fine.
+A `Divider` marks the boundary between app chrome and a pane's content, not a
+boundary inside content. Allowed: the top bar and footer, a studio or sidebar
+rail against the detail pane (vertical), a pane's fixed header against its
+scrolling body (`PaneShell scroll="body"`, `InspectorHeader`), and inside a
+floating surface (popover, palette) the seam between its header or input and
+its list, at most one per side.
+
+Inside content, separation comes from gap (the `gap-4/6/8` scale), from
+surface (`SectionSurface`, `bg-subtle` against the canvas), or from a label
+that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
+content is a bug, not a style choice. A toolbar group or a dialog block that
+sits inside content does not get its own `<Divider>` either: it gets a `gap`
+or a card.
+
+Never use a `border-t/-r/-b/-l` on a container as a divider. Borders that draw
+a control's own shape are fine.
+
+`apps/desktop/src/__tests__/regressions/divider-sits-between-chrome.test.ts`
+guards this with a frozen debt list: a violation already in the codebase may
+be listed there, but the list only shrinks. Each allowed file carries a
+reason: `chrome` for one of the boundaries above, `markdown` for a table rule
+or a `---` break that the Markdown renderer draws because the source text asked
+for it, and `debt` for a line inside content that has not been migrated yet. A
+short list of files is exempt from the border check because their `border-t/b`
+draws a control's own shape (a corner bracket, an input underline), not a seam.
 
 ## A dialog is the last resort, not the default
 

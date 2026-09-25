@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Divider, formatError } from '@goodboy/ui';
+import { formatError } from '@goodboy/ui';
 import type {
   IsoDateTime,
   SessionExternalTaskProvider,
@@ -121,13 +121,10 @@ export const LinkIssueForm = ({
         onClear={() => undefined}
       />
       {error != null ? (
-        <>
-          <Divider />
-          <footer role="alert" className="flex items-center gap-1 text-xs text-danger">
-            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            {error}
-          </footer>
-        </>
+        <footer role="alert" className="flex items-center gap-1 text-xs text-danger">
+          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          {error}
+        </footer>
       ) : null}
     </div>
   );

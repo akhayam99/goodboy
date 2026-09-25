@@ -320,7 +320,7 @@ describe('WorkflowRow detail dashboard', () => {
     const remove = screen.getByRole('button', { name: 'Refactor workflow actions' });
 
     expect(within(toggle).getByRole('switch').getAttribute('aria-checked')).toBe('false');
-    expect(lifecycleSlot.querySelector('[role="separator"]')).not.toBeNull();
+    expect(toggle.parentElement).not.toBe(remove.parentElement);
     expect(toggle.compareDocumentPosition(remove)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 

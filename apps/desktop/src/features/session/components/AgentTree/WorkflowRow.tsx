@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { isAgentStatusSettled, runsForWorkflowRun } from '@goodboy/core';
 import {
   cn,
-  Divider,
   formatUsdPrecise,
   Input,
   MetaRow,
@@ -297,36 +296,39 @@ export const WorkflowRow = ({
                   onClick={() => toggleWorkflowExpand(task.id, run.id, expanded)}
                 />
               </CardActionSlot>
-              <CardActionSlot label="Workflow lifecycle actions" className="gap-2">
-                {isQueuedManual ? (
-                  <WorkflowRunStartButton
-                    variant="detail"
-                    blockReason={wfBlockReason}
-                    onStart={() => startWorkflowRun(task.id, run.id)}
+              <CardActionSlot label="Workflow lifecycle actions" className="gap-4">
+                <div className="flex items-center gap-2">
+                  {isQueuedManual ? (
+                    <WorkflowRunStartButton
+                      variant="detail"
+                      blockReason={wfBlockReason}
+                      onStart={() => startWorkflowRun(task.id, run.id)}
+                    />
+                  ) : null}
+                  {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
+                    <WorkflowAutorunToggle
+                      isOn={run.autoRun}
+                      onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {isClosable ? (
+                    <WorkflowCloseButton onConfirm={() => void closeWorkflowRun(task.id, run.id)} />
+                  ) : null}
+                  {isDiscarded ? (
+                    <GhostActionButton
+                      icon={Undo2}
+                      label="Restore"
+                      onClick={() => void restoreWorkflow(task.id, run.id)}
+                    />
+                  ) : null}
+                  <WorkflowRunMenu
+                    workflowName={name}
+                    onDiscard={isDiscarded ? null : () => void onDiscardWorkflow(run.id)}
+                    onDelete={() => void onDeleteWorkflow(run.id)}
                   />
-                ) : null}
-                {!isDiscarded && !isCompleted && !hasOrchestratorStrip && (
-                  <WorkflowAutorunToggle
-                    isOn={run.autoRun}
-                    onToggle={() => void setWorkflowRunAutoRun(task.id, run.id, !run.autoRun)}
-                  />
-                )}
-                <Divider orientation="vertical" className="h-5 self-center" />
-                {isClosable ? (
-                  <WorkflowCloseButton onConfirm={() => void closeWorkflowRun(task.id, run.id)} />
-                ) : null}
-                {isDiscarded ? (
-                  <GhostActionButton
-                    icon={Undo2}
-                    label="Restore"
-                    onClick={() => void restoreWorkflow(task.id, run.id)}
-                  />
-                ) : null}
-                <WorkflowRunMenu
-                  workflowName={name}
-                  onDiscard={isDiscarded ? null : () => void onDiscardWorkflow(run.id)}
-                  onDelete={() => void onDeleteWorkflow(run.id)}
-                />
+                </div>
               </CardActionSlot>
             </div>
           </div>

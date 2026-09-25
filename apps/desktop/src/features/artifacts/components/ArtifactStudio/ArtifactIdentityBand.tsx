@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button, Divider, IconButton, PANE_RHYTHM, StudioDetailTabs, cn } from '@goodboy/ui';
+import { Button, IconButton, PANE_RHYTHM, StudioDetailTabs, cn } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { ArtifactExportActions } from './ArtifactExportActions';
 import { ArtifactStatusChip } from './ArtifactStatusChip';
@@ -67,16 +67,17 @@ export const ArtifactIdentityBand = ({
         data-testid="artifact-details-toggle"
         className="shrink-0"
       />
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-4">
         <StudioDetailTabs
           ariaLabel="Artifact sections"
           options={tabs}
           value={tab}
           onChange={onTabChange}
         />
-        <Divider orientation="vertical" className="h-4" />
-        {actions}
-        <ArtifactExportActions artifact={artifact} />
+        <div className="flex shrink-0 items-center gap-2">
+          {actions}
+          <ArtifactExportActions artifact={artifact} />
+        </div>
       </div>
     </div>
   );
