@@ -7,6 +7,7 @@ import {
   ArtifactDocument,
   type ArtifactDocumentMedium,
 } from '../../../artifacts/components/ArtifactDocument';
+import { useRecordArtifactOpened } from '../../../artifacts/hooks/useRecordArtifactOpened';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
 import { artifactMetaFields } from './artifactMetaFields';
 import { closePrintWindow } from './closePrintWindow';
@@ -58,6 +59,12 @@ export const ArtifactReaderView = ({ request }: Props) => {
   const isReading = request.mode === 'read';
   const medium: ArtifactDocumentMedium = isReading ? 'window' : 'paper';
   const canPrint = status.kind === 'ready' || status.kind === 'wireframe';
+  useRecordArtifactOpened({
+    artifactId:
+      isReading && status.kind !== 'loading' && status.kind !== 'failed'
+        ? request.artifactId
+        : null,
+  });
 
   const print = useCallback(() => {
     setPrintError(null);

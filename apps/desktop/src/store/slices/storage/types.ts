@@ -1,4 +1,6 @@
 import type {
+  ArtifactId,
+  ArtifactKind,
   MountId,
   SessionId,
   WorkspaceId,
@@ -103,3 +105,38 @@ export type KeepStorageFolderParams = {
 export type StorageSizeCache = Readonly<
   Record<string, { readonly sizeBytes: number; readonly sizedAt: number }>
 >;
+
+export type StorageArtifact = {
+  readonly id: ArtifactId;
+  readonly kind: ArtifactKind;
+  readonly title: string;
+  readonly sessionGoal: string;
+  readonly deletedAt: number;
+  readonly updatedAt: number;
+  readonly openedAt: number | null;
+  readonly keptAt: number | null;
+  readonly keptUntil: number | null;
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+  readonly workspaceName: string;
+  readonly workspaceSlug: string;
+  readonly folder: string;
+  readonly sizeBytes: number | null;
+};
+
+export type StorageArtifactFilter = 'review' | 'kept';
+
+export type KeepStorageArtifactParams = {
+  readonly id: ArtifactId;
+  readonly days: number | null;
+  readonly isStopping?: boolean;
+};
+
+export type DeleteStorageArtifactsParams = {
+  readonly ids: ReadonlyArray<ArtifactId>;
+};
+
+export type StorageArtifactDeletion = {
+  readonly deleted: number;
+  readonly failed: ReadonlyArray<{ readonly id: ArtifactId; readonly message: string }>;
+};

@@ -5,6 +5,7 @@ import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
+  StorageArtifact,
   StorageFocus,
   StorageFolder,
   StorageRemovalSummary,
@@ -325,6 +326,8 @@ export type AppState = AppSliceState & {
   readonly storageRemovingPaths: Readonly<Record<string, true>>;
   readonly storageOutcome: StorageRemovalSummary | null;
   readonly storageFocus: StorageFocus | null;
+  readonly storageArtifacts: ReadonlyArray<StorageArtifact>;
+  readonly storageDeletingArtifacts: Readonly<Record<string, true>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;
