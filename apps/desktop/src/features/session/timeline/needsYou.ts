@@ -1,5 +1,6 @@
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 import type { TimelineStreamItem } from './buildTimelineStream';
+import { isRowNeedingYou } from '../../workTreeModel/rowState';
 
 type RootsParams = {
   readonly items: ReadonlyArray<TimelineStreamItem>;
@@ -8,7 +9,7 @@ type RootsParams = {
 export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => {
   const roots = new Set<string>();
   for (const item of items) {
-    if (item.kind === 'row' && item.rowState.ask != null) {
+    if (item.kind === 'row' && isRowNeedingYou({ state: item.rowState })) {
       roots.add(item.familyId ?? item.id);
     }
   }
@@ -18,7 +19,8 @@ export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => 
 type FirstRowParams = RootsParams;
 
 export const firstNeedsYouRowId = ({ items }: FirstRowParams): string | null =>
-  items.find((item) => item.kind === 'row' && item.rowState.ask != null)?.id ?? null;
+  items.find((item) => item.kind === 'row' && isRowNeedingYou({ state: item.rowState }))?.id ??
+  null;
 
 type EntriesParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;

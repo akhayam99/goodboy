@@ -6,7 +6,7 @@ export const pruneArchivedTranscripts = (_set: SetFn, get: GetFn) => {
   return async (): Promise<number> => {
     const refs = await listArchivedSessionRefs({ db: tauriDatabase });
     if (refs.length === 0) {
-      await get().loadStorageStats();
+      await get().loadStorage();
       return 0;
     }
     const deleted = await deleteTurnEventsForSessions({
@@ -14,7 +14,7 @@ export const pruneArchivedTranscripts = (_set: SetFn, get: GetFn) => {
       sessionIds: refs.map((ref) => ref.sessionId),
     });
     await vacuumDatabase({ db: tauriDatabase });
-    await get().loadStorageStats();
+    await get().loadStorage();
     return deleted;
   };
 };

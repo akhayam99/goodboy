@@ -1,5 +1,7 @@
+import { autoLimitContext } from '../../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../../providerLimits/resolveLimitedTaskModel';
 import { invoke } from '@tauri-apps/api/core';
-import { getDefaultBinary, resolveTaskModel, runAuxOneShot } from '@goodboy/core';
+import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
 import { heuristicAgentTitle } from '../../../../shared/lib/agent-title-heuristic';
@@ -148,7 +150,8 @@ export const applyHeuristicTitle = async ({
       return;
     }
 
-    const taskModel = resolveTaskModel({
+    const taskModel = resolveLimitedTaskModel({
+      limitContext: autoLimitContext({ state: get() }),
       task: 'agent_naming',
       preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
       workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })

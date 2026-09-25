@@ -127,7 +127,7 @@ const pathOwnerStatement = ({
      UNION ALL
      SELECT 'retained' AS source
      FROM retained_worktree_paths
-     WHERE worktree_path = ?
+     WHERE worktree_path = ? AND reason != 'orphan'
      LIMIT 1`,
   params: [worktreePath, excludedMountId, excludedMountId, worktreePath],
   abortWhen: 'rows',

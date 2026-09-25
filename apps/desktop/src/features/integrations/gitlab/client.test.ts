@@ -3,6 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import type { WorkspaceId } from '@goodboy/types';
 import {
   gitlabFetchIssue,
+  gitlabListIssueDiscussions,
+  gitlabReplyToIssueDiscussion,
   gitlabResolveMrDiscussion,
   gitlabUpdateIssueDescription,
   issueIdentifier,
@@ -137,5 +139,48 @@ describe('gitlabResolveMrDiscussion', () => {
     });
 
     expect(mockInvoke.mock.calls[0]?.[1]).toMatchObject({ resolved: false });
+  });
+});
+
+describe('gitlab issue discussions', () => {
+  it('lists the threads of an issue', async () => {
+    mockInvoke.mockResolvedValueOnce([]);
+
+    await gitlabListIssueDiscussions({
+      workspaceId: 'workspace-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_list_issue_discussions', {
+      workspaceId: 'workspace-1',
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+    });
+  });
+
+  it('replies inside the chosen thread', async () => {
+    mockInvoke.mockResolvedValueOnce(12);
+
+    const noteId = await gitlabReplyToIssueDiscussion({
+      workspaceId: 'workspace-1' as WorkspaceId,
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+      discussionId: 'd-1',
+      body: 'Agreed',
+    });
+
+    expect(noteId).toBe(12);
+    expect(mockInvoke).toHaveBeenCalledWith('gitlab_reply_to_issue_discussion', {
+      workspaceId: 'workspace-1',
+      host: 'https://gitlab.com',
+      projectPath: 'acme/web',
+      issueIid: 7,
+      discussionId: 'd-1',
+      body: 'Agreed',
+    });
   });
 });

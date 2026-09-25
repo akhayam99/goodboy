@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { fallbackStepOutputSummary, stripControlMarkers } from '@goodboy/core';
+import {
+  fallbackStepOutputSummary,
+  isAgentStatusHalted,
+  isAgentStatusSettled,
+  stripControlMarkers,
+} from '@goodboy/core';
 import { Markdown, SectionSurface, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
@@ -14,21 +19,20 @@ import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren'
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
-import { AGENT_KIND_META, classifyAgent } from '../../agent-kind';
+import { classifyAgent } from '../../agent-kind';
 import { AgentMetaLine } from './AgentMetaLine';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentBriefDelegates } from './AgentBriefDelegates';
 import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
-import { AgentBriefWhy } from './AgentBriefWhy';
+import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
 import { AgentFollowUps } from './AgentFollowUps';
 import { agentFollowUpMoves } from './followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
 import { agentNowState } from './agentNowState';
 import { AgentMuchLonger } from './AgentMuchLonger';
 import type { WorkTime } from '../../../workTreeModel/workTime';
-import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 
 type Props = {
   readonly session: Session;
@@ -59,7 +63,6 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
   );
   const openQuestions = useSessionOpenQuestions(session.id);
   const answeredQuestions = useSessionAnsweredQuestions(session.id);
-  const attachedRuns = useAttachedWorkflowRuns({ session });
   const metrics = useAgentMetrics({ sessionId: session.id });
   const children = useMemo(
     () => selectSpawnedChildren({ runs, parentAgentId: agent.id, turnStates }),
@@ -101,13 +104,6 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     }
     return runs.find((run) => run.id === parentId) ?? null;
   }, [agent.parentAgentId, runs]);
-  const step = useMemo(() => {
-    if (agent.workflowRunId == null || agent.stepId == null) {
-      return null;
-    }
-    const attached = attachedRuns.find(({ run }) => run.id === agent.workflowRunId) ?? null;
-    return attached?.workflow.steps.find((candidate) => candidate.id === agent.stepId) ?? null;
-  }, [agent.stepId, agent.workflowRunId, attachedRuns]);
   const lastAssistantText = useMemo(() => {
     const items = reduceTranscript(transcript);
     for (let index = items.length - 1; index >= 0; index -= 1) {
@@ -125,27 +121,14 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     : lastAssistantText === ''
       ? ''
       : fallbackStepOutputSummary({ output: lastAssistantText });
-  const expectedOutput = step?.expectedOutput?.trim() ?? AGENT_KIND_META[kind].expectedOutput;
   const isTerminal =
-    agent.status === 'completed' || agent.status === 'failed' || agent.status === 'skipped';
+    isAgentStatusSettled({ status: agent.status }) || isAgentStatusHalted({ status: agent.status });
   const now = agentNowState({ agent, turnState, transcript });
   const isSplitIntoSubagents = kind === 'implementer' && laneChildren.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
-      <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
-      <AgentBriefQuestions session={session} agent={agent} />
-      <AgentBriefWhy step={agent.parentAgentId == null ? step : null} />
-      {summary !== '' && !isSplitIntoSubagents ? (
-        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
-          <div className="text-sm text-foreground">
-            <Markdown text={stripControlMarkers(summary)} />
-          </div>
-          {!hasOutputSummary ? (
-            <span className="text-2xs text-muted-foreground">from the last reply</span>
-          ) : null}
-        </SectionSurface>
-      ) : null}
+      <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
       {!isTerminal ? (
         <SectionSurface label="Now">
           <div className="flex items-center gap-2 text-xs text-foreground">
@@ -165,14 +148,27 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
           {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
         </SectionSurface>
       ) : null}
-      {expectedOutput != null && expectedOutput !== '' ? (
-        <SectionSurface label="Expected output">
-          <p className="text-sm text-foreground">{expectedOutput}</p>
+      <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
+      <AgentBriefQuestions session={session} agent={agent} />
+      {summary !== '' && !isSplitIntoSubagents ? (
+        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
+          <div className="text-sm text-foreground">
+            <Markdown text={stripControlMarkers(summary)} />
+          </div>
+          {!hasOutputSummary ? (
+            <span className="text-2xs text-muted-foreground">from the last reply</span>
+          ) : null}
         </SectionSurface>
       ) : null}
       <AgentBriefPlans
         plans={plans.filter((plan) => plan.agentId === agent.id)}
         sessionId={session.id}
+      />
+      <AgentBriefChildren session={session} agent={agent} kind={kind} children={laneChildren} />
+      <AgentBriefDelegates
+        sessionId={session.id}
+        delegates={delegates}
+        questions={sessionQuestions}
       />
       <AgentFollowUps
         sourceAgent={agent}
@@ -185,12 +181,6 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
             ?.id ?? null
         }
       />
-      <AgentBriefDelegates
-        sessionId={session.id}
-        delegates={delegates}
-        questions={sessionQuestions}
-      />
-      <AgentBriefChildren session={session} agent={agent} kind={kind} children={laneChildren} />
       <AgentMetaLine
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}

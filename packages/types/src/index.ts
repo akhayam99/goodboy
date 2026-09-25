@@ -47,6 +47,9 @@ export type {
   SessionMount,
   SessionMountView,
   SessionProjectMount,
+  WorktreeLedgerEntry,
+  WorktreeRoot,
+  WorktreeRootSource,
 } from './mount';
 export type {
   PrSeries,
@@ -124,7 +127,16 @@ export type {
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
-export type { ProviderUsage, TurnEvent } from './adapter';
+export type { ProviderUsage, TurnEvent, UserTurnSentVia } from './adapter';
+export type {
+  AgentHandoff,
+  HandoffDraft,
+  HandoffRef,
+  HandoffSection,
+  HandoffSectionKind,
+  HandoffSender,
+} from './handoff';
+export { HANDOFF_SECTION_KINDS } from './handoff';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
   AgentTurnSpan,
@@ -205,18 +217,25 @@ export type {
 } from './budget';
 export type { TelemetrySummary, TelemetryPeriodSummary } from './telemetry-period';
 export type {
+  ProviderLimitStatus,
+  ProviderLimitWindow,
+  ProviderLimitWindowKind,
+  ProviderLimits,
+} from './provider-limits';
+export type {
   Agent,
   AgentEffort,
   AgentRole,
   AgentSourceKind,
   AgentStatus,
+  AgentStoppedBy,
   Step,
   StepDef,
   StepSize,
   Workflow,
   WorkflowOrigin,
 } from './workflow';
-export { WORKFLOW_ORIGINS, isStepSize, isWorkflowOrigin } from './workflow';
+export { WORKFLOW_ORIGINS, isAgentStoppedBy, isStepSize, isWorkflowOrigin } from './workflow';
 export type {
   AuxTaskId,
   GlobalSettings,
@@ -361,6 +380,7 @@ export type {
 export type {
   ResolveThread,
   ResolveThreadState,
+  ResolveStage,
   ResolveAttempt,
   ResolveAttemptPhase,
   ResolveQueueApprovalState,

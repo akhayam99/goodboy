@@ -34,9 +34,14 @@ Three tokens, exported from `conceptIcons.ts`:
 
 | Token               | px  | Use                                                    |
 | ------------------- | --- | ------------------------------------------------------ |
-| `ICON_SIZE.row`     | 13  | Leading and trailing glyphs inside list and table rows |
+| `ICON_SIZE.row`     | 12  | Leading and trailing glyphs inside list and table rows |
 | `ICON_SIZE.control` | 14  | Buttons, menu triggers, rail tabs, form adornments     |
 | `ICON_SIZE.hero`    | 18  | Empty states, studio headers, choice tiles             |
+
+Every token is even. Badges and icon boxes are even (`size-5`, `size-9`,
+`WorkNode` at 20 px), so an odd glyph lands on a half pixel and looks off
+centre. `WorkNode` centres its glyph in a full-size flex box with no line
+height, and draws the svg as a block so it never sits on a text baseline.
 
 Sizes below the row token (8 to 11 px) stay as plain numbers. They belong to
 chips, badges and status dots, where the glyph is a mark inside a shape, not a
@@ -111,13 +116,15 @@ Never build a colored role word or an outlined kind chip by hand.
 
 ## Run states
 
-| State     | Concept        | Glyph          | Tone    | Used by                                              |
-| --------- | -------------- | -------------- | ------- | ---------------------------------------------------- |
-| pending   | `runPending`   | `CircleDashed` | neutral | `AgentStatusIcon`                                    |
-| running   | none           | pulsing dot    | info    | `StatusDot tone="info" pulsing`                      |
-| done      | `runDone`      | `CircleCheck`  | success | `AgentStatusIcon`, run status                        |
-| failed    | `runFailed`    | `CircleX`      | danger  | `AgentStatusIcon`                                    |
-| cancelled | `runCancelled` | `CircleSlash`  | neutral | `AgentStatusIcon` (skipped), discarded workflow runs |
+| State     | Concept        | Glyph          | Tone    | Used by                                               |
+| --------- | -------------- | -------------- | ------- | ----------------------------------------------------- |
+| pending   | `runPending`   | `CircleDashed` | neutral | `AgentStatusIcon`                                     |
+| running   | none           | pulsing dot    | info    | `StatusDot tone="info" pulsing`                       |
+| done      | `runDone`      | `CircleCheck`  | success | `AgentStatusIcon`, run status                         |
+| failed    | `runFailed`    | `CircleX`      | danger  | `AgentStatusIcon`                                     |
+| blocked   | `runBlocked`   | `OctagonAlert` | warning | `AgentStatusIcon`                                     |
+| cancelled | `runCancelled` | `CircleSlash`  | neutral | `AgentStatusIcon` (skipped), discarded workflow runs  |
+| stopped   | `runStopped`   | `CirclePause`  | neutral | agent you stopped, stopped step, `AgentStoppedNotice` |
 
 ## Projects, mounts and git objects
 

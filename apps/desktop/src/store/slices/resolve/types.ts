@@ -13,6 +13,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { PublishConversationsResult } from './publishConversations';
+import type { ResolveCandidateMode } from './resolveCandidateMode';
 import type { ResolveCheckPair } from './runResolveCheck';
 import type { GetFn, SetFn } from '../../slice-types';
 
@@ -39,6 +40,7 @@ export type AttemptParams = SessionParams & {
   readonly instructions: string | null;
   readonly phase: 'queued' | 'running';
   readonly threadIds?: ReadonlyArray<string>;
+  readonly candidateMode?: ResolveCandidateMode;
 };
 export type CancelAttemptParams = SessionParams & {
   readonly attemptId: string;

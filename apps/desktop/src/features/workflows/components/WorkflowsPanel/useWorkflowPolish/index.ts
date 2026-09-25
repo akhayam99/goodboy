@@ -1,8 +1,10 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { DEFAULT_SESSION_PROVIDER_PREFERENCE, resolveTaskModel } from '@goodboy/core';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
+import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
+import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
 import { useToast } from '../../../../../app/components/Toast';
 import type { WorkflowDraft } from '../../../engine';
 import { updateStep } from '../../../engine';
@@ -30,9 +32,11 @@ export const useWorkflowPolish = ({
   const [polishingKey, setPolishingKey] = useState<string | null>(null);
   const [polishError, setPolishError] = useState<string | null>(null);
 
+  const limitContext = useAutoLimitContext();
   const taskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'prose_polish',
         preferences: overrides?.taskModels,
         workspaceDefaultProviderId: overrides?.defaultProviderId,
@@ -40,7 +44,7 @@ export const useWorkflowPolish = ({
           connectedProviders[0] ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
         connectedProviders: connectedProviders.length > 0 ? connectedProviders : null,
       }),
-    [connectedProviders, overrides],
+    [connectedProviders, limitContext, overrides],
   );
   const deps = { ...taskModel, ...(workingDir !== null && { workingDir }) };
 

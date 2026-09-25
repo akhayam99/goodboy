@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
+  AgentHandoff,
   AgentId,
+  IsoDateTime,
   OpenQuestion,
   Session,
   SessionId,
-  StepId,
   WorkflowRunId,
 } from '@goodboy/types';
 
@@ -23,6 +24,10 @@ const state = vi.hoisted(() => ({
   sessionPlans: {} as Record<string, ReadonlyArray<unknown>>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   answeredQuestions: [] as ReadonlyArray<OpenQuestion>,
+  agentHandoffs: {} as Record<string, AgentHandoff | null>,
+  sessionOpenQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
+  sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
+  loadAgentHandoff: async () => undefined,
   selectAgent: async () => undefined,
   answerOpenQuestions: async () => undefined,
   dismissOpenQuestion: async () => undefined,
@@ -56,14 +61,6 @@ vi.mock('../../hooks/useAgentMetrics', () => ({
     providerUsageByAgentId: new Map(),
     turnsByAgentId: new Map(),
   }),
-}));
-
-const attached = vi.hoisted(() => ({
-  runs: [] as ReadonlyArray<unknown>,
-}));
-
-vi.mock('../../../workflows/useAttachedWorkflowRuns', () => ({
-  useAttachedWorkflowRuns: () => attached.runs,
 }));
 
 vi.mock('./AgentFollowUps', () => ({
@@ -119,9 +116,9 @@ beforeEach(() => {
     sessionPlans: {},
     openQuestions: [],
     answeredQuestions: [],
+    agentHandoffs: {},
   });
   transcriptItems.items = [];
-  attached.runs = [];
 });
 
 describe('AgentBrief summary', () => {
@@ -465,66 +462,67 @@ describe('AgentBrief sections', () => {
     );
     const sections = Array.from(container.querySelectorAll('section'));
 
-    expect(sections.length).toBeGreaterThan(2);
+    expect(sections.length).toBeGreaterThan(1);
     expect(sections.every(opensWithItsLabel)).toBe(true);
   });
 });
 
-describe('AgentBrief why this step', () => {
-  const runId = 'run-1' as WorkflowRunId;
-  const STEP_ID = 'step-3' as StepId;
-  const withReason = (reason: string) => {
-    attached.runs = [
-      {
-        run: { id: runId },
-        workflow: {
-          steps: [{ id: STEP_ID, name: 'Implement validators', orchestratorReason: reason }],
-        },
-      },
-    ];
+describe('AgentBrief handoff line', () => {
+  const handoff: AgentHandoff = {
+    agentId,
+    sender: { kind: 'orchestrator', workflowRunId: 'run-1' as WorkflowRunId, stepOrdinal: 4 },
+    ask: 'Backfill the settled batches behind a flag.',
+    why: 'The plan splits validators, schemas and the banner.',
+    doneWhen: 'A dry run report lists every batch.',
+    sections: [],
+    sentSystem: null,
+    sentMessage: 'Backfill the settled batches behind a flag.',
+    provider: 'codex',
+    createdAt: '2026-09-25T12:04:00.000Z' as IsoDateTime,
   };
 
-  it('says why the orchestrator chose the step, above the outcome', () => {
-    withReason('The plan splits validators, schemas and the banner.');
+  it('leads with one line naming who sent the agent and what for', () => {
+    state.agentHandoffs = { [agentId]: handoff };
+    state.agentTurnState = { [agentId]: { kind: 'running', runId: 'r', startedAt: '' } };
 
-    render(
-      <AgentBrief
-        session={session}
-        agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID, outputSummary: 'shipped it' })}
-      />,
-    );
+    render(<AgentBrief session={session} agent={makeAgent({ status: 'running' })} />);
 
-    const why = screen.getByRole('region', { name: 'Why this step' });
-    expect(why.textContent).toContain('The plan splits validators, schemas and the banner.');
+    const line = screen.getByTestId('agent-brief-handoff-line');
+    expect(line.textContent).toContain('Sent by');
+    expect(line.textContent).toContain('Orchestrator · step 4');
+    expect(line.textContent).toContain('Backfill the settled batches behind a flag.');
     expect(
-      why.compareDocumentPosition(screen.getByText('Outcome')) & Node.DOCUMENT_POSITION_FOLLOWING,
+      line.compareDocumentPosition(screen.getByText('Now')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('leaves the reason to the step agent, not to its subagents', () => {
-    withReason('The plan splits validators, schemas and the banner.');
+  it('opens the transcript on the handoff', () => {
+    state.agentHandoffs = { [agentId]: handoff };
+    const reveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', reveal);
 
-    render(
-      <AgentBrief
-        session={session}
-        agent={makeAgent({
-          workflowRunId: runId,
-          stepId: STEP_ID,
-          parentAgentId: 'agent-0' as AgentId,
-        })}
-      />,
-    );
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+    fireEvent.click(screen.getByTestId('agent-brief-handoff-line'));
 
-    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
+    expect(reveal).toHaveBeenCalledTimes(1);
+    window.removeEventListener('goodboy:reveal-chat', reveal);
   });
 
-  it('says nothing when the step carries no reason', () => {
-    withReason('  ');
+  it('leaves the why and the expected output to the transcript', () => {
+    state.agentHandoffs = { [agentId]: handoff };
 
-    render(
-      <AgentBrief session={session} agent={makeAgent({ workflowRunId: runId, stepId: STEP_ID })} />,
-    );
+    render(<AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped it' })} />);
 
-    expect(screen.queryByRole('region', { name: 'Why this step' })).toBeNull();
+    expect(screen.queryByText('Why this step')).toBeNull();
+    expect(screen.queryByText('Expected output')).toBeNull();
+    expect(screen.queryByText(handoff.why ?? '')).toBeNull();
+  });
+
+  it('says nothing about the handoff of an agent spawned before it was stored', () => {
+    state.agentHandoffs = { [agentId]: null };
+
+    render(<AgentBrief session={session} agent={makeAgent({})} />);
+
+    expect(screen.queryByTestId('agent-brief-handoff-line')).toBeNull();
   });
 });

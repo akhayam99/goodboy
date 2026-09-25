@@ -90,7 +90,7 @@ fn write_synced(path: &Path, contents: &str) -> std::io::Result<()> {
     file.sync_all()
 }
 
-fn write_atomic(path: &Path, contents: &str) -> Result<(), ArtifactExportError> {
+pub(crate) fn write_atomic(path: &Path, contents: &str) -> Result<(), ArtifactExportError> {
     let temp = temp_sibling(path);
     if let Err(error) = write_synced(&temp, contents) {
         let _ = std::fs::remove_file(&temp);

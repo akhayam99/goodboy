@@ -211,6 +211,7 @@ const baseState = (): State => {
   return {
     sessions: [session()],
     workspaces: [{ id: WORKSPACE_ID, rootPath: '/tmp/repo', kind: 'repo' }],
+    projects: [],
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'codex', connection: 'connected' },
@@ -1636,6 +1637,39 @@ describe('orchestrateNextStep', () => {
     const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
     expect(input.operatorHints).toContain('[since step 1] ignore the docs');
     expect(input.operatorHints).toContain('[new] run a reviewer first');
+  });
+
+  it('hands the orchestrator the workspace projects with the starred one first', async () => {
+    const state = {
+      ...baseState(),
+      projects: [
+        { id: 'project-relay', workspaceId: WORKSPACE_ID, name: 'notify-relay', kind: 'repo' },
+        {
+          id: 'project-ledger',
+          workspaceId: WORKSPACE_ID,
+          name: 'ledger-core',
+          kind: 'repo',
+          starredAt: HINT_AT,
+          description: 'Settles payments',
+        },
+      ],
+    };
+    decideSpy.mockResolvedValueOnce({
+      decision: { action: 'done', reason: 'all set' },
+      usage: NO_USAGE,
+      model: 'claude-haiku-4-5',
+    });
+    const { set, get } = harness(state);
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    const input = decideSpy.mock.calls[0]?.[0] as OrchestratorInput;
+    expect(input.operatorHints).toContain(
+      '- ledger-core (repo) | starred, the owner works here most | Settles payments\n- notify-relay (repo)',
+    );
+    expect(input.operatorHints).toContain(
+      'When a request names no project, look in starred projects first.',
+    );
   });
 
   it('stamps the queued hints with the decision that first read them', async () => {

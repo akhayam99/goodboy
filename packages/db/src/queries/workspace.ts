@@ -18,14 +18,20 @@ type WorkspaceRow = OverrideRow & {
   readonly disconnected_at: number | null;
   readonly last_accessed_at: number | null;
   readonly profile_workspace_id: string | null;
-  readonly profile_bio: string | null;
+  readonly profile_roles_json: string | null;
+  readonly profile_about_work: string | null;
+  readonly profile_working_rules: string | null;
+  readonly profile_explain_more_json: string | null;
 };
 
 const WORKSPACE_SELECT = `
   SELECT
     w.*,
     wp.workspace_id AS profile_workspace_id,
-    wp.bio AS profile_bio
+    wp.roles_json AS profile_roles_json,
+    wp.about_work AS profile_about_work,
+    wp.working_rules AS profile_working_rules,
+    wp.explain_more_json AS profile_explain_more_json
   FROM workspaces w
   LEFT JOIN workspace_profiles wp ON wp.workspace_id = w.id`;
 
@@ -33,11 +39,31 @@ type ProfileParams = {
   readonly row: WorkspaceRow;
 };
 
+const parseLabels = ({ json }: { readonly json: string | null }): ReadonlyArray<string> => {
+  if (json === null) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((entry): entry is string => typeof entry === 'string');
+  } catch {
+    return [];
+  }
+};
+
 const profileFromRow = ({ row }: ProfileParams): WorkspaceProfile | undefined => {
   if (row.profile_workspace_id === null) {
     return undefined;
   }
-  return { bio: row.profile_bio };
+  return {
+    roles: parseLabels({ json: row.profile_roles_json }),
+    aboutWork: row.profile_about_work,
+    workingRules: row.profile_working_rules,
+    explainMore: parseLabels({ json: row.profile_explain_more_json }),
+  };
 };
 
 type ToDomainParams = {
@@ -231,11 +257,22 @@ export const upsertWorkspaceProfile = async ({
   profile,
 }: UpsertWorkspaceProfileParams): Promise<void> => {
   await db.execute(
-    `INSERT INTO workspace_profiles (workspace_id, bio, updated_at)
-     VALUES (?, ?, ?)
+    `INSERT INTO workspace_profiles (
+       workspace_id, roles_json, about_work, working_rules, explain_more_json, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(workspace_id) DO UPDATE SET
-       bio = excluded.bio,
+       roles_json = excluded.roles_json,
+       about_work = excluded.about_work,
+       working_rules = excluded.working_rules,
+       explain_more_json = excluded.explain_more_json,
        updated_at = excluded.updated_at`,
-    [workspaceId, profile.bio, Date.now()],
+    [
+      workspaceId,
+      profile.roles.length === 0 ? null : JSON.stringify(profile.roles),
+      profile.aboutWork,
+      profile.workingRules,
+      profile.explainMore.length === 0 ? null : JSON.stringify(profile.explainMore),
+      Date.now(),
+    ],
   );
 };

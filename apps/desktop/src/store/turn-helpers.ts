@@ -8,7 +8,6 @@ import {
   extractScoutDomains,
   hasBlockingQuestion,
   planTaskModelFallback,
-  resolveTaskModel,
   SLOT_BUDGETS,
   Summarizer,
   SummarizerParseError,
@@ -95,6 +94,8 @@ import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullReque
 import { selectMountById } from './slices/project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
 import { selectResolvedSettings } from './slices/overrides/selectResolvedSettings';
+import { autoLimitContext } from './slices/providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from './slices/providerLimits/resolveLimitedTaskModel';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -279,7 +280,8 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
   const taskModel =
     entry.taskModelOverride ??
     routeTaskModel({
-      taskModel: resolveTaskModel({
+      taskModel: resolveLimitedTaskModel({
+        limitContext: autoLimitContext({ state: get() }),
         task: 'summarizer',
         preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
         workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })

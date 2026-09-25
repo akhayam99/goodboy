@@ -56,7 +56,10 @@ describe('workspace queries', () => {
     const workspace = makeWorkspace({
       overrides: {
         profile: {
-          bio: 'I build the platform tooling for this team.',
+          roles: ['Platform Engineer'],
+          aboutWork: 'I build the platform tooling for this team.',
+          workingRules: null,
+          explainMore: [],
         },
         overrides: {
           ...EMPTY_OVERRIDES,
@@ -120,14 +123,36 @@ describe('workspace queries', () => {
     const db = await makeDb();
     const workspace = makeWorkspace({});
     await insertWorkspace({ db, workspace });
-    await upsertWorkspaceProfile({
-      db,
-      workspaceId: workspace.id,
-      profile: { bio: 'I review outcomes, not diffs.' },
-    });
+    const profile = {
+      roles: ['Tech Lead', 'Backend Engineer'],
+      aboutWork: 'Leads the payments platform team.',
+      workingRules: 'Ask before touching migrations.',
+      explainMore: ['Rust'],
+    };
+    await upsertWorkspaceProfile({ db, workspaceId: workspace.id, profile });
+
+    expect((await getWorkspaceById({ db, id: workspace.id }))?.profile).toEqual(profile);
+
+    const cleared = { roles: [], aboutWork: null, workingRules: null, explainMore: [] };
+    await upsertWorkspaceProfile({ db, workspaceId: workspace.id, profile: cleared });
+    expect((await getWorkspaceById({ db, id: workspace.id }))?.profile).toEqual(cleared);
+  });
+
+  it('reads unreadable role lists as empty', async () => {
+    const db = await makeDb();
+    const workspace = makeWorkspace({});
+    await insertWorkspace({ db, workspace });
+    await db.execute(
+      `INSERT INTO workspace_profiles (workspace_id, roles_json, explain_more_json, updated_at)
+       VALUES (?, 'not json', '{"a":1}', 1)`,
+      [workspace.id],
+    );
 
     expect((await getWorkspaceById({ db, id: workspace.id }))?.profile).toEqual({
-      bio: 'I review outcomes, not diffs.',
+      roles: [],
+      aboutWork: null,
+      workingRules: null,
+      explainMore: [],
     });
   });
 

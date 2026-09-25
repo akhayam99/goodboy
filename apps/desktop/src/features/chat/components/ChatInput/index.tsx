@@ -1,6 +1,15 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Paperclip, Send, Square } from 'lucide-react';
-import { cn, Divider, formatUsd, Textarea, Tooltip, tintClasses } from '@goodboy/ui';
+import {
+  Button,
+  cn,
+  Divider,
+  formatUsd,
+  KbdPill,
+  Textarea,
+  Tooltip,
+  tintClasses,
+} from '@goodboy/ui';
 import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore, useSessionCost } from '../../../../store';
@@ -43,6 +52,8 @@ type Props = {
   readonly providerDisconnected?: boolean;
 };
 
+type RunningDelivery = 'queue' | 'now';
+
 export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
   const sessionNudge = useAppStore((s) => s.sessionNudges[session.id] ?? null);
@@ -76,6 +87,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   const loadScripts = useAppStore((s) => s.loadScripts);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
+  const loadAgentQueues = useAppStore((s) => s.loadAgentQueues);
 
   const { showToast } = useToast();
   const announceAgentStarted = useAgentStartedToast();
@@ -150,10 +162,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     [setValue, setAttachments, routing],
   );
 
-  const { queue, enqueue, removeQueued, editQueued } = useMessageQueue({
+  const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useMessageQueue({
+    sessionId: session.id,
     agentId: selectedAgentId,
-    isRunning,
-    dispatchTurn: dispatch.dispatchTurn,
     onEdit: onEditQueued,
   });
 
@@ -192,8 +203,8 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
   }, [session.workspaceId, loadScripts, loadPhaseTemplates]);
 
   useEffect(() => {
-    void loadPhaseRunsForSession(session.id);
-  }, [session.id, loadPhaseRunsForSession]);
+    void loadPhaseRunsForSession(session.id).then(() => loadAgentQueues(session.id));
+  }, [session.id, loadPhaseRunsForSession, loadAgentQueues]);
 
   const sendWith = useCallback(
     async ({
@@ -201,11 +212,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       atts,
       modelOverrideId,
       force = false,
+      delivery = 'queue',
     }: {
       readonly content: string;
       readonly atts: ReadonlyArray<PendingAttachment>;
       readonly modelOverrideId: string | null;
       readonly force?: boolean;
+      readonly delivery?: RunningDelivery;
     }) => {
       const override: TurnProviderOverride | undefined = routing.allowOverride
         ? modelOverrideId == null
@@ -225,13 +238,18 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         if (selectedAgentId == null) {
           return;
         }
-        enqueue({
+        const turn = {
           id: crypto.randomUUID(),
           agentId: selectedAgentId,
           content,
           attachments: atts,
           override,
-        });
+        };
+        if (delivery === 'now') {
+          sendNow(turn);
+          return;
+        }
+        enqueue(turn);
         return;
       }
 
@@ -259,13 +277,20 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
       isRunning,
       selectedAgentId,
       enqueue,
+      sendNow,
       dispatch.dispatchTurn,
       setValue,
       setAttachments,
     ],
   );
 
-  const submitDraft = async ({ force }: { readonly force: boolean }) => {
+  const submitDraft = async ({
+    force,
+    delivery = 'queue',
+  }: {
+    readonly force: boolean;
+    readonly delivery?: RunningDelivery;
+  }) => {
     const content = value.trim();
     const atts = attachments;
     if ((!content && atts.length === 0) || providerDisconnected || session.archivedAt != null)
@@ -289,10 +314,12 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
 
     setValue('');
     setAttachments([]);
-    await sendWith({ content, atts, modelOverrideId: null, force });
+    await sendWith({ content, atts, modelOverrideId: null, force, delivery });
   };
 
   const onSend = async () => submitDraft({ force: false });
+
+  const onSendNow = async () => submitDraft({ force: false, delivery: 'now' });
 
   const onSendAnyway = async () => submitDraft({ force: true });
 
@@ -408,13 +435,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     }
     if (event.key === 'Enter' && !event.shiftKey && !popoverOpen) {
       event.preventDefault();
-      void onSend();
+      void (isRunning && (event.metaKey || event.ctrlKey) ? onSendNow() : onSend());
     }
   };
 
   const isArchived = session.archivedAt != null;
   const isBlocked = providerDisconnected || isArchived;
   const canSend = !isBlocked && (value.trim().length > 0 || attachments.length > 0);
+  const showsDeliveryChoice = isRunning && canSend;
   const sendDisabledTitle = isArchived
     ? ARCHIVED_SESSION_REASON
     : providerDisconnected
@@ -454,6 +482,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           canEdit={value.trim().length === 0 && attachments.length === 0}
           onEdit={editQueued}
           onRemove={removeQueued}
+          onSendNow={sendQueued}
         />
         <div
           ref={composerRef}
@@ -521,7 +550,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                     : isRunning
                       ? queue.length > 0
                         ? 'Type to queue another message'
-                        : 'Turn running, type to queue the next message'
+                        : 'Turn running, type to queue a message or send it now'
                       : (firstMessagePrompt ?? CHAT_PLACEHOLDER)
               }
               disabled={isBlocked}
@@ -534,7 +563,9 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               <Tooltip content="Cancel turn">
                 <button
                   type="button"
-                  onClick={() => void cancelCurrentTurn(session.id)}
+                  onClick={() =>
+                    void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
+                  }
                   aria-label="Cancel turn"
                   className={cn(
                     'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',
@@ -546,18 +577,16 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
                 </button>
               </Tooltip>
-            ) : (
+            ) : showsDeliveryChoice ? null : (
               <Tooltip
-                content={
-                  sendDisabledTitle ?? (isRunning ? 'Queue message (enter)' : 'Send (enter)')
-                }
+                content={sendDisabledTitle ?? 'Send (enter)'}
                 anchorClassName="absolute right-2 top-1/2 -translate-y-1/2"
               >
                 <button
                   type="button"
                   onClick={() => void onSend()}
                   disabled={!canSend}
-                  aria-label={isRunning ? 'Queue message' : 'Send message'}
+                  aria-label="Send message"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-on-tone shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                 >
                   <Send size={ICON_SIZE.control} aria-hidden className="-translate-x-px" />
@@ -644,9 +673,31 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 onVerbosity={routing.setVerbosity}
                 onReset={routing.onResetTurnOverride}
               />
+              {showsDeliveryChoice ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => void onSend()}>
+                    Queue{' '}
+                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+                      ↵
+                    </KbdPill>
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={() => void onSendNow()}>
+                    Send now{' '}
+                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+                      ⌘↵
+                    </KbdPill>
+                  </Button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
+        {showsDeliveryChoice ? (
+          <p className="px-1 text-2xs text-faint-foreground">
+            Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
+            continues with your message.
+          </p>
+        ) : null}
         {dispatch.error ? (
           <ComposerErrorNotice
             message={dispatch.error}

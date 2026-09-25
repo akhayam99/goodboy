@@ -1,5 +1,5 @@
 import { Markdown, MetaRow } from '@goodboy/ui';
-import type { MessageAttachment, ProviderId } from '@goodboy/types';
+import type { MessageAttachment, ProviderId, UserTurnSentVia } from '@goodboy/types';
 import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
@@ -45,10 +45,24 @@ type Props = {
   attachments?: ReadonlyArray<MessageAttachment>;
   provider?: ProviderId;
   model?: string;
+  sentVia?: UserTurnSentVia;
   workingDir?: string | null;
 };
 
-export const UserText = ({ text, at, attachments, provider, model, workingDir = null }: Props) => {
+const SENT_VIA_LABEL: Record<UserTurnSentVia, string> = {
+  queued: 'Queued · sent after the turn',
+  interrupt: 'Sent now · interrupted the turn',
+};
+
+export const UserText = ({
+  text,
+  at,
+  attachments,
+  provider,
+  model,
+  sentVia,
+  workingDir = null,
+}: Props) => {
   const atts = attachments ?? [];
   return (
     <TranscriptShell
@@ -73,6 +87,7 @@ export const UserText = ({ text, at, attachments, provider, model, workingDir = 
           items={[
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             provider && model ? <span key="model">{modelLabel(model)}</span> : null,
+            sentVia ? <span key="sent-via">{SENT_VIA_LABEL[sentVia]}</span> : null,
             <span key="time" className="font-mono">
               {formatClockTime({ iso: at })}
             </span>,

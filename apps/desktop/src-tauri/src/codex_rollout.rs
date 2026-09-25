@@ -85,7 +85,90 @@ fn context_from_bytes(line: &[u8]) -> Option<CodexRolloutContext> {
     context_from_line(std::str::from_utf8(line).ok()?)
 }
 
-fn last_context<R: Read + Seek>(mut reader: R) -> Option<CodexRolloutContext> {
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexRateLimitsReading {
+    pub observed_at: Option<String>,
+    pub rate_limits: serde_json::Value,
+}
+
+fn rate_limits_from_line(line: &str) -> Option<CodexRateLimitsReading> {
+    if !line.contains("\"rate_limits\"") {
+        return None;
+    }
+    let value: serde_json::Value = serde_json::from_str(line).ok()?;
+    let rate_limits = value.get("payload")?.get("rate_limits")?;
+    if !rate_limits.is_object() {
+        return None;
+    }
+    Some(CodexRateLimitsReading {
+        observed_at: value
+            .get("timestamp")
+            .and_then(|v| v.as_str())
+            .map(String::from),
+        rate_limits: rate_limits.clone(),
+    })
+}
+
+fn rate_limits_from_bytes(line: &[u8]) -> Option<CodexRateLimitsReading> {
+    rate_limits_from_line(std::str::from_utf8(line).ok()?)
+}
+
+fn last_context<R: Read + Seek>(reader: R) -> Option<CodexRolloutContext> {
+    last_match(reader, context_from_bytes)
+}
+
+fn last_rate_limits<R: Read + Seek>(reader: R) -> Option<CodexRateLimitsReading> {
+    last_match(reader, rate_limits_from_bytes)
+}
+
+fn is_rollout_file(path: &Path) -> bool {
+    path.is_file()
+        && path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with("rollout-") && name.ends_with(".jsonl"))
+}
+
+fn collect_newest_rollouts(dir: &Path, limit: usize, found: &mut Vec<PathBuf>) {
+    for child in sorted_children_desc(dir) {
+        if found.len() >= limit {
+            return;
+        }
+        if child.is_dir() {
+            collect_newest_rollouts(&child, limit, found);
+            continue;
+        }
+        if is_rollout_file(&child) {
+            found.push(child);
+        }
+    }
+}
+
+fn newest_rollouts(sessions_dir: &Path, limit: usize) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+    collect_newest_rollouts(sessions_dir, limit, &mut found);
+    found
+}
+
+const LATEST_ROLLOUTS_SCANNED: usize = 5;
+
+fn latest_rate_limits(sessions_dir: &Path) -> Option<CodexRateLimitsReading> {
+    newest_rollouts(sessions_dir, LATEST_ROLLOUTS_SCANNED)
+        .into_iter()
+        .filter_map(|path| last_rate_limits(File::open(path).ok()?))
+        .max_by(|left, right| left.observed_at.cmp(&right.observed_at))
+}
+
+#[tauri::command]
+pub async fn codex_rate_limits_latest() -> Option<CodexRateLimitsReading> {
+    tauri::async_runtime::spawn_blocking(|| latest_rate_limits(&codex_home()?.join("sessions")))
+        .await
+        .ok()
+        .flatten()
+}
+
+fn last_match<R: Read + Seek, T>(mut reader: R, read_line: fn(&[u8]) -> Option<T>) -> Option<T> {
     let mut end = reader.seek(SeekFrom::End(0)).ok()?;
     let mut carry: Vec<u8> = Vec::new();
     while end > 0 {
@@ -100,8 +183,8 @@ fn last_context<R: Read + Seek>(mut reader: R) -> Option<CodexRolloutContext> {
         } else {
             Vec::new()
         };
-        if let Some(context) = lines.iter().rev().find_map(|line| context_from_bytes(line)) {
-            return Some(context);
+        if let Some(found) = lines.iter().rev().find_map(|line| read_line(line)) {
+            return Some(found);
         }
         carry = head;
         end = start;
@@ -186,6 +269,59 @@ mod tests {
         assert_eq!(find_rollout(&root, "thread-abc"), Some(wanted));
         assert_eq!(find_rollout(&root, "thread-missing"), None);
         std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    const TOKEN_COUNT_WITH_LIMITS: &str = r#"{"timestamp":"2026-09-25T10:59:20.919Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":21578,"output_tokens":222,"total_tokens":21800},"model_context_window":258400},"rate_limits":{"limit_id":"codex","primary":{"used_percent":0.0,"window_minutes":300,"resets_at":1790351955},"secondary":{"used_percent":100.0,"window_minutes":10080,"resets_at":1790458728},"plan_type":"plus","rate_limit_reached_type":null}}}"#;
+    const TOKEN_COUNT_OLDER_LIMITS: &str = r#"{"timestamp":"2026-09-24T08:00:00.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"limit_id":"codex","primary":{"used_percent":40.0,"window_minutes":300,"resets_at":1790200000},"plan_type":"plus"}}}"#;
+
+    #[test]
+    fn reads_the_last_rate_limits_of_a_rollout() {
+        let rollout = [TOKEN_COUNT_WITH_LIMITS, TOKEN_COUNT_EMPTY].join("\n");
+        let reading = last_rate_limits(Cursor::new(rollout)).unwrap();
+        assert_eq!(
+            reading.observed_at.as_deref(),
+            Some("2026-09-25T10:59:20.919Z")
+        );
+        assert_eq!(
+            reading.rate_limits["secondary"]["used_percent"].as_f64(),
+            Some(100.0)
+        );
+        assert_eq!(
+            last_rate_limits(Cursor::new(TOKEN_COUNT_LATE.to_string())),
+            None
+        );
+    }
+
+    #[test]
+    fn picks_the_newest_rate_limits_across_the_latest_rollouts() {
+        let root = std::env::temp_dir().join(format!("gb-rate-limits-{}", std::process::id()));
+        let older_day = root.join("2026").join("09").join("24");
+        let newer_day = root.join("2026").join("09").join("25");
+        std::fs::create_dir_all(&older_day).unwrap();
+        std::fs::create_dir_all(&newer_day).unwrap();
+        std::fs::write(
+            older_day.join("rollout-2026-09-24T08-00-00-thread-old.jsonl"),
+            TOKEN_COUNT_OLDER_LIMITS,
+        )
+        .unwrap();
+        std::fs::write(
+            newer_day.join("rollout-2026-09-25T10-00-00-thread-new.jsonl"),
+            TOKEN_COUNT_WITH_LIMITS,
+        )
+        .unwrap();
+        std::fs::write(
+            newer_day.join("rollout-2026-09-25T11-00-00-thread-empty.jsonl"),
+            TOKEN_COUNT_LATE,
+        )
+        .unwrap();
+
+        assert_eq!(newest_rollouts(&root, 2).len(), 2);
+        assert_eq!(
+            latest_rate_limits(&root).and_then(|reading| reading.observed_at),
+            Some("2026-09-25T10:59:20.919Z".to_string())
+        );
+        std::fs::remove_dir_all(&root).unwrap();
+        assert_eq!(latest_rate_limits(&root), None);
     }
 
     #[test]

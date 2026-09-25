@@ -14,6 +14,7 @@ describe('taskModelAgentSpawnConfig', () => {
       },
       workspaceDefaultProviderId: 'codex',
       sessionDefaultProviderId: 'anthropic',
+      limitContext: null,
     });
 
     expect(config).toMatchObject({
@@ -21,5 +22,22 @@ describe('taskModelAgentSpawnConfig', () => {
       model: 'gpt-5.6-luna',
       effort: 'xhigh',
     });
+  });
+
+  it('drafts a pr on the next provider when Auto meets an exhausted default', () => {
+    const base = {
+      task: 'pr_draft' as const,
+      preferences: null,
+      workspaceDefaultProviderId: 'anthropic' as const,
+      sessionDefaultProviderId: 'anthropic' as const,
+    };
+
+    expect(taskModelAgentSpawnConfig({ ...base, limitContext: null }).provider).toBe('anthropic');
+    expect(
+      taskModelAgentSpawnConfig({
+        ...base,
+        limitContext: { connected: ['anthropic', 'codex'], atLimit: ['anthropic'] },
+      }).provider,
+    ).toBe('codex');
   });
 });

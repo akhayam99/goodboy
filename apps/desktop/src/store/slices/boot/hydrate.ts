@@ -19,6 +19,7 @@ import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVer
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegrationSecrets';
 import { drainAuditRetryQueue } from './auditRetryQueue';
+import { scheduleStorageCheck } from '../storage/scheduleStorageCheck';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from '../../types';
 
@@ -57,6 +58,10 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await get().hydrateCliRequirements();
         void get()
           .loadNotifications()
+          .catch(() => {});
+        void get()
+          .loadProviderLimits()
+          .then(() => get().refreshCodexLimits())
           .catch(() => {});
         recordBootBreadcrumb({
           phase: 'migrating',
@@ -229,6 +234,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         void get()
           .reconcileOrphanWorktrees()
           .catch(() => {});
+        scheduleStorageCheck({ get });
 
         void get().refreshGithubStatus();
       } catch (err) {

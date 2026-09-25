@@ -101,6 +101,16 @@ describe('delegateRowState', () => {
     ).toBe('retry');
   });
 
+  it('stops showing a delegate as running once you stopped it', () => {
+    expect(
+      delegateRowState({
+        asker: null,
+        delegate: delegate({ id: 'd1', status: 'stopped', stoppedBy: 'you' }),
+        isChosen: false,
+      }),
+    ).toBe('available');
+  });
+
   it('blocks a second layer: a delegated agent cannot delegate again', () => {
     const asker = delegate({ id: 'parent-delegate', status: 'running' });
     expect(canDelegateQuestion({ asker })).toBe(false);

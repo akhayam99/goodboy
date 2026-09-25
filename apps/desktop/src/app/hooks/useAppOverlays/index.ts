@@ -46,7 +46,7 @@ export const useAppOverlays = ({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [palettePrefix, setPalettePrefix] = useState('');
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
-  const { commitDiff, commitDiffLoader, closeCommitDiff } = useCommitDiff();
+  useCommitDiff();
 
   const open = useCallback(({ overlay: next }: OpenParams) => setOverlay(next), []);
   const close = useCallback(() => setOverlay(null), []);
@@ -180,17 +180,18 @@ export const useAppOverlays = ({
     paletteOpen,
     palettePrefix,
     convertWorkspaceOpen,
-    commitDiff,
-    commitDiffLoader,
     closePalette,
     offerWorkspaceRepo,
     closeConvertWorkspace,
-    closeCommitDiff,
     closeDeleteConfirm,
   });
 
   return {
     footer: footerTarget({ overlay, connected }),
+    settingsProviderId:
+      overlay?.kind === 'settings' && overlay.focus.scope === 'providers'
+        ? (overlay.focus.provider ?? null)
+        : null,
     armDeleteConfirm,
     openAddWorkspace,
     openChangelog,

@@ -3,12 +3,14 @@ import {
   PROVIDER_CAPABILITIES,
   modelIdForSelection,
   resolveStoredModelSelection,
-  resolveTaskModel,
   clampEffortForModel,
 } from '@goodboy/core';
+import { resolveLimitedTaskModel } from '../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { EffortLevel, ProviderId, SessionId, WorkflowRun } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { AUTO_RECOMMENDATION_COPY } from '../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
+import { autoLimitReason } from '../../../../../shared/components/RoutingPicker/autoLimitReason';
+import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
 import { useAppStore } from '../../../../../store/store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { isRoutingModelKnown } from '../../../../../store/slices/workflows/orchestrateNextStep';
@@ -60,7 +62,9 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const defaultProvider = (session?.providerOverride ??
     session?.providerPreference.defaultProvider ??
     'anthropic') as ProviderId;
-  const automatic = resolveTaskModel({
+  const limitContext = useAutoLimitContext();
+  const automatic = resolveLimitedTaskModel({
+    limitContext,
     task: 'workflow_orchestrator',
     preferences: taskModels,
     workspaceDefaultProviderId,
@@ -77,7 +81,8 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
   const routingFor = ({ provider }: ProviderRoutingParams) =>
     provider === automatic.providerId
       ? automatic
-      : resolveTaskModel({
+      : resolveLimitedTaskModel({
+          limitContext: null,
           task: 'workflow_orchestrator',
           preferences: null,
           workspaceDefaultProviderId: provider,
@@ -143,6 +148,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           provider: automatic.providerId,
           model: automatic.model,
           ...AUTO_RECOMMENDATION_COPY,
+          reason: autoLimitReason({
+            defaultProvider: workspaceDefaultProviderId ?? defaultProvider,
+            pickedProvider: automatic.providerId,
+            atLimit: limitContext?.atLimit ?? [],
+          }),
         }}
         recommendationKind="auto"
         disabled={disabled}

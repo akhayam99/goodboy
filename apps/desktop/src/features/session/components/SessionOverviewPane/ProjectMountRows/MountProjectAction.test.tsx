@@ -115,4 +115,25 @@ describe('MountProjectAction', () => {
 
     expect(screen.getByRole('button', { name: 'Add API' })).toBeDefined();
   });
+
+  it('puts starred projects at the top of the picker', () => {
+    store.projects = [
+      project({ id: 'relay', name: 'notify-relay' }),
+      { ...project({ id: 'ledger', name: 'ledger-core' }), starredAt: '2026-09-25T09:00:00.000Z' },
+    ];
+    render(
+      <MountProjectAction
+        sessionId={SESSION_ID}
+        workspaceId={WORKSPACE_ID}
+        presentation="button"
+      />,
+    );
+    openPicker();
+
+    expect(
+      screen
+        .getAllByRole('button', { name: /^Add (ledger-core|notify-relay)$/ })
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Add ledger-core', 'Add notify-relay']);
+  });
 });

@@ -66,25 +66,9 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'control',
   },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/FileDiffCard.tsx': {
-    count: 1,
+  'apps/desktop/src/features/diff/lib/lineTone.ts': {
+    count: 2,
     reason: 'diff',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/DiffPairCells.tsx': {
-    count: 1,
-    reason: 'diff',
-  },
-  'apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewPairCells.tsx': {
-    count: 1,
-    reason: 'diff',
-  },
-  'apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewFileDiff.tsx': {
-    count: 1,
-    reason: 'diff',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewerDialog/comments/CommentItem.tsx': {
-    count: 1,
-    reason: 'debt',
   },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineStreamRow.tsx':
     {

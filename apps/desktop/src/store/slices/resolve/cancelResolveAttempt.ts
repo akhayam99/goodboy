@@ -1,9 +1,5 @@
-import {
-  listResolveAttempts,
-  listResolveThreads,
-  setResolveAttemptPhase,
-  upsertResolveThread,
-} from '@goodboy/db';
+import { listResolveAttempts, listResolveThreads, setResolveAttemptPhase } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { ResolveThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelWorktreeWriter } from '../../../features/worktree/worktree';
@@ -45,7 +41,7 @@ export const cancelResolveAttempt = async ({
     if (row.activeAttemptId !== attemptId || row.state === 'closed') {
       continue;
     }
-    await upsertResolveThread({
+    await saveResolveThread({
       db,
       row: { ...row, ...restored({ row }), activeAttemptId: null, updatedAt: Date.now() },
       expectedRevision: row.revision,

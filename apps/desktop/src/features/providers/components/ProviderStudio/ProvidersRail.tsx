@@ -1,4 +1,5 @@
-import { outdatedCliModels } from '@goodboy/core';
+import { limitsChipOf, outdatedCliModels } from '@goodboy/core';
+import { limitsRailStatus } from '../../limits/limitsRailStatus';
 import { cn, PANE_RHYTHM, SelectableRow, StatusRailItem, type Tone } from '@goodboy/ui';
 import { type ProviderConnectionState, type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
@@ -25,6 +26,8 @@ const STATUS_TONE: Record<ProviderConnectionState, Tone> = {
 
 export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults }: Props) => {
   const learned = useAppStore((state) => state.cliRequirements);
+  const providerLimits = useAppStore((state) => state.providerLimits);
+  const nowMs = Date.now();
   return (
     <ul
       aria-label="Providers & models settings"
@@ -53,18 +56,30 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
         const isOutdated =
           p.connection !== 'missing' &&
           outdatedCliModels({ provider: id, installedVersion: p.version, learned }).length > 0;
-        const subtitle = isOutdated
-          ? 'update needed'
-          : p.connection === 'connected'
+        const limitStatus =
+          p.connection === 'connected'
+            ? limitsRailStatus({
+                chip: limitsChipOf({ providerId: id, limits: providerLimits[id], nowMs }),
+                nowMs,
+              })
+            : null;
+        const connectionSubtitle =
+          p.connection === 'connected'
             ? (p.identity ?? PROVIDER_CONNECTION_LABEL.connected)
             : PROVIDER_CONNECTION_LABEL[p.connection];
+        const subtitle = isOutdated
+          ? 'update needed'
+          : (limitStatus?.subtitle ?? connectionSubtitle);
+        const tone: Tone = isOutdated
+          ? 'warning'
+          : (limitStatus?.tone ?? STATUS_TONE[p.connection]);
         return (
           <li key={id}>
             <StatusRailItem
               icon={<Icon size={ICON_SIZE.control} style={{ color: brandColor(id) }} />}
               label={p.label}
               subtitle={subtitle}
-              tone={isOutdated ? 'warning' : STATUS_TONE[p.connection]}
+              tone={tone}
               selected={id === focusedId}
               onClick={() => onSelect(id)}
             />

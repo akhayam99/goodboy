@@ -71,6 +71,15 @@ The new-workspace form offers **Single project**, **Multi project** and
 different kinds of workspace, and a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).
 
+You can **star** the projects you work on most and give each project a
+one-line **description**. Both live on the project row in workspace settings.
+
+- Every agent's project list puts starred projects first, marks them, shows each
+  description next to the name, and says to look in starred projects first when
+  a request names no project. The planner and the orchestrator get the same list
+- Project pickers and the Activity project filter put starred projects on top
+- A star never changes what an agent may mount or write
+
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
@@ -141,6 +150,14 @@ screen calls it **Close worktree**, and a closed row offers **Reopen**.
 delete a mount that has uncommitted work, a lock, or a process still using the
 folder. It keeps track of it and tries again at the next cleanup.
 
+**Storage** (Settings > App > Storage) shows every worktree folder Goodboy made
+in three groups. **In use** belongs to a session that is still open and is never
+touched from there. **To review** belongs to an archived or deleted session, or
+to no session at all. **Kept** is what you chose to keep, for good or for 30
+days. A clean folder idle longer than "Suggest cleanup after" (30 days by
+default) can go in one bulk step. Its branch stays, even with commits that were
+never pushed.
+
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
 
@@ -206,6 +223,17 @@ An agent finishes on its own. Once its last turn succeeded, it has no open
 question of its own, no turn is starting or running and no child still works,
 it moves to the finished agents without a click. Sending it a new message
 opens it again. There is no "mark done".
+
+Writing to an agent while its turn runs offers two choices, the same two the
+orchestrator hints use. **Queue** (Enter) waits for the turn to end. **Send
+now** (⌘Enter) stops the turn, keeps what it wrote, and continues with your
+message. Queued messages sit above the composer, reading **Waits for this
+turn** or **Sending now**, and each one can be edited, removed or sent now.
+They are saved in the database (`agent_queued_messages`), so they survive a
+restart, and they go out one per turn in order. An agent you stopped keeps its
+queue until you continue it or send one now. Once sent, a message leaves the
+queue and its bubble in the chat says "Queued · sent after the turn" or "Sent
+now · interrupted the turn".
 
 **Close** is only for an agent outside a workflow that is stuck on a failed
 turn or on its own question. It means "stop waiting on this agent": the agent
@@ -303,7 +331,10 @@ Planner agents write plans. Other agents use them, and Goodboy remembers who
 used which plan. The Artifacts page lists plans, reports and wireframes as one
 list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
-for its details and for a chat with the agent that wrote it.
+for its details and for a chat with the agent that wrote it. **Open in
+window**, under `⋯`, shows the same document as a light page in its own
+window, with Print and Copy; **Print** opens that page straight in the print
+dialog, where the system saves the PDF.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its
@@ -311,12 +342,24 @@ checks, the files it touches and its model (`Auto` when the planner proposed
 none). Once the plan runs, each part takes the state of the subagent that
 carries it, matched by order under the agent that ran the plan.
 
+A plan follows one shape: a title, then Goal, Context, Approach, Risks, Done
+when and Out of scope. The planner writes each part with its own checks
+(`doneWhen`, at most 4) and the files it touches (`touches`, at most 12), and
+the subagent that carries a part receives both in its kickoff, so it knows
+when the part is done.
+
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
 colour) and the screens as a grid under it. A node or a tile opens
 **Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a JSON file, the JSON on the
-clipboard, or only the open screen.
+zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
+the clipboard, or only the open screen. **Export as a folder** writes, into a
+folder you pick, `index.html` with the flow and the screens, one page per
+screen under `screens/` linked by plain links, one `wireframe.css`, the
+validated `wireframe.json`, its `wireframe.schema.json` (built from the code
+constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
+rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
+style. Goodboy never reads that folder back.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
@@ -357,6 +400,14 @@ Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
 reads every page of threads GitHub returns. If the read fails, Conversations
 shows the error from `gh` instead of an empty list.
+
+Conversations is a work tree: every open comment is a row grouped under its
+file, and the agent that worked on it is a child row with its model, its time
+and the one sha that lands on the branch (`Fixed in 4f21c8b`). Each comment
+shows one of eight states (New, Working, Needs you, Ready to review,
+Approved, Resolved, Failed, Later) and at most one action. Selecting comments
+opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
+`Resolve N`; the publish bar says `Close N on GitHub`.
 
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
@@ -404,10 +455,10 @@ Settings can be set at four levels. The level closest to the work wins:
   wins. A project override sets the branch prefix for that project's mounts.
   The settings screens edit the workspace row and read that row back, since
   it is what they change.
-- **Workflows, the step library and skills** belong to the workspace. A step
-  library entry with no workspace is a built-in starter step for everyone.
-  Editing one saves a single copy in the workspace: later edits in the same
-  editor update that copy, and a blur with no change saves nothing.
+- **Workflows, saved steps and skills** belong to the workspace. Built-in
+  steps live in code and are the same everywhere. They are read only: **Save a
+  copy** puts one copy in the workspace, and that copy remembers what it is
+  based on.
 - **Project scripts** belong to the project, because only the project knows
   its root folder.
 - **Integration bindings** use the project's own connection first, then the
@@ -425,17 +476,26 @@ specific rule that fits wins.
 
 ## Workspace profile
 
-Each workspace can have one profile. It is a short bio you write in your own
-words, under the prompt "What agents should know about this workspace and you".
+Each workspace can have one profile, edited under "About you" on the workspace
+page and in onboarding. It has four fields:
 
-- The bio goes word for word into every agent's prompt, as what you say about
-  yourself
-- An empty bio adds nothing
-- When you save it, Goodboy also writes a plain copy to
-  `~/.goodboy/workspaces/<slug>/PROFILE.md`
+- **Your roles**: chips from a library of about 30 roles, or your own
+- **About your work**: what you do and for whom
+- **How agents should work with you**: your working rules
+- **Explain more when it touches**: topics where you want longer explanations
 
-The database holds the real copy. Goodboy writes the file but never reads it
-back.
+Each agent reads only the fields its job needs. The matrix is
+`PROFILE_ACCESS` in `packages/core/src/profile/profileAccess.ts`, and the form
+shows it under "See who reads what".
+
+- Planner, orchestrator and the question delegate read roles, work and rules
+- Scout, investigator, report and wireframe read roles, work and topics
+- Implementer, tester and docs read roles and rules
+- Reviewer and resolver read roles, rules and topics
+- A custom role reads every field
+- Task models read nothing, and the profile never goes into text Goodboy posts
+
+Empty fields add nothing. The profile lives only in the database.
 
 ## Integrations
 
@@ -672,6 +732,7 @@ An agent materializes a project through the query bridge like this:
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
 - `packages/core/src/skills/registry.ts`: finds skills
-- `apps/desktop/src-tauri/src/profile_file.rs`: writes `PROFILE.md`
+- `packages/core/src/profile/profileAccess.ts`: which profile fields each
+  role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb
 - `packages/db/src/queries/resolve-thread.ts`: review conversations

@@ -67,6 +67,24 @@ on macOS and Linux.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
+### Document windows
+
+- **A document window loads only a route of the bundle.** `Open in window` and
+  `Print` open the same hash route (`#print=artifact&session=…&artifact=…`),
+  rendered by `ArtifactReaderView` with `ArtifactDocument`. `mode=read` shows
+  the document with a Print and Copy toolbar; without it the window opens the
+  print dialog once. Reader windows are labelled `win-reader-*` and print
+  windows `win-print-*`.
+- **Every `win-*` window gets the full IPC grant** of
+  `apps/desktop/src-tauri/capabilities/default.json`. So no `win-*` window may
+  ever load remote content or a file from disk. A future window that shows
+  remote pages needs its own label outside `win-*`, no capability, and its
+  own CSP.
+- **The document carries no runtime style.** No `<style>` element and no
+  `style` string built at runtime: Tauri adds a nonce to the CSP and the
+  webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
+  keyed on `data-medium` (`window` for the reader, `paper` for print).
+
 ### Git status reads
 
 - **A git read fails closed.** Distances and the working tree are `known` or
@@ -135,14 +153,17 @@ Everything the app saves for itself lives in `~/.goodboy`.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
-- `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.
 
 When a session works on a repository, it gets its own git worktree in the
 repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
-can have several worktrees of the same project.
+can have several worktrees of the same project. The `worktree_roots` table
+remembers every repository that ever held one, even after its project or
+workspace is gone, and the storage scan only ever looks inside
+`<repo>/.goodboy/worktrees/` of those roots. Sizes count allocated blocks,
+the way Finder's "size on disk" does.
 
 Two things live next to your code instead of in `~/.goodboy`. A folder
 project keeps its session folders in `<project-root>/sessions/`. Skills live

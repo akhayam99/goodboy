@@ -1,4 +1,6 @@
-import { listResolveThreads, upsertResolveThread } from '@goodboy/db';
+import { listResolveThreads } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
+import { withNextStage } from './withNextStage';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveThread } from './createResolveThread';
 import { projectResolveRows } from './projectResolveRows';
@@ -28,10 +30,11 @@ export const updateResolveThread = async ({
   if (revision !== undefined && previous?.revision !== revision) {
     return false;
   }
-  const saved = await upsertResolveThread({
+  const saved = await saveResolveThread({
     db,
     row,
     expectedRevision: previous?.revision ?? null,
+    previous: previous ?? null,
   });
   if (!saved) {
     return false;
@@ -42,7 +45,10 @@ export const updateResolveThread = async ({
     sessionId,
     rows: [
       ...rows.filter((item) => item.threadId !== threadId),
-      { ...row, revision: previous === undefined ? 0 : previous.revision + 1 },
+      {
+        ...withNextStage({ previous, row }),
+        revision: previous === undefined ? 0 : previous.revision + 1,
+      },
     ],
     attempts: get().sessionResolveAttempts[sessionId] ?? [],
   });

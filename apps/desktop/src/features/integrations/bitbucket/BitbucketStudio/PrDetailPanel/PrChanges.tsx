@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { EmptyState, ErrorStrip, FOCUS_RING, Skeleton, cn } from '@goodboy/ui';
+import { EmptyState, ErrorStrip, Skeleton } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { PrFileDiffDialog } from './PrFileDiffDialog';
+import { DiffView } from '../../../../diff/components/DiffView';
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
@@ -12,9 +11,6 @@ type Props = {
 };
 
 export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
-  const [openPath, setOpenPath] = useState<string | null>(null);
-  const openFile = files.find((file) => file.path === openPath) ?? null;
-
   if (isLoading) {
     return (
       <div role="status" aria-label="Loading the diff" className="flex flex-col gap-1.5">
@@ -41,31 +37,5 @@ export const PrChanges = ({ files, isLoading, error, onRetry }: Props) => {
     );
   }
 
-  return (
-    <>
-      <ul aria-label="Changed files" className="flex flex-col gap-px">
-        {files.map((file) => (
-          <li key={file.path}>
-            <button
-              type="button"
-              onClick={() => setOpenPath(file.path)}
-              className={cn(
-                'flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-2xs hover:bg-hover',
-                FOCUS_RING,
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate font-mono text-foreground">{file.path}</span>
-              <span className="shrink-0 font-mono tabular-nums text-success">
-                +{file.additions}
-              </span>
-              <span className="shrink-0 font-mono tabular-nums text-danger">−{file.deletions}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {openFile != null ? (
-        <PrFileDiffDialog file={openFile} onClose={() => setOpenPath(null)} />
-      ) : null}
-    </>
-  );
+  return <DiffView files={files} presentation="inline" />;
 };

@@ -141,7 +141,8 @@ describe('Linear issue requests', () => {
       id: 'comment-7',
       body: 'Looks good',
       createdAt: '2026-08-05T09:00:00Z',
-      user: { name: 'Ada' },
+      parent: null,
+      user: { name: 'Ada', avatarUrl: null },
     };
     mockInvoke.mockResolvedValueOnce(created);
 
@@ -149,14 +150,40 @@ describe('Linear issue requests', () => {
       workspaceId: WORKSPACE_ID,
       issueId: 'issue-42',
       body: 'Looks good',
+      parentId: null,
     });
 
     expect(mockInvoke).toHaveBeenCalledWith('linear_create_comment', {
       workspaceId: WORKSPACE_ID,
       issueId: 'issue-42',
       body: 'Looks good',
+      parentId: null,
     });
     expect(comment).toEqual(created);
+  });
+
+  it('sends the parent comment so a reply lands in its thread', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      id: 'comment-8',
+      body: 'Agreed',
+      createdAt: '2026-08-05T09:05:00Z',
+      parent: { id: 'comment-7' },
+      user: { name: 'Robin', avatarUrl: null },
+    });
+
+    await linearCreateComment({
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      body: 'Agreed',
+      parentId: 'comment-7',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('linear_create_comment', {
+      workspaceId: WORKSPACE_ID,
+      issueId: 'issue-42',
+      body: 'Agreed',
+      parentId: 'comment-7',
+    });
   });
 
   it('sends the new description to the update command and returns the saved body', async () => {

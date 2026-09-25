@@ -15,11 +15,13 @@ import {
   PROVIDER_CAPABILITIES,
   type PlannerOutput,
   clampEffortForModel,
+  isAgentStatusHalted,
   recommendedModelForRole,
   resolveRoleRouting,
-  resolveTaskModel,
   runsForWorkflowRun,
 } from '@goodboy/core';
+import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
+import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type {
   EffortLevel,
   ProviderId,
@@ -39,6 +41,7 @@ import {
 } from '../../../workflows/workflows';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
 import { buildProfileGuard } from '../../../../store/profileGuard';
+import { buildWorkspaceProjectsBlock } from '../../../../store/buildWorkspaceProjectsBlock';
 import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
@@ -46,6 +49,7 @@ import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workfl
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
 import {
   addStep as addDraftStep,
+  blankStepDraft,
   draftFromPlannerSteps,
   draftFromWorkflow,
   duplicateStep as duplicateDraftStep,
@@ -59,6 +63,9 @@ import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
 import { ROLE_LABEL, classifyStep } from '../../agent-kind';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
+import { useSaveAsStep } from '../../../workflows/hooks/useSaveAsStep';
+import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
+import { stepDraftFromSavedStep, type SavedStep } from '../../../workflows/savedSteps';
 import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { useToast } from '../../../../app/components/Toast';
@@ -270,26 +277,30 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     [providers],
   );
 
+  const limitContext = useAutoLimitContext();
+
   const resolvedPlanTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'plan_generation',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const resolvedProsePolishTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'prose_polish',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const plannerEffectiveProviderId: ProviderId =
@@ -298,7 +309,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const plannerRecommendedModel = useMemo(
     () =>
       plannerProviderOverride !== ''
-        ? resolveTaskModel({
+        ? resolveLimitedTaskModel({
+            limitContext: null,
             task: 'plan_generation',
             preferences: null,
             workspaceDefaultProviderId: plannerProviderOverride,
@@ -312,13 +324,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const resolvedOrchestratorTaskModel = useMemo(
     () =>
-      resolveTaskModel({
+      resolveLimitedTaskModel({
+        limitContext,
         task: 'workflow_orchestrator',
         preferences: workspaceOverrides?.taskModels,
         workspaceDefaultProviderId: workspaceOverrides?.defaultProviderId,
         sessionDefaultProviderId: providerId,
       }),
-    [workspaceOverrides, providerId],
+    [limitContext, workspaceOverrides, providerId],
   );
 
   const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
@@ -339,7 +352,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const recommendedOrchestratorModel = useMemo(
     () =>
       orchestratorProviderOverride !== ''
-        ? resolveTaskModel({
+        ? resolveLimitedTaskModel({
+            limitContext: null,
             task: 'workflow_orchestrator',
             preferences: null,
             workspaceDefaultProviderId: orchestratorProviderOverride,
@@ -387,7 +401,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         }
         const agents = runsForWorkflowRun(sessionPhaseRuns, r.id);
         const complete = isWorkflowRunComplete({ run: r, workflow: template, agents });
-        const failed = agents.some((a) => a.status === 'failed');
+        const failed = agents.some((a) => isAgentStatusHalted({ status: a.status }));
         return complete || failed ? [] : [{ run: r, template, ordinal: r.ordinal }];
       })
       .sort((a, b) => a.ordinal - b.ordinal);
@@ -547,13 +561,20 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps((previous) => reorderDraftSteps({ steps: previous, from, to }));
   };
 
-  const addStep = () => {
-    setSteps((previous) => addDraftStep({ steps: previous }));
+  const savedSteps = useSavedSteps({ workspaceId: session.workspaceId });
+  const addStep = (picked: SavedStep | null) => {
+    const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
+    setSteps((previous) => addDraftStep({ steps: previous, step }));
+    setExpandedKey(step.key);
   };
+  const { savingKey, saveAsStep } = useSaveAsStep({
+    workspaceId: session.workspaceId,
+    onLinked: (key, libraryStepId) => patchStep(key, { libraryStepId }),
+    onError: (message) => setError({ title: "Couldn't save the step", message }),
+  });
 
   const { drag, dropIndex, startStepDrag, ghost } = useWorkflowDrag({
     enabled: steps.length > 0,
-    onDropLibrary: () => {},
     onReorder: moveStepTo,
   });
   const isDraggingStep = drag !== null;
@@ -733,14 +754,21 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
           ...(sessionWorktree != null && { workingDir: sessionWorktree }),
         },
       });
+      const storeState = useAppStore.getState();
       const profileBlock = buildProfileGuard({
-        profile: useAppStore
-          .getState()
-          .workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+        profile: storeState.workspaces.find((candidate) => candidate.id === session.workspaceId)
+          ?.profile,
+        audience: 'planner',
       });
+      const projectsBlock = buildWorkspaceProjectsBlock({
+        projects: storeState.projects.filter(
+          (project) => project.workspaceId === session.workspaceId,
+        ),
+      });
+      const repoContext = [profileBlock, projectsBlock].filter((block) => block !== '').join('\n');
       const result = await client.plan({
         process,
-        ...(profileBlock.length > 0 && { repoContext: profileBlock }),
+        ...(repoContext.length > 0 && { repoContext }),
       });
       const planned = stepsFromPlan({ plan: result.output, roleModels });
       if (planned.length === 0) {
@@ -936,6 +964,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       dropIndex={dropIndex}
       disabled={blocked}
       banner={planning && steps.length > 0 ? <PlanDraftingBanner /> : null}
+      savedSteps={savedSteps}
       onAddStep={addStep}
       renderStep={({ step, index, span }) => {
         const effort = step.effort ?? roleEffort(step.role);
@@ -1001,6 +1030,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 onDuplicate={() =>
                   setSteps((previous) => duplicateDraftStep({ steps: previous, key: step.key }))
                 }
+                isSavingAsStep={savingKey === step.key}
+                onSaveAsStep={() => void saveAsStep(step)}
                 onRemove={() => removeStep(step.key)}
                 onDone={() => setExpandedKey(null)}
               />

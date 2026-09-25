@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { IsoDateTime, Workspace, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Workspace, WorkspaceId, WorkspaceProfile } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
 const { hookState, finishWizard, requestNewSession, storeActions, repoLib } = vi.hoisted(() => ({
@@ -122,13 +122,25 @@ vi.mock('./steps/ProjectsStep', () => ({
   ProjectsStep: () => <div data-testid="ProjectsStep" />,
 }));
 vi.mock('./steps/ProfileStep', () => ({
-  ProfileStep: ({ bio, onBioChange }: { bio: string; onBioChange: (bio: string) => void }) => (
+  ProfileStep: ({
+    profile,
+    onProfileChange,
+  }: {
+    profile: WorkspaceProfile;
+    onProfileChange: (profile: WorkspaceProfile) => void;
+  }) => (
     <div data-testid="ProfileStep">
       <input
-        aria-label="Profile bio"
-        value={bio}
-        onChange={(event) => onBioChange(event.target.value)}
+        aria-label="About your work"
+        value={profile.aboutWork ?? ''}
+        onChange={(event) => onProfileChange({ ...profile, aboutWork: event.target.value })}
       />
+      <button
+        type="button"
+        onClick={() => onProfileChange({ ...profile, roles: [...profile.roles, 'Tech Lead'] })}
+      >
+        Add Tech Lead
+      </button>
     </div>
   ),
 }));
@@ -469,7 +481,7 @@ describe('OnboardingWizard', () => {
   });
 
   describe('profile step', () => {
-    it('continues past an empty bio without spending a profile write', async () => {
+    it('continues past an empty profile without spending a profile write', async () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
@@ -483,20 +495,26 @@ describe('OnboardingWizard', () => {
       expect(storeActions.updateWorkspaceProfile).not.toHaveBeenCalled();
     });
 
-    it('persists the typed bio as the whole profile', async () => {
+    it('persists the typed fields as the whole profile', async () => {
       setHook(connectedWorkspaceState);
       render(<OnboardingWizard />);
       await reachProfileStep();
 
-      fireEvent.change(screen.getByLabelText('Profile bio'), {
+      fireEvent.change(screen.getByLabelText('About your work'), {
         target: { value: '  I lead design for the checkout team.  ' },
       });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Tech Lead' }));
       fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
       await waitFor(() => expect(screen.getByTestId('ReadyStep')).toBeDefined());
       expect(storeActions.updateWorkspaceProfile).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        profile: { bio: 'I lead design for the checkout team.' },
+        profile: {
+          roles: ['Tech Lead'],
+          aboutWork: 'I lead design for the checkout team.',
+          workingRules: null,
+          explainMore: [],
+        },
       });
     });
   });

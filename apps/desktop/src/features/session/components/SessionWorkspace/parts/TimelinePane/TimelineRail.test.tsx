@@ -200,3 +200,74 @@ describe('TimelineRail', () => {
     expect(screen.queryByTestId('timeline-lane-wash')).toBeNull();
   });
 });
+
+describe('TimelineRail row edges', () => {
+  const segmentOf = (overrides: Partial<RailSegment>): RailSegment => ({
+    column: 0,
+    laneId: null,
+    identityIndex: null,
+    isMuted: false,
+    dash: 'solid',
+    fromY: 0,
+    toY: 32,
+    ...overrides,
+  });
+
+  it('runs a solid line one pixel past both row edges so rows never leave a hairline', () => {
+    const { container } = render(
+      <TimelineRail width={32} rail={railOf({ segment: segmentOf({}) })} />,
+    );
+    const line = screen.getByTestId('timeline-rail-segment');
+
+    expect(line.getAttribute('y1')).toBe('-1');
+    expect(line.getAttribute('y2')).toBe('33');
+    expect(container.querySelector('svg')?.getAttribute('class')).toContain('overflow-visible');
+  });
+
+  it('runs the identity lane past the row edges the same way as the grey spine', () => {
+    render(
+      <TimelineRail
+        width={32}
+        rail={railOf({ segment: segmentOf({ column: 1, laneId: 'lane', identityIndex: 0 }) })}
+      />,
+    );
+    const line = screen.getByTestId('timeline-rail-segment');
+
+    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['-1', '33']);
+  });
+
+  it('stops exactly at the marker when the line ends inside the row', () => {
+    render(
+      <TimelineRail width={32} rail={railOf({ segment: segmentOf({ fromY: 16, toY: 32 }) })} />,
+    );
+    const line = screen.getByTestId('timeline-rail-segment');
+
+    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['16', '33']);
+  });
+
+  it('keeps a dashed line inside its row so the dash pattern never doubles', () => {
+    render(<TimelineRail width={32} rail={railOf({ segment: segmentOf({ dash: 'dashed' }) })} />);
+    const line = screen.getByTestId('timeline-rail-segment');
+
+    expect([line.getAttribute('y1'), line.getAttribute('y2')]).toEqual(['0', '32']);
+  });
+
+  it('carries an elbow from the row above across the top edge', () => {
+    render(
+      <TimelineRail
+        width={32}
+        rail={railOf({
+          segment: segmentOf({ fromY: 16, toY: 32 }),
+          joins: [{ ...MUTED_JOIN, isMuted: false }],
+        })}
+      />,
+    );
+    const bleed = screen.getByTestId('timeline-rail-join-bleed');
+
+    expect([bleed.getAttribute('x1'), bleed.getAttribute('y1'), bleed.getAttribute('y2')]).toEqual([
+      '24',
+      '-1',
+      '0',
+    ]);
+  });
+});

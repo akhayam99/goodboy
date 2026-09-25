@@ -56,6 +56,7 @@ export const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion 
       return { question: ask.question };
     case 'restartStep':
     case 'runStep':
+    case 'continue':
       return null;
     default: {
       const exhaustive: never = ask;

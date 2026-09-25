@@ -1,7 +1,8 @@
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import {
   formatWorkflowFromNL,
   orchestratorModelPool,
-  resolveTaskModel,
   type FormattedWorkflowStep,
   type OrchestratorModelOption,
   type WorkflowRoutingAvailabilitySnapshot,
@@ -32,7 +33,8 @@ const generationTaskModel = ({
   const connected = state.providers
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
-  return resolveTaskModel({
+  return resolveLimitedTaskModel({
+    limitContext: autoLimitContext({ state }),
     task: 'plan_generation',
     preferences: overrides?.taskModels,
     workspaceDefaultProviderId: overrides?.defaultProviderId,

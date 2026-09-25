@@ -1,4 +1,4 @@
-import type { ResolveThread, ResolveThreadState, SessionId } from '@goodboy/types';
+import type { ResolveStage, ResolveThread, ResolveThreadState, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
 
@@ -22,7 +22,13 @@ type StateParams = ListParams & {
   readonly threadId: string;
   readonly revision: number;
   readonly state: ResolveThreadState;
+  readonly stage: ResolveStage;
   readonly stateReason: string | null;
+};
+
+type StageParams = ListParams & {
+  readonly threadId: string;
+  readonly stage: ResolveStage;
 };
 
 export const listResolveThreads = async ({
@@ -30,7 +36,7 @@ export const listResolveThreads = async ({
   sessionId,
 }: ListParams): Promise<ReadonlyArray<ResolveThread>> => {
   const rows = await db.select<Row>(
-    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, state, state_reason AS stateReason, revision, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
+    `SELECT id, session_id AS sessionId, project_id AS projectId, pr_number AS prNumber, thread_id AS threadId, origin_kind AS originKind, state, stage, state_reason AS stateReason, revision, active_attempt_id AS activeAttemptId, disposition, reply_draft AS replyDraft, commit_shas_json AS commitShas, question, reply_posted_at AS replyPostedAt, reply_id AS replyId, github_resolved AS githubResolved, closed_at AS closedAt, closed_source AS closedSource, created_at AS createdAt, updated_at AS updatedAt FROM resolve_threads WHERE session_id = ? ORDER BY created_at, id`,
     [sessionId],
   );
   return rows.map((row) => ({
@@ -46,13 +52,14 @@ export const upsertResolveThread = async ({
   expectedRevision,
 }: UpsertParams): Promise<boolean> => {
   const result = await db.execute(
-    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, state, state_reason, revision, active_attempt_id, disposition, reply_draft, commit_shas_json, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, state, stage, state_reason, revision, active_attempt_id, disposition, reply_draft, commit_shas_json, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
        project_id = excluded.project_id,
        pr_number = excluded.pr_number,
        origin_kind = excluded.origin_kind,
        state = excluded.state,
+       stage = excluded.stage,
        state_reason = excluded.state_reason,
        active_attempt_id = excluded.active_attempt_id,
        disposition = excluded.disposition,
@@ -75,6 +82,7 @@ export const upsertResolveThread = async ({
       row.threadId,
       row.originKind,
       row.state,
+      row.stage,
       row.stateReason,
       row.revision,
       row.activeAttemptId,
@@ -102,14 +110,27 @@ export const setResolveThreadState = async ({
   threadId,
   revision,
   state,
+  stage,
   stateReason,
 }: StateParams): Promise<boolean> => {
   const result = await db.execute(
-    `UPDATE resolve_threads SET state = ?, state_reason = ?, revision = revision + 1, updated_at = ?
+    `UPDATE resolve_threads SET state = ?, stage = ?, state_reason = ?, revision = revision + 1, updated_at = ?
      WHERE session_id = ? AND thread_id = ? AND revision = ?`,
-    [state, stateReason, Date.now(), sessionId, threadId, revision],
+    [state, stage, stateReason, Date.now(), sessionId, threadId, revision],
   );
   return result.rowsAffected > 0;
+};
+
+export const setResolveThreadStage = async ({
+  db,
+  sessionId,
+  threadId,
+  stage,
+}: StageParams): Promise<void> => {
+  await db.execute(
+    'UPDATE resolve_threads SET stage = ?, updated_at = ? WHERE session_id = ? AND thread_id = ?',
+    [stage, Date.now(), sessionId, threadId],
+  );
 };
 
 export const setResolveThreadReplyDraft = async ({

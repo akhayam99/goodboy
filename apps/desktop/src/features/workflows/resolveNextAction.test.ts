@@ -121,9 +121,35 @@ describe('resolveNextAction', () => {
       kind: 'recover',
       subjectAgentId: 'a-1',
       step: { id: 's1' },
+      isBlocked: false,
       sentence: 'Implement stopped before finishing.',
       cause: 'Test and Review wait on this step.',
     });
+  });
+
+  it('offers the same recovery for a blocked step and says it never asked anything', () => {
+    const action = resolve({ agents: stepAgents('completed', 'blocked', 'pending', 'pending') });
+
+    expect(action).toMatchObject({
+      kind: 'recover',
+      subjectAgentId: 'a-1',
+      step: { id: 's1' },
+      isBlocked: true,
+      sentence:
+        'Implement stopped without finishing and without asking you anything. Tell it what to do next.',
+    });
+  });
+
+  it('never raises a recovery for a step you stopped yourself', () => {
+    expect(resolve({ agents: stepAgents('completed', 'stopped', 'pending') })).toEqual({
+      kind: 'none',
+    });
+    expect(
+      resolve({
+        agents: stepAgents('completed', 'stopped', 'pending'),
+        subjectAgentId: 'a-1' as AgentId,
+      }),
+    ).toEqual({ kind: 'none' });
   });
 
   it('counts the waiting steps past the first two', () => {

@@ -9,7 +9,7 @@ import { formatError } from '@goodboy/ui';
 import type { ResolvePublicationThread, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { postThreadReply } from '../github/postThreadReply';
-import { isDeliveryComplete } from './deriveResolveQueueStatus';
+import { isDeliveryComplete } from './deliveryReceipts';
 import { markThreadDone } from './markThreadDone';
 import type { ResolveStepPlan } from './resolveStepPlan';
 import { restoreResolvePublication } from './restoreResolvePublication';

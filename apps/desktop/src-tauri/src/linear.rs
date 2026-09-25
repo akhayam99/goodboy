@@ -240,6 +240,13 @@ query Issue($issueId: String!) {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LinearCommentUser {
     pub name: String,
+    #[serde(rename = "avatarUrl", default)]
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearCommentParent {
+    pub id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -249,18 +256,25 @@ pub struct LinearIssueComment {
     #[serde(rename = "createdAt")]
     pub created_at: String,
     pub user: Option<LinearCommentUser>,
+    #[serde(default)]
+    pub parent: Option<LinearCommentParent>,
 }
 
+const COMMENT_PAGE_SIZE: u32 = 100;
+const COMMENT_PAGE_LIMIT: usize = 20;
+
 const ISSUE_COMMENTS_QUERY: &str = r#"
-query IssueComments($issueId: String!) {
+query IssueComments($issueId: String!, $first: Int!, $after: String) {
   issue(id: $issueId) {
-    comments {
+    comments(first: $first, after: $after) {
       nodes {
         id
         body
         createdAt
-        user { name }
+        parent { id }
+        user { name avatarUrl }
       }
+      pageInfo { hasNextPage endCursor }
     }
   }
 }
@@ -274,19 +288,44 @@ mutation CommentCreate($input: CommentCreateInput!) {
       id
       body
       createdAt
-      user { name }
+      parent { id }
+      user { name avatarUrl }
     }
   }
 }
 "#;
 
-fn comment_create_variables(issue_id: &str, body: &str) -> serde_json::Value {
+fn issue_comments_variables(issue_id: &str, after: Option<&str>) -> serde_json::Value {
     serde_json::json!({
-        "input": {
-            "issueId": issue_id,
-            "body": body
-        }
+        "issueId": issue_id,
+        "first": COMMENT_PAGE_SIZE,
+        "after": after
     })
+}
+
+fn next_comment_cursor(page_info: &LinearPageInfo) -> Option<String> {
+    if !page_info.has_next_page {
+        return None;
+    }
+    page_info
+        .end_cursor
+        .clone()
+        .filter(|cursor| !cursor.is_empty())
+}
+
+fn comment_create_variables(
+    issue_id: &str,
+    body: &str,
+    parent_id: Option<&str>,
+) -> serde_json::Value {
+    let mut input = serde_json::json!({
+        "issueId": issue_id,
+        "body": body
+    });
+    if let Some(parent) = parent_id {
+        input["parentId"] = serde_json::json!(parent);
+    }
+    serde_json::json!({ "input": input })
 }
 
 const ISSUE_UPDATE_MUTATION: &str = r#"
@@ -375,17 +414,25 @@ pub async fn linear_fetch_issue_comments(
     cache: State<'_, LinearTokenCache>,
 ) -> Result<Vec<LinearIssueComment>, LinearError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
-    let resp: IssueCommentsResponse = graphql(
-        &token,
-        ISSUE_COMMENTS_QUERY,
-        Some(serde_json::json!({ "issueId": issue_id })),
-    )
-    .await?;
-    let mut comments = resp
-        .issue
-        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?
-        .comments
-        .nodes;
+    let mut comments: Vec<LinearIssueComment> = Vec::new();
+    let mut cursor: Option<String> = None;
+    for _ in 0..COMMENT_PAGE_LIMIT {
+        let resp: IssueCommentsResponse = graphql(
+            &token,
+            ISSUE_COMMENTS_QUERY,
+            Some(issue_comments_variables(&issue_id, cursor.as_deref())),
+        )
+        .await?;
+        let page = resp
+            .issue
+            .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?
+            .comments;
+        comments.extend(page.nodes);
+        cursor = next_comment_cursor(&page.page_info);
+        if cursor.is_none() {
+            break;
+        }
+    }
     comments.sort_by(|a, b| a.created_at.cmp(&b.created_at));
     Ok(comments)
 }
@@ -396,13 +443,18 @@ pub async fn linear_create_comment(
     project_id: Option<String>,
     issue_id: String,
     body: String,
+    parent_id: Option<String>,
     cache: State<'_, LinearTokenCache>,
 ) -> Result<LinearIssueComment, LinearError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
     let resp: CommentCreateResponse = graphql(
         &token,
         COMMENT_CREATE_MUTATION,
-        Some(comment_create_variables(&issue_id, &body)),
+        Some(comment_create_variables(
+            &issue_id,
+            &body,
+            parent_id.as_deref(),
+        )),
     )
     .await?;
     if !resp.comment_create.success {
@@ -468,8 +520,23 @@ struct IssueResponse {
 }
 
 #[derive(Deserialize)]
+struct LinearPageInfo {
+    #[serde(rename = "hasNextPage", default)]
+    has_next_page: bool,
+    #[serde(rename = "endCursor", default)]
+    end_cursor: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct CommentPage {
+    nodes: Vec<LinearIssueComment>,
+    #[serde(rename = "pageInfo")]
+    page_info: LinearPageInfo,
+}
+
+#[derive(Deserialize)]
 struct IssueComments {
-    comments: Nodes<LinearIssueComment>,
+    comments: CommentPage,
 }
 
 #[derive(Deserialize)]
@@ -512,12 +579,70 @@ mod tests {
 
     #[test]
     fn comment_create_variables_nest_the_issue_and_the_body_under_input() {
-        let variables = comment_create_variables("issue-42", "ship it");
+        let variables = comment_create_variables("issue-42", "ship it", None);
 
         assert_eq!(variables["input"]["issueId"], "issue-42");
         assert_eq!(variables["input"]["body"], "ship it");
         assert!(variables.get("issueId").is_none());
         assert!(variables.get("body").is_none());
+    }
+
+    #[test]
+    fn comment_create_variables_leave_out_the_parent_for_a_new_thread() {
+        let variables = comment_create_variables("issue-42", "ship it", None);
+
+        assert!(variables["input"].get("parentId").is_none());
+    }
+
+    #[test]
+    fn comment_create_variables_nest_the_parent_for_a_reply() {
+        let variables = comment_create_variables("issue-42", "ship it", Some("comment-7"));
+
+        assert_eq!(variables["input"]["parentId"], "comment-7");
+        assert_eq!(variables["input"]["body"], "ship it");
+    }
+
+    #[test]
+    fn comment_page_cursor_stops_on_the_last_page() {
+        let more = LinearPageInfo {
+            has_next_page: true,
+            end_cursor: Some("cursor-2".into()),
+        };
+        let last = LinearPageInfo {
+            has_next_page: false,
+            end_cursor: Some("cursor-3".into()),
+        };
+
+        assert_eq!(next_comment_cursor(&more), Some("cursor-2".to_string()));
+        assert_eq!(next_comment_cursor(&last), None);
+    }
+
+    #[test]
+    fn comment_parses_its_parent_and_the_author_avatar() {
+        let raw = r#"{
+            "id": "c2",
+            "body": "agreed",
+            "createdAt": "2026-09-20T10:00:00Z",
+            "parent": { "id": "c1" },
+            "user": { "name": "Robin Vale", "avatarUrl": "https://linear.example/robin.png" }
+        }"#;
+        let comment: LinearIssueComment = serde_json::from_str(raw).unwrap();
+
+        assert_eq!(
+            comment.parent.map(|parent| parent.id),
+            Some("c1".to_string())
+        );
+        assert_eq!(
+            comment.user.and_then(|user| user.avatar_url),
+            Some("https://linear.example/robin.png".to_string())
+        );
+    }
+
+    #[test]
+    fn issue_comments_query_pages_and_asks_for_the_parent() {
+        assert!(ISSUE_COMMENTS_QUERY.contains("comments(first: $first, after: $after)"));
+        assert!(ISSUE_COMMENTS_QUERY.contains("parent { id }"));
+        assert!(ISSUE_COMMENTS_QUERY.contains("pageInfo { hasNextPage endCursor }"));
     }
 
     #[test]

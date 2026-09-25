@@ -111,6 +111,40 @@ export type RetainedWorktreePath = Readonly<{
   updatedAt: IsoDateTime;
 }>;
 
+export type WorktreeLedgerEntry = Readonly<{
+  id: string;
+  workspaceId: WorkspaceId | null;
+  projectId: ProjectId | null;
+  sourceSessionId: SessionId | null;
+  sourceMountId: MountId | null;
+  repoRoot: string;
+  worktreePath: string;
+  branch: string;
+  reason: RetainedWorktreeReason;
+  lastCheckedAt: IsoDateTime | null;
+  firstSeenAt: IsoDateTime;
+  sizeBytes: number | null;
+  sizedAt: IsoDateTime | null;
+  keptAt: IsoDateTime | null;
+  keptUntil: IsoDateTime | null;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}>;
+
+export type WorktreeRootSource = 'project' | 'mount' | 'user';
+
+export type WorktreeRoot = Readonly<{
+  repoRoot: string;
+  firstSeenAt: IsoDateTime;
+  lastScannedAt: IsoDateTime | null;
+  addedBy: WorktreeRootSource;
+  projectId: ProjectId | null;
+  projectName: string | null;
+  workspaceId: WorkspaceId | null;
+  workspaceName: string | null;
+  isDisconnected: boolean;
+}>;
+
 export type SessionMountView = SessionMount &
   Readonly<{
     projectId: ProjectId;

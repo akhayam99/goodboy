@@ -368,14 +368,6 @@ export const gitlabResolveMrDiscussion = async ({
   });
 };
 
-export type GitlabIssueNote = {
-  id: number;
-  body: string;
-  system: boolean;
-  author: GitlabMrAuthor | null;
-  createdAt: string;
-};
-
 type IssueTarget = {
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
@@ -384,19 +376,44 @@ type IssueTarget = {
   readonly issueIid: number;
 };
 
-export const gitlabListIssueNotes = async ({
+export const gitlabListIssueDiscussions = async ({
   workspaceId,
   projectId,
   host,
   projectPath,
   issueIid,
-}: IssueTarget): Promise<ReadonlyArray<GitlabIssueNote>> => {
-  return invoke<ReadonlyArray<GitlabIssueNote>>('gitlab_list_issue_notes', {
+}: IssueTarget): Promise<ReadonlyArray<GitlabMrDiscussion>> => {
+  return invoke<ReadonlyArray<GitlabMrDiscussion>>('gitlab_list_issue_discussions', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     host,
     projectPath,
     issueIid,
+  });
+};
+
+type IssueReplyParams = IssueTarget & {
+  readonly discussionId: string;
+  readonly body: string;
+};
+
+export const gitlabReplyToIssueDiscussion = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  issueIid,
+  discussionId,
+  body,
+}: IssueReplyParams): Promise<number> => {
+  return invoke<number>('gitlab_reply_to_issue_discussion', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    issueIid,
+    discussionId,
+    body,
   });
 };
 

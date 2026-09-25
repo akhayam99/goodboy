@@ -32,7 +32,6 @@ import {
   recommendedModelForRole,
   resolveRoleRouting,
   resolveStoredModelSelection,
-  resolveTaskModel,
   resolveWorkflowRouting,
   devWarn,
   isAgentStatusSettled,
@@ -65,6 +64,7 @@ import {
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { buildProfileGuard } from '../../profileGuard';
+import { buildWorkspaceProjectsBlock } from '../../buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';
@@ -77,6 +77,8 @@ import { findWorkflowActivationBlock } from './workflowActivationGate';
 import { waitForSessionSummarizer } from './summarizerGate';
 import { WORKFLOW_BLOCK_COPY } from '../../../features/workflows/blockCopy';
 import type { GetFn, SetFn } from './types';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -616,7 +618,8 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         session.providerPreference.defaultProvider) as ProviderId;
       const workspaceRoleModels =
         selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
-      const taskModel = resolveTaskModel({
+      const taskModel = resolveLimitedTaskModel({
+        limitContext: autoLimitContext({ state: get() }),
         task: 'workflow_orchestrator',
         preferences: selectResolvedSettings({ state: get(), sessionId })?.taskModels,
         workspaceDefaultProviderId: selectResolvedSettings({ state: get(), sessionId })
@@ -631,6 +634,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const profileBlock = buildProfileGuard({
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
+        audience: 'orchestrator',
+      });
+      const projectsBlock = buildWorkspaceProjectsBlock({
+        projects: get().projects.filter((project) => project.workspaceId === session.workspaceId),
       });
       const readHints = run.orchestratorHints ?? [];
       const readHintIds = new Set(readHints.map((hint) => hint.id));
@@ -643,7 +650,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const isDecisionDiscarded = (): boolean =>
         hasOperatorStop({ get, sessionId, workflowRunId }) ||
         decisionRestartMark({ get, workflowRunId }) !== restartMark;
-      const hints = [profileBlock, formatOrchestratorHints({ hints: readHints })]
+      const hints = [profileBlock, projectsBlock, formatOrchestratorHints({ hints: readHints })]
         .map((entry) => entry?.trim() ?? '')
         .filter((entry) => entry !== '')
         .join('\n');

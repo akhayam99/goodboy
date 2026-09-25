@@ -8,6 +8,7 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
+import { isRowStoppedByUser } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
@@ -63,7 +64,8 @@ export const TimelineStreamRow = ({
     hasUnread: item.hasUnread,
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
-  const isWaiting = item.rowState.phase === 'waiting';
+  const isWaiting =
+    item.rowState.phase === 'waiting' && !isRowStoppedByUser({ state: item.rowState });
   const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (runLane === null) {

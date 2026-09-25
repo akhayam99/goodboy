@@ -1,5 +1,7 @@
-import { resolveTaskModel, clampEffortForModel } from '@goodboy/core';
+import { clampEffortForModel } from '@goodboy/core';
 import type { AuxTaskId, ProviderId, TaskModelPreferences } from '@goodboy/types';
+import type { AutoLimitContext } from '../../../../store/slices/providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import { kindRouting } from '../../agent-kind';
 import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
 
@@ -8,6 +10,7 @@ type Params = {
   readonly preferences: TaskModelPreferences | null | undefined;
   readonly workspaceDefaultProviderId: ProviderId | null | undefined;
   readonly sessionDefaultProviderId: ProviderId;
+  readonly limitContext: AutoLimitContext | null;
 };
 
 export const taskModelAgentSpawnConfig = ({
@@ -15,8 +18,10 @@ export const taskModelAgentSpawnConfig = ({
   preferences,
   workspaceDefaultProviderId,
   sessionDefaultProviderId,
+  limitContext,
 }: Params): AgentSpawnConfigValue => {
-  const taskModel = resolveTaskModel({
+  const taskModel = resolveLimitedTaskModel({
+    limitContext,
     task,
     preferences,
     workspaceDefaultProviderId,

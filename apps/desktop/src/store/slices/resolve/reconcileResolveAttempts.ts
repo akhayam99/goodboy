@@ -1,4 +1,5 @@
-import { listMessagesForAgent, setResolveAttemptPhase, upsertResolveThread } from '@goodboy/db';
+import { listMessagesForAgent, setResolveAttemptPhase } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { listLiveRunIds } from '../../../features/chat/turn';
 import {
@@ -42,7 +43,7 @@ const downgradeTargetless = async ({ attempts, rows }: DowngradeParams): Promise
       if (row.activeAttemptId !== attempt.id || row.state === 'closed') {
         continue;
       }
-      await upsertResolveThread({
+      await saveResolveThread({
         db: tauriDatabase,
         row: {
           ...row,
@@ -156,7 +157,7 @@ export const reconcileResolveAttempts = async ({
           : outcomePatch({ outcome, verdict: parsed.analysisVerdicts[row.threadId] });
       hasFailure = hasFailure || patch.state === 'failed';
       hasQuestion = hasQuestion || patch.state === 'needs_answer';
-      await upsertResolveThread({
+      await saveResolveThread({
         db: tauriDatabase,
         row: { ...row, ...patch, updatedAt: Date.now() },
         expectedRevision: row.revision,

@@ -70,7 +70,8 @@ export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
 
 export type DiffFocus =
   | { readonly kind: 'commit'; readonly sha: string; readonly path: string | null }
-  | { readonly kind: 'working'; readonly path: string | null };
+  | { readonly kind: 'working'; readonly path: string | null }
+  | { readonly kind: 'branch'; readonly path: string | null };
 
 export type FocusedExternalTask = {
   readonly provider: SessionExternalTaskProvider;

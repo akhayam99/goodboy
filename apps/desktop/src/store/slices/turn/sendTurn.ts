@@ -18,7 +18,11 @@ import {
   type ClaudeFlagSet,
   CLI_CREDENTIAL,
   PROVIDER_API_KEY_ENV,
+  composeHandoffBody,
   isApiProvider,
+  renderHandoff,
+  type HandoffBodyLayers,
+  type HandoffEarlierStep,
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import {
@@ -36,6 +40,7 @@ import type {
   AgentTurnSpan,
   AttachmentInput,
   EffortLevel,
+  HandoffDraft,
   IsoDateTime,
   Message,
   MessageAttachment,
@@ -51,6 +56,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
   TurnState,
+  UserTurnSentVia,
   Workflow,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -95,6 +101,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
+import { markTurnActive, markTurnSettled } from './turnSettled';
 import {
   claimWorkflowTurn,
   clearWorkflowTurns,
@@ -103,6 +110,7 @@ import {
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
+import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { clearMaterializationBatch } from '../../materializationGate';
@@ -126,6 +134,7 @@ import {
 import { applyHeuristicTitle } from './applyHeuristicTitle';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { resolveWorktreePath } from '../resolve/resolveWorktreePath';
+import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import {
   selectActiveMount,
@@ -161,6 +170,7 @@ import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMa
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { collectTouchedMounts } from './collectTouchedMounts';
 import { recordTurnSpan } from './recordTurnSpan';
+import { composeAgentHandoff } from './composeAgentHandoff';
 import { snapshotMountChanges } from './snapshotMountChanges';
 import { turnSpanEndReason } from './turnSpanEndReason';
 import { resolveTurnModelSelection } from './resolveTurnModelSelection';
@@ -180,6 +190,8 @@ type Input = {
   override?: TurnProviderOverride;
   force?: boolean;
   origin?: 'operator' | 'workflow' | 'mount-continuation';
+  handoff?: HandoffDraft;
+  sentVia?: UserTurnSentVia;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -221,6 +233,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       override,
       force,
       origin,
+      handoff,
+      sentVia,
       retry,
     }: Input,
     lease: TurnLease,
@@ -361,6 +375,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     let phaseWorkflowRunId: WorkflowRunId | null = null;
     let phasePromptCarryForward = '';
     let phaseTransitionEvent: Extract<TurnEvent, { kind: 'step_transition' }> | null = null;
+    let handoffEarlierSteps: ReadonlyArray<HandoffEarlierStep> = [];
     if (session.workflowRuns.length > 0) {
       const freshRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -416,6 +431,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
                   new Date(immediatePredecessor.startedAt).getTime()
                 : null;
             phasePromptCarryForward = carryForwardContext;
+            handoffEarlierSteps = completedPredecessors.map((agent) => ({
+              agentId: agent.id,
+              ordinal: agent.ordinal,
+              name: agent.name,
+              summary: agent.outputSummary ?? null,
+            }));
             phaseTransitionEvent = {
               kind: 'step_transition',
               runId: 'pending' as ProviderRunId,
@@ -683,6 +704,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const runId = crypto.randomUUID() as ProviderRunId;
     const isFirstTurn = (get().agentRunHistory[activeAgentId] ?? []).length === 0;
+    const isHandoffTurn = retry == null && isFirstTurn && activeAgent?.startedAt == null;
 
     set((state) => {
       const prev = state.agentRunHistory[activeAgentId] ?? [];
@@ -718,6 +740,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
         provider,
         model,
+        ...(isHandoffTurn && { handoffId: activeAgentId }),
+        ...(sentVia !== undefined && { sentVia }),
         at: userMessage.createdAt,
       });
     }
@@ -834,36 +858,34 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const earlyAgentKind = turnAgentKind;
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
-    if (contextPreamble.length > 0) {
-      resolvedPrompt = `${contextPreamble}\n\n${resolvedPrompt}`;
-    }
 
-    if (workflowRoutingFlags().isChildModelSelectionEnabled === true) {
-      const childRoutingBlock = composeChildRoutingPrompt({
-        role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
-        availability: workflowAvailabilitySnapshot({
-          providers: get().providers,
-          cooldowns: get().providerCooldowns,
-          alerts: get().budgetAlerts ?? [],
-          sessionId,
-          isRunBudgetBlocked: false,
-          nowMs: Date.now(),
-          providerPool: runProviderPool({
-            sessions: get().sessions,
-            sessionId,
-            workflowRunId: agentRowEarly?.workflowRunId,
-          }),
-        }),
-      });
-      if (childRoutingBlock.length > 0) {
-        resolvedPrompt = `${childRoutingBlock}\n\n${resolvedPrompt}`;
-      }
-    }
+    const childRoutingBlock =
+      workflowRoutingFlags().isChildModelSelectionEnabled === true
+        ? composeChildRoutingPrompt({
+            role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+            availability: workflowAvailabilitySnapshot({
+              providers: get().providers,
+              cooldowns: get().providerCooldowns,
+              alerts: get().budgetAlerts ?? [],
+              sessionId,
+              isRunBudgetBlocked: false,
+              nowMs: Date.now(),
+              providerPool: runProviderPool({
+                sessions: get().sessions,
+                sessionId,
+                workflowRunId: agentRowEarly?.workflowRunId,
+              }),
+            }),
+          })
+        : '';
 
     const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
-    if (isClusterChild && !resolvedPrompt.includes(clusterBoundaryMarker(activeAgentId))) {
-      resolvedPrompt = `${composeClusterBoundary(activeAgentId)}\n\n${resolvedPrompt}`;
-    }
+    const clusterBoundary = isClusterChild
+      ? {
+          marker: clusterBoundaryMarker(activeAgentId),
+          block: composeClusterBoundary(activeAgentId),
+        }
+      : null;
 
     const isKickoff =
       agentRowEarly?.providerSessionId === undefined &&
@@ -877,18 +899,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const goalAttachmentsBlock = buildGoalAttachmentsBlock(earlyAgentKind, goalAttachments, {
       isKickoff,
     });
-    if (goalAttachmentsBlock.length > 0) {
-      resolvedPrompt = `${goalAttachmentsBlock}\n\n${resolvedPrompt}`;
-    }
 
     const needsTextHistory = provider === 'cursor' || provider === 'codex' || provider === 'gemini';
-    if (needsTextHistory) {
-      const priorTranscripts = get().transcripts[activeAgentId] ?? [];
-      const priorTurns = buildPriorTurnsBlock(priorTranscripts, 8000);
-      if (priorTurns.length > 0) {
-        resolvedPrompt = `${priorTurns}\n\n${resolvedPrompt}`;
-      }
-    }
+    const priorTurns = needsTextHistory
+      ? buildPriorTurnsBlock(get().transcripts[activeAgentId] ?? [], 8000)
+      : '';
 
     const agentRowForVerbosity =
       (get().sessionPhaseRuns[sessionId] ?? []).find((r) => r.id === activeAgentId) ?? null;
@@ -898,7 +913,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       selectResolvedSettings({ state: get(), sessionId })?.defaultVerbosity ??
       'normal';
     const verbosityHint = verbosityDirective(effectiveVerbosity);
-    resolvedPrompt = `${verbosityHint}\n\n${resolvedPrompt}`;
+    const handoffMessage = resolvedPrompt;
+    const handoffBodyLayers: HandoffBodyLayers = {
+      message: handoffMessage,
+      contextPreamble,
+      childRouting: childRoutingBlock,
+      clusterBoundary,
+      goalAttachments: goalAttachmentsBlock,
+      priorTurns,
+      verbosity: verbosityHint,
+    };
+    resolvedPrompt = composeHandoffBody(handoffBodyLayers);
 
     const estimated = estimateTokens(resolvedPrompt);
     const ctxWindow = getModelContextWindow(model);
@@ -935,6 +960,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
               rows: get().sessionResolveThreads[sessionId] ?? [],
               agent: agentRowEarly,
             }),
+            candidateMode: resolveCandidateMode({
+              agents: get().sessionPhaseRuns[sessionId] ?? [],
+              resolverId: activeAgentId,
+              isOperatorTurn: origin === 'operator',
+            }),
           })
         : undefined;
     lease.attemptId = resolveAttemptId;
@@ -955,6 +985,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       },
     });
     let receivedProviderError = false;
+    let receivedStreamError = false;
     let lastError: unknown = null;
     let turnWasCancelled = false;
     let shouldAutoAdvanceWorkflow = false;
@@ -1037,11 +1068,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     });
     const profileGuard = buildProfileGuard({
       profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+      audience:
+        agentRowEarly !== null && isQuestionDelegate({ agent: agentRowEarly })
+          ? 'questionDelegate'
+          : (phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind]),
     });
     const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
       .filter((block) => block.length > 0)
       .join('\n\n');
-    const fullSystemPrompt = kindSystemPrompt ? `${guards}\n\n${kindSystemPrompt}` : guards;
+    const renderedHandoff = renderHandoff({
+      ...handoffBodyLayers,
+      provider,
+      guards,
+      roleInstructions: kindSystemPrompt ?? '',
+    });
+    const fullSystemPrompt = renderedHandoff.system;
     const gitDirs = await resolveGitCommonDirs({
       repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
     });
@@ -1051,10 +1092,43 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       gitDirs,
     });
 
-    if (provider !== 'anthropic') {
-      resolvedPrompt = `${guards}\n\n${
-        kindSystemPrompt ? `[role-boundary]\n${kindSystemPrompt}\n[/role-boundary]\n\n` : ''
-      }${resolvedPrompt}`;
+    resolvedPrompt = renderedHandoff.message;
+
+    if (isHandoffTurn) {
+      try {
+        await get().recordAgentHandoff({
+          handoff: composeAgentHandoff({
+            get,
+            session,
+            sessionId,
+            agentId: activeAgentId,
+            agentKind: earlyAgentKind,
+            draft: handoff,
+            content: userTurnText,
+            step: phaseDefinition,
+            workflowRunId: phaseWorkflowRunId ?? agentRowEarly?.workflowRunId ?? null,
+            earlierSteps: handoffEarlierSteps,
+            attachments: attachmentRefs,
+            goalAttachments,
+            mounts: scopeMounts,
+            rules: {
+              scope: scopeGuard,
+              language: languageGuard,
+              integrations: integrationsGuard,
+              replies: verbosityHint,
+              routing: childRoutingBlock,
+              cluster: clusterBoundary === null ? '' : clusterBoundary.block,
+            },
+            profile: profileGuard,
+            roleInstructions: kindSystemPrompt ?? '',
+            rendered: renderedHandoff,
+            provider,
+            createdAt: now(),
+          }),
+        });
+      } catch (error) {
+        console.warn(`[handoff] ${activeAgentId}: ${formatError(error)}`);
+      }
     }
 
     if (isFirstTurn && !agentRowEarly?.parentAgentId) {
@@ -1088,25 +1162,29 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       });
 
     try {
-      for await (const rawEvent of runTurn({
-        runId,
-        provider,
-        model: spawnModel,
-        workingDir,
-        writableRoots,
-        prompt: resolvedPrompt,
-        binary: providerInfo?.binary,
-        workspaceId: session.workspaceId,
-        sessionId,
-        ...(turnMountId !== null && { mountId: turnMountId }),
-        ...(resumeSessionId !== undefined && { resumeSessionId }),
-        systemPrompt: fullSystemPrompt,
-        ...(effortFlag !== undefined && { effort: effortFlag }),
-        ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
-        ...(writerLease !== undefined && { writerLease }),
-        ...(apiKeyBinding ?? {}),
-        ...claudeFlags,
-      })) {
+      for await (const rawEvent of runTurn(
+        {
+          runId,
+          provider,
+          model: spawnModel,
+          workingDir,
+          writableRoots,
+          prompt: resolvedPrompt,
+          binary: providerInfo?.binary,
+          workspaceId: session.workspaceId,
+          sessionId,
+          ...(turnMountId !== null && { mountId: turnMountId }),
+          ...(resumeSessionId !== undefined && { resumeSessionId }),
+          systemPrompt: fullSystemPrompt,
+          ...(effortFlag !== undefined && { effort: effortFlag }),
+          ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
+          ...(writerLease !== undefined && { writerLease }),
+          ...(apiKeyBinding ?? {}),
+          ...claudeFlags,
+        },
+        now,
+        { onProviderLimits: (limits) => void get().recordProviderLimits({ limits }) },
+      )) {
         const maxModeFailure =
           provider === 'cursor' && rawEvent.kind === 'error'
             ? matchCursorMaxModeFailure({ message: rawEvent.message })
@@ -1157,6 +1235,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
         if (event.kind === 'error') {
           receivedProviderError = true;
+          receivedStreamError = true;
         }
         if (event.kind === 'tool_call_end' && event.isError === true) {
           const toolCallFailure = classifyToolCallFailure({ output: event.output });
@@ -1200,6 +1279,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
             sessionId,
             now,
           });
+          if (provider === 'codex') {
+            void get().refreshCodexLimits();
+          }
         }
 
         const currentAgentState = get().agentTurnState[activeAgentId];
@@ -1275,6 +1357,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           sessionId,
           resolvedAgentId,
           assistantText,
+          didAgentDie: receivedStreamError || assistantText.trim().length === 0,
           resolveAttemptId,
           now,
         });
@@ -1590,10 +1673,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         at: now(),
       });
       if (resolvedAgentId) {
-        await invokeAgentUpdateStatus(resolvedAgentId, {
-          status: 'failed',
-          completedAt: now(),
-        });
+        const isStoppedByUser =
+          cancelledBeforeFailure &&
+          (get().sessionPhaseRuns[sessionId] ?? []).some(
+            (agent) => agent.id === resolvedAgentId && agent.status === 'stopped',
+          );
+        if (!isStoppedByUser) {
+          await invokeAgentUpdateStatus(resolvedAgentId, {
+            status: 'failed',
+            completedAt: now(),
+          });
+        }
         const refreshedRuns = await invokeAgentList(sessionId);
         set((state) => ({
           sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
@@ -1766,7 +1856,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const name =
       (get().sessionPhaseRuns[sessionId] ?? []).find((run) => run.id === agentId)?.name ?? 'agent';
     await invokeAgentUpdateStatus(agentId, {
-      status: 'failed',
+      status: 'blocked',
       completedAt: new Date().toISOString() as IsoDateTime,
     }).catch(() => undefined);
     const refreshed = await invokeAgentList(sessionId).catch(() => null);
@@ -1795,6 +1885,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
     const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
+    const settledAgentId = input.agentId ?? get().selectedAgentId[input.sessionId] ?? null;
+    if (settledAgentId !== null) {
+      markTurnActive({ agentId: settledAgentId });
+    }
     try {
       return await runOnce(input, lease);
     } finally {
@@ -1812,6 +1906,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void continueOnRequestedMount({ input }).catch((error) =>
         console.error('mount continuation failed', error),
       );
+      if (settledAgentId !== null) {
+        markTurnSettled({ agentId: settledAgentId });
+        void get().drainAgentQueue({ sessionId: input.sessionId, agentId: settledAgentId });
+      }
     }
   };
   return run;

@@ -599,7 +599,7 @@ describe('ReviewPane', () => {
     await waitFor(() => expect(h.state.preparePublication).toHaveBeenCalledTimes(1));
     rerender(<ReviewPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Push fix and resolve threads' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Close \d+ on GitHub$/ }));
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
     expect(h.state.publishConversations.mock.calls[0]?.[0]).toMatchObject({
@@ -627,7 +627,9 @@ describe('ReviewPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write review (1)' }));
     expect(screen.getByTestId('write-review')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Submit review (1)' }));
+    expect(screen.getByRole('button', { name: '1 draft' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
 
     act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));

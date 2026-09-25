@@ -39,6 +39,7 @@ import type { SpawnFocus } from '../session-view/spawnFocus';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
 
 const spawnQueue = createKeyedQueue();
 
@@ -124,6 +125,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
           kind: resolvedKind,
           roleModels,
           defaultProvider: settings?.defaultProviderId ?? null,
+          limitContext: autoLimitContext({ state: get() }),
         });
         const sourceThreadId = args.sourceThreadIds?.[0] ?? args.sourceThreadId;
         const inserted = await invokeAgentInsert({
@@ -269,11 +271,16 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       void get().drainResolveQueue({ sessionId });
     }
   } else if (kickoff.length > 0) {
+    const handedPlan = planSection === '' ? null : planForKickoff;
     void get().sendTurn({
       sessionId,
       agentId: inserted.id,
       content: kickoff,
       ...(args.mountId !== undefined && { mountId: args.mountId }),
+      handoff: {
+        instruction: baseKickoff,
+        plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
+      },
     });
   }
 

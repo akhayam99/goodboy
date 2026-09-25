@@ -47,16 +47,28 @@ describe('continueOrPause', () => {
     vi.clearAllMocks();
   });
 
-  it('continues a hands-free cluster once, then pauses it with the cluster copy', async () => {
+  it('continues a live hands-free cluster once, then blocks it instead of failing it', async () => {
     const { state, set, get } = buildHarness({ autoRun: true });
     const restart = vi.fn();
-    const params = { set, get, sessionId: SESSION_ID, agent, workflowRunId: RUN_ID, restart };
+    const params = {
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agent,
+      workflowRunId: RUN_ID,
+      restart,
+      didAgentDie: false,
+    };
 
     await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('continued');
-    await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('paused');
+    await expect(continueOrPause({ ...params, unit: 'cluster' })).resolves.toBe('blocked');
 
     expect(restart).toHaveBeenCalledTimes(1);
     expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'child-1',
+      expect.objectContaining({ status: 'blocked' }),
+    );
+    expect(hoisted.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
       'child-1',
       expect.objectContaining({ status: 'failed' }),
     );
@@ -64,15 +76,44 @@ describe('continueOrPause', () => {
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Subagent paused on cluster 1',
-        body: "The implementer stopped before completing this subagent's part. Open the agent and continue manually.",
+        title: 'Subagent blocked on cluster 1',
+        body: expect.stringContaining('without asking you anything'),
         sessionId: SESSION_ID,
       }),
     );
     expect(state.workflowContinueAttempts).toEqual({});
   });
 
-  it('pauses at once when autorun is off', async () => {
+  it('marks the agent failed only when its last turn died', async () => {
+    const { state, set, get } = buildHarness({ autoRun: true });
+    const restart = vi.fn();
+    const params = {
+      set,
+      get,
+      sessionId: SESSION_ID,
+      agent,
+      workflowRunId: RUN_ID,
+      unit: 'step' as const,
+      restart,
+      didAgentDie: true,
+    };
+
+    await expect(continueOrPause(params)).resolves.toBe('continued');
+    await expect(continueOrPause(params)).resolves.toBe('failed');
+
+    expect(hoisted.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+      'child-1',
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(state.emitNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Step failed on cluster 1',
+        body: expect.stringContaining('stopped responding'),
+      }),
+    );
+  });
+
+  it('blocks at once when autorun is off', async () => {
     const { state, set, get } = buildHarness({ autoRun: false });
     const restart = vi.fn();
 
@@ -83,16 +124,17 @@ describe('continueOrPause', () => {
       agent,
       workflowRunId: RUN_ID,
       unit: 'step',
+      didAgentDie: false,
       restart,
     });
 
-    expect(outcome).toBe('paused');
+    expect(outcome).toBe('blocked');
     expect(restart).not.toHaveBeenCalled();
     expect(state.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Step paused on cluster 1',
+        title: 'Step blocked on cluster 1',
         body: expect.stringContaining('Autorun is off'),
         sessionId: SESSION_ID,
       }),
@@ -109,6 +151,7 @@ describe('continueOrPause', () => {
       agent,
       workflowRunId: RUN_ID,
       unit: 'step' as const,
+      didAgentDie: false,
       restart,
     };
 

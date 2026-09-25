@@ -178,9 +178,11 @@ describe('PrDetailPanel', () => {
   it('renders the changed file from the raw unified diff bitbucket returns', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /^Changes/ }));
-    await waitFor(() => expect(screen.getByText('src/rocket.ts')).toBeTruthy());
-    fireEvent.click(screen.getByText('src/rocket.ts'));
+    await waitFor(() =>
+      expect(document.querySelector('[data-file-path="src/rocket.ts"]')).not.toBeNull(),
+    );
     const fileSection = document.querySelector('[data-file-path="src/rocket.ts"]');
+    expect(document.querySelector('table')).toBeNull();
     expect(fileSection?.textContent).toContain('const fuel = 100;');
     expect(fileSection?.textContent).toContain('const fuel = 0;');
   });
@@ -229,10 +231,10 @@ describe('PrDetailPanel', () => {
   it('posts a top level comment without a parent', async () => {
     renderPanel();
     await openConversation();
-    fireEvent.change(screen.getByLabelText('Write a comment'), {
+    fireEvent.change(screen.getByLabelText('Start a new thread'), {
       target: { value: 'Shipping this' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(h.state.commentOnBitbucketPr).toHaveBeenCalledTimes(1));
     const params = h.state.commentOnBitbucketPr.mock.calls[0]?.[0];
@@ -245,7 +247,7 @@ describe('PrDetailPanel', () => {
     await openConversation();
     fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
     fireEvent.change(screen.getByLabelText('Write a reply'), { target: { value: 'Fixed it' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(h.state.replyToBitbucketPrComment).toHaveBeenCalledWith(

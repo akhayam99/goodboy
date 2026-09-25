@@ -86,7 +86,7 @@ describe('GithubIssueDetail', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Write a comment' }), {
       target: { value: 'On it.' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
       expect(h.ghCreateIssueComment).toHaveBeenCalledWith({

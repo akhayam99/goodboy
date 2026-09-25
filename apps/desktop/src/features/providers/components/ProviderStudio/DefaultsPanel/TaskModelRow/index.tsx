@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { PROVIDER_CAPABILITIES, clampEffortForModel, resolveTaskModel } from '@goodboy/core';
+import { PROVIDER_CAPABILITIES, clampEffortForModel } from '@goodboy/core';
+import { resolveLimitedTaskModel } from '../../../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { AuxTaskId, EffortLevel, ProviderId, TaskModelPreference } from '@goodboy/types';
 import { RoutingPicker } from '../../../../../../shared/components/RoutingPicker';
+import { AUTO_RECOMMENDATION_COPY } from '../../../../../../shared/components/RoutingPicker/autoRecommendationCopy';
+import { autoLimitReason } from '../../../../../../shared/components/RoutingPicker/autoLimitReason';
+import { useAutoLimitContext } from '../../../../hooks/useAutoLimitContext';
 import { DefaultRow } from '../DefaultRow';
 import { FallbackRow, type FallbackChoice } from '../FallbackRow';
 
@@ -30,7 +34,9 @@ export const TaskModelRow = ({
   disabled,
   onChange,
 }: Props) => {
-  const automatic = resolveTaskModel({
+  const limitContext = useAutoLimitContext();
+  const automatic = resolveLimitedTaskModel({
+    limitContext,
     task,
     preferences: null,
     workspaceDefaultProviderId: defaultProviderId,
@@ -45,7 +51,8 @@ export const TaskModelRow = ({
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
-  const recommendedModel = resolveTaskModel({
+  const recommendedModel = resolveLimitedTaskModel({
+    limitContext: null,
     task,
     preferences: null,
     workspaceDefaultProviderId: providerId,
@@ -54,6 +61,11 @@ export const TaskModelRow = ({
   const effortModel = model === '' ? recommendedModel : model;
   const effortValue = preference?.effort ?? automatic.effort ?? DEFAULT_EFFORT;
   const pendingModel = useRef(effortModel);
+  const limitReason = autoLimitReason({
+    defaultProvider: defaultProviderId,
+    pickedProvider: automatic.providerId,
+    atLimit: limitContext?.atLimit ?? [],
+  });
 
   useEffect(() => {
     setProviderId(preferredProviderId);
@@ -104,6 +116,7 @@ export const TaskModelRow = ({
           provider: automatic.providerId,
           model: automatic.model,
           ...(automatic.effort != null && { effort: automatic.effort }),
+          ...(limitReason !== AUTO_RECOMMENDATION_COPY.reason && { reason: limitReason }),
         }}
         recommendationKind="auto"
         overridden={preference != null}
@@ -118,7 +131,8 @@ export const TaskModelRow = ({
           }
           setProviderId(next);
           pendingProvider.current = next;
-          const switched = resolveTaskModel({
+          const switched = resolveLimitedTaskModel({
+            limitContext: null,
             task,
             preferences: null,
             workspaceDefaultProviderId: next,

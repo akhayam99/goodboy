@@ -271,21 +271,36 @@ covered.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
-  session and opens that run's output in the right drawer. Spend opens Impact; it is never merged with a
-  count. The bell opens the notification popover.
+  session and opens that run's output in the right drawer. Spend opens Impact;
+  it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
+  Gemini, Cursor), in the provider order, with providers that report nothing
+  last. The order never follows state. At rest a chip is its glyph and a bar of
+  the provider's most used window; the number shows from 80%, `Out` with the
+  reset day at 100%, a clock marks data older than 30 minutes or a window that
+  reset since, and a dashed track means no data. The card tooltip always
+  carries every window, its percentage and its reset. A click opens Settings >
+  Providers & models on that provider, scrolled to Usage, and the chip stays
+  pressed while that page is open. The strip is a toolbar: arrow keys move
+  between chips. With no provider connected the strip is one `Connect a
+provider` chip. A bar in the chrome is always a provider window; money is
+  always a figure. The bell opens the notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows and says only `Search`.
-2. Below `chrome-labels` it becomes an icon with ⌘K, and the signal words
-   (`need you`, `running`, `scripts`, `today`) drop. Counts, dots, glyphs and
-   the spend figure stay, and their tooltips carry the words.
+1. Below `chrome-wide` the command center narrows and says only `Search`, and
+   Limits keeps two chips instead of four.
+2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
+   (`need you`, `running`, `scripts`, `today`, `Limits`) drop and Limits keeps
+   one chip. Counts, dots, glyphs and the spend figure stay, and their
+   tooltips carry the words.
 
 The traffic lights, identity, the command center, the needs-you count, the
-spend figure and the bell never hide. No control ever moves into an overflow
-menu. `chrome-labels` sits below the 1024px minimum window, so words only drop
-under zoom.
+spend figure, the first Limits chip and the bell never hide. The Limits chips
+past the ones that fit are the only overflow: a `+N` chip takes the tone of
+the worst hidden provider and lists them. No other control moves into an
+overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
+only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
@@ -439,12 +454,30 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
+- **Storage is the one place for disk space.** App > Storage lists every
+  worktree folder Goodboy made, grouped by repository, disconnected projects
+  and removed workspaces included, under three filters: To review, In use and
+  Kept. It is app scope because the disk belongs to the machine. The workspace
+  page only shows a Notice that points to Storage filtered on that workspace,
+  and the `open-orphan-worktrees` notification action opens Storage too
+  (`openStorage`). The only bulk action removes clean folders idle past "Suggest
+  cleanup after"; a folder with changes, an operation in progress, a writer
+  lease or no git registration never joins it and says why on its row.
+  Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
+  sends a `storage-reclaimable` notification (action `open-storage`) when that
+  amount passes 10 GB, then stays quiet for 14 days and speaks again only after
+  it grew by another 10 GB. The thresholds and the last nudge live in the
+  settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
+  `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
+  boot, never on the boot path. The worktree scan itself sends nothing.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
   doing: warning on Providers & models when a connected CLI is too old for a
   model it serves or no provider is connected (`selectProviderAttention`, with
   the reason as the row subtitle), info on General while an app update is
-  ready. Danger zone reads in `text-danger`. Panel sections sit on
+  ready, info on Storage with "N GB can go" as its subtitle once clean idle
+  folders pass 10 GB (warning when the disk has under 10 GB free and at least
+  1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
   `SectionSurface` cards with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
@@ -491,12 +524,27 @@ one is open at a time.
   Conversation with its count. `RecordSections` owns the order, the fact
   registries in `shared/detail-fields` own the slots. A changed file opens its
   diff in a full-screen dialog.
+- **One conversation, one composer, what the tool can do.** Every record's
+  Conversation is `shared/components/Conversation`: messages without cards, a
+  thread's replies under a neutral rail (the last three open, the rest behind
+  Show earlier replies), a code anchor chip on review threads, and a resolved
+  thread folded into one row. Each tool has a pure adapter next to its client
+  that turns its comments into threads and declares its capabilities: Reply
+  where the tool has threads, Quote where it is flat (the post quotes the
+  message, and mentions the author on GitHub), Resolve only where the tool
+  resolves, reactions only on Slack. The composer sits in the drawer's dock,
+  only when the tool lets Goodboy write. Reply (or `r` on a focused message)
+  puts a Replying to bar above it, Escape clears it, ⌘↵ sends. A sent message
+  shows Sending in place, and a refused one stays with its text, Retry, Copy
+  text and Discard.
 
 ## Lens surfaces
 
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
-  way back. No lens keeps a rail beside its detail. A studio pairs a rail with
+  way back. No lens keeps a rail beside its detail. Conversations is the one
+  exception, because its work happens in bulk: a comment opens in a drawer
+  column to the right and the list stays visible and selectable. A studio pairs a rail with
   a detail and has no back link. Completed and discarded groups sit behind
   header toggles that hide themselves at zero. So a session whose runs are all
   done shows an empty state, instead of opening the last completed run.
@@ -602,6 +650,34 @@ and the log, which follows the tail until you scroll up and then offers
 says `Following output` while it runs and the exit, time and Copy output after.
 A run records the mount it ran in, so a project mounted twice reopens on the
 right branch.
+
+`file-diff` (payload `{ source, path }`) peeks at a diff without leaving the
+page. The source is a worktree (a file opened from the chat) or a commit (a
+GitHub commit link clicked anywhere in a session; outside a session the link
+opens in the browser). It shows unified and wrapped, and a worktree peek offers
+`Open in Diff`, which opens the Diff lens on that mount with the file in focus.
+`diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
+lists the review drafts of Write review; the dock count opens each one.
+
+## The Diff lens
+
+Every diff in the app is one `DiffView` (`features/diff`): the Diff lens, Write
+review, the Bitbucket pull request changes and the `file-diff` drawer. Only the
+comment behavior changes: a note for the agents in the Diff lens, a review
+draft in Write review, none in Bitbucket and the drawer. There is no file
+sidebar. The toolbar row holds `N files` (the file jump, also `T`: filter,
+arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
+saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
+previous and next file. Each file has a sticky header (status letter, path,
+changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
+on file); a viewed file collapses, and generated or binary files start
+collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
+number to comment, drag or shift-click to cover a range; the composer and the
+threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
+The Diff lens docks `N open notes`, the resolver routing chip and
+`Propose fixes`; Write review docks `N drafts` and `Submit review`, whose
+popover holds the summary and the verdict. Files mount in batches of 20 as the
+browser idles, so a large diff stays responsive.
 
 ## The Scripts lens
 

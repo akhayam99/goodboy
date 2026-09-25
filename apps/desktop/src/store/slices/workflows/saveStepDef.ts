@@ -1,4 +1,4 @@
-import type { WorkspaceId } from '@goodboy/types';
+import type { StepDef, WorkspaceId } from '@goodboy/types';
 import {
   invokeStepDefList,
   invokeStepDefUpsert,
@@ -7,9 +7,10 @@ import {
 import type { SetFn } from './types';
 
 export const saveStepDef = (set: SetFn) => {
-  return async (args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId) => {
-    await invokeStepDefUpsert(args);
+  return async (args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<StepDef> => {
+    const saved = await invokeStepDefUpsert(args);
     const defs = await invokeStepDefList(listWorkspaceId);
     set((state) => ({ stepLibrary: { ...state.stepLibrary, [listWorkspaceId]: defs } }));
+    return saved;
   };
 };

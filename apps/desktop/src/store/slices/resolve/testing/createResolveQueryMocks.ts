@@ -25,6 +25,18 @@ type PublicationPhaseParams = {
   readonly error?: string | null;
   readonly pushedHead?: string | null;
 };
+type HolderParams = { readonly id: string; readonly holder: string; readonly now: number };
+type StateParams = SessionParams & {
+  readonly threadId: string;
+  readonly revision: number;
+  readonly state: ResolveThread['state'];
+  readonly stage: ResolveThread['stage'];
+  readonly stateReason: string | null;
+};
+type StageParams = SessionParams & {
+  readonly threadId: string;
+  readonly stage: ResolveThread['stage'];
+};
 type QueueItemParams = { readonly item: ResolveQueueItem };
 type QueueItemIdParams = SessionParams & { readonly itemId: string };
 type ApprovalParams = QueueItemIdParams & {
@@ -107,6 +119,51 @@ export const createResolveQueryMocks = () => {
           ACTIVE_PHASES.includes(publication.phase),
       ),
     ),
+    listActiveResolvePublicationsForSession: vi.fn(async ({ sessionId }: SessionParams) =>
+      [...publications.values()].filter(
+        (publication) =>
+          publication.sessionId === sessionId && ACTIVE_PHASES.includes(publication.phase),
+      ),
+    ),
+    claimResolvePublication: vi.fn(
+      async ({ id, holder, now, staleBefore }: HolderParams & { readonly staleBefore: number }) => {
+        const publication = publications.get(id);
+        if (publication === undefined) {
+          return false;
+        }
+        const lastSign =
+          publication.heartbeatAt ?? publication.confirmedAt ?? publication.createdAt;
+        const isFree =
+          publication.holder === null || publication.holder === holder || lastSign < staleBefore;
+        if (!isFree) {
+          return false;
+        }
+        publications.set(id, { ...publication, holder, heartbeatAt: now });
+        return true;
+      },
+    ),
+    beatResolvePublication: vi.fn(async ({ id, holder, now }: HolderParams) => {
+      const publication = publications.get(id);
+      if (publication !== undefined && publication.holder === holder) {
+        publications.set(id, { ...publication, heartbeatAt: now });
+      }
+    }),
+    setResolveThreadState: vi.fn(
+      async ({ threadId, revision, state, stage, stateReason }: StateParams) => {
+        const row = threads.get(threadId);
+        if (row === undefined || row.revision !== revision) {
+          return false;
+        }
+        threads.set(threadId, { ...row, state, stage, stateReason, revision: row.revision + 1 });
+        return true;
+      },
+    ),
+    setResolveThreadStage: vi.fn(async ({ threadId, stage }: StageParams) => {
+      const row = threads.get(threadId);
+      if (row !== undefined) {
+        threads.set(threadId, { ...row, stage });
+      }
+    }),
     listResolvePublicationsForSession: vi.fn(async ({ sessionId }: SessionParams) =>
       [...publications.values()].filter((publication) => publication.sessionId === sessionId),
     ),

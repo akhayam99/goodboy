@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, ScrollFade, cn, formatError } from '@goodboy/ui';
+import type { WorkspaceProfile } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { normalizeWorkspaceProfile } from '../../../shared/utils/normalizeWorkspaceProfile';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { initRepo, scanChildRepos, validateGitRepo } from '../../../shared/lib/repo';
 import type { DetectedChildRepos } from '../../../shared/hooks/useChildRepoDetection';
@@ -34,7 +36,9 @@ export const OnboardingWizard = () => {
     [],
   );
   const [workspaceName, setWorkspaceName] = useState('');
-  const [bioDraft, setBioDraft] = useState('');
+  const [profileDraft, setProfileDraft] = useState<WorkspaceProfile>(() =>
+    normalizeWorkspaceProfile({ profile: undefined }),
+  );
   const [busy, setBusy] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
@@ -67,7 +71,7 @@ export const OnboardingWizard = () => {
     }
     setShape((current) => current ?? (workspace === null ? null : 'workspace'));
     setWorkspaceName(workspace?.name ?? '');
-    setBioDraft(workspace?.profile?.bio ?? '');
+    setProfileDraft(normalizeWorkspaceProfile({ profile: workspace?.profile }));
   }, [open, workspace?.id]);
 
   if (!open) {
@@ -236,14 +240,12 @@ export const OnboardingWizard = () => {
       if (workspace === null) {
         return;
       }
-      const bio = bioDraft.trim();
-      if (bio === (workspace.profile?.bio ?? '')) {
+      const next = normalizeWorkspaceProfile({ profile: profileDraft });
+      const stored = normalizeWorkspaceProfile({ profile: workspace.profile });
+      if (JSON.stringify(next) === JSON.stringify(stored)) {
         return;
       }
-      await updateWorkspaceProfile({
-        workspaceId: workspace.id,
-        profile: { bio: bio === '' ? null : bio },
-      });
+      await updateWorkspaceProfile({ workspaceId: workspace.id, profile: next });
     });
 
   const cta = wizardCta({
@@ -319,8 +321,8 @@ export const OnboardingWizard = () => {
                 step={step}
                 workspace={workspace}
                 pendingConflicts={pendingConflicts}
-                bio={bioDraft}
-                onBioChange={setBioDraft}
+                profile={profileDraft}
+                onProfileChange={setProfileDraft}
                 shapeStep={{
                   workspace,
                   shape,

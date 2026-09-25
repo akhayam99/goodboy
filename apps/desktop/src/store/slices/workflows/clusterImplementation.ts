@@ -1,6 +1,7 @@
 import type {
   Agent,
   AgentId,
+  HandoffDraft,
   ImplementationCluster,
   IsoDateTime,
   PlanWithCount,
@@ -19,6 +20,7 @@ import { composeKickoff, composeUnitBoundary } from '../../kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
+import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 
@@ -58,6 +60,18 @@ export const clusterBoundaryMarker = (childId: AgentId): string =>
 export const composeClusterBoundary = (childId: AgentId): string =>
   composeUnitBoundary({ unit: 'cluster', marker: clusterBoundaryMarker(childId) });
 
+type ClusterChecksParams = {
+  readonly label: string;
+  readonly items: ReadonlyArray<string> | undefined;
+};
+
+const composeClusterChecks = ({ label, items }: ClusterChecksParams): string => {
+  if (items === undefined || items.length === 0) {
+    return '';
+  }
+  return [`**${label}**`, ...items.map((item) => `- ${item}`)].join('\n');
+};
+
 function composeClusterKickoff(
   childId: AgentId,
   goalTitle: string,
@@ -75,9 +89,36 @@ function composeClusterKickoff(
     priorBlock,
     `**Cluster ${index + 1}/${clusters.length}** ${cluster?.title ?? ''}`,
     cluster?.instructions ?? '',
+    composeClusterChecks({ label: 'Done when', items: cluster?.doneWhen }),
+    composeClusterChecks({ label: 'Touches', items: cluster?.touches }),
     composeClusterBoundary(childId),
   );
 }
+
+type ClusterHandoffParams = {
+  readonly containerId: AgentId;
+  readonly goalTitle: string;
+  readonly clusters: ReadonlyArray<ImplementationCluster>;
+  readonly index: number;
+};
+
+const clusterHandoff = ({
+  containerId,
+  goalTitle,
+  clusters,
+  index,
+}: ClusterHandoffParams): HandoffDraft => {
+  const cluster = clusters[index];
+  return {
+    sender: {
+      kind: 'parent',
+      parentAgentId: containerId,
+      label: `cluster ${index + 1} of ${clusters.length}`,
+    },
+    instruction: composeKickoff(cluster?.title ?? '', cluster?.instructions ?? ''),
+    goal: goalTitle,
+  };
+};
 
 const hasInstructions = (cluster: ImplementationCluster | undefined): boolean =>
   (cluster?.instructions ?? '').trim().length > 0;
@@ -99,6 +140,7 @@ type StartChildParams = {
   readonly containerId: AgentId;
   readonly childId: AgentId;
   readonly content: string;
+  readonly handoff?: HandoffDraft;
   readonly attempt?: number;
 };
 
@@ -141,6 +183,7 @@ const handleChildStartFailure = async ({
   containerId,
   childId,
   content,
+  handoff,
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
   const message = error instanceof Error ? error.message : String(error);
@@ -189,7 +232,16 @@ const handleChildStartFailure = async ({
     if (turn?.kind === 'running' || turn?.kind === 'starting') {
       return;
     }
-    startChild({ set, get, sessionId, containerId, childId, content, attempt: failures + 1 });
+    startChild({
+      set,
+      get,
+      sessionId,
+      containerId,
+      childId,
+      content,
+      ...(handoff !== undefined && { handoff }),
+      attempt: failures + 1,
+    });
   }, delayMs);
 };
 
@@ -200,6 +252,7 @@ function startChild({
   containerId,
   childId,
   content,
+  handoff,
   attempt = get().clusterStartAttempts[childId] ?? 1,
 }: StartChildParams): void {
   set((s) => ({
@@ -210,7 +263,13 @@ function startChild({
     clusterStartAttempts: { ...s.clusterStartAttempts, [childId]: attempt },
   }));
   void get()
-    .sendTurn({ sessionId, agentId: childId, content, origin: 'workflow' })
+    .sendTurn({
+      sessionId,
+      agentId: childId,
+      content,
+      origin: 'workflow',
+      ...(handoff !== undefined && { handoff }),
+    })
     .catch((error: unknown) => {
       void handleChildStartFailure({
         set,
@@ -219,6 +278,7 @@ function startChild({
         containerId,
         childId,
         content,
+        ...(handoff !== undefined && { handoff }),
         error,
       });
     });
@@ -343,6 +403,7 @@ export const fanOutClusters = async (
       containerId: container.id,
       childId: first,
       content: composeClusterKickoff(first, goalTitle, clusters, 0),
+      handoff: clusterHandoff({ containerId: container.id, goalTitle, clusters, index: 0 }),
     });
   }
 };
@@ -513,7 +574,7 @@ export const resumeClusterChildren = async ({
   });
   const clusters = plan?.clusters ?? [];
   if (!hasInstructions(clusters[index])) {
-    await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+    await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
     const blocked = await invokeAgentList(sessionId);
     set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
     void get().refreshUnreadWorkspaces();
@@ -554,6 +615,12 @@ export const resumeClusterChildren = async ({
     containerId: container.id,
     childId: next.id,
     content: composeClusterKickoff(next.id, plan?.title ?? 'the plan', clusters, index),
+    handoff: clusterHandoff({
+      containerId: container.id,
+      goalTitle: plan?.title ?? 'the plan',
+      clusters,
+      index,
+    }),
   });
   return true;
 };
@@ -577,7 +644,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ) => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const child = runs.find((r) => r.id === childAgentId);
@@ -600,6 +667,9 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     );
 
     if (!opts?.force && !extractClusterDone(assistantText)) {
+      if (await holdForUserQuestion({ set, get, sessionId, agent: child, assistantText })) {
+        return;
+      }
       await continueOrPause({
         set,
         get,
@@ -607,6 +677,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
         agent: child,
         workflowRunId: child.workflowRunId,
         unit: 'cluster',
+        didAgentDie: opts?.didAgentDie === true,
         restart: () =>
           startChild({
             set,
@@ -664,7 +735,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
     const nextIndex = children.findIndex((c) => !isDone(c));
     const next = nextIndex >= 0 ? children[nextIndex] : undefined;
     if (!next) {
-      await invokeAgentUpdateStatus(containerId, { status: 'failed', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(containerId, { status: 'blocked', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
@@ -678,7 +749,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       return;
     }
     if (!hasInstructions(clusters[nextIndex])) {
-      await invokeAgentUpdateStatus(next.id, { status: 'failed', completedAt: nowIso() });
+      await invokeAgentUpdateStatus(next.id, { status: 'blocked', completedAt: nowIso() });
       const blocked = await invokeAgentList(sessionId);
       set((s) => ({ sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: blocked } }));
       void get().refreshUnreadWorkspaces();
@@ -719,6 +790,7 @@ export const advanceClusterImplementation = (set: SetFn, get: GetFn) => {
       containerId,
       childId: next.id,
       content: composeClusterKickoff(next.id, goalTitle, clusters, nextIndex),
+      handoff: clusterHandoff({ containerId, goalTitle, clusters, index: nextIndex }),
     });
   };
 };

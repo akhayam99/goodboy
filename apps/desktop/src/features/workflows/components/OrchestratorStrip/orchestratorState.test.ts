@@ -216,6 +216,32 @@ describe('resolveOrchestratorState', () => {
     expect(state.detail).toBeNull();
   });
 
+  it('names a blocked step apart from a failed one', () => {
+    const state = resolve({ agents: [makeAgent(0, 'completed'), makeAgent(1, 'blocked')] });
+
+    expect(state.phase).toBe('step-failed');
+    expect(state.sentence).toBe('Paused on blocked step 2');
+  });
+
+  it('holds calmly on a step you stopped, even under autorun', () => {
+    const state = resolve({
+      run: makeRun({ autoRun: true }),
+      agents: [makeAgent(0, 'completed'), makeAgent(1, 'stopped', { stoppedBy: 'you' })],
+    });
+
+    expect(state.phase).toBe('waiting');
+    expect(state.tone).toBe('neutral');
+    expect(state.sentence).toBe('Step 2 stopped by you · step 1');
+  });
+
+  it('says when Goodboy stopped a step on quit', () => {
+    const state = resolve({
+      agents: [makeAgent(0, 'stopped', { stoppedBy: 'app' })],
+    });
+
+    expect(state.sentence).toBe('Step 1 stopped when Goodboy quit · step 0');
+  });
+
   it('waits on a pending step without a running agent', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed'), makeAgent(1, 'pending')] });
 

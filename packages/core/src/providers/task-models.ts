@@ -42,6 +42,7 @@ type Params = {
   readonly sessionDefaultProviderId: ProviderId;
   readonly connectedProviders?: ReadonlyArray<ProviderId> | null;
   readonly fallbackOrder?: ReadonlyArray<ProviderId> | null;
+  readonly atLimitProviders?: ReadonlyArray<ProviderId> | null;
 };
 
 type AutomaticParams = {
@@ -111,12 +112,14 @@ export const resolveTaskModel = ({
   sessionDefaultProviderId,
   connectedProviders,
   fallbackOrder,
+  atLimitProviders,
 }: Params): TaskModelPreference => {
   const defaultProviderId = workspaceDefaultProviderId ?? sessionDefaultProviderId;
   const auto: AutoContext = {
     defaultProvider: defaultProviderId,
     ...(connectedProviders != null && { connected: connectedProviders }),
     ...(fallbackOrder != null && { fallbackOrder }),
+    ...(atLimitProviders != null && { atLimit: atLimitProviders }),
   };
   const preference = preferences?.[task];
   const preferred =

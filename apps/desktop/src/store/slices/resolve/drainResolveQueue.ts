@@ -3,8 +3,8 @@ import {
   listResolveAttempts,
   listResolveThreads,
   setResolveAttemptPhase,
-  upsertResolveThread,
 } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import { formatError } from '@goodboy/ui';
 import type {
   Agent,
@@ -82,7 +82,7 @@ type ClearParams = { readonly rows: ReadonlyArray<ResolveThread> };
 
 const clearDirtyRows = async ({ rows }: ClearParams): Promise<boolean> => {
   for (const row of rows) {
-    await upsertResolveThread({
+    await saveResolveThread({
       db: tauriDatabase,
       row: { ...row, stateReason: clearDirtyTreeReason({ row }), updatedAt: Date.now() },
       expectedRevision: row.revision,
@@ -149,7 +149,7 @@ const syncDirtyTree = async ({
       if (row.state === 'closed' || isDirtyTreeRow({ row })) {
         continue;
       }
-      await upsertResolveThread({
+      await saveResolveThread({
         db: tauriDatabase,
         row: { ...row, stateReason: withDirtyTreeReason({ row }), updatedAt: Date.now() },
         expectedRevision: row.revision,

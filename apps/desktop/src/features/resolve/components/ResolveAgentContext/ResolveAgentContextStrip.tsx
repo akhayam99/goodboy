@@ -3,7 +3,8 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
-import { RESOLVE_QUEUE_STATUS_LABEL, sharedRunHeading } from '../../resolveQueueCopy';
+import { sharedRunHeading } from '../../resolveQueueCopy';
+import { RESOLVE_UI_STATE_LABEL } from '../../resolveRowState';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 
 type Props = {
@@ -29,7 +30,7 @@ export const ResolveAgentContextStrip = ({ sessionId, threadId, prNumber }: Prop
       </button>
       <span className="min-w-0 truncate text-2xs text-muted-foreground">
         PR #{prNumber}
-        {row !== null && ` · ${RESOLVE_QUEUE_STATUS_LABEL[row.status]}`}
+        {row !== null && ` · ${RESOLVE_UI_STATE_LABEL[row.status]}`}
         {coveredCount > 0 && ` · ${sharedRunHeading({ count: coveredCount + 1 })}`}
       </span>
     </div>

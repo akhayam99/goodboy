@@ -1,3 +1,4 @@
+mod artifact_folder;
 mod artifacts;
 mod attachment;
 mod aux_spawn;
@@ -24,7 +25,6 @@ mod path_env;
 mod permissions;
 mod planner;
 mod process_group;
-mod profile_file;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
@@ -42,6 +42,7 @@ mod session_dir;
 mod settings_overrides;
 mod skills;
 mod slack;
+mod storage;
 mod summarize;
 mod terminal;
 mod turn;
@@ -200,7 +201,7 @@ pub fn run() {
             bridge::bridge_command_result,
             bridge::bridge_revoke,
             bridge::bridge_stop,
-            profile_file::workspace_profile_project,
+            artifact_folder::export_artifact_folder,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
@@ -216,7 +217,10 @@ pub fn run() {
             worktree::worktree_tidy_goodboy,
             worktree::worktree_orphans,
             worktree::worktree_folder_remove,
-            worktree::worktree_list,
+            storage::worktree_folder_facts,
+            storage::disk_free,
+            storage::app_data_usage,
+            storage::reveal_in_file_manager,
             worktree::worktree_remote_url,
             worktree::worktree_diff,
             worktree::worktree_diff_file,
@@ -282,6 +286,7 @@ pub fn run() {
             summarize::summarize_cancel,
             planner::planner_run,
             codex_rollout::codex_rollout_context,
+            codex_rollout::codex_rate_limits_latest,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,
@@ -367,8 +372,9 @@ pub fn run() {
             gitlab::gitlab_fetch_assigned_issues,
             gitlab::gitlab_fetch_issue,
             gitlab::gitlab_update_issue,
-            gitlab::gitlab_list_issue_notes,
             gitlab::gitlab_create_issue_note,
+            gitlab::gitlab_list_issue_discussions,
+            gitlab::gitlab_reply_to_issue_discussion,
             gitlab::gitlab_fetch_assigned_mrs,
             gitlab::gitlab_mr_for_branch,
             gitlab::gitlab_create_mr,

@@ -15,6 +15,7 @@ type Result = {
   readonly comments: ReadonlyArray<GithubIssueComment>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly reload: () => void;
   readonly post: ((body: string) => Promise<void>) | null;
 };
 
@@ -31,6 +32,9 @@ export const useGithubIssueComments = ({ workspaceId, rootPath, issueNumber }: P
 
   useEffect(() => {
     setComments([]);
+  }, [workspaceId, rootPath, issueNumber]);
+
+  useEffect(() => {
     setError(null);
     if (workspaceId == null || rootPath == null) {
       setIsLoading(false);
@@ -64,6 +68,10 @@ export const useGithubIssueComments = ({ workspaceId, rootPath, issueNumber }: P
     };
   }, [workspaceId, rootPath, issueNumber, reloadToken]);
 
+  const reload = useCallback(() => {
+    setReloadToken((token) => token + 1);
+  }, []);
+
   const post = useCallback(
     async (body: string) => {
       if (workspaceId == null || rootPath == null) {
@@ -84,6 +92,7 @@ export const useGithubIssueComments = ({ workspaceId, rootPath, issueNumber }: P
     comments,
     isLoading,
     error,
+    reload,
     post: workspaceId == null || rootPath == null ? null : post,
   };
 };

@@ -25,6 +25,7 @@ export type AutoContext = {
   readonly cliVersions?: Partial<Record<ProviderId, string | null>>;
   readonly learned?: ReadonlyArray<CliRequirement>;
   readonly isCursorMaxModeOn?: boolean;
+  readonly atLimit?: ReadonlyArray<ProviderId> | null;
 };
 
 export type AutoStep = 'curated' | 'next-in-column' | 'next-provider' | 'cost-tier';
@@ -34,6 +35,7 @@ export type AutoPick = {
   readonly model: string;
   readonly effort: EffortLevel | null;
   readonly step: AutoStep;
+  readonly skippedAtLimit?: ReadonlyArray<ProviderId>;
 };
 
 type Params = AutoContext & {
@@ -50,7 +52,10 @@ type ProviderGate = (params: ProviderGateParams) => boolean;
 const isConnected: ProviderGate = ({ provider, context }) =>
   context.connected == null || context.connected.includes(provider);
 
-export const AUTO_PROVIDER_GATES: ReadonlyArray<ProviderGate> = [isConnected];
+export const isUnderLimit: ProviderGate = ({ provider, context }) =>
+  context.atLimit == null || !context.atLimit.includes(provider);
+
+export const AUTO_PROVIDER_GATES: ReadonlyArray<ProviderGate> = [isConnected, isUnderLimit];
 
 const ALL_PROVIDERS: ReadonlyArray<ProviderId> = Object.keys(PROVIDER_CAPABILITIES).filter(
   (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
@@ -176,13 +181,31 @@ const tierPick = ({ provider, slot }: ProviderPickParams): AutoPick | null => {
   return { provider, model: model.id, effort: null, step: 'cost-tier' };
 };
 
+type SkippedParams = {
+  readonly pick: AutoPick;
+  readonly context: AutoContext;
+};
+
+const skippedAtLimitBefore = ({ pick, context }: SkippedParams): ReadonlyArray<ProviderId> => {
+  const atLimit = context.atLimit ?? [];
+  if (atLimit.length === 0) {
+    return [];
+  }
+  const ladder = candidateProviders({ ...context, atLimit: null });
+  const index = ladder.indexOf(pick.provider);
+  return ladder
+    .slice(0, index === -1 ? ladder.length : index)
+    .filter((provider) => atLimit.includes(provider));
+};
+
 export const resolveAuto = ({ slot, ...context }: Params): AutoPick | null => {
   for (const provider of candidateProviders(context)) {
     const pick = isCuratedProvider(provider)
       ? curatedPick({ provider, slot, context })
       : tierPick({ provider, slot, context });
     if (pick != null) {
-      return pick;
+      const skippedAtLimit = skippedAtLimitBefore({ pick, context });
+      return skippedAtLimit.length === 0 ? pick : { ...pick, skippedAtLimit };
     }
   }
   return null;

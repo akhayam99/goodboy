@@ -1,4 +1,6 @@
-import { listResolveQueueItems, upsertResolveThread } from '@goodboy/db';
+import { listResolveQueueItems } from '@goodboy/db';
+import { advanceResolveStage } from './advanceResolveStage';
+import { saveResolveThread } from './saveResolveThread';
 import { worktreeIsAncestor, worktreeStatus } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
@@ -43,13 +45,19 @@ export const invalidateIntegratedApprovals = async ({
     if (isReachable) {
       continue;
     }
-    const written = await upsertResolveThread({
+    const written = await saveResolveThread({
       db,
       row: { ...thread, stateReason: BASE_CHANGED_REASON, updatedAt: Date.now() },
       expectedRevision: thread.revision,
     });
     if (written) {
       invalidated += 1;
+      await advanceResolveStage({
+        set,
+        sessionId,
+        threadIds: [thread.threadId],
+        event: () => ({ kind: 'user_unapproved' }),
+      });
     }
   }
   if (invalidated > 0) {

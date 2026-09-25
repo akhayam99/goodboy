@@ -104,6 +104,15 @@ tree, a breadcrumb back to the list, and autosave. **Draft steps** asks an
 agent to write the steps from the goal. With steps already there it reads
 **Redraft steps**, asks first, and offers an undo once the new steps land.
 
+**Add step**, in the Studio and in the builder, opens a menu: a search field,
+**Blank step**, then the built-in steps and the steps saved in this workspace.
+The pick lands at the tip of the tree with its editor open. **Save as step** in
+a step's editor saves it to the workspace. The **Saved steps** tab next to
+**Workflows** is where you manage them. Built-in steps, one per role that works
+in the repo, cannot be edited or removed: **Save a copy** makes a workspace copy
+that says what it is based on. A saved step saves once, when you press **Done**
+or move to another row, never on every field.
+
 ### When a run starts
 
 The **Starts** chip in the launch bar picks one:
@@ -171,9 +180,11 @@ node the run tree draws for that step, with the same number or check. Hovering
 a line lights its row in the tree, and hovering or selecting a step row lights
 its line. When the run has ended, its closing reason sits on top. The five
 newest lines show, and the rest sit behind a count. The tree rows carry no
-reasons of their own. An agent's Brief repeats its own step's reason under
-**Why this step**, below any open question it asks. Sub-agents show none,
-because the reason belongs to the step.
+reasons of their own. An agent's own step reason is the why of the handoff
+block at the top of its transcript, which is also where the step's expected
+output sits, as Done when. The Brief keeps only the state: one line naming who
+sent the agent (it opens that block), then Now, questions, the outcome, what
+it produced and the meta line.
 
 ### Hints
 
@@ -205,12 +216,12 @@ Then the run either moves on or waits for you.
 A run waits when:
 
 - An agent asked a question you have not answered yet
-- A step failed
+- A step failed or is blocked
 - The summarizer is still writing the handoff
 - An agent is still running
 
 When a run waits for more than one reason, its row in the activity feed says
-one thing only. A failed step comes first, then an open question, then a step
+one thing only. A failed or blocked step comes first, then an open question, then a step
 waiting for your click, then the spend limit. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
@@ -295,6 +306,8 @@ repeat it at the bottom. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
+- A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Check completion** and **Skip step**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
+- A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrator strip says "Step 2 stopped by you" in a neutral tone
 - An open question: "Implement asks: ..." with the step that waits on it, or "This step waits on your answer." when the agent that asked is that step, and **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
@@ -374,6 +387,8 @@ Everything below is the code behind the sections above.
 - `packages/core/src/summarizer/step-output.ts`: the rules every handoff follows
 - `packages/core/src/orchestrator/prompt.ts`: `ORCHESTRATOR_SYSTEM_PROMPT`
 - `packages/core/src/workflows/library.ts`: `WORKFLOW_LIBRARY`, the presets that come with the app
+- `packages/core/src/workflows/builtinSteps.ts`: `BUILTIN_STEPS`, the built-in saved steps. They live in code, not in `step_library`
+- `apps/desktop/src/features/workflows/savedSteps.ts`: one shape for built-in and workspace steps. `AddStepMenu` and `WorkflowStudio/SavedStepsList` read it through `useSavedSteps`
 - `packages/core/src/roles.ts`: `ROLE_REGISTRY`, the roles a step can take
 
 ### `phaseTemplate*` means workflow
@@ -394,7 +409,7 @@ The schema is in `packages/db/src/migrations/`. A few things it does not tell yo
 - Every per-run flag lives on `session_workflows`. The agents of a run carry the same id
 - A run's plan and open questions belong to the run, not the session. Two runs on one session never read each other's state. A question blocks a run when it carries that run's id, or, for old rows with no run id, that run's workflow id (`workflowRunHasOpenQuestions`). A question with neither blocks only the agent that asked it, never a run
 - `is_preset = 0` marks a one-off run. It does not show up in the preset picker
-- A `step_library` row with a `NULL` `workspace_id` is a built-in step for every workspace
+- `step_library` holds only workspace steps. The rows with a `NULL` `workspace_id` are soft-deleted anchors (`m180`): they keep the `seed_*` ids that `steps.library_step_id` points at valid. `step_def_list` never returns them, and `step_def_upsert` and `step_def_delete` refuse them. A new built-in step needs an anchor row in a migration, or a workflow step that links to it fails the foreign key
 
 Adding a workflow creates every agent of the run at once, each one `pending`.
 Each step's settings are worked out per agent. When a step sets nothing, the
@@ -416,7 +431,7 @@ contract.
 | 1     | `complete`               | every step is done              |
 | 2     | `blocked` `questions`    | an open question exists         |
 | 3     | `blocked` `summarizer`   | summarizer busy, not `auto_run` |
-| 4     | `blocked` `failed-step`  | a step failed                   |
+| 4     | `blocked` `failed-step`  | a step failed or is blocked     |
 | 5     | `automatic`              | `auto_run` is on                |
 | 6     | `blocked` `turn-running` | a turn or agent is running      |
 | 7     | `ready`                  | the user can advance            |
@@ -444,7 +459,7 @@ that click.
 An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions. It only starts the next agent when every agent is `completed` or
-`skipped`, and a `failed` agent is never either.
+`skipped`, and a `failed` or `blocked` agent is never either.
 
 One check decides when a run is finished: `isWorkflowRunComplete`. The chain
 trigger, attach and the builder all use it. A run is not finished while any
@@ -459,6 +474,18 @@ check that advances, chains or finishes a run uses it, so closing an agent by
 hand (`doneAt`) never moves a run. `isAgentSettled` also counts an agent you
 closed. Only what the screen draws uses it: the lane of an agent's children in
 the activity rail and in the run tree of the workflow detail.
+`isAgentStatusHalted` is the other side: `failed` or `blocked`, an agent that
+stopped and waits for you. The workflow chain, the Next action strip and the
+recovery prompt all read it, so a blocked step holds the run exactly like a
+failed one.
+
+An agent you stop (Interrupt, or Stop in the composer) is `stopped`, with
+`stopped_by = you`. An agent still running when Goodboy quits comes back as
+`stopped` with `stopped_by = app`. A stopped agent is neither settled nor
+failed: its row, the run and the agent header say it was stopped and offer
+Continue, which sends "Continue from where you stopped." as a normal message.
+Autorun never passes a stopped step (`stopped-step`), and a stopped step does
+not count as needing you. Any later status change clears the stop.
 
 A step has no Close. Closing an agent is for agents outside a workflow (see
 [concepts.md](concepts.md#agents)). A stuck step is unblocked with Skip step,
@@ -537,9 +564,9 @@ The restart marks, the hints being read, the set of runs that are deciding and
 the queued requests live in memory, keyed by run and removed with it. Everything a restart needs
 (outcome, stop, summary, hints) is on the run's row.
 
-Expected output belongs to a workflow's own steps. Step library entries do not
-carry it. Rows written before the field existed have none, except the seeded
-example steps that the backfill filled in.
+Expected output belongs to a workflow's own steps and to saved steps
+(`step_library.expected_output`, `m181`). Rows written before the field existed
+have none, except the seeded example steps that the backfill filled in.
 
 ### The post-step summarizer
 
@@ -566,5 +593,35 @@ offers to retry. Either way, the summary is what the next step starts from.
 Steps run one after another. Parallel work happens inside a step. The
 `parallel_agents` setting decides whether a scout step can split into several agents.
 
-If a hands-free step stops without a `step-done` marker, Goodboy nudges it
-once. If it stops again, the step fails and waits for the user.
+### When a step stops without its done marker
+
+Every kickoff, re-kick and recovery prompt ends with the scope line from
+`composeUnitBoundary`. It names the done marker and the question channel: a
+question in plain prose never reaches the user, so an agent that needs an
+answer, an approval or a confirmation asks it in a blocking
+`<<ctx-question>>` block and stops.
+
+When a step or a sub-agent ends a turn without its `step-done` or
+`cluster-done` marker, `holdForUserQuestion` looks at the turn first:
+
+- It carries a `<<ctx-question>>`: the step waits for your answer. No re-kick
+  is spent.
+- It ends by asking you something in prose (a question, "confirm the
+  force-push", "I need your approval"): `extractProseQuestion` in
+  `@goodboy/core` takes the asking paragraph from the last two paragraphs of
+  the turn, and Goodboy saves it as a blocking open question owned by that
+  agent. It shows with the other open questions, and your answer goes back to
+  the same agent. No re-kick is spent.
+
+Otherwise `continueOrPause` decides. A hands-free step or sub-agent is
+re-kicked once. After that, or at once when autorun is off, the agent stops in
+one of two states:
+
+- `failed`: the agent died. Its last turn ended with a stream error or with no
+  output at all. A crash, a non-zero exit, a spawn error, an auth or quota
+  error or a kill ends the turn in `sendTurn` and is marked `failed` there.
+- `blocked`: the agent is alive but did not finish, and asked nothing. The
+  runaway breaker (too many unattended workflow turns in an hour) and a
+  sub-agent whose plan instructions are no longer readable also end in
+  `blocked`. A blocked agent resumes when you write to it, or through Check
+  completion and Skip step.

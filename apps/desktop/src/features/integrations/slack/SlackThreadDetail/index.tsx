@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Notice } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
@@ -8,9 +9,12 @@ import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFa
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import { slackGetPermalink, type SlackMessage } from '../client';
 import { buildThreadProperties } from '../buildThreadProperties';
-import { slackUserNames } from '../nameMaps';
+import { slackChannelNames, slackUserNames } from '../nameMaps';
 import { slackThreadTitle } from '../threadFormulas';
-import { ThreadConversation } from '../ThreadConversation';
+import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { SLACK_THREAD_CAPABILITIES, slackConversation } from '../slackConversation';
+import { ThreadReactions } from '../ThreadReactions';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
 
@@ -69,12 +73,65 @@ export const SlackThreadDetail = ({
       }),
     [channelName, messages, userNames],
   );
+  const channels = thread.channels;
+  const reply = actions.reply;
+  const react = actions.react;
+  const isWriting = actions.isWriting;
+  const source = useMemo<ConversationSource>(() => {
+    const byTs = new Map(messages.map((message) => [message.ts, message]));
+    return {
+      toolLabel: 'Slack',
+      threads: slackConversation({
+        messages,
+        usersById: new Map(users.map((user) => [user.id, user])),
+        userNames,
+        channelNames: slackChannelNames({ channels }),
+      }),
+      capabilities: SLACK_THREAD_CAPABILITIES,
+      isLoading: thread.isLoading,
+      error: thread.error,
+      onRetry: thread.refetch,
+      onPost: reply == null ? null : ({ body }) => reply(body),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'The messages in this thread show up here.',
+      footnote: null,
+      composerNote: 'Sent as plain text by the connected bot, not by you.',
+      renderMessageFooter: (message) => {
+        const original = byTs.get(message.id);
+        if (original == null) {
+          return null;
+        }
+        return (
+          <ThreadReactions
+            messageTs={original.ts}
+            reactions={original.reactions}
+            isWriting={isWriting}
+            onReact={react}
+          />
+        );
+      },
+    };
+  }, [
+    messages,
+    users,
+    userNames,
+    channels,
+    thread.isLoading,
+    thread.error,
+    thread.refetch,
+    reply,
+    react,
+    isWriting,
+  ]);
+  const conversation = useConversationPane({ source, resetKey: `${channelId}:${threadTs}` });
   const rootText = messages[0]?.text ?? '';
   const title = slackThreadTitle({ text: rootText });
 
   return (
     <PaneShell
       scroll="body"
+      dock={conversation.composer}
       header={
         <RecordHeader
           provider="slack"
@@ -88,29 +145,15 @@ export const SlackThreadDetail = ({
         />
       }
     >
-      <RecordSections
-        sections={[
-          {
-            key: 'conversation',
-            kind: 'conversation',
-            label: 'Conversation',
-            count: messages.length,
-            isCollapsible: false,
-            defaultOpen: true,
-            content: (
-              <ThreadConversation
-                messages={messages}
-                users={users}
-                channels={thread.channels}
-                isLoading={thread.isLoading}
-                error={thread.error}
-                onRetry={thread.refetch}
-                actions={actions}
-              />
-            ),
-          },
-        ]}
-      />
+      {actions.error == null ? null : (
+        <Notice
+          tone="danger"
+          placement="inline"
+          title="Slack refused the reaction"
+          body={actions.error}
+        />
+      )}
+      <RecordSections sections={[conversation.section]} />
     </PaneShell>
   );
 };

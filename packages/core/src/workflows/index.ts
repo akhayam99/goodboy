@@ -6,7 +6,7 @@ export {
   runsForWorkflowRun,
   type WorkflowChainState,
 } from './sequencer';
-export { isAgentSettled, isAgentStatusSettled } from './settled';
+export { isAgentSettled, isAgentStatusHalted, isAgentStatusSettled } from './settled';
 export {
   buildChainCarryForward,
   buildParallelCarryForward,
@@ -14,6 +14,12 @@ export {
   type ParallelCarryForwardBranch,
 } from './propagator';
 export { WORKFLOW_LIBRARY, type WorkflowLibraryEntry, type WorkflowLibraryStep } from './library';
+export {
+  BUILTIN_STEPS,
+  builtinStepForRole,
+  isBuiltinStepId,
+  type BuiltinStep,
+} from './builtinSteps';
 export { seedWorkflowLibrary, type SeedResult, type SeedWorkflowLibraryDeps } from './seeder';
 export {
   formatWorkflowFromNL,

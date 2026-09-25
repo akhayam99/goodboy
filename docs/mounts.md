@@ -123,11 +123,26 @@ outlive their row move to `retained_worktree_paths` and are probed later;
 anything a worktree scan finds that no row, retained path or unsettled
 operation owns is reported as an orphan.
 
+`retained_worktree_paths` is the ledger of every folder Goodboy no longer
+uses. A row may have no session, mount or workspace: an orphan the scan found
+is written with `reason = 'orphan'` and `first_seen_at` set to the first scan
+that saw it, and deleting a workspace sets `workspace_id` to null instead of
+dropping the row. The scan walks `worktree_roots`, the registry of every
+repository where Goodboy created a worktree. A root is written for each repo
+project, disconnected ones included, and by `createProjectMount`, `forkMount`
+and `attachMount` before `createWorktree` runs, so a crash between the
+folder and its row still leaves the root registered. The registry has no
+foreign key, so a root outlives its project and its workspace. An orphan row
+never blocks a mount or a retained transfer from taking its path: the owner
+replaces it.
+
 Removing an orphan only touches a direct child of `<repo>/.goodboy/worktrees/`.
 A symlink, a nested path, a folder in any other worktree root and a clone of
 another repository are refused. A folder git still registers goes through the
 same checked removal as an unmount, so uncommitted work keeps it. So do
-commits that no remote branch and no default branch contain. A folder git
+commits that no remote branch and no default branch contain, unless the caller
+passes `allowLocalCommits`: the Storage page does, because the branch keeps
+those commits, and its confirm says how many folders have them. A folder git
 no longer tracks cannot be checked for changes, so the bulk action keeps it
 too. Either one is removed only after the user confirms that folder on its own.
 

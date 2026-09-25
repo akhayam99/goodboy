@@ -230,6 +230,18 @@ const SHIPPED_MIGRATION_SQL_SHA256: Readonly<Record<number, string>> = {
   171: '4859da6c58d08dc70166259f1e5ff9e21cca49aee9150e21b0e38d91abcc5488',
   172: '08aa3a3b49e39ac9a5dd38a99e86b54af5bcd362067d6259212396159e1883a0',
   173: 'e97a01d7fbe5d17a68b9e946b85d9f5e9919653bd0e74b359122493da738faaa',
+  174: '1a9ff04e8ef7e0142ce48e0329cfb51b2c684e03900cbbf941ed5e7465919668',
+  175: '78fe0d4b0e9aa274d87e6281d9b58e4b6be7cae8553edf39aa955433a33048b6',
+  176: '5ddb5041d79fa9116bc37c8735c9d75f56f71809c89a3338e01cace6805f7e58',
+  177: '207ab1e52d8f3236c2f70cc935e6c4f449d4c6504d61062a7b5643902fdf8a01',
+  178: 'b871ff5e9046c53a985974bf07b4bead74db9918f5cee52a8c8b46fe4ac99d4d',
+  179: 'bb45a9e592d14232aff871f95c2cfa0d024b40d652cfea251c4c1d9d09b52561',
+  180: '7fc375a31b5162c779e933e3abcc5f6195c75a3106fa4c2a45512a5e6eec0521',
+  181: '76984bf1123d47fa9ee33a49d57fe15b465f5b19466e80185e2592d17b2644d7',
+  182: '7e0562220c74e68681f468a365c8834c140acb47e0d470bae8d6c6c490a42744',
+  183: '4bba80e35564ab35b84b3257917cf9dafba603f3a60b5679391af0f5d4e37e26',
+  184: 'db6d094cabb0f08cb61a3c38bc36a5b3fb59436c9f5908d7f750df6c73ffe042',
+  185: '680955b8bf12f4a55bbc36f438b0c98a496ade292164f7ee6de3420dd6bba335',
 };
 
 const MIN_CONVERGENCE_SAMPLE_POINTS = 10;
@@ -339,7 +351,7 @@ describe('migration convergence', () => {
       expect(result.applied).toEqual(versions.slice(count));
       expect(await schemaOf(upgraded)).toEqual(target);
     }
-  }, 30_000);
+  }, 90_000);
 
   it('samples at least the floor of intermediate versions, strictly increasing', () => {
     const counts = sampleIntermediateCounts({

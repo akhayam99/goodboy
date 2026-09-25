@@ -12,13 +12,17 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { invokeAgentListSpy, invokeAgentUpdateStatusSpy, summarizeStepOutputSpy } = vi.hoisted(
-  () => ({
-    invokeAgentListSpy: vi.fn(),
-    invokeAgentUpdateStatusSpy: vi.fn(),
-    summarizeStepOutputSpy: vi.fn(),
-  }),
-);
+const {
+  invokeAgentListSpy,
+  invokeAgentUpdateStatusSpy,
+  summarizeStepOutputSpy,
+  insertOpenQuestionSpy,
+} = vi.hoisted(() => ({
+  invokeAgentListSpy: vi.fn(),
+  invokeAgentUpdateStatusSpy: vi.fn(),
+  summarizeStepOutputSpy: vi.fn(),
+  insertOpenQuestionSpy: vi.fn(async () => ({ inserted: true })),
+}));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
@@ -27,7 +31,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return { ...actual, summarizeStepOutput: summarizeStepOutputSpy };
 });
 
-vi.mock('@goodboy/db', () => ({ updateSessionWorkflowStep: vi.fn() }));
+vi.mock('@goodboy/db', () => ({
+  updateSessionWorkflowStep: vi.fn(),
+  insertOpenQuestion: insertOpenQuestionSpy,
+}));
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
@@ -122,6 +129,8 @@ const buildHarness = ({ sessions = [session], agents = [agent] }: Params = {}) =
     refreshUnreadWorkspaces: vi.fn(),
     emitNotification: vi.fn(),
     sendTurn: vi.fn(),
+    loadSessionOpenQuestions: vi.fn(async () => undefined),
+    phaseTemplates: {},
     agentTurnState: {},
     workflowContinueAttempts: {},
     stepSummaryDegraded: {},
@@ -377,7 +386,7 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
   });
 
-  it('pauses the step with a notification once the single continue is spent', async () => {
+  it('blocks the live step with a notification once the single continue is spent', async () => {
     const finalize = buildHarness();
 
     await finalize(SESSION_ID, AGENT_ID, 'stopped early', false);
@@ -385,20 +394,57 @@ describe('finalizeWorkflowStep output summary', () => {
 
     expect(result).toEqual({ shouldAutoAdvance: false });
     expect(finalize.state.sendTurn).toHaveBeenCalledTimes(1);
+    const rekick = (finalize.state.sendTurn.mock.calls[0] as unknown[])[0] as {
+      readonly content: string;
+    };
+    expect(rekick.content).toContain('**Questions** a question in plain prose never reaches');
     expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
       AGENT_ID,
-      expect.objectContaining({ status: 'failed' }),
+      expect.objectContaining({ status: 'blocked' }),
     );
     expect(finalize.state.emitNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'error',
         severity: 'warning',
-        title: 'Step paused on Implement',
-        body: expect.stringContaining('step-done marker'),
+        title: 'Step blocked on Implement',
+        body: expect.stringContaining('without asking you anything'),
         sessionId: SESSION_ID,
       }),
     );
     expect(finalize.state.workflowContinueAttempts).toEqual({});
+  });
+
+  it('fails the step only when its last turn died', async () => {
+    const finalize = buildHarness();
+
+    await finalize(SESSION_ID, AGENT_ID, '', false, { didAgentDie: true });
+    await finalize(SESSION_ID, AGENT_ID, '', false, { didAgentDie: true });
+
+    expect(invokeAgentUpdateStatusSpy).toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('waits for the user on a question asked in prose instead of re-kicking', async () => {
+    const finalize = buildHarness();
+    const text = 'All checks green.\n\nShall I force-push the rebuilt branch now?';
+
+    const first = await finalize(SESSION_ID, AGENT_ID, text, false);
+    await finalize(SESSION_ID, AGENT_ID, text, false);
+
+    expect(first).toEqual({ shouldAutoAdvance: false });
+    expect(finalize.state.sendTurn).not.toHaveBeenCalled();
+    expect(invokeAgentUpdateStatusSpy).not.toHaveBeenCalled();
+    expect(insertOpenQuestionSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        sessionId: SESSION_ID,
+        createdByAgentId: AGENT_ID,
+        text: 'Shall I force-push the rebuilt branch now?',
+        isBlocking: true,
+      }),
+    );
   });
 
   it('gives the continue back after the agent asks a question', async () => {

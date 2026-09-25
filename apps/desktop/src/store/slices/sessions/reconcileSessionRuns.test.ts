@@ -80,14 +80,19 @@ describe('loaded run reconciliation', () => {
     expect(updateSessionState).toHaveBeenCalledOnce();
   });
 
-  it('persists a running agent as pending', async () => {
+  it('persists a running agent as stopped by the app', async () => {
     const agent = buildAgent({ status: 'running' });
 
     const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
 
     expect(cancelTurn).toHaveBeenCalledWith(RUN_ID);
-    expect(updateAgentStatus).toHaveBeenCalledWith({}, agent.id, { status: 'pending' });
-    expect(reconciled.status).toBe('pending');
+    expect(updateAgentStatus).toHaveBeenCalledWith({}, agent.id, {
+      status: 'stopped',
+      stoppedAt: expect.any(String),
+      stoppedBy: 'app',
+    });
+    expect(reconciled.status).toBe('stopped');
+    expect(reconciled.stoppedBy).toBe('app');
   });
 
   it('returns settled records with the same references', async () => {

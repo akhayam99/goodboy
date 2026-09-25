@@ -360,6 +360,7 @@ describe('ArtifactStudio shell', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
     ).toEqual([
+      expect.stringContaining('Open in window'),
       expect.stringContaining('Print'),
       expect.stringContaining('Regenerate'),
       'Copy markdown',

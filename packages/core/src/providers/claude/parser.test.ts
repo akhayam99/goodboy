@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { parseStreamJsonLine, type ParseContext } from './parser';
 import { resetTextBoundary } from '../shared/text-boundary';
+import { RATE_LIMIT_FIXTURES } from '../limits/rateLimitFixtures';
 
 const at = '2026-05-07T00:00:00.000Z' as IsoDateTime;
 const ctx: ParseContext = {
@@ -344,6 +345,21 @@ describe('parseStreamJsonLine', () => {
       raw,
       at,
     });
+  });
+
+  it('hands a rate limit event to onProviderLimits and keeps it out of the transcript', () => {
+    const onProviderLimits = vi.fn();
+    const onUnknown = vi.fn();
+    const events = parseStreamJsonLine(RATE_LIMIT_FIXTURES.claudeWeeklyWarning, {
+      ...ctx,
+      onProviderLimits,
+      onUnknown,
+    });
+    expect(events).toEqual([]);
+    expect(onUnknown).not.toHaveBeenCalled();
+    expect(onProviderLimits).toHaveBeenCalledWith(
+      expect.objectContaining({ providerId: 'anthropic', status: 'warning', observedAt: at }),
+    );
   });
 
   it('calls onUnknown hook for unrecognised payload types', () => {

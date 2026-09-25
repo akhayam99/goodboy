@@ -34,6 +34,9 @@ type TransferMountPathParams = {
   readonly expectedRevision: number;
 };
 
+const OWNED = `source_session_id IS NOT NULL AND source_mount_id IS NOT NULL
+  AND workspace_id IS NOT NULL AND reason != 'orphan'`;
+
 const toDomain = (row: Row): RetainedWorktreePath => ({
   ...row,
   lastCheckedAt:
@@ -51,7 +54,7 @@ export const listRetainedWorktreePaths = async ({
             source_session_id AS sourceSessionId, source_mount_id AS sourceMountId,
             repo_root AS repoRoot, worktree_path AS worktreePath, branch, reason,
             last_checked_at AS lastCheckedAt, created_at AS createdAt, updated_at AS updatedAt
-     FROM retained_worktree_paths WHERE workspace_id = ? ORDER BY created_at, id`,
+     FROM retained_worktree_paths WHERE workspace_id = ? AND ${OWNED} ORDER BY created_at, id`,
     [workspaceId],
   );
   return rows.map(toDomain);
@@ -66,8 +69,8 @@ export const retainedPathInsertStatement = ({
 }: RetainedPathInsertParams): PlainStatement => ({
   sql: `INSERT INTO retained_worktree_paths
     (id, workspace_id, project_id, source_session_id, source_mount_id, repo_root,
-     worktree_path, branch, reason, last_checked_at, created_at, updated_at)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     worktree_path, branch, reason, last_checked_at, first_seen_at, created_at, updated_at)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   params: [
     retained.id,
     retained.workspaceId,
@@ -79,6 +82,7 @@ export const retainedPathInsertStatement = ({
     retained.branch,
     retained.reason,
     retained.lastCheckedAt === null ? null : Date.parse(retained.lastCheckedAt),
+    Date.parse(retained.createdAt),
     Date.parse(retained.createdAt),
     Date.parse(retained.updatedAt),
   ],
@@ -110,11 +114,15 @@ export const transferMountPathToRetained = async ({
       {
         sql: `SELECT id FROM session_worktrees WHERE worktree_path = ? AND id != ?
          UNION ALL
-         SELECT id FROM retained_worktree_paths WHERE worktree_path = ?
+         SELECT id FROM retained_worktree_paths WHERE worktree_path = ? AND reason != 'orphan'
          LIMIT 1`,
         params: [retained.worktreePath, retained.sourceMountId, retained.worktreePath],
         abortWhen: 'rows',
         abortCode: PATH_OWNED,
+      },
+      {
+        sql: "DELETE FROM retained_worktree_paths WHERE worktree_path = ? AND reason = 'orphan'",
+        params: [retained.worktreePath],
       },
       retainedPathInsertStatement({ retained }),
       {
@@ -158,7 +166,7 @@ export const listAllRetainedWorktreePaths = async ({
   readonly db: Database;
 }): Promise<ReadonlyArray<RetainedWorktreePath>> => {
   const rows = await db.select<Row>(
-    `SELECT ${SELECT_COLUMNS} FROM retained_worktree_paths ORDER BY created_at, id`,
+    `SELECT ${SELECT_COLUMNS} FROM retained_worktree_paths WHERE ${OWNED} ORDER BY created_at, id`,
     [],
   );
   return rows.map(toDomain);

@@ -3,6 +3,7 @@ import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordH
 import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
+import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
@@ -13,7 +14,9 @@ import { useJiraIssueActions } from '../useJiraIssueActions';
 import { useJiraIssueComments } from '../useJiraIssueComments';
 import { AssigneePicker } from '../AssigneePicker';
 import { TransitionMenu } from '../TransitionMenu';
-import { IssueConversation } from '../IssueConversation';
+import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../shared/components/Conversation/types';
+import { JIRA_CAPABILITIES, jiraConversation } from '../jiraConversation';
 
 type Props = {
   readonly issue: JiraIssue;
@@ -32,7 +35,30 @@ export const JiraIssueDetail = ({
 }: Props) => {
   const actions = useJiraIssueActions({ issue, workspaceId, projectId, onWritten: onIssueWritten });
   const live = actions.issue;
-  const conversation = useJiraIssueComments({ issue: live, workspaceId, projectId });
+  const { comments, isLoading, error, reload, post } = useJiraIssueComments({
+    issue: live,
+    workspaceId,
+    projectId,
+  });
+  const source = useMemo<ConversationSource>(() => {
+    const flat = jiraConversation({ comments });
+    return {
+      toolLabel: 'Jira',
+      threads: flat.threads,
+      capabilities: JIRA_CAPABILITIES,
+      isLoading,
+      error,
+      onRetry: reload,
+      onPost: post == null ? null : ({ body }) => post(body),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'Comments on this issue show up here.',
+      footnote: flat.footnote,
+      composerNote: 'Plain text, one paragraph per line',
+      renderMessageFooter: null,
+    };
+  }, [comments, isLoading, error, reload, post]);
+  const conversation = useConversationPane({ source, resetKey: live.key });
   const tone = statusCategoryTone({ statusCategory: live.statusCategory });
   const assign = actions.assign;
   const facts = resolveFacts({ registry: jiraIssueFields, entity: live });
@@ -60,6 +86,7 @@ export const JiraIssueDetail = ({
   return (
     <PaneShell
       scroll="body"
+      dock={conversation.composer}
       header={
         <RecordHeader
           provider="jira"
@@ -95,23 +122,7 @@ export const JiraIssueDetail = ({
               <DescriptionSection text={live.description} onSave={actions.saveDescription} />
             ),
           },
-          {
-            key: 'conversation',
-            kind: 'conversation',
-            label: 'Conversation',
-            count: conversation.comments.length,
-            isCollapsible: false,
-            defaultOpen: true,
-            content: (
-              <IssueConversation
-                comments={conversation.comments}
-                isLoading={conversation.isLoading}
-                error={conversation.error}
-                onRetry={conversation.reload}
-                onPost={conversation.post}
-              />
-            ),
-          },
+          conversation.section,
         ]}
       />
     </PaneShell>

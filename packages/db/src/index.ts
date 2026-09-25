@@ -47,6 +47,8 @@ export {
   reconnectProject,
   updateProjectKind,
   updateProjectBaseBranch,
+  updateProjectStar,
+  updateProjectDescription,
 } from './queries/project';
 export {
   describeProjectAdoption,
@@ -164,6 +166,9 @@ export {
   listTurnSpans,
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
+export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
+export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
+export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export { getSetting, setSetting } from './queries/settings';
 export {
   listBudgetRules,
@@ -194,6 +199,11 @@ export {
   getAgentById,
   type AgentConfigUpdate,
 } from './queries/agent';
+export {
+  listAgentQueuedMessages,
+  replaceAgentQueuedMessages,
+  type AgentQueuedMessageRecord,
+} from './queries/agent-queued-message';
 export {
   insertSessionWorktree,
   insertSessionMount,
@@ -237,6 +247,25 @@ export {
   markRetainedWorktreePathChecked,
   transferMountPathToRetained,
 } from './queries/retained-worktree-path';
+export {
+  deleteWorktreeLedgerEntries,
+  listWorktreeLedger,
+  recordOrphanWorktrees,
+  setWorktreeLedgerKeep,
+  setWorktreeLedgerSize,
+  type OrphanLedgerInput,
+} from './queries/worktree-ledger';
+export {
+  listStorageMounts,
+  listStorageSessionRefs,
+  type StorageMountRow,
+  type StorageSessionRef,
+} from './queries/storage-folders';
+export {
+  listWorktreeRoots,
+  markWorktreeRootScanned,
+  registerWorktreeRoot,
+} from './queries/worktree-root';
 export { insertSessionEvent, listSessionEvents } from './queries/session-event';
 export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings-overrides';
 export {
@@ -371,6 +400,8 @@ export {
 export {
   listResolveThreads,
   setResolveThreadReplyDraft,
+  setResolveThreadStage,
+  setResolveThreadState,
   upsertResolveThread,
 } from './queries/resolve-thread';
 export {
@@ -412,6 +443,9 @@ export {
   insertResolvePublication,
   setResolvePublicationPhase,
   listActiveResolvePublications,
+  listActiveResolvePublicationsForSession,
+  claimResolvePublication,
+  beatResolvePublication,
   listResolvePublicationsForSession,
   upsertResolvePublicationThread,
   listResolvePublicationThreads,

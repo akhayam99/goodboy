@@ -6,7 +6,7 @@ import { RecordSections } from '../../../../../shared/components/StudioDetail/Re
 import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
 import { DescriptionSection } from '../../../../../shared/components/DescriptionSection';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Notice, RefreshIconButton } from '@goodboy/ui';
 import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
@@ -25,10 +25,13 @@ import { useGitlabMrDiscussions } from '../../useGitlabMrDiscussions';
 import { projectPathFromMrUrl } from '../useGitlabMrs';
 import { CreateMrForm } from './CreateMrForm';
 import { MrApprovals } from './MrApprovals';
-import { MrConversation } from './MrConversation';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
 import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
+import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';
+import { systemNoteFootnote } from '../../systemNoteFootnote';
 import { useMrVerbs, type MrVerbBusy } from './useMrVerbs';
 
 type ApprovalSummaryParams = {
@@ -117,6 +120,61 @@ export const MrDetailPanel = ({
     host: canAct ? activeHost : null,
     projectPath: canAct ? projectPath : null,
     mrIid: canAct ? mr.iid : null,
+  });
+
+  const {
+    discussions: discussionList,
+    isLoading: isDiscussionLoading,
+    error: discussionError,
+    reload: reloadDiscussions,
+    post: postNote,
+    reply: replyToDiscussion,
+    resolve: resolveDiscussion,
+    resolveError,
+  } = discussions;
+  const source = useMemo<ConversationSource>(() => {
+    const conversation = gitlabMrConversation({ discussions: discussionList });
+    return {
+      toolLabel: 'GitLab',
+      threads: conversation.threads,
+      capabilities: GITLAB_MR_CAPABILITIES,
+      isLoading: isDiscussionLoading,
+      error: discussionError,
+      onRetry: reloadDiscussions,
+      onPost:
+        postNote == null || replyToDiscussion == null
+          ? null
+          : ({ body, threadId }) =>
+              threadId == null
+                ? postNote({ body })
+                : replyToDiscussion({ discussionId: threadId, body }),
+      onResolve:
+        resolveDiscussion == null
+          ? null
+          : ({ threadId, isResolved }) =>
+              resolveDiscussion({ discussionId: threadId, resolved: isResolved }),
+      resolveError:
+        resolveError == null
+          ? null
+          : { threadId: resolveError.discussionId, message: resolveError.message },
+      emptyDescription: 'Notes and review threads on this merge request show up here.',
+      footnote: systemNoteFootnote({ count: conversation.systemNoteCount }),
+      composerNote: null,
+      renderMessageFooter: null,
+    };
+  }, [
+    discussionList,
+    isDiscussionLoading,
+    discussionError,
+    reloadDiscussions,
+    postNote,
+    replyToDiscussion,
+    resolveDiscussion,
+    resolveError,
+  ]);
+  const conversation = useConversationPane({
+    source,
+    resetKey: mr == null ? 'none' : mr.webUrl,
   });
 
   useEffect(() => {
@@ -246,7 +304,6 @@ export const MrDetailPanel = ({
   }
 
   if (mr != null) {
-    const postNote = discussions.post;
     const approval = approvals.approval;
     const sections: ReadonlyArray<RecordSection> = [
       {
@@ -270,31 +327,13 @@ export const MrDetailPanel = ({
             },
           ]
         : []),
-      {
-        key: 'conversation',
-        kind: 'conversation',
-        label: 'Conversation',
-        count: discussions.discussions.length,
-        isCollapsible: false,
-        defaultOpen: true,
-        content: (
-          <MrConversation
-            discussions={discussions.discussions}
-            isLoading={discussions.isLoading}
-            error={discussions.error}
-            onRetry={discussions.reload}
-            onPost={postNote == null ? null : (body: string) => postNote({ body })}
-            onReply={discussions.reply}
-            onResolve={discussions.resolve}
-            resolveError={discussions.resolveError}
-          />
-        ),
-      },
+      conversation.section,
     ];
 
     return (
       <PaneShell
         scroll="body"
+        dock={conversation.composer}
         header={
           <RecordHeader
             provider="gitlab"

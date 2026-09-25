@@ -25,6 +25,7 @@ import type {
   Session,
   SessionId,
   SessionProviderPreference,
+  StepDef,
   StepDefId,
   Workflow,
   WorkflowId,
@@ -42,7 +43,9 @@ import type {
   VerbosityLevel,
   SkillId,
   TurnEvent,
+  UserTurnSentVia,
   TurnProviderOverride,
+  HandoffDraft,
   SessionExternalTaskProvider,
   SessionExternalTask,
   SessionMountView,
@@ -165,7 +168,12 @@ import {
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
-import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
+import type {
+  AgentQueueItemParams,
+  AgentQueuedTurn,
+  AgentQueuedTurnInput,
+} from './slices/agentQueue/types';
+import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
@@ -219,6 +227,10 @@ import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import { createDurationEstimatesSlice } from './slices/durationEstimates';
 import { durationEstimatesInitialState } from './slices/durationEstimates/state';
+import { createProviderLimitsSlice } from './slices/providerLimits';
+import { providerLimitsInitialState } from './slices/providerLimits/state';
+import { createHandoffsSlice } from './slices/handoffs';
+import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
   LoadPrSeriesInput,
@@ -258,9 +270,9 @@ import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
+import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
 import { createWorktreesSlice } from './slices/worktrees';
 import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
-import type { OrphanRemoval } from './slices/worktrees/removeOrphanWorktrees';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -387,6 +399,8 @@ type AppActions = {
     projectId: ProjectId;
     baseBranch: string | null;
   }): Promise<void>;
+  setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
+  describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
@@ -568,14 +582,14 @@ type AppActions = {
     sessionId: SessionId,
     childAgentId: AgentId,
     assistantText: string,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ): Promise<void>;
   finalizeWorkflowStep(
     sessionId: SessionId,
     agentId: AgentId,
     assistantText: string,
     planCapturedThisTurn: boolean,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ): Promise<{ readonly shouldAutoAdvance: boolean }>;
   advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
   skipStuckStepAndAdvance(
@@ -630,8 +644,15 @@ type AppActions = {
     override?: TurnProviderOverride;
     force?: boolean;
     origin?: 'operator' | 'workflow';
+    handoff?: HandoffDraft;
+    sentVia?: UserTurnSentVia;
   }): Promise<SendTurnResult>;
-  cancelCurrentTurn(sessionId: SessionId, agentId?: AgentId): Promise<void>;
+  cancelCurrentTurn(
+    sessionId: SessionId,
+    agentId?: AgentId,
+    reason?: CancelTurnReason,
+  ): Promise<void>;
+  continueStoppedAgent(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
   retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
@@ -639,9 +660,6 @@ type AppActions = {
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
   toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
-  loadStorageStats(): Promise<void>;
-  pruneArchivedTranscripts(): Promise<number>;
-  removeArchivedWorktrees(): Promise<{ removed: number; failed: number }>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
@@ -680,7 +698,7 @@ type AppActions = {
   ): Promise<void>;
   suggestWorkflowTitle(sessionId: SessionId, goal: string): Promise<string | null>;
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
-  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<void>;
+  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<StepDef>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
   resetWorkflows(workspaceId: WorkspaceId): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
@@ -733,8 +751,16 @@ type AppActions = {
   resetWorkflowNodeRoutingLock(params: ResetWorkflowNodeRoutingLockParams): Promise<void>;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
-  setAgentQueue(agentId: AgentId, queue: ReadonlyArray<AgentQueuedTurn>): void;
-  clearAgentQueue(agentId: AgentId): void;
+  loadAgentQueues(sessionId: SessionId): Promise<void>;
+  enqueueAgentMessage(params: {
+    turn: AgentQueuedTurnInput;
+    placement?: 'last' | 'first';
+  }): Promise<void>;
+  removeQueuedMessage(params: AgentQueueItemParams): Promise<void>;
+  takeQueuedMessage(params: AgentQueueItemParams): AgentQueuedTurn | null;
+  drainAgentQueue(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
+  sendQueuedNow(params: AgentQueueItemParams & { sessionId: SessionId }): Promise<void>;
+  sendAgentMessageNow(params: { sessionId: SessionId; turn: AgentQueuedTurnInput }): Promise<void>;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
@@ -1020,11 +1046,6 @@ type AppActions = {
   setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
   closeSessionTerminals(sessionId: SessionId): Promise<void>;
   reconcileOrphanWorktrees(): Promise<void>;
-  removeOrphanWorktrees(params: {
-    workspaceId: WorkspaceId;
-    paths: ReadonlyArray<string>;
-    mode: WorktreeRemovalMode;
-  }): Promise<ReadonlyArray<OrphanRemoval>>;
 };
 
 export type AppStore = AppState &
@@ -1034,7 +1055,10 @@ export type AppStore = AppState &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
-  ReturnType<typeof createDurationEstimatesSlice>;
+  ReturnType<typeof createDurationEstimatesSlice> &
+  ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createStorageSlice> &
+  ReturnType<typeof createHandoffsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1097,6 +1121,8 @@ export const initialState: AppState = {
   ...prWritesInitialState,
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
+  ...providerLimitsInitialState,
+  ...handoffsInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
   sessionBranches: {},
@@ -1109,6 +1135,13 @@ export const initialState: AppState = {
   summarizerStatus: {},
   storageStats: null,
   storageStatsLoading: false,
+  storageFolders: [],
+  storageRoots: [],
+  storageSizeCache: {},
+  storageMeasuringPath: null,
+  storageRemovingPaths: {},
+  storageOutcome: null,
+  storageFocus: null,
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
@@ -1221,6 +1254,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
+  ...createAgentQueueSlice(set, get),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),
@@ -1243,6 +1277,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
+  ...createProviderLimitsSlice(set, get),
+  ...createHandoffsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

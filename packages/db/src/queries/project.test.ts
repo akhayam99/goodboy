@@ -16,6 +16,8 @@ import {
   reconnectProject,
   updateProjectKind,
   updateProjectBaseBranch,
+  updateProjectDescription,
+  updateProjectStar,
 } from './project';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -48,6 +50,7 @@ const makeProject = ({ id = 'project-1', overrides = {} }: MakeProjectParams): P
   rootPath: `/tmp/${id}`,
   kind: 'repo',
   baseBranch: null,
+  description: null,
   overrides: EMPTY_OVERRIDES,
   createdAt: at({ value: '2026-08-22T10:00:00Z' }),
   updatedAt: at({ value: '2026-08-22T10:05:00Z' }),
@@ -128,6 +131,44 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBe('develop');
     await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: null });
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
+  });
+
+  it('stars a project with a description and clears both', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+    const starredAt = at({ value: '2026-09-25T09:00:00Z' });
+
+    await updateProjectStar({ db, projectId: project.id, starredAt });
+    await updateProjectDescription({
+      db,
+      projectId: project.id,
+      description: 'Settles payments and writes the ledger',
+    });
+    const starred = await getProjectById({ db, id: project.id });
+    expect(starred?.starredAt).toBe(starredAt);
+    expect(starred?.description).toBe('Settles payments and writes the ledger');
+
+    await updateProjectStar({ db, projectId: project.id, starredAt: null });
+    await updateProjectDescription({ db, projectId: project.id, description: null });
+    const cleared = await getProjectById({ db, id: project.id });
+    expect(cleared?.starredAt).toBeUndefined();
+    expect(cleared?.description).toBeNull();
+  });
+
+  it('keeps the star and description a project is inserted with', async () => {
+    const db = await makeDb();
+    const project = makeProject({
+      overrides: {
+        starredAt: at({ value: '2026-09-25T09:00:00Z' }),
+        description: 'Fans out receipts',
+      },
+    });
+    await insertProject({ db, project });
+    expect(await getProjectById({ db, id: project.id })).toEqual({
+      ...project,
+      lastAccessedAt: project.updatedAt,
+    });
   });
 
   it('disconnects and reconnects a project', async () => {

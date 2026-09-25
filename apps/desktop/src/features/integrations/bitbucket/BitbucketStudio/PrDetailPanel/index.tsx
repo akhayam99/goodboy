@@ -19,8 +19,10 @@ import { BitbucketStateChip } from '../../BitbucketStateChip';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../client';
 import { useAppStore } from '../../../../../store';
 import { usePrVerbs } from '../usePrVerbs';
+import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
+import { BITBUCKET_PR_CAPABILITIES, bitbucketConversation } from '../../bitbucketConversation';
 import { PrChanges } from './PrChanges';
-import { PrConversation } from './PrConversation';
 import { useBitbucketPrDetail } from './useBitbucketPrDetail';
 import { useBitbucketPrDiff } from './useBitbucketPrDiff';
 import { usePrActions } from './usePrActions';
@@ -96,6 +98,43 @@ export const PrDetailPanel = ({
     onDecline: actions.decline,
   });
 
+  const comment = actions.comment;
+  const reply = actions.reply;
+  const source = useMemo<ConversationSource>(
+    () => ({
+      toolLabel: 'Bitbucket',
+      threads: bitbucketConversation({ comments: detail.comments }),
+      capabilities: BITBUCKET_PR_CAPABILITIES,
+      isLoading: detail.isLoading,
+      error: detail.error,
+      onRetry: detail.reload,
+      onPost:
+        comment == null || reply == null
+          ? null
+          : ({ body, threadId }) =>
+              threadId == null ? comment(body) : reply({ parentCommentId: Number(threadId), body }),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'Comments on this pull request show up here.',
+      footnote: actions.canAct ? null : POST_BLOCKED,
+      composerNote: null,
+      renderMessageFooter: null,
+    }),
+    [
+      detail.comments,
+      detail.isLoading,
+      detail.error,
+      detail.reload,
+      comment,
+      reply,
+      actions.canAct,
+    ],
+  );
+  const conversation = useConversationPane({
+    source,
+    resetKey: target == null ? 'none' : JSON.stringify(target),
+  });
+
   if (pullRequest == null || repo == null) {
     return (
       <RecordDetailEmptyState
@@ -150,30 +189,13 @@ export const PrDetailPanel = ({
         />
       ),
     },
-    {
-      key: 'conversation',
-      kind: 'conversation',
-      label: 'Conversation',
-      count: detail.comments.length,
-      isCollapsible: false,
-      defaultOpen: true,
-      content: (
-        <PrConversation
-          comments={detail.comments}
-          isLoading={detail.isLoading}
-          error={detail.error}
-          postBlockReason={actions.canAct ? null : POST_BLOCKED}
-          onRetry={detail.reload}
-          onPost={actions.comment}
-          onReply={actions.reply}
-        />
-      ),
-    },
+    conversation.section,
   ];
 
   return (
     <PaneShell
       scroll="body"
+      dock={conversation.composer}
       header={
         <RecordHeader
           provider="bitbucket"

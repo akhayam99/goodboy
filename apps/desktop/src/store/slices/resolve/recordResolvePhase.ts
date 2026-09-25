@@ -1,9 +1,5 @@
-import {
-  listResolveAttempts,
-  listResolveThreads,
-  setResolveAttemptPhase,
-  upsertResolveThread,
-} from '@goodboy/db';
+import { listResolveAttempts, listResolveThreads, setResolveAttemptPhase } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { ResolveThread } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
@@ -62,7 +58,7 @@ export const recordResolvePhase = async ({
               stateReason: `${phase === 'cancelled' ? 'stopped' : 'failed'}:${row.disposition !== null && row.stateReason !== null ? row.stateReason : 'interrupted'}`,
             }
           : outcomePatch({ outcome: candidate });
-      await upsertResolveThread({
+      await saveResolveThread({
         db,
         row: { ...row, ...patch, updatedAt: Date.now() },
         expectedRevision: previous?.revision ?? null,

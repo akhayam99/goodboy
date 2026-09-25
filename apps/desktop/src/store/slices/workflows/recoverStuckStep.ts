@@ -1,4 +1,9 @@
-import { classifyWorkflowChain, findReusableAgent, runsForWorkflowRun } from '@goodboy/core';
+import {
+  classifyWorkflowChain,
+  findReusableAgent,
+  isAgentStatusHalted,
+  runsForWorkflowRun,
+} from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { composeStepBoundary } from '../../kickoff';
@@ -45,7 +50,7 @@ export const recoverStuckStep = (get: GetFn) => {
         return;
       }
       const agent = findReusableAgent(agents, chain.failedStep.id);
-      if (agent == null || agent.status !== 'failed') {
+      if (agent == null || !isAgentStatusHalted({ status: agent.status })) {
         return;
       }
       const turn = get().agentTurnState[agent.id];

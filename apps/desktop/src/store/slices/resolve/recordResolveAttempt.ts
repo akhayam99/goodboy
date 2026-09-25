@@ -1,9 +1,5 @@
-import {
-  insertResolveAttempt,
-  listResolveAttempts,
-  listResolveThreads,
-  upsertResolveThread,
-} from '@goodboy/db';
+import { insertResolveAttempt, listResolveAttempts, listResolveThreads } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
 import type { ResolveAttempt } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
@@ -27,6 +23,7 @@ export const recordResolveAttempt = async ({
   phase,
   threadIds,
   mountTarget,
+  candidateMode = 'propose',
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -58,7 +55,7 @@ export const recordResolveAttempt = async ({
     createdAt: queued?.createdAt ?? now,
   };
   await insertResolveAttempt({ db, attempt });
-  if (phase === 'running') {
+  if (phase === 'running' && candidateMode === 'propose') {
     await beginResolveCandidate({
       set,
       get,
@@ -83,7 +80,7 @@ export const recordResolveAttempt = async ({
         projectId: get().sessionActiveProject[sessionId] ?? null,
         prNumber: attempt.prNumber,
       });
-    await upsertResolveThread({
+    await saveResolveThread({
       db,
       row: {
         ...row,

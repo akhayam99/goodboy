@@ -1,5 +1,6 @@
 import { deferResolveQueueItem as deferItem, listResolveQueueItems } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { advanceResolveStage } from './advanceResolveStage';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import type { ItemParams, SliceParams } from './types';
 
@@ -18,6 +19,14 @@ export const deferResolveQueueItem = async ({ set, sessionId, itemId }: Params):
   const deferred = await deferItem({ db, sessionId, itemId });
   if (!deferred) {
     throw new Error('Resolve item could not be deferred');
+  }
+  if (target !== undefined) {
+    await advanceResolveStage({
+      set,
+      sessionId,
+      threadIds: [target.thread.threadId],
+      event: () => ({ kind: 'user_parked' }),
+    });
   }
   await loadResolveQueueItemsInto({ set, sessionId });
 };

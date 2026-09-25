@@ -32,6 +32,18 @@ import { m170WorkflowRunProviderPool } from './m170-workflow-run-provider-pool';
 import { m171SessionEventWorkflowClosed } from './m171-session-event-workflow-closed';
 import { m172StepSize } from './m172-step-size';
 import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-mounts';
+import { m174AgentStopped } from './m174-agent-stopped';
+import { m175AgentQueuedMessages } from './m175-agent-queued-messages';
+import { m176ProviderLimits } from './m176-provider-limits';
+import { m177ProjectFocus } from './m177-project-focus';
+import { m178WorkspaceProfileFields } from './m178-workspace-profile-fields';
+import { m179ResolveStage } from './m179-resolve-stage';
+import { m180StepLibraryBuiltinsInCode } from './m180-step-library-builtins-in-code';
+import { m181StepLibraryExpectedOutput } from './m181-step-library-expected-output';
+import { m182RetainedWorktreeLedger } from './m182-retained-worktree-ledger';
+import { m183WorktreeRoots } from './m183-worktree-roots';
+import { m184TurnSpansBackfill } from './m184-turn-spans-backfill';
+import { m185AgentHandoffs } from './m185-agent-handoffs';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -351,4 +363,16 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 171, sql: m171SessionEventWorkflowClosed },
   { version: 172, sql: m172StepSize },
   { version: 173, sql: m173AgentTurnSpanTouchedMounts },
+  { version: 174, sql: m174AgentStopped },
+  { version: 175, sql: m175AgentQueuedMessages },
+  { version: 176, sql: m176ProviderLimits },
+  { version: 177, sql: m177ProjectFocus },
+  { version: 178, sql: m178WorkspaceProfileFields },
+  { version: 179, sql: m179ResolveStage },
+  { version: 180, sql: m180StepLibraryBuiltinsInCode },
+  { version: 181, sql: m181StepLibraryExpectedOutput },
+  { version: 182, sql: m182RetainedWorktreeLedger },
+  { version: 183, sql: m183WorktreeRoots },
+  { version: 184, sql: m184TurnSpansBackfill },
+  { version: 185, sql: m185AgentHandoffs },
 ];

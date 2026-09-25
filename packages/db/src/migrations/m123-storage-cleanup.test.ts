@@ -79,7 +79,10 @@ describe('m123 storage cleanup', () => {
 
   it('drops unused soft-delete and library inheritance columns', async () => {
     const db = await seedThrough122();
-    await migrate(db, migrations);
+    await migrate(
+      db,
+      migrations.filter((migration) => migration.version <= 123),
+    );
 
     expect(await columnsFor({ db, table: 'skills' })).not.toContain('deleted_at');
     expect(await columnsFor({ db, table: 'permission_rules' })).not.toContain('deleted_at');

@@ -1,4 +1,6 @@
-import { listResolveThreads, upsertResolveThread } from '@goodboy/db';
+import { listResolveThreads } from '@goodboy/db';
+import { saveResolveThread } from './saveResolveThread';
+import { withNextStage } from './withNextStage';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectResolveRows } from './projectResolveRows';
 import type { BatchUpdateParams, SliceParams } from './types';
@@ -24,9 +26,14 @@ export const updateResolveThreads = async ({
     }
     const row = { ...previous, ...update.patch, updatedAt: Date.now() };
     if (
-      await upsertResolveThread({ db: tauriDatabase, row, expectedRevision: previous.revision })
+      await saveResolveThread({
+        db: tauriDatabase,
+        row,
+        expectedRevision: previous.revision,
+        previous,
+      })
     ) {
-      rows[index] = { ...row, revision: previous.revision + 1 };
+      rows[index] = { ...withNextStage({ previous, row }), revision: previous.revision + 1 };
     }
   }
   projectResolveRows({

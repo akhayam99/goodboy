@@ -28,6 +28,16 @@ Owns the turn pipeline. The frontend drives it from
   lease queues it as a resolve attempt rather than running two writers in one
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
+- A resolver turn proposes only while another agent in the session is running.
+  Its work is then parked as a candidate: committed to a candidate ref, the
+  branch reset to where the turn started, and offered for acceptance on the
+  queued comments it answers. A message the user types in the resolver chat,
+  or any resolver turn once nothing else is running, applies: its commits stay
+  on the branch. Work no queued comment covers is never parked.
+- Recovery on load parks a leftover candidate only when its turn is not
+  running, no later attempt started on that worktree, and a writer is still
+  live or the resolver has not completed. Otherwise the candidate is dropped
+  and the branch is left as it is.
 - A turn in a folder project captures a recoverable file version before and
   after it runs.
 
@@ -66,6 +76,53 @@ record a live turn already wrote wins.
   reads.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
+- `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
+  message out it adds the context slots, the child routing menu, the cluster
+  boundary, the goal attachments, the prior turns and the verbosity line, then
+  places the guards and the kind prompt per provider. The text it returns is
+  byte for byte what the CLI received before it existed;
+  `store.handoff-sent-text.test.ts` pins it for Claude and Codex.
+
+## What each agent is handed
+
+- An agent's first turn stores one `agent_handoffs` row (m185), written once
+  and never updated: who sent it (`HandoffSender`), the ask in one line, the
+  why, `doneWhen`, one-line sections (ask, goal, earlier steps, plan, files,
+  threads, scope and rules, about you, role instructions) and the exact text
+  sent (`sent_system` only for Claude, `sent_message` for every provider). It
+  lives only in the local database and includes the workspace profile.
+- A first turn is one with no run yet in `agentRunHistory`, an agent that never
+  started, and no fallback retry. Its `user_text` event carries
+  `handoffId`, the agent id, so the transcript can draw the handoff there.
+- A composer that knows more than the message passes a `HandoffDraft` to
+  `sendTurn`: the workflow step passes its instruction, goal and plan, a
+  cluster child its cluster and the parent it came from, a scout tree child its
+  area. Everything else comes from the agent row (`deriveHandoffSender`): a
+  resolver is sent by Resolve, a question delegate by its question, a child of
+  another agent by that agent or as its follow-up, a workflow step by the
+  orchestrator on a dynamic run and by the workflow otherwise, and anything
+  else by you. The visible `user_text` keeps the full composed text, because
+  the prior turns block replays it for Codex, Cursor and Antigravity.
+- The transcript draws that first message as one handoff block
+  (`features/chat/components/HandoffBlock`), the same for every provider: who
+  sent it, the ask in one line, the why, and a chip per section; a chip opens
+  the block on its section. It opens by itself only while the agent has not
+  answered yet. Earlier steps open their agent, the plan is a title and Open
+  plan (never its body), and **View as sent** shows the exact text in mono, in
+  two parts for Claude and one for the others with a line that says why. When
+  you wrote the first message yourself, your bubble stays and a one-line
+  **Also received** strip sits above it.
+- On screen the block never says "handoff" (an internal word,
+  `jargon-copy.test.ts`): its eyebrow is "sent by". An agent from before m185
+  has no handoff row: its first message shows closed as "first message · older
+  format", the original text clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes the `handoff` item and
+  `TranscriptRows` counts it as the first user turn.
+- The transcript is the record and the Brief is the dashboard. What the agent
+  received lives only in the handoff block; the Brief shows one line, "Sent by
+  Orchestrator · step 4 · the ask", that switches to the Transcript tab with
+  the block open (`requestHandoffOpen`). The Brief no longer carries Why this
+  step or Expected output, and the old kickoff cards and their text parsers
+  are gone.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -165,7 +222,8 @@ the agent in `error` with a retryable error event.
 - A span holds machine time only: `started_at` is taken right before the CLI starts and `ended_at` when its stream ends. Waiting on an open question, a review or a retry never falls inside a span, so an agent's execution time is the sum of its spans. `Agent.startedAt` to `lastFinishedAt` is wall clock and is not that number.
 - `provider`, `model` and `effort` are what the CLI was actually started with, after routing and clamping. `effort` is null when no effort flag was passed. `cost_usd` is the sum of the telemetry the run recorded, null when it recorded none.
 - `end_reason` is `cancelled` for a stopped turn, `failed` for a thrown turn or one with no answer, `awaiting_user` when the answer ends on a blocking question, and `succeeded` otherwise.
-- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace. There is no backfill: older wall clock numbers would bring back the wrong duration, so a run from before spans existed has no observed effort and its row shows the planned one in faint.
+- Spans outlive their session and agent (`ON DELETE SET NULL`) so duration history stays with the workspace.
+- m184 rebuilt spans once for the succeeded runs from before spans existed, so estimates start from real history. It ties a run to its agent through the run's `done` turn event, or the agent's last `provider_run_id` when the events were pruned, and takes the provider run's own `created_at` to `finishedAt`, the machine time of that run. A backfilled span has `effort` null, because runs never stored the effort flag, so its row shows the planned effort in faint and it only counts toward the tiers without effort. The migration fills a helper table in one pass over `turn_events`, then inserts in 17 chunks by the last character of the run id, each committed on its own, and never overwrites a span the app recorded.
 - `touched_mount_ids` lists the session mounts the turn changed, as a JSON array (null on spans from before it was recorded). `collectTouchedMounts` joins two signals. Every `file_edit` path the CLI reported maps to the innermost mount that holds it. On top of that, `snapshotMountChanges` reads each writable mount's numstat (`worktreeChangedFiles`) right before the CLI starts and again at the end, and a mount whose numstat moved counts too, which catches edits made through the shell. The numstat signal is dropped when another agent of the session was running at the end of the turn or closed a turn during it (`hasOtherSessionTurnSince`), because the change could be theirs. Gemini reports no `file_edit`, so its turns rely on the numstat signal alone. A failure never fails the turn; it falls back to the reported edits.
 - The activity feed shows these mounts on an agent row (`useAgentTouchedWorktrees`, union over the agent's spans) only when the session has two or more mounts. The row shows the worktree icon and a count, never a name that the title would have to share space with; the tooltip and accessible name list the mounts. A mount that left the session drops out of the row.
 - After a span is written, `recordTurnSpan` calls `refreshTurnSpans`, which reloads the session spans and the workspace history only where a pane already loaded them.

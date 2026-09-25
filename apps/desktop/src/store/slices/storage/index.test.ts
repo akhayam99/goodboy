@@ -1,46 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountOperation, Project, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, MountOperation, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
+import type { StorageFolder } from './types';
 
 const {
   listArchivedSessionRefs,
-  listArchivedSessionMounts,
-  listAllRetainedWorktreePaths,
   deleteTurnEventsForSessions,
-  getTurnEventStatsForSessions,
-  getDatabaseSizeBytes,
-  updateSessionMountLifecycle,
   vacuumDatabase,
+  updateSessionMountLifecycle,
+  deleteWorktreeLedgerEntries,
+  setWorktreeLedgerKeep,
   removeWorktreeChecked,
+  removeWorktreeFolder,
   worktreeWriterStatus,
-  worktreeDirectorySize,
-  worktreeList,
   operations,
 } = vi.hoisted(() => ({
   operations: new Map<string, MountOperation>(),
   listArchivedSessionRefs: vi.fn(),
-  listArchivedSessionMounts: vi.fn(),
-  listAllRetainedWorktreePaths: vi.fn(),
   deleteTurnEventsForSessions: vi.fn(),
-  getTurnEventStatsForSessions: vi.fn(),
-  getDatabaseSizeBytes: vi.fn(),
-  updateSessionMountLifecycle: vi.fn(),
   vacuumDatabase: vi.fn(),
+  updateSessionMountLifecycle: vi.fn(),
+  deleteWorktreeLedgerEntries: vi.fn(async () => undefined),
+  setWorktreeLedgerKeep: vi.fn(
+    async (_params: { readonly keptAt: string | null; readonly keptUntil: string | null }) =>
+      undefined,
+  ),
   removeWorktreeChecked: vi.fn(),
+  removeWorktreeFolder: vi.fn(),
   worktreeWriterStatus: vi.fn(),
-  worktreeDirectorySize: vi.fn(),
-  worktreeList: vi.fn(),
 }));
 
 vi.mock('@goodboy/db', () => ({
   listArchivedSessionRefs,
-  listArchivedSessionMounts,
-  listAllRetainedWorktreePaths,
   deleteTurnEventsForSessions,
-  getTurnEventStatsForSessions,
-  getDatabaseSizeBytes,
-  updateSessionMountLifecycle,
   vacuumDatabase,
+  updateSessionMountLifecycle,
+  deleteWorktreeLedgerEntries,
+  setWorktreeLedgerKeep,
   getMountOperation: vi.fn(
     async ({ requestId }: { readonly requestId: string }) => operations.get(requestId) ?? null,
   ),
@@ -49,98 +45,106 @@ vi.mock('@goodboy/db', () => ({
   }),
 }));
 
-vi.mock('../../../shared/lib/db', () => ({
-  tauriDatabase: {},
-}));
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktreeChecked,
+  removeWorktreeFolder,
   worktreeWriterStatus,
-  worktreeDirectorySize,
-  worktreeList,
 }));
 
-import { collectArchivedWorktrees } from './collectArchivedWorktrees';
-import { loadStorageStats } from './loadStorageStats';
+import { keepStorageFolder } from './keepStorageFolder';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
-import { removeArchivedWorktrees } from './removeArchivedWorktrees';
+import { removeStorageFolders } from './removeStorageFolders';
+import { STORAGE_KEPT_ARCHIVED_KEY } from './storageSettings';
 
-const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
-const PROJECT_ID = 'project-1' as ProjectId;
 const ARCHIVED_SESSION = 'session-archived' as SessionId;
-const LIVE_SESSION = 'session-live' as SessionId;
 
-const project = {
-  id: PROJECT_ID,
-  workspaceId: WORKSPACE_ID,
-  name: 'project',
-  rootPath: '/repo',
-  kind: 'repo',
-} as Project;
-
-type StoredMount = {
-  readonly id: string;
-  readonly sessionId: SessionId;
-  readonly projectId: ProjectId;
-  readonly worktreePath: string;
-  readonly branch: string;
-  readonly revision: number;
-} & Record<string, unknown>;
-
-const mount = (overrides: Record<string, unknown>): StoredMount =>
-  ({
-    sessionId: ARCHIVED_SESSION,
-    projectId: PROJECT_ID,
-    lastWorktreePath: null,
-    baseBranch: null,
-    parallelIndex: 0,
-    mountName: 'project',
-    repoSlug: null,
-    isAttached: true,
-    diskState: 'present',
-    revision: 3,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  }) as unknown as StoredMount;
-
-const archivedWorktree = mount({
-  id: 'wt-archived',
-  worktreePath: '/repo/.goodboy/worktrees/archived',
-  branch: 'ak/archived',
+const folder = (overrides: Partial<StorageFolder>): StorageFolder => ({
+  path: '/repo/.goodboy/worktrees/archived',
+  repoRoot: '/repo',
+  branch: 'goodboy/archived',
+  origin: 'archived',
+  why: 'archived-session',
+  sessionId: ARCHIVED_SESSION,
+  sessionGoal: 'Settle batch retry',
+  mountId: 'wt-archived' as MountId,
+  revision: 3,
+  ledgerId: null,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  sessionActivityAt: 1,
+  sizeBytes: 4096,
+  sizedAt: 1,
+  facts: null,
+  keptAt: null,
+  keptUntil: null,
+  ...overrides,
 });
 
-const liveWorktree = mount({
-  id: 'wt-live',
-  sessionId: LIVE_SESSION,
-  worktreePath: '/repo/.goodboy/worktrees/live',
-  branch: 'ak/live',
+const orphan = folder({
+  path: '/repo/.goodboy/worktrees/ghost',
+  branch: 'goodboy/ghost',
+  origin: 'ledger',
+  why: 'no-session',
+  sessionId: null,
+  mountId: null,
+  revision: null,
+  ledgerId: 'ledger-ghost',
+  sizeBytes: 1000,
 });
 
-const makeGet =
-  (loadStats = vi.fn(async () => undefined)) =>
-  () =>
+type Harness = {
+  state: {
+    storageFolders: ReadonlyArray<StorageFolder>;
+    storageRemovingPaths: Readonly<Record<string, true>>;
+    storageOutcome: unknown;
+    settings: Readonly<Record<string, string>>;
+  };
+  loadStorage: ReturnType<typeof vi.fn>;
+  saveSetting: ReturnType<typeof vi.fn>;
+};
+
+const makeHarness = (folders: ReadonlyArray<StorageFolder>): Harness => ({
+  state: { storageFolders: folders, storageRemovingPaths: {}, storageOutcome: null, settings: {} },
+  loadStorage: vi.fn(async () => undefined),
+  saveSetting: vi.fn(async () => undefined),
+});
+
+const wire = (harness: Harness) => {
+  const set = vi.fn((updater: unknown) => {
+    const patch =
+      typeof updater === 'function'
+        ? (updater as (state: Harness['state']) => object)(harness.state)
+        : updater;
+    Object.assign(harness.state, patch);
+  });
+  const get = () =>
     ({
-      projects: [project],
+      ...harness.state,
+      projects: [],
       sessions: [],
       terminalTabs: {},
-      loadStorageStats: loadStats,
-      reconcileOrphanWorktrees: vi.fn(async () => undefined),
+      loadStorage: harness.loadStorage,
+      saveSetting: harness.saveSetting,
     }) as unknown as AppStore;
+  return { set, get };
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
   operations.clear();
-
   listArchivedSessionRefs.mockResolvedValue([
-    { sessionId: ARCHIVED_SESSION, workspaceId: WORKSPACE_ID },
+    { sessionId: ARCHIVED_SESSION, workspaceId: 'workspace-1' },
   ]);
-  listArchivedSessionMounts.mockResolvedValue([archivedWorktree]);
-  listAllRetainedWorktreePaths.mockResolvedValue([]);
+  deleteTurnEventsForSessions.mockResolvedValue(12);
   updateSessionMountLifecycle.mockResolvedValue(true);
   removeWorktreeChecked.mockImplementation(async ({ worktreePath }: { worktreePath: string }) => ({
     kind: 'removed',
     path: worktreePath,
+  }));
+  removeWorktreeFolder.mockImplementation(async ({ path }: { path: string }) => ({
+    kind: 'removed',
+    path,
   }));
   worktreeWriterStatus.mockImplementation(async ({ path }: { path: string }) => ({
     path,
@@ -151,134 +155,116 @@ beforeEach(() => {
     hasExited: false,
     waiting: [],
   }));
-  worktreeDirectorySize.mockImplementation(async ({ path }: { path: string }) => ({
-    path,
-    sizeBytes: 1024,
-    isPartial: false,
-    exists: true,
-  }));
-  worktreeList.mockResolvedValue([
-    { path: '/repo', branch: 'main', head: 'a', isMain: true },
-    {
-      path: archivedWorktree.worktreePath,
-      branch: archivedWorktree.branch,
-      head: 'b',
-      isMain: false,
-    },
-    { path: liveWorktree.worktreePath, branch: liveWorktree.branch, head: 'c', isMain: false },
-  ]);
-  getTurnEventStatsForSessions.mockResolvedValue({ rowCount: 12, payloadBytes: 4096 });
-  getDatabaseSizeBytes.mockResolvedValue(233_000_000);
-  deleteTurnEventsForSessions.mockResolvedValue(12);
 });
 
-describe('collectArchivedWorktrees', () => {
-  it('keeps only the worktrees of archived sessions', async () => {
-    const targets = await collectArchivedWorktrees({ projects: [project] });
+describe('removeStorageFolders', () => {
+  it('removes an archived mount through the checked unmount and a ledger folder through the folder command', async () => {
+    const harness = makeHarness([folder({}), orphan]);
+    const { set, get } = wire(harness);
 
-    expect(targets).toEqual([
-      {
-        sessionId: ARCHIVED_SESSION,
-        mountId: 'wt-archived',
-        repoPath: '/repo',
-        worktreePath: archivedWorktree.worktreePath,
-        branch: 'ak/archived',
-        revision: 3,
-        sizeBytes: 1024,
-      },
-    ]);
-  });
-
-  it('drops worktrees git no longer reports', async () => {
-    worktreeList.mockResolvedValue([{ path: '/repo', branch: 'main', head: 'a', isMain: true }]);
-
-    await expect(collectArchivedWorktrees({ projects: [project] })).resolves.toEqual([]);
-  });
-
-  it('never claims a checkout whose branch matches but whose path does not', async () => {
-    worktreeList.mockResolvedValue([
-      { path: '/repo', branch: 'main', head: 'a', isMain: true },
-      { path: '/elsewhere/checkout', branch: 'ak/archived', head: 'b', isMain: false },
-    ]);
-
-    await expect(collectArchivedWorktrees({ projects: [project] })).resolves.toEqual([]);
-  });
-});
-
-describe('removeArchivedWorktrees', () => {
-  it('removes only the archived session worktree and refreshes the stats', async () => {
-    const loadStats = vi.fn(async () => undefined);
-    const result = await removeArchivedWorktrees(vi.fn(), makeGet(loadStats))();
-
-    expect(removeWorktreeChecked.mock.calls).toEqual([
-      [{ repoPath: '/repo', worktreePath: archivedWorktree.worktreePath, mode: 'safe' }],
-    ]);
-    expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mountId: 'wt-archived',
-        worktreePath: null,
-        isAttached: false,
-        expectedRevision: 3,
-      }),
-    );
-    expect(result).toEqual({ removed: 1, failed: 0 });
-    expect(loadStats).toHaveBeenCalled();
-    expect([...operations.values()]).toEqual([
-      expect.objectContaining({
-        kind: 'remove',
-        status: 'succeeded',
-        mountId: 'wt-archived',
-        input: expect.objectContaining({ finish: 'clear-path' }),
-      }),
-    ]);
-  });
-
-  it('leaves a removal whose row write lost its revision uncertain instead of swallowing it', async () => {
-    updateSessionMountLifecycle.mockResolvedValueOnce(false);
-
-    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
-
-    expect(result).toEqual({ removed: 0, failed: 1 });
-    expect([...operations.values()]).toEqual([
-      expect.objectContaining({
-        kind: 'remove',
-        status: 'uncertain',
-        errorCode: 'revision-conflict',
-      }),
-    ]);
-  });
-
-  it('keeps a mount the guard refuses and counts it as a failure', async () => {
-    listArchivedSessionMounts.mockResolvedValue([
-      archivedWorktree,
-      { ...liveWorktree, sessionId: ARCHIVED_SESSION },
-    ]);
-    removeWorktreeChecked.mockResolvedValueOnce({
-      kind: 'kept',
-      path: archivedWorktree.worktreePath,
-      reasons: ['locked'],
+    const summary = await removeStorageFolders(
+      set,
+      get,
+    )({
+      paths: [folder({}).path, orphan.path],
+      mode: 'safe',
     });
 
-    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
-
-    expect(removeWorktreeChecked).toHaveBeenCalledTimes(2);
-    expect(updateSessionMountLifecycle).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ removed: 1, failed: 1 });
+    expect(removeWorktreeChecked).toHaveBeenCalledWith({
+      repoPath: '/repo',
+      worktreePath: '/repo/.goodboy/worktrees/archived',
+      mode: 'safe',
+    });
+    expect(updateSessionMountLifecycle).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: 'wt-archived', worktreePath: null, expectedRevision: 3 }),
+    );
+    expect(removeWorktreeFolder).toHaveBeenCalledWith({
+      repoPath: '/repo',
+      path: orphan.path,
+      mode: 'safe',
+      allowLocalCommits: true,
+    });
+    expect(deleteWorktreeLedgerEntries).toHaveBeenCalledWith({ db: {}, ids: ['ledger-ghost'] });
+    expect(summary).toEqual({ removed: 2, freedBytes: 5096, kept: [] });
+    expect(harness.state.storageFolders).toEqual([]);
+    expect(harness.loadStorage).toHaveBeenCalled();
   });
 
-  it('retains a mount when removal throws and counts it as a failure', async () => {
-    removeWorktreeChecked.mockRejectedValueOnce(new Error('git failed'));
+  it('keeps a folder that changed while the cleanup ran and says why', async () => {
+    removeWorktreeFolder.mockResolvedValueOnce({
+      kind: 'kept',
+      path: orphan.path,
+      reasons: ['untracked-files'],
+    });
+    const harness = makeHarness([orphan]);
+    const { set, get } = wire(harness);
 
-    const result = await removeArchivedWorktrees(vi.fn(), makeGet())();
+    const summary = await removeStorageFolders(set, get)({ paths: [orphan.path], mode: 'safe' });
 
-    expect(updateSessionMountLifecycle).not.toHaveBeenCalled();
-    expect(result).toEqual({ removed: 0, failed: 1 });
+    expect(summary.removed).toBe(0);
+    expect(summary.kept).toEqual([
+      { kind: 'kept', path: orphan.path, reasons: ['untracked-files'], message: null },
+    ]);
+    expect(deleteWorktreeLedgerEntries).not.toHaveBeenCalled();
+    expect(harness.state.storageFolders).toEqual([orphan]);
+    expect(harness.state.storageRemovingPaths).toEqual({});
+  });
+
+  it('reports a thrown removal as failed and never touches a folder in use', async () => {
+    removeWorktreeFolder.mockRejectedValueOnce(new Error('git failed'));
+    const inUse = folder({ path: '/repo/.goodboy/worktrees/live', origin: 'in-use' });
+    const harness = makeHarness([orphan, inUse]);
+    const { set, get } = wire(harness);
+
+    const summary = await removeStorageFolders(
+      set,
+      get,
+    )({
+      paths: [orphan.path, inUse.path],
+      mode: 'safe',
+    });
+
+    expect(summary.kept.map((outcome) => outcome.kind)).toEqual(['failed', 'kept']);
+    expect(removeWorktreeChecked).not.toHaveBeenCalled();
+  });
+});
+
+describe('keepStorageFolder', () => {
+  it('keeps a ledger folder for thirty days in its row', async () => {
+    const harness = makeHarness([orphan]);
+    const { set, get } = wire(harness);
+
+    await keepStorageFolder(set, get)({ path: orphan.path, days: 30 });
+
+    const call = setWorktreeLedgerKeep.mock.calls[0]?.[0];
+    expect(Date.parse(call?.keptUntil ?? '') - Date.parse(call?.keptAt ?? '')).toBe(
+      30 * 24 * 60 * 60 * 1000,
+    );
+    expect(harness.state.storageFolders[0]?.keptAt).not.toBeNull();
+  });
+
+  it('keeps an archived folder in the settings and stops keeping it again', async () => {
+    const harness = makeHarness([folder({})]);
+    const { set, get } = wire(harness);
+
+    await keepStorageFolder(set, get)({ path: folder({}).path, days: null });
+    const saved = harness.saveSetting.mock.calls[0] as unknown as [string, string];
+    expect(saved[0]).toBe(STORAGE_KEPT_ARCHIVED_KEY);
+    expect(JSON.parse(saved[1])).toEqual({
+      [folder({}).path]: { keptAt: expect.any(Number), keptUntil: null },
+    });
+
+    await keepStorageFolder(set, get)({ path: folder({}).path, days: null, isStopping: true });
+    expect(harness.state.storageFolders[0]).toMatchObject({ keptAt: null, keptUntil: null });
   });
 });
 
 describe('pruneArchivedTranscripts', () => {
-  it('deletes the archived transcripts then vacuums', async () => {
-    const deleted = await pruneArchivedTranscripts(vi.fn(), makeGet())();
+  it('deletes the archived transcripts, vacuums, then reloads storage', async () => {
+    const harness = makeHarness([]);
+    const { set, get } = wire(harness);
+
+    const deleted = await pruneArchivedTranscripts(set, get)();
 
     expect(deleteTurnEventsForSessions).toHaveBeenCalledWith({
       db: {},
@@ -286,80 +272,15 @@ describe('pruneArchivedTranscripts', () => {
     });
     expect(vacuumDatabase).toHaveBeenCalled();
     expect(deleted).toBe(12);
+    expect(harness.loadStorage).toHaveBeenCalled();
   });
 
   it('does not touch the database when nothing is archived', async () => {
     listArchivedSessionRefs.mockResolvedValue([]);
+    const harness = makeHarness([]);
+    const { set, get } = wire(harness);
 
-    await expect(pruneArchivedTranscripts(vi.fn(), makeGet())()).resolves.toBe(0);
+    await expect(pruneArchivedTranscripts(set, get)()).resolves.toBe(0);
     expect(deleteTurnEventsForSessions).not.toHaveBeenCalled();
-    expect(vacuumDatabase).not.toHaveBeenCalled();
-  });
-});
-
-describe('loadStorageStats', () => {
-  it('publishes the archived footprint and clears the loading flag', async () => {
-    const set = vi.fn();
-    await loadStorageStats(set, makeGet())();
-
-    expect(set.mock.calls[0]?.[0]).toEqual({ storageStatsLoading: true });
-    expect(set.mock.calls[1]?.[0]).toEqual({
-      storageStats: {
-        databaseBytes: 233_000_000,
-        archivedSessionCount: 1,
-        archivedTranscriptRows: 12,
-        archivedTranscriptBytes: 4096,
-        archivedWorktrees: [
-          {
-            sessionId: ARCHIVED_SESSION,
-            mountId: 'wt-archived',
-            repoPath: '/repo',
-            worktreePath: archivedWorktree.worktreePath,
-            branch: 'ak/archived',
-            revision: 3,
-            sizeBytes: 1024,
-          },
-        ],
-        retainedWorktrees: [],
-      },
-      storageStatsLoading: false,
-    });
-  });
-
-  it('publishes the retained folders with their measured size', async () => {
-    listAllRetainedWorktreePaths.mockResolvedValue([
-      {
-        id: 'retained-1',
-        workspaceId: WORKSPACE_ID,
-        projectId: PROJECT_ID,
-        sourceSessionId: ARCHIVED_SESSION,
-        sourceMountId: 'wt-archived',
-        repoRoot: '/repo',
-        worktreePath: '/repo/.goodboy/worktrees/kept',
-        branch: 'ak/kept',
-        reason: 'session_delete',
-        lastCheckedAt: null,
-        createdAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-      },
-    ]);
-    const set = vi.fn();
-
-    await loadStorageStats(set, makeGet())();
-
-    expect(set.mock.calls[1]?.[0]).toMatchObject({
-      storageStats: {
-        retainedWorktrees: [
-          {
-            id: 'retained-1',
-            repoRoot: '/repo',
-            worktreePath: '/repo/.goodboy/worktrees/kept',
-            branch: 'ak/kept',
-            reason: 'session_delete',
-            sizeBytes: 1024,
-          },
-        ],
-      },
-    });
   });
 });

@@ -339,13 +339,13 @@ describe('story: an autorun step turn and what follows it', () => {
     await vi.waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledTimes(2));
   });
 
-  it('continues a step without its marker exactly once, then pauses it with a notification', async () => {
+  it('continues a step without its marker exactly once, then blocks it with a notification', async () => {
     storySpies.runTurn.mockImplementation(streamOf({ text: 'stopped before the end' }));
 
     await sendStepTurn({ content: 'implement the export' });
     await vi.waitFor(() =>
       expect(statusWrites({ agentId: IMPLEMENT_AGENT })).toContainEqual(
-        expect.objectContaining({ status: 'failed' }),
+        expect.objectContaining({ status: 'blocked' }),
       ),
     );
 
@@ -355,7 +355,11 @@ describe('story: an autorun step turn and what follows it', () => {
         ?.prompt ?? '',
     );
     expect(continuePrompt).toContain('Continue with the remaining work now.');
-    expect(notificationTitles()).toContain('Step paused on Implement');
+    expect(continuePrompt).toContain('a question in plain prose never reaches the user');
+    expect(statusWrites({ agentId: IMPLEMENT_AGENT })).not.toContainEqual(
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(notificationTitles()).toContain('Step blocked on Implement');
     expect(statusWrites({ agentId: REVIEW_AGENT })).toEqual([]);
     expect(useAppStore.getState().workflowContinueAttempts).toEqual({});
   });
@@ -376,6 +380,24 @@ describe('story: an autorun step turn and what follows it', () => {
     );
     expect(statusWrites({ agentId: REVIEW_AGENT })).toEqual([]);
     expect(notificationTitles()).not.toContain('Step paused on Implement');
+  });
+
+  it('waits for the user when the step asks for approval in prose', async () => {
+    storySpies.runTurn.mockImplementation(
+      streamOf({ text: 'Checks are green.\n\nConfermi il force-push prima che proceda?' }),
+    );
+
+    await sendStepTurn({ content: 'implement the export' });
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(1);
+    expect(statusWrites({ agentId: IMPLEMENT_AGENT })).not.toContainEqual(
+      expect.objectContaining({ status: 'failed' }),
+    );
+    expect(statusWrites({ agentId: IMPLEMENT_AGENT })).not.toContainEqual(
+      expect.objectContaining({ status: 'blocked' }),
+    );
+    expect(notificationTitles()).not.toContain('Step blocked on Implement');
+    expect(useAppStore.getState().workflowContinueAttempts).toEqual({});
   });
 
   it('records a cancelled resolver turn as cancelled and never advances', async () => {

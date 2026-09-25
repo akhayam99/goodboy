@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, IsoDateTime, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
 import {
+  isRowNeedingYou,
   resolveAgentRowState,
   resolveRunRowState,
   type RowState,
@@ -137,12 +138,28 @@ describe('resolveAgentRowState', () => {
       { agent: { status: 'skipped' } },
       { node: 'skipped', sentence: 'Skipped', tone: 'neutral', ask: null },
     ],
+    [
+      'A14 blocked, alive but stuck',
+      { agent: { status: 'blocked' } },
+      {
+        node: 'question',
+        sentence: 'Blocked, tell the agent what to do next',
+        tone: 'warning',
+        ask: null,
+      },
+    ],
   ])('%s', (_name, input, expected) => {
     expect(read(agentState(input))).toEqual(expected);
   });
 
   it('puts failed above an open question on the same agent', () => {
     expect(agentState({ agent: { status: 'failed' }, isAsking: true }).phase).toBe('failed');
+  });
+
+  it('shows the open question of a blocked agent before the blocked reason', () => {
+    expect(agentState({ agent: { status: 'blocked' }, isAsking: true }).reason?.kind).toBe(
+      'question',
+    );
   });
 
   it('keeps a finished agent done when you also closed it', () => {
@@ -199,8 +216,18 @@ describe('resolveRunRowState', () => {
     ],
     [
       'R7 a step failed',
-      { failedStep: { stepLabel: '4.1' }, advance: blocked('failed-step') },
+      { failedStep: { stepLabel: '4.1', isBlocked: false }, advance: blocked('failed-step') },
       { node: 'failed', sentence: 'Step 4.1 failed', tone: 'danger', ask: 'restartStep' },
+    ],
+    [
+      'R7b a step is blocked, alive but stuck',
+      { failedStep: { stepLabel: '4.1', isBlocked: true }, advance: blocked('failed-step') },
+      {
+        node: 'question',
+        sentence: 'Step 4.1 is blocked, tell the agent what to do next',
+        tone: 'warning',
+        ask: 'restartStep',
+      },
     ],
     [
       'R8 the spend limit paused it',
@@ -250,7 +277,7 @@ describe('resolveRunRowState', () => {
           orchestrationStop: { kind: 'closed', message: 'Closed by you' },
         },
         isFinished: true,
-        failedStep: { stepLabel: '2' },
+        failedStep: { stepLabel: '2', isBlocked: false },
       },
       { node: 'closed', sentence: 'Closed by you', tone: 'neutral', ask: null },
     ],
@@ -267,7 +294,7 @@ describe('resolveRunRowState', () => {
   it('orders failed over waiting over running', () => {
     expect(
       runState({
-        failedStep: { stepLabel: '2' },
+        failedStep: { stepLabel: '2', isBlocked: false },
         question: { question: QUESTION, stepLabel: '3' },
         hasRunningStep: true,
       }).phase,
@@ -321,5 +348,56 @@ describe('rowStateShortSentence', () => {
   it('has nothing to say when the full sentence has nothing to say', () => {
     expect(rowStateShortSentence({ state: { phase: 'done', reason: null, ask: null } })).toBeNull();
     expect(rowStateShortSentence({ state: waiting({ kind: 'discarded' }) })).toBeNull();
+  });
+});
+
+describe('stopped agents', () => {
+  it('reads a stopped agent as stopped by you with a Continue ask, never as failed', () => {
+    const state = agentState({ agent: { status: 'stopped', stoppedBy: 'you' } });
+
+    expect(read(state)).toEqual({
+      node: 'stopped',
+      sentence: 'Stopped by you',
+      tone: 'neutral',
+      ask: 'continue',
+    });
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('says Goodboy quit when the app stopped the agent', () => {
+    const state = agentState({ agent: { status: 'stopped', stoppedBy: 'app' } });
+
+    expect(rowStateSentence({ state })).toBe('Stopped when Goodboy quit');
+    expect(rowStateNode({ state }).label).toBe('Stopped when Goodboy quit');
+  });
+
+  it('names the stopped step on the run and asks to continue it', () => {
+    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
+    const state = runState({ stoppedStep: { agent, stepLabel: '4' } });
+
+    expect(read(state)).toEqual({
+      node: 'stopped',
+      sentence: 'Step 4 stopped by you',
+      tone: 'neutral',
+      ask: 'continue',
+    });
+    expect(rowStateShortSentence({ state })).toBe('Stopped');
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('puts a blocked step ahead of a stopped one and keeps it a warning', () => {
+    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
+    const state = runState({
+      failedStep: { stepLabel: '3', isBlocked: true },
+      stoppedStep: { agent, stepLabel: '4' },
+    });
+
+    expect(state.reason?.kind).toBe('stepBlocked');
+    expect(rowStateTone({ state })).toBe('warning');
+    expect(rowStateNode({ state }).label).toBe('Blocked');
+  });
+
+  it('still counts an open question as needing you', () => {
+    expect(isRowNeedingYou({ state: agentState({ isAsking: true }) })).toBe(true);
   });
 });

@@ -2,6 +2,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  AgentStoppedBy,
   IsoDateTime,
   EffortLevel,
   ProviderId,
@@ -14,6 +15,7 @@ import type {
   WorkflowRoutingLock,
   WorkflowTaskProfile,
 } from '@goodboy/types';
+import { isAgentStoppedBy } from '@goodboy/types';
 import type { Database } from '../client';
 import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
 import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
@@ -35,6 +37,8 @@ type AgentRow = {
   last_finished_at: number | null;
   last_viewed_at: number | null;
   done_at: number | null;
+  stopped_at: number | null;
+  stopped_by: string | null;
   deleted_at: number | null;
   verbosity: string | null;
   effort: string | null;
@@ -110,6 +114,10 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(row.done_at != null && {
       doneAt: new Date(row.done_at).toISOString() as IsoDateTime,
     }),
+    ...(row.stopped_at != null && {
+      stoppedAt: new Date(row.stopped_at).toISOString() as IsoDateTime,
+    }),
+    ...(isAgentStoppedBy(row.stopped_by) && { stoppedBy: row.stopped_by }),
     ...(row.deleted_at != null && {
       deletedAt: new Date(row.deleted_at).toISOString() as IsoDateTime,
     }),
@@ -175,6 +183,8 @@ export const updateAgentStatus = async (
     outputSummary?: string;
     startedAt?: IsoDateTime;
     completedAt?: IsoDateTime;
+    stoppedAt?: IsoDateTime | null;
+    stoppedBy?: AgentStoppedBy | null;
   },
 ): Promise<void> => {
   const updates: string[] = [];
@@ -199,6 +209,14 @@ export const updateAgentStatus = async (
   if (fields.completedAt !== undefined) {
     updates.push('last_finished_at = ?');
     values.push(Date.parse(fields.completedAt));
+  }
+  if (fields.stoppedAt !== undefined) {
+    updates.push('stopped_at = ?');
+    values.push(fields.stoppedAt === null ? null : Date.parse(fields.stoppedAt));
+  }
+  if (fields.stoppedBy !== undefined) {
+    updates.push('stopped_by = ?');
+    values.push(fields.stoppedBy);
   }
 
   if (updates.length === 0) {

@@ -73,22 +73,26 @@ vi.mock('../../../../../store', () => ({
   useMountDiffStats: () => diffStats,
 }));
 
-vi.mock('../../../../permissions/components/DiffViewerDialog', () => ({
-  DiffViewerPane: ({
+vi.mock('../../../../diff/components/SessionDiffPane', () => ({
+  DIFF_PANE_TITLE: 'Diff',
+  SessionDiffPane: ({
     diffFocus,
     worktreePath,
     onContentEmptyChange,
     headerActions,
+    aboveBody,
   }: {
     diffFocus: { readonly kind: string } | null;
     worktreePath?: string;
     onContentEmptyChange?: (isEmpty: boolean) => void;
     headerActions?: React.ReactNode;
+    aboveBody?: React.ReactNode;
   }) => {
     reportDiffEmpty = onContentEmptyChange;
     return (
       <>
         {headerActions}
+        {aboveBody}
         <div
           data-testid="diff-viewer"
           data-focus-kind={diffFocus?.kind ?? 'none'}

@@ -1,0 +1,10 @@
+export const RATE_LIMIT_FIXTURES = {
+  claudeWeeklyWarning:
+    '{"type":"rate_limit_event","rate_limit_info":{"status":"allowed_warning","resetsAt":1782432000,"rateLimitType":"seven_day","utilization":0.88,"isUsingOverage":false,"surpassedThreshold":0.75},"uuid":"00000000-0000-4000-8000-000000000001","session_id":"00000000-0000-4000-8000-00000000000a"}',
+  claudeFiveHourAllowed:
+    '{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","resetsAt":1779509400,"rateLimitType":"five_hour","overageStatus":"rejected","overageDisabledReason":"org_level_disabled","isUsingOverage":false},"uuid":"00000000-0000-4000-8000-000000000002","session_id":"00000000-0000-4000-8000-00000000000a"}',
+  claudeFiveHourRejected:
+    '{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","resetsAt":1779509400,"rateLimitType":"five_hour","overageStatus":"rejected","overageDisabledReason":"org_level_disabled","isUsingOverage":false},"uuid":"00000000-0000-4000-8000-000000000003","session_id":"00000000-0000-4000-8000-00000000000a"}',
+  codexTokenCount:
+    '{"timestamp":"2026-09-25T10:59:20.919Z","ordinal":18,"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":21578,"cached_input_tokens":6656,"cache_write_input_tokens":0,"output_tokens":222,"reasoning_output_tokens":44,"total_tokens":21800},"last_token_usage":{"input_tokens":21578,"cached_input_tokens":6656,"cache_write_input_tokens":0,"output_tokens":222,"reasoning_output_tokens":44,"total_tokens":21800},"model_context_window":258400},"rate_limits":{"limit_id":"codex","limit_name":null,"primary":{"used_percent":0.0,"window_minutes":300,"resets_at":1790351955},"secondary":{"used_percent":100.0,"window_minutes":10080,"resets_at":1790458728},"credits":{"has_credits":false,"unlimited":false,"balance":"0"},"individual_limit":null,"spend_control_reached":null,"plan_type":"plus","rate_limit_reached_type":null}}}',
+} satisfies Readonly<Record<string, string>>;

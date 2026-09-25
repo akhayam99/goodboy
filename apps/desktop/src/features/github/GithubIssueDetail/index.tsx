@@ -10,7 +10,9 @@ import { StateBadge } from '@goodboy/ui';
 import { githubIssueFields, resolveFacts } from '../../../shared/detail-fields';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
 import { stateWord } from '../../inbox/stateWord';
-import { GithubIssueComments } from '../GithubIssueComments';
+import { useConversationPane } from '../../../shared/components/Conversation/useConversationPane';
+import type { ConversationSource } from '../../../shared/components/Conversation/types';
+import { GITHUB_ISSUE_CAPABILITIES, githubIssueConversation } from '../githubIssueConversation';
 import { useGithubIssueComments } from '../useGithubIssueComments';
 import {
   useGithubIssueDescription,
@@ -25,7 +27,7 @@ type Props = {
 
 export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) => {
   const { description, save } = useGithubIssueDescription({ issue, editContext });
-  const { comments, isLoading, error, post } = useGithubIssueComments({
+  const { comments, isLoading, error, reload, post } = useGithubIssueComments({
     workspaceId: editContext?.workspaceId ?? null,
     rootPath: editContext?.rootPath ?? null,
     issueNumber: issue.number,
@@ -34,6 +36,26 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
     () => resolveFacts({ registry: githubIssueFields, entity: issue }),
     [issue],
   );
+
+  const source = useMemo<ConversationSource>(
+    () => ({
+      toolLabel: 'GitHub issues',
+      threads: githubIssueConversation({ comments }),
+      capabilities: GITHUB_ISSUE_CAPABILITIES,
+      isLoading,
+      error,
+      onRetry: reload,
+      onPost: post == null ? null : ({ body }) => post(body),
+      onResolve: null,
+      resolveError: null,
+      emptyDescription: 'This issue has no comments yet.',
+      footnote: null,
+      composerNote: null,
+      renderMessageFooter: null,
+    }),
+    [comments, isLoading, error, reload, post],
+  );
+  const conversation = useConversationPane({ source, resetKey: issue.url });
 
   const sections: ReadonlyArray<RecordSection> = [
     {
@@ -44,31 +66,13 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
       defaultOpen: true,
       content: <DescriptionSection text={description} onSave={save} />,
     },
-    ...(editContext != null
-      ? [
-          {
-            key: 'conversation',
-            kind: 'conversation' as const,
-            label: 'Conversation',
-            count: comments.length,
-            isCollapsible: false,
-            defaultOpen: true,
-            content: (
-              <GithubIssueComments
-                comments={comments}
-                isLoading={isLoading}
-                error={error}
-                onPost={post}
-              />
-            ),
-          },
-        ]
-      : []),
+    ...(editContext != null ? [conversation.section] : []),
   ];
 
   return (
     <PaneShell
       scroll="body"
+      dock={editContext != null ? conversation.composer : null}
       header={
         <RecordHeader
           provider="github"

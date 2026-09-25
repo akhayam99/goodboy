@@ -344,6 +344,8 @@ export const preparePublication = async ({
     pushedHead: null,
     confirmedAt: null,
     completedAt: null,
+    holder: null,
+    heartbeatAt: null,
     error: null,
     createdAt: frozenAt,
   };

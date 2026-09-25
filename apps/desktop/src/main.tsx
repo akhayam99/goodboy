@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { getVersion } from '@tauri-apps/api/app';
 import {
+  CodeHighlighterContext,
   ErrorBoundary,
   RemoteImageLoaderProvider,
   type ErrorReportOutcome,
@@ -11,10 +12,11 @@ import { App } from './App';
 import { MockScene } from './app/components/MockScene';
 import { MOCK_ENABLED } from './store/mock-data';
 import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
-import { ArtifactPrintView } from './features/reports/components/ArtifactPrintView';
-import { removeBootShell } from './features/reports/components/ArtifactPrintView/removeBootShell';
+import { ArtifactReaderView } from './features/reports/components/ArtifactReaderView';
+import { removeBootShell } from './features/reports/components/ArtifactReaderView/removeBootShell';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
+import { APP_CODE_HIGHLIGHTER } from './features/diff/lib/highlight/codeHighlighter';
 import { openUrl } from './shared/lib/editor';
 import { buildCrashReport, CRASH_TRACE_BUDGET } from './features/settings/buildCrashReport';
 import './styles.css';
@@ -52,13 +54,15 @@ createRoot(container).render(
   <StrictMode>
     <ErrorBoundary onReport={reportCrash} reportSummary={REPORT_SUMMARY}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
-        {printRequest !== null ? (
-          <ArtifactPrintView request={printRequest} />
-        ) : MOCK_ENABLED ? (
-          <MockScene />
-        ) : (
-          <App />
-        )}
+        <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
+          {printRequest !== null ? (
+            <ArtifactReaderView request={printRequest} />
+          ) : MOCK_ENABLED ? (
+            <MockScene />
+          ) : (
+            <App />
+          )}
+        </CodeHighlighterContext.Provider>
       </RemoteImageLoaderProvider>
     </ErrorBoundary>
   </StrictMode>,

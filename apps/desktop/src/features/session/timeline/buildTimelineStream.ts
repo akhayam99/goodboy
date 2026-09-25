@@ -1,5 +1,5 @@
 import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
-import { isAgentSettled } from '@goodboy/core';
+import { isAgentSettled, isAgentStatusHalted } from '@goodboy/core';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
 import { isQuestionDelegate } from '../../context/questionDelegate';
@@ -10,6 +10,7 @@ import {
   type RowPhase,
   type RowReadyStep,
   type RowState,
+  type RowStoppedStep,
 } from '../../workTreeModel/rowState';
 import type {
   TimelineAgentEntry,
@@ -647,8 +648,21 @@ const readyStepOf = ({
 
 const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
   for (const child of entry.children) {
-    if (child.kind === 'agent' && child.agent.status === 'failed' && child.agent.doneAt == null) {
-      return { stepLabel: child.stepLabel };
+    if (
+      child.kind === 'agent' &&
+      isAgentStatusHalted({ status: child.agent.status }) &&
+      child.agent.doneAt == null
+    ) {
+      return { stepLabel: child.stepLabel, isBlocked: child.agent.status === 'blocked' };
+    }
+  }
+  return null;
+};
+
+const stoppedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }): RowStoppedStep | null => {
+  for (const child of entry.children) {
+    if (child.kind === 'agent' && child.agent.status === 'stopped' && child.agent.doneAt == null) {
+      return { agent: child.agent, stepLabel: child.stepLabel };
     }
   }
   return null;
@@ -688,6 +702,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     isDeciding,
     hasRunningStep,
     failedStep: failedStepOf({ entry }),
+    stoppedStep: stoppedStepOf({ entry }),
     question: runOpenQuestion({ entry }),
     readyStep,
     chainedAfterTitle: chainedAfterTitleOf({ entry, context }),

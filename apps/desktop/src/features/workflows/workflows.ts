@@ -31,6 +31,7 @@ import type {
   Agent,
   AgentId,
   AgentStatus,
+  AgentStoppedBy,
   VerbosityLevel,
   Workflow,
   WorkflowId,
@@ -44,7 +45,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
+import { isAgentStoppedBy, isStepSize, isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -76,6 +77,8 @@ type RawStepDefRow = {
   readonly modelDefault: string | null;
   readonly effortDefault: string | null;
   readonly verbosityDefault: string | null;
+  readonly expectedOutput: string | null;
+  readonly baseStepId: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -126,6 +129,8 @@ type RawAgentRow = {
   readonly routingLock: string | null;
   readonly routingDecision: string | null;
   readonly taskProfile: string | null;
+  readonly stoppedAt?: string | null;
+  readonly stoppedBy?: string | null;
 };
 
 type ParseStringArrayParams = {
@@ -181,12 +186,14 @@ function rowToStep(row: RawWorkflowStepRow): Step {
 function rowToStepDef(row: RawStepDefRow): StepDef {
   return {
     id: row.id as StepDefId,
-    workspaceId: row.workspaceId as WorkspaceId | null,
+    workspaceId: row.workspaceId as WorkspaceId,
     role: normalizeAgentRole({ role: row.role }),
     name: row.name,
     promptPrefix: row.promptPrefix,
     createdAt: row.createdAt as IsoDateTime,
     updatedAt: row.updatedAt as IsoDateTime,
+    ...(row.expectedOutput != null && { expectedOutput: row.expectedOutput }),
+    ...(row.baseStepId != null && { baseStepId: row.baseStepId as StepDefId }),
     ...(row.providerDefault != null && { providerDefault: row.providerDefault as ProviderId }),
     ...(row.modelDefault != null && { modelDefault: row.modelDefault }),
     ...(row.effortDefault != null && { effortDefault: row.effortDefault as AgentEffort }),
@@ -272,6 +279,8 @@ function rowToAgent(row: RawAgentRow): Agent {
     ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
     ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
     ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
+    ...(row.stoppedAt != null && { stoppedAt: row.stoppedAt as IsoDateTime }),
+    ...(isAgentStoppedBy(row.stoppedBy) && { stoppedBy: row.stoppedBy }),
     ...(row.kind != null && { kind: row.kind }),
     ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
     ...(row.effort != null && { effort: row.effort as AgentEffort }),
@@ -390,10 +399,12 @@ export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepD
 
 export type StepDefUpsertArgs = {
   readonly id?: StepDefId;
-  readonly workspaceId: WorkspaceId | null;
+  readonly workspaceId: WorkspaceId;
+  readonly baseStepId?: StepDefId;
   readonly role: AgentRole;
   readonly name: string;
   readonly promptPrefix: string;
+  readonly expectedOutput?: string;
   readonly providerDefault?: ProviderId;
   readonly modelDefault?: string;
   readonly effortDefault?: AgentEffort;
@@ -412,6 +423,8 @@ export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<Step
       modelDefault: args.modelDefault ?? null,
       effortDefault: args.effortDefault ?? null,
       verbosityDefault: args.verbosityDefault ?? null,
+      expectedOutput: args.expectedOutput ?? null,
+      baseStepId: args.baseStepId ?? null,
     },
   });
   return rowToStepDef(row);
@@ -610,6 +623,8 @@ export type AgentUpdateFields = {
   readonly outputSummary?: string;
   readonly startedAt?: IsoDateTime;
   readonly completedAt?: IsoDateTime;
+  readonly stoppedAt?: IsoDateTime;
+  readonly stoppedBy?: AgentStoppedBy;
 };
 
 export const invokeAgentUpdateStatus = async (
@@ -624,6 +639,8 @@ export const invokeAgentUpdateStatus = async (
       outputSummary: fields.outputSummary ?? null,
       startedAt: fields.startedAt ?? null,
       completedAt: fields.completedAt ?? null,
+      stoppedAt: fields.stoppedAt ?? null,
+      stoppedBy: fields.stoppedBy ?? null,
     },
   });
   return rowToAgent(row);

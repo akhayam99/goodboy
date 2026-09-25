@@ -4,12 +4,20 @@ import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
-import type { StorageStats } from './slices/storage';
+import type {
+  StorageFocus,
+  StorageFolder,
+  StorageRemovalSummary,
+  StorageRoot,
+  StorageSizeCache,
+  StorageStats,
+} from './slices/storage/types';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
+import type { ProviderLimitsState } from './slices/providerLimits/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
@@ -90,7 +98,7 @@ import type { DiscoveredScriptScan } from './slices/scripts/state';
 import type { DetectedEditor } from '../shared/lib/editor';
 import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
-import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
+import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { DrawerSliceState } from './slices/drawer/state';
@@ -239,6 +247,7 @@ type AppSliceState = ArtifactsState &
   PrWritesState &
   IssueBriefsState &
   DurationEstimatesState &
+  ProviderLimitsState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &
@@ -309,6 +318,13 @@ export type AppState = AppSliceState & {
   readonly summarizerStatus: Readonly<Record<string, SummarizerSessionStatus>>;
   readonly storageStats: StorageStats | null;
   readonly storageStatsLoading: boolean;
+  readonly storageFolders: ReadonlyArray<StorageFolder>;
+  readonly storageRoots: ReadonlyArray<StorageRoot>;
+  readonly storageSizeCache: StorageSizeCache;
+  readonly storageMeasuringPath: string | null;
+  readonly storageRemovingPaths: Readonly<Record<string, true>>;
+  readonly storageOutcome: StorageRemovalSummary | null;
+  readonly storageFocus: StorageFocus | null;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
   readonly sessionBudgets: Readonly<Record<SessionId, SessionBudget>>;
   readonly providerSpendBreakdown: ReadonlyArray<ProviderSpendEntry>;

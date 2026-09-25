@@ -30,8 +30,12 @@ const detailPhase = ({ status, isWaitingOnYou }: PhaseParams): RowPhase => {
       return 'done';
     case 'failed':
       return 'failed';
+    case 'blocked':
+      return 'waiting';
     case 'skipped':
       return 'skipped';
+    case 'stopped':
+      return 'waiting';
     default: {
       const exhaustive: never = status;
       return exhaustive;

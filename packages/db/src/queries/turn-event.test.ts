@@ -139,4 +139,16 @@ describe('turn event queries', () => {
     expect(new TextEncoder().encode(rows[0]?.payload).byteLength).toBeLessThanOrEqual(64 * 1024);
     expect(events[0]).toMatchObject({ kind: 'tool_call_end', output: '…[truncated]' });
   });
+
+  it('keeps how an oversized queued message was sent', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-large-queued',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'x'.repeat(100_000), sentVia: 'queued', at },
+    });
+
+    const events = await listTurnEventsForAgent(db, agentId);
+    expect(events[0]).toMatchObject({ kind: 'user_text', sentVia: 'queued' });
+  });
 });

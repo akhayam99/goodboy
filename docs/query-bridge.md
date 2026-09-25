@@ -33,10 +33,10 @@ They can also act on them, the same way you can from Goodboy:
 | Tool      | Reads                                      | Acts                                              |
 | --------- | ------------------------------------------ | ------------------------------------------------- |
 | GitHub    | PRs, diffs, checks, threads, issues        | comment, resolve, merge, push, open PR            |
-| GitLab    | MRs, diffs, discussions, approvals, issues | note, resolve, approve, merge, open MR            |
+| GitLab    | MRs, diffs, discussions, approvals, issues | note, reply, resolve, approve, merge, open MR     |
 | Bitbucket | PRs, diffs, comments, build statuses       | comment, approve, request changes, merge, decline |
 | Jira      | issues, comments, transitions              | comment, update, transition                       |
-| Linear    | issues, comments                           | comment, update description                       |
+| Linear    | issues, comment threads                    | comment, reply, update description                |
 | Sentry    | issues and issue detail                    |                                                   |
 | Slack     | channels, threads, users, permalinks       | reply, add reaction                               |
 

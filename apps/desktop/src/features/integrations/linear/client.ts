@@ -51,7 +51,8 @@ export type LinearIssueComment = {
   id: string;
   body: string;
   createdAt: string;
-  user: { name: string } | null;
+  parent: { id: string } | null;
+  user: { name: string; avatarUrl: string | null } | null;
 };
 
 type Params = {
@@ -150,18 +151,21 @@ export const linearFetchIssueComments = async ({
 
 type CreateCommentParams = Params & {
   readonly body: string;
+  readonly parentId: string | null;
 };
 
 export const linearCreateComment = async ({
   workspaceId,
   issueId,
   body,
+  parentId,
   projectId,
 }: CreateCommentParams): Promise<LinearIssueComment> => {
   return invoke<LinearIssueComment>('linear_create_comment', {
     workspaceId,
     issueId,
     body,
+    parentId,
     ...(projectId != null ? { projectId } : {}),
   });
 };

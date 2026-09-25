@@ -237,9 +237,9 @@ describe('reduceTranscript, open-question answer boundary', () => {
   });
 
   it('keeps ordinary user_text turns', () => {
-    const items = reduceTranscript([userTextEvent('a normal message')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
+    const items = reduceTranscript([userTextEvent('first'), userTextEvent('a normal message')]);
+    expect(items).toHaveLength(2);
+    expect(items[1]!.kind).toBe('user_text');
   });
 
   it('detects the oq-answers wrapper despite leading whitespace', () => {
@@ -251,9 +251,12 @@ describe('reduceTranscript, open-question answer boundary', () => {
   });
 
   it('does not treat an inline mention of the marker as an answer', () => {
-    const items = reduceTranscript([userTextEvent('here is text then <<oq-answers>> later')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
+    const items = reduceTranscript([
+      userTextEvent('first'),
+      userTextEvent('here is text then <<oq-answers>> later'),
+    ]);
+    expect(items).toHaveLength(2);
+    expect(items[1]!.kind).toBe('user_text');
   });
 
   it('carries no answer text on the oq_answer marker (pure boundary)', () => {
@@ -285,7 +288,7 @@ describe('reduceTranscript, open-question answer boundary', () => {
     ];
     const items = reduceTranscript(events);
     expect(items.map((i) => i.kind)).toEqual([
-      'user_text',
+      'handoff',
       'assistant_text',
       'oq_answer',
       'assistant_text',
@@ -296,8 +299,8 @@ describe('reduceTranscript, open-question answer boundary', () => {
 const workflowMarker =
   '**Scope** this step only, never a later one. Emit `<<step-done id="agent-1">>` on its own line once it is truly done.';
 
-describe('reduceTranscript, workflow kickoff boundary', () => {
-  it('maps a composed kickoff to a workflow_kickoff item with parsed sections', () => {
+describe('reduceTranscript, first message', () => {
+  it('shows a composed kickoff from before handoffs as the first message, unparsed', () => {
     const kickoff = [
       '**Goal** Ship the onboarding wizard',
       '**Plan**\n1. wire steps',
@@ -305,90 +308,20 @@ describe('reduceTranscript, workflow kickoff boundary', () => {
       workflowMarker,
     ].join('\n\n');
     const items = reduceTranscript([userTextEvent(kickoff)]);
-    expect(items).toHaveLength(1);
-    const item = items[0]!;
-    expect(item.kind).toBe('workflow_kickoff');
-    if (item.kind === 'workflow_kickoff') {
-      expect(item.goal).toBe('Ship the onboarding wizard');
-      expect(item.instructions).toContain('Focus on the providers step only.');
-      expect(item.parsed).toBe(true);
-      expect(item.raw).toBe(kickoff);
-    }
-  });
-
-  it('keeps ordinary user_text turns that are not kickoffs', () => {
-    const items = reduceTranscript([userTextEvent('fix the login bug')]);
-    expect(items).toHaveLength(1);
-    expect(items[0]!.kind).toBe('user_text');
-  });
-
-  it('emits a workflow_kickoff even when parsed:false (malformed goal)', () => {
-    const malformed = `**Goal**\n\n\n\n${workflowMarker}`;
-    const items = reduceTranscript([userTextEvent(malformed)]);
-    expect(items).toHaveLength(1);
-    const item = items[0]!;
-    expect(item.kind).toBe('workflow_kickoff');
-    if (item.kind === 'workflow_kickoff') {
-      expect(item.parsed).toBe(false);
-      expect(item.raw).toBe(malformed);
-    }
-  });
-
-  it('carries the at timestamp from the event', () => {
-    const kickoff = `**Goal** Goal text\n\n${workflowMarker}`;
-    const items = reduceTranscript([userTextEvent(kickoff)]);
-    const item = items[0]!;
-    expect(item.kind).toBe('workflow_kickoff');
-    if (item.kind === 'workflow_kickoff') {
-      expect(item.at).toBe(AT);
-    }
-  });
-
-  it('key starts with kickoff-', () => {
-    const kickoff = `**Goal** Goal text\n\n${workflowMarker}`;
-    const items = reduceTranscript([userTextEvent(kickoff)]);
-    const item = items[0]!;
-    expect(item.key).toMatch(/^kickoff-/);
-  });
-
-  it('multiple kickoff events get distinct keys', () => {
-    const kickoff = `**Goal** Goal text\n\n${workflowMarker}`;
-    const items = reduceTranscript([userTextEvent(kickoff), userTextEvent(kickoff)]);
-    expect(items).toHaveLength(2);
-    expect(items[0]!.key).not.toBe(items[1]!.key);
-  });
-
-  it('oq_answer takes priority over workflow_kickoff check (oq-answers wrapping)', () => {
-    const items = reduceTranscript([
-      userTextEvent('<<oq-answers>>\nAnswers:\n- Q: a\n  A: b\n<</oq-answers>>'),
+    expect(items).toEqual([
+      { kind: 'handoff', key: 'handoff-0', handoffId: null, text: kickoff, at: AT },
     ]);
-    expect(items[0]!.kind).toBe('oq_answer');
   });
 
-  it('flushes buffered assistant_text before a kickoff event', () => {
+  it('keeps a later kickoff-looking message as a plain user turn', () => {
     const kickoff = `**Goal** Goal text\n\n${workflowMarker}`;
-    const events: TurnEvent[] = [
-      assistantTextEvent('some assistant output'),
-      userTextEvent(kickoff),
-    ];
-    const items = reduceTranscript(events);
-    expect(items.map((i) => i.kind)).toEqual(['assistant_text', 'workflow_kickoff']);
+    const items = reduceTranscript([userTextEvent('first'), userTextEvent(kickoff)]);
+    expect(items.map((i) => i.kind)).toEqual(['handoff', 'user_text']);
   });
 
-  it('kickoff followed by assistant_text produces both items in order', () => {
-    const kickoff = `**Goal** Goal text\n\n${workflowMarker}`;
-    const events: TurnEvent[] = [userTextEvent(kickoff), assistantTextEvent('ok, starting')];
+  it('flushes buffered assistant_text before the first message', () => {
+    const events: TurnEvent[] = [assistantTextEvent('some assistant output'), userTextEvent('go')];
     const items = reduceTranscript(events);
-    expect(items.map((i) => i.kind)).toEqual(['workflow_kickoff', 'assistant_text']);
-  });
-
-  it('kickoff without plan section produces empty instructions', () => {
-    const noInstructions = `**Goal** Only a goal\n\n${workflowMarker}`;
-    const items = reduceTranscript([userTextEvent(noInstructions)]);
-    const item = items[0]!;
-    expect(item.kind).toBe('workflow_kickoff');
-    if (item.kind === 'workflow_kickoff') {
-      expect(item.instructions).toBe('');
-    }
+    expect(items.map((i) => i.kind)).toEqual(['assistant_text', 'handoff']);
   });
 });

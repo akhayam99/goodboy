@@ -445,6 +445,7 @@ describe('completeResolvedAgent', () => {
       AGENT_ID,
       expect.any(String),
       true,
+      { didAgentDie: false },
     );
     expect(advance).toBe(true);
   });
@@ -469,6 +470,7 @@ describe('completeResolvedAgent', () => {
       AGENT_ID,
       expect.any(String),
       true,
+      { didAgentDie: false },
     );
   });
 
@@ -499,6 +501,7 @@ describe('completeResolvedAgent', () => {
       AGENT_ID,
       expect.any(String),
       false,
+      { didAgentDie: false },
     );
     expect(advance).toBe(false);
   });
@@ -524,6 +527,7 @@ describe('completeResolvedAgent', () => {
       AGENT_ID,
       expect.any(String),
       false,
+      { didAgentDie: false },
     );
   });
 

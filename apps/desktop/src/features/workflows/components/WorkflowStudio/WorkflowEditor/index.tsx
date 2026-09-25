@@ -12,13 +12,17 @@ import { PlanDraftingBanner } from '../../../../session/components/WorkflowBuild
 import type { StepDraft } from '../../../engine';
 import {
   addStep,
+  blankStepDraft,
   duplicateStep,
   removeStep,
   reorderSteps,
   stepDraftWithModel,
   updateStep,
 } from '../../../engine';
+import { useSaveAsStep } from '../../../hooks/useSaveAsStep';
+import { useSavedSteps } from '../../../hooks/useSavedSteps';
 import { useWorkflowDrag } from '../../../hooks/useWorkflowDrag';
+import { stepDraftFromSavedStep, type SavedStep } from '../../../savedSteps';
 import { StepTree } from '../../StepTree';
 import { StepEditor } from '../../StepTree/StepEditor';
 import { StepRow } from '../../StepTree/StepRow';
@@ -70,18 +74,21 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     }
     setSteps((current) => reorderSteps({ steps: current, from, to }));
   };
-  const addBlankStep = () => {
-    const blank = addStep({ steps: [] })[0];
-    if (blank === undefined) {
-      return;
-    }
-    setSteps((current) => addStep({ steps: current, step: blank }));
-    setExpandedKey(blank.key);
+  const savedSteps = useSavedSteps({ workspaceId });
+  const insertStep = (picked: SavedStep | null) => {
+    const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
+    setSteps((current) => addStep({ steps: current, step }));
+    setExpandedKey(step.key);
   };
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const { savingKey, saveAsStep } = useSaveAsStep({
+    workspaceId,
+    onLinked: (key, libraryStepId) => patchStep(key, { libraryStepId }),
+    onError: (message) => setSaveError(`Couldn't save the step. ${message}`),
+  });
 
   const { drag, dropIndex, startStepDrag, ghost } = useWorkflowDrag({
     enabled: steps.length > 0,
-    onDropLibrary: () => {},
     onReorder: moveStepTo,
   });
   const draggingKey = drag?.kind === 'step' ? (steps[drag.fromIndex]?.key ?? null) : null;
@@ -138,7 +145,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
     <PlanDraftingBanner />
   ) : null;
 
-  const error = editor.formError ?? editor.generationError ?? polish.polishError;
+  const error = editor.formError ?? editor.generationError ?? polish.polishError ?? saveError;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -211,7 +218,8 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
         disabled={blocked}
         banner={banner}
         action={draftAction}
-        onAddStep={addBlankStep}
+        savedSteps={savedSteps}
+        onAddStep={insertStep}
         renderStep={({ step, index, span }) => {
           const effort = step.effort;
           return (
@@ -275,6 +283,11 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
                   onDuplicate={() =>
                     setSteps((current) => duplicateStep({ steps: current, key: step.key }))
                   }
+                  isSavingAsStep={savingKey === step.key}
+                  onSaveAsStep={() => {
+                    setSaveError(null);
+                    void saveAsStep(step);
+                  }}
                   onRemove={() => {
                     setSteps((current) => removeStep({ steps: current, key: step.key }));
                     setExpandedKey(null);

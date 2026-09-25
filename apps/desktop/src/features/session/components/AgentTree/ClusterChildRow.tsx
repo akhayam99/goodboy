@@ -3,6 +3,9 @@ import { Check, Clock } from 'lucide-react';
 import type { Agent } from '@goodboy/types';
 import { agentHasUnread, useAppStore } from '../../../../store';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+
+const StoppedIcon = CONCEPT_ICONS.runStopped;
 
 type Props = {
   readonly child: Agent;
@@ -47,6 +50,10 @@ export const ClusterChildRow = ({
       </span>
     ) : child.status === 'failed' ? (
       <StatusDot tone="danger" size="sm" />
+    ) : child.status === 'blocked' ? (
+      <StatusDot tone="warning" size="sm" />
+    ) : child.status === 'stopped' ? (
+      <StoppedIcon size={10} className="text-muted-foreground" aria-label="Stopped" />
     ) : (
       <Clock size={10} className="text-faint-foreground" aria-hidden />
     );

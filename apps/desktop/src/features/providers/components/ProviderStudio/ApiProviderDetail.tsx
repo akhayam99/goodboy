@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import { brandColor, PROVIDER_BRAND } from '../provider-brand';
 import { ProviderBindingsSection } from './ProviderBindingsSection';
 import { ProviderCredentialsSection } from './ProviderCredentialsSection';
+import { UsageSection } from './UsageSection';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { SETTINGS_PANE_ENTRY } from '../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -100,6 +101,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
         </div>
       </section>
 
+      {isRuntimeReady ? <UsageSection providerId={info.id} billing="token" /> : null}
       <ProviderCredentialsSection providerId={info.id} />
       <ProviderBindingsSection providerId={info.id} cliIdentity={null} />
     </PaneShell>

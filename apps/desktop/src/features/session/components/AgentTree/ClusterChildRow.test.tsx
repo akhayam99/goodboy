@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 
-vi.mock('@goodboy/ui', () => ({
+vi.mock('@goodboy/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/ui')>()),
   cn: (...a: unknown[]) => a.filter(Boolean).join(' '),
   tintClasses: (tone: string) => ({
     bg: `bg-${tone}/10`,
@@ -123,5 +124,11 @@ describe('ClusterChildRow unread border', () => {
     expect(screen.getByText('routing')).toBeTruthy();
     expect(screen.getByText('+2')).toBeTruthy();
     expect(screen.queryByText('sessions')).toBeNull();
+  });
+
+  it('marks a child you stopped as stopped, not as waiting to start', () => {
+    renderRow(buildAgent({ id: 'c1' as AgentId, status: 'stopped', stoppedBy: 'you' }));
+
+    expect(screen.getByLabelText('Stopped')).toBeTruthy();
   });
 });

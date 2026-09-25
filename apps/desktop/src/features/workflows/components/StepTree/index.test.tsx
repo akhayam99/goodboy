@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StepDraft } from '../../engine';
+import { savedStepGroups } from '../../savedSteps';
 import { StepEditor } from './StepEditor';
 import { StepRow } from './StepRow';
 import { StepTree } from '.';
@@ -60,6 +61,7 @@ const renderTree = ({
       isDragging={isDragging}
       dropIndex={dropIndex}
       disabled={disabled}
+      savedSteps={savedStepGroups({ defs: [] })}
       onAddStep={onAddStep}
       renderStep={({ step: slotStep, index, span }) => (
         <li key={slotStep.key} data-span={span}>
@@ -165,7 +167,8 @@ describe('StepTree', () => {
     const onAddStep = vi.fn();
     renderTree({ steps: [], onAddStep });
     fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
-    expect(onAddStep).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('option', { name: /Blank step/ }));
+    expect(onAddStep).toHaveBeenCalledWith(null);
 
     cleanup();
     renderTree({ steps: [], disabled: true });

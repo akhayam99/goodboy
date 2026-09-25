@@ -11,5 +11,8 @@ type AgentParams = {
 export const isAgentStatusSettled = ({ status }: StatusParams): boolean =>
   status === 'completed' || status === 'skipped';
 
+export const isAgentStatusHalted = ({ status }: StatusParams): boolean =>
+  status === 'failed' || status === 'blocked';
+
 export const isAgentSettled = ({ agent }: AgentParams): boolean =>
   agent.doneAt != null || isAgentStatusSettled({ status: agent.status });

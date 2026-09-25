@@ -15,8 +15,6 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { useToast } from '../../../../app/components/Toast';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { useColumnWidth } from '../../../../shared/hooks/useColumnWidth';
-import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { openUrl } from '../../../../shared/lib/editor';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
@@ -63,7 +61,6 @@ export const ReviewPane = ({ session }: Props) => {
   );
   const [isBusy, setIsBusy] = useState(false);
   const [lifecycleBusy, setLifecycleBusy] = useState<PrLifecycleBusy>(null);
-  const [listWidth, setListWidth] = useColumnWidth(STORAGE_KEYS.reviewBoardListWidth, 320);
   const { showToast } = useToast();
   const reportError = useAppStore((s) => s.reportError);
 
@@ -343,12 +340,13 @@ export const ReviewPane = ({ session }: Props) => {
         onCancel={() => setMode('pr_details')}
       />
     ) : mode === 'write_review' ? (
-      <WriteReview session={session} listWidth={listWidth} />
+      <WriteReview session={session} />
     ) : null;
 
   const dock =
     mode === 'write_review' ? (
       <PublishBar
+        sessionId={sessionId}
         provider="github"
         draftCount={openDrafts.length}
         publishing={isBusy}

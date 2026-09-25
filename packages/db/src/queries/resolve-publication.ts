@@ -21,7 +21,7 @@ type PublicationRow = Omit<
   readonly worktreePath: string | null;
 };
 
-const PUBLICATION_COLUMNS = `id, session_id AS sessionId, repo, pr_number AS prNumber, branch, target_ref AS targetRef, local_head AS localHead, remote_head AS remoteHead, commit_shas_json AS commitShas, candidate_ids_json AS candidateIds, approved_item_ids_json AS approvedItemIds, requires_push AS requiresPush, mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath, phase, pushed_head AS pushedHead, confirmed_at AS confirmedAt, completed_at AS completedAt, error, created_at AS createdAt`;
+const PUBLICATION_COLUMNS = `id, session_id AS sessionId, repo, pr_number AS prNumber, branch, target_ref AS targetRef, local_head AS localHead, remote_head AS remoteHead, commit_shas_json AS commitShas, candidate_ids_json AS candidateIds, approved_item_ids_json AS approvedItemIds, requires_push AS requiresPush, mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath, phase, pushed_head AS pushedHead, confirmed_at AS confirmedAt, completed_at AS completedAt, holder, heartbeat_at AS heartbeatAt, error, created_at AS createdAt`;
 
 const THREAD_COLUMNS = `publication_id AS publicationId, thread_id AS threadId, revision, prior_state AS priorState, source_fingerprint AS sourceFingerprint, operation_id AS operationId, reply_body AS replyBody, reply_phase AS replyPhase, reply_id AS replyId, reply_attempted_at AS replyAttemptedAt, reply_posted_at AS replyPostedAt, resolve_phase AS resolvePhase, resolved_at AS resolvedAt, error`;
 
@@ -53,8 +53,8 @@ export const insertResolvePublication = async ({
 }): Promise<void> => {
   const target = fromMountTarget({ target: publication.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_publications (id, session_id, repo, pr_number, branch, target_ref, local_head, remote_head, commit_shas_json, candidate_ids_json, approved_item_ids_json, requires_push, mount_id, mount_revision, worktree_path, phase, pushed_head, confirmed_at, completed_at, error, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO resolve_publications (id, session_id, repo, pr_number, branch, target_ref, local_head, remote_head, commit_shas_json, candidate_ids_json, approved_item_ids_json, requires_push, mount_id, mount_revision, worktree_path, phase, pushed_head, confirmed_at, completed_at, holder, heartbeat_at, error, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       publication.id,
       publication.sessionId,
@@ -75,6 +75,8 @@ export const insertResolvePublication = async ({
       publication.pushedHead,
       publication.confirmedAt,
       publication.completedAt,
+      publication.holder,
+      publication.heartbeatAt,
       publication.error,
       publication.createdAt,
     ],
@@ -104,6 +106,61 @@ export const setResolvePublicationPhase = async ({
      WHERE id = ?`,
     [phase, error, pushedHead ?? null, pushedHead ?? null, phase, now, Number(isTerminal), now, id],
   );
+};
+
+type HolderParams = {
+  readonly db: Database;
+  readonly id: string;
+  readonly holder: string;
+  readonly now: number;
+};
+
+type ClaimParams = HolderParams & {
+  readonly staleBefore: number;
+};
+
+export const claimResolvePublication = async ({
+  db,
+  id,
+  holder,
+  now,
+  staleBefore,
+}: ClaimParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE resolve_publications SET holder = ?, heartbeat_at = ?
+     WHERE id = ?
+       AND (holder IS NULL OR holder = ? OR COALESCE(heartbeat_at, confirmed_at, created_at) < ?)`,
+    [holder, now, id, holder, staleBefore],
+  );
+  return result.rowsAffected > 0;
+};
+
+export const beatResolvePublication = async ({
+  db,
+  id,
+  holder,
+  now,
+}: HolderParams): Promise<void> => {
+  await db.execute('UPDATE resolve_publications SET heartbeat_at = ? WHERE id = ? AND holder = ?', [
+    now,
+    id,
+    holder,
+  ]);
+};
+
+export const listActiveResolvePublicationsForSession = async ({
+  db,
+  sessionId,
+}: {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+}): Promise<ReadonlyArray<ResolvePublication>> => {
+  const placeholders = ACTIVE_PHASES.map(() => '?').join(', ');
+  const rows = await db.select<PublicationRow>(
+    `SELECT ${PUBLICATION_COLUMNS} FROM resolve_publications WHERE session_id = ? AND phase IN (${placeholders}) ORDER BY created_at, id`,
+    [sessionId, ...ACTIVE_PHASES],
+  );
+  return rows.map(hydrate);
 };
 
 export const listActiveResolvePublications = async ({

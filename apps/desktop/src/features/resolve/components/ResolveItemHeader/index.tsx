@@ -1,7 +1,7 @@
 import { Button, Divider, OverflowMenu, Tooltip } from '@goodboy/ui';
 import type { OverflowMenuItem } from '@goodboy/ui';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ResolveQueueStatus } from '../../../../store/slices/resolve/deriveResolveQueueStatus';
+import type { ResolveUiState } from '../../resolveRowState';
 import type {
   ResolveItemAction,
   ResolveItemActionId,
@@ -14,7 +14,7 @@ type Props = {
   readonly title: string;
   readonly location: string | null;
   readonly prNumber: number;
-  readonly status: ResolveQueueStatus;
+  readonly status: ResolveUiState;
   readonly nextStep: string | null;
   readonly actions: ResolveItemActionSet;
   readonly isEditing: boolean;

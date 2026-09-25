@@ -13,7 +13,7 @@ it('keeps traversal, back, overflow and the primary action reachable', () => {
       title="Comment"
       location="src/retry.ts:84"
       prNumber={12}
-      status="fix_ready"
+      status="ready"
       nextStep="Approved changes stay local"
       actions={{
         primary: { id: 'resolve', label: 'Resolve', disabledReason: null },

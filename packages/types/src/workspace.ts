@@ -30,7 +30,10 @@ export type WorkspaceGitStatus = Readonly<{
 }>;
 
 export type WorkspaceProfile = Readonly<{
-  bio: string | null;
+  roles: ReadonlyArray<string>;
+  aboutWork: string | null;
+  workingRules: string | null;
+  explainMore: ReadonlyArray<string>;
 }>;
 
 export type Project = Readonly<{
@@ -40,6 +43,8 @@ export type Project = Readonly<{
   rootPath: string;
   kind: 'repo' | 'folder';
   baseBranch?: string | null;
+  description?: string | null;
+  starredAt?: IsoDateTime;
   overrides: OverrideSettings;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;

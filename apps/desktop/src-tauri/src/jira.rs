@@ -469,22 +469,47 @@ fn paragraph_content(line: &str) -> Value {
     }
 }
 
+fn paragraph_node(line: &str) -> Value {
+    serde_json::json!({
+        "type": "paragraph",
+        "content": paragraph_content(line)
+    })
+}
+
+fn quoted_line(line: &str) -> Option<&str> {
+    line.strip_prefix("> ").or_else(|| line.strip_prefix('>'))
+}
+
+fn flush_quote(content: &mut Vec<Value>, quote: &mut Vec<Value>) {
+    if quote.is_empty() {
+        return;
+    }
+    content.push(serde_json::json!({
+        "type": "blockquote",
+        "content": std::mem::take(quote)
+    }));
+}
+
 fn text_to_adf(text: &str) -> Value {
-    let paragraphs: Vec<Value> = text
-        .lines()
-        .map(str::trim_end)
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            serde_json::json!({
-                "type": "paragraph",
-                "content": paragraph_content(line)
-            })
-        })
-        .collect();
-    let content = match paragraphs.is_empty() {
-        true => vec![serde_json::json!({ "type": "paragraph", "content": [] })],
-        false => paragraphs,
-    };
+    let mut content: Vec<Value> = Vec::new();
+    let mut quote: Vec<Value> = Vec::new();
+    for line in text.lines().map(str::trim_end) {
+        if let Some(inner) = quoted_line(line) {
+            if !inner.trim().is_empty() {
+                quote.push(paragraph_node(inner.trim_end()));
+            }
+            continue;
+        }
+        flush_quote(&mut content, &mut quote);
+        if line.is_empty() {
+            continue;
+        }
+        content.push(paragraph_node(line));
+    }
+    flush_quote(&mut content, &mut quote);
+    if content.is_empty() {
+        content.push(serde_json::json!({ "type": "paragraph", "content": [] }));
+    }
     serde_json::json!({ "type": "doc", "version": 1, "content": content })
 }
 
@@ -1382,6 +1407,29 @@ mod tests {
         assert_eq!(content[1]["content"][0]["text"], "*partial emphasis* here");
         assert_eq!(content[2]["content"][0]["text"], "**bold**");
         assert!(content[2]["content"][0].get("marks").is_none());
+    }
+
+    #[test]
+    fn adf_writer_groups_quoted_lines_into_one_blockquote() {
+        let document = text_to_adf("> first\n> second\n\n@ana agreed");
+        let content = document["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2);
+        assert_eq!(content[0]["type"], "blockquote");
+        let quoted = content[0]["content"].as_array().unwrap();
+        assert_eq!(quoted.len(), 2);
+        assert_eq!(quoted[0]["type"], "paragraph");
+        assert_eq!(quoted[0]["content"][0]["text"], "first");
+        assert_eq!(quoted[1]["content"][0]["text"], "second");
+        assert_eq!(content[1]["type"], "paragraph");
+        assert_eq!(content[1]["content"][0]["text"], "@ana agreed");
+    }
+
+    #[test]
+    fn adf_writer_keeps_a_quote_only_body_as_a_blockquote() {
+        let document = text_to_adf("> only a quote");
+        let content = document["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["type"], "blockquote");
     }
 
     #[test]

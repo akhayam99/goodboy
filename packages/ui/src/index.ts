@@ -43,10 +43,6 @@ export { HeaderBand } from './components/HeaderBand';
 export { MetaItem } from './components/MetaItem';
 export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
-export { NoteCard } from './components/NoteCard';
-export { NoteComposer } from './components/NoteComposer';
-export { NoteHeader } from './components/NoteHeader';
-export { NoteListSkeleton } from './components/NoteListSkeleton';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuItems } from './components/MenuItems';
@@ -121,6 +117,14 @@ export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
+export {
+  CODE_TOKEN_CLASS,
+  CodeHighlighterContext,
+  type CodeHighlighter,
+  type CodeLines,
+  type CodeToken,
+  type CodeTokenKind,
+} from './components/Markdown/codeHighlighter';
 export { parseMarkdown } from './components/Markdown/parseMarkdown';
 export { inlineMarkdownText } from './components/Markdown/inlineMarkdownText';
 export { InlineMarkdown } from './components/Markdown/InlineMarkdown';
@@ -170,7 +174,7 @@ export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
 export { Tooltip } from './components/Tooltip';
-export type { TooltipProps, TooltipSide } from './components/Tooltip';
+export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
 export type { TintClasses, Tone } from './tint';
 export { WorkMeta } from './components/WorkTree/WorkMeta';

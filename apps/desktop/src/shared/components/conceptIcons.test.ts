@@ -38,15 +38,26 @@ describe('CONCEPT_ICONS', () => {
       CONCEPT_ICONS.runPending,
       CONCEPT_ICONS.runDone,
       CONCEPT_ICONS.runFailed,
+      CONCEPT_ICONS.runBlocked,
       CONCEPT_ICONS.runCancelled,
+      CONCEPT_ICONS.runStopped,
     ];
     expect(new Set(outcomes).size).toBe(outcomes.length);
+  });
+
+  it('keeps a stopped run calm and a blocked run a warning', () => {
+    expect(CONCEPT_TONE.runStopped).toBe('neutral');
+    expect(CONCEPT_TONE.runBlocked).toBe('warning');
   });
 });
 
 describe('ICON_SIZE', () => {
   it('exposes exactly the three sizes the app draws with', () => {
-    expect(ICON_SIZE).toEqual({ row: 13, control: 14, hero: 18 });
+    expect(ICON_SIZE).toEqual({ row: 12, control: 14, hero: 18 });
+  });
+
+  it('keeps every size even so a glyph centres on whole pixels in an even badge', () => {
+    expect(Object.values(ICON_SIZE).filter((size) => size % 2 !== 0)).toEqual([]);
   });
 });
 

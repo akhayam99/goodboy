@@ -86,6 +86,47 @@ describe('resolveAuto', () => {
     ).toBeNull();
   });
 
+  it('skips a provider at its usage limit and says which one it skipped', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'implementer' },
+        defaultProvider: 'anthropic',
+        fallbackOrder: ['anthropic', 'codex', 'gemini'],
+        connected: ['anthropic', 'codex'],
+        atLimit: ['anthropic'],
+      }),
+    ).toEqual({
+      provider: 'codex',
+      model: 'gpt-5.6-sol',
+      effort: 'medium',
+      step: 'next-provider',
+      skippedAtLimit: ['anthropic'],
+    });
+  });
+
+  it('keeps the default when only a later provider is at its limit', () => {
+    const pick = resolveAuto({
+      slot: { kind: 'role', id: 'implementer' },
+      defaultProvider: 'anthropic',
+      fallbackOrder: ['anthropic', 'codex'],
+      connected: ['anthropic', 'codex'],
+      atLimit: ['codex'],
+    });
+    expect(pick?.provider).toBe('anthropic');
+    expect(pick?.skippedAtLimit).toBeUndefined();
+  });
+
+  it('says nothing when every connected provider is at its limit', () => {
+    expect(
+      resolveAuto({
+        slot: { kind: 'task', id: 'summarizer' },
+        defaultProvider: 'codex',
+        connected: ['codex'],
+        atLimit: ['codex'],
+      }),
+    ).toBeNull();
+  });
+
   it('writes a cursor thinking pick as the slug the cli runs', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'reviewer' }, defaultProvider: 'cursor' })?.model,

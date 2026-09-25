@@ -17,13 +17,15 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { liveMountTarget } from './mountTarget';
 import { deliverPublicationThread } from './deliverPublicationThread';
-import { isDeliveryComplete } from './deriveResolveQueueStatus';
+import { isDeliveryComplete } from './deliveryReceipts';
 import { preparePublication } from './preparePublication';
 import { publicationOutcome, type PublicationOutcome } from './publicationOutcome';
 import { RESOLVE_ON_GITHUB_DEFAULT, resolveStepPlan } from './resolveStepPlan';
 import { isDriftChecked, mountTargetDrift, publicationDrift } from './publicationDrift';
 import { loadPublicationsInto } from './publicationState';
+import { startPublicationHeartbeat } from './publicationHeartbeat';
 import { withPublicationLock } from './publicationLock';
+import { PUBLICATION_INTERRUPTED } from './reconcileInterruptedPublications';
 import { restoreResolvePublication } from './restoreResolvePublication';
 import { verifiedPush } from './verifiedPush';
 import type { PublishParams, SliceParams } from './types';
@@ -120,7 +122,14 @@ const publishOnce = async ({
       if (lease !== null && !lease.isGranted) {
         return { kind: 'busy' };
       }
+      let stopHeartbeat = (): void => undefined;
       try {
+        const current = (
+          await listResolvePublicationsForSession({ db: tauriDatabase, sessionId })
+        ).find((candidate) => candidate.id === publicationId);
+        if (current === undefined || current.error === PUBLICATION_INTERRUPTED) {
+          return { kind: 'missing' };
+        }
         const rowsBefore = await listResolveThreads({ db: tauriDatabase, sessionId });
         const comments: ReadonlyArray<PrComment> =
           get().sessionGithub[sessionId]?.detail?.comments ?? [];
@@ -154,6 +163,11 @@ const publishOnce = async ({
             return { kind: 'drifted', drift };
           }
         }
+        const heartbeat = await startPublicationHeartbeat({ publicationId });
+        if (heartbeat === null) {
+          return { kind: 'busy' };
+        }
+        stopHeartbeat = heartbeat;
         await setResolvePublicationPhase({
           db: tauriDatabase,
           id: publicationId,
@@ -265,6 +279,7 @@ const publishOnce = async ({
         });
         return { kind: 'done', ...outcome };
       } finally {
+        stopHeartbeat();
         if (lease !== null) {
           await releaseWorktreeWriter({ path: worktreePath, holder }).catch(() => undefined);
         }

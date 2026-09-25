@@ -34,12 +34,24 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
         : `Paused at the ${formatUsd(reason.limitUsd)} spend limit`;
     case 'failed':
       return 'Failed';
+    case 'blocked':
+      return 'Blocked, tell the agent what to do next';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
+    case 'stepBlocked':
+      return reason.stepLabel == null
+        ? 'A step is blocked, tell the agent what to do next'
+        : `Step ${reason.stepLabel} is blocked, tell the agent what to do next`;
     case 'orchestratorFailed':
       return 'The orchestrator failed';
     case 'stopped':
       return 'Stopped by you';
+    case 'agentStopped':
+      return reason.by === 'app' ? 'Stopped when Goodboy quit' : 'Stopped by you';
+    case 'stepStopped':
+      return reason.stepLabel == null
+        ? 'A step was stopped'
+        : `Step ${reason.stepLabel} stopped by you`;
     case 'deciding':
       return ORCHESTRATOR_DECIDING_SENTENCE;
     case 'briefing':
@@ -74,6 +86,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'orchestratorFailed':
       return 'Orchestrator failed';
     case 'stopped':
+    case 'agentStopped':
+    case 'stepStopped':
       return 'Stopped';
     case 'deciding':
       return 'Choosing next';
@@ -87,6 +101,10 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Chained';
     case 'awaitingFirstMessage':
       return 'Write to start';
+    case 'blocked':
+      return 'Blocked';
+    case 'stepBlocked':
+      return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
     case 'failed':
     case 'stepFailed':
     case 'skipped':
@@ -119,8 +137,19 @@ const PHASE_TONE: Record<RowPhase, Tone> = {
 export const rowStateShortSentence = ({ state }: StateParams): string | null =>
   state.reason == null ? null : reasonShortSentence({ reason: state.reason });
 
+const NEUTRAL_REASONS: ReadonlySet<RowStateReason['kind']> = new Set([
+  'discarded',
+  'agentStopped',
+  'stepStopped',
+]);
+
+export const isRowStoppedByUser = ({ state }: StateParams): boolean =>
+  state.reason?.kind === 'agentStopped' || state.reason?.kind === 'stepStopped';
+
 export const rowStateTone = ({ state }: StateParams): Tone =>
-  state.reason?.kind === 'discarded' ? 'neutral' : PHASE_TONE[state.phase];
+  state.reason != null && NEUTRAL_REASONS.has(state.reason.kind)
+    ? 'neutral'
+    : PHASE_TONE[state.phase];
 
 export type RowNode = {
   readonly state: Exclude<WorkNodeState, 'marker'>;
@@ -134,6 +163,9 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
     case 'running':
       return 'running';
     case 'waiting':
+      if (isRowStoppedByUser({ state })) {
+        return 'stopped';
+      }
       return state.reason?.kind === 'ready'
         ? 'ready'
         : state.reason?.kind === 'budget'
@@ -161,6 +193,12 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'discarded') {
     return { state: node, label: 'Discarded' };
+  }
+  if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
+    return { state: node, label: 'Blocked' };
+  }
+  if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
+    return { state: node, label: 'Stopped when Goodboy quit' };
   }
   return { state: node, label: ROW_NODE_LABEL[node] };
 };

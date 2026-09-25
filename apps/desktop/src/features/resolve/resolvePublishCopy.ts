@@ -26,10 +26,25 @@ const plural = ({
 
 export const REVIEW_PUBLICATION = 'Review publication';
 
-export const PUBLISH_INTENT_LABEL: Record<ResolvePublishIntent, string> = {
-  publish_fix: 'Push fix and resolve threads',
-  close_without_fix: 'Resolve threads without the fix',
-  post_replies: 'Post replies',
+export const publishIntentLabel = ({
+  intent,
+  preview,
+}: {
+  readonly intent: ResolvePublishIntent;
+  readonly preview: ResolvePublicationPreview;
+}): string => {
+  switch (intent) {
+    case 'publish_fix':
+      return `Close ${preview.replies.length + preview.notes.length} on GitHub`;
+    case 'close_without_fix':
+      return 'Resolve threads without the fix';
+    case 'post_replies':
+      return `Send ${plural({ count: preview.replies.length, one: 'reply', many: 'replies' })}`;
+    default: {
+      const exhaustive: never = intent;
+      return exhaustive;
+    }
+  }
 };
 
 export const CLOSE_WITHOUT_FIX_CONFIRM = {

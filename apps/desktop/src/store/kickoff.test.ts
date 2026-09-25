@@ -35,10 +35,13 @@ describe('composePlanSection', () => {
 });
 
 describe('composeStepBoundary', () => {
-  it('states the scope and the done marker in one line', () => {
+  it('states the scope and the done marker in one line, then the question channel', () => {
     const text = composeStepBoundary('agent-1' as AgentId);
-    expect(text).toContain('**Scope** this step only');
-    expect(text).toContain('<<step-done id="agent-1">>');
-    expect(text.split('\n')).toHaveLength(1);
+    const [scope, gap, questions] = text.split('\n');
+    expect(scope).toContain('**Scope** this step only');
+    expect(scope).toContain('<<step-done id="agent-1">>');
+    expect(gap).toBe('');
+    expect(questions).toContain('**Questions** a question in plain prose never reaches the user');
+    expect(questions).toContain('<<ctx-question blocking="true">>');
   });
 });

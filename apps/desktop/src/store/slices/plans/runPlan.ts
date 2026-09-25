@@ -1,5 +1,5 @@
 import type { AgentId, PlanId, SessionId } from '@goodboy/types';
-import { runsForWorkflowRun } from '@goodboy/core';
+import { isAgentStatusHalted, runsForWorkflowRun } from '@goodboy/core';
 import { classifyStep, kindConsumesPlan } from '../../../features/session/agent-kind';
 import { resolveWorkflowAdvance } from '../../../features/workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../features/workflows/workflowAdvanceView';
@@ -30,7 +30,7 @@ export const runPlan = (get: GetFn) => {
       });
     }
 
-    if (creatorAgent.status === 'failed') {
+    if (isAgentStatusHalted({ status: creatorAgent.status })) {
       return null;
     }
 

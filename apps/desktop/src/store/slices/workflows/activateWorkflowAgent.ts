@@ -172,14 +172,26 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
       });
     }
 
+    const instruction = evidence?.text ?? promptPrefix;
     const kickoff = composeKickoff(
       goalSection,
       planSection,
-      evidence?.text ?? promptPrefix,
+      instruction,
       composeStepBoundary(agentId),
     );
+    const handedPlan = planSection === '' ? null : (explicitPlan ?? latestPlan);
     if (kickoff.length > 0) {
-      await get().sendTurn({ sessionId, agentId, content: kickoff, origin: 'workflow' });
+      await get().sendTurn({
+        sessionId,
+        agentId,
+        content: kickoff,
+        origin: 'workflow',
+        handoff: {
+          instruction,
+          goal: run?.goal ?? template?.goal ?? null,
+          plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
+        },
+      });
     }
   };
 };

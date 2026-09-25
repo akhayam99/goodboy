@@ -1,11 +1,12 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractMarkers, extractStepDone } from '@goodboy/core';
+import { extractStepDone } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
+import { holdForUserQuestion } from './holdForUserQuestion';
 import type { GetFn, SetFn } from './types';
 import { summarizeWorkflowAgentOutput } from './summarizeWorkflowAgentOutput';
 import { pendingMountContinuations } from '../turn/mountContinuations';
@@ -41,7 +42,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     agentId: AgentId,
     assistantText: string,
     planCapturedThisTurn: boolean,
-    opts?: { readonly force?: boolean },
+    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
   ): Promise<{ readonly shouldAutoAdvance: boolean }> => {
     const runs = get().sessionPhaseRuns[sessionId] ?? [];
     const agent = runs.find((r) => r.id === agentId);
@@ -73,9 +74,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
     const hasMarker = markerId !== null && !claimsAnotherStep;
     const satisfied = !!opts?.force || hasMarker || planCapturedThisTurn;
     if (!satisfied) {
-      const askedQuestion = extractMarkers(assistantText).questions.length > 0;
-      if (askedQuestion) {
-        resetContinueAttempts({ set, get, agentId });
+      if (await holdForUserQuestion({ set, get, sessionId, agent, assistantText })) {
         return { shouldAutoAdvance: false };
       }
       await continueOrPause({
@@ -85,6 +84,7 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
         agent,
         workflowRunId: agent.workflowRunId,
         unit: 'step',
+        didAgentDie: opts?.didAgentDie === true,
         restart: () => startStep(set, get, sessionId, agentId, composeStepContinue(agentId)),
       });
       return { shouldAutoAdvance: false };

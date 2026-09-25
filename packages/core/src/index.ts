@@ -39,6 +39,7 @@ export {
   extractScoutDomains,
   extractScoutSplit,
   extractOpenQuestionAnswer,
+  extractProseQuestion,
   extractStepDone,
   hasBlockingQuestion,
   isOpenQuestionAnswerText,
@@ -132,8 +133,11 @@ export {
   WIREFRAME_LIMITS,
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
+  PLAN_KIT_GUIDE,
   REPORT_KIT_GUIDE,
   WIREFRAME_SCHEMA_BRIEF,
+  WIREFRAME_JSON_SCHEMA_ID,
+  buildWireframeJsonSchema,
   WIREFRAME_SCHEMA_VERSION,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
@@ -180,6 +184,15 @@ export {
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
 export {
+  ROLE_LIBRARY,
+  ROLE_LIBRARY_GROUPS,
+  type RoleLibraryEntry,
+  type RoleLibraryGroup,
+} from './profile/roleLibrary';
+export { matchRoleLibrary } from './profile/matchRoleLibrary';
+export { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from './profile/profileAccess';
+
+export {
   sessionLanguageRule,
   sessionLanguageTurnRule,
   type SessionLanguageRuleParams,
@@ -211,6 +224,18 @@ export { PROVIDER_API_KEY_ENV } from './providers/provider-api-key-env';
 export { TASKS } from './settings/tasks';
 export { DEFAULT_GROUPS, type DefaultGroups, type DefaultsGroup } from './settings/defaultGroups';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
+export { parseCodexRateLimits } from './providers/limits/parseCodexRateLimits';
+export { mergeProviderLimits } from './providers/limits/mergeProviderLimits';
+export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './providers/limits/constants';
+export {
+  PROVIDERS_REPORTING_LIMITS,
+  limitsChipOf,
+  selectLimitsChips,
+  worstLimitsChip,
+  type LimitsChip,
+  type LimitsChipState,
+} from './providers/limits/selectLimitsChips';
+export { providersAtLimit } from './providers/limits/providersAtLimit';
 
 export {
   PROVIDER_CAPABILITIES,
@@ -387,12 +412,17 @@ export {
   findReusableAgent,
   isWorkflowComplete,
   isAgentSettled,
+  isAgentStatusHalted,
   isAgentStatusSettled,
   runsForWorkflowRun,
   type ChainCarryForwardStep,
   type ParallelCarryForwardBranch,
   type WorkflowChainState,
   WORKFLOW_LIBRARY,
+  BUILTIN_STEPS,
+  builtinStepForRole,
+  isBuiltinStepId,
+  type BuiltinStep,
   type WorkflowLibraryEntry,
   type WorkflowLibraryStep,
   seedWorkflowLibrary,
@@ -514,6 +544,24 @@ export {
   type RunDurationSample,
   type TimeInterval,
 } from './estimates';
+
+export {
+  buildHandoff,
+  composeHandoffBody,
+  handoffLine,
+  hasSeparateSystemPrompt,
+  renderHandoff,
+  type BuildHandoffParams,
+  type HandoffBodyLayers,
+  type HandoffClusterBoundary,
+  type HandoffEarlierStep,
+  type HandoffFile,
+  type HandoffLayers,
+  type HandoffRole,
+  type HandoffRule,
+  type HandoffThread,
+  type RenderedHandoff,
+} from './handoff';
 
 export {
   formatWorkflowModelMenu,

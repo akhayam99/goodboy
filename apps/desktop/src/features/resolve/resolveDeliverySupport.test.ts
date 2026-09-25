@@ -12,7 +12,7 @@ const rowOf = ({
 
 describe('deliverySupportLine', () => {
   it('says reply pending for a ready_to_push row with no delivery yet', () => {
-    expect(deliverySupportLine({ row: rowOf({ status: 'ready_to_push', delivery: null }) })).toBe(
+    expect(deliverySupportLine({ row: rowOf({ status: 'approved', delivery: null }) })).toBe(
       'Reply pending',
     );
   });
@@ -26,7 +26,7 @@ describe('deliverySupportLine', () => {
       isComplete: false,
       replyBody: 'We are keeping this as it is',
     };
-    expect(deliverySupportLine({ row: rowOf({ status: 'ready_to_push', delivery }) })).toBe(
+    expect(deliverySupportLine({ row: rowOf({ status: 'approved', delivery }) })).toBe(
       'Reply posted · Left open on GitHub',
     );
   });
@@ -40,12 +40,12 @@ describe('deliverySupportLine', () => {
       isComplete: false,
       replyBody: 'We are keeping this as it is',
     };
-    expect(deliverySupportLine({ row: rowOf({ status: 'wont_fix', delivery }) })).toBe(
+    expect(deliverySupportLine({ row: rowOf({ status: 'approved', delivery }) })).toBe(
       'Reply posted · Left open on GitHub',
     );
   });
 
   it('shows nothing for an undecided row with no delivery', () => {
-    expect(deliverySupportLine({ row: rowOf({ status: 'fix_ready', delivery: null }) })).toBe(null);
+    expect(deliverySupportLine({ row: rowOf({ status: 'ready', delivery: null }) })).toBe(null);
   });
 });
