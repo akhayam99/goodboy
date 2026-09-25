@@ -52,3 +52,4 @@ export type {
 
 export { parseWireframeSource, validateWireframeDocument } from './validateWireframeDocument';
 export { WIREFRAME_SCHEMA_BRIEF } from './wireframeSchemaBrief';
+export { buildWireframeJsonSchema, WIREFRAME_JSON_SCHEMA_ID } from './buildWireframeJsonSchema';

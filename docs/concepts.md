@@ -324,8 +324,14 @@ A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
 colour) and the screens as a grid under it. A node or a tile opens
 **Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a JSON file, the JSON on the
-clipboard, or only the open screen.
+zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
+the clipboard, or only the open screen. **Export as a folder** writes, into a
+folder you pick, `index.html` with the flow and the screens, one page per
+screen under `screens/` linked by plain links, one `wireframe.css`, the
+validated `wireframe.json`, its `wireframe.schema.json` (built from the code
+constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
+rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
+style. Goodboy never reads that folder back.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.

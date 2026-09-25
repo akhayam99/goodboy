@@ -1,4 +1,4 @@
-import { ChevronDown, Copy, Download, FileDown, SquareDashed } from 'lucide-react';
+import { ChevronDown, Copy, Download, FileDown, FolderDown, SquareDashed } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
@@ -12,6 +12,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly screen: WireframeScreen | null;
   readonly isBusy: boolean;
+  readonly onExportFolder: () => void;
   readonly onSaveCopy: () => void;
   readonly onCopyJson: () => void;
   readonly onCopyScreen: (screen: WireframeScreen) => void;
@@ -20,6 +21,7 @@ type Props = {
 export const WireframeExportMenu = ({
   screen,
   isBusy,
+  onExportFolder,
   onSaveCopy,
   onCopyJson,
   onCopyScreen,
@@ -27,10 +29,19 @@ export const WireframeExportMenu = ({
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-80 max-w-[calc(100vw-2rem)]',
-    expectedHeight: 180,
+    expectedHeight: 230,
     expectedWidth: 320,
   });
   const items: ReadonlyArray<OverflowMenuItem> = [
+    {
+      kind: 'item',
+      key: 'folder',
+      label: 'Export as a folder…',
+      description: 'A page per screen, the JSON and its schema, in a folder you pick',
+      icon: FolderDown,
+      disabled: isBusy,
+      onClick: onExportFolder,
+    },
     {
       kind: 'item',
       key: 'save',
