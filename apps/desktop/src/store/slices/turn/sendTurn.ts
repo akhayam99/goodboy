@@ -103,6 +103,7 @@ import {
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
 import { buildIntegrationsGuard } from '../../integrationsGuard';
 import { buildProfileGuard } from '../../profileGuard';
+import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { clearMaterializationBatch } from '../../materializationGate';
@@ -1037,6 +1038,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     });
     const profileGuard = buildProfileGuard({
       profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)?.profile,
+      audience:
+        agentRowEarly !== null && isQuestionDelegate({ agent: agentRowEarly })
+          ? 'questionDelegate'
+          : (phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind]),
     });
     const guards = [scopeGuard, languageGuard, integrationsGuard, profileGuard]
       .filter((block) => block.length > 0)

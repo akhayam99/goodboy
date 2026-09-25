@@ -632,6 +632,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const profileBlock = buildProfileGuard({
         profile: get().workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
+        audience: 'orchestrator',
       });
       const projectsBlock = buildWorkspaceProjectsBlock({
         projects: get().projects.filter((project) => project.workspaceId === session.workspaceId),

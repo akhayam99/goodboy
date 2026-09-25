@@ -135,7 +135,6 @@ Everything the app saves for itself lives in `~/.goodboy`.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
-- `workspaces/<slug>/PROFILE.md`: a copy of a workspace's profile, written out for reading. The database row is the real one, and the app never reads this file back.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.

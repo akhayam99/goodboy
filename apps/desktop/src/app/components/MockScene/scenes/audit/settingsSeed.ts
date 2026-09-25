@@ -35,7 +35,11 @@ export const SETTINGS_WORKSPACE: Workspace = {
   name: 'Harborline',
   slug: 'harborline',
   profile: {
-    bio: 'Payments platform team. ledger-core settles, notify-relay fans out receipts, payments-api fronts both.',
+    roles: ['Tech Lead', 'Backend Engineer'],
+    aboutWork:
+      'Leads the payments platform team. Owns settlement correctness and the ledger schema.',
+    workingRules: null,
+    explainMore: ['Rust'],
   },
   overrides: SETTINGS_OVERRIDES,
   createdAt: SETTINGS_NOW,

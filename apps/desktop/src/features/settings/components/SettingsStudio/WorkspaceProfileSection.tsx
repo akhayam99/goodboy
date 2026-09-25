@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
-import { Textarea } from '@goodboy/ui';
+import { useEffect, useMemo, useState } from 'react';
+import type { WorkspaceId, WorkspaceProfile } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { ProfileForm } from '../../../../shared/components/ProfileForm';
+import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
 type Props = {
@@ -14,47 +15,30 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
   );
   const updateWorkspaceProfile = useAppStore((s) => s.updateWorkspaceProfile);
   const reportError = useAppStore((s) => s.reportError);
-  const [bioDraft, setBioDraft] = useState(profile?.bio ?? '');
-  const [busy, setBusy] = useState(false);
+  const stored = useMemo(() => normalizeWorkspaceProfile({ profile }), [profile]);
+  const storedKey = JSON.stringify(stored);
+  const [draft, setDraft] = useState<WorkspaceProfile>(stored);
 
   useEffect(() => {
-    setBioDraft(profile?.bio ?? '');
-  }, [workspaceId, profile?.bio]);
+    setDraft(stored);
+  }, [workspaceId, storedKey]);
 
-  const commitBio = async () => {
-    const trimmed = bioDraft.trim();
-    const next = trimmed === '' ? null : trimmed;
-    if (next === (profile?.bio ?? null)) {
+  const commit = async (next: WorkspaceProfile) => {
+    const normalized = normalizeWorkspaceProfile({ profile: next });
+    if (JSON.stringify(normalized) === storedKey) {
       return;
     }
-    setBusy(true);
     try {
-      await updateWorkspaceProfile({ workspaceId, profile: { bio: next } });
+      await updateWorkspaceProfile({ workspaceId, profile: normalized });
     } catch (error) {
-      void reportError({ title: "Couldn't save the workspace profile", error, workspaceId });
-    } finally {
-      setBusy(false);
+      void reportError({ title: "Couldn't save what agents know about you", error, workspaceId });
     }
   };
 
   return (
-    <section aria-labelledby="workspace-about-you" className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <WorkspaceEyebrow id="workspace-about-you" label="About you" />
-        <span className="text-2xs text-faint-foreground">
-          Agents read this before they talk to you.
-        </span>
-      </div>
-      <Textarea
-        value={bioDraft}
-        aria-label="What agents should know about this workspace and you"
-        placeholder="What agents should know about this workspace and you"
-        disabled={busy}
-        rows={4}
-        onChange={(event) => setBioDraft(event.target.value)}
-        onBlur={() => void commitBio()}
-        className="w-full"
-      />
+    <section aria-labelledby="workspace-about-you" className="flex flex-col gap-3">
+      <WorkspaceEyebrow id="workspace-about-you" label="About you" />
+      <ProfileForm value={draft} onChange={setDraft} onCommit={(next) => void commit(next)} />
     </section>
   );
 };

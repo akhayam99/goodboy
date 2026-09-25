@@ -30,7 +30,10 @@ export type WorkspaceGitStatus = Readonly<{
 }>;
 
 export type WorkspaceProfile = Readonly<{
-  bio: string | null;
+  roles: ReadonlyArray<string>;
+  aboutWork: string | null;
+  workingRules: string | null;
+  explainMore: ReadonlyArray<string>;
 }>;
 
 export type Project = Readonly<{

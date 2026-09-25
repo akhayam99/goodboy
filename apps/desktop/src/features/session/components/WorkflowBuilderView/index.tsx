@@ -738,6 +738,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       const profileBlock = buildProfileGuard({
         profile: storeState.workspaces.find((candidate) => candidate.id === session.workspaceId)
           ?.profile,
+        audience: 'planner',
       });
       const projectsBlock = buildWorkspaceProjectsBlock({
         projects: storeState.projects.filter(
