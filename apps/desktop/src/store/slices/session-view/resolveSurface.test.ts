@@ -66,6 +66,7 @@ describe('the round trip between the resolve queue and the diff', () => {
       detailFocus: 'primary',
       isDeferredShown: false,
       isCompletedShown: false,
+      lastRouting: null,
     });
     expect(state.resolveDiffReturn[SESSION_ID]).toEqual({
       threadId: 't-parser',
@@ -107,6 +108,7 @@ describe('the round trip between the resolve queue and the diff', () => {
       detailFocus: 'primary',
       isDeferredShown: false,
       isCompletedShown: false,
+      lastRouting: null,
     });
   });
 
@@ -155,6 +157,7 @@ describe('the round trip between the resolve queue and the agent', () => {
         detailFocus: 'primary',
         isDeferredShown: false,
         isCompletedShown: false,
+        lastRouting: null,
       },
     });
   });
@@ -190,6 +193,7 @@ describe('the round trip between the resolve queue and the agent', () => {
       detailFocus: 'primary',
       isDeferredShown: false,
       isCompletedShown: true,
+      lastRouting: null,
     });
   });
 

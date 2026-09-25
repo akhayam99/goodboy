@@ -48,7 +48,7 @@ type Params = {
   readonly setAgentConfig: SetAgentConfigFn;
 };
 
-const chunksFor = ({
+export const fixAttemptChunks = ({
   threads,
   mode,
   pr,
@@ -85,7 +85,7 @@ export const startFixAttempt = async ({
   setAgentConfig,
 }: Params): Promise<ReadonlyArray<AgentId>> => {
   const hint = (instructions ?? choice.hint ?? '').trim();
-  const chunks = chunksFor({ threads, mode, pr, hint, contextWindow });
+  const chunks = fixAttemptChunks({ threads, mode, pr, hint, contextWindow });
   const agentIds: Array<AgentId> = [];
   for (const chunk of chunks) {
     const owned = new Set(

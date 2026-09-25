@@ -6,14 +6,12 @@ import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
-import type { ResolveModelChoice } from '../../chat/spawn-from-comment';
-import { contextWindowFor } from '../../session/contextWindowFor';
-import { startFixAttempt } from '../../review/startFixAttempt';
+import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
 import { useRebaseAgent } from '../../session/hooks/useRebaseAgent';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
-import { RESOLVE_QUEUE_ACTION_LABEL } from '../../resolve/resolveQueueCopy';
+import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
@@ -132,19 +130,11 @@ export const useSuggestionActions = ({
     if (pullRequest == null || unresolvedThreads.length === 0) {
       return;
     }
-    const routing = kindRouting({ kind: 'resolver', roleModels });
-    const choice: ResolveModelChoice = {
-      provider: routing.provider,
-      model: routing.model,
-      effort: routing.effort,
-    };
-    void startFixAttempt({
+    void startResolve({
       sessionId,
       threads: unresolvedThreads,
       pr: pullRequest,
-      choice,
-      mode: 'shared',
-      contextWindow: contextWindowFor(routing.model),
+      routing: kindRouting({ kind: 'resolver', roleModels }),
       spawnAgent,
       setAgentConfig,
     })
@@ -199,7 +189,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: RESOLVE_QUEUE_ACTION_LABEL.startRun,
+          label: resolveNewLabel({ count: unresolvedThreads.length }),
           isDisabled: false,
           onAct: startResolving,
         },

@@ -48,10 +48,43 @@ export const RESOLVE_QUEUE_ACTION_LABEL = {
   wontFix: 'Will not fix',
   askForChanges: 'Ask agent to revise',
   send: 'Send to agent',
-  startRun: 'Start resolve run',
   openComment: 'Open comment',
   cancel: 'Cancel',
+  clearSelection: 'Clear',
+  resolveOptions: 'Choose the model',
+  note: 'Note for the agent (optional)',
 } as const;
+
+type CountParams = { readonly count: number };
+
+const commentNoun = ({ count }: CountParams): string => (count === 1 ? 'comment' : 'comments');
+
+export const resolveNewLabel = ({ count }: CountParams): string => `Resolve ${count} new`;
+
+export const resolveCountLabel = ({ count }: CountParams): string => `Resolve ${count}`;
+
+export const resolvePopoverHeading = ({ count }: CountParams): string =>
+  `Resolve ${count} ${commentNoun({ count })}`;
+
+export const resolveSelectionLabel = ({ count }: CountParams): string => `${count} selected`;
+
+export const resolveSelectLabel = ({ body }: { readonly body: string }): string => `Select ${body}`;
+
+export const resolveAgentsLine = ({
+  agents,
+  count,
+}: CountParams & { readonly agents: number }): string => {
+  const noun = commentNoun({ count });
+  if (agents <= 1) {
+    return count === 1
+      ? 'One agent works on this comment'
+      : `One agent works on these ${count} ${noun}`;
+  }
+  return `${agents} agents, ${count} ${noun}`;
+};
+
+export const resolveWithLabel = ({ summary }: { readonly summary: string }): string =>
+  `With ${summary}`;
 
 export const RESOLVE_QUEUE_REFRESH_LABEL = 'the latest comments';
 
