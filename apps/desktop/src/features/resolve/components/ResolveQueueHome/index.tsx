@@ -44,6 +44,8 @@ import type { ResolveQueueRow as QueueRow } from '../../buildResolveQueueRows';
 import { groupResolveQueue, groupSharedRuns, rowsForResolveFilter } from '../../groupResolveQueue';
 import { orderResolveQueueRows } from '../../orderResolveQueueRows';
 import { resolveQueueErrorPlacement } from '../../resolveQueueErrorPlacement';
+import { conversationsCounter } from '../../conversationsCounter';
+import { useNow } from '../../../../shared/hooks/useNow';
 import {
   RESOLVE_QUEUE_REFRESH_LABEL,
   RESOLVE_QUEUE_TITLE,
@@ -120,6 +122,7 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
   const detailRef = useRef<HTMLDivElement | null>(null);
   const reportError = useAppStore((s) => s.reportError);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
+  const now = useNow(5_000);
   const comments = useAppStore(
     (s) =>
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
@@ -598,6 +601,13 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
 
   const isLoading = github.detail === null && github.detailLoading;
   const isRunLive = hasActiveResolveRun({ attempts });
+  const counter = conversationsCounter({
+    comments: github.detail?.comments ?? null,
+    fetchedAt: github.detailFetchedAt ?? null,
+    error: refreshError,
+    now,
+  });
+  const isReadTrusted = github.detail !== null && refreshError === null;
 
   return (
     <div className="isolate grid h-full min-h-0 min-w-0 overflow-hidden">
@@ -610,6 +620,7 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
           <PaneShell
             title={RESOLVE_QUEUE_TITLE}
             scroll="body"
+            {...(counter !== null && { meta: counter })}
             actions={
               newThreads.length === 0 ? null : (
                 <ResolveWithPopover
@@ -672,9 +683,12 @@ export const ResolveQueueHome = ({ session, header = null, eyebrow, dock = null 
               {!isLoading && listed.length === 0 && view.filter === 'retryable' && (
                 <NothingToRetryState />
               )}
-              {!isLoading && listed.length === 0 && view.filter !== 'retryable' && (
-                <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
-              )}
+              {!isLoading &&
+                isReadTrusted &&
+                listed.length === 0 &&
+                view.filter !== 'retryable' && (
+                  <NothingWaitingState hasOtherActiveWork={groups.active.length > 0} />
+                )}
               {!isLoading && listed.length > 0 && (
                 <div className="flex flex-col gap-4">
                   {listGroups.map((group) => (

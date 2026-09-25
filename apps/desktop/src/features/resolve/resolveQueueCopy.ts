@@ -86,7 +86,7 @@ export const resolveAgentsLine = ({
 export const resolveWithLabel = ({ summary }: { readonly summary: string }): string =>
   `With ${summary}`;
 
-export const RESOLVE_QUEUE_REFRESH_LABEL = 'the latest comments';
+export const RESOLVE_QUEUE_REFRESH_LABEL = 'comments from GitHub';
 
 export const RESOLVE_RUN_IN_PROGRESS = 'Resolve run in progress';
 

@@ -10,7 +10,7 @@ export const NothingWaitingState = ({ hasOtherActiveWork }: NothingWaitingProps)
   <FilledEmptyState
     icon={CheckCheck}
     tone="neutral"
-    title={hasOtherActiveWork ? 'No comments need review' : 'No active comments'}
+    title={hasOtherActiveWork ? 'No comments need review' : 'No open comments on GitHub'}
   />
 );
 
@@ -44,8 +44,8 @@ export const ResolveQueueErrorState = ({ message, onRetry }: ErrorProps) => (
   <EmptyState
     icon={AlertTriangle}
     tone="danger"
-    title="Could not load comments"
-    description={message}
+    title="Couldn't read comments from GitHub"
+    description={`gh returned: ${message}`}
     action={
       <Button size="sm" variant="secondary" onClick={onRetry}>
         Retry

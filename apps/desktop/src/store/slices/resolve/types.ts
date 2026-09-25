@@ -2,6 +2,8 @@ import type {
   Agent,
   AgentId,
   MountTargetSnapshot,
+  PrComment,
+  ProjectId,
   ResolveAttemptPhase,
   ResolveCheckBreadth,
   ResolvePublicationDrift,
@@ -105,6 +107,12 @@ export type EnsureReviewThreadParams = SessionParams & {
   readonly isCancelled?: () => boolean;
 };
 
+export type MaterializeParams = SessionParams & {
+  readonly prNumber: number;
+  readonly projectId: ProjectId | null;
+  readonly comments: ReadonlyArray<PrComment>;
+};
+
 export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'closed' | 'cancelled';
 
 export type ResolveActions = {
@@ -141,4 +149,5 @@ export type ResolveActions = {
   readonly ensureReviewThread: (
     params: EnsureReviewThreadParams,
   ) => Promise<EnsureReviewThreadResult>;
+  readonly materializeReviewThreads: (params: MaterializeParams) => Promise<number>;
 };

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GhResult, GhRunner } from '../gh';
+import { GhCliError } from '../gh';
 import { fetchPrDetail } from '../details';
 
 type FakeResponse = {
@@ -240,14 +241,141 @@ describe('fetchPrDetail', () => {
     expect(detail.checks[2]!.conclusion).toBe('failure');
   });
 
-  it('returns empty pieces when gh exits non-zero', async () => {
+  it('fails the read instead of reporting zero threads when gh exits non-zero', async () => {
     const runner: GhRunner = {
       run: vi.fn().mockResolvedValue({ stdout: '', stderr: 'boom', exitCode: 1 }),
     };
+    await expect(fetchPrDetail(runner, 'org/repo', 1)).rejects.toBeInstanceOf(GhCliError);
+  });
+
+  it('keeps the other pieces empty when only they fail', async () => {
+    const runner = makeMultiRunner([
+      {
+        match: matchIssueComments,
+        result: { stdout: '', stderr: 'boom', exitCode: 1 },
+      },
+      { match: matchReviewThreads, result: emptyReviewThreads },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: { stdout: '', stderr: 'boom', exitCode: 1 },
+      },
+    ]);
     const detail = await fetchPrDetail(runner, 'org/repo', 1);
     expect(detail.comments).toEqual([]);
     expect(detail.reviews).toEqual([]);
     expect(detail.reviewRequests).toEqual([]);
     expect(detail.checks).toEqual([]);
+  });
+
+  it('fails the read when the review threads query returns graphql errors', async () => {
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: matchReviewThreads,
+        result: jsonOk({ errors: [{ message: 'API rate limit exceeded' }] }),
+      },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] }),
+      },
+    ]);
+    await expect(fetchPrDetail(runner, 'org/repo', 1)).rejects.toThrow('API rate limit exceeded');
+  });
+
+  it('reads every page of review threads instead of stopping at the first', async () => {
+    const threadNode = (id: string, databaseId: number) => ({
+      id,
+      isResolved: false,
+      isOutdated: false,
+      viewerCanResolve: true,
+      path: 'src/retry.ts',
+      line: databaseId,
+      comments: {
+        nodes: [
+          {
+            id: `PRRC_${id}`,
+            databaseId,
+            author: { login: 'reviewer', avatarUrl: null },
+            body: `note ${id}`,
+            createdAt: `2026-01-01T10:00:${String(databaseId).padStart(2, '0')}Z`,
+            url: `https://x/${databaseId}`,
+            replyTo: null,
+          },
+        ],
+      },
+    });
+    const pageOf = ({
+      nodes,
+      hasNextPage,
+      endCursor,
+    }: {
+      readonly nodes: ReadonlyArray<ReturnType<typeof threadNode>>;
+      readonly hasNextPage: boolean;
+      readonly endCursor: string | null;
+    }) =>
+      jsonOk({
+        data: {
+          repository: {
+            pullRequest: { reviewThreads: { pageInfo: { hasNextPage, endCursor }, nodes } },
+          },
+        },
+      });
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: (a) => matchReviewThreads(a) && a.includes('after=cursor-2'),
+        result: pageOf({
+          nodes: [threadNode('PRT_3', 3)],
+          hasNextPage: false,
+          endCursor: 'cursor-3',
+        }),
+      },
+      {
+        match: (a) => matchReviewThreads(a) && a.includes('after=cursor-1'),
+        result: pageOf({
+          nodes: [threadNode('PRT_2', 2)],
+          hasNextPage: true,
+          endCursor: 'cursor-2',
+        }),
+      },
+      {
+        match: matchReviewThreads,
+        result: pageOf({
+          nodes: [threadNode('PRT_1', 1)],
+          hasNextPage: true,
+          endCursor: 'cursor-1',
+        }),
+      },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] }),
+      },
+    ]);
+    const detail = await fetchPrDetail(runner, 'org/repo', 1);
+    expect(detail.comments.map((c) => c.threadId)).toEqual(['PRT_1', 'PRT_2', 'PRT_3']);
+    expect(detail.comments.every((c) => c.canResolve === true)).toBe(true);
+  });
+
+  it('fails the read when GitHub says there is a next page without a cursor', async () => {
+    const runner = makeMultiRunner([
+      { match: matchIssueComments, result: jsonOk([]) },
+      {
+        match: matchReviewThreads,
+        result: jsonOk({
+          data: {
+            repository: {
+              pullRequest: {
+                reviewThreads: { pageInfo: { hasNextPage: true, endCursor: null }, nodes: [] },
+              },
+            },
+          },
+        }),
+      },
+      {
+        match: (a) => a[0] === 'pr' && a[1] === 'view',
+        result: jsonOk({ reviews: [], reviewRequests: [], statusCheckRollup: [] }),
+      },
+    ]);
+    await expect(fetchPrDetail(runner, 'org/repo', 1)).rejects.toBeInstanceOf(GhCliError);
   });
 });

@@ -331,6 +331,11 @@ A **review conversation** is Goodboy's saved record of one review, issue or
 diff comment. It keeps its state, its verdict, its draft reply and the commits
 that answer it.
 
+Every open review thread on the pull request gets a conversation as soon as
+Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
+reads every page of threads GitHub returns. If the read fails, Conversations
+shows the error from `gh` instead of an empty list.
+
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 

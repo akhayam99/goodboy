@@ -156,6 +156,16 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
             return updates;
           },
         });
+        try {
+          await get().materializeReviewThreads({
+            sessionId,
+            prNumber: pr.number,
+            projectId: mount.projectId,
+            comments: detail.comments,
+          });
+        } catch (error) {
+          console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
+        }
         if (!isCurrent()) {
           return;
         }
@@ -197,7 +207,8 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
         github: {
           ...current,
           detailLoading: false,
-          detailError: opts?.silent === true ? null : formatError(lastError),
+          detailError:
+            opts?.silent === true && current.detail !== null ? null : formatError(lastError),
         },
       });
     });
