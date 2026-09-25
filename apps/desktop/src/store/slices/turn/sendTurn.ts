@@ -51,6 +51,7 @@ import type {
   TurnEvent,
   TurnProviderOverride,
   TurnState,
+  UserTurnSentVia,
   Workflow,
   WorkflowRunId,
 } from '@goodboy/types';
@@ -95,6 +96,7 @@ import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
+import { markTurnActive, markTurnSettled } from './turnSettled';
 import {
   claimWorkflowTurn,
   clearWorkflowTurns,
@@ -180,6 +182,7 @@ type Input = {
   override?: TurnProviderOverride;
   force?: boolean;
   origin?: 'operator' | 'workflow' | 'mount-continuation';
+  sentVia?: UserTurnSentVia;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -221,6 +224,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       override,
       force,
       origin,
+      sentVia,
       retry,
     }: Input,
     lease: TurnLease,
@@ -718,6 +722,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ...(attachmentRefs.length > 0 ? { attachments: attachmentRefs } : {}),
         provider,
         model,
+        ...(sentVia !== undefined && { sentVia }),
         at: userMessage.createdAt,
       });
     }
@@ -1802,6 +1807,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
     const lease: TurnLease = { path: null, holder: null, token: null, attemptId: undefined };
+    const settledAgentId = input.agentId ?? get().selectedAgentId[input.sessionId] ?? null;
+    if (settledAgentId !== null) {
+      markTurnActive({ agentId: settledAgentId });
+    }
     try {
       return await runOnce(input, lease);
     } finally {
@@ -1819,6 +1828,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       void continueOnRequestedMount({ input }).catch((error) =>
         console.error('mount continuation failed', error),
       );
+      if (settledAgentId !== null) {
+        markTurnSettled({ agentId: settledAgentId });
+        void get().drainAgentQueue({ sessionId: input.sessionId, agentId: settledAgentId });
+      }
     }
   };
   return run;

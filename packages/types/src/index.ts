@@ -124,7 +124,7 @@ export type {
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
-export type { ProviderUsage, TurnEvent } from './adapter';
+export type { ProviderUsage, TurnEvent, UserTurnSentVia } from './adapter';
 export type { TelemetryKind, TelemetryRecord } from './telemetry';
 export type {
   AgentTurnSpan,

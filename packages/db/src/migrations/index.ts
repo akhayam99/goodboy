@@ -33,6 +33,7 @@ import { m171SessionEventWorkflowClosed } from './m171-session-event-workflow-cl
 import { m172StepSize } from './m172-step-size';
 import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-mounts';
 import { m174AgentStopped } from './m174-agent-stopped';
+import { m175AgentQueuedMessages } from './m175-agent-queued-messages';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -353,4 +354,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 172, sql: m172StepSize },
   { version: 173, sql: m173AgentTurnSpanTouchedMounts },
   { version: 174, sql: m174AgentStopped },
+  { version: 175, sql: m175AgentQueuedMessages },
 ];

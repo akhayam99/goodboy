@@ -42,6 +42,7 @@ import type {
   VerbosityLevel,
   SkillId,
   TurnEvent,
+  UserTurnSentVia,
   TurnProviderOverride,
   SessionExternalTaskProvider,
   SessionExternalTask,
@@ -165,7 +166,12 @@ import {
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
-import type { AgentQueuedTurn } from './slices/agents/setAgentQueue';
+import type {
+  AgentQueueItemParams,
+  AgentQueuedTurn,
+  AgentQueuedTurnInput,
+} from './slices/agentQueue/types';
+import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
 import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
@@ -631,6 +637,7 @@ type AppActions = {
     override?: TurnProviderOverride;
     force?: boolean;
     origin?: 'operator' | 'workflow';
+    sentVia?: UserTurnSentVia;
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(
     sessionId: SessionId,
@@ -739,8 +746,16 @@ type AppActions = {
   resetWorkflowNodeRoutingLock(params: ResetWorkflowNodeRoutingLockParams): Promise<void>;
   setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
   clearAgentAttachments(agentId: AgentId): void;
-  setAgentQueue(agentId: AgentId, queue: ReadonlyArray<AgentQueuedTurn>): void;
-  clearAgentQueue(agentId: AgentId): void;
+  loadAgentQueues(sessionId: SessionId): Promise<void>;
+  enqueueAgentMessage(params: {
+    turn: AgentQueuedTurnInput;
+    placement?: 'last' | 'first';
+  }): Promise<void>;
+  removeQueuedMessage(params: AgentQueueItemParams): Promise<void>;
+  takeQueuedMessage(params: AgentQueueItemParams): AgentQueuedTurn | null;
+  drainAgentQueue(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
+  sendQueuedNow(params: AgentQueueItemParams & { sessionId: SessionId }): Promise<void>;
+  sendAgentMessageNow(params: { sessionId: SessionId; turn: AgentQueuedTurnInput }): Promise<void>;
   deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   wipeLocalDatabase(): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
@@ -1227,6 +1242,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createPermissionsSlice(set, get),
   ...createProvidersSlice(set, get),
   ...createAgentsSlice(set, get),
+  ...createAgentQueueSlice(set, get),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),

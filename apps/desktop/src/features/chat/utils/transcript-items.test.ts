@@ -197,6 +197,22 @@ const generatedEvents = ({ count, seed }: GeneratedParams): ReadonlyArray<TurnEv
     return doneEvent();
   });
 
+describe('reduceTranscript sent via', () => {
+  it('keeps how a queued or interrupting message was sent', () => {
+    const items = reduceTranscript([
+      { kind: 'user_text', runId: RUN, text: 'keep the flag', sentVia: 'queued', at: AT },
+      { kind: 'user_text', runId: RUN, text: 'use decimals', sentVia: 'interrupt', at: AT },
+      userText({ text: 'plain' }),
+    ]);
+
+    expect(items.map((item) => (item.kind === 'user_text' ? item.sentVia : null))).toEqual([
+      'queued',
+      'interrupt',
+      undefined,
+    ]);
+  });
+});
+
 describe('reduceTranscript incremental resume', () => {
   it('matches a full pass for every growing prefix of a mixed sequence', () => {
     const events = mixedEvents();
