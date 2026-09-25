@@ -92,8 +92,12 @@ describe('startResolve', () => {
       threads: [threadOf('PRRT_1'), threadOf('PRRT_2', 'src/client.ts')],
       pr: PR,
       routing: { provider: 'codex', model: 'gpt-5.5', effort: 'high' },
-      commitStyle: 'fixup',
-      worktreePath: '/repos/notify-relay',
+      style: {
+        commitStyle: 'fixup',
+        voice: 'friendly',
+        styleNote: null,
+        worktreePath: '/repos/notify-relay',
+      },
       spawnAgent,
       setAgentConfig,
     });
@@ -108,6 +112,7 @@ describe('startResolve', () => {
       '- PRRT_1: `git commit --fixup=3a1f9c2full`, so the subject reads `fixup! Add retry policy`',
     );
     expect(prompt).not.toContain('- PRRT_2: `git commit --fixup');
+    expect(prompt).toContain('Voice: friendly.');
   });
 
   it('never reads git for the default new commit style', async () => {
@@ -118,7 +123,12 @@ describe('startResolve', () => {
       threads: [threadOf('PRRT_1')],
       pr: PR,
       routing: { provider: 'codex', model: 'gpt-5.5', effort: 'high' },
-      worktreePath: '/repos/notify-relay',
+      style: {
+        commitStyle: 'new',
+        voice: 'terse',
+        styleNote: null,
+        worktreePath: '/repos/notify-relay',
+      },
       spawnAgent,
       setAgentConfig,
     });

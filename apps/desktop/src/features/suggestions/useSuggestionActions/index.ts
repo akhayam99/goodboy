@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatError } from '@goodboy/ui';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
@@ -76,6 +77,9 @@ export const useSuggestionActions = ({
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
+  const resolveStyle = useAppStore(
+    useShallow((state) => sessionResolveStyle({ state, sessionId })),
+  );
   const rows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
   const setActiveLens = useAppStore((state) => state.setActiveLens);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -135,6 +139,7 @@ export const useSuggestionActions = ({
       threads: unresolvedThreads,
       pr: pullRequest,
       routing: kindRouting({ kind: 'resolver', roleModels }),
+      style: resolveStyle,
       spawnAgent,
       setAgentConfig,
     })

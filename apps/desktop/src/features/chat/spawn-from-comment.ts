@@ -4,6 +4,7 @@ import type {
   ProviderId,
   PullRequestState,
   EffortLevel,
+  ReplyVoice,
   ResolveCommitStyle,
 } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
@@ -13,22 +14,55 @@ import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 
 const TITLE_MAX = 60;
 
-const REPLY_CONTRACT: ReadonlyArray<string> = [
+const REPLY_STRUCTURE: ReadonlyArray<string> = [
   'Every <<comment-reply>> block follows this contract.',
-  'Goodboy wraps your block in a fixed structure when it posts: a verdict label ("Valid." for a fix, "Not applying." for a close) opens the first paragraph, and a "Resolution." paragraph naming the commit or the closing reason is appended below. Write only what goes between them.',
+  "Goodboy places your block into the workspace's reply template when it posts, and the template adds the commit or the closing line. Write only the reason.",
   'So never state the outcome and never name the commit sha: no "Fixed in `abc1234`.", no "Not applying this one.", no "Resolved in", no closing sentence. Both would read twice.',
   'Write the reason, in GitHub-flavored markdown addressed to the reviewer: what was actually wrong, or why the change is not the right one.',
-  'Two to four sentences, or two to four `-` bullets when there is more than one independent point, one claim per bullet. One sentence is enough when the cause is obvious.',
   'Put identifiers, paths, symbols and commit shas in backticks. No headings, no bold runs, no block quotes, no nested lists, no tables.',
-  'Stay under 40 words on a straightforward thread. Never go past 120 words, and only get near it when the reasoning genuinely matters.',
+  'Never go past 120 words, and only get near it when the reasoning genuinely matters.',
   'Summarize a long enumeration with a count instead of listing it, as in "about 50 other routes follow the same convention".',
-  "Past tense for what you did, present tense for what is true of the code. No praise openers, no apologies, no hedging, no restating the reviewer's own words.",
   'Leave out the investigation narrative and the list of everything you checked.',
+];
+
+const TERSE_VOICE: ReadonlyArray<string> = [
+  'Voice: terse.',
+  'Two to four sentences, or two to four `-` bullets when there is more than one independent point, one claim per bullet. One sentence is enough when the cause is obvious.',
+  'Stay under 40 words on a straightforward thread.',
+  "Past tense for what you did, present tense for what is true of the code. No praise openers, no apologies, no hedging, no restating the reviewer's own words.",
   'A good reply reads like this:',
   '',
   '- `apps/web/src/routes/` uses camelCase folders that mirror the URL slug.',
   '- Renaming this one alone would break the convention in about 50 sibling routes.',
 ];
+
+const VOICE_RULES: Record<Exclude<ReplyVoice, 'mine'>, ReadonlyArray<string>> = {
+  terse: TERSE_VOICE,
+  friendly: [
+    'Voice: friendly.',
+    'First person, plain words, two to four sentences.',
+    'One short thanks when the comment caught a real bug, never more than one, and none otherwise. No apologies, no hedging.',
+  ],
+  formal: [
+    'Voice: formal.',
+    'Third person, complete sentences, no contractions, two to four sentences.',
+    'No praise, no apologies, no hedging.',
+  ],
+};
+
+export const replyVoiceRules = ({
+  voice,
+  styleNote,
+}: {
+  readonly voice: ReplyVoice;
+  readonly styleNote: string | null;
+}): ReadonlyArray<string> => {
+  const note = styleNote?.trim() ?? '';
+  if (voice === 'mine' && note !== '') {
+    return ["Voice: the maintainer's own. Follow this note on how they write replies:", note];
+  }
+  return VOICE_RULES[voice === 'mine' ? 'terse' : voice];
+};
 
 const EXAMPLE_SHA = 'a1b2c3d';
 
@@ -224,13 +258,19 @@ export const commitStyleInstruction = ({
   ];
 };
 
+export type ResolverStyle = {
+  readonly commitStyle?: ResolveCommitStyle;
+  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
+  readonly voice?: ReplyVoice;
+  readonly styleNote?: string | null;
+};
+
 type KickoffParams = {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly pr: PullRequestState;
   readonly hint: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
-  readonly commitStyle?: ResolveCommitStyle;
-  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
+  readonly style?: ResolverStyle;
 };
 
 export const buildResolverKickoff = ({
@@ -238,9 +278,9 @@ export const buildResolverKickoff = ({
   pr,
   hint,
   priorContext,
-  commitStyle = 'new',
-  fixupTargets = [],
+  style = {},
 }: KickoffParams): string => {
+  const { commitStyle = 'new', fixupTargets = [], voice = 'terse', styleNote = null } = style;
   const noun = threads.length === 1 ? 'thread' : 'threads';
   const lines: Array<string> = [
     `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
@@ -265,7 +305,13 @@ export const buildResolverKickoff = ({
   }
   if (threadIds.length > 0) {
     lines.push('', ...reportingSection({ threadIds }));
-    lines.push('', RESOLVER_KICKOFF_LABELS.replyContract, ...REPLY_CONTRACT);
+    lines.push(
+      '',
+      RESOLVER_KICKOFF_LABELS.replyContract,
+      ...REPLY_STRUCTURE,
+      '',
+      ...replyVoiceRules({ voice, styleNote }),
+    );
   }
   const operatorNotes = hint.trim();
   if (operatorNotes.length > 0) {
@@ -289,8 +335,7 @@ type ResolverAgentArgsParams = {
   readonly pr: PullRequestState;
   readonly hint?: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
-  readonly commitStyle?: ResolveCommitStyle;
-  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
+  readonly style?: ResolverStyle;
 };
 
 export const buildResolverAgentArgs = ({
@@ -298,8 +343,7 @@ export const buildResolverAgentArgs = ({
   pr,
   hint = '',
   priorContext,
-  commitStyle,
-  fixupTargets,
+  style,
 }: ResolverAgentArgsParams): CommentAgentArgs => {
   const first = threads[0];
   if (first === undefined) {
@@ -319,8 +363,7 @@ export const buildResolverAgentArgs = ({
       pr,
       hint,
       ...(priorContext !== undefined && { priorContext }),
-      ...(commitStyle !== undefined && { commitStyle }),
-      ...(fixupTargets !== undefined && { fixupTargets }),
+      ...(style !== undefined && { style }),
     }),
     sourceThreadIds,
     sourceCommentUrl: first.head.url,

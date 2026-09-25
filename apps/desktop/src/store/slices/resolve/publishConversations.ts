@@ -20,7 +20,8 @@ import { deliverPublicationThread } from './deliverPublicationThread';
 import { isDeliveryComplete } from './deliveryReceipts';
 import { preparePublication } from './preparePublication';
 import { publicationOutcome, type PublicationOutcome } from './publicationOutcome';
-import { RESOLVE_ON_GITHUB_DEFAULT, resolveStepPlan } from './resolveStepPlan';
+import { sessionReplySettings } from '../../sessionReplySettings';
+import { resolveStepPlan } from './resolveStepPlan';
 import { isDriftChecked, mountTargetDrift, publicationDrift } from './publicationDrift';
 import { loadPublicationsInto } from './publicationState';
 import { startPublicationHeartbeat } from './publicationHeartbeat';
@@ -234,7 +235,8 @@ const publishOnce = async ({
               plan: resolveStepPlan({
                 threadId: thread.threadId,
                 comments,
-                shouldResolveOnGithub: RESOLVE_ON_GITHUB_DEFAULT,
+                shouldResolveOnGithub: sessionReplySettings({ state: get(), sessionId })
+                  .resolveOnGithub,
               }),
             });
             receipts.set(thread.threadId, receipt);

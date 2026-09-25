@@ -21,7 +21,9 @@ import type {
   Session,
   SessionId,
 } from '@goodboy/types';
+import { useShallow } from 'zustand/react/shallow';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { replyVoiceOf } from '../../../../store/sessionReplySettings';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -149,6 +151,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const openResolveDiff = useAppStore((s) => s.openResolveDiff);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
+  const replyVoice = useAppStore(useShallow((s) => replyVoiceOf({ state: s, sessionId })));
   const openResolvePublication = useAppStore((s) => s.openResolvePublication);
   const resolveThreads = useAppStore((s) => s.sessionResolveThreads[sessionId] ?? EMPTY_THREADS);
 
@@ -358,6 +361,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
               intent: 'retry',
             },
           ],
+          style: replyVoice,
           spawnAgent,
           setAgentConfig,
         });
@@ -369,6 +373,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     },
     [
       github,
+      replyVoice,
       reportError,
       roleModels,
       rows,

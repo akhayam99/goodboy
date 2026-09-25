@@ -2,19 +2,17 @@ import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { CountToggle } from '@goodboy/ui';
 import type { PrComment, ResolvePublicationPreview } from '@goodboy/types';
-import {
-  RESOLVE_ON_GITHUB_DEFAULT,
-  resolveStepPlan,
-} from '../../../../store/slices/resolve/resolveStepPlan';
+import { resolveStepPlan } from '../../../../store/slices/resolve/resolveStepPlan';
 import { excludedLine, heldBackNote, publicationCountsLine } from '../../resolvePublishCopy';
 import { RESOLVE_PUBLISH_REPLIES_LABEL, RESOLVE_REPLY_PLAN } from '../../resolveQueueCopy';
 
 type Props = {
   readonly preview: ResolvePublicationPreview;
   readonly comments: ReadonlyArray<PrComment>;
+  readonly resolveOnGithub: boolean;
 };
 
-export const PublishLines = ({ preview, comments }: Props) => {
+export const PublishLines = ({ preview, comments, resolveOnGithub }: Props) => {
   const [areRepliesShown, setAreRepliesShown] = useState(false);
   const counts = publicationCountsLine({ preview });
   const held = heldBackNote({ preview });
@@ -51,7 +49,7 @@ export const PublishLines = ({ preview, comments }: Props) => {
                     resolveStepPlan({
                       threadId: reply.threadId,
                       comments,
-                      shouldResolveOnGithub: RESOLVE_ON_GITHUB_DEFAULT,
+                      shouldResolveOnGithub: resolveOnGithub,
                     }) === 'resolve'
                       ? RESOLVE_REPLY_PLAN.resolves
                       : RESOLVE_REPLY_PLAN.leavesOpen}

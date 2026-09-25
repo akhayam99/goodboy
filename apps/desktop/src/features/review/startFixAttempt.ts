@@ -1,16 +1,10 @@
-import type {
-  AgentId,
-  PullRequestState,
-  ResolveCommitStyle,
-  SessionId,
-  EffortLevel,
-} from '@goodboy/types';
+import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import {
   buildResolverAgentArgs,
   buildResolverKickoff,
-  type FixupTarget,
   type PriorContext,
   type ResolveModelChoice,
+  type ResolverStyle,
 } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../github/comment-threads';
 import { chunkConversations } from './chunkConversations';
@@ -50,8 +44,7 @@ type Params = {
   readonly instructions?: string | null;
   readonly mode: FixMode;
   readonly priorContext?: ReadonlyArray<PriorContext>;
-  readonly commitStyle?: ResolveCommitStyle;
-  readonly fixupTargets?: ReadonlyArray<FixupTarget>;
+  readonly style?: ResolverStyle;
   readonly contextWindow?: number | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
@@ -89,8 +82,7 @@ export const startFixAttempt = async ({
   instructions,
   mode,
   priorContext,
-  commitStyle = 'new',
-  fixupTargets = [],
+  style,
   contextWindow = null,
   spawnAgent,
   setAgentConfig,
@@ -108,8 +100,7 @@ export const startFixAttempt = async ({
       pr,
       hint,
       ...(scoped.length > 0 && { priorContext: scoped }),
-      commitStyle,
-      fixupTargets,
+      ...(style !== undefined && { style }),
     });
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
