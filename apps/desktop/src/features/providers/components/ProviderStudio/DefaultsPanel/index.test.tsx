@@ -171,6 +171,13 @@ const TASK_LABELS = [
   'Rebase',
 ];
 
+const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
+  'Plan drafting',
+  'Workflow orchestrator',
+  'PR and MR drafts',
+  'Rebase',
+]);
+
 const openRolesTab = () => fireEvent.click(screen.getByRole('tab', { name: /Agent roles/ }));
 
 describe('DefaultsPanel', () => {
@@ -226,7 +233,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        label === 'Rebase' || label === 'Workflow orchestrator' ? 'sonnet-5' : 'haiku-4.5',
+        SONNET_TASK_LABELS.has(label) ? 'sonnet-5' : 'haiku-4.5',
       );
     }
     expect(screen.getByLabelText('Step summaries routing status: Auto').textContent).toBe('Auto');
@@ -365,7 +372,7 @@ describe('DefaultsPanel', () => {
     openRolesTab();
 
     expect(screen.getByRole('button', { name: 'Planner routing model' }).textContent).toBe(
-      'opus-5',
+      'opus-5.5',
     );
   });
 
@@ -395,7 +402,7 @@ describe('DefaultsPanel', () => {
       'ws-1',
       expect.objectContaining({
         roleModels: {
-          investigator: { providerId: 'anthropic', model: 'haiku-4.5', effort: 'medium' },
+          investigator: { providerId: 'anthropic', model: 'haiku-4.5', effort: 'high' },
         },
       }),
     );

@@ -1,6 +1,5 @@
 import {
   classifyFirstTurn,
-  getCheapModel,
   presentationKeyForRole,
   REPORT_KIT_GUIDE,
   ROLE_REGISTRY,
@@ -372,26 +371,23 @@ export type AgentKindRouting = {
   readonly effort: AgentEffort;
 };
 
-const CHEAP_TIER_KINDS: ReadonlySet<AgentKind> = new Set<AgentKind>(['scout', 'docs', 'generic']);
-
 type KindRoutingParams = {
   readonly kind: AgentKind;
   readonly roleModels?: RoleModelPreferences | null;
+  readonly defaultProvider?: ProviderId | null;
 };
 
-export const kindRouting = ({ kind, roleModels }: KindRoutingParams): AgentKindRouting => {
-  const role = resolveRoleRouting({ role: KIND_TO_ROLE[kind], prefs: roleModels });
-  if (role.isOverride || !CHEAP_TIER_KINDS.has(kind)) {
-    return { provider: role.provider, model: role.model, effort: role.effort };
-  }
-  return { provider: role.provider, model: getCheapModel(role.provider), effort: 'low' };
-};
-
-export const isRightSizedKind = ({ kind, roleModels }: KindRoutingParams): boolean => {
-  if (!CHEAP_TIER_KINDS.has(kind)) {
-    return false;
-  }
-  return !resolveRoleRouting({ role: KIND_TO_ROLE[kind], prefs: roleModels }).isOverride;
+export const kindRouting = ({
+  kind,
+  roleModels,
+  defaultProvider,
+}: KindRoutingParams): AgentKindRouting => {
+  const role = resolveRoleRouting({
+    role: KIND_TO_ROLE[kind],
+    prefs: roleModels,
+    ...(defaultProvider != null && { auto: { defaultProvider } }),
+  });
+  return { provider: role.provider, model: role.model, effort: role.effort };
 };
 
 export const AGENT_KIND_DEFAULTS: Record<

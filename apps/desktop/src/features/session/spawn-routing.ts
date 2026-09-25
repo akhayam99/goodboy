@@ -1,8 +1,8 @@
 import { PROVIDER_CAPABILITIES, getModelProvider, clampEffortForModel } from '@goodboy/core';
 import type { AgentEffort, ProviderId, RoleModelPreferences, Session } from '@goodboy/types';
-import { isRightSizedKind, kindRouting, type AgentKind, type AgentKindRouting } from './agent-kind';
+import { kindRouting, type AgentKind, type AgentKindRouting } from './agent-kind';
 
-type SpawnRoutingOrigin = 'chat' | 'right-sized' | 'role-default';
+type SpawnRoutingOrigin = 'chat' | 'role-default';
 
 export type SpawnRouting = AgentKindRouting & {
   readonly origin: SpawnRoutingOrigin;
@@ -12,6 +12,7 @@ type Params = {
   readonly kind: AgentKind;
   readonly roleModels: RoleModelPreferences | null;
   readonly session: Session | null;
+  readonly defaultProvider?: ProviderId | null;
 };
 
 type ChatParams = {
@@ -41,11 +42,14 @@ const chatRouting = ({ session, fallbackEffort }: ChatParams): AgentKindRouting 
   };
 };
 
-export const resolveSpawnRouting = ({ kind, roleModels, session }: Params): SpawnRouting => {
-  const roleDefault = kindRouting({ kind, roleModels });
-  const origin: SpawnRoutingOrigin = isRightSizedKind({ kind, roleModels })
-    ? 'right-sized'
-    : 'role-default';
+export const resolveSpawnRouting = ({
+  kind,
+  roleModels,
+  session,
+  defaultProvider,
+}: Params): SpawnRouting => {
+  const roleDefault = kindRouting({ kind, roleModels, defaultProvider });
+  const origin: SpawnRoutingOrigin = 'role-default';
   if (kind !== 'generic' || session == null) {
     return { ...roleDefault, origin };
   }

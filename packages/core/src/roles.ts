@@ -1,12 +1,9 @@
-import type { AgentEffort, AgentRole, ProviderId, WorkflowTaskType } from '@goodboy/types';
+import type { AgentRole, WorkflowTaskType } from '@goodboy/types';
 import { devWarn } from './dev-log';
 
 export type { AgentEffort, AgentRole } from '@goodboy/types';
 
 export type RoleDefaults = {
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: AgentEffort;
   readonly description: string;
   readonly fanOut: RoleFanOutCapability;
   readonly prompt?: string;
@@ -61,9 +58,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'haiku-4.5',
-    effort: 'low',
     description: 'survey code, list relevant files, identify abstractions; no changes',
     fanOut: {
       mode: 'natural',
@@ -81,9 +75,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'reproduce, diagnose, root-cause, patch the failure',
     fanOut: {
       mode: 'conditional',
@@ -101,9 +92,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'opus-5',
-    effort: 'high',
     description: 'design the change; produce an ordered plan',
     fanOut: {
       mode: 'never',
@@ -121,9 +109,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'apply one assigned plan or sequential cluster in small commits',
     fanOut: {
       mode: 'never',
@@ -141,9 +126,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'audit the diff read-only, delegate test execution, flag drift',
     fanOut: {
       mode: 'conditional',
@@ -161,9 +143,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'author and run tests; report production failures for an implementer',
     fanOut: {
       mode: 'conditional',
@@ -182,9 +161,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: false,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'address a review comment with one local commit',
     fanOut: {
       mode: 'never',
@@ -202,9 +178,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: true,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'haiku-4.5',
-    effort: 'low',
     description: 'write repository documentation only, never reports',
     prompt:
       'you are a repository documentation agent. write and update repository documentation, READMEs, changelogs, and docstrings. never produce session reports or other report artifacts. ALLOWED: editing documentation files and documentation text. FORBIDDEN: editing production logic, writing tests, implementing features, creating plans, or writing reports.',
@@ -224,9 +197,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: false,
     selectionEligible: true,
     pickerEligible: false,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'produce a requested report from supplied evidence',
     fanOut: {
       mode: 'never',
@@ -244,9 +214,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: false,
     selectionEligible: true,
     pickerEligible: false,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'produce a requested wireframe from supplied product evidence',
     fanOut: {
       mode: 'never',
@@ -264,9 +231,6 @@ export const ROLE_REGISTRY = {
     classifierEligible: false,
     selectionEligible: true,
     pickerEligible: true,
-    provider: 'anthropic',
-    model: 'sonnet-5',
-    effort: 'medium',
     description: 'user-defined role',
     fanOut: {
       mode: 'never',

@@ -102,7 +102,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
 }));
 
 import type { OrchestratorClientDeps, OrchestratorInput } from '@goodboy/core';
-import { OrchestratorClient, OrchestratorClientSpawnError, ROLE_REGISTRY } from '@goodboy/core';
+import { OrchestratorClient, OrchestratorClientSpawnError, AUTO_DEFAULTS } from '@goodboy/core';
 import { orchestrateNextStep, persistOrchestrationStop } from './orchestrateNextStep';
 import { requestDecisionRestart } from './decisionRestart';
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
@@ -674,7 +674,7 @@ describe('orchestrateNextStep', () => {
 
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
     expect(insert['kind']).toBe('scout');
-    expect(insert['modelOverride']).toBe(ROLE_REGISTRY.scout.model);
+    expect(insert['modelOverride']).toBe(AUTO_DEFAULTS.anthropic.scout[0]?.key);
     expect(insert['effort']).toBeUndefined();
   });
 

@@ -1,6 +1,6 @@
-import { getCheapModel, recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
+import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
-import { KIND_TO_ROLE, isRightSizedKind, kindRouting, type AgentKind } from '../session/agent-kind';
+import { KIND_TO_ROLE, kindRouting, type AgentKind } from '../session/agent-kind';
 
 type Params = {
   readonly step: Step | null;
@@ -57,9 +57,7 @@ export const resolveStepRouting = ({
   const kindModel =
     provider === fallback.provider
       ? fallback.model
-      : isRightSizedKind({ kind, roleModels })
-        ? getCheapModel(provider)
-        : recommendedModelForRole({ role: KIND_TO_ROLE[kind], provider, prefs: roleModels });
+      : recommendedModelForRole({ role: KIND_TO_ROLE[kind], provider, prefs: roleModels });
   const preferredEffort = preference.isOverride ? preference.effort : null;
   const sessionScopedModel = provider === sessionProvider ? sessionModel : null;
   return {

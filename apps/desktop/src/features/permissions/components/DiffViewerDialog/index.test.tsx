@@ -413,7 +413,7 @@ describe('DiffViewerPane', () => {
         name: 'Rebase on main',
         provider: 'codex',
         model: 'gpt-5.6-terra',
-        effort: 'low',
+        effort: 'medium',
         focus: 'none',
       }),
     );

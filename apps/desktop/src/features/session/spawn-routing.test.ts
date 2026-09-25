@@ -40,7 +40,7 @@ describe('resolveSpawnRouting', () => {
     });
   });
 
-  it('keeps the right-sized role default for an explicit kind, whatever the chat is on', () => {
+  it('keeps the role default for an explicit kind, whatever the chat is on', () => {
     const routing = resolveSpawnRouting({
       kind: 'scout',
       roleModels: null,
@@ -55,11 +55,11 @@ describe('resolveSpawnRouting', () => {
       provider: 'anthropic',
       model: 'haiku-4.5',
       effort: 'low',
-      origin: 'right-sized',
+      origin: 'role-default',
     });
   });
 
-  it('falls back to the cheap default when the chat has no model pinned', () => {
+  it('falls back to the Custom default when the chat has no model pinned', () => {
     const routing = resolveSpawnRouting({
       kind: 'generic',
       roleModels: null,
@@ -68,9 +68,9 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
-      origin: 'right-sized',
+      model: 'sonnet-5',
+      effort: 'medium',
+      origin: 'role-default',
     });
   });
 

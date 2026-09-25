@@ -26,7 +26,6 @@ import {
   OrchestratorProviderError,
   ROLE_REGISTRY,
   SELECTABLE_AGENT_ROLES,
-  defaultsForRole,
   hintedRoutingOutcome,
   orchestratorModelPool,
   parseWorkflowRoutingProposal,
@@ -796,7 +795,11 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       }
       if (decision.action === 'next') {
         const proposed = decision.step;
-        const compiled = defaultsForRole(proposed.role);
+        const compiled = resolveRoleRouting({
+          role: proposed.role,
+          prefs: null,
+          auto: { defaultProvider },
+        });
         const parsedProposal = parseWorkflowRoutingProposal({
           fields: proposed,
           emittingProvider: routing.providerId,

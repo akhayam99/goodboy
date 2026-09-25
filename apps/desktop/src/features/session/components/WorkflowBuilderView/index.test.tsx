@@ -1641,7 +1641,7 @@ describe('WorkflowBuilderView (step management in custom mode)', () => {
 
     const model = withinSteps().getAllByRole('button', { name: /^model:auto$/i })[0]!;
     expect(model.dataset['provider']).toBe('cursor');
-    expect(model.dataset['recommendedModel']).toBe('gpt-5.6-luna');
+    expect(model.dataset['recommendedModel']).toBe('auto');
 
     fireEvent.click(startBtn());
     await waitFor(() => expect(mockSavePhaseTemplate).toHaveBeenCalledOnce());
@@ -1719,7 +1719,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
     const modelBtn = screen.getByRole('button', { name: /^model:auto$/i });
-    expect(modelBtn.dataset['recommendedModel']).toBe('haiku-4.5');
+    expect(modelBtn.dataset['recommendedModel']).toBe('sonnet-5');
     expect(screen.queryByText(/cheap-tier/i)).toBeNull();
   });
 
@@ -1734,7 +1734,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     await waitFor(() => screen.getByText('2 steps'));
 
     expect(vi.mocked(PlannerClient)).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'anthropic', model: 'haiku-4.5' }),
+      expect.objectContaining({ providerId: 'anthropic', model: 'sonnet-5' }),
     );
   });
 
@@ -1764,7 +1764,7 @@ describe('WorkflowBuilderView (planner model picker)', () => {
     mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
-    fireEvent.click(screen.getByRole('button', { name: /^effort:high$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^effort:medium$/i }));
 
     fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
       target: { value: 'do something' },

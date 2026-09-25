@@ -403,15 +403,13 @@ describe('spawnReportAgent', () => {
 });
 
 describe('resolveReportRouting', () => {
-  it('uses the cheapest connected model by default', () => {
+  it('writes the report on the curated default, the same model Defaults shows', () => {
     const routing = resolveReportRouting({
       state: getWith()(),
       sessionId: SESSION_ID,
       picked: null,
     });
-    expect(routing.provider).toBe('anthropic');
-    expect(routing.effort).toBe('low');
-    expect(routing.model).not.toBe('opus-5');
+    expect(routing).toEqual({ provider: 'anthropic', model: 'sonnet-5', effort: 'medium' });
   });
 
   it('honours an explicit pick over the default', () => {

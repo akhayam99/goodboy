@@ -9,7 +9,6 @@ import {
   normalizeSelectableAgentRole,
   presentationKeyForRole,
 } from './roles';
-import { PROVIDER_CAPABILITIES } from './providers/capabilities';
 
 describe('ROLE_REGISTRY', () => {
   it('covers every defined AgentRole', () => {
@@ -30,52 +29,6 @@ describe('ROLE_REGISTRY', () => {
       expect(ROLE_REGISTRY[role as keyof typeof ROLE_REGISTRY]).toBeDefined();
     }
     expect(Object.keys(ROLE_REGISTRY).sort()).toEqual([...expected].sort());
-  });
-
-  it('routes the read-only survey role to the cheap model', () => {
-    expect(ROLE_REGISTRY.scout.model).toMatch(/haiku/);
-  });
-
-  it('routes the debugging role to sonnet, since it reads deeply and patches', () => {
-    expect(ROLE_REGISTRY.investigator.model).toMatch(/sonnet/);
-  });
-
-  it('names a model its provider ships, at an effort that model supports', () => {
-    for (const [role, defaults] of Object.entries(ROLE_REGISTRY)) {
-      const model = PROVIDER_CAPABILITIES[defaults.provider].models.find(
-        (entry) => entry.id === defaults.model,
-      );
-      expect(model, `${role} → ${defaults.provider}/${defaults.model}`).toBeDefined();
-      if (model?.effort != null && model.effort.length > 0) {
-        expect(model.effort, `${role} → ${defaults.model}/${defaults.effort}`).toContain(
-          defaults.effort,
-        );
-      }
-    }
-  });
-
-  it('routes design-heavy roles to the strong model', () => {
-    expect(ROLE_REGISTRY.planner.model).toMatch(/opus/);
-  });
-
-  it('routes balanced roles to sonnet', () => {
-    expect(ROLE_REGISTRY.implementer.model).toMatch(/sonnet/);
-    expect(ROLE_REGISTRY.reviewer.model).toMatch(/sonnet/);
-    expect(ROLE_REGISTRY.resolver.model).toMatch(/sonnet/);
-    expect(ROLE_REGISTRY.report.model).toMatch(/sonnet/);
-    expect(ROLE_REGISTRY.wireframe.model).toMatch(/sonnet/);
-  });
-
-  it('keeps the resolver on the same routing the resolve UI spawned before it had a role', () => {
-    expect(ROLE_REGISTRY.resolver.provider).toBe(ROLE_REGISTRY.custom.provider);
-    expect(ROLE_REGISTRY.resolver.model).toBe(ROLE_REGISTRY.custom.model);
-    expect(ROLE_REGISTRY.resolver.effort).toBe(ROLE_REGISTRY.custom.effort);
-  });
-
-  it('every default uses anthropic provider for now', () => {
-    for (const r of Object.values(ROLE_REGISTRY)) {
-      expect(r.provider).toBe('anthropic');
-    }
   });
 
   it('declares fan-out capability per role', () => {

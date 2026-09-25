@@ -16,6 +16,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import {
   AGENT_KIND_META,
   visibleAgentKinds,
@@ -75,7 +76,15 @@ export const CreateAgentPopover = ({
   );
   const roleModels = useSessionRoleModels({ sessionId });
   const session = useAppStore((state) => state.sessions?.find((s) => s.id === sessionId) ?? null);
-  const spawnDefault = resolveSpawnRouting({ kind: selectedKind, roleModels, session });
+  const defaultProvider = useAppStore(
+    (state) => selectResolvedSettings({ state, sessionId })?.defaultProviderId ?? null,
+  );
+  const spawnDefault = resolveSpawnRouting({
+    kind: selectedKind,
+    roleModels,
+    session,
+    defaultProvider,
+  });
   const effective: AgentKindRouting = routing ?? spawnDefault;
   const routingSummary = recommendationSummary({
     provider: effective.provider,

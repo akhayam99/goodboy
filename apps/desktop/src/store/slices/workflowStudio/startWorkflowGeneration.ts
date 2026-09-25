@@ -32,21 +32,12 @@ const generationTaskModel = ({
   const connected = state.providers
     .filter((provider) => provider.connection === 'connected')
     .map((provider) => provider.id);
-  const firstConnected = connected[0];
-  const resolved = resolveTaskModel({
+  return resolveTaskModel({
     task: 'plan_generation',
     preferences: overrides?.taskModels,
     workspaceDefaultProviderId: overrides?.defaultProviderId,
-    sessionDefaultProviderId: firstConnected ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
-  });
-  if (firstConnected == null || connected.includes(resolved.providerId)) {
-    return resolved;
-  }
-  return resolveTaskModel({
-    task: 'plan_generation',
-    preferences: null,
-    workspaceDefaultProviderId: firstConnected,
-    sessionDefaultProviderId: firstConnected,
+    sessionDefaultProviderId: connected[0] ?? DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
+    connectedProviders: connected.length > 0 ? connected : null,
   });
 };
 

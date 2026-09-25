@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   PROVIDER_CAPABILITIES,
   clampEffortForModel,
-  defaultsForRole,
   getModelProvider,
   modelEffortLevels,
   recommendedModelForRole,
@@ -90,7 +89,11 @@ export const RoleModelRow = ({
   disabled,
   onChange,
 }: Props) => {
-  const compiled = defaultsForRole(role);
+  const compiled = resolveRoleRouting({
+    role,
+    prefs: null,
+    auto: { defaultProvider: defaultProviderId },
+  });
   const prefs: RoleModelPreferences | null = preference == null ? null : { [role]: preference };
   const resolved = resolveRoleRouting({ role, prefs });
   const resolvedProviderId = resolved.isOverride ? resolved.provider : defaultProviderId;

@@ -15,7 +15,6 @@ import {
   PROVIDER_CAPABILITIES,
   type PlannerOutput,
   clampEffortForModel,
-  defaultsForRole,
   recommendedModelForRole,
   resolveRoleRouting,
   resolveTaskModel,
@@ -128,7 +127,7 @@ const isDraftEmpty = (d: WorkflowBuilderDraft): boolean =>
   d.orchestratorModel.effortOverride === null &&
   d.providerPool === null;
 
-const PLANNER_EFFORT: EffortLevel = defaultsForRole('planner').effort;
+const PLANNER_EFFORT: EffortLevel = resolveRoleRouting({ role: 'planner', prefs: null }).effort;
 const ORCHESTRATOR_EFFORT: EffortLevel = 'medium';
 const DYNAMIC_EXECUTION_MODE: WorkflowExecutionMode = 'dynamic';
 const DYNAMIC_WORKFLOW_NAME = 'Orchestrated workflow';

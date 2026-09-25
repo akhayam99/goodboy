@@ -227,6 +227,7 @@ export type {
   RoleModelPreference,
   RoleModelPreferences,
   SettingsScope,
+  TaskModelFallback,
   TaskModelPreference,
   TaskModelPreferences,
   VerbosityLevel,

@@ -149,7 +149,7 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'docs',
       provider: 'anthropic',
-      model: 'haiku-4.5',
+      model: 'sonnet-5',
       effort: 'low',
       focus: 'agent',
     });
@@ -225,7 +225,7 @@ describe('CreateAgentPopover', () => {
       kindOverride: 'generic',
       provider: 'anthropic',
       model: 'claude-opus-5',
-      effort: 'low',
+      effort: 'medium',
       focus: 'agent',
     });
   });
@@ -371,8 +371,8 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',
       provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
+      model: 'sonnet-5',
+      effort: 'medium',
       focus: 'agent',
     });
   });
@@ -419,8 +419,8 @@ describe('CreateAgentPopover', () => {
     expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
       kindOverride: 'generic',
       provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
+      model: 'sonnet-5',
+      effort: 'medium',
       initialPrompt: 'keep the diff small',
       focus: 'agent',
     });

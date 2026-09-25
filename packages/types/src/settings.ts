@@ -17,10 +17,17 @@ export type AuxTaskId =
   | 'pr_draft'
   | 'rebase';
 
+export type TaskModelFallback = Readonly<{
+  providerId: ProviderId;
+  model: string;
+  effort?: EffortLevel;
+}>;
+
 export type TaskModelPreference = Readonly<{
   providerId: ProviderId;
   model: string;
   effort?: EffortLevel;
+  fallback?: TaskModelFallback;
 }>;
 
 export type TaskModelPreferences = Readonly<Partial<Record<AuxTaskId, TaskModelPreference>>>;
