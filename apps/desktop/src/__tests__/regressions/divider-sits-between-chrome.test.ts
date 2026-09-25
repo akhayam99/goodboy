@@ -151,10 +151,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/providers/components/ProviderStudio/DefaultsPanel/index.tsx': {
-    count: 3,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/resolve/components/ResolveItemHeader/index.tsx': {
     count: 1,
     reason: 'chrome',
