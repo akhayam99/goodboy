@@ -1,6 +1,6 @@
 {
   "name": "goodboy",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
   "license": "FSL-1.1-MIT",
