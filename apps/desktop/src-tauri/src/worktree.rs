@@ -368,6 +368,10 @@ fn worktree_integrate_candidate_blocking(
         git(path, &["reset", "--hard", "--quiet", &candidate])?;
         return Ok(IntegratedCandidate { sha: candidate });
     }
+    if let Some(integrated) = landed_equivalent(path, &expected, &candidate, &actual)? {
+        write_journal(&journal, &[&candidate, &integrated])?;
+        return Ok(IntegratedCandidate { sha: integrated });
+    }
     std::fs::write(&picking, format!("{candidate}\n"))?;
     let range = format!("{expected}..{candidate}");
     if git(path, &["cherry-pick", "--allow-empty", &range]).is_err() {
@@ -382,6 +386,29 @@ fn worktree_integrate_candidate_blocking(
     write_journal(&journal, &[&candidate, &integrated])?;
     std::fs::remove_file(&picking)?;
     Ok(IntegratedCandidate { sha: integrated })
+}
+
+fn landed_equivalent(
+    cwd: &Path,
+    expected: &str,
+    candidate: &str,
+    actual: &str,
+) -> Result<Option<String>, WorktreeError> {
+    let pending = git(cwd, &["cherry", actual, candidate, expected])?;
+    let marks: Vec<&str> = pending
+        .lines()
+        .filter_map(|line| line.split_whitespace().next())
+        .collect();
+    if marks.is_empty() || marks.iter().any(|mark| *mark != "-") {
+        return Ok(None);
+    }
+    let landed = git(cwd, &["cherry", candidate, actual, expected])?;
+    Ok(landed
+        .lines()
+        .filter_map(|line| line.strip_prefix("- "))
+        .map(str::trim)
+        .last()
+        .map(str::to_string))
 }
 
 fn write_journal(journal: &Path, lines: &[&str]) -> Result<(), WorktreeError> {
@@ -6460,6 +6487,63 @@ mod candidate_tests {
             git_ok(&root, &["rev-list", "--count", &format!("{base}..HEAD")]),
             "2",
             "the candidate was integrated twice"
+        );
+    }
+
+    fn forget_integration(root: &Path, id: &str, candidate: &str) {
+        let dir = root.join(".git").join("goodboy-candidate-integrations");
+        std::fs::remove_file(dir.join(format!("{id}.journal"))).unwrap();
+        std::fs::write(dir.join(format!("{id}.picking")), format!("{candidate}\n")).unwrap();
+    }
+
+    #[test]
+    fn a_retry_after_a_crash_past_the_cherry_pick_records_it_without_picking_again() {
+        let root = init_repo("candidate-pick-crash");
+        let base = commit(&root, "base.txt", "base", "base");
+        commit(&root, "fix.txt", "fix", "fix");
+        commit(&root, "test.txt", "test", "test");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        commit(&root, "other.txt", "other", "external");
+        let picked = integrate(&root, "cand-1", &candidate, &base).unwrap();
+        forget_integration(&root, "cand-1", &candidate);
+        let later = commit(&root, "later.txt", "later", "later");
+
+        let retried = integrate(&root, "cand-1", &candidate, &base).unwrap();
+
+        assert_eq!(retried, picked, "the retry reported another commit");
+        assert_eq!(head(&root), later, "the retry moved the branch");
+        assert_eq!(
+            git_ok(&root, &["rev-list", "--count", &format!("{base}..HEAD")]),
+            "4",
+            "the fix was picked twice"
+        );
+        assert_eq!(
+            integrate(&root, "cand-1", &candidate, &base).unwrap(),
+            picked,
+            "the retry did not record the integration"
+        );
+    }
+
+    #[test]
+    fn a_retry_after_a_crash_still_refuses_a_fix_that_no_longer_applies() {
+        let root = init_repo("candidate-pick-crash-conflict");
+        let base = commit(&root, "shared.txt", "base\n", "base");
+        commit(&root, "shared.txt", "fix\n", "fix");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        let moved = commit(&root, "shared.txt", "external\n", "external");
+        let dir = root.join(".git").join("goodboy-candidate-integrations");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("cand-1.picking"), format!("{candidate}\n")).unwrap();
+
+        let outcome = integrate(&root, "cand-1", &candidate, &base);
+
+        let message = format!("{outcome:?}");
+        assert!(message.contains("no longer applies"), "{message}");
+        assert_eq!(head(&root), moved, "the branch was moved anyway");
+        assert_eq!(git_ok(&root, &["status", "--porcelain=v1"]), "");
+        assert!(
+            !dir.join("cand-1.journal").exists(),
+            "a refused fix was recorded"
         );
     }
 

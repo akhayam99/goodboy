@@ -379,7 +379,9 @@ with a local commit and never pushes.
 - Approving a fix fast-forwards the branch to it. When the branch moved on
   since the fix started, the fix is cherry-picked onto the new head and that
   commit becomes the sha on the branch. If it no longer applies, the pick is
-  aborted and the branch stays as it was
+  aborted and the branch stays as it was. When an approval was interrupted
+  after the pick landed, approving again finds the same change on the branch
+  and records that commit instead of picking it twice
 
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
