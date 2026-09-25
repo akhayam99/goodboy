@@ -174,8 +174,14 @@ describe('WorkflowsPanel home', () => {
     const confirm = screen.getByRole('group', {
       name: 'Restore built-in workflows in Harborline?',
     });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore' }));
-    await waitFor(() => expect(state.resetWorkflows).toHaveBeenCalledWith('ws-1'));
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore 3' }));
+    await waitFor(() =>
+      expect(state.resetWorkflows).toHaveBeenCalledWith('ws-1', [
+        'refactor-example',
+        'plan-and-ship',
+        'fix-a-bug',
+      ]),
+    );
   });
 });
 

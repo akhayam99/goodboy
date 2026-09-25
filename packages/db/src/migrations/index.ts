@@ -34,6 +34,7 @@ import { m172StepSize } from './m172-step-size';
 import { m173AgentTurnSpanTouchedMounts } from './m173-agent-turn-span-touched-mounts';
 import { m180StepLibraryBuiltinsInCode } from './m180-step-library-builtins-in-code';
 import { m181StepLibraryExpectedOutput } from './m181-step-library-expected-output';
+import { m188RefactorBuiltinName } from './m188-refactor-builtin-name';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -355,4 +356,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 173, sql: m173AgentTurnSpanTouchedMounts },
   { version: 180, sql: m180StepLibraryBuiltinsInCode },
   { version: 181, sql: m181StepLibraryExpectedOutput },
+  { version: 188, sql: m188RefactorBuiltinName },
 ];

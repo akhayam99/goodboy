@@ -400,6 +400,8 @@ export {
   type WorkflowLibraryEntry,
   type WorkflowLibraryStep,
   seedWorkflowLibrary,
+  restoreWorkflowLibrary,
+  type RestoreWorkflowLibraryParams,
   type SeedResult,
   type SeedWorkflowLibraryDeps,
   formatWorkflowFromNL,

@@ -37,6 +37,34 @@ const matchesEntry = ({ workflow, entry }: MatchParams): boolean => {
   });
 };
 
+export type BuiltinDrift = 'edited' | 'deleted';
+
+export type RestorableBuiltin = {
+  readonly entry: WorkflowLibraryEntry;
+  readonly drift: BuiltinDrift;
+};
+
+type WorkflowsParams = {
+  readonly workflows: ReadonlyArray<Workflow>;
+};
+
+export const restorableBuiltins = ({ workflows }: WorkflowsParams): RestorableBuiltin[] =>
+  WORKFLOW_LIBRARY.flatMap((entry): RestorableBuiltin[] => {
+    const seeded = workflows.find((workflow) =>
+      workflow.id.startsWith(`${SEED_ID_PREFIX}${entry.slug}_`),
+    );
+    if (seeded !== undefined && matchesEntry({ workflow: seeded, entry })) {
+      return [];
+    }
+    const nameTaken = workflows.some(
+      (workflow) => workflow.id !== seeded?.id && workflow.name === entry.name,
+    );
+    if (nameTaken) {
+      return [];
+    }
+    return [{ entry, drift: seeded === undefined ? 'deleted' : 'edited' }];
+  });
+
 export const builtinWorkflowState = ({ workflow }: Params): BuiltinWorkflowState => {
   if (workflow.origin !== 'library') {
     return 'custom';

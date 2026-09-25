@@ -98,6 +98,52 @@ describe('WorkflowList', () => {
     expect(screen.getByText('+2')).toBeDefined();
   });
 
+  it('names only the built-ins that changed in the restore confirm', async () => {
+    const onRestore = vi.fn(async () => undefined);
+    render(
+      <WorkflowList
+        workflows={[seeded()]}
+        workspaceName="Harborline"
+        isRestoring={false}
+        tabs={null}
+        importControl={null}
+        onOpen={vi.fn()}
+        onNew={vi.fn()}
+        onRestore={onRestore}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Restore built-in workflows/ }));
+    const confirm = screen.getByRole('group', {
+      name: 'Restore built-in workflows in Harborline?',
+    });
+    expect(confirm.textContent).toContain(
+      'Plan and ship and Fix a bug go back to their original steps. Your own workflows and other workspaces are not touched.',
+    );
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Restore 2' }));
+    await vi.waitFor(() => expect(onRestore).toHaveBeenCalledWith(['plan-and-ship', 'fix-a-bug']));
+  });
+
+  it('disables the restore when every built-in is unchanged', () => {
+    const workflows = WORKFLOW_LIBRARY.map((entry) =>
+      seeded({
+        id: `wf_seed_${entry.slug}_ws-1` as Workflow['id'],
+        name: entry.name,
+        steps: entry.steps.map((libraryStep, ordinal) => ({
+          ...step(ordinal, libraryStep.role, `${entry.slug}-${libraryStep.name}`),
+          name: libraryStep.name,
+          promptPrefix: libraryStep.promptPrefix,
+          expectedOutput: libraryStep.expectedOutput,
+        })),
+      }),
+    );
+    renderList(workflows);
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow actions' }));
+    const item = screen.getByRole('menuitem', { name: /Restore built-in workflows/ });
+    expect((item as HTMLButtonElement).disabled).toBe(true);
+    expect(item.textContent).toContain('Built-in workflows are unchanged');
+  });
+
   it('shows the empty state when there is nothing to list', () => {
     renderList([]);
     expect(screen.getByText('No workflows yet')).toBeDefined();

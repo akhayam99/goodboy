@@ -7,10 +7,10 @@ import type {
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
-import { upsertWorkflow, type Database } from '@goodboy/db';
+import { restoreSeededWorkflow, upsertWorkflow, type Database } from '@goodboy/db';
 import { normalizeAgentRole } from '../roles';
 import { builtinStepForRole } from './builtinSteps';
-import { WORKFLOW_LIBRARY } from './library';
+import { WORKFLOW_LIBRARY, type WorkflowLibraryEntry } from './library';
 
 export type SeedWorkflowLibraryDeps = {
   readonly db: Database;
@@ -32,6 +32,40 @@ function makeStepId(slug: string, stepName: string, workspaceId: WorkspaceId): S
   return `step_seed_${slug}_${stepSlug}_${workspaceId}` as StepId;
 }
 
+type SeedParams = {
+  readonly entry: WorkflowLibraryEntry;
+  readonly workspaceId: WorkspaceId;
+  readonly now: IsoDateTime;
+};
+
+const seededWorkflow = ({ entry, workspaceId, now }: SeedParams): Workflow => {
+  const workflowId = makeWorkflowId(entry.slug, workspaceId);
+  const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
+    const libraryStepId = builtinStepForRole({ role: normalizeAgentRole({ role: s.role }) })?.id;
+    return {
+      id: makeStepId(entry.slug, s.name, workspaceId),
+      workflowId,
+      ...(libraryStepId && { libraryStepId }),
+      role: s.role as AgentRole,
+      ordinal,
+      name: s.name,
+      promptPrefix: s.promptPrefix,
+      expectedOutput: s.expectedOutput,
+    };
+  });
+  return {
+    id: workflowId,
+    workspaceId,
+    name: entry.name,
+    description: entry.description,
+    ...(entry.goal && { goal: entry.goal }),
+    steps,
+    origin: 'library',
+    createdAt: now,
+    updatedAt: now,
+  };
+};
+
 export const seedWorkflowLibrary = async (
   deps: SeedWorkflowLibraryDeps,
   workspaceId: WorkspaceId,
@@ -40,35 +74,31 @@ export const seedWorkflowLibrary = async (
   const seeded: Array<{ slug: string; workflowId: WorkflowId }> = [];
 
   for (const entry of WORKFLOW_LIBRARY) {
-    const workflowId = makeWorkflowId(entry.slug, workspaceId);
-    const steps: ReadonlyArray<Step> = entry.steps.map((s, ordinal) => {
-      const libraryStepId = builtinStepForRole({ role: normalizeAgentRole({ role: s.role }) })?.id;
-      return {
-        id: makeStepId(entry.slug, s.name, workspaceId),
-        workflowId,
-        ...(libraryStepId && { libraryStepId }),
-        role: s.role as AgentRole,
-        ordinal,
-        name: s.name,
-        promptPrefix: s.promptPrefix,
-        expectedOutput: s.expectedOutput,
-      };
-    });
-
-    const workflow: Workflow = {
-      id: workflowId,
-      workspaceId,
-      name: entry.name,
-      description: entry.description,
-      ...(entry.goal && { goal: entry.goal }),
-      steps,
-      origin: 'library',
-      createdAt: now,
-      updatedAt: now,
-    };
-
+    const workflow = seededWorkflow({ entry, workspaceId, now });
     await upsertWorkflow(deps.db, workflow);
-    seeded.push({ slug: entry.slug, workflowId });
+    seeded.push({ slug: entry.slug, workflowId: workflow.id });
+  }
+
+  return { seeded };
+};
+
+export type RestoreWorkflowLibraryParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly slugs: ReadonlyArray<string>;
+};
+
+export const restoreWorkflowLibrary = async (
+  deps: SeedWorkflowLibraryDeps,
+  { workspaceId, slugs }: RestoreWorkflowLibraryParams,
+): Promise<SeedResult> => {
+  const now = (deps.now ?? isoNow)();
+  const wanted = new Set(slugs);
+  const seeded: Array<{ slug: string; workflowId: WorkflowId }> = [];
+
+  for (const entry of WORKFLOW_LIBRARY.filter((candidate) => wanted.has(candidate.slug))) {
+    const workflow = seededWorkflow({ entry, workspaceId, now });
+    await restoreSeededWorkflow(deps.db, workflow);
+    seeded.push({ slug: entry.slug, workflowId: workflow.id });
   }
 
   return { seeded };

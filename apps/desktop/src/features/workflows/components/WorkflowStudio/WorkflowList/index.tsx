@@ -1,14 +1,17 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
 import { Button, EmptyState, InlineConfirm, OverflowMenu } from '@goodboy/ui';
-import { WORKFLOW_LIBRARY } from '@goodboy/core';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { builtinWorkflowState } from '../../../builtinWorkflowState';
+import {
+  builtinWorkflowState,
+  restorableBuiltins,
+  type RestorableBuiltin,
+} from '../../../builtinWorkflowState';
 import { WorkflowListRow } from './WorkflowListRow';
 
 type Props = {
@@ -19,17 +22,15 @@ type Props = {
   readonly importControl: ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
   readonly onNew: () => void;
-  readonly onRestore: () => Promise<void>;
+  readonly onRestore: (slugs: ReadonlyArray<string>) => Promise<void>;
 };
 
-const BUILTIN_NAMES = WORKFLOW_LIBRARY.map((entry) => entry.name);
-
-const restoreDescription = (): string => {
+const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): string => {
   const verb =
-    BUILTIN_NAMES.length === 1
-      ? 'goes back to its original steps'
-      : 'go back to their original steps';
-  const names = new Intl.ListFormat('en', { type: 'conjunction' }).format(BUILTIN_NAMES);
+    restorable.length === 1 ? 'goes back to its original steps' : 'go back to their original steps';
+  const names = new Intl.ListFormat('en', { type: 'conjunction' }).format(
+    restorable.map(({ entry }) => entry.name),
+  );
   return `${names} ${verb}. Your own workflows and other workspaces are not touched.`;
 };
 
@@ -44,6 +45,8 @@ export const WorkflowList = ({
   onRestore,
 }: Props) => {
   const [isConfirmingRestore, setIsConfirmingRestore] = useState(false);
+  const restorable = useMemo(() => restorableBuiltins({ workflows }), [workflows]);
+  const hasRestorable = restorable.length > 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -63,21 +66,23 @@ export const WorkflowList = ({
               key: 'restore',
               label: 'Restore built-in workflows',
               icon: RotateCcw,
+              disabled: !hasRestorable,
+              ...(!hasRestorable && { description: 'Built-in workflows are unchanged' }),
               onClick: () => setIsConfirmingRestore(true),
             },
           ]}
         />
       </div>
-      {isConfirmingRestore ? (
+      {isConfirmingRestore && hasRestorable ? (
         <InlineConfirm
           role="alert"
           icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
           title={`Restore built-in workflows in ${workspaceName ?? 'this workspace'}?`}
-          description={restoreDescription()}
-          confirmLabel="Restore"
+          description={restoreDescription(restorable)}
+          confirmLabel={`Restore ${restorable.length}`}
           isBusy={isRestoring}
           onConfirm={async () => {
-            await onRestore();
+            await onRestore(restorable.map(({ entry }) => entry.slug));
             setIsConfirmingRestore(false);
           }}
           onCancel={() => setIsConfirmingRestore(false)}

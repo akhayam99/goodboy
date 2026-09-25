@@ -55,10 +55,10 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     void loadStepLibrary(workspaceId);
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
-  const restore = async () => {
+  const restore = async (slugs: ReadonlyArray<string>) => {
     setIsRestoring(true);
     try {
-      await resetWorkflows(workspaceId);
+      await resetWorkflows(workspaceId, slugs);
     } finally {
       setIsRestoring(false);
     }

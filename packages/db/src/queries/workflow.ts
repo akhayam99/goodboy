@@ -180,7 +180,7 @@ const STEP_UPSERT_SQL = `INSERT INTO steps
      size             = excluded.size,
      deleted_at       = NULL`;
 
-export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+const upsertStatements = (workflow: Workflow): ReadonlyArray<PlainStatement> => {
   const stepStatements = workflow.steps.map((step): PlainStatement => ({
     sql: STEP_UPSERT_SQL,
     params: [
@@ -241,7 +241,28 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
       workflow.origin ?? null,
     ],
   };
-  await db.transaction({ statements: [workflowStatement, ...stepStatements] });
+  return [workflowStatement, ...stepStatements];
+};
+
+export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+  await db.transaction({ statements: upsertStatements(workflow) });
+};
+
+export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+  const deletedAt = Date.now();
+  const keptIds = workflow.steps.map((step) => step.id);
+  const keptPlaceholders = keptIds.length === 0 ? "''" : keptIds.map(() => '?').join(', ');
+  await db.transaction({
+    statements: [
+      ...upsertStatements(workflow),
+      { sql: 'UPDATE workflows SET deleted_at = NULL WHERE id = ?', params: [workflow.id] },
+      {
+        sql: `UPDATE steps SET deleted_at = ?
+         WHERE workflow_id = ? AND deleted_at IS NULL AND id NOT IN (${keptPlaceholders})`,
+        params: [deletedAt, workflow.id, ...keptIds],
+      },
+    ],
+  });
 };
 
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {

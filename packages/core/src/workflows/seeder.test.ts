@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
-import { migrate, listWorkflows, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
+import type { IsoDateTime, StepId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import {
+  deleteWorkflow,
+  getWorkflow,
+  insertWorkspace,
+  listWorkflows,
+  migrate,
+  upsertWorkflow,
+  type Database as DbInterface,
+} from '@goodboy/db';
 import { WORKFLOW_LIBRARY } from './library';
-import { seedWorkflowLibrary } from './seeder';
+import { restoreWorkflowLibrary, seedWorkflowLibrary } from './seeder';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 
@@ -92,6 +100,62 @@ describe('seedWorkflowLibrary', () => {
       expect(wf.createdAt).toBe(fixed);
       expect(wf.updatedAt).toBe(fixed);
     }
+  });
+
+  it('ships refactor, plan and ship, and fix a bug as built-ins', () => {
+    expect(WORKFLOW_LIBRARY.map((entry) => entry.name)).toEqual([
+      'Refactor',
+      'Plan and ship',
+      'Fix a bug',
+    ]);
+  });
+
+  describe('restoreWorkflowLibrary', () => {
+    const REFACTOR = 'refactor-example';
+    const FIX = 'fix-a-bug';
+
+    it('puts back the steps of an edited built-in and drops the steps the user added', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+      const workflowId = `wf_seed_${REFACTOR}_${workspaceId}` as WorkflowId;
+      const seeded = await getWorkflow(db, workflowId);
+      const [first, ...rest] = seeded!.steps;
+      await upsertWorkflow(db, {
+        ...seeded!,
+        name: 'Refactor ledger-core',
+        steps: [
+          { ...first!, promptPrefix: 'Map it.', modelOverride: 'model-x' },
+          ...rest,
+          { ...first!, id: 'step-extra' as StepId, ordinal: rest.length + 1 },
+        ],
+      });
+
+      await restoreWorkflowLibrary({ db }, { workspaceId, slugs: [REFACTOR] });
+
+      const restored = await getWorkflow(db, workflowId);
+      const entry = WORKFLOW_LIBRARY.find((candidate) => candidate.slug === REFACTOR)!;
+      expect(restored!.name).toBe(entry.name);
+      expect(restored!.steps.map((step) => step.promptPrefix)).toEqual(
+        entry.steps.map((step) => step.promptPrefix),
+      );
+      expect(restored!.steps.some((step) => step.modelOverride !== undefined)).toBe(false);
+    });
+
+    it('brings back a deleted built-in and leaves the others alone', async () => {
+      const { db, workspaceId } = await setup();
+      await seedWorkflowLibrary({ db }, workspaceId);
+      await deleteWorkflow(db, `wf_seed_${FIX}_${workspaceId}` as WorkflowId);
+      const refactorId = `wf_seed_${REFACTOR}_${workspaceId}` as WorkflowId;
+      const refactor = await getWorkflow(db, refactorId);
+      await upsertWorkflow(db, { ...refactor!, name: 'Refactor ledger-core' });
+
+      const result = await restoreWorkflowLibrary({ db }, { workspaceId, slugs: [FIX] });
+
+      expect(result.seeded.map((seeded) => seeded.slug)).toEqual([FIX]);
+      const names = (await listWorkflows(db, workspaceId)).map((workflow) => workflow.name);
+      expect(names).toContain('Fix a bug');
+      expect(names).toContain('Refactor ledger-core');
+    });
   });
 
   describe('provider routing (regression for cursor/codex sessions)', () => {
