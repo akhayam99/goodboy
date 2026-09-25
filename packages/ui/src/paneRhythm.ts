@@ -30,7 +30,10 @@ export const PANE_RHYTHM = {
   board: {
     pad: 'px-6 py-5',
     colGap: 'gap-3',
-    colWidth: 'min-w-60 max-w-80 flex-1 basis-0',
+    colWidth: 'w-72 shrink-0',
+    dock: 'w-11',
+    dockOpen: 'w-34',
+    dockSticky: 'sticky right-0 bg-background',
     maxWidth: 'max-w-[106rem]',
     cardGap: 'gap-2.5',
     colStack: 'gap-2.5',

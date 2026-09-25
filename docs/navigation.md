@@ -14,9 +14,14 @@
 - **The board frame.** The header has the pane title grade (`Board` plus a
   session count), with its actions on the right. Header and columns sit in one
   centred frame with a maximum width, so a wide or zoomed-out window never
-  stretches the board. Stage columns share that width between a minimum and a
-  maximum. Empty columns show only their header, and collapsed Done and
-  Archived keep a horizontal header. Cards have one fixed height: a goal of up
+  stretches the board. Every column has one fixed width, and the board scrolls
+  sideways when they do not fit. Empty columns show their header and a short
+  hint. Done and Archived fold into a dock at the end of the board: one icon
+  per column with its count, widening to name them on hover or focus. A click
+  opens the column just before the dock, and its header button folds it back.
+  The dock stays pinned to the right edge while the board scrolls, and the
+  folded state is remembered per workspace, both folded by default. Folding
+  Archived clears its selection; folding Done keeps it. Cards have one fixed height: a goal of up
   to two lines (the full goal in the tooltip) is the card's one button, and the
   lifecycle menu shows next to the quick actions on hover or focus. Restoring
   an archived card uses the `restore` glyph.

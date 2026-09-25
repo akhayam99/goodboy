@@ -25,7 +25,7 @@ vi.mock('../StageBoardCard', () => ({
   ),
 }));
 
-import { StageColumn } from './index';
+import { StageColumn, type ColumnCollapse } from './index';
 
 const nav = {} as BoardNavigation;
 
@@ -50,6 +50,7 @@ const renderColumn = (
   sessions: ReadonlyArray<Session>,
   selection: MultiSelect<SessionId> = makeSelection(),
   spec: Parameters<typeof StageColumn>[0]['spec'] = { kind: 'stage', stage: 'building' },
+  collapse?: ColumnCollapse,
 ) =>
   render(
     <StageColumn
@@ -60,6 +61,7 @@ const renderColumn = (
       onArchive={noop}
       onDelete={noop}
       onRestore={noop}
+      collapse={collapse}
     />,
   );
 
@@ -77,13 +79,6 @@ describe('StageColumn', () => {
     expect(container.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('keeps a collapsed empty column to its header', () => {
-    renderColumn([], makeSelection(), { kind: 'stage', stage: 'done' });
-    expect(screen.queryByText('Nothing done yet')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /done/ }));
-    expect(screen.getByText('Nothing done yet')).toBeDefined();
-  });
-
   it('renders the count and stage label once the column has cards', () => {
     renderColumn([makeSession('s-1', 'one')]);
     expect(screen.getByText('1')).toBeDefined();
@@ -97,28 +92,40 @@ describe('StageColumn', () => {
     expect(screen.getByText('running')).toBeDefined();
   });
 
-  it('starts collapsed for done and archived, open otherwise', () => {
-    renderColumn([makeSession('s-1', 'one')], makeSelection(), { kind: 'stage', stage: 'done' });
-    expect(screen.getByRole('button', { name: /done/ }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
-    expect(screen.queryByRole('button', { name: 'card one' })).toBeNull();
-
-    cleanup();
-    renderColumn([makeSession('s-1', 'one')], makeSelection(), { kind: 'archived' });
-    expect(screen.getByRole('button', { name: /archived/ }).getAttribute('aria-expanded')).toBe(
-      'false',
-    );
-    expect(screen.queryByRole('button', { name: 'card one' })).toBeNull();
-
-    cleanup();
+  it('offers a collapse control only on a folding column', () => {
     renderColumn([makeSession('s-1', 'one')]);
+    expect(screen.queryByRole('button', { name: /sessions?$/ })).toBeNull();
+
+    cleanup();
+    const onCollapse = vi.fn();
+    renderColumn(
+      [makeSession('s-1', 'one')],
+      makeSelection(),
+      { kind: 'stage', stage: 'done' },
+      { label: 'Done, 1 session', onCollapse },
+    );
+    const button = screen.getByRole('button', { name: 'Done, 1 session' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe('board-column-done');
+    expect(button.id).toBe('board-collapse-done');
+    expect(button.hasAttribute('title')).toBe(false);
     expect(screen.getByRole('button', { name: 'card one' })).toBeDefined();
+
+    fireEvent.click(button);
+    expect(onCollapse).toHaveBeenCalledTimes(1);
   });
 
-  it('renders no native title on the collapse control', () => {
-    renderColumn([makeSession('s-1', 'one')], makeSelection(), { kind: 'stage', stage: 'done' });
-    expect(screen.getByRole('button', { name: /done/ }).hasAttribute('title')).toBe(false);
+  it('holds every column at the fixed board width', () => {
+    const { container } = renderColumn(
+      [],
+      makeSelection(),
+      { kind: 'archived' },
+      { label: 'Archived, 0 sessions', onCollapse: noop },
+    );
+    const column = container.querySelector('#board-column-archived');
+    expect(column?.className).toContain('w-72');
+    expect(column?.className).toContain('motion-safe:starting:w-11');
+    expect(screen.getByText('Nothing archived')).toBeDefined();
   });
 
   it('marks the cards the board selection owns', () => {
@@ -142,32 +149,5 @@ describe('StageColumn', () => {
     fireEvent.click(screen.getByRole('button', { name: 'card one' }), { altKey: true });
 
     expect(handleItemClick).toHaveBeenCalledWith('s-1', expect.anything());
-  });
-
-  it('clears the archived selection when the archived column collapses', () => {
-    const clear = vi.fn();
-    renderColumn([makeSession('s-1', 'one')], makeSelection({ clear }), { kind: 'archived' });
-    const header = screen.getByRole('button', { name: /archived/ });
-
-    fireEvent.click(header);
-    clear.mockClear();
-    fireEvent.click(header);
-
-    expect(clear).toHaveBeenCalled();
-  });
-
-  it('leaves the active selection alone when a stage column collapses', () => {
-    const clear = vi.fn();
-    renderColumn([makeSession('s-1', 'one')], makeSelection({ clear }), {
-      kind: 'stage',
-      stage: 'done',
-    });
-    const header = screen.getByRole('button', { name: /done/ });
-
-    fireEvent.click(header);
-    clear.mockClear();
-    fireEvent.click(header);
-
-    expect(clear).not.toHaveBeenCalled();
   });
 });

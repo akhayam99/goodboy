@@ -27,7 +27,11 @@ import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
-import { StageColumn } from './StageColumn';
+import { StageColumn, type ColumnCollapse } from './StageColumn';
+import { BoardDock } from './BoardDock';
+import { describeDockColumn } from './BoardDock/describeDockColumn';
+import { boardColumnIds } from './boardColumnIds';
+import { useBoardCollapse, type BoardCollapsibleColumn } from '../../hooks/useBoardCollapse';
 import { useBoardNavigation } from './useBoardNavigation';
 import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
@@ -42,7 +46,9 @@ const STAGES: ReadonlyArray<SessionStage> = (
   .sort((a, b) => a[1] - b[1])
   .map(([stage]) => stage);
 
-const SKELETON_COLUMNS = [3, 2, 2, 1, 2];
+const BOARD_COLLAPSIBLE_COLUMNS: ReadonlyArray<BoardCollapsibleColumn> = ['done', 'archived'];
+
+const SKELETON_COLUMNS = [3, 2, 2, 1];
 
 const BoardSkeleton = () => (
   <div
@@ -67,8 +73,24 @@ const BoardSkeleton = () => (
         </div>
       </div>
     ))}
+    <div className={cn('flex shrink-0 flex-col items-center gap-2', PANE_RHYTHM.board.dock)}>
+      <Skeleton className="size-8 rounded-md" />
+      <Skeleton className="size-8 rounded-md" />
+    </div>
   </div>
 );
+
+const prefersReducedMotion = (): boolean => {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false;
+  }
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+};
+
+type FocusRequest = {
+  readonly id: string;
+  readonly revealId: string | null;
+};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -136,7 +158,69 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     },
     [filteredArchived, selection],
   );
-  const lasso = useDragLasso<SessionId>({ containerRef: columnsRef, onSelect: onLassoSelect });
+  const lasso = useDragLasso<SessionId>({
+    containerRef: columnsRef,
+    onSelect: onLassoSelect,
+    ignoreSelector: '[data-board-dock]',
+  });
+
+  const { collapsed, setCollapsed } = useBoardCollapse({ workspaceId });
+  const [focusRequest, setFocusRequest] = useState<FocusRequest | null>(null);
+  const clearArchivedSelection = selection.archived.clear;
+
+  useEffect(() => {
+    if (!collapsed.archived) {
+      return;
+    }
+    clearArchivedSelection();
+  }, [clearArchivedSelection, collapsed.archived]);
+
+  useEffect(() => {
+    if (focusRequest === null) {
+      return;
+    }
+    setFocusRequest(null);
+    document.getElementById(focusRequest.id)?.focus({ preventScroll: true });
+    if (focusRequest.revealId === null) {
+      return;
+    }
+    document.getElementById(focusRequest.revealId)?.scrollIntoView?.({
+      inline: 'nearest',
+      block: 'nearest',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }, [focusRequest]);
+
+  const openColumn = useCallback(
+    (column: BoardCollapsibleColumn) => {
+      const ids = boardColumnIds({ key: column });
+      setCollapsed({ column, isCollapsed: false });
+      setFocusRequest({ id: ids.collapse, revealId: ids.column });
+    },
+    [setCollapsed],
+  );
+
+  const collapseColumn = useCallback(
+    (column: BoardCollapsibleColumn) => {
+      setCollapsed({ column, isCollapsed: true });
+      setFocusRequest({ id: boardColumnIds({ key: column }).dock, revealId: null });
+    },
+    [setCollapsed],
+  );
+
+  const doneSessions = byStage.get('done') ?? EMPTY_ARRAY;
+  const columnCounts: Record<BoardCollapsibleColumn, number> = {
+    done: doneSessions.length,
+    archived: filteredArchived.length,
+  };
+  const collapseFor = (column: BoardCollapsibleColumn): ColumnCollapse => ({
+    label: describeDockColumn({ column, count: columnCounts[column] }).ariaLabel,
+    onCollapse: () => collapseColumn(column),
+  });
+  const dockEntries = BOARD_COLLAPSIBLE_COLUMNS.filter((column) => collapsed[column]).map(
+    (column) => ({ column, count: columnCounts[column] }),
+  );
+  const openStages = STAGES.filter((stage) => stage !== 'done' || !collapsed.done);
 
   const empty = sessions.length === 0 && archived.length === 0;
   const pending = !boardReady || (sessions.length === 0 && archivedList === undefined);
@@ -272,9 +356,12 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           <div
             ref={columnsRef}
             onPointerDown={lasso.onPointerDown}
-            className={cn('relative flex h-full min-h-0 w-full', PANE_RHYTHM.board.colGap)}
+            className={cn(
+              'relative flex h-full min-h-0 w-max min-w-full',
+              PANE_RHYTHM.board.colGap,
+            )}
           >
-            {STAGES.map((stage) => (
+            {openStages.map((stage) => (
               <StageColumn
                 key={stage}
                 spec={{ kind: 'stage', stage }}
@@ -284,18 +371,29 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onRestore={onRestore}
+                collapse={stage === 'done' ? collapseFor('done') : undefined}
               />
             ))}
-            <StageColumn
-              key="archived"
-              spec={{ kind: 'archived' }}
-              sessions={filteredArchived}
-              nav={nav}
-              selection={selection.archived}
-              onArchive={onArchive}
-              onDelete={onDelete}
-              onRestore={onRestore}
-            />
+            {!collapsed.archived && (
+              <StageColumn
+                key="archived"
+                spec={{ kind: 'archived' }}
+                sessions={filteredArchived}
+                nav={nav}
+                selection={selection.archived}
+                onArchive={onArchive}
+                onDelete={onDelete}
+                onRestore={onRestore}
+                collapse={collapseFor('archived')}
+              />
+            )}
+            {dockEntries.length > 0 && (
+              <BoardDock
+                entries={dockEntries}
+                isLassoActive={lasso.isDragging}
+                onOpen={openColumn}
+              />
+            )}
             {lasso.rect && (
               <div
                 aria-hidden

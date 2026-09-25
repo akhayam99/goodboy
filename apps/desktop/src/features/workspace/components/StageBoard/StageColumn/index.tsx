@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { cn, Eyebrow, LensEmptyState, ScrollFade, tintClasses } from '@goodboy/ui';
+import { PanelRightClose } from 'lucide-react';
+import { cn, Eyebrow, IconButton, LensEmptyState, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { describeStageBucket } from '../../../../session/session-stage';
 import {
@@ -10,6 +9,7 @@ import {
 import type { MultiSelect } from '../../../../../shared/hooks/useMultiSelect';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
+import { boardColumnIds } from '../boardColumnIds';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { PANE_RHYTHM } from '@goodboy/ui';
 
@@ -54,8 +54,12 @@ const EMPTY_COPY: Record<ColumnKey, EmptyCopy> = {
 type ColumnView = {
   readonly key: ColumnKey;
   readonly presentation: StatePresentation;
-  readonly collapsible: boolean;
   readonly archived: boolean;
+};
+
+export type ColumnCollapse = {
+  readonly label: string;
+  readonly onCollapse: () => void;
 };
 
 const viewFor = (spec: ColumnSpec): ColumnView => {
@@ -68,14 +72,12 @@ const viewFor = (spec: ColumnSpec): ColumnView => {
         tone: 'neutral',
         icon: CONCEPT_ICONS.archive,
       },
-      collapsible: true,
       archived: true,
     };
   }
   return {
     key: spec.stage,
     presentation: describeStageBucket({ stage: spec.stage }),
-    collapsible: spec.stage === 'done',
     archived: false,
   };
 };
@@ -88,6 +90,7 @@ type StageColumnProps = {
   readonly onArchive: (session: Session) => void;
   readonly onDelete: (session: Session) => void;
   readonly onRestore: (session: Session) => void;
+  readonly collapse?: ColumnCollapse;
 };
 
 export const StageColumn = ({
@@ -98,19 +101,13 @@ export const StageColumn = ({
   onArchive,
   onDelete,
   onRestore,
+  collapse,
 }: StageColumnProps) => {
   const view = viewFor(spec);
-  const [collapsed, setCollapsed] = useState(view.collapsible);
   const empty = sessions.length === 0;
-
-  const { clear: clearSelection, isSelected } = selection;
-  const archivedColumn = view.archived;
-
-  useEffect(() => {
-    if (collapsed && archivedColumn) {
-      clearSelection();
-    }
-  }, [collapsed, archivedColumn, clearSelection]);
+  const { isSelected } = selection;
+  const ids = boardColumnIds({ key: view.key });
+  const isFolding = collapse !== undefined;
 
   const header = (
     <span
@@ -130,34 +127,34 @@ export const StageColumn = ({
 
   return (
     <div
+      id={ids.column}
       className={cn(
         'flex min-h-0 flex-col',
-        collapsed ? 'w-auto' : PANE_RHYTHM.board.colWidth,
+        PANE_RHYTHM.board.colWidth,
         PANE_RHYTHM.board.colStack,
+        isFolding &&
+          'motion-safe:transition-[width] motion-safe:duration-220 motion-safe:ease-[cubic-bezier(0.2,0,0,1)] motion-safe:starting:w-11',
       )}
     >
-      {view.collapsible ? (
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-expanded={!collapsed}
-          className="flex shrink-0 items-center gap-2 text-left"
-        >
-          <ChevronDown
-            size={ICON_SIZE.row}
-            aria-hidden
-            className={cn(
-              'shrink-0 text-faint-foreground transition-transform',
-              collapsed && '-rotate-90',
-            )}
+      <div className="flex h-6 shrink-0 items-center justify-between gap-2">
+        {header}
+        {collapse !== undefined && (
+          <IconButton
+            id={ids.collapse}
+            icon={PanelRightClose}
+            iconSize={ICON_SIZE.control}
+            variant="ghost"
+            label={collapse.label}
+            tooltip="Collapse"
+            aria-expanded
+            aria-controls={ids.column}
+            onClick={collapse.onCollapse}
+            className="p-1"
           />
-          {header}
-        </button>
-      ) : (
-        <div className="shrink-0">{header}</div>
-      )}
+        )}
+      </div>
 
-      {!collapsed && empty && (
+      {empty && (
         <LensEmptyState
           icon={view.presentation.icon}
           title={EMPTY_COPY[view.key].title}
@@ -165,9 +162,16 @@ export const StageColumn = ({
         />
       )}
 
-      {!collapsed && !empty && (
+      {!empty && (
         <ScrollFade orientation="vertical" className="flex-1">
-          <div className={cn('flex flex-col', PANE_RHYTHM.board.cardGap)}>
+          <div
+            className={cn(
+              'flex flex-col',
+              PANE_RHYTHM.board.cardGap,
+              isFolding &&
+                'motion-safe:transition-opacity motion-safe:delay-80 motion-safe:duration-120 motion-safe:starting:opacity-0',
+            )}
+          >
             {sessions.map((session) => (
               <StageBoardCard
                 key={session.id}
