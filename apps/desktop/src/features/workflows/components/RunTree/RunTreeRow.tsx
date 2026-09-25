@@ -1,4 +1,4 @@
-import { Button, InteractiveRow, WORK_META_COLUMN, cn } from '@goodboy/ui';
+import { Button, InteractiveRow, WORK_META_COLUMN, WORK_ROW, cn } from '@goodboy/ui';
 import type {
   EffortLevel,
   OpenQuestion,
@@ -121,7 +121,7 @@ export const RunTreeRow = ({
           </span>
         )}
       </span>
-      <div className="flex min-w-0 flex-1 items-end">
+      <div className={cn(WORK_ROW.container, 'flex min-w-0 flex-1 items-end')}>
         <div className="flex min-w-0 flex-1" style={{ height: boxHeight }}>
           <InteractiveRow
             label={label}
@@ -133,12 +133,13 @@ export const RunTreeRow = ({
             <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
               {entry.stepLabel}
             </span>
-            <AgentKindChip kind={entry.agentKind} className="@max-[720px]:w-18" />
+            <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
             <span className="flex min-w-0 flex-1 items-center gap-2">
               <span
                 title={agent.name}
                 className={cn(
-                  'min-w-0 truncate',
+                  WORK_ROW.title,
+                  'truncate',
                   isNested ? 'text-xs leading-4' : 'text-sm leading-5',
                   item.rowState.phase === 'queued'
                     ? 'text-muted-foreground'

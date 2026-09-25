@@ -85,7 +85,7 @@ export const RunTreeRows = ({
   };
 
   return (
-    <div className="@container flex min-w-0 flex-col" aria-label={label} data-testid={testId}>
+    <div className="flex min-w-0 flex-col" aria-label={label} data-testid={testId}>
       {stream.items.map((item, index) => {
         const railRow = rail.rows[index];
         if (railRow === undefined) {
