@@ -52,6 +52,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Skipped';
     case 'chained':
       return `Starts after ${reason.afterTitle}`;
+    case 'awaitingFirstMessage':
+      return 'Waiting for your first message';
     case 'discarded':
       return null;
     default: {
@@ -83,6 +85,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Closed';
     case 'chained':
       return 'Chained';
+    case 'awaitingFirstMessage':
+      return 'Write to start';
     case 'failed':
     case 'stepFailed':
     case 'skipped':

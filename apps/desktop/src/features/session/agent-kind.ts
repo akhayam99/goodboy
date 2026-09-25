@@ -107,14 +107,18 @@ export const AGENT_KIND_META: Record<
   AgentKind,
   {
     label: string;
+    noun: string;
     pluralLabel: string;
     hint: string;
     persona: string;
     expectedOutput: string | null;
+    firstMessagePrompt: string | null;
   }
 > = {
   generic: {
     label: 'Generalist',
+    noun: 'Generalist',
+    firstMessagePrompt: null,
     pluralLabel: 'generalists',
     hint: 'Plans, investigates, edits, and verifies without a narrow role',
     persona: 'max',
@@ -122,6 +126,8 @@ export const AGENT_KIND_META: Record<
   },
   scout: {
     label: 'Scout',
+    noun: 'Scout',
+    firstMessagePrompt: 'What should Scout look into?',
     pluralLabel: 'scouts',
     hint: 'Reads and searches codebase. Never edits files',
     persona: 'scout',
@@ -129,6 +135,8 @@ export const AGENT_KIND_META: Record<
   },
   planner: {
     label: 'Plan',
+    noun: 'Planner',
+    firstMessagePrompt: 'What should Planner plan?',
     pluralLabel: 'planners',
     hint: 'Analyzes goals, produces a plan. No code, no edits',
     persona: 'drafty',
@@ -136,6 +144,8 @@ export const AGENT_KIND_META: Record<
   },
   implementer: {
     label: 'Implement',
+    noun: 'Implementer',
+    firstMessagePrompt: 'What should Implementer build?',
     pluralLabel: 'implementers',
     hint: 'Writes code based on active plan. No re-planning',
     persona: 'hammer',
@@ -143,6 +153,8 @@ export const AGENT_KIND_META: Record<
   },
   debugger: {
     label: 'Debug',
+    noun: 'Debugger',
+    firstMessagePrompt: 'What should Debugger fix?',
     pluralLabel: 'debuggers',
     hint: 'Reproduces and fixes bugs. No refactoring, no planning',
     persona: 'sherlock',
@@ -150,6 +162,8 @@ export const AGENT_KIND_META: Record<
   },
   tester: {
     label: 'Test',
+    noun: 'Tester',
+    firstMessagePrompt: 'What should Tester cover?',
     pluralLabel: 'testers',
     hint: 'Writes tests. No production code changes',
     persona: 'beaker',
@@ -157,6 +171,8 @@ export const AGENT_KIND_META: Record<
   },
   reviewer: {
     label: 'Review',
+    noun: 'Reviewer',
+    firstMessagePrompt: 'What should Reviewer check?',
     pluralLabel: 'reviewers',
     hint: 'Reviews diffs, suggests fixes. Read-only',
     persona: 'specs',
@@ -164,6 +180,8 @@ export const AGENT_KIND_META: Record<
   },
   'pr-reviewer': {
     label: 'PR reviewer',
+    noun: 'PR reviewer',
+    firstMessagePrompt: 'What should PR reviewer look at?',
     pluralLabel: 'PR reviewers',
     hint: 'Reviews an external pull request checked out locally. Read-only',
     persona: 'monocle',
@@ -171,6 +189,8 @@ export const AGENT_KIND_META: Record<
   },
   docs: {
     label: 'Docs',
+    noun: 'Docs',
+    firstMessagePrompt: 'What should Docs write up?',
     pluralLabel: 'docs',
     hint: 'Writes documentation. No production logic',
     persona: 'scribble',
@@ -178,6 +198,8 @@ export const AGENT_KIND_META: Record<
   },
   report: {
     label: 'Report',
+    noun: 'Report',
+    firstMessagePrompt: 'What should the report cover?',
     pluralLabel: 'reports',
     hint: 'Synthesizes a requested report from supplied evidence',
     persona: 'scribble',
@@ -185,6 +207,8 @@ export const AGENT_KIND_META: Record<
   },
   wireframe: {
     label: 'Wireframe',
+    noun: 'Wireframe',
+    firstMessagePrompt: 'What should the wireframe show?',
     pluralLabel: 'wireframes',
     hint: 'Produces a requested wireframe from supplied product evidence',
     persona: 'drafty',
@@ -192,6 +216,8 @@ export const AGENT_KIND_META: Record<
   },
   resolver: {
     label: 'Resolve',
+    noun: 'Resolver',
+    firstMessagePrompt: 'What should Resolver address?',
     pluralLabel: 'resolvers',
     hint: 'Addresses one comment with a local commit. Started from a review comment',
     persona: 'patches',

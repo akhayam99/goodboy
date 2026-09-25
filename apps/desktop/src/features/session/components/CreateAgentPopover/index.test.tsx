@@ -15,6 +15,9 @@ type Store = {
   readonly cancelProviderConnect: ReturnType<typeof vi.fn>;
   readonly dismissProviderConnect: ReturnType<typeof vi.fn>;
   readonly workspaceDurationHistory: Readonly<Record<string, unknown>>;
+  readonly sessionPlans: Readonly<
+    Record<string, ReadonlyArray<{ readonly title: string; readonly status: string }>>
+  >;
 };
 
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
@@ -40,6 +43,9 @@ const h = vi.hoisted(() => ({
   spawnAgent: vi.fn(async () => 'a1'),
   providers: [{ id: 'anthropic' as ProviderId, connection: 'connected' }],
   sessions: [] as ReadonlyArray<unknown>,
+  sessionPlans: {} as Readonly<
+    Record<string, ReadonlyArray<{ readonly title: string; readonly status: string }>>
+  >,
   providerConnect: {
     codex: {
       phase: 'idle',
@@ -71,6 +77,7 @@ vi.mock('../../../../store', () => ({
       cancelProviderConnect: h.cancelProviderConnect,
       dismissProviderConnect: h.dismissProviderConnect,
       workspaceDurationHistory: h.workspaceDurationHistory,
+      sessionPlans: h.sessionPlans,
     }),
 }));
 
@@ -90,7 +97,7 @@ const openPopover = () => {
 };
 
 const confirm = () => {
-  fireEvent.click(screen.getByRole('button', { name: /^Start (?!agent$)/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^(Open|Start) (?!agent$)/ }));
 };
 
 const expandRouting = () => {
@@ -103,6 +110,7 @@ afterEach(() => {
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
   h.sessions = [makeSession()];
   h.workspaceDurationHistory = {};
+  h.sessionPlans = {};
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
 
@@ -282,9 +290,9 @@ describe('CreateAgentPopover', () => {
 
     expect((await screen.findByRole('alert')).textContent).toContain('provider is unavailable');
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Start Generalist' }).hasAttribute('disabled'),
-      ).toBe(false),
+      expect(screen.getByRole('button', { name: 'Open Generalist' }).hasAttribute('disabled')).toBe(
+        false,
+      ),
     );
     expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
   });
@@ -393,7 +401,7 @@ describe('CreateAgentPopover', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 220 });
     renderControl();
     openPopover();
-    const action = screen.getByRole('button', { name: 'Start Generalist' });
+    const action = screen.getByRole('button', { name: 'Open Generalist' });
     const footer = action.closest('footer');
     expect(footer?.className).toContain('shrink-0');
     expect(footer?.previousElementSibling?.getAttribute('role')).toBe('separator');
@@ -412,27 +420,25 @@ describe('CreateAgentPopover', () => {
     expect(screen.getByRole('button', { name: 'Opus' })).toBeTruthy();
   });
 
-  it('sends optional instructions as the first prompt and omits them when empty', () => {
+  it('has no instructions field and never sends a first prompt', () => {
     renderControl();
     openPopover();
 
-    const instructions = screen.getByRole('textbox', { name: 'Agent instructions' });
-    fireEvent.change(instructions, { target: { value: '  keep the diff small  ' } });
-    confirm();
+    expect(screen.queryByRole('textbox', { name: 'Agent instructions' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Scout' }));
+    expect(screen.getByText('You write the first message in its chat.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Scout' }));
 
-    expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
-      kindOverride: 'generic',
-      provider: 'anthropic',
-      model: 'sonnet-5',
-      effort: 'medium',
-      initialPrompt: 'keep the diff small',
-      focus: 'agent',
-    });
+    expect(h.spawnAgent).toHaveBeenCalledOnce();
+    expect(h.spawnAgent).toHaveBeenCalledWith(
+      SID,
+      expect.not.objectContaining({ initialPrompt: expect.anything() }),
+    );
   });
 
-  it('gives the usual first-turn time only once the agent has instructions to start on', () => {
+  it('gives the usual first-turn time only when the agent starts on its own', () => {
     const turn = (minutes: number) => ({
-      role: 'custom',
+      role: 'implementer',
       provider: 'anthropic',
       model: 'claude-sonnet-5',
       effort: null,
@@ -448,29 +454,46 @@ describe('CreateAgentPopover', () => {
         orchestratedRuns: [],
       },
     };
+    h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'active' }] };
     renderControl();
     openPopover();
 
     expect(screen.queryByTestId('launch-estimate')).toBeNull();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
-      target: { value: 'keep the diff small' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
     expect(screen.getByTestId('launch-estimate').textContent).toBe('Starts now · usually 9-13m');
   });
 
-  it('places the role before the instructions and the instructions before routing', () => {
+  it('starts an implementer on the active plan and says so', () => {
+    h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'active' }] };
+    renderControl();
+    openPopover();
+    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+
+    expect(screen.getByText('Starts now from plan: Round once per batch')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Start Implementer on the plan' }));
+    expect(h.spawnAgent).toHaveBeenCalledWith(
+      SID,
+      expect.objectContaining({ kindOverride: 'implementer' }),
+    );
+  });
+
+  it('opens an implementer when the latest plan is not active', () => {
+    h.sessionPlans = { [SID]: [{ title: 'Round once per batch', status: 'discarded' }] };
+    renderControl();
+    openPopover();
+    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+
+    expect(screen.getByRole('button', { name: 'Open Implementer' })).toBeTruthy();
+    expect(screen.queryByText(/Starts now from plan/)).toBeNull();
+  });
+
+  it('places the role before routing', () => {
     renderControl();
     openPopover();
 
     const role = screen.getByText('Role');
-    const instructions = screen.getByRole('textbox', { name: 'Agent instructions' });
     const routing = screen.getByRole('button', { name: /^Agent routing:/ });
 
-    expect(
-      role.compareDocumentPosition(instructions) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      instructions.compareDocumentPosition(routing) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+    expect(role.compareDocumentPosition(routing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

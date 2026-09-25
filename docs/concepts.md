@@ -196,6 +196,12 @@ You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
 
+**Start agent** asks only for a role and its routing. The button says what
+happens next: an Implementer with an active plan starts on that plan right
+away, and every other role opens its chat with the cursor in the composer so
+you write the first message. Until you do, its row reads "Waiting for your
+first message" and does not count as needing you.
+
 An agent finishes on its own. Once its last turn succeeded, it has no open
 question of its own, no turn is starting or running and no child still works,
 it moves to the finished agents without a click. Sending it a new message

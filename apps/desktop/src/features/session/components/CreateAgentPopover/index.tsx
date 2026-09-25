@@ -25,7 +25,6 @@ import {
 } from '../../agent-kind';
 import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
 import { resolveSpawnRouting } from '../../spawn-routing';
-import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
 import { AgentKindGrid } from './AgentKindGrid';
 import { LaunchEstimateNote } from './LaunchEstimateNote';
@@ -60,7 +59,6 @@ export const CreateAgentPopover = ({
   const { open, close, toggle } = dropdown;
   const [kind, setKind] = useState<AgentKind>('generic');
   const [routing, setRouting] = useState<AgentKindRouting | null>(null);
-  const [instructions, setInstructions] = useState('');
   const [isRoutingOpen, setIsRoutingOpen] = useState(false);
   const [isSpawning, setIsSpawning] = useState(false);
   const [spawnError, setSpawnError] = useState<string | null>(null);
@@ -87,6 +85,18 @@ export const CreateAgentPopover = ({
     defaultProvider,
   });
   const effective: AgentKindRouting = routing ?? spawnDefault;
+  const activePlan = useAppStore((state) => {
+    const plans = state.sessionPlans[sessionId] ?? [];
+    const latest = plans[plans.length - 1] ?? null;
+    return latest?.status === 'active' ? latest : null;
+  });
+  const kindLabel = AGENT_KIND_META[selectedKind].noun;
+  const planToStart = selectedKind === 'implementer' ? activePlan : null;
+  const actionLabel = planToStart == null ? `Open ${kindLabel}` : `Start ${kindLabel} on the plan`;
+  const actionNote =
+    planToStart == null
+      ? 'You write the first message in its chat.'
+      : `Starts now from plan: ${planToStart.title}`;
   const routingSummary = recommendationSummary({
     provider: effective.provider,
     model: effective.model,
@@ -100,19 +110,16 @@ export const CreateAgentPopover = ({
     isSpawningRef.current = true;
     setIsSpawning(true);
     setSpawnError(null);
-    const trimmedInstructions = instructions.trim();
     try {
       await spawnAgent(sessionId, {
         kindOverride: selectedKind,
         provider: effective.provider,
         model: effective.model,
         effort: effective.effort,
-        ...(trimmedInstructions !== '' && { initialPrompt: trimmedInstructions }),
         focus: 'agent',
       });
       setKind('generic');
       setRouting(null);
-      setInstructions('');
       setIsRoutingOpen(false);
       close();
       if (onSpawned != null) {
@@ -158,12 +165,6 @@ export const CreateAgentPopover = ({
             className="px-2.5 py-1.5"
           />
         )}
-        <AgentInstructionsField
-          value={instructions}
-          onChange={setInstructions}
-          disabled={isSpawning}
-          className="px-2.5 py-1.5"
-        />
         <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
           <div className="px-2.5">
             <button
@@ -232,12 +233,15 @@ export const CreateAgentPopover = ({
       <Divider />
       <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
         {spawnError === null ? (
-          <LaunchEstimateNote
-            workspaceId={session?.workspaceId ?? null}
-            kind={selectedKind}
-            routing={effective}
-            isShown={open && instructions.trim() !== ''}
-          />
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-2xs text-faint-foreground">{actionNote}</span>
+            <LaunchEstimateNote
+              workspaceId={session?.workspaceId ?? null}
+              kind={selectedKind}
+              routing={effective}
+              isShown={open && planToStart != null}
+            />
+          </span>
         ) : (
           <span role="alert" className="min-w-0 flex-1 text-2xs text-danger">
             {spawnError}
@@ -248,9 +252,9 @@ export const CreateAgentPopover = ({
           onClick={() => void onCreate()}
           disabled={isSpawning}
           isBusy={isSpawning}
-          busyLabel={`Starting ${AGENT_KIND_META[selectedKind].label}`}
+          busyLabel={`Starting ${kindLabel}`}
         >
-          Start {AGENT_KIND_META[selectedKind].label}
+          {actionLabel}
         </Button>
       </PopoverFooter>
     </AnchoredPopover>
