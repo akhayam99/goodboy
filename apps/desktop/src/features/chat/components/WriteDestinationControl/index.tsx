@@ -17,12 +17,7 @@ type Props = {
   readonly fallback?: 'automatic';
 };
 
-const MAX_LABEL_LENGTH = 46;
-
 const REACH_LIST = new Intl.ListFormat('en', { type: 'conjunction' });
-
-const shorten = (label: string): string =>
-  label.length > MAX_LABEL_LENGTH ? `${label.slice(0, MAX_LABEL_LENGTH - 1)}…` : label;
 
 export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props) => {
   const { next, candidates, running, diverges, isAutomatic } = useWriteDestination({
@@ -97,9 +92,9 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       bordered={false}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       label={
-        <span className="max-w-[16rem] truncate">
-          <span className="text-muted-foreground">{primaryVerb}</span>{' '}
-          <span className="text-foreground">{shorten(primaryTarget ?? nextLabel)}</span>
+        <span className="flex min-w-0 items-baseline gap-1">
+          <span className="shrink-0 text-muted-foreground">{primaryVerb}</span>{' '}
+          <span className="min-w-0 truncate text-foreground">{primaryTarget ?? nextLabel}</span>
         </span>
       }
       title={primaryTitle}
@@ -108,17 +103,17 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
       expanded={dropdown.open}
       onClick={openPicker}
       disabled={!hasCandidates}
-      className="shrink-0"
+      className="min-w-0 max-w-full"
     />
   );
 
   return (
-    <span className="inline-flex min-w-0 shrink-0 items-center gap-1">
+    <span className="inline-flex min-w-0 max-w-96 items-center gap-1">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"
         ariaLabel="Choose where new turns start"
-        anchorClassName="shrink-0"
+        anchorClassName="flex min-w-0"
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
@@ -176,7 +171,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
           tone="primary"
           size="3xs"
           bordered={false}
-          label={<span className="max-w-[10rem] truncate">{`Next: ${shorten(nextLabel)}`}</span>}
+          label={<span className="max-w-40 truncate">{`Next: ${nextLabel}`}</span>}
           title={`New turns start in ${nextDetail}.`}
         />
       ) : null}
