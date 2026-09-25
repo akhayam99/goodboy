@@ -181,6 +181,9 @@ click: **Everything**, **Work**, and **Needs you**, which shows only what
 waits on you whatever the filter hides and lasts until you leave it. The
 filter shows once the feed holds more than one kind of row. **Start agent**
 is the one primary, and its menu starts a workflow, a report or a wireframe.
+When the activity column is narrower than 28rem, the needs-you chip keeps
+its count, Filter keeps its icon and the Suggested next strip keeps its
+title and action.
 
 ## Agents
 

@@ -22,7 +22,7 @@ export const TimelineSuggestionStrip = ({ suggestions, railWidth, actionsFor }: 
         aria-label="Suggested next"
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md bg-subtle px-2 py-1.5"
       >
-        <Eyebrow label="Suggested next" className="shrink-0 leading-6" />
+        <Eyebrow label="Suggested next" className="shrink-0 leading-6 @max-md/activity:hidden" />
         <ul className="flex min-w-0 flex-1 flex-col">
           {suggestions.map((suggestion) => (
             <TimelineSuggestionItem

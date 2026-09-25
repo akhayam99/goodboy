@@ -481,7 +481,7 @@ export const TimelinePane = ({ session, actions, kickoff }: Props) => {
   }
 
   return (
-    <section aria-label="Activity" className="flex flex-col gap-2">
+    <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
       <SectionHeader
         label="Activity"
         hint={emptyHint}

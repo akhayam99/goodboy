@@ -124,7 +124,7 @@ export const ActivityFilterPanel = ({
           )}
         >
           <ListFilter size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          Filter
+          <span className="@max-md/activity:hidden">Filter</span>
           {detail === null ? null : <span className="text-faint-foreground">{detail}</span>}
         </button>
       }

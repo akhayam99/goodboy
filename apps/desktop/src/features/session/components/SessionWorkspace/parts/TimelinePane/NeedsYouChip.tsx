@@ -17,7 +17,12 @@ export const NeedsYouChip = ({ count, onReveal }: Props) => {
       size="control"
       emphasis="subtle"
       icon={<CONCEPT_ICONS.questions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
-      label={`${count} ${count === 1 ? 'needs' : 'need'} you`}
+      label={
+        <>
+          {count}
+          <span className="@max-md/activity:sr-only">{` ${count === 1 ? 'needs' : 'need'} you`}</span>
+        </>
+      }
       onClick={onReveal}
     />
   );
