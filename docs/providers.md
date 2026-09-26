@@ -455,8 +455,13 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
   `--disallowedTools`). The other CLIs have no equivalent flag
-- The composer's mode picker disables the rows the active provider can't honor
-  and says why
+- The composer's mode picker offers four modes: Read only, Ask first, Edits
+  allowed and Full access. It disables the rows the active provider can't
+  honor and says why. `dontAsk` stays in the type for older sessions and reads
+  as Ask first; the picker never offers it
+- Every workspace starts on Full access (`workspaces.default_permission_mode`).
+  A new session takes its workspace's default, which Settings, Workspace,
+  Permissions can lower; a running session keeps its mode
 
 ### API keys
 
