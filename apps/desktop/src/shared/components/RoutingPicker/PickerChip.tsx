@@ -30,7 +30,7 @@ export const PickerChip = ({
     title={isHiddenInPicker ? (title ?? HIDDEN_IN_PICKER) : title}
     aria-pressed={active}
     className={cn(
-      'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
+      'inline-flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-label transition-colors',
       active
         ? cn('font-medium shadow-sm', CHIP_TONE_ACTIVE[tone])
         : 'text-muted-foreground hover:bg-background hover:text-foreground',

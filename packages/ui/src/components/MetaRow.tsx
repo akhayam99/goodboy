@@ -15,7 +15,7 @@ export const MetaRow = ({ items, className }: MetaRowProps) => {
   return (
     <span
       className={cn(
-        'flex flex-wrap items-center gap-1.5 text-2xs text-muted-foreground',
+        'flex flex-wrap items-center gap-1.5 text-secondary text-muted-foreground',
         className,
       )}
     >

@@ -1,6 +1,7 @@
 import type { MountId, MountPullRequestProvider, SessionId } from '@goodboy/types';
 import type { ReviewTargetOutcome } from '../review-navigation';
 import type { SessionStudio } from '../session-view/types';
+import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 export type OpenMountRequestInput = {
@@ -31,7 +32,7 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
       await get()
         .setSessionActiveMount({ sessionId, mountId })
         .catch(() => undefined);
-      get().setSessionStudio(sessionId, studioFor({ mountId, provider }));
+      get().navigate({ to: sessionPlace({ sessionId, studio: studioFor({ mountId, provider }) }) });
       return { kind: 'opened' };
     }
     if (requestNumber === undefined) {

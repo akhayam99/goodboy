@@ -31,9 +31,8 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       runPlan: vi.fn(async () => 'agent-impl'),
       spawnReportAgent: vi.fn(async () => 'agent-report-3'),
       spawnWireframeAgent: vi.fn(async () => 'agent-wireframe-3'),
-      selectAgent: vi.fn(async () => undefined),
-      setCurrentSession: vi.fn(async () => undefined),
-      setActiveLens: vi.fn(),
+      navigate: vi.fn(),
+      loadAgentTranscript: vi.fn(async () => undefined),
       openDrawer: vi.fn(),
       toggleDrawer: vi.fn(),
       focusedArtifactId: {} as Record<string, string | null>,
@@ -76,6 +75,7 @@ vi.mock('../../../../store', async () => {
   };
   useAppStore.getState = () => state;
   return {
+    ...(await import('../../../../store/slices/navigation/place')),
     EMPTY_ARRAY: [] as readonly never[],
     useAppStore,
     useSessionPlans: () => state.plans,
@@ -303,7 +303,9 @@ describe('ArtifactStudio list', () => {
     state.sessionPhaseRuns = { 'sess-1': [reportAgent] };
     renderStudio();
     openRow(/Report 2/);
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-report-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-report-2' },
+    });
   });
 
   it('renders the creation pane over the list when creation is open', () => {
@@ -604,7 +606,9 @@ describe('ArtifactStudio plan parts', () => {
     expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Running part 2 of 2');
     expect(screen.queryByTestId('artifact-action-runAgain')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /Part 1, Add a dry run/ }));
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-part-1');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-part-1' },
+    });
   });
 });
 
@@ -636,7 +640,9 @@ describe('ArtifactStudio generating run', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Open agent/ }));
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-wireframe-live');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-wireframe-live' },
+    });
   });
 
   it('follows the run to the artifact it produced', () => {

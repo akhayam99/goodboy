@@ -103,7 +103,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
                 className={cn(
                   'inline-flex items-center gap-1 rounded-md border',
                   tintClasses('danger').border,
-                  'px-2 py-1 text-xs font-medium text-danger transition-colors',
+                  'px-2 py-1 text-label font-medium text-danger transition-colors',
                   tintClasses('danger').hoverBg,
                   'disabled:cursor-not-allowed disabled:opacity-60',
                 )}
@@ -115,7 +115,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
                 type="button"
                 onClick={() => setDeleteAllArmed(false)}
                 disabled={deletingAll}
-                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center rounded-md border border-border px-2 py-1 text-label font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -125,7 +125,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
               type="button"
               onClick={() => setDeleteAllArmed(true)}
               disabled={versions.length === 0 || loading}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-label font-medium text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={ICON_SIZE.row} aria-hidden />
               Delete all
@@ -137,7 +137,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
       {loading || groups.length > 0 ? (
         <div className="flex items-stretch gap-3">
           <div className="flex w-80 shrink-0 flex-col gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Files</h2>
+            <h2 className="text-heading text-foreground">Files</h2>
             <PathSummaryList
               groups={groups}
               selectedPath={selectedGroup?.relativePath ?? null}
@@ -149,7 +149,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
           </div>
           <Divider orientation="vertical" />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <h2 className="text-sm font-semibold text-foreground">
+            <h2 className="text-heading text-foreground">
               {selectedGroup?.relativePath ?? 'History'}
             </h2>
             <VersionHistoryList
@@ -171,14 +171,14 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-hover"
+              className="inline-flex rounded-md border border-border px-2 py-1 text-label font-medium text-foreground transition-colors hover:bg-hover"
             >
               Close
             </button>
           }
         />
       )}
-      {error != null ? <p className="text-sm font-medium text-danger">{error}</p> : null}
+      {error != null ? <p className="text-row text-danger">{error}</p> : null}
     </PaneShell>
   );
 };

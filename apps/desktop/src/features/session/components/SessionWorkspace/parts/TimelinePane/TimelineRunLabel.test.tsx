@@ -17,11 +17,13 @@ afterEach(cleanup);
 type LabelProps = {
   readonly entry: TimelineRunEntry;
   readonly isDeciding?: boolean;
+  readonly isRevealed?: boolean;
 };
 
-const Label = ({ entry, isDeciding = false }: LabelProps) => (
+const Label = ({ entry, isDeciding = false, isRevealed = false }: LabelProps) => (
   <TimelineRunLabel
     entry={entry}
+    isRevealed={isRevealed}
     rowState={resolveRunRowState({
       run: entry.run,
       advance: null,
@@ -274,5 +276,17 @@ describe('TimelineRunLabel', () => {
     render(<Label entry={entryOf({ goal: '   ' })} />);
 
     expect(screen.getByText('Refactor (example)')).toBeDefined();
+  });
+
+  it('tags a run just started, even when the active filter would hide it', () => {
+    render(<Label entry={entryOf()} isRevealed />);
+
+    expect(screen.getByText('Shown because you started it')).toBeDefined();
+  });
+
+  it('stays quiet about a run nobody just started', () => {
+    render(<Label entry={entryOf()} />);
+
+    expect(screen.queryByText('Shown because you started it')).toBeNull();
   });
 });

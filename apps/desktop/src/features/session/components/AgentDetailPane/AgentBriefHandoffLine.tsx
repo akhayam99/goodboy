@@ -27,7 +27,7 @@ export const AgentBriefHandoffLine = ({ sessionId, agentId }: Props) => {
       type="button"
       data-testid="agent-brief-handoff-line"
       onClick={() => requestHandoffOpen({ agentId })}
-      className="flex min-w-0 items-center gap-2 rounded-md bg-subtle px-2 py-1.5 text-left text-xs transition-colors hover:bg-hover"
+      className="flex min-w-0 items-center gap-2 rounded-md bg-subtle px-2 py-1.5 text-left text-label transition-colors hover:bg-hover"
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
       <span className="shrink-0 text-muted-foreground">{isYou ? 'Started by' : 'Sent by'}</span>

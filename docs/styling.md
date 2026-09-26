@@ -79,7 +79,14 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
-Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
+Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta` and the
+rest), never a size, a weight, a leading and a tracking written one by one. The
+roles and the ratchet that counts the raw classes are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
+
+`no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
+`font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.
+The one standing exception for size is relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.
 
@@ -107,16 +114,28 @@ containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
 
+Top bar, sidebar and footer are one chrome field, and `main` is a **sheet** on
+it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
+where the chrome wraps it on two sides: with the sidebar, the top-left and
+bottom-left corners take `rounded-frame` (10px) and one uniform 1px
+`frame-edge` border runs along the top, left and bottom; the right side meets
+the window square. With no sidebar, or while it is hidden, the sheet has no
+radius and only a top and bottom edge. The left resize handle draws no line at
+rest: on hover and drag its `data-left-resize` state turns the sheet's left
+edge to `border` in 120ms, so the sheet edge is the handle. A studio follows
+the same rule: `StudioRailLayout` puts its rail on the chrome and its detail on
+a wrapped sheet, and a studio without a rail is a flush sheet.
+
 The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the command center. Page breadcrumbs stay
 in the content column of the pane that owns them and do not set the top bar's
 size.
 
-The right drawer is a grid column too: `rhandle` and `right` after `main`,
-`0px 0px` while closed, `6px` and the saved width while open. The same
-`grid-template-columns` transition moves the main area in 200ms, so the content
+The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
+area beside the page, 0px wide while closed and the saved width plus two 8px
+insets while open. Its width transition moves the page in 220ms, so the content
 column slides and stays centred. When pushing would leave the column under
-560px, the drawer moves onto the `main` area instead as an overlay.
+560px, the drawer lies over the page instead.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's left padding is `--titlebar-inset`. It defaults to 12px in
@@ -148,8 +167,9 @@ no other `max-w-*` layout width lives under `features/`.
 `shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
 explicit allowlist, such as the image lightbox), and on a lens the session
-workspace mounts without `PaneShell`. The few views still on a hand-built band
-render the crumb through `PageCrumbRow` until they move.
+workspace mounts without `PaneShell`, or a root that draws a crumb of its own.
+The session trail lives only in `TrailBar`, a 40px band above every layer; the
+panes under it start with their title.
 
 Detail views (an agent, a pull request, an issue from any tracker, a Review
 mode) use `PaneShell` like every other pane. A detail keeps its own header
@@ -183,10 +203,22 @@ mask.
 ## Scroll edges fade, never hard-cut
 
 Every scroll region is wrapped in `ScrollFade` from `@goodboy/ui`. Raw
-`overflow-y-auto` is forbidden. The viewport hides its native scrollbar, so the
-fade is the only sign that a region scrolls. A region that must drive its own
-scroll (a log that follows its tail) passes `viewportRef` and
-`onViewportScroll` instead of reaching for a raw scroller.
+`overflow-y-auto` is forbidden (the `raw-scroller` ratchet only ever shrinks).
+The viewport hides its native scrollbar, and `ScrollFade` draws its own thumb
+in overlay: a track 2px from the edge, a 6px pill that grows to 8px under the
+pointer, in the `scrollbar-thumb` / `scrollbar-thumb-active` tokens. It never
+takes width from the content, so a mouse user can still see how long a list
+is without scrolling first; the fade is not the only sign a region scrolls
+anymore. It shows on scroll or on hover, hides 900ms after the last of either,
+and stays lit permanently under the system's "always show scrollbars" setting
+(read once through the `system_scroller_style` Tauri command, exposed to
+`ScrollFade` through `ScrollerStyleContext`). Pass `scrollbar="none"` to a
+`ScrollFade` that must never show a thumb (rare; most viewports want the
+default). A region that must drive its own scroll (a log that follows its
+tail) passes `viewportRef` and `onViewportScroll` instead of reaching for a
+raw scroller. A `textarea` or a `contenteditable`, which cannot be wrapped,
+gets the `.native-scroll` class instead: a thin native scrollbar in the same
+`scrollbar-thumb` token.
 
 **Give it a bounded height**: `min-h-0 flex-1` inside a flex column, or a
 `max-h-*` on the root. A root with no height limit does not throw an error. It
@@ -202,15 +234,18 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 
 ## Dividers separate chrome from content, never content from content
 
-A `Divider` marks the boundary between app chrome and a pane's content, not a
-boundary inside content. Allowed: the top bar and footer, a studio or sidebar
-rail against the detail pane (vertical), a pane's fixed header against its
+Chrome and content separate with the edge of the content sheet, not with a
+line: the top bar, the footer and a studio rail draw no horizontal `Divider`
+against the content, and the board header sits `gap-6` above its columns. A
+`Divider` marks what is left of the boundary between chrome and a pane's
+content, never a boundary inside content. Allowed: a vertical divider inside
+the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (a `PaneShell` dock, the `DrawerFrame` header), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
 Inside content, separation comes from gap (the `gap-4/6/8` scale), from
-surface (`SectionSurface`, `bg-subtle` against the canvas), or from a label
+a band (`Band`, `bg-fill` inside its parent), or from a label
 that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that
 sits inside content does not get its own `<Divider>` either: it gets a `gap`

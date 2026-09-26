@@ -13,6 +13,7 @@ type Params = {
   readonly expectedWidth: number;
   readonly align: Align;
   readonly shouldMatchTriggerWidth: boolean;
+  readonly isAtLeastTriggerWidth?: boolean;
 };
 
 type ResolveDesiredLeftParams = {
@@ -44,6 +45,7 @@ export const useDropdownDirection = ({
   expectedWidth,
   align,
   shouldMatchTriggerWidth,
+  isAtLeastTriggerWidth = false,
 }: Params): CSSProperties | undefined => {
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined);
 
@@ -92,6 +94,7 @@ export const useDropdownDirection = ({
         maxWidth: viewportWidth,
         maxHeight,
         ...(shouldMatchTriggerWidth ? { width: popupWidth } : {}),
+        ...(isAtLeastTriggerWidth ? { minWidth: Math.min(rect.width, viewportWidth) } : {}),
       });
     };
 
@@ -108,7 +111,16 @@ export const useDropdownDirection = ({
       window.removeEventListener('scroll', updatePosition, true);
       observer?.disconnect();
     };
-  }, [align, expectedHeight, expectedWidth, open, popupRef, shouldMatchTriggerWidth, triggerRef]);
+  }, [
+    align,
+    expectedHeight,
+    expectedWidth,
+    isAtLeastTriggerWidth,
+    open,
+    popupRef,
+    shouldMatchTriggerWidth,
+    triggerRef,
+  ]);
 
   return style;
 };

@@ -38,7 +38,7 @@ export const ProjectBaseBranchInput = ({ project }: Props) => {
         onCommit={(candidate) => commit({ candidate })}
       />
       {error != null ? (
-        <span role="alert" className="text-2xs text-danger">
+        <span role="alert" className="text-secondary text-danger">
           {error}
         </span>
       ) : null}

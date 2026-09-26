@@ -21,7 +21,7 @@ export const SpendButton = ({ onOpenSpend }: Props) => {
         type="button"
         onClick={onOpenSpend}
         aria-label={label}
-        className="flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-1 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover"
+        className="flex shrink-0 items-center gap-1 rounded-sm px-1.5 py-1 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover"
       >
         <span className="font-medium tabular-nums text-foreground">
           {formatUsd(rollup.todaySpend)}

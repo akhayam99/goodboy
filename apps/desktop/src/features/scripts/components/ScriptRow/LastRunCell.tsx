@@ -11,7 +11,7 @@ type Props = {
 export const LastRunCell = ({ lastRun, blockedReason }: Props) => {
   if (lastRun === null) {
     return (
-      <span className="w-32 shrink-0 truncate text-2xs text-faint-foreground">
+      <span className="w-32 shrink-0 truncate text-secondary text-faint-foreground">
         {blockedReason ?? ''}
       </span>
     );
@@ -20,7 +20,7 @@ export const LastRunCell = ({ lastRun, blockedReason }: Props) => {
   return (
     <span
       className={cn(
-        'flex w-32 shrink-0 items-center gap-1 truncate text-2xs tabular-nums',
+        'flex w-32 shrink-0 items-center gap-1 truncate text-secondary tabular-nums',
         isRunning ? 'text-info' : 'text-muted-foreground',
       )}
     >

@@ -21,10 +21,12 @@ const state = vi.hoisted(() => ({
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   loadAgentHandoff: vi.fn(async () => undefined),
-  selectAgent: vi.fn(async () => undefined),
+  navigate: vi.fn(),
+  loadAgentTranscript: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
 }));
@@ -105,7 +107,7 @@ describe('HandoffBlock', () => {
       [AGENT]: [{ kind: 'assistant_text', runId: 'r' as never, delta: 'On it.', at: AT }],
     };
     state.loadAgentHandoff.mockClear();
-    state.selectAgent.mockClear();
+    state.navigate.mockClear();
   });
 
   afterEach(() => {
@@ -119,9 +121,101 @@ describe('HandoffBlock', () => {
     expect(screen.getByText('Backfill the settled batches behind a flag.')).toBeTruthy();
     expect(screen.getByText('Why: Rounding now lands once per batch.')).toBeTruthy();
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
-      'Ask1 earlier stepPlanImplementer instructions',
+      'Ask1 earlier stepPlanImplementer instructionsAll',
     );
     expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
+  });
+
+  it('keeps the chips visible once the block is open', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+
+    expect(screen.getByTestId('handoff-chips').textContent).toBe(
+      'Ask1 earlier stepPlanImplementer instructionsAll',
+    );
+  });
+
+  it('a second click on the same chip closes its section', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+
+    fireEvent.click(planChip);
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    expect(planChip.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(planChip);
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(planChip.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('reopens the section a collapsed chip names, instead of landing on nothing', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+    fireEvent.click(planChip);
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse what the agent received' }));
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+
+    fireEvent.click(planChip);
+
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+  });
+
+  it('keeps only one section open: a second chip replaces the first', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer instructions' }));
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
+  });
+
+  it('Escape closes the open section and returns focus to its chip', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+    fireEvent.click(planChip);
+
+    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
+
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(document.activeElement).toBe(planChip);
+  });
+
+  it('Escape in one card returns focus to its own chip, not another cards chip of the same kind', () => {
+    const otherAgent = 'agent-5' as AgentId;
+    state.agentHandoffs = { [AGENT]: handoff(), [otherAgent]: handoff() };
+    render(
+      <>
+        <HandoffBlock item={item()} sessionId={SESSION} agentId={AGENT} workingDir={null} />
+        <HandoffBlock
+          item={item({ key: 'handoff-1', handoffId: otherAgent })}
+          sessionId={SESSION}
+          agentId={otherAgent}
+          workingDir={null}
+        />
+      </>,
+    );
+    const planChips = screen.getAllByRole('button', { name: 'Plan' });
+    fireEvent.click(planChips[1]!);
+
+    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
+
+    expect(document.activeElement).toBe(planChips[1]);
+    expect(document.activeElement).not.toBe(planChips[0]);
+  });
+
+  it('All shows every section together', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+
+    expect(screen.getByTestId('handoff-section-ask')).toBeTruthy();
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
   });
 
   it('opens by itself while the agent has not answered yet', () => {
@@ -137,7 +231,9 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 earlier step' }));
     fireEvent.click(screen.getByRole('button', { name: /Trace the rounding/ }));
 
-    expect(state.selectAgent).toHaveBeenCalledWith(SESSION, 'agent-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION, agentId: 'agent-2' },
+    });
   });
 
   it('shows the plan as a title and a link, never its body', () => {
@@ -185,7 +281,7 @@ describe('HandoffBlock', () => {
     expect(screen.getByText('Which services read the per-line totals?')).toBeTruthy();
     expect(screen.getByTestId('handoff-also-received').textContent).toContain('Also received');
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
-      '1 earlier stepPlanImplementer instructions',
+      '1 earlier stepPlanImplementer instructionsAll',
     );
   });
 

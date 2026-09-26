@@ -58,7 +58,7 @@ export const DecisionsSection = ({
         onAdd={(decision) => onWrite(appendDecision({ text: value, decision }))}
       />
       {document.hasContentOutsideRows ? (
-        <p className="text-2xs text-muted-foreground">
+        <p className="text-secondary text-muted-foreground">
           This document also holds text that no row covers. Edit the source to reach it.
         </p>
       ) : null}

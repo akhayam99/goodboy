@@ -33,7 +33,7 @@ export const AnswerOptionRow = ({
       aria-describedby={recommended ? descriptionId : undefined}
       onClick={onToggle}
       className={cn(
-        'flex w-full items-start justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-sm font-medium',
+        'flex w-full items-start justify-between gap-2 rounded-md border px-2 py-1.5 text-left text-row',
         'transition-[color,background-color,border-color] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         selected

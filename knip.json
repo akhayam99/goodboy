@@ -18,7 +18,6 @@
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
         "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
-        "src/features/session/timeline/sessionEventPresentation.ts": ["exports"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],
         "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
         "src/store/slices/project-mounts/mountRecoveryGuard.ts": ["exports"],

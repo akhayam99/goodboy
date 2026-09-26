@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import type { LensKind } from '../../../store';
+import { useAppStore, agentPlace } from '../../../store';
 import { useToast } from '../../../app/components/Toast';
 
 type AnnounceParams = {
@@ -10,14 +9,11 @@ type AnnounceParams = {
   readonly title: string;
   readonly message: string;
   readonly actionLabel?: string;
-  readonly lens?: LensKind;
   readonly onOpen?: () => void;
 };
 
 export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const { showToast } = useToast();
   return useCallback(
     ({
@@ -26,7 +22,6 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
       title,
       message,
       actionLabel = 'Open the agent',
-      lens = 'agents',
       onOpen,
     }: AnnounceParams) => {
       if (agentId == null) {
@@ -40,15 +35,13 @@ export const useAgentStartedToast = (): ((params: AnnounceParams) => void) => {
           label: actionLabel,
           onClick: () => {
             void (async () => {
-              await setCurrentSession(sessionId);
-              setActiveLens(sessionId, lens);
-              await selectAgent(sessionId, agentId);
+              navigate({ to: agentPlace({ sessionId, agentId }) });
               onOpen?.();
             })();
           },
         },
       });
     },
-    [selectAgent, setActiveLens, setCurrentSession, showToast],
+    [navigate, showToast],
   );
 };

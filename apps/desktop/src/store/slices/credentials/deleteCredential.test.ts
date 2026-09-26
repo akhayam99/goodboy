@@ -40,9 +40,7 @@ type StoreShape = Pick<AppStore, 'providerCredentials' | 'workspaceOverrides'>;
 
 const boundOverride: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: { anthropic: credentialId },
   taskModels: null,

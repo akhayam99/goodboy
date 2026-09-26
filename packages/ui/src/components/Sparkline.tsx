@@ -8,7 +8,7 @@ type Props = {
 export const Sparkline = ({ values, formatMaximum = formatUsdPrecise }: Props) => {
   if (values.length < 2) {
     return (
-      <div className="flex h-20 items-center justify-center rounded-lg border border-border-soft bg-subtle text-2xs text-faint-foreground">
+      <div className="flex h-20 items-center justify-center rounded-lg border border-border-soft bg-subtle text-secondary text-faint-foreground">
         not enough turns to chart
       </div>
     );
@@ -29,7 +29,7 @@ export const Sparkline = ({ values, formatMaximum = formatUsdPrecise }: Props) =
 
   return (
     <div className="relative h-24 w-full rounded-lg border border-border-soft bg-subtle">
-      <span className="pointer-events-none absolute right-2 top-1.5 font-mono text-2xs tabular-nums text-muted-foreground">
+      <span className="pointer-events-none absolute right-2 top-1.5 font-mono text-secondary tabular-nums text-muted-foreground">
         {formatMaximum(maximum)}
       </span>
       <svg

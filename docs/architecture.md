@@ -153,7 +153,7 @@ in one atomic step with SQLite's own reset (`SQLITE_DBCONFIG_RESET_DATABASE`
 plus `VACUUM`), and the chain replays from m001 on the empty file. It never
 drops tables one by one: that leaves views like `live_agents` behind, and the
 first `ALTER TABLE ... RENAME` of the replay fails on them (see
-[traps](traps.md#traps-in-the-toolchain)). Builds before 0.7.1 did exactly
+[traps](traps.md#traps-in-the-toolchain)). Builds before 0.8.0 did exactly
 that, so `db::open` checks the file at launch. It finishes the wipe only when
 both signs of that old wipe are there: a view reads a table that no longer
 exists, and one of `schema_version`, `sessions` or `agents` is missing. It

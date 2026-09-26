@@ -167,8 +167,8 @@ export const PermissionScopePicker = ({
               onClick={() => pickBroad(scope)}
               className="flex w-full flex-col items-start gap-0.5 px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
             >
-              <span className="text-xs text-foreground">{SCOPE_LABELS[scope]}</span>
-              <span className="text-2xs text-muted-foreground">{SCOPE_TITLES[scope]}</span>
+              <span className="text-label text-foreground">{SCOPE_LABELS[scope]}</span>
+              <span className="text-secondary text-muted-foreground">{SCOPE_TITLES[scope]}</span>
             </button>
           ))
         )}

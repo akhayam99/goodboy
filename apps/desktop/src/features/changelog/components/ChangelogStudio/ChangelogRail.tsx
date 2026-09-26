@@ -48,10 +48,10 @@ export const ChangelogRail = ({
             onClick={() => onSelect(release.version)}
             className="items-center gap-2 px-2.5 py-2"
           >
-            <span className="min-w-0 flex-1 truncate text-sm">{release.version}</span>
+            <span className="min-w-0 flex-1 truncate text-body">{release.version}</span>
             {isInstalled && <Chip tone="neutral" width="sm" label="installed" />}
             {isAvailable && <Chip tone="primary" width="sm" label="available" />}
-            <span className="w-14 shrink-0 text-right text-2xs tabular-nums text-muted-foreground">
+            <span className="w-14 shrink-0 text-right text-secondary tabular-nums text-muted-foreground">
               {formatReleaseDate({ iso: release.publishedAt, style: 'short' })}
             </span>
           </SelectableRow>

@@ -26,7 +26,7 @@ const HistoryEntry = ({
     <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-3">
       <div className="flex items-center gap-2">
         <AuthorshipChip byUser={entry.author === 'user'} />
-        <span className="text-2xs text-muted-foreground">
+        <span className="text-secondary text-muted-foreground">
           {formatRelativeAge({ fromIso: entry.createdAt })}
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -41,7 +41,7 @@ const HistoryEntry = ({
             onClick={() => onRestore(entry)}
             title="Restore this version"
             aria-label="Restore this version"
-            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
+            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <RotateCcw size={10} aria-hidden />
             restore
@@ -58,14 +58,14 @@ const HistoryEntry = ({
         {expanded ? (
           <div className="rounded-sm text-xs leading-relaxed text-foreground">
             {renderAsMarkdown ? (
-              <Markdown text={entry.value} className="text-xs" />
+              <Markdown text={entry.value} className="text-label" />
             ) : (
               <p className="whitespace-pre-wrap">{entry.value}</p>
             )}
           </div>
         ) : renderAsMarkdown ? (
           <div className="text-xs leading-relaxed text-foreground line-clamp-3">
-            <Markdown text={entry.value} className="text-xs" />
+            <Markdown text={entry.value} className="text-label" />
           </div>
         ) : (
           <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground line-clamp-3">

@@ -131,7 +131,7 @@ export const RunTreeRow = ({
             frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
             className="flex h-full min-w-0 items-center gap-2 pl-2 pr-1.5"
           >
-            <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
+            <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
               {entry.stepLabel}
             </span>
             <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
@@ -141,7 +141,7 @@ export const RunTreeRow = ({
                 className={cn(
                   WORK_ROW.title,
                   'truncate',
-                  isNested ? 'text-xs leading-4' : 'text-sm leading-5',
+                  isNested ? 'text-label' : 'text-body',
                   item.rowState.phase === 'queued'
                     ? 'text-muted-foreground'
                     : item.rowState.phase === 'running' || item.hasUnread
@@ -152,7 +152,7 @@ export const RunTreeRow = ({
                 {agent.name}
               </span>
               {answersFor === null ? null : (
-                <span className="max-w-40 shrink-0 truncate text-3xs text-muted-foreground">
+                <span className="max-w-40 shrink-0 truncate text-meta text-muted-foreground">
                   {`answering for ${answersFor}`}
                 </span>
               )}

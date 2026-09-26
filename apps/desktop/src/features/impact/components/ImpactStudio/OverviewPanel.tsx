@@ -139,7 +139,7 @@ export const OverviewPanel = ({
             </StudioWidget>
             <StudioWidget label="spend this window" hint="highest-cost sessions">
               {data.spendUsd === null ? (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-label text-muted-foreground">
                   No spend recorded in this window
                 </span>
               ) : (

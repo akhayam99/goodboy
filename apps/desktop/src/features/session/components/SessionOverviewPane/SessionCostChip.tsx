@@ -160,8 +160,11 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       }
     >
       <div className="flex flex-col gap-0.5 px-4 py-3">
-        <span className="text-sm font-semibold text-foreground">Session budget</span>
-        <InlineMarkdown text={sessionLabel} className="truncate text-2xs text-muted-foreground" />
+        <span className="text-heading text-foreground">Session budget</span>
+        <InlineMarkdown
+          text={sessionLabel}
+          className="truncate text-secondary text-muted-foreground"
+        />
       </div>
       <Divider />
       <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">

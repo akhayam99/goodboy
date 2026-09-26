@@ -95,7 +95,7 @@ describe('StudioShell close behavior', () => {
         {() => <p>body</p>}
       </StudioShell>,
     );
-    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(onClose).not.toHaveBeenCalled();
     vi.advanceTimersByTime(300);
     expect(onClose).toHaveBeenCalledOnce();

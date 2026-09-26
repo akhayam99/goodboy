@@ -149,8 +149,8 @@ const seedFlowAuditBase = () => {
     loadGoalAttachments: async () => undefined,
     loadSessionEvents: async () => undefined,
     loadSessionArtifacts: async () => undefined,
-    setActiveLens: noop,
-    selectAgent: async () => undefined,
+    navigate: () => undefined,
+    loadAgentTranscript: async () => undefined,
   });
 };
 

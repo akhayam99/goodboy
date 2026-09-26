@@ -67,7 +67,6 @@ import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/work
 import { composeChildRoutingPrompt } from '../../../features/workflows/composeChildRoutingPrompt';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { runProviderPool } from '../../../features/workflows/runProviderPool';
-import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveProviderForTurn } from '../../../features/providers/routing';
 import {
   providersCoolingDown,
@@ -861,25 +860,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const slotFilter = slotsForKind(earlyAgentKind);
     const contextPreamble = buildContextPreamble(sharedSlots, slotFilter);
 
-    const childRoutingBlock =
-      workflowRoutingFlags().isChildModelSelectionEnabled === true
-        ? composeChildRoutingPrompt({
-            role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
-            availability: workflowAvailabilitySnapshot({
-              providers: get().providers,
-              cooldowns: get().providerCooldowns,
-              alerts: get().budgetAlerts ?? [],
-              sessionId,
-              isRunBudgetBlocked: false,
-              nowMs: Date.now(),
-              providerPool: runProviderPool({
-                sessions: get().sessions,
-                sessionId,
-                workflowRunId: agentRowEarly?.workflowRunId,
-              }),
-            }),
-          })
-        : '';
+    const childRoutingBlock = composeChildRoutingPrompt({
+      role: phaseDefinition?.role ?? KIND_TO_ROLE[earlyAgentKind],
+      availability: workflowAvailabilitySnapshot({
+        providers: get().providers,
+        cooldowns: get().providerCooldowns,
+        alerts: get().budgetAlerts ?? [],
+        sessionId,
+        isRunBudgetBlocked: false,
+        nowMs: Date.now(),
+        providerPool: runProviderPool({
+          sessions: get().sessions,
+          sessionId,
+          workflowRunId: agentRowEarly?.workflowRunId,
+        }),
+      }),
+    });
 
     const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
     const clusterBoundary = isClusterChild

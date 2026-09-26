@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const WorkspaceFilterChip = ({ name, onClear }: Props) => (
-  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+  <div className="flex items-center gap-2 text-label text-muted-foreground">
     <span>Only folders from {name}</span>
     <Button variant="ghost" size="sm" onClick={onClear}>
       <X size={ICON_SIZE.row} aria-hidden />

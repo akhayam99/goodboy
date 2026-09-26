@@ -42,9 +42,7 @@ const now = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 const preProjectMigrations = migrations.filter((migration) => migration.version <= 116);
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

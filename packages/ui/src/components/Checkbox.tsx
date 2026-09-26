@@ -25,7 +25,7 @@ export const Checkbox = ({
 }: CheckboxProps) => (
   <label
     className={cn(
-      'inline-flex items-center gap-2 text-xs text-foreground',
+      'inline-flex items-center gap-2 text-label text-foreground',
       disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
       className,
     )}

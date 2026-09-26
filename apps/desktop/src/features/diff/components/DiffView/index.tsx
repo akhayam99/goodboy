@@ -287,7 +287,7 @@ export const DiffView = ({
       {mountedCount < files.length ? (
         <div className="flex flex-col gap-2" aria-label="Loading more files">
           <Skeleton className="h-9 w-full rounded-md" />
-          <span className="text-center text-2xs tabular-nums text-muted-foreground">
+          <span className="text-center text-secondary tabular-nums text-muted-foreground">
             {mountedCount} of {files.length} files
           </span>
         </div>
@@ -332,15 +332,10 @@ export const DiffView = ({
 
   return (
     <div data-slot="diff-view" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0 [scrollbar-gutter:stable]">
+      <div className="shrink-0">
         <PageColumn className="pb-3">{toolbar}</PageColumn>
       </div>
-      <ScrollFade
-        className="min-h-0 flex-1"
-        viewportRef={viewportRef}
-        viewportClassName="[scrollbar-gutter:stable]"
-        fadeSize={24}
-      >
+      <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
         <PageColumn>{body}</PageColumn>
       </ScrollFade>
     </div>

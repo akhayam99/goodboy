@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
-import { IconButton, SectionSurface } from '@goodboy/ui';
+import { IconButton, Band } from '@goodboy/ui';
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import type { Agent, ProviderId, SessionId, Step, WorkflowRunId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../providers/providers';
@@ -41,7 +41,8 @@ export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps, onClose }
     return null;
   }
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label={WORKFLOW_ROUTING_COPY.sectionLabel}
       ariaLabel={WORKFLOW_ROUTING_COPY.sectionLabel}
       hint={WORKFLOW_ROUTING_COPY.sectionHint}
@@ -67,6 +68,6 @@ export const WorkflowNodeRouting = ({ sessionId, workflowRunId, steps, onClose }
           />
         ))}
       </ul>
-    </SectionSurface>
+    </Band>
   );
 };

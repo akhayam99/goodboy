@@ -89,7 +89,7 @@ export const seedWorkspaceChrome = ({ session, siblings }: ChromeParams): void =
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     loadArchivedSessions: async () => undefined,
-    setCurrentSession: async () => undefined,
+    navigate: () => undefined,
     loadSessionEvents: async () => undefined,
     loadSessionArtifacts: async () => undefined,
     loadSessionAnsweredQuestions: async () => undefined,
@@ -97,7 +97,7 @@ export const seedWorkspaceChrome = ({ session, siblings }: ChromeParams): void =
     loadSessionOpenQuestions: async () => undefined,
     loadPhaseRunsForSession: async () => undefined,
     loadSessionPlans: async () => undefined,
-    selectAgent: async () => undefined,
+    loadAgentTranscript: async () => undefined,
     markAgentViewed: async () => undefined,
     refreshProviders: async () => undefined,
   });

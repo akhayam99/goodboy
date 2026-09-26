@@ -10,6 +10,7 @@ import { StudioHomeTabs, type StudioHomeView } from '../WorkflowStudio/StudioHom
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
+import { isPresetWorkflow } from '../../isPresetWorkflow';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
 type Props = { readonly workspaceId: WorkspaceId };
@@ -37,10 +38,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         .map((provider) => provider.id),
     [providers],
   );
-  const presets = useMemo(
-    () => templates.filter((template) => template.deletedAt == null && template.isPreset !== false),
-    [templates],
-  );
+  const presets = useMemo(() => templates.filter(isPresetWorkflow), [templates]);
   const takenNames = useMemo<ReadonlySet<string>>(
     () =>
       new Set(

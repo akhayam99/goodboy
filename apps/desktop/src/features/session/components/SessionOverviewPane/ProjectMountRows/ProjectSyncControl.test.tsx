@@ -119,8 +119,8 @@ describe('ProjectSyncControl', () => {
   it('commits a trimmed base branch on Enter', async () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
-    const input = screen.getByRole('combobox', { name: 'Base branch' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Base branch' }));
+    const input = screen.getByRole('combobox', { name: 'Search branches' });
     fireEvent.change(input, { target: { value: '  release  ' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -132,13 +132,11 @@ describe('ProjectSyncControl', () => {
     );
   });
 
-  it('clears an empty base branch to null', async () => {
+  it('clears the base branch to null with Use default', async () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
-    const input = screen.getByRole('combobox', { name: 'Base branch' });
-    fireEvent.change(input, { target: { value: '   ' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Base branch' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
 
     await waitFor(() =>
       expect(store.updateProjectBaseBranch).toHaveBeenCalledWith({
@@ -151,13 +149,13 @@ describe('ProjectSyncControl', () => {
   it('reverts the base branch edit on Escape', () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
-    const input = screen.getByRole('combobox', { name: 'Base branch' });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Base branch' }));
+    const input = screen.getByRole('combobox', { name: 'Search branches' });
     fireEvent.change(input, { target: { value: 'release' } });
     fireEvent.keyDown(input, { key: 'Escape' });
 
     expect(store.updateProjectBaseBranch).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    expect(screen.getByRole('button', { name: 'Base branch: develop' })).toBeDefined();
+    expect(screen.queryByRole('combobox', { name: 'Search branches' })).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Base branch' }).textContent).toBe('develop');
   });
 });

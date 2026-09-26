@@ -14,10 +14,6 @@ vi.mock('../../../../../store', () => ({
 vi.mock('../../AgentDetailPane', () => ({
   AgentDetailPane: () => <div>agent detail</div>,
 }));
-vi.mock('../../../../resolve/components/ResolveAgentContext', () => ({
-  ResolveAgentContext: () => null,
-}));
-
 import { AgentOverlay } from './AgentOverlay';
 
 const sessionId = 'sess-1' as SessionId;

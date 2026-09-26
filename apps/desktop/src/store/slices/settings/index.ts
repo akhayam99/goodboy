@@ -4,11 +4,11 @@ import { loadSetting } from './loadSetting';
 import { saveSetting } from './saveSetting';
 import type { GetFn, SetFn } from './types';
 
-export const createSettingsSlice = (set: SetFn, _get: GetFn) => {
+export const createSettingsSlice = (set: SetFn, get: GetFn) => {
   return {
     loadSetting: loadSetting(set),
     saveSetting: saveSetting(set),
     exportConfig: exportConfig(),
-    importConfig: importConfig(),
+    importConfig: importConfig(set, get),
   };
 };

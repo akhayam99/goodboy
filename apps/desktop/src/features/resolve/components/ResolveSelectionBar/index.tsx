@@ -112,13 +112,13 @@ export const ResolveSelectionBar = ({
       aria-label={resolveSelectionLabel({ count })}
       className="flex min-w-0 flex-wrap items-center gap-2 rounded-md bg-subtle px-3 py-1.5"
     >
-      <span className="min-w-0 truncate text-xs font-medium text-foreground">
+      <span className="min-w-0 truncate text-label font-medium text-foreground">
         {resolveSelectionLabel({ count })}
       </span>
       <Button size="sm" variant="ghost" onClick={onClear}>
         {RESOLVE_QUEUE_ACTION_LABEL.clearSelection}
       </Button>
-      <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
         {nothingToApprove > 0 && approvable.length > 0
           ? nothingToApproveLabel({ count: nothingToApprove })
           : ''}

@@ -41,14 +41,14 @@ export const ProfileAccessPopover = () => {
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
-          className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+          className="text-label font-medium text-primary underline-offset-2 hover:underline"
         >
           See who reads what
         </button>
       }
     >
-      <span className="text-sm font-semibold text-foreground">Who reads what</span>
-      <table className="w-full text-xs">
+      <span className="text-heading text-foreground">Who reads what</span>
+      <table className="w-full text-label">
         <thead>
           <tr className="text-faint-foreground">
             <th scope="col" className="py-1 text-left font-medium">
@@ -86,7 +86,7 @@ export const ProfileAccessPopover = () => {
           ))}
         </tbody>
       </table>
-      <span className="text-2xs text-muted-foreground">
+      <span className="text-secondary text-muted-foreground">
         Never included in anything Goodboy posts to GitHub, Linear or Slack.
       </span>
     </AnchoredPopover>

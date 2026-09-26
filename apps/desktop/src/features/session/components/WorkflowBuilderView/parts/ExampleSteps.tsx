@@ -49,7 +49,7 @@ export const ExampleSteps = ({ identityIndex, children }: Props) => (
       style={entryDelay({ order: EXAMPLE_STEPS.length + 1 })}
     >
       <StepTreeGutter span="none" identityIndex={identityIndex} />
-      <p className="pb-1 pl-2 text-2xs leading-4 text-faint-foreground">
+      <p className="pb-1 pl-2 text-secondary text-faint-foreground">
         Example. Real steps are picked one at a time as the run goes.
       </p>
     </div>

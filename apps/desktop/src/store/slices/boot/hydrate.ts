@@ -3,7 +3,6 @@ import { formatError } from '@goodboy/ui';
 import { getSetting, listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
 import { invoke } from '@tauri-apps/api/core';
 import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
-import { migrateLsToDb } from '../../../shared/lib/ls-to-db-migration';
 import { newerDatabaseFromError } from '../../../shared/lib/newerDatabase';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
@@ -52,7 +51,6 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         const migratingAt = Date.now();
         set({ bootPhase: 'migrating', bootFailedPhase: null, newerDatabase: null, error: null });
         await runDbMigrations();
-        await migrateLsToDb();
         await hydrateOnboardingFromDb();
         await get().hydrateChangelogSeen();
         await get().hydrateCliRequirements();

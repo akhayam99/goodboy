@@ -9,11 +9,11 @@ import {
 import { cn } from '../cn';
 import { Checkbox } from './Checkbox';
 import { Input } from './Input';
-import { Select } from './Select';
+import { Listbox } from './Listbox';
 import { Textarea } from './Textarea';
 
-const LABELABLE_TAGS = new Set(['input', 'select', 'textarea']);
-const LABELABLE_COMPONENTS = new Set<ElementType>([Input, Select, Textarea, Checkbox]);
+const LABELABLE_TAGS = new Set(['input', 'textarea']);
+const LABELABLE_COMPONENTS = new Set<ElementType>([Input, Listbox, Textarea, Checkbox]);
 
 const isLabelableControl = (child: ReactNode): child is ReactElement<{ id?: string }> => {
   if (!isValidElement(child)) {
@@ -48,11 +48,11 @@ export const FieldRow = ({
   const labelBlock = (
     <div className="flex min-w-40 shrink flex-col gap-0.5">
       {associate ? (
-        <label htmlFor={controlId} className="text-xs font-medium text-foreground">
+        <label htmlFor={controlId} className="text-label font-medium text-foreground">
           {label}
         </label>
       ) : (
-        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="text-label font-medium text-foreground">{label}</span>
       )}
       {help ? <p className="text-2xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>

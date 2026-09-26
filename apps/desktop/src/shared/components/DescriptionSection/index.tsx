@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button, Markdown, Textarea, cn } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
+import { isInteractiveClick } from '../../utils/isInteractiveClick';
 import { StudioWidget } from '@goodboy/ui';
 
 type Props = {
@@ -27,6 +28,13 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isClamped = !isExpanded && overflowsClamp({ text });
 
+  const onBodyClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (isInteractiveClick({ target: event.target })) {
+      return;
+    }
+    edit.start();
+  };
+
   if (edit.isEditing) {
     return (
       <StudioWidget label="description" variant="frameless">
@@ -44,11 +52,11 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
           />
           <div className="flex items-center justify-between gap-3">
             {edit.error != null ? (
-              <p role="alert" className="min-w-0 text-xs text-danger">
+              <p role="alert" className="min-w-0 text-label text-danger">
                 {edit.error}
               </p>
             ) : (
-              <p className="text-2xs text-muted-foreground">Escape to cancel</p>
+              <p className="text-secondary text-muted-foreground">Escape to cancel</p>
             )}
             <div className="flex shrink-0 items-center gap-2">
               <Button size="sm" variant="ghost" onClick={edit.cancel}>
@@ -77,7 +85,9 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
       action={
         edit.canEdit ? (
           <div className="flex items-center gap-2">
-            {edit.isDirty ? <span className="text-2xs text-warning">Unsaved edits</span> : null}
+            {edit.isDirty ? (
+              <span className="text-secondary text-warning">Unsaved edits</span>
+            ) : null}
             <Button size="sm" variant="ghost" onClick={edit.start}>
               <Pencil size={12} aria-hidden />
               Edit
@@ -87,23 +97,23 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
       }
     >
       <div
-        onClick={edit.start}
+        onClick={onBodyClick}
         className={cn('flex flex-col', edit.canEdit && 'cursor-text')}
         data-testid="description-body"
       >
         {text.trim() !== '' ? (
           <div className={cn('min-w-0', isClamped && 'line-clamp-[10] [&>*]:block')}>
-            <Markdown text={text} className="text-sm leading-relaxed" />
+            <Markdown text={text} className="text-prose" />
           </div>
         ) : (
-          <p className="text-sm italic text-faint-foreground">No description.</p>
+          <p className="text-body italic text-faint-foreground">No description.</p>
         )}
       </div>
       {overflowsClamp({ text }) ? (
         <button
           type="button"
           onClick={() => setIsExpanded((expanded) => !expanded)}
-          className="self-start text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="self-start text-secondary text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           {isExpanded ? 'Show less' : 'Show more'}
         </button>

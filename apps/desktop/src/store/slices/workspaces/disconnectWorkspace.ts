@@ -1,5 +1,5 @@
 import type { IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
-import { disconnectWorkspace as disconnectWorkspaceInDb } from '@goodboy/db';
+import { disconnectWorkspaceAndProjects } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
@@ -34,6 +34,8 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
 
     const now = new Date().toISOString() as IsoDateTime;
     const prevWorkspaces = state.workspaces;
+    const prevProjects = state.projects;
+    const ownedProjects = state.projects.filter((project) => project.workspaceId === id);
 
     if (wasCurrentWorkspace) {
       clearPendingTurnEvents();
@@ -88,10 +90,16 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
     });
 
     try {
-      await disconnectWorkspaceInDb({ db: tauriDatabase, id, at: now });
+      await disconnectWorkspaceAndProjects({
+        db: tauriDatabase,
+        id,
+        projectIds: ownedProjects.map((project) => project.id),
+        at: now,
+      });
     } catch (err) {
       set((s) => ({
         workspaces: prevWorkspaces,
+        projects: prevProjects,
         ...(wasCurrentWorkspace ? { currentWorkspaceId: id } : {}),
       }));
       throw err;

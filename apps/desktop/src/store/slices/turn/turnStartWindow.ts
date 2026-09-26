@@ -20,8 +20,6 @@ export const cancelTurnStartWindow = ({ agentId }: Params): boolean => {
   return true;
 };
 
-export const isTurnStartCancelled = ({ agentId }: Params): boolean => windows.get(agentId) === true;
-
 export const claimTurnStart = ({ agentId }: Params): TurnStartClaim => {
   if (windows.get(agentId) !== true) {
     return 'granted';

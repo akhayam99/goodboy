@@ -19,7 +19,7 @@ export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta 
       <h1
         data-testid="artifact-title"
         title={title}
-        className="min-w-0 flex-1 truncate text-lg font-semibold leading-6 text-foreground"
+        className="min-w-0 flex-1 truncate text-title text-foreground"
       >
         {title}
       </h1>

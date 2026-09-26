@@ -75,21 +75,19 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
     project.lastAccessedAt === undefined ? updatedAt : Date.parse(project.lastAccessedAt);
   await db.execute(
     `INSERT INTO projects (
-       id, workspace_id, name, root_path, default_provider_id, default_workflow_id,
-       default_branch_prefix, parallel_enabled, created_at, updated_at, disconnected_at,
+       id, workspace_id, name, root_path, default_provider_id,
+       default_branch_prefix, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
        task_models, role_models, provider_pool, base_branch, attribution_footer,
        description, starred_at, ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
       project.name,
       project.rootPath,
       project.overrides.defaultProviderId,
-      project.overrides.defaultWorkflowId,
       project.overrides.defaultBranchPrefix,
-      project.overrides.parallelEnabled === null ? null : project.overrides.parallelEnabled ? 1 : 0,
       createdAt,
       updatedAt,
       project.disconnectedAt === undefined ? null : Date.parse(project.disconnectedAt),
@@ -138,6 +136,17 @@ export const listProjectsForWorkspace = async ({
     `SELECT * FROM projects
      WHERE workspace_id = ? AND disconnected_at IS NULL
      ORDER BY created_at ASC`,
+    [workspaceId],
+  );
+  return rows.map((row) => toDomain({ row }));
+};
+
+export const listAllProjectsForWorkspace = async ({
+  db,
+  workspaceId,
+}: ListProjectsParams): Promise<ReadonlyArray<Project>> => {
+  const rows = await db.select<ProjectRow>(
+    `SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at ASC`,
     [workspaceId],
   );
   return rows.map((row) => toDomain({ row }));

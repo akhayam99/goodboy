@@ -422,3 +422,47 @@ describe('surface ladder', () => {
     },
   );
 });
+
+type OverlayFloor = {
+  readonly token: string;
+  readonly surfaces: ReadonlyArray<string>;
+  readonly floor: number;
+};
+
+const OVERLAY_FLOORS: ReadonlyArray<OverlayFloor> = [
+  { token: 'frame-edge', surfaces: ['chrome', 'background'], floor: 1.2 },
+  { token: 'scrollbar-thumb', surfaces: ['background', 'subtle', 'floating'], floor: 1.8 },
+  { token: 'scrollbar-thumb-active', surfaces: ['background', 'subtle', 'floating'], floor: 3 },
+];
+
+describe('translucent edges and thumbs', () => {
+  const palettes = readThemes();
+  const blocks = themeBlocks();
+  const themes = [
+    { theme: 'dark', block: blocks.dark },
+    { theme: 'light', block: blocks.light },
+  ] as const;
+
+  it.each(
+    themes.flatMap(({ theme, block }) =>
+      OVERLAY_FLOORS.map((overlay) => ({ theme, block, ...overlay })),
+    ),
+  )(
+    'keeps $token at $floor:1 over its surfaces in $theme',
+    ({ theme, block, token, surfaces, floor }) => {
+      const overlay = readTranslucent({ block, token });
+      const failures = surfaces
+        .map((surface) => {
+          const parent = swatch(palettes[theme], surface);
+          const painted = composite({
+            foreground: overlay.rgb,
+            background: parent,
+            alpha: overlay.alpha,
+          });
+          return { surface, ratio: contrast(painted, parent) };
+        })
+        .filter(({ ratio }) => ratio < floor);
+      expect(failures).toEqual([]);
+    },
+  );
+});

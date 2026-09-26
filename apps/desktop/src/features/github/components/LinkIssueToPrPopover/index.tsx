@@ -56,11 +56,11 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
       }
     >
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-foreground">
+        <span className="text-label font-medium text-foreground">
           Link an issue to this pull request
         </span>
         {candidates.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             Link the issue to the session first, from its tracker tab.
           </p>
         ) : (
@@ -74,17 +74,17 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
                 aria-label={`Link issue ${candidate.identifier} to this pull request`}
                 className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:pointer-events-none disabled:opacity-40"
               >
-                <span className="shrink-0 font-mono text-xs font-semibold text-foreground">
+                <span className="shrink-0 font-mono text-label font-semibold text-foreground">
                   {candidate.identifier}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">
                   {candidate.title}
                 </span>
               </button>
             ))}
           </div>
         )}
-        {error !== null ? <p className="text-xs text-danger">{error}</p> : null}
+        {error !== null ? <p className="text-label text-danger">{error}</p> : null}
       </div>
     </AnchoredPopover>
   );

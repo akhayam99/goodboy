@@ -31,7 +31,7 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
     })),
     previewProjectAdoption: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
     removeProject: vi.fn(async () => undefined),
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    openWorkspace: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{
       id: string;
       workspaceId: string;
@@ -130,7 +130,7 @@ describe('WorkspaceLinkForm', () => {
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/alpha' }),
     );
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-direct');
+    expect(state.openWorkspace).toHaveBeenCalledWith('ws-direct', 'alpha');
     expect(onComplete).toHaveBeenCalledWith({
       mode: 'project',
       workspace: expect.objectContaining({ id: 'ws-direct' }),
@@ -203,7 +203,7 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
 
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalledWith({ name: 'Acme' }));
-    expect(state.setCurrentWorkspace).toHaveBeenCalledWith('ws-created');
+    expect(state.openWorkspace).toHaveBeenCalledWith('ws-created', 'Acme');
 
     const done = await screen.findByRole('button', { name: 'Done' });
     expect(done.hasAttribute('disabled')).toBe(true);

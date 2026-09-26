@@ -69,7 +69,7 @@ export const Conversation = ({ source, model }: Props) => {
         </ul>
       )}
       {source.footnote == null ? null : (
-        <p className="text-2xs text-muted-foreground">{source.footnote}</p>
+        <p className="text-secondary text-muted-foreground">{source.footnote}</p>
       )}
     </div>
   );

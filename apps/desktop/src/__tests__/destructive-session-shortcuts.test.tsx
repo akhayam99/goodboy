@@ -23,15 +23,15 @@ const { state } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: {} as Record<string, string>,
-      setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
-      setCurrentSession: vi.fn(),
-      lensGo: vi.fn(),
       currentWorkspaceId: 'workspace-1' as string | null,
       currentSessionId: 'session-1' as string | null,
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
-      setActiveLens: vi.fn(),
+      appStudio: null,
+      openStudio: vi.fn(),
+      amendStudio: vi.fn(),
+      closeStudio: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
     },
@@ -212,7 +212,9 @@ describe('archive/delete session shortcuts', () => {
     expect(container.querySelector('[data-testid="delete-confirm"]')).not.toBeNull();
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }),
+      );
     });
 
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();

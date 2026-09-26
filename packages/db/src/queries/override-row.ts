@@ -8,15 +8,12 @@ import type {
   RoleModelPreferences,
   TaskModelPreferences,
   VerbosityLevel,
-  WorkflowId,
 } from '@goodboy/types';
 import { isJsonArray, isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
 
 export type OverrideRow = {
   readonly default_provider_id: string | null;
-  readonly default_workflow_id: string | null;
   readonly default_branch_prefix: string | null;
-  readonly parallel_enabled: number | null;
   readonly default_verbosity: string | null;
   readonly provider_bindings: string | null;
   readonly task_models: string | null;
@@ -96,9 +93,7 @@ type Params = {
 
 export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   defaultProviderId: row.default_provider_id as ProviderId | null,
-  defaultWorkflowId: row.default_workflow_id as WorkflowId | null,
   defaultBranchPrefix: row.default_branch_prefix,
-  parallelEnabled: row.parallel_enabled === null ? null : row.parallel_enabled !== 0,
   defaultVerbosity: row.default_verbosity as VerbosityLevel | null,
   providerBindings: parseJsonColumn<ProviderBindings | null>({
     value: row.provider_bindings,

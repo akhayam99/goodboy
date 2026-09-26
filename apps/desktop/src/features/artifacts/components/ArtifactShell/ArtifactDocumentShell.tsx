@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RotateCw, Trash2 } from 'lucide-react';
 import { Button, InlineConfirm, Textarea, formatError } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
-import { useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -53,7 +53,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
   const exporter = useArtifactExport({ artifact });
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
@@ -292,7 +292,9 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
               artifact={artifact}
               plan={plan}
               agents={agents}
-              onOpenAgent={(agent) => void selectAgent(sessionId, agent.id)}
+              onOpenAgent={(agent) =>
+                navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })
+              }
               onOpenDetails={() =>
                 openDrawer({
                   kind: 'artifact',
@@ -311,7 +313,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         className="flex min-w-0 flex-col gap-4"
       >
         {alert === null ? null : (
-          <span role="alert" className="text-2xs text-danger">
+          <span role="alert" className="text-secondary text-danger">
             {alert}
           </span>
         )}
@@ -321,7 +323,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             aria-label={`Edit ${artifact.title}`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="artifact-prose-measure w-full font-mono text-sm"
+            className="artifact-prose-measure w-full font-mono text-body"
             autoGrow
             minRows={12}
             maxRows={80}
@@ -338,7 +340,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             })}
             onOpenPart={(row) => {
               if (hasRun && row.agentId !== null) {
-                void selectAgent(sessionId, row.agentId);
+                navigate({ to: agentPlace({ sessionId, agentId: row.agentId }) });
                 return;
               }
               openDrawer({

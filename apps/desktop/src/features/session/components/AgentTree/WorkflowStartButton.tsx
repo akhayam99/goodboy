@@ -24,7 +24,7 @@ export const WorkflowStartButton = ({ sessionId }: Props) => {
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-subtle px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-hover"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-subtle px-3 py-1.5 text-label font-medium text-foreground ring-1 ring-border-soft transition-colors hover:bg-hover"
         >
           <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Start a workflow

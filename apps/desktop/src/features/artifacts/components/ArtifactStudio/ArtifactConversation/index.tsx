@@ -47,13 +47,16 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
           <div className="flex min-w-0 flex-1 items-baseline gap-2">
             <span
               data-testid="artifact-conversation-recipient"
-              className="shrink-0 text-xs text-foreground"
+              className="shrink-0 text-label text-foreground"
             >
               {agent === null
                 ? 'the agent behind this artifact is gone'
                 : `writing to ${agent.name}`}
             </span>
-            <span className="min-w-0 truncate text-2xs text-muted-foreground" title={followUpNote}>
+            <span
+              className="min-w-0 truncate text-secondary text-muted-foreground"
+              title={followUpNote}
+            >
               {followUpNote}
             </span>
           </div>
@@ -79,7 +82,7 @@ export const ArtifactConversation = ({ sessionId, artifact, agent, isWorkflowOwn
       <Divider />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {session === null || !hasAgent ? (
-          <div className={cn('text-2xs text-muted-foreground', PANE_RHYTHM.body)}>
+          <div className={cn('text-secondary text-muted-foreground', PANE_RHYTHM.body)}>
             no conversation to show. this artifact has no agent to talk to in this session.
           </div>
         ) : (

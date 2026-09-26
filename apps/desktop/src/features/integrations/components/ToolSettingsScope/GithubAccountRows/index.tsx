@@ -34,7 +34,7 @@ export const GithubAccountRows = ({ workspaceId, connection }: Props) => {
   };
 
   if (status === null) {
-    return <p className="text-xs text-muted-foreground">Checking the GitHub connection</p>;
+    return <p className="text-label text-muted-foreground">Checking the GitHub connection</p>;
   }
 
   if (!status.available) {

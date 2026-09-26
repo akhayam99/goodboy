@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { sessionWorktreePath } from './sessionWorktreePath';
 import type { GetFn } from './types';
@@ -6,6 +6,7 @@ import type { GetFn } from './types';
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const MOUNT_ID = 'mount-1' as MountId;
 
 const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
   (() => ({
@@ -15,6 +16,7 @@ const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
     sessionProjectMounts: {
       [SESSION_ID]: [
         {
+          mountId: MOUNT_ID,
           projectId: PROJECT_ID,
           mountName: 'repo',
           worktreePath: worktrees[SESSION_ID]?.[0] ?? '',
@@ -28,18 +30,22 @@ const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
   })) as unknown as GetFn;
 
 describe('sessionWorktreePath', () => {
-  it('returns the primary worktree of the session', () => {
+  it('returns the worktree of the mount it is given', () => {
     const get = getFn({ [SESSION_ID]: ['/tmp/wt', '/tmp/wt-secondary'] });
 
-    expect(sessionWorktreePath({ get, sessionId: SESSION_ID })).toBe('/tmp/wt');
+    expect(sessionWorktreePath({ get, sessionId: SESSION_ID, mountId: MOUNT_ID })).toBe('/tmp/wt');
   });
 
   it('throws when the session has no worktree', () => {
-    expect(() => sessionWorktreePath({ get: getFn({}), sessionId: SESSION_ID })).toThrow(
-      'no worktree',
-    );
     expect(() =>
-      sessionWorktreePath({ get: getFn({ [SESSION_ID]: [''] }), sessionId: SESSION_ID }),
+      sessionWorktreePath({ get: getFn({}), sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).toThrow('no worktree');
+    expect(() =>
+      sessionWorktreePath({
+        get: getFn({ [SESSION_ID]: [''] }),
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+      }),
     ).toThrow('no worktree');
   });
 });

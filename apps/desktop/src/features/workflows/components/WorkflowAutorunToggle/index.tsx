@@ -11,7 +11,7 @@ export const WorkflowAutorunToggle = ({ isOn, onToggle }: Props) => (
       label="Autorun"
       checked={isOn}
       onChange={() => onToggle()}
-      className="min-h-7 text-2xs font-medium"
+      className="min-h-7 text-secondary font-medium"
     />
   </span>
 );

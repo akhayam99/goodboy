@@ -180,7 +180,7 @@ export const Dialog = ({
             <header className="flex shrink-0 items-start justify-between gap-4 px-6 py-4">
               <div className="flex min-w-0 flex-col gap-1">
                 {title ? (
-                  <h2 id={titleId} className="text-sm font-semibold tracking-tight text-foreground">
+                  <h2 id={titleId} className="text-heading tracking-tight text-foreground">
                     {title}
                   </h2>
                 ) : null}
@@ -220,7 +220,7 @@ export const Dialog = ({
             <Divider orientation="vertical" />
             <div ref={bodyRef} className="min-w-0 flex-1">
               <ScrollFade
-                className="min-w-0 flex-1 text-sm"
+                className="min-w-0 flex-1 text-body"
                 viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
               >
                 {children}
@@ -230,7 +230,7 @@ export const Dialog = ({
         ) : (
           <div ref={bodyRef} className="min-h-0 flex-1">
             <ScrollFade
-              className="min-h-0 flex-1 text-sm"
+              className="min-h-0 flex-1 text-body"
               viewportClassName={cn('flex flex-col', bodyClassName ?? 'gap-4 px-6 py-5')}
             >
               {children}

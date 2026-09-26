@@ -15,10 +15,8 @@ export const ProvidersStep = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          Connect a provider
-        </h2>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+        <h2 className="text-display text-foreground">Connect a provider</h2>
+        <p className="mx-auto max-w-md text-prose text-muted-foreground">
           Every agent runs through a provider, so connect at least one.
         </p>
       </div>

@@ -18,8 +18,8 @@ export const LegendaGrid = ({ rows }: Props) => (
           aria-hidden
           className={cn('inline-block h-2.5 w-2.5 shrink-0 rounded-full', row.dot)}
         />
-        <span className="w-28 shrink-0 text-sm font-medium text-foreground">{row.label}</span>
-        <span className="text-sm text-muted-foreground">{row.desc}</span>
+        <span className="w-28 shrink-0 text-row text-foreground">{row.label}</span>
+        <span className="text-body text-muted-foreground">{row.desc}</span>
       </li>
     ))}
   </ul>

@@ -7,7 +7,7 @@ type Props = {
 export const WorktreeColumns = ({ isSelecting }: Props) => (
   <div
     aria-hidden
-    className="flex h-6 items-center gap-2.5 px-2 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
+    className="flex h-6 items-center gap-2.5 px-2 text-eyebrow text-faint-foreground"
   >
     {isSelecting ? <span className={STORAGE_COLUMN.check} /> : null}
     <span className={STORAGE_COLUMN.node} />

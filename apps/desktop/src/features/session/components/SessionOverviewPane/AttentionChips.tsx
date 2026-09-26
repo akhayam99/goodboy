@@ -4,7 +4,10 @@ import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { standaloneArtifacts } from '../../../artifacts/standaloneArtifacts';
-import { useDestinationCounts } from '../../hooks/useDestinationCounts';
+import { useSessionOpenQuestions } from '../../../../store';
+import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
+import { conversationsWaiting } from '../../../resolve/conversationsWaiting';
+import { selectOpenQuestions } from './lib';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -37,12 +40,13 @@ const AttentionChip = ({ icon: Icon, label, count, tooltip, onOpen }: ChipProps)
 
 export const AttentionChips = ({ sessionId, onSelectLens }: Props) => {
   const artifacts = useAppStore((s) => s.sessionArtifacts[sessionId] ?? EMPTY_ARRAY);
-  const counts = useDestinationCounts({ sessionId });
+  const rows = useResolveQueueRows({ sessionId });
+  const openQuestions = useSessionOpenQuestions(sessionId);
   const artifactCount = standaloneArtifacts({ artifacts }).filter(
     (artifact) => artifact.status !== 'discarded',
   ).length;
-  const reviewCount = counts.review ?? 0;
-  const questionCount = counts.questions ?? 0;
+  const reviewCount = conversationsWaiting({ rows });
+  const questionCount = selectOpenQuestions(openQuestions).length;
 
   if (artifactCount === 0 && reviewCount === 0 && questionCount === 0) {
     return null;

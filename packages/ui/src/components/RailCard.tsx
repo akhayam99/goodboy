@@ -43,7 +43,7 @@ export const RailCard = ({
     )}
   >
     <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-      <span className="line-clamp-2 text-sm font-medium text-foreground">{title}</span>
+      <span className="line-clamp-2 text-row text-foreground">{title}</span>
       {status != null ? <span className="flex flex-wrap items-center gap-2">{status}</span> : null}
       {meta}
     </span>

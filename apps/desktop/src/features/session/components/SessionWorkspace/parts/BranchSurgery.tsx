@@ -58,12 +58,12 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
           <li key={commit.sha} className="flex min-w-0 flex-col gap-1">
             <div className="flex min-w-0 items-baseline gap-2">
               <GitCommit size={11} aria-hidden className="shrink-0 text-faint-foreground" />
-              <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+              <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
                 {commit.shortSha}
               </span>
               <span
                 className={cn(
-                  'truncate text-2xs',
+                  'truncate text-secondary',
                   commit.pushed ? 'text-faint-foreground' : 'text-foreground',
                 )}
                 title={commit.subject}
@@ -73,7 +73,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
             </div>
             {commit.pushed ? (
               <span
-                className="pl-5 text-2xs italic text-faint-foreground"
+                className="pl-5 text-secondary italic text-faint-foreground"
                 title="Rewriting it would need a force push"
               >
                 already pushed
@@ -114,7 +114,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
                         onChange={(event) => setDraft({ ...draft, message: event.target.value })}
                         placeholder={PROMPT.squash}
                         aria-label={PROMPT.squash}
-                        className="h-7 text-xs"
+                        className="h-7 text-label"
                       />
                     }
                     onConfirm={submit}
@@ -127,7 +127,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
                       onChange={(event) => setDraft({ ...draft, message: event.target.value })}
                       placeholder={PROMPT.amend}
                       aria-label={PROMPT.amend}
-                      className="h-7 text-xs"
+                      className="h-7 text-label"
                     />
                     <div className="flex items-center gap-1">
                       <GhostActionButton
@@ -150,7 +150,7 @@ export const BranchSurgery = ({ commits, headSha, onAmend, onSquash }: Props) =>
           </li>
         ))}
       </ul>
-      {error !== null && <p className="text-2xs text-danger">{error}</p>}
+      {error !== null && <p className="text-secondary text-danger">{error}</p>}
     </div>
   );
 };

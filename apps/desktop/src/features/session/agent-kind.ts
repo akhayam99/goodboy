@@ -238,62 +238,62 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
   scout: {
     bg: 'bg-agent-scout',
     fg: 'text-agent-scout',
-    label: AGENT_KIND_META.scout.label,
+    label: AGENT_KIND_META.scout.noun,
   },
   planner: {
     bg: 'bg-agent-planner',
     fg: 'text-agent-planner',
-    label: AGENT_KIND_META.planner.label,
+    label: AGENT_KIND_META.planner.noun,
   },
   implementer: {
     bg: 'bg-agent-implementer',
     fg: 'text-agent-implementer',
-    label: AGENT_KIND_META.implementer.label,
+    label: AGENT_KIND_META.implementer.noun,
   },
   debugger: {
     bg: 'bg-agent-debugger',
     fg: 'text-agent-debugger',
-    label: AGENT_KIND_META.debugger.label,
+    label: AGENT_KIND_META.debugger.noun,
   },
   tester: {
     bg: 'bg-agent-tester',
     fg: 'text-agent-tester',
-    label: AGENT_KIND_META.tester.label,
+    label: AGENT_KIND_META.tester.noun,
   },
   reviewer: {
     bg: 'bg-agent-reviewer',
     fg: 'text-agent-reviewer',
-    label: AGENT_KIND_META.reviewer.label,
+    label: AGENT_KIND_META.reviewer.noun,
   },
   'pr-reviewer': {
     bg: 'bg-agent-pr-reviewer',
     fg: 'text-agent-pr-reviewer',
-    label: AGENT_KIND_META['pr-reviewer'].label,
+    label: AGENT_KIND_META['pr-reviewer'].noun,
   },
   docs: {
     bg: 'bg-agent-docs',
     fg: 'text-agent-docs',
-    label: AGENT_KIND_META.docs.label,
+    label: AGENT_KIND_META.docs.noun,
   },
   report: {
     bg: 'bg-agent-report',
     fg: 'text-agent-report',
-    label: AGENT_KIND_META.report.label,
+    label: AGENT_KIND_META.report.noun,
   },
   wireframe: {
     bg: 'bg-agent-wireframe',
     fg: 'text-agent-wireframe',
-    label: AGENT_KIND_META.wireframe.label,
+    label: AGENT_KIND_META.wireframe.noun,
   },
   resolver: {
     bg: 'bg-agent-resolver',
     fg: 'text-agent-resolver',
-    label: AGENT_KIND_META.resolver.label,
+    label: AGENT_KIND_META.resolver.noun,
   },
   generic: {
     bg: 'bg-agent-generic',
     fg: 'text-agent-generic',
-    label: AGENT_KIND_META.generic.label,
+    label: AGENT_KIND_META.generic.noun,
   },
 };
 
@@ -391,7 +391,7 @@ export const ROLE_LABEL: Record<AgentRole, string> = {
   report: 'Report',
   wireframe: 'Wireframe',
   resolver: 'Resolver',
-  custom: 'Custom',
+  custom: 'Generalist',
 };
 
 export type AgentKindRouting = {

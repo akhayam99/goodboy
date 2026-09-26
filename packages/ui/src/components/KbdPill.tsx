@@ -7,7 +7,7 @@ export const KbdPill = ({ className, ...rest }: KbdPillProps) => {
   return (
     <kbd
       className={cn(
-        'inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 font-mono text-xs text-muted-foreground',
+        'inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border bg-muted px-1 text-code text-muted-foreground',
         className,
       )}
       {...rest}

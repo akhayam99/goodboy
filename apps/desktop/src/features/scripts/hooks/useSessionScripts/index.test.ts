@@ -104,7 +104,7 @@ describe('useSessionScripts', () => {
               packageName: 'ledger-core',
               relDir: '',
               manager: 'pnpm',
-              scripts: [{ name: 'test', command: 'pnpm run test' }],
+              scripts: [{ name: 'test', command: 'pnpm run test', body: 'vitest run' }],
             },
           ],
         },

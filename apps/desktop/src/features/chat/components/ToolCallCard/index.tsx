@@ -79,7 +79,10 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
               {status === 'failed' && (
                 <span
-                  className={cn('shrink-0 text-2xs uppercase tracking-eyebrow', dangerTint.text)}
+                  className={cn(
+                    'shrink-0 text-secondary uppercase tracking-eyebrow',
+                    dangerTint.text,
+                  )}
                 >
                   error
                 </span>
@@ -95,7 +98,7 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
           type="button"
           onClick={() => setRawMode((value) => !value)}
           data-testid="raw-toggle"
-          className="rounded-md px-1.5 py-0.5 text-2xs text-faint-foreground hover:bg-hover hover:text-foreground"
+          className="rounded-md px-1.5 py-0.5 text-secondary text-faint-foreground hover:bg-hover hover:text-foreground"
         >
           {rawMode ? 'structured' : 'raw json'}
         </button>
@@ -103,13 +106,13 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
       {rawMode ? (
         <>
           <Section label="input">
-            <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
+            <pre className="min-w-0 whitespace-pre-wrap break-words text-code text-muted-foreground">
               {JSON.stringify(item.input, null, 2)}
             </pre>
           </Section>
           {item.ended ? (
             <Section label="output">
-              <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-xs text-muted-foreground">
+              <pre className="min-w-0 whitespace-pre-wrap break-words text-code text-muted-foreground">
                 {JSON.stringify(item.output, null, 2)}
               </pre>
             </Section>
@@ -118,13 +121,13 @@ export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
       ) : (
         <>
           <Section label="input">
-            <div className="min-w-0 text-xs">
+            <div className="min-w-0 text-label">
               <StructuredData data={item.input} label="input" hasImages={hasInputImages} />
             </div>
           </Section>
           {item.ended ? (
             <Section label="output">
-              <div className="min-w-0 text-xs">
+              <div className="min-w-0 text-label">
                 <StructuredData data={item.output} label="output" hasImages={hasOutputImages} />
               </div>
             </Section>

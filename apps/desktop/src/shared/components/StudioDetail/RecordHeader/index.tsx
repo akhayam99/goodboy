@@ -11,6 +11,7 @@ import { ICON_SIZE } from '../../conceptIcons';
 import { RecordActions } from '../RecordActions';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
 import { RecordOverflowMenu } from './RecordOverflowMenu';
+import { useInheritedPaneActions } from '../../PaneShell/paneActionsContext';
 
 type ExternalRef = {
   readonly url: string;
@@ -44,6 +45,7 @@ export const RecordHeader = ({
   const { copy } = useCopyLink();
   const hostLabel = integrationLabel({ provider });
   const armed = verbs.secondary.find((verb) => verb.key === armedKey) ?? null;
+  const inheritedActions = useInheritedPaneActions();
 
   useEffect(() => {
     setArmedKey(null);
@@ -53,11 +55,12 @@ export const RecordHeader = ({
     <div data-slot="record-header" className="flex min-w-0 flex-col gap-2">
       <div className="flex h-7 min-w-0 items-center gap-2">
         <IntegrationGlyph provider={provider} size="xs" useBrandColor />
-        <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+        <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
           {identifier}
         </span>
         {state}
         <span className="min-w-0 flex-1" />
+        {inheritedActions}
         {externalRef != null ? (
           <IconButton
             icon={ArrowUpRight}

@@ -47,7 +47,6 @@ import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
-import { useCloseStaleDrawer } from './app/hooks/useCloseStaleDrawer';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 
 const KEEP_ALIVE_CAP = 5;
@@ -62,7 +61,6 @@ export const App = () => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
-  useCloseStaleDrawer();
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);
@@ -214,11 +212,6 @@ export const App = () => {
       <AppShell
         topBar={
           <AppTopBar
-            sidebar={{
-              hasSidebar: arrangement.leftSlot !== 'none',
-              isCollapsed: sessionSidebar.isCollapsed,
-              onToggle: sessionSidebar.toggle,
-            }}
             onOpenSpend={openSpend}
             onOpenScript={openScript}
             openProviderId={settingsProviderId}
@@ -242,9 +235,9 @@ export const App = () => {
         leftSidebar={
           currentSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail />
+              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} />
             ) : (
-              <SessionNavSidebar session={currentSession} />
+              <SessionNavSidebar session={currentSession} onToggleSidebar={sessionSidebar.toggle} />
             )
           ) : undefined
         }
@@ -262,7 +255,12 @@ export const App = () => {
               onHold={sessionSidebar.holdPeek}
               onRelease={sessionSidebar.releasePeek}
             >
-              <SessionNavSidebar session={currentSession} onNavigate={sessionSidebar.closePeek} />
+              <SessionNavSidebar
+                session={currentSession}
+                onNavigate={sessionSidebar.closePeek}
+                isCollapsed={sessionSidebar.isCollapsed}
+                onToggleSidebar={sessionSidebar.toggle}
+              />
             </SidebarPeekOverlay>
           ) : undefined
         }

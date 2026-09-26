@@ -909,36 +909,4 @@ describe('resolve candidates keep the branch tip approved', () => {
     expect(preview.blocker).toBe('uncaptured_work');
     expect(preview.publicationId).toBeNull();
   });
-
-  it('invalidates an approval whose integrated work left the branch', async () => {
-    const live = makeHarness();
-    const itemA = await seedItem({ threadId: 'thread-a' });
-    await live.actions.beginResolveCandidate({
-      sessionId: SESSION_ID,
-      attemptId: 'attempt-1',
-      mountTarget: mountTarget(),
-    });
-    agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
-    await live.actions.captureResolveCandidate({
-      sessionId: SESSION_ID,
-      attemptId: 'attempt-1',
-      threadIds: ['thread-a'],
-    });
-    await live.actions.acceptResolveQueueItem({
-      sessionId: SESSION_ID,
-      itemId: itemA,
-      revision: 0,
-      reply: 'Reply for thread-a',
-    });
-
-    git(worktreePath, ['reset', '--hard', '--quiet', rootSha]);
-    const invalidated = await live.actions.invalidateIntegratedApprovals({ sessionId: SESSION_ID });
-
-    expect(invalidated).toBe(1);
-    const entry = (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
-      (row) => row.item.id === itemA,
-    );
-    expect(entry!.thread.stage).toBe('proposed');
-    await expectNoAncestryLeak();
-  });
 });

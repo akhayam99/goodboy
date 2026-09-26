@@ -24,7 +24,7 @@ export const startRunnableScript = ({
     sessionId,
     scriptId: script.key,
     name: script.name,
-    command: script.command,
+    command: script.invocation,
     cwd: discoveredScriptCwd({ worktreePath, relDir: script.relDir }),
     mountId,
   });

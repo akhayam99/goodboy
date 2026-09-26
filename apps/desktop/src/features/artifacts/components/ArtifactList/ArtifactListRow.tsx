@@ -54,7 +54,7 @@ export const ArtifactListRow = ({ row, onOpen, onStop, onRetry }: Props) => (
       <span
         className={cn(
           WORK_ROW.title,
-          'max-w-[60%] shrink-0 truncate text-sm leading-5',
+          'max-w-[60%] shrink-0 truncate text-body',
           row.isFaint ? 'text-faint-foreground' : 'text-foreground',
         )}
         title={row.title}
@@ -64,7 +64,7 @@ export const ArtifactListRow = ({ row, onOpen, onStop, onRetry }: Props) => (
       <span
         className={cn(
           WORK_ROW.state,
-          'min-w-0 truncate text-xs leading-4',
+          'min-w-0 truncate text-label',
           row.isFaint ? 'text-faint-foreground' : SENTENCE_CLASS[row.sentenceTone],
         )}
       >
@@ -73,7 +73,7 @@ export const ArtifactListRow = ({ row, onOpen, onStop, onRetry }: Props) => (
     </span>
     <span
       data-testid="artifact-row-meta"
-      className="flex shrink-0 items-center gap-3 text-2xs leading-4 tabular-nums text-muted-foreground"
+      className="flex shrink-0 items-center gap-3 text-secondary tabular-nums text-muted-foreground"
     >
       <span className="flex w-20 shrink-0 items-center gap-1.5 truncate @max-[520px]:hidden">
         <ArtifactKindGlyph kind={row.kind} size={ICON_SIZE.row} />

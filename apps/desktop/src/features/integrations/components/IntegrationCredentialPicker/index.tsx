@@ -51,7 +51,7 @@ export const IntegrationCredentialPicker = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-semibold text-foreground">Saved personal API keys</span>
+      <span className="text-label font-semibold text-foreground">Saved personal API keys</span>
       <p className="text-2xs leading-relaxed text-muted-foreground">
         A key you entered once is offered to every project. Pick one to link this project without
         typing it again.
@@ -72,7 +72,7 @@ export const IntegrationCredentialPicker = ({
         onClick={() => onSelect(null)}
         disabled={isDisabled}
         aria-pressed={selectedCredentialId === null}
-        className="flex items-center gap-2 rounded-md border border-dashed border-border-soft px-3 py-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="flex items-center gap-2 rounded-md border border-dashed border-border-soft px-3 py-2 text-label text-muted-foreground hover:text-foreground disabled:opacity-50"
       >
         <KeyRound size={ICON_SIZE.row} aria-hidden />
         Use a new personal API key

@@ -82,7 +82,7 @@ export const DiffToolbar = ({
       </AnchoredPopover>
       <div className="ml-auto flex items-center gap-2">
         {viewedCount !== null ? (
-          <span className="flex items-center gap-1.5 text-2xs tabular-nums text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-secondary tabular-nums text-muted-foreground">
             {viewedCount} of {files.length} viewed
             <span
               aria-hidden

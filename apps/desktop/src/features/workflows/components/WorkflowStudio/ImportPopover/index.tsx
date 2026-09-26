@@ -99,11 +99,11 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search workflows"
-            className="h-7 pl-7 text-xs"
+            className="h-7 pl-7 text-label"
           />
         </label>
         {total > 0 ? (
-          <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
             {catalogCount({ workflows: total, workspaces: readyWithWorkflows.length })}
           </span>
         ) : null}
@@ -124,7 +124,7 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
             ))}
           </div>
         ) : (
-          <p className="px-1.5 py-2 text-xs text-muted-foreground">{emptyText}</p>
+          <p className="px-1.5 py-2 text-label text-muted-foreground">{emptyText}</p>
         )}
       </div>
       <PopoverFooter className="flex min-h-10 shrink-0 items-center gap-2 px-3 py-1.5">
@@ -132,8 +132,8 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
           role={importer.importError === null ? undefined : 'alert'}
           className={
             importer.importError === null
-              ? 'min-w-0 flex-1 truncate text-2xs text-muted-foreground'
-              : 'min-w-0 flex-1 truncate text-2xs text-danger'
+              ? 'min-w-0 flex-1 truncate text-secondary text-muted-foreground'
+              : 'min-w-0 flex-1 truncate text-secondary text-danger'
           }
         >
           {importer.importError === null

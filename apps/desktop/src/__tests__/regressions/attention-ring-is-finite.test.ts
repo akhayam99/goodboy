@@ -66,7 +66,7 @@ describe('motion-gated animation declarations', () => {
   const lines = source.split('\n');
   const ranges = findNoPreferenceRanges({ lines });
 
-  it.each(['spin-border', 'border-pulse', 'attention-ring'])(
+  it.each(['spin-border', 'attention-ring'])(
     '%s is declared only inside a prefers-reduced-motion: no-preference block',
     (animationName) => {
       const lineIndex = findDeclarationLine({ lines, animationName });

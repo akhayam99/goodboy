@@ -154,7 +154,7 @@ export const LaunchSessionPanel = ({
         />
       )}
       {briefTitle !== null && (
-        <p className="px-2 text-xs font-semibold text-foreground">{briefTitle}</p>
+        <p className="px-2 text-label font-semibold text-foreground">{briefTitle}</p>
       )}
       <Textarea
         value={goal}
@@ -181,17 +181,14 @@ export const LaunchSessionPanel = ({
 
       <footer className="flex items-center justify-end gap-2 px-1">
         {(brief?.status === 'loading' || readyBrief !== null) && (
-          <p className="min-w-0 flex-1 truncate px-1 text-2xs text-faint-foreground">
+          <p className="min-w-0 flex-1 truncate px-1 text-secondary text-faint-foreground">
             Edited text is never replaced by the brief.
           </p>
         )}
-        <Button
-          size="sm"
-          onClick={() => void launch()}
-          disabled={!canLaunch}
-          className={cn('shrink-0', isBusy && 'animate-border-pulse')}
-        >
-          {isBusy ? 'Launching…' : 'Launch session'}
+        <Button size="sm" onClick={() => void launch()} disabled={!canLaunch} className="shrink-0">
+          <span className={cn(isBusy && 'text-shimmer')}>
+            {isBusy ? 'Launching…' : 'Launch session'}
+          </span>
           {!isBusy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
         </Button>
       </footer>

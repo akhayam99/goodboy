@@ -45,7 +45,7 @@ export const useRecordFrame = ({
     if (linkedSessionId == null) {
       return;
     }
-    void openSession({ sessionId: linkedSessionId, onOpened: onLaunched });
+    openSession({ sessionId: linkedSessionId, onOpened: onLaunched });
   }, [launchRequest, linkedSessionId, openSession, onLaunched]);
 
   const primary =

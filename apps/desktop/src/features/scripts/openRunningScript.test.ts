@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../store/slices/navigation/place';
 import type { MountId, SessionId } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
-    setCurrentSession: vi.fn(async () => undefined),
+    navigate: vi.fn(),
     openDrawer: vi.fn(),
   },
 }));
 
-vi.mock('../../store', () => ({
+vi.mock('../../store', async () => ({
+  ...(await import('../../store/slices/navigation/place')),
   useAppStore: { getState: () => store },
 }));
 
@@ -18,7 +20,7 @@ const SESSION_ID = 'session-1' as SessionId;
 const MOUNT_ID = 'mount-ledger' as MountId;
 
 beforeEach(() => {
-  store.setCurrentSession.mockClear();
+  store.navigate.mockClear();
   store.openDrawer.mockClear();
 });
 
@@ -35,7 +37,7 @@ describe('openRunningScript', () => {
       },
     });
 
-    expect(store.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
+    expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
     expect(store.openDrawer).toHaveBeenCalledWith({
       kind: 'scriptRun',
       sessionId: SESSION_ID,

@@ -29,7 +29,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5 border-l-2 border-border-soft py-0.5 pl-3">
-      <p className="text-2xs font-medium text-foreground">
+      <p className="text-secondary font-medium text-foreground">
         {sharedCandidateSentence({ count: members.length })}
       </p>
       <ul className="flex min-w-0 flex-col gap-1">
@@ -38,7 +38,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
             <button
               type="button"
               onClick={() => onSelectMember(member.threadId)}
-              className="min-w-0 flex-1 truncate rounded-sm text-left text-2xs text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="min-w-0 flex-1 truncate rounded-sm text-left text-secondary text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {member.title === null ? member.threadId : inlineMarkdownText({ text: member.title })}
             </button>
@@ -51,7 +51,7 @@ export const SharedCandidateNote = ({ members, onSelectMember }: Props) => {
           </li>
         ))}
       </ul>
-      {warning !== null && <p className="text-2xs text-warning">{warning}</p>}
+      {warning !== null && <p className="text-secondary text-warning">{warning}</p>}
     </div>
   );
 };

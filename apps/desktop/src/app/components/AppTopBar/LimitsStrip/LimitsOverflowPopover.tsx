@@ -66,7 +66,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
           aria-expanded={isOpen}
           onClick={toggle}
           className={cn(
-            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-2xs font-medium tabular-nums text-muted-foreground motion-safe:transition-colors',
+            'flex h-6 shrink-0 items-center gap-0.5 rounded-md px-1.5 text-secondary font-medium tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
@@ -92,7 +92,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   close();
                   onOpen(chip);
                 }}
-                className="flex h-8 w-full items-center gap-2 rounded-sm px-2 text-xs hover:bg-hover"
+                className="flex h-8 w-full items-center gap-2 rounded-sm px-2 text-label hover:bg-hover"
               >
                 <Glyph
                   size={ICON_SIZE.row}
@@ -109,7 +109,7 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                   isStale={chip.isStale}
                   className="w-15"
                 />
-                <span className="flex-1 truncate text-right text-2xs text-faint-foreground">
+                <span className="flex-1 truncate text-right text-secondary text-faint-foreground">
                   {rowValue({ chip, nowMs })}
                 </span>
               </button>

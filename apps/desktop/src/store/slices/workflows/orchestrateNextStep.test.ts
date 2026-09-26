@@ -725,7 +725,6 @@ describe('orchestrateNextStep', () => {
   });
 
   it('metadata reaches the provider request', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
     orchestratorTransport.stdout = anthropicReply(
       [
         '<<orchestrator>>',
@@ -789,28 +788,6 @@ describe('orchestrateNextStep', () => {
         effort: 'high',
       }),
     );
-    vi.unstubAllEnvs();
-  });
-
-  it('leaves catalog metadata out of the provider request while the flag is off', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
-    orchestratorTransport.stdout = anthropicReply(
-      [
-        '<<orchestrator>>',
-        JSON.stringify({ action: 'done', reason: 'all set' }),
-        '<</orchestrator>>',
-      ].join('\n'),
-    );
-    const { set, get } = harness(baseState());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    const prompt = orchestratorTransport.requests[0]!['userMessage'] as string;
-    expect(prompt).toContain('anthropic/opus-5 - Opus 5 - efforts: low, medium, high, xhigh, max');
-    expect(prompt).not.toContain('unassessed');
-    expect(prompt).not.toMatch(/ ctx \d+k /);
-    expect(prompt).not.toMatch(/\$[\d.]+\/\$[\d.]+/);
-    vi.unstubAllEnvs();
   });
 
   it('drops a cooling provider out of the menu it offers', async () => {
@@ -945,41 +922,7 @@ describe('orchestrateNextStep', () => {
     expect(savedStep().orchestratorReason).toBe('This one is hard.');
   });
 
-  it('never invents a difficulty for an unprofiled step while the metadata flag is off', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
-    decideSpy.mockResolvedValue({
-      usage: NO_USAGE,
-      decision: {
-        action: 'next',
-        reason: 'This one is hard.',
-        step: {
-          name: 'Implement',
-          role: 'implementer',
-          promptPrefix: [
-            'Rework the migration runner so every segment is transactional.',
-            '```ts',
-            'const run = () => {};',
-            '```',
-          ].join('\n'),
-          model: 'fable-5',
-        },
-      },
-    });
-    const { set, get } = harness(baseState());
-
-    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
-
-    expect(savedStep().taskProfile).toEqual({
-      taskType: 'general',
-      difficulty: 'unknown',
-      basis: 'unknown',
-    });
-    expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBeUndefined();
-    vi.unstubAllEnvs();
-  });
-
-  it('labels a difficulty it read off the step text as heuristic when the flag is on', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+  it('labels a difficulty it read off the step text as heuristic', async () => {
     decideSpy.mockResolvedValue({
       usage: NO_USAGE,
       decision: {
@@ -1008,7 +951,6 @@ describe('orchestrateNextStep', () => {
       basis: 'heuristic',
     });
     expect(decideSpy.mock.calls[0]![0].isModelMetadataEnabled).toBe(true);
-    vi.unstubAllEnvs();
   });
 
   it('runs a pick from another connected provider than the one deciding', async () => {

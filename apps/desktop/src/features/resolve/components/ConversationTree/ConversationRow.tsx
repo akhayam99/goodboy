@@ -106,23 +106,25 @@ export const ConversationRow = ({
         <span
           aria-hidden
           title={note.author}
-          className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-subtle text-3xs font-medium uppercase text-muted-foreground"
+          className="inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-subtle text-meta font-medium uppercase text-muted-foreground"
         >
           {note.author.charAt(0)}
         </span>
       )}
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         <span
-          className={cn(WORK_ROW.title, 'min-w-0 truncate text-sm leading-5 text-foreground')}
+          className={cn(WORK_ROW.title, 'min-w-0 truncate text-body text-foreground')}
           title={body ?? undefined}
         >
           {title}
         </span>
         {note?.line != null && (
-          <span className="shrink-0 font-mono text-2xs text-faint-foreground">:{note.line}</span>
+          <span className="shrink-0 font-mono text-secondary text-faint-foreground">
+            :{note.line}
+          </span>
         )}
         {heldBack !== null && (
-          <span className={cn(WORK_ROW.state, 'shrink-0 text-2xs text-warning')}>
+          <span className={cn(WORK_ROW.state, 'shrink-0 text-secondary text-warning')}>
             {heldBackChipLabel({ kind: heldBack })}
           </span>
         )}
@@ -130,7 +132,7 @@ export const ConversationRow = ({
           <span
             className={cn(
               WORK_ROW.state,
-              'min-w-0 shrink-0 truncate text-xs leading-4',
+              'min-w-0 shrink-0 truncate text-label',
               SENTENCE_TONE[row.status],
             )}
           >
@@ -138,7 +140,7 @@ export const ConversationRow = ({
           </span>
         )}
       </span>
-      <span className="flex shrink-0 items-center gap-2 text-2xs leading-4 tabular-nums text-muted-foreground">
+      <span className="flex shrink-0 items-center gap-2 text-secondary tabular-nums text-muted-foreground">
         <span className={WORK_META_COLUMN.time}>
           {note === null
             ? ''

@@ -4,11 +4,12 @@ import type {
   AgentId,
   MountId,
   ProjectId,
+  SessionEvent,
   SessionId,
   SessionProjectMount,
   WorktreeStatus,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../app/components/Toast';
@@ -48,6 +49,33 @@ type RebaseTarget = {
 };
 
 const REBASE_AGENT_PREFIX = 'Rebase on ';
+
+const EMPTY_SESSION_EVENTS: ReadonlyArray<SessionEvent> = [];
+
+const EMPTY_REBASING_AGENT_IDS: ReadonlySet<AgentId> = new Set();
+
+type RebasingAgentIdsParams = {
+  readonly events: ReadonlyArray<SessionEvent> | null;
+  readonly mountId: MountId | null;
+};
+
+const rebasingAgentIdsFor = ({ events, mountId }: RebasingAgentIdsParams): ReadonlySet<AgentId> => {
+  if (mountId == null || events == null) {
+    return EMPTY_REBASING_AGENT_IDS;
+  }
+  const ids = new Set<AgentId>();
+  for (const event of events) {
+    const agentId = event.payload?.agentId;
+    if (
+      event.kind === 'rebase_requested' &&
+      event.payload?.mountId === mountId &&
+      agentId != null
+    ) {
+      ids.add(agentId as AgentId);
+    }
+  }
+  return ids;
+};
 
 export const rebasePromptFor = ({
   baseBranch,
@@ -110,9 +138,11 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const phaseRuns = useAppStore((state) =>
     sessionId == null ? null : (state.sessionPhaseRuns[sessionId] ?? null),
   );
+  const sessionEvents = useAppStore((state) =>
+    sessionId == null ? null : (state.sessionEvents?.[sessionId] ?? EMPTY_SESSION_EVENTS),
+  );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const selectAgent = useAppStore((state) => state.selectAgent);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const navigate = useAppStore((state) => state.navigate);
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
@@ -130,11 +160,17 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       }),
     [limitContext, session?.providerPreference.defaultProvider, workspaceOverrides],
   );
+  const rebasingAgentIds = useMemo(
+    () => rebasingAgentIdsFor({ events: sessionEvents, mountId: mountId ?? null }),
+    [sessionEvents, mountId],
+  );
   const isAgentRunning =
+    mountId != null &&
     phaseRuns?.some(
       (agent) =>
         agent.name.startsWith(REBASE_AGENT_PREFIX) &&
-        (agent.status === 'pending' || agent.status === 'running'),
+        (agent.status === 'pending' || agent.status === 'running') &&
+        (agent.id === pending?.agentId || rebasingAgentIds.has(agent.id)),
     ) === true;
   const isRunning = isStarting || isAgentRunning;
   const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
@@ -188,8 +224,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       action: {
         label: 'Open the rebase agent',
         onClick: () => {
-          setActiveLens(sessionId, 'agents');
-          void selectAgent(sessionId, agentId);
+          navigate({ to: agentPlace({ sessionId, agentId }) });
         },
       },
     });
@@ -199,9 +234,8 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     pending,
     phaseRuns,
     reportError,
-    selectAgent,
+    navigate,
     sessionId,
-    setActiveLens,
     showToast,
   ]);
 
@@ -259,8 +293,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         action: {
           label: 'Open the rebase agent',
           onClick: () => {
-            setActiveLens(sessionId, 'agents');
-            void selectAgent(sessionId, agentId);
+            navigate({ to: agentPlace({ sessionId, agentId }) });
           },
         },
       });

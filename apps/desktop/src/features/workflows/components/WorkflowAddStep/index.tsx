@@ -150,12 +150,12 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
         />
       </ul>
       {error !== null ? (
-        <span className="text-2xs font-medium text-danger" role="alert">
+        <span className="text-secondary font-medium text-danger" role="alert">
           {error}
         </span>
       ) : null}
       {error === null && isOrchestrating ? (
-        <span className="text-2xs font-medium text-muted-foreground">
+        <span className="text-secondary font-medium text-muted-foreground">
           the orchestrator is choosing the next step
         </span>
       ) : null}

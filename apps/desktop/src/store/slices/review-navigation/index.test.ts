@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import type { MountId, SessionId } from '@goodboy/types';
+import { sessionPlace } from '../navigation/place';
 import { createReviewNavigationSlice } from './index';
 import { reviewNavigationInitialState } from './state';
 import type { ReviewDestination } from './destination';
@@ -60,7 +61,8 @@ const createHarness = () => {
       calls.push('thread');
       return 'created' as const;
     }),
-    setActiveLens: vi.fn(() => {
+    navigate: vi.fn((params: { readonly to: unknown }) => {
+      void params;
       calls.push('lens');
     }),
   };
@@ -147,7 +149,7 @@ describe('the review navigation target', () => {
     });
 
     expect(outcome).toEqual({ kind: 'unavailable', reason: 'no_mount' });
-    expect(live.state.setActiveLens).not.toHaveBeenCalled();
+    expect(live.state.navigate).not.toHaveBeenCalled();
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
   });
 
@@ -158,7 +160,9 @@ describe('the review navigation target', () => {
 
     expect(outcome).toEqual({ kind: 'opened' });
     expect(live.state.selectSessionPr).not.toHaveBeenCalled();
-    expect(live.state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
     expect(live.get().reviewTargets[SESSION_ID]?.destination).toEqual({ kind: 'home' });
   });
 
@@ -174,7 +178,9 @@ describe('the review navigation target', () => {
     expect(outcome).toEqual({ kind: 'unavailable', reason: 'no_pull_request' });
     expect(live.state.ensureReviewThread).not.toHaveBeenCalled();
     expect(live.get().reviewTargets[SESSION_ID]?.status).toBe('unavailable');
-    expect(live.state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
   });
 
   it('keeps the queue open with no selection when the thread is gone', async () => {
@@ -248,7 +254,7 @@ describe('the review navigation target', () => {
     });
 
     expect(outcome).toEqual({ kind: 'unavailable', reason: 'superseded' });
-    expect(live.state.setActiveLens).not.toHaveBeenCalled();
+    expect(live.state.navigate).not.toHaveBeenCalled();
   });
 
   it('keeps a remote failure on the target so the surface can retry it', async () => {
@@ -310,7 +316,7 @@ describe('the review navigation target', () => {
     expect(live.get().reviewTargets[SESSION_ID]?.destination).toMatchObject({
       threadId: 'PRRT_2',
     });
-    expect(live.state.setActiveLens).toHaveBeenCalledTimes(1);
+    expect(live.state.navigate).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the newest navigation even when mount activation finishes out of order', async () => {

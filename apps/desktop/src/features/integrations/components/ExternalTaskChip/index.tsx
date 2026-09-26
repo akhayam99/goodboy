@@ -96,7 +96,7 @@ export const ExternalTaskChip = ({
     return (
       <span
         title={tooltip}
-        className="inline-flex min-w-0 shrink-0 items-center gap-1 text-2xs text-muted-foreground"
+        className="inline-flex min-w-0 shrink-0 items-center gap-1 text-secondary text-muted-foreground"
       >
         <span aria-hidden className="inline-flex">
           {glyph}
@@ -155,7 +155,7 @@ export const ExternalTaskChip = ({
       title={tooltip}
       aria-label={ariaLabel ?? `open ${task.identifier} in ${meta.label}`}
       className={cn(
-        'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium transition-colors',
+        'inline-flex min-w-0 shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-secondary font-medium transition-colors',
         meta.colorClasses,
       )}
     >

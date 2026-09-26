@@ -16,8 +16,11 @@ export type RunnableScript = {
   readonly key: string;
   readonly kind: 'saved' | 'manifest';
   readonly name: string;
-  readonly command: string;
+  readonly body: string;
+  readonly invocation: string;
+  readonly manager: string;
   readonly source: RunnableScriptSource;
+  readonly packageName: string;
   readonly relDir: string;
   readonly category: ScriptCategory;
   readonly savedId: ProjectScriptId | null;
@@ -30,6 +33,7 @@ export type SessionScriptGroup = {
   readonly branch: string;
   readonly worktreePath: string;
   readonly isReady: boolean;
+  readonly packageCount: number;
   readonly scripts: ReadonlyArray<RunnableScript>;
 };
 
@@ -53,16 +57,16 @@ const categoryRank = ({ category }: { readonly category: ScriptCategory }): numb
   MANIFEST_CATEGORY_ORDER.indexOf(category);
 
 const compareManifest = (left: RunnableScript, right: RunnableScript): number => {
-  const byCategory =
-    categoryRank({ category: left.category }) - categoryRank({ category: right.category });
-  if (byCategory !== 0) {
-    return byCategory;
-  }
   if (left.source !== right.source) {
     return left.source === 'composer' ? 1 : -1;
   }
   if (left.relDir !== right.relDir) {
     return left.relDir === '' ? -1 : left.relDir.localeCompare(right.relDir);
+  }
+  const byCategory =
+    categoryRank({ category: left.category }) - categoryRank({ category: right.category });
+  if (byCategory !== 0) {
+    return byCategory;
   }
   return left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
 };
@@ -82,15 +86,18 @@ const savedScriptsOf = ({ saved, projectId }: SavedParams): ReadonlyArray<Runnab
     .filter((script) => script.projectId === projectId)
     .sort(compareSaved)
     .map((script): RunnableScript => {
-      const command = extractPreviewLine({ body: script.body });
+      const preview = extractPreviewLine({ body: script.body });
       return {
         key: script.id,
         kind: 'saved',
         name: script.name,
-        command,
+        body: preview,
+        invocation: preview,
+        manager: '',
         source: 'saved',
+        packageName: '',
         relDir: '',
-        category: classifyScript({ name: script.name, command }),
+        category: classifyScript({ name: script.name, command: preview }),
         savedId: script.id,
       };
     });
@@ -115,10 +122,13 @@ const manifestScriptsOf = ({
         }),
         kind: 'manifest',
         name: script.name,
-        command: script.command,
+        body: script.body,
+        invocation: script.command,
+        manager: group.manager,
         source: group.source,
+        packageName: group.packageName,
         relDir: group.relDir,
-        category: classifyScript({ name: script.name, command: script.command }),
+        category: classifyScript({ name: script.name, command: script.body }),
         savedId: null,
       })),
     )
@@ -148,6 +158,7 @@ export const buildSessionScripts = ({
       branch: mount.branch,
       worktreePath: mount.worktreePath,
       isReady,
+      packageCount: manifest.filter((group) => group.scripts.length > 0).length,
       scripts: [
         ...savedScriptsOf({ saved, projectId: mount.projectId }),
         ...manifestScriptsOf({ groups: manifest, worktreePath: mount.worktreePath }),

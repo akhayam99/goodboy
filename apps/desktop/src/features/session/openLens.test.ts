@@ -1,44 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
+import { sessionPlace } from '../../store/slices/navigation/place';
 
 const { state } = vi.hoisted(() => ({
   state: {
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
     setScriptsLensScope: vi.fn(),
   },
 }));
 
-vi.mock('../../store', () => ({
+vi.mock('../../store', async () => ({
   useAppStore: { getState: () => state },
+  sessionPlace: (await import('../../store/slices/navigation/place')).sessionPlace,
 }));
 
 import { openLens } from './openLens';
 
 const SESSION_ID = 'sess-1' as SessionId;
 
+const toLens = (lens: Parameters<typeof sessionPlace>[0]['lens']) => ({
+  to: sessionPlace({ sessionId: SESSION_ID, lens }),
+});
+
 beforeEach(() => {
-  state.setActiveLens = vi.fn();
+  state.navigate = vi.fn();
   state.setScriptsLensScope = vi.fn();
 });
 
 describe('openLens', () => {
-  it('sets the lens without toggling when it is already active', () => {
+  it('navigates to the lens as a history voice', () => {
     openLens({ sessionId: SESSION_ID, lens: 'review' });
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
-    openLens({ sessionId: SESSION_ID, lens: 'review' });
-    expect(state.setActiveLens).toHaveBeenLastCalledWith(SESSION_ID, 'review');
+    expect(state.navigate).toHaveBeenCalledWith(toLens('review'));
   });
 
   it('clears the one-shot scripts scope on the way into scripts', () => {
     openLens({ sessionId: SESSION_ID, lens: 'scripts' });
     expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'scripts');
+    expect(state.navigate).toHaveBeenCalledWith(toLens('scripts'));
   });
 
   it('leaves the scripts scope alone for every other destination', () => {
     openLens({ sessionId: SESSION_ID, lens: 'plans' });
     openLens({ sessionId: SESSION_ID, lens: null });
     expect(state.setScriptsLensScope).not.toHaveBeenCalled();
-    expect(state.setActiveLens).toHaveBeenLastCalledWith(SESSION_ID, null);
+    expect(state.navigate).toHaveBeenLastCalledWith(toLens(null));
   });
 });

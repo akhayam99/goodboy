@@ -1,4 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react';
+import { cn } from '../cn';
+import type { ResizeActivity } from '../sheet';
 
 export type ResizeHandleProps = {
   readonly value: number;
@@ -8,6 +10,8 @@ export type ResizeHandleProps = {
   readonly onReset?: () => void;
   readonly side?: 'left' | 'right';
   readonly ariaLabel: string;
+  readonly onActivityChange?: (activity: ResizeActivity) => void;
+  readonly drawsEdge?: boolean;
 };
 
 type DragState = {
@@ -31,8 +35,21 @@ export const ResizeHandle = ({
   onReset,
   side = 'left',
   ariaLabel,
+  onActivityChange,
+  drawsEdge = true,
 }: ResizeHandleProps) => {
   const dragStateRef = useRef<DragState | null>(null);
+  const isHoveredRef = useRef(false);
+  const activityRef = useRef(onActivityChange);
+  activityRef.current = onActivityChange;
+
+  const report = () => {
+    if (dragStateRef.current !== null) {
+      activityRef.current?.('drag');
+      return;
+    }
+    activityRef.current?.(isHoveredRef.current ? 'hover' : 'idle');
+  };
 
   useEffect(() => {
     const onMove = (event: globalThis.MouseEvent) => {
@@ -57,6 +74,7 @@ export const ResizeHandle = ({
       dragStateRef.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      report();
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
@@ -81,6 +99,12 @@ export const ResizeHandle = ({
     };
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    report();
+  };
+
+  const onHoverChange = (isHovered: boolean) => {
+    isHoveredRef.current = isHovered;
+    report();
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -110,11 +134,19 @@ export const ResizeHandle = ({
       aria-valuenow={value}
       tabIndex={0}
       onMouseDown={onMouseDown}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
       onKeyDown={onKeyDown}
       onDoubleClick={onReset}
       className="group relative h-full w-1.5 shrink-0 cursor-col-resize select-none overflow-hidden focus-visible:outline-none"
     >
-      <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-border-soft to-transparent transition-colors group-hover:via-border group-focus-visible:via-primary" />
+      <div
+        data-edge={drawsEdge ? 'line' : 'owner'}
+        className={cn(
+          'pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-primary opacity-0 motion-safe:transition-opacity group-focus-visible:opacity-100',
+          drawsEdge && 'bg-border group-hover:opacity-100 group-focus-visible:bg-primary',
+        )}
+      />
     </div>
   );
 };

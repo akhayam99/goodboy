@@ -242,59 +242,8 @@ describe('startWorkflowGeneration', () => {
       }),
     );
   });
-  it('leaves a generated step unrouted while the metadata flag is off', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
-    formatWorkflowFromNLMock.mockResolvedValue({
-      name: 'Review and ship',
-      description: 'Review the change, then ship it.',
-      steps: [
-        {
-          role: 'reviewer',
-          name: 'Review',
-          promptPrefix: 'Review the change',
-          expectedOutput: 'Review findings',
-          routing: { provider: 'anthropic', model: 'opus-5', effort: 'high' },
-        },
-      ],
-    });
-    const savePhaseTemplate = vi.fn(async (template: SavedTemplate) => {
-      expect(template.steps.length).toBeGreaterThan(0);
-      return { id: 'wf-5' as WorkflowId };
-    });
-    const state = {
-      workflowGenerations: {},
-      providers: [{ id: 'anthropic', connection: 'connected' }],
-      providerCooldowns: {},
-      budgetAlerts: [],
-      workspaceOverrides: {},
-      savePhaseTemplate,
-      clearWorkflowStudioDraft: vi.fn(),
-    };
-    const set = vi.fn((updater: (current: typeof state) => Partial<typeof state>) => {
-      Object.assign(state, updater(state));
-    });
-    const generate = startWorkflowGeneration(set as never, (() => state) as never);
 
-    await generate({
-      workspaceId: 'ws-1' as never,
-      description: 'Review and ship this change',
-      workflow: null,
-      form: null,
-    });
-
-    const args = savePhaseTemplate.mock.calls[0]![0];
-    expect(args.steps[0]).toEqual({
-      role: 'reviewer',
-      ordinal: 0,
-      name: 'Review',
-      promptPrefix: 'Review the change',
-      expectedOutput: 'Review findings',
-    });
-    expect(formatWorkflowFromNLMock.mock.calls.at(-1)?.[0].input).not.toHaveProperty('modelMenu');
-  });
-
-  it('carries the emitted pick and profile onto a generated step when the flag is on', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
+  it('carries the emitted pick and profile onto a generated step', async () => {
     formatWorkflowFromNLMock.mockResolvedValue({
       name: 'Review and ship',
       description: 'Review the change, then ship it.',
@@ -363,7 +312,6 @@ describe('startWorkflowGeneration', () => {
     expect(formatWorkflowFromNLMock.mock.calls.at(-1)?.[0].input.modelMenu.length).toBeGreaterThan(
       0,
     );
-    vi.unstubAllEnvs();
   });
 });
 
@@ -411,11 +359,9 @@ describe('startWorkflowGeneration model metadata', () => {
   afterEach(() => {
     generationTransport.stdout = null;
     generationTransport.requests.length = 0;
-    vi.unstubAllEnvs();
   });
 
   it('metadata reaches the provider request', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'true');
     generationTransport.stdout = generationReply([
       {
         role: 'reviewer',
@@ -477,37 +423,5 @@ describe('startWorkflowGeneration model metadata', () => {
         taskProfile: { taskType: 'review', difficulty: 'heavy', basis: 'agent' },
       }),
     );
-  });
-
-  it('leaves catalog metadata out of the provider request while the flag is off', async () => {
-    vi.stubEnv('VITE_WORKFLOW_MODEL_METADATA', 'false');
-    generationTransport.stdout = generationReply([
-      {
-        role: 'reviewer',
-        name: 'Review',
-        promptPrefix: 'Review the change',
-        expectedOutput: 'Review findings',
-      },
-    ]);
-    const { state, set, savePhaseTemplate } = generationState();
-
-    await startWorkflowGeneration(
-      set as never,
-      (() => state) as never,
-    )({
-      workspaceId: 'ws-1' as never,
-      description: 'Review and ship this change',
-      workflow: null,
-      form: null,
-    });
-
-    const prompt = generationTransport.requests[0]!['userMessage'] as string;
-    expect(prompt).not.toContain('AVAILABLE MODELS');
-    expect(prompt).not.toContain('unassessed');
-    expect(prompt).not.toMatch(/\$[\d.]+\/\$[\d.]+/);
-
-    const savedSteps = (savePhaseTemplate.mock.calls[0]![0] as unknown as SavedTemplate).steps;
-    expect(savedSteps[0]).not.toHaveProperty('providerOverride');
-    expect(savedSteps[0]).not.toHaveProperty('routingDecision');
   });
 });

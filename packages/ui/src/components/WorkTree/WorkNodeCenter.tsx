@@ -9,7 +9,7 @@ type Props = {
   readonly glyphSize?: number;
 };
 
-const SIGN_CLASS = 'text-2xs font-bold leading-none tabular-nums';
+const SIGN_CLASS = 'text-2xs font-semibold leading-none tabular-nums';
 
 type SignParams = {
   readonly sign: string;
@@ -87,7 +87,7 @@ export const WorkNodeCenter = ({
     case 'closed':
       return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':
-      return <span className="size-1.5 rounded-xs bg-muted-foreground" />;
+      return <span className="size-1.5 rounded-sm bg-muted-foreground" />;
     case 'skipped':
       return <Minus size={glyphSize} strokeWidth={2.5} className="text-faint-foreground" />;
     default: {

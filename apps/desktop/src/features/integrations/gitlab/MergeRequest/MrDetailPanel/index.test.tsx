@@ -22,9 +22,8 @@ type Store = {
   readonly createMrForSession: ReturnType<typeof vi.fn>;
   readonly mergeMrForSession: ReturnType<typeof vi.fn>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
-  readonly selectAgent: ReturnType<typeof vi.fn>;
-  readonly setCurrentSession: ReturnType<typeof vi.fn>;
-  readonly setActiveLens: ReturnType<typeof vi.fn>;
+  readonly navigate: ReturnType<typeof vi.fn>;
+  readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
   readonly reportError: ReturnType<typeof vi.fn>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
 };
@@ -73,15 +72,15 @@ const h = vi.hoisted(() => ({
     createMrForSession: vi.fn(async () => undefined),
     mergeMrForSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-3'),
-    selectAgent: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     workspaceOverrides: {},
   } satisfies Store,
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
@@ -145,8 +144,7 @@ beforeEach(() => {
   h.store.refreshSessionMr.mockClear();
   h.store.createMrForSession.mockClear();
   h.store.spawnAgent.mockClear();
-  h.store.selectAgent.mockClear();
-  h.store.setCurrentSession.mockClear();
+  h.store.navigate.mockClear();
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
   h.store.sessionGitlabMr = {};
@@ -264,13 +262,17 @@ describe('MrDetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
-    expect(h.store.selectAgent).not.toHaveBeenCalled();
+    expect(h.store.navigate).not.toHaveBeenCalled();
     const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
 
     action?.onClick();
 
-    await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-3'));
+    await waitFor(() =>
+      expect(h.store.navigate).toHaveBeenCalledWith({
+        to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-3' },
+      }),
+    );
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 

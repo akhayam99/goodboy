@@ -3,7 +3,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ScrollFade, SegmentedTabs, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { useAppStore } from '../../../../store';
+import { useAppStore, sessionPlace } from '../../../../store';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { SpendSection } from '../../../budget/components/spend/SpendSection';
@@ -24,15 +24,23 @@ import { ShippedPanel } from './ShippedPanel';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialScope?: ImpactScope;
+  readonly onScopeChange?: (scope: ImpactScope) => void;
   readonly onClose: () => void;
 };
 
 const DAY_MS = 86_400_000;
 
-export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
+export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
-  const [scope, setScope] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
-  const setCurrentSession = useAppStore((state) => state.setCurrentSession);
+  const [scope, setScopeState] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
+  const setScope = useCallback(
+    (next: ImpactScope) => {
+      setScopeState(next);
+      onScopeChange?.(next);
+    },
+    [onScopeChange],
+  );
+  const navigate = useAppStore((state) => state.navigate);
   const metrics = useImpactMetrics({ workspaceId, windowId });
   const sinceMs = useMemo(
     () => (windowId === 'all' ? null : Date.now() - IMPACT_WINDOW_DAYS * DAY_MS),
@@ -41,10 +49,10 @@ export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
   const spend = useWorkspaceSpend({ sinceMs });
   const openSession = useCallback(
     (sessionId: SessionId) => {
-      void setCurrentSession(sessionId);
+      navigate({ to: sessionPlace({ sessionId }) });
       onClose();
     },
-    [onClose, setCurrentSession],
+    [onClose, navigate],
   );
 
   const selectedSession =

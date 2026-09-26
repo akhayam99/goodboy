@@ -14,7 +14,7 @@ type Props = {
 const COLLAPSED_LIMIT = 4;
 
 const chipClass =
-  'inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground';
+  'inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-secondary text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground';
 
 export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArtifact }: Props) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -24,7 +24,7 @@ export const ReportProvenanceRow = ({ reportType, links, onOpenAgent, onOpenArti
   return (
     <div
       data-testid="report-provenance"
-      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted-foreground"
+      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-secondary text-muted-foreground"
     >
       <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 uppercase tracking-eyebrow">
         {reportType}

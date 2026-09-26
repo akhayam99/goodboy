@@ -35,9 +35,6 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
-  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
-);
 vi.mock('../../../features/onboarding/onboarding-store', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
@@ -113,9 +110,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     slug: 'ws',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -456,9 +451,7 @@ describe('store contract', () => {
           slug: 'demo',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -486,9 +479,7 @@ describe('store contract', () => {
           kind: 'repo',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,

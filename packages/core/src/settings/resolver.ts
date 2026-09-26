@@ -15,19 +15,6 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
     sessionOverride: sess,
   } = input;
 
-  const resolvedWorkflowId = (() => {
-    if (sess?.defaultWorkflowId !== undefined) {
-      return sess.defaultWorkflowId;
-    }
-    if (project?.defaultWorkflowId !== undefined) {
-      return project.defaultWorkflowId;
-    }
-    if (ws?.defaultWorkflowId !== undefined) {
-      return ws.defaultWorkflowId;
-    }
-    return g.defaultWorkflowId;
-  })();
-
   return {
     roleModels: sess?.roleModels ?? project?.roleModels ?? ws?.roleModels ?? null,
     taskModels: sess?.taskModels ?? project?.taskModels ?? ws?.taskModels ?? null,
@@ -43,14 +30,13 @@ export const resolveSettings = (input: ResolveSettingsInput): ResolvedSettings =
       project?.defaultProviderId ??
       ws?.defaultProviderId ??
       g.defaultProviderId,
-    defaultWorkflowId: resolvedWorkflowId,
+    defaultWorkflowId: g.defaultWorkflowId,
     defaultBranchPrefix:
       sess?.defaultBranchPrefix ??
       project?.defaultBranchPrefix ??
       ws?.defaultBranchPrefix ??
       g.defaultBranchPrefix,
-    parallelEnabled:
-      sess?.parallelEnabled ?? project?.parallelEnabled ?? ws?.parallelEnabled ?? g.parallelEnabled,
+    parallelEnabled: g.parallelEnabled,
     defaultVerbosity:
       sess?.defaultVerbosity ??
       project?.defaultVerbosity ??

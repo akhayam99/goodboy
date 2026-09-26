@@ -7,7 +7,7 @@ export const PlanDraftingBanner = () => (
     className="flex items-center gap-2 rounded-md bg-subtle px-2.5 py-1.5 ring-1 ring-border-soft"
   >
     <StatusDot tone="info" size="sm" pulsing />
-    <span className="text-2xs text-muted-foreground">
+    <span className="text-secondary text-muted-foreground">
       Drafting a new plan. These steps stay until it lands.
     </span>
   </div>

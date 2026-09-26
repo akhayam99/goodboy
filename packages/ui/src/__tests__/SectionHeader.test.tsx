@@ -70,8 +70,10 @@ describe('SectionHeader, eyebrow size', () => {
   it('sits the label on the eyebrow grade and the description one grade under nothing', () => {
     render(<SectionHeader label="Decisions" hint="One row per choice already settled." />);
 
-    expect(screen.getByText('Decisions').className).toContain('text-2xs');
-    expect(screen.getByText('One row per choice already settled.').className).toContain('text-2xs');
+    expect(screen.getByText('Decisions').className).toContain('text-eyebrow');
+    expect(screen.getByText('One row per choice already settled.').className).toContain(
+      'text-secondary',
+    );
   });
 
   it('keeps the heading in the outline when a reading surface asks for one', () => {
@@ -88,7 +90,7 @@ describe('SectionHeader, eyebrow size', () => {
     const heading = screen.getByRole('heading', { level: 2 });
 
     expect(heading.className).not.toContain('text-base');
-    expect(screen.getByText('Session summary').className).toContain('text-2xs');
+    expect(screen.getByText('Session summary').className).toContain('text-eyebrow');
   });
 
   it('takes a third-level heading for a block nested inside a section', () => {

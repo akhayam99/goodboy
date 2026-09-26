@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
-import { WorkspaceEyebrow } from './WorkspaceEyebrow';
+import { Eyebrow } from '@goodboy/ui';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -20,7 +20,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         workspaceId={workspaceId}
         density="compact"
         heading={({ count }) => (
-          <WorkspaceEyebrow id="workspace-projects" label="Projects" count={count} />
+          <h2 id="workspace-projects" className="flex items-center gap-1.5">
+            <Eyebrow label="Projects" />
+            <span className="text-eyebrow tabular-nums text-foreground">{count}</span>
+          </h2>
         )}
         emptyHint="No projects linked yet. Add a repository or a folder."
         rowAccessory={({ project }) =>
@@ -28,7 +31,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         }
       />
       {hasProjects && (
-        <p className="flex items-center gap-1.5 px-2 text-xs text-faint-foreground">
+        <p className="flex items-center gap-1.5 px-2 text-label text-faint-foreground">
           <Star size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           Starred projects come first for agents and in project pickers. Descriptions go into every
           agent's project list.

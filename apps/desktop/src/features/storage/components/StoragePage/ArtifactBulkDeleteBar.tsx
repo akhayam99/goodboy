@@ -38,7 +38,9 @@ export const ArtifactBulkDeleteBar = ({
   if (selected === null) {
     if (suggested.length === 0) {
       return (
-        <p className="px-2 text-2xs text-faint-foreground">Nothing unused to delete. {rule}</p>
+        <p className="px-2 text-secondary text-faint-foreground">
+          Nothing unused to delete. {rule}
+        </p>
       );
     }
     return (
@@ -48,7 +50,7 @@ export const ArtifactBulkDeleteBar = ({
           Delete {suggested.length} unused ·{' '}
           {formatBytes({ bytes: bytesOf({ artifacts: suggested }) })}
         </Button>
-        <span className="text-2xs text-faint-foreground">
+        <span className="text-secondary text-faint-foreground">
           {rule} Deleting removes the copy on disk and the record in Goodboy.
         </span>
       </div>

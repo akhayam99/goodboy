@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { RemoteImageLoaderProvider } from '@goodboy/ui';
 import { DescriptionSection } from './index';
 
 const SOURCE = '## Goal\n\nShip the **editor**.';
 const FENCED = '```\nplain body, not markdown\n```';
+const WITH_LINK = 'Read the [runbook](https://example.com/runbook) first.';
+const WITH_IMAGE = '![board](https://example.com/board.png)';
 
 afterEach(cleanup);
 
@@ -49,6 +52,43 @@ describe('DescriptionSection', () => {
     expect(
       (screen.getByRole('textbox', { name: 'Edit description' }) as HTMLTextAreaElement).value,
     ).toBe('typed but not saved');
+  });
+
+  it('click on a link does not enter edit', () => {
+    render(<DescriptionSection text={WITH_LINK} onSave={vi.fn(async () => {})} />);
+
+    fireEvent.click(screen.getByRole('link', { name: 'runbook' }));
+
+    expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
+  });
+
+  it('click on Load image does not enter edit', () => {
+    const load = vi.fn().mockResolvedValue('data:image/png;base64,abc');
+    render(
+      <RemoteImageLoaderProvider load={load}>
+        <DescriptionSection text={WITH_IMAGE} onSave={vi.fn(async () => {})} />
+      </RemoteImageLoaderProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+
+    expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
+  });
+
+  it('drag selection does not enter edit', () => {
+    render(<DescriptionSection text={SOURCE} onSave={vi.fn(async () => {})} />);
+
+    const body = screen.getByTestId('description-body');
+    const range = document.createRange();
+    range.selectNodeContents(body);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+
+    fireEvent.click(body);
+
+    expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
+
+    window.getSelection()?.removeAllRanges();
   });
 
   it('commits the draft through the write path', async () => {

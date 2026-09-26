@@ -28,13 +28,13 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
     count: 2,
     reason: 'chrome',
   },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
     { count: 1, reason: 'chrome' },
@@ -100,13 +100,13 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/resolve/components/ResolveItemHeader/index.tsx': {
+  'apps/desktop/src/features/resolve/components/ResolvePanelHeader/index.tsx': {
     count: 1,
     reason: 'chrome',
   },
   'apps/desktop/src/features/resolve/components/ResolveItemView/index.tsx': {
-    count: 1,
-    reason: 'debt',
+    count: 2,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
     count: 1,
@@ -158,10 +158,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/workspace/components/ProjectFilter/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
     reason: 'debt',
@@ -174,10 +170,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/workspace/components/StageBoard/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx': {
     count: 1,
     reason: 'debt',
@@ -186,16 +178,13 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/shared/components/PaneShell/FocusedPane.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx': {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
-  'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,
@@ -290,7 +279,7 @@ describe('a divider sits between chrome and content, never inside content', () =
       .map(([path, count]) => `${path}: ${count} (allowed ${ALLOWED[path]?.count ?? 0})`);
     expect(
       offenders,
-      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a surface (SectionSurface, bg-subtle) or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
+      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a Band or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 

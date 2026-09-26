@@ -59,11 +59,9 @@ export const ArtifactList = ({
       header={
         <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-baseline gap-2">
-            <h1 className="min-w-0 truncate text-lg font-semibold leading-6 text-foreground">
-              Artifacts
-            </h1>
+            <h1 className="min-w-0 truncate text-title text-foreground">Artifacts</h1>
             {counts.all > 0 ? (
-              <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+              <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
                 {counts.all}
               </span>
             ) : null}

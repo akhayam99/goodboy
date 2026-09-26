@@ -63,7 +63,7 @@ export const SessionKickoff = ({ session, onOpenWorkflowBuilder, onPickIssue }: 
   return (
     <section ref={sectionRef} aria-label="Kickoff" className="flex flex-col gap-2">
       <header className="flex items-center justify-between gap-2 px-0.5">
-        <h3 id={questionId} className="text-sm font-medium text-foreground">
+        <h3 id={questionId} className="text-row text-foreground">
           How do you want to start?
         </h3>
         <MoreWaysMenu sessionId={session.id} />

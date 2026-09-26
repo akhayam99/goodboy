@@ -22,7 +22,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
     ? [
         { label: 'workspaces', value: result.stats.workspaces },
         ...(WORKSPACE_FEATURES.skills ? [{ label: 'skills', value: result.stats.skills }] : []),
-        { label: 'workflows', value: result.stats.workflows },
+        { label: 'workflows', value: result.stats.phaseTemplates },
         { label: 'permission rules', value: result.stats.permissionRules },
         ...(SESSION_FEATURES.budget
           ? [{ label: 'budget rules', value: result.stats.budgetRules }]
@@ -52,12 +52,12 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
             aria-hidden
             className="mt-0.5 shrink-0 text-danger"
           />
-          <p className="text-xs text-danger">{error}</p>
+          <p className="text-label text-danger">{error}</p>
         </div>
       ) : result?.ok ? (
         <dl className="divide-y divide-border-soft overflow-hidden rounded-md border border-border-soft">
           {statRows.map((row) => (
-            <div key={row.label} className="flex items-center justify-between px-3 py-2 text-xs">
+            <div key={row.label} className="flex items-center justify-between px-3 py-2 text-label">
               <dt className="flex items-center gap-2 text-muted-foreground">
                 <CheckCircle2 size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
                 <span>{row.label}:</span>
@@ -74,7 +74,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
           )}
         >
           {result.errors.map((e) => (
-            <li key={e.field} className="flex items-start gap-2 px-3 py-2 text-xs">
+            <li key={e.field} className="flex items-start gap-2 px-3 py-2 text-label">
               <AlertCircle
                 size={ICON_SIZE.row}
                 aria-hidden

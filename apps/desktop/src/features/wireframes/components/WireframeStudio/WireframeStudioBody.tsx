@@ -184,7 +184,7 @@ export const WireframeStudioBody = ({
           <span
             data-testid="wireframe-mock-state"
             title="screen state the mock is standing in"
-            className="ml-auto shrink-0 truncate rounded-full border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground"
+            className="ml-auto shrink-0 truncate rounded-full border border-border-soft px-2 py-0.5 text-secondary text-muted-foreground"
           >
             mock state on: {toggledOn.map(([key]) => key).join(', ')}
           </span>
@@ -233,7 +233,7 @@ export const WireframeStudioBody = ({
             onAction={runAction}
           />
           {screen.note === undefined ? null : (
-            <span className="text-2xs italic text-muted-foreground">{screen.note}</span>
+            <span className="text-secondary italic text-muted-foreground">{screen.note}</span>
           )}
         </>
       ) : null}

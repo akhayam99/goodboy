@@ -14,7 +14,7 @@ export const StorageCheckAgain = () => {
       reportError({ title: "Couldn't read storage usage", error }),
     );
   return (
-    <span className="flex items-center gap-2 text-2xs text-faint-foreground">
+    <span className="flex items-center gap-2 text-secondary text-faint-foreground">
       {checkedAt === null ? null : (
         <span>Checked {formatSince({ from: checkedAt, now: Date.now() })} ago</span>
       )}

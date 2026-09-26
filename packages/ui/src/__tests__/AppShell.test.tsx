@@ -1,14 +1,8 @@
 // @vitest-environment happy-dom
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import {
-  AppShell,
-  RIGHT_DRAWER_DEFAULT,
-  RIGHT_DRAWER_MAX,
-  RIGHT_DRAWER_STORAGE_KEY,
-  canDrawerPush,
-} from '../components/AppShell';
+import { AppShell } from '../components/AppShell';
 
 afterEach(cleanup);
 
@@ -103,90 +97,25 @@ describe('AppShell', () => {
   });
 });
 
-type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
-
-const stubGridWidth = (width: number) => {
-  class StubObserver {
-    private readonly callback: ObserverCallback;
-    constructor(callback: ObserverCallback) {
-      this.callback = callback;
-    }
-    observe() {
-      this.callback([{ contentRect: { width } }]);
-    }
-    disconnect() {}
-  }
-  vi.stubGlobal('ResizeObserver', StubObserver);
-};
-
-const gridOf = (text: string) =>
-  screen.getByText(text).closest('[style*="grid-template-columns"]') as HTMLElement;
-
 describe('AppShell right drawer', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('keeps a closed drawer as a zero-width, inert column', () => {
+  it('keeps a closed drawer as a zero-width, inert column beside the main area', () => {
     render(<AppShell leftSidebar={<div>sessions</div>} main={<div>main</div>} />);
 
-    const grid = gridOf('main');
-    expect(grid.style.gridTemplateAreas).toBe('"left lhandle main rhandle right"');
-    expect(grid.style.gridTemplateColumns.endsWith('0px 0px')).toBe(true);
-    expect(screen.getByRole('complementary', { name: 'Side panel' }).hasAttribute('inert')).toBe(
-      true,
-    );
-  });
-
-  it('opens as a grid column at the default width and pushes the main area', () => {
-    stubGridWidth(1512);
-    render(
-      <AppShell
-        leftSidebar={<div>sessions</div>}
-        main={<div>main</div>}
-        drawer={<div>drafts</div>}
-      />,
-    );
-
+    const grid = screen
+      .getByText('main')
+      .closest('[style*="grid-template-columns"]') as HTMLElement;
     const panel = screen.getByRole('complementary', { name: 'Side panel' });
-    expect(panel.getAttribute('data-drawer-mode')).toBe('push');
-    expect(panel.style.gridArea).toBe('right');
-    expect(panel.hasAttribute('inert')).toBe(false);
-    expect(gridOf('main').style.gridTemplateColumns).toContain(`6px ${RIGHT_DRAWER_DEFAULT}px`);
-    expect(screen.getByRole('separator', { name: 'Resize side panel' })).toBeDefined();
+    expect(grid.style.gridTemplateAreas).toBe('"left lhandle main"');
+    expect(panel.hasAttribute('inert')).toBe(true);
+    expect(panel.style.width).toBe('0px');
   });
 
-  it('lies over the main area when pushing would squeeze the column under its floor', () => {
-    stubGridWidth(1280);
-    render(
-      <AppShell
-        leftSidebar={<div>sessions</div>}
-        main={<div>main</div>}
-        drawer={<div>drafts</div>}
-      />,
-    );
-
-    const panel = screen.getByRole('complementary', { name: 'Side panel' });
-    expect(panel.getAttribute('data-drawer-mode')).toBe('overlay');
-    expect(panel.style.gridArea).toBe('main');
-    expect(panel.className).toContain('shadow-xl');
-    expect(gridOf('main').style.gridTemplateColumns.endsWith('0px 0px')).toBe(true);
-  });
-
-  it('pushes only when the main area keeps a 560px column beside the drawer', () => {
-    expect(canDrawerPush({ mainWidthPx: 1166, drawerWidthPx: 400 })).toBe(true);
-    expect(canDrawerPush({ mainWidthPx: 934, drawerWidthPx: 400 })).toBe(false);
-  });
-
-  it('reads the saved width back clamped to its range', () => {
-    stubGridWidth(2400);
-    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, '900');
+  it('opens the drawer inside the main area', () => {
     render(<AppShell main={<div>main</div>} drawer={<div>drafts</div>} />);
 
-    expect(gridOf('main').style.gridTemplateColumns).toContain(`${RIGHT_DRAWER_MAX}px`);
+    const panel = screen.getByRole('complementary', { name: 'Side panel' });
+    expect(panel.hasAttribute('inert')).toBe(false);
+    expect(panel.closest('main')).not.toBeNull();
+    expect(screen.getByText('drafts')).toBeDefined();
   });
 });

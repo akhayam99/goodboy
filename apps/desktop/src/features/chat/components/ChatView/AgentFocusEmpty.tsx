@@ -17,7 +17,7 @@ export const AgentFocusEmpty = ({ kind }: Props) => {
         PANE_RHYTHM.column,
       )}
     >
-      <p className="flex items-center gap-2 text-sm text-foreground">
+      <p className="flex items-center gap-2 text-body text-foreground">
         {visual.image ? (
           <span
             aria-hidden
@@ -40,7 +40,7 @@ export const AgentFocusEmpty = ({ kind }: Props) => {
           <span className="font-medium">{meta.noun}</span>: {meta.hint}.
         </span>
       </p>
-      <p className="text-xs text-faint-foreground">
+      <p className="text-label text-faint-foreground">
         It shares the session brief with every other agent.
       </p>
     </div>

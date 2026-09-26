@@ -45,7 +45,7 @@ export const PrContextRow = ({
       meta={
         <>
           {repo !== null && (
-            <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
+            <span className="min-w-0 truncate font-mono text-secondary text-muted-foreground">
               {repo}
             </span>
           )}

@@ -26,7 +26,7 @@ export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
       }
       title="Open pull request in Review"
       className={cn(
-        'flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs',
+        'flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-label',
         'ring-1 ring-border-soft transition-colors hover:bg-hover',
       )}
     >
@@ -34,7 +34,7 @@ export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
         <span className="inline-flex items-center gap-1 font-medium">
           <GitFork size={11} aria-hidden />#{pullRequest.number}
         </span>
-        <span className={cn('text-2xs', meta.textClass)}>{meta.label}</span>
+        <span className={cn('text-secondary', meta.textClass)}>{meta.label}</span>
       </span>
       <ArrowUpRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
     </button>

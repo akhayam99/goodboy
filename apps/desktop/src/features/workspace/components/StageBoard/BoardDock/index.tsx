@@ -91,7 +91,7 @@ export const BoardDock = ({ entries, isLassoActive, onOpen }: Props) => {
               <span
                 aria-hidden
                 className={cn(
-                  'min-w-0 flex-1 truncate text-left text-xs font-medium',
+                  'min-w-0 flex-1 truncate text-left text-label font-medium',
                   toneText,
                   'motion-safe:transition-opacity motion-safe:delay-60 motion-safe:duration-100 motion-safe:starting:opacity-0',
                 )}
@@ -102,7 +102,7 @@ export const BoardDock = ({ entries, isLassoActive, onOpen }: Props) => {
             <span
               aria-hidden
               className={cn(
-                'text-2xs tabular-nums',
+                'text-secondary tabular-nums',
                 isEmpty ? 'text-faint-foreground' : 'text-muted-foreground',
               )}
             >

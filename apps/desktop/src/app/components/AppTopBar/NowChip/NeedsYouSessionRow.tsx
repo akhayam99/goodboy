@@ -35,9 +35,9 @@ export const NeedsYouSessionRow = ({ session, onSelect, fallbackTone = 'neutral'
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <InlineMarkdown
             text={session.goal}
-            className="truncate text-xs font-medium text-foreground"
+            className="truncate text-label font-medium text-foreground"
           />
-          <span className="truncate text-2xs text-muted-foreground">{reason}</span>
+          <span className="truncate text-secondary text-muted-foreground">{reason}</span>
         </span>
       </button>
     </li>
