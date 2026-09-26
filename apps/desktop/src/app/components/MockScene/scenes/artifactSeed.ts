@@ -360,9 +360,9 @@ const allocate = ({ total, weights }: AllocateArgs): ReadonlyArray<Cents> => {
 
 ## Sources
 
-- agent ${IMPLEMENTER_AGENT_ID}
-- agent ${TESTER_AGENT_ID}
-- plan ${PLAN_ARTIFACT_ID}
+- Apply the rounding fix in ledger-core (Implementer)
+- Cover the split allocation cases (Tester)
+- Round once per batch (Plan)
 
 ## Open questions
 
@@ -417,8 +417,8 @@ leaves dry run.
 
 ## Sources
 
-- agent ${IMPLEMENTER_AGENT_ID}
-- agent ${TESTER_AGENT_ID}`;
+- Apply the rounding fix in ledger-core (Implementer)
+- Cover the split allocation cases (Tester)`;
 
 const REPORT_KICKOFF = `# evidence pack: Session summary
 
