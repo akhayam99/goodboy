@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Copy } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -237,6 +238,19 @@ describe('artifactMenu', () => {
     expect(menu.groups.map((group) => group.label)).toEqual(['Wireframes', 'Reports']);
     expect(rowsOf(menu)[0]?.metaA).toBe('v3 · 20m ago');
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+  });
+
+  it('carries at most two actions for the open artifact', () => {
+    const action = (id: string) => ({ id, label: id, icon: Copy, confirm: null, onRun: vi.fn() });
+    const menu = artifactMenu({
+      artifacts: [],
+      currentId: null,
+      ageOf: () => 'now',
+      actions: [action('a'), action('b'), action('c')],
+      onSelect: vi.fn(),
+    });
+
+    expect(menu.actions.map((entry) => entry.id)).toEqual(['a', 'b']);
   });
 });
 

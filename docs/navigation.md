@@ -327,7 +327,13 @@ activity yet show the plain overview with its actions.
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
-  newest first; an artifact lists the session's artifacts by kind.
+  newest first; an artifact lists the session's artifacts by kind. Actions
+  exist only where a real action backs them: `Start agent`, `Start a workflow`
+  and `New artifact` (opens the kind picker) on their pages, `Stop this step`
+  while a step runs and `Retry step` when it failed or is blocked
+  (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
+  artifact. An attempt offers no `Resolve again`: a new attempt needs the
+  instruction the Review page asks for.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each (`Local only`,
   `Behind main by N`, `On origin`) and `All branches in Overview`. It never
