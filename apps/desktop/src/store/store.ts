@@ -35,6 +35,7 @@ import type {
   WorkflowSpendLimitMode,
   ProviderId,
   Project,
+  GoodboyIgnoreMode,
   ProjectId,
   ProviderCredential,
   CredentialId,
@@ -228,6 +229,7 @@ import { durationEstimatesInitialState } from './slices/durationEstimates/state'
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
 import { createHandoffsSlice } from './slices/handoffs';
+import { createSecurityFindingsSlice } from './slices/security-findings';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -414,6 +416,11 @@ type AppActions = {
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
+  checkGoodboyIgnore(input: { projectId: ProjectId }): Promise<void>;
+  saveGoodboyIgnore(input: {
+    projectId: ProjectId;
+    mode: Exclude<GoodboyIgnoreMode, 'existing'>;
+  }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
@@ -1043,7 +1050,8 @@ export type AppStore = AppState &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
   ReturnType<typeof createStorageSlice> &
-  ReturnType<typeof createHandoffsSlice>;
+  ReturnType<typeof createHandoffsSlice> &
+  ReturnType<typeof createSecurityFindingsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1267,6 +1275,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
   ...createHandoffsSlice(set, get),
+  ...createSecurityFindingsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

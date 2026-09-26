@@ -23,6 +23,8 @@ export type PermissionRequestId = string & { readonly __brand: 'PermissionReques
 
 export type SessionEventId = string & { readonly __brand: 'SessionEventId' };
 
+export type SecurityFindingId = string & { readonly __brand: 'SecurityFindingId' };
+
 export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' };
 export type IntegrationBindingId = string & { readonly __brand: 'IntegrationBindingId' };
 

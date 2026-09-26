@@ -52,7 +52,16 @@ export {
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
+  updateProjectGoodboyIgnore,
 } from './queries/project';
+export {
+  recordSecurityFindings,
+  listOpenSecurityFindings,
+  listDismissedSecurityFindings,
+  countOpenSecurityFindings,
+  dismissSecurityFinding,
+  flagSecurityFindingAgain,
+} from './queries/security-finding';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,

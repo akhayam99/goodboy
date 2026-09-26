@@ -40,6 +40,9 @@ vi.mock('../../../../store', () => ({
 }));
 vi.mock('../../../../shared/lib/repo', () => repoMocks);
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+vi.mock('./GoodboyIgnoreField', () => ({
+  GoodboyIgnoreField: () => null,
+}));
 vi.mock('./ProjectBaseBranchInput', () => ({
   ProjectBaseBranchInput: ({ project }: { project: { name: string } }) => (
     <span data-testid="base-branch">{project.name}</span>

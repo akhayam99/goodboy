@@ -39,5 +39,12 @@ export const saveScript = (get: GetFn) => {
     };
     await upsertProjectScript({ db: tauriDatabase, script });
     await get().loadScripts(workspaceId);
+    await get().recordScanFindings({
+      workspaceId,
+      projectId,
+      subjectKind: 'script',
+      subjectId: script.id,
+      text: body,
+    });
   };
 };
