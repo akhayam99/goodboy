@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowUpCircle } from 'lucide-react';
 import { Button, InlineConfirm } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useRunningAgentCount } from '../../hooks/useRunningAgentCount';
 import { useUpdateArrivalCard } from '../../hooks/useUpdateArrivalCard';
@@ -29,7 +30,7 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
       <div className="fixed bottom-[46px] left-1/2 z-popover w-[368px] -translate-x-1/2">
         <InlineConfirm
           role="alert"
-          icon={<ArrowUpCircle size={16} aria-hidden />}
+          icon={<ArrowUpCircle size={ICON_SIZE.control} aria-hidden />}
           title={`${runningCount} agent${runningCount === 1 ? '' : 's'} ${runningCount === 1 ? 'is' : 'are'} running. Restarting stops them.`}
           confirmLabel="Restart when they finish"
           cancelLabel="Restart now"
@@ -51,7 +52,11 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
   return (
     <div className="fixed bottom-[46px] left-1/2 z-popover w-[368px] -translate-x-1/2 rounded-lg border border-border-soft bg-floating p-3 shadow-lg">
       <div className="flex items-start gap-2">
-        <ArrowUpCircle size={16} aria-hidden className="mt-0.5 shrink-0 text-primary" />
+        <ArrowUpCircle
+          size={ICON_SIZE.control}
+          aria-hidden
+          className="mt-0.5 shrink-0 text-primary"
+        />
         <div className="flex min-w-0 flex-col gap-1">
           <p className="text-sm font-semibold text-foreground">{arrivalTitle({ version })}</p>
           {lead !== null ? <p className="text-xs text-muted-foreground">{lead}</p> : null}

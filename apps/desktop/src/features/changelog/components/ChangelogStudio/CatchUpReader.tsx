@@ -1,4 +1,3 @@
-import { Divider } from '@goodboy/ui';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
 import { ReleaseBody } from './ReleaseBody';
@@ -15,15 +14,15 @@ export const CatchUpReader = ({ catchUp, dates, installedVersion }: Props) => (
     title="What's new"
     meta={`Since ${catchUp.fromVersion} · ${catchUp.releases.length} releases`}
   >
-    <div className="flex flex-col gap-6">
-      {catchUp.releases.map((release, index) => (
+    <div className="flex flex-col gap-8">
+      {catchUp.releases.map((release) => (
         <div key={release.version} className="flex flex-col gap-5">
-          {index > 0 ? <Divider /> : null}
-          <h3 className="text-sm font-semibold text-foreground">Goodboy {release.version}</h3>
+          <h2 className="text-sm font-semibold text-foreground">Goodboy {release.version}</h2>
           <ReleaseBody
             release={release}
             dateLabel={dates[release.version] ?? null}
             installedVersion={installedVersion}
+            featureHeadingLevel={3}
           />
         </div>
       ))}

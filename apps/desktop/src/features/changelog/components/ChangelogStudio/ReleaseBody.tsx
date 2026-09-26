@@ -49,10 +49,17 @@ type Props = {
   readonly release: ReleaseEntry;
   readonly dateLabel: string | null;
   readonly installedVersion: string | null;
+  readonly featureHeadingLevel?: 2 | 3;
   readonly onOpenScreen?: (params: { readonly screen: ChangelogScreen }) => void;
 };
 
-export const ReleaseBody = ({ release, dateLabel, installedVersion, onOpenScreen }: Props) => {
+export const ReleaseBody = ({
+  release,
+  dateLabel,
+  installedVersion,
+  featureHeadingLevel = 2,
+  onOpenScreen,
+}: Props) => {
   const prs = uniquePrs({ release });
   const showPrInMeta = prs.length === 1;
   const eyebrowLabel = releaseEyebrowLabel({ release, installedVersion });
@@ -86,6 +93,7 @@ export const ReleaseBody = ({ release, dateLabel, installedVersion, onOpenScreen
               key={feature.title}
               feature={feature}
               showPrRef={!showPrInMeta}
+              headingLevel={featureHeadingLevel}
               onOpenScreen={onOpenScreen}
             />
           ))}
@@ -99,6 +107,7 @@ export const ReleaseBody = ({ release, dateLabel, installedVersion, onOpenScreen
               key={feature.title}
               feature={feature}
               showPrRef={!showPrInMeta}
+              headingLevel={featureHeadingLevel}
               onOpenScreen={onOpenScreen}
             />
           ))}

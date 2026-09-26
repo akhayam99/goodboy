@@ -131,7 +131,7 @@ export const ChangelogRail = ({
                 className="flex items-center gap-1 px-1.5 py-1 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground hover:text-muted-foreground"
               >
                 <ChevronRight
-                  size={12}
+                  size={ICON_SIZE.row}
                   aria-hidden
                   className={isOlderOpen ? 'rotate-90' : undefined}
                 />

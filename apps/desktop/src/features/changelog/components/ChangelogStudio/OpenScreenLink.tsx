@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { changelogScreenLabel } from '../../changelogScreens';
 import type { ChangelogScreen } from '../../changelogScreens';
 
@@ -18,7 +19,7 @@ export const OpenScreenLink = ({ screen, onOpenScreen }: Props) => {
       className="flex items-center gap-0.5 text-xs text-primary hover:underline"
     >
       Open {changelogScreenLabel({ screen })}
-      <ChevronRight size={12} aria-hidden />
+      <ChevronRight size={ICON_SIZE.row} aria-hidden />
     </button>
   );
 };
