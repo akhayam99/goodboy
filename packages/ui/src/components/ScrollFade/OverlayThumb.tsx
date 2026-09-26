@@ -34,7 +34,7 @@ export const OverlayThumb = ({ viewportRef, orientation }: Props) => {
       onPointerDown={onTrackPointerDown}
       className={cn(
         'pointer-events-auto absolute',
-        horizontal ? 'inset-x-1 bottom-0.5 h-3' : 'inset-y-1 right-0.5 w-3',
+        horizontal ? 'inset-x-1 bottom-0.5 h-3' : 'inset-y-1 end-0.5 w-3',
       )}
     >
       <div
@@ -44,7 +44,7 @@ export const OverlayThumb = ({ viewportRef, orientation }: Props) => {
         onPointerDown={onThumbPointerDown}
         className={cn(
           'absolute flex motion-safe:transition-opacity',
-          horizontal ? 'inset-x-0 bottom-0 h-3 items-end' : 'inset-y-0 right-0 w-3 justify-end',
+          horizontal ? 'inset-x-0 bottom-0 h-3 items-end' : 'inset-y-0 end-0 w-3 justify-end',
           visible ? 'opacity-100 motion-safe:duration-120' : 'opacity-0 motion-safe:duration-300',
         )}
       >
