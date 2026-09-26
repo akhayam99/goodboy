@@ -211,7 +211,13 @@ describe('TimelinePane on an empty session', () => {
     return render(
       <TimelinePane
         session={SESSION}
-        actions={<OverviewActions sessionId={SESSION.id} onOpenWorkflowBuilder={() => undefined} />}
+        actions={
+          <OverviewActions
+            session={SESSION}
+            onOpenWorkflowBuilder={() => undefined}
+            onOpenRun={() => undefined}
+          />
+        }
       />,
     );
   };
@@ -224,16 +230,17 @@ describe('TimelinePane on an empty session', () => {
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
-  it('folds every other way to start into the menu of one Start agent split', () => {
+  it('keeps Run workflow beside Start agent and folds Report/Wireframe into Create', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     renderEmptySession();
 
     expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
-    for (const name of ['Start a workflow', 'Create report', 'Create wireframe']) {
+    expect(screen.getByRole('button', { name: /Run workflow/ })).toBeDefined();
+    for (const name of ['Create report', 'Create wireframe']) {
       expect(screen.queryByRole('button', { name: new RegExp(name) })).toBeNull();
     }
-    fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
-    for (const name of ['Workflow', 'Report', 'Wireframe']) {
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+    for (const name of ['Report', 'Wireframe']) {
       expect(screen.getByRole('menuitem', { name: new RegExp(`^${name}`) })).toBeDefined();
     }
   });

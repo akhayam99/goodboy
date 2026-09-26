@@ -34,7 +34,11 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         session={session}
         actions={
           <ArchivedGate isArchived={isArchived}>
-            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            <OverviewActions
+              session={session}
+              onOpenWorkflowBuilder={openWorkflowBuilder}
+              onOpenRun={() => onSelectLens('workflows')}
+            />
           </ArchivedGate>
         }
       />
