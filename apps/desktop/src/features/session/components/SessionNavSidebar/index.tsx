@@ -5,18 +5,24 @@ import {
   useAppStore,
   useCurrentWorkspace,
   useSessions,
-  BOARD_PLACE,
   sessionPlace,
 } from '../../../../store';
 import { SessionActivityBar } from '../../../workspace/components/SessionActivityBar';
-import { BoardCta } from './parts/BoardCta';
+import { SidebarToggleButton } from './parts/SidebarToggleButton';
 
 type Props = {
   readonly session: Session;
   readonly onNavigate?: () => void;
+  readonly isCollapsed?: boolean;
+  readonly onToggleSidebar?: () => void;
 };
 
-export const SessionNavSidebar = ({ session, onNavigate }: Props) => {
+export const SessionNavSidebar = ({
+  session,
+  onNavigate,
+  isCollapsed = false,
+  onToggleSidebar,
+}: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
   const navigate = useAppStore((s) => s.navigate);
@@ -40,16 +46,13 @@ export const SessionNavSidebar = ({ session, onNavigate }: Props) => {
     void loadArchivedSessions(currentWorkspace.id);
   }, [currentWorkspace, loadArchivedSessions]);
 
-  const onBoard = useCallback(() => {
-    navigate({ to: BOARD_PLACE });
-    onNavigate?.();
-  }, [onNavigate, navigate]);
-
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 flex-col gap-2 px-2 pb-1.5 pt-2">
-        <BoardCta onNavigate={onBoard} />
-      </div>
+      {onToggleSidebar !== undefined ? (
+        <div className="flex shrink-0 items-center gap-2 pb-1.5 pl-1.5 pr-2 pt-2">
+          <SidebarToggleButton isCollapsed={isCollapsed} onToggle={onToggleSidebar} />
+        </div>
+      ) : null}
       <div className="flex min-h-0 flex-1 flex-col overflow-x-clip">
         <div className="flex min-h-0 flex-1">
           {currentWorkspace ? (

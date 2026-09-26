@@ -33,10 +33,12 @@
   and what is it costing"). The footer is access ("where do I go"). The sidebar is
   presence ("what else is going on"). The ⌘K palette is transit ("where do I
   want to be").
-- **The top bar carries state and identity, never destinations.** It never
-  edits a record in place. Anything that opens a destination belongs in the
-  footer. The spend chip is the one exception: it is state that opens the
-  studio that owns that number, the impact overview.
+- **The top bar carries state, identity and movement.** Movement is Back,
+  Forward, Board and Search, clustered in the centre. Destinations (studios)
+  stay in the footer, and the bar never edits a record in place. The spend
+  chip is the one exception: it is state that opens the studio that owns that
+  number, the impact overview. Board is not a destination like Inbox: it is
+  home, and home sits with the arrows.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the sidebar nor a studio
@@ -140,9 +142,10 @@ context, never navigation.** A session draws one full-width pane, and its
 navigation lives in that single left sidebar. The right drawer holds reference
 material beside the page and closes with the pane that opened it. The
 sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from one control in the top bar
-or ⌘B. Peek
-never touches that preference.
+session it follows a saved preference, toggled from the first button of the
+sidebar (or of the collapsed rail, on the same axis) or ⌘B. ⌘B does nothing on
+the board or under a studio, where the sidebar is not there to see. Peek never
+touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -345,12 +348,17 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: the sidebar toggle, then workspace identity. On views without a
-  sidebar the toggle's slot stays reserved, so identity never moves. The
-  sidebar keeps no header and the collapsed rail no toggle of their own.
-  Identity has a 200px limit and truncates, with the full name in its tooltip.
-- Centre: the command center. It opens the palette and shows ⌘K. It never
-  takes typing itself.
+- Left: workspace identity. It has a 200px limit and truncates, with the full
+  name in its tooltip. The sidebar toggle lives in the sidebar, not here.
+- Centre: the movement cluster, then the command center. `Back` and `Forward`
+  (24px icons) name their destination in the tooltip (`Back to Review ·
+{session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
+  empty, and open the last 12 entries on right click or a 400ms hold. `Board`
+  is `SquareKanban` plus the word, 24px high like the search: on the board it
+  is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
+  over a studio on the board it closes the studio; in a session it navigates
+  to the board as a history entry. ⌘⇧H does the same. The command center opens
+  the palette and shows ⌘K; it never takes typing itself.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
@@ -378,7 +386,8 @@ viewport, so app zoom takes the same path as a narrow window:
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
-The traffic lights, identity, the command center, the needs-you count, the
+The traffic lights, identity, the movement cluster (Board keeps its word),
+the command center, the needs-you count, the
 spend figure, the first Limits chip and the bell never hide. The Limits chips
 past the ones that fit are the only overflow: a `+N` chip takes the tone of
 the worst hidden provider and lists them. No other control moves into an

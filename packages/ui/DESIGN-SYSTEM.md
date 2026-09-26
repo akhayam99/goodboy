@@ -928,7 +928,10 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.ts` pins both. Widening the rail to fix a padding is
+`collapsed-rail-width.test.ts` pins both. The sidebar toggle is therefore not
+in the top bar: it is the first `size-8` button of the collapsed rail and of
+the open sidebar's first row, on the same axis in both states
+(`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

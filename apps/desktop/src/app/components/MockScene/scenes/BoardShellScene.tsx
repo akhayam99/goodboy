@@ -54,17 +54,7 @@ const BoardShellSceneContent = () => {
 
   return (
     <AppShell
-      topBar={
-        <AppTopBar
-          sidebar={{
-            hasSidebar: arrangement.leftSlot !== 'none',
-            isCollapsed: arrangement.leftSlot === 'rail',
-            onToggle: noop,
-          }}
-          onOpenSpend={noop}
-          onOpenScript={noop}
-        />
-      }
+      topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={undefined}

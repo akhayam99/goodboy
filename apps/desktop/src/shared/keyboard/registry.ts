@@ -107,7 +107,7 @@ export const SHORTCUTS = {
   },
   'session.board': {
     combo: 'cmd+shift+KeyH',
-    label: 'Back to board',
+    label: 'Board',
     plane: 'session',
     group: 'navigate',
   },

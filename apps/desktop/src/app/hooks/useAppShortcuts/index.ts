@@ -8,12 +8,12 @@ import {
   useSessions,
   useWorkspaces,
   type LensKind,
-  BOARD_PLACE,
   sessionPlace,
 } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
+import { useGoToBoard } from '../useGoToBoard';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -135,7 +135,16 @@ export const useAppShortcuts = ({
   useShortcut('workspace.switcher', () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
   );
-  useShortcut('column.toggle', toggleSidebar);
+  const toggleVisibleSidebar = useCallback(() => {
+    const state = useAppStore.getState();
+    if (state.currentSessionId === null || state.appStudio !== null) {
+      return;
+    }
+    toggleSidebar();
+  }, [toggleSidebar]);
+  const goToBoard = useGoToBoard();
+
+  useShortcut('column.toggle', toggleVisibleSidebar);
   useShortcut('nav.back', back);
   useShortcut('nav.forward', forward);
   useMouseHistoryButtons({ back, forward });
@@ -154,7 +163,7 @@ export const useAppShortcuts = ({
   useShortcut('session.permissions', openPermissionPicker);
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
-  useShortcut('session.board', () => navigate({ to: BOARD_PLACE }));
+  useShortcut('session.board', goToBoard);
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => goToLens({ kind: 'context' }));
