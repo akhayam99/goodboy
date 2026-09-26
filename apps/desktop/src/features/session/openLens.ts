@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, type LensKind } from '../../store';
+import { sessionPlace, useAppStore, type LensKind } from '../../store';
 
 type Params = Readonly<{
   sessionId: SessionId;
@@ -11,5 +11,5 @@ export const openLens = ({ sessionId, lens }: Params): void => {
   if (lens === 'scripts') {
     state.setScriptsLensScope({ scope: null });
   }
-  state.setActiveLens(sessionId, lens);
+  state.navigate({ to: sessionPlace({ sessionId, lens }) });
 };

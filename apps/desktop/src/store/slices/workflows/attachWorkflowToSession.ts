@@ -22,6 +22,7 @@ import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { persistOrchestrationStop } from './orchestrateNextStep';
 import { activateWorkflowAgentOrNotify } from './activateWorkflowAgentOrNotify';
 import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';
+import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 type Options = {
@@ -200,7 +201,7 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     }
 
     if (options?.navigate === true) {
-      get().setActiveLens(sessionId, 'workflows');
+      get().navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
     }
 
     const attachmentInputs = options?.attachmentInputs;

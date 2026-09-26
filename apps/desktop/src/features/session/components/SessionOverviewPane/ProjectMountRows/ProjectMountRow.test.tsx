@@ -51,11 +51,13 @@ const { store, remoteKind } = vi.hoisted(() => ({
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
     agentTurnState: {} as Record<string, { kind: string }>,
     agentTurnDestination: {} as Record<string, { kind: string; mountId?: string }>,
-    selectAgent: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
   },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 vi.mock('./ProjectBranchChip', () => ({
@@ -743,7 +745,9 @@ describe('ProjectMountRow presence', () => {
     expect(presence.textContent).toContain('3 agents here');
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Planner' }));
-    expect(store.selectAgent).toHaveBeenCalledWith(sessionId, 'a-2');
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: 'a-2' },
+    });
   });
 
   it('shows no presence with a single mount', () => {

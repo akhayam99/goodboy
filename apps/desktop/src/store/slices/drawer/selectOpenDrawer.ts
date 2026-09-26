@@ -6,11 +6,5 @@ export const selectOpenDrawer = (state: AppState): OpenDrawer | null => {
   if (drawer === null) {
     return null;
   }
-  if (state.currentSessionId !== drawer.sessionId) {
-    return null;
-  }
-  if ((state.activeLens[drawer.sessionId] ?? null) !== drawer.lens) {
-    return null;
-  }
-  return drawer;
+  return state.currentSessionId === drawer.sessionId ? drawer : null;
 };

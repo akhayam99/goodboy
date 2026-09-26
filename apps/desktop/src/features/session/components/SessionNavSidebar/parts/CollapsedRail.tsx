@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { Kanban, Plus } from 'lucide-react';
 import { COLLAPSED_RAIL_WIDTH, Tooltip, cn } from '@goodboy/ui';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, BOARD_PLACE } from '../../../../../store';
 import { shortcutGlyphs } from '../../../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
@@ -12,11 +12,11 @@ const RAIL_BUTTON = cn(
 );
 
 export const CollapsedRail = () => {
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const navigate = useAppStore((s) => s.navigate);
 
   const onBoard = useCallback(() => {
-    void setCurrentSession(null);
-  }, [setCurrentSession]);
+    navigate({ to: BOARD_PLACE });
+  }, [navigate]);
 
   return (
     <div

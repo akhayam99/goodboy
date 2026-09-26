@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { formatError } from '@goodboy/ui';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../store';
 import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
@@ -81,7 +81,7 @@ export const useSuggestionActions = ({
     useShallow((state) => sessionResolveStyle({ state, sessionId })),
   );
   const rows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
 
@@ -143,7 +143,7 @@ export const useSuggestionActions = ({
       spawnAgent,
       setAgentConfig,
     })
-      .then(() => setActiveLens(sessionId, 'review'))
+      .then(() => navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }))
       .catch((error: unknown) => {
         reportError("The fix didn't start")(formatError(error));
       });

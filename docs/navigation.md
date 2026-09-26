@@ -86,6 +86,49 @@ row names its project. An empty list says why: no project in the session, no
 script in the project, or no match for the filter. Enter runs the row and opens
 its output in the right drawer; the composer text is cleared.
 
+## Addresses and history
+
+Every view has an address, and one history per window and workspace records
+them. The navigation slice (`store/slices/navigation/`) owns both.
+
+- **A `Location` is where you are plus how the page was.** Its `place` is the
+  board or a session view: lens, open agent, session studio and one target
+  (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
+  studio open over that place, if any. Its `focus` is the page state: the open
+  drawer, selection, scroll and revealed rows. `locationKey` prints the text
+  form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
+  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`.
+- **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
+  `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
+  `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
+  surfaces render from (`activeLens`, `selectedAgentId`, `sessionStudio`, the
+  focused target) are written only by the slice. A contract test
+  (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or
+  `shared/` calls `setActiveLens`, `setCurrentSession`, `selectAgent` or
+  `setSessionStudio`.
+- **Aliases live in `canonicalLocation`, and only there.** An agent resolves
+  to its home lens (an unknown agent to Agents). `pr` on a GitHub session
+  becomes `review` before it is recorded, so no view redirects after it
+  mounts.
+- **Push, amend, replace.** A new place pushes: board and session, session to
+  session, lens, a child, a sibling from a switcher, a session studio. Pushing
+  the place you are on replaces it. Page state amends the current entry and
+  never adds one. Canonical rewrites replace. The stack keeps 50 entries and
+  lives in memory. Each workspace has its own stack, so switching workspace
+  finds that workspace's history again.
+- **Back restores the entry as it was; a forward move arrives clean.** Before a
+  push, the live view is captured into the current entry, so Back finds the
+  same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
+  notification, Board) starts with an empty focus.
+- **Up goes to the parent.** When the previous entry is the parent, Up is Back.
+  Otherwise it pushes the parent. Closing a session studio pops every studio
+  entry stacked on the same base.
+- **Dead entries fall out.** An archived or deleted session removes its
+  entries and collapses the duplicates left behind. An agent that is gone
+  falls back to its home lens.
+- **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
+  back and forward buttons walk the stack.
+
 ## Surfaces
 
 **Shell layout.** One strip of chrome sits above, one footer below, and between
@@ -228,9 +271,9 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   are shortcuts into a place that already has a parent. None of them may
   rewrite it. History is what Back is for.
 - **A child hangs off the overview section that owns it**: a step under its
-  run under Workflows, an ad-hoc agent under Agents, a fix attempt under Review.
-  The overlay's back target still prefers the surface the user was standing
-  in. So Back returns where you were, while the trail says where you are.
+  run under Workflows, an ad-hoc agent under Agents, a resolver under its
+  comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
+  you were, while the trail says where you are.
 - **A crumb with siblings is a switcher.** It is plain text when the agent is
   alone in its home lens. Otherwise it is a popover that switches the open
   agent in place.
@@ -413,11 +456,31 @@ shortcuts), the guide and Report an issue. The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
-- **Navigating closes the studio.** Moving to another workspace, session, or
-  lens of the current session closes whatever studio is open, whether the move
-  came from the palette, a needs-you row, a shortcut or a link inside the
-  studio, so the destination always lands in front. Selecting an agent does
-  not count: workflow steps select agents on their own.
+- **An open studio is a history entry.** Opening a studio, or switching from
+  one studio to another, pushes an entry over the page underneath
+  (`openStudio`). Reopening the same studio, a Settings scope change and the
+  Inbox's provider and record update that entry (`amendStudio`). Back from
+  Workflows reopens the Inbox with its record. Close and Esc fold every studio
+  entry stacked on the same page into that page (`closeStudio`): closing means
+  the side trip is over, Back means one step.
+- **Navigating closes the studio.** A forward move to a place (another
+  session, a lens, an agent, the board) arrives with no studio, whether it came
+  from the palette, a needs-you row, a shortcut or a link inside the studio, so
+  the destination always lands in front. Switching workspace closes it too.
+- **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
+  mounts only while a studio is open and stays mounted from Inbox to Workflows
+  to Settings. It owns the 40px band (the studio's icon and name, the body's
+  subtitle and accessory, Done), the Esc layer and the motion: `studio-in` when
+  it opens, `studio-out` when it closes, and on a switch only the band's name
+  fades while the new body enters in 160ms. A studio body still renders
+  `StudioShell`; inside the frame it only hands its chrome to the band. Until a
+  body's chunk arrives, the frame shows one of three opaque skeletons: `list`
+  (Inbox, Notifications, Report an issue, Add workspace), `rail` (Settings,
+  Impact) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  open, no frame node exists, so nothing covers the page.
+- **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
+  open), the agent overlay and the delete confirm all register with
+  `useEscapeLayer`, so Esc closes the topmost layer only.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
   popover (its footer's Open all notifications) and from the palette's Go to
@@ -586,6 +649,17 @@ one is open at a time.
   one durable conversation model. Everything it sends goes out through one
   publisher. So a restart finds the same rows in the same states, and no second
   path pushes a reply or closes a thread.
+- **The resolver stays in Review.** A resolver exists for one comment, so its
+  home is that comment, never the Agents lens. The conversation panel has two
+  tabs, `Comment` and `Agent`; `Agent` shows the resolver's live transcript and
+  composer, with a dot while it works. View agent, a notification, the
+  agent-started toast and the palette all land on Review with that comment's
+  panel open on `Agent` (`canonicalLocation` maps the resolver to the first
+  thread of its attempt). `…` → Open agent full page opens the resolver as a
+  child page of Review; Back, or Up when the queue is the entry below, returns
+  to the queue with the panel open, and Up from a page reached any other way
+  opens the queue with that comment. There are no return pills: the Diff, the
+  publication and the resolver page all come back through Back.
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is one entry (its goal, decisions and
   summary parts open through their shortcuts). Explore is always listed and
@@ -620,20 +694,27 @@ the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 
 ## The right drawer
 
-The drawer is a column of the window grid (`AppShell`, areas
-`left lhandle main rhandle right`), never a split nested inside a pane. It opens
-at 400px, resizes from 340 to 560px, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read). Closed, its tracks are
-`0px 0px` and it is `inert`. When the main area minus the drawer and the two
-gutters would leave the content column under 560px, it lies over the right of
-the main area with `shadow-xl` and no scrim, and the main stays interactive.
-It never touches the sidebar preference.
+Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
+split nested inside a pane. `AppShell` puts one beside the main area, and a
+studio body puts one beside its list. It opens at 400px, resizes from 340 to
+560px from a handle on its left edge, and keeps one saved width
+(`goodboy:right-drawer-width:v1`, clamped on read) for every drawer. It is a
+floating card: 8px from the top, right and bottom edges and from the column,
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
+area minus the drawer and the two gutters would leave the content column
+under 560px, the card lies over the right of the main area with a shadow and
+no scrim, and the main stays interactive; pushing, it has no shadow. Closed,
+its track is 0px wide and `inert`. Opening pushes the track open in 220ms while
+the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
+an open drawer fades its content in 120ms. It never touches the sidebar
+preference.
 
 One drawer at a time, per window. The `drawer` store slice holds
-`{ kind, sessionId, payload, lens }`: `openDrawer`, `closeDrawer` and
-`toggleDrawer` (pressing the trigger again closes it). It closes when the lens
-or the session changes, with Escape, and with its X; focus then returns to the
-trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+`{ kind, sessionId, payload }`: `openDrawer`, `closeDrawer` and `toggleDrawer`
+(pressing the trigger again closes it). **The open drawer is part of the
+history entry's focus.** A forward move (crumb, sidebar, palette, a child such
+as an agent) arrives with it closed; Back and Forward bring it back as it was;
+Escape and its X close it in place. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
@@ -647,10 +728,21 @@ artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. The inbox
-studio keeps the same contract inside itself (`InboxStudioLayout`): the record
-opens in a right column with the same width constants and the same saved width,
-resizes with the same handle, pushes the list while the list keeps 560px and
-lies over it otherwise. Escape closes the record before the studio.
+record opens in the same `DrawerColumn` inside the studio body
+(`InboxStudioLayout`), with the same width, card and motion. Escape closes the
+record before the studio.
+
+`conversation` (payload `{ threadId, tab }`) is a Review conversation. The queue
+stays the page and the conversation opens in the shell drawer: `DrawerHost`
+renders `ConversationDrawerSlot`, and `ResolveQueueHome` portals the panel
+into it, so the panel keeps the queue's order and keys. Back from the Diff or
+from the resolver's page finds the conversation open again, because it was in
+the entry. The panel is one column that reads its own width (`@container`),
+never the viewport: a 44px `ResolvePanelHeader` (the state as glyph and word,
+the location in mono, previous and next with `N of M`, `…`, close), then the
+comment, the agent's question, the reply, the change, the checks and the
+resolver's run, and a fixed footer with one primary and one secondary action.
+The list beside it replaces the old Back to conversations button.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one

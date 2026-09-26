@@ -41,8 +41,9 @@ export {
   type MountDiffStat,
 } from './selectors';
 export { useTranscript } from './transcript';
-export { readPersistedLens } from './slices/session-view';
 export type { SessionStudio, LensKind, DiffFocus } from './slices/session-view';
 export { NO_PROJECT_FILTER_ID } from './slices/sessionFilters';
+export { BOARD_PLACE, agentPlace, sessionPlace } from './slices/navigation/place';
+export type { InboxStudioFocus, StudioKind, StudioPlace } from './slices/navigation/studio';
 
 export const EMPTY_ARRAY: readonly never[] = [];

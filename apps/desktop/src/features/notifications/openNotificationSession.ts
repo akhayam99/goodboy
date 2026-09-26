@@ -1,5 +1,5 @@
 import type { Notification } from '@goodboy/db';
-import { useAppStore } from '../../store';
+import { agentPlace, sessionPlace, useAppStore } from '../../store';
 
 type OpenNotificationSessionParams = {
   readonly notification: Notification;
@@ -24,16 +24,9 @@ export const openNotificationSession = ({
     if (!state.sessions.some((candidate) => candidate.id === sessionId)) {
       return;
     }
-    if (state.currentSessionId === sessionId) {
-      state.setActiveLens(sessionId, null);
-    }
-    if (state.currentSessionId !== sessionId) {
-      await state.setCurrentSession(sessionId);
-    }
-    if (agentId == null) {
-      return;
-    }
-    await useAppStore.getState().selectAgent(sessionId, agentId);
+    state.navigate({
+      to: agentId == null ? sessionPlace({ sessionId }) : agentPlace({ sessionId, agentId }),
+    });
   })().catch((error: unknown) => {
     void useAppStore.getState().reportError({ title: "Couldn't open this notification", error });
   });

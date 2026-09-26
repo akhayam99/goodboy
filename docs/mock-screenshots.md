@@ -70,7 +70,7 @@ useEffect(() => {
     sessions: [FAKE_SESSION],
     sessionGithub: { [FAKE_SESSION.id]: { pr: FAKE_PR, ... } },
     // every store key the component (and the hooks it calls) reads
-    selectAgent: async () => undefined, // action functions can be stubbed too
+    loadAgentTranscript: async () => undefined, // action functions can be stubbed too
   });
 }, []);
 ```

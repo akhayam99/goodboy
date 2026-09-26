@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { OpenQuestion, Session } from '@goodboy/types';
+import type { ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 type Worktree = {
   readonly id: string;
@@ -73,17 +74,18 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       loadSessionDismissedQuestions: vi.fn(async () => undefined),
       markAllAgentsSeen: vi.fn(),
       openArtifactCreation: vi.fn(),
-      setActiveLens: vi.fn(),
+      navigate: vi.fn(),
       setFocusedArtifactId: vi.fn(),
       openMountDiff: vi.fn(),
       closeWorkflowRun: vi.fn(async () => undefined),
     },
   }));
 
-vi.mock('../../../../../../store', () => {
+vi.mock('../../../../../../store', async () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
   useAppStore.getState = () => storeState;
   return {
+    ...(await import('../../../../../../store/slices/navigation/place')),
     EMPTY_ARRAY: Object.freeze([]),
     agentHasUnread: () => unread.current,
     useAppStore,
@@ -170,7 +172,7 @@ beforeEach(() => {
   storeState.closeWorkflowRun.mockClear();
   storeState.openArtifactCreation.mockReset();
   storeState.markAllAgentsSeen.mockReset();
-  storeState.setActiveLens.mockReset();
+  storeState.navigate.mockReset();
   storeState.setFocusedArtifactId.mockReset();
   storeState.loadSessionArtifacts.mockClear();
   storeState.loadSessionAnsweredQuestions.mockClear();
@@ -599,7 +601,9 @@ describe('TimelinePane questions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
-    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+    });
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
   });
 
@@ -724,7 +728,9 @@ describe('TimelinePane run waiting on an answer', () => {
     }
     fireEvent.click(within(row).getByRole('button', { name: 'Answer' }));
 
-    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'questions');
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+    });
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
   });
 });
@@ -873,8 +879,13 @@ describe('TimelinePane artifact rows', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
 
-    expect(storeState.setFocusedArtifactId).toHaveBeenCalledWith('session-1', 'artifact-report');
-    expect(storeState.setActiveLens).toHaveBeenCalledWith('session-1', 'plans');
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({
+        sessionId: 'session-1' as SessionId,
+        lens: 'plans',
+        target: { kind: 'artifact', artifactId: 'artifact-report' as ArtifactId },
+      }),
+    });
   });
 
   it('hides the kinds the activity filter turned off', () => {

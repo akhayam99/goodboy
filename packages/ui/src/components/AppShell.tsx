@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
+import { DrawerColumn } from './DrawerColumn';
 import { ResizeHandle } from './ResizeHandle';
 
 export type AppShellProps = {
@@ -20,13 +21,6 @@ export const LEFT_SIDEBAR_MIN = 260;
 export const LEFT_SIDEBAR_MAX = 640;
 export const LEFT_SIDEBAR_DEFAULT = 340;
 export const LEFT_SIDEBAR_STORAGE_KEY = 'goodboy:left-sidebar-width:v2';
-
-export const RIGHT_DRAWER_MIN = 340;
-export const RIGHT_DRAWER_MAX = 560;
-export const RIGHT_DRAWER_DEFAULT = 400;
-export const RIGHT_DRAWER_STORAGE_KEY = 'goodboy:right-drawer-width:v1';
-export const COLUMN_MIN_PUSH = 560;
-export const COLUMN_GUTTERS = 48;
 
 export const COLLAPSED_RAIL_WIDTH = 44;
 
@@ -62,30 +56,12 @@ const readPersistedLeftWidth = (): number =>
     max: LEFT_SIDEBAR_MAX,
   });
 
-const readPersistedDrawerWidth = (): number =>
-  readPersistedWidth({
-    key: RIGHT_DRAWER_STORAGE_KEY,
-    fallback: RIGHT_DRAWER_DEFAULT,
-    min: RIGHT_DRAWER_MIN,
-    max: RIGHT_DRAWER_MAX,
-  });
-
-type PushParams = {
-  readonly mainWidthPx: number;
-  readonly drawerWidthPx: number;
-};
-
-export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
-  mainWidthPx - drawerWidthPx - COLUMN_GUTTERS >= COLUMN_MIN_PUSH;
-
 type LayoutParams = {
   readonly leftCollapsed: boolean;
   readonly leftHidden: boolean;
   readonly hasLeftSidebar: boolean;
   readonly hasFooter: boolean;
   readonly leftWidthPx: number;
-  readonly isDrawerPushed: boolean;
-  readonly drawerWidthPx: number;
 };
 
 type Layout = {
@@ -114,50 +90,22 @@ const buildLayout = ({
   hasLeftSidebar,
   hasFooter,
   leftWidthPx,
-  isDrawerPushed,
-  drawerWidthPx,
 }: LayoutParams): Layout => {
   const rows = hasFooter ? 'minmax(0,1fr) auto' : 'minmax(0,1fr)';
-  const rightCols = isDrawerPushed ? `${HANDLE_WIDTH}px ${drawerWidthPx}px` : '0px 0px';
   if (!hasLeftSidebar) {
     return {
-      templateAreas: hasFooter
-        ? '"main rhandle right" "footer footer footer"'
-        : '"main rhandle right"',
-      templateColumns: `minmax(0,1fr) ${rightCols}`,
+      templateAreas: hasFooter ? '"main" "footer"' : '"main"',
+      templateColumns: 'minmax(0,1fr)',
       templateRows: rows,
     };
   }
   const leftCol = `${leftColumnWidth({ leftCollapsed, leftHidden, leftWidthPx })}px`;
   const handleCol = leftHidden || leftCollapsed ? '0px' : `${HANDLE_WIDTH}px`;
   return {
-    templateAreas: hasFooter
-      ? '"left lhandle main rhandle right" "footer footer footer footer footer"'
-      : '"left lhandle main rhandle right"',
-    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr) ${rightCols}`,
+    templateAreas: hasFooter ? '"left lhandle main" "footer footer footer"' : '"left lhandle main"',
+    templateColumns: `${leftCol} ${handleCol} minmax(0,1fr)`,
     templateRows: rows,
   };
-};
-
-const useElementWidth = () => {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState<number | null>(null);
-  useEffect(() => {
-    const node = ref.current;
-    if (node === null || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry === undefined) {
-        return;
-      }
-      setWidth(entry.contentRect.width);
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
 };
 
 export const AppShell = ({
@@ -174,11 +122,8 @@ export const AppShell = ({
 }: AppShellProps) => {
   const hasFooter = footer != null;
   const hasLeftSidebar = leftSidebar != null;
-  const isDrawerOpen = drawer != null;
   const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
   const [leftWidth, setLeftWidth] = useState<number>(readPersistedLeftWidth);
-  const [drawerWidth, setDrawerWidth] = useState<number>(readPersistedDrawerWidth);
-  const grid = useElementWidth();
   const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
   const isSheetWrapped = hasLeftSidebar && !leftHidden;
 
@@ -189,59 +134,23 @@ export const AppShell = ({
     localStorage.setItem(LEFT_SIDEBAR_STORAGE_KEY, String(leftWidth));
   }, [leftWidth]);
 
-  useEffect(() => {
-    if (typeof localStorage === 'undefined') {
-      return;
-    }
-    localStorage.setItem(RIGHT_DRAWER_STORAGE_KEY, String(drawerWidth));
-  }, [drawerWidth]);
-
-  const leftTrack = hasLeftSidebar
-    ? leftColumnWidth({
-        leftCollapsed: leftSidebarCollapsed,
-        leftHidden,
-        leftWidthPx: leftWidth,
-      }) + (isLeftResizeDisabled ? 0 : HANDLE_WIDTH)
-    : 0;
-  const isDrawerOverlay =
-    isDrawerOpen &&
-    grid.width !== null &&
-    !canDrawerPush({ mainWidthPx: grid.width - leftTrack, drawerWidthPx: drawerWidth });
-  const isDrawerPushed = isDrawerOpen && !isDrawerOverlay;
-
   const layout = buildLayout({
     leftCollapsed: leftSidebarCollapsed,
     leftHidden,
     hasLeftSidebar,
     hasFooter,
     leftWidthPx: leftWidth,
-    isDrawerPushed,
-    drawerWidthPx: drawerWidth,
   });
   const gridStyle = {
     gridTemplateAreas: layout.templateAreas,
     gridTemplateColumns: layout.templateColumns,
     gridTemplateRows: layout.templateRows,
-    '--drawer-w': `${drawerWidth}px`,
-  } satisfies CSSProperties & Record<'--drawer-w', string>;
-
-  const drawerHandle = (
-    <ResizeHandle
-      value={drawerWidth}
-      min={RIGHT_DRAWER_MIN}
-      max={RIGHT_DRAWER_MAX}
-      onChange={setDrawerWidth}
-      onReset={() => setDrawerWidth(RIGHT_DRAWER_DEFAULT)}
-      side="right"
-      ariaLabel="Resize side panel"
-    />
-  );
+  } satisfies CSSProperties;
 
   return (
     <div className="flex h-screen w-screen flex-col bg-chrome">
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
-        ref={grid.ref}
         className={cn(
           'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-out',
           className,
@@ -287,28 +196,13 @@ export const AppShell = ({
           )}
           style={{ gridArea: 'main' }}
         >
-          {main}
+          <DrawerColumn
+            main={main}
+            drawer={drawer ?? null}
+            ariaLabel="Side panel"
+            resizeLabel="Resize side panel"
+          />
         </main>
-        <div className="min-h-0 overflow-hidden" style={{ gridArea: 'rhandle' }}>
-          {isDrawerPushed ? drawerHandle : null}
-        </div>
-        <aside
-          aria-label="Side panel"
-          data-drawer-mode={isDrawerOverlay ? 'overlay' : isDrawerPushed ? 'push' : 'closed'}
-          inert={!isDrawerOpen}
-          className={cn(
-            'flex min-h-0 min-w-0 overflow-hidden bg-background',
-            isDrawerOverlay && 'z-20 justify-self-end shadow-xl',
-          )}
-          style={
-            isDrawerOverlay
-              ? { gridArea: 'main', width: `${drawerWidth + HANDLE_WIDTH}px` }
-              : { gridArea: 'right' }
-          }
-        >
-          {isDrawerOverlay ? drawerHandle : null}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{drawer}</div>
-        </aside>
         {leftOverlay != null ? (
           <div
             className="pointer-events-none relative z-20 flex min-h-0 min-w-0"

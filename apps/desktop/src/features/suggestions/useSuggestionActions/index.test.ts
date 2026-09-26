@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../store/slices/navigation/place';
 import { renderHook } from '@testing-library/react';
 import type {
   Agent,
@@ -33,7 +34,7 @@ const { storeState, spies } = vi.hoisted(() => {
     void agentId;
     void fields;
   });
-  const setActiveLens = vi.fn();
+  const navigate = vi.fn();
   const rebaseRun = vi.fn(async () => undefined);
   return {
     spies: {
@@ -44,7 +45,7 @@ const { storeState, spies } = vi.hoisted(() => {
       advanceAgent: vi.fn(async () => undefined),
       spawnAgent,
       setAgentConfig,
-      setActiveLens,
+      navigate,
       rebaseRun,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseAgent: vi.fn((_params: unknown) => ({
@@ -68,14 +69,18 @@ const { storeState, spies } = vi.hoisted(() => {
       emitNotification,
       spawnAgent,
       setAgentConfig,
-      setActiveLens,
+      navigate,
     },
   };
 });
 
-vi.mock('../../../store', () => {
+vi.mock('../../../store', async () => {
   const useAppStore = <T>(selector: (state: typeof storeState) => T) => selector(storeState);
-  return { EMPTY_ARRAY: Object.freeze([]), useAppStore };
+  return {
+    ...(await import('../../../store/slices/navigation/place')),
+    EMPTY_ARRAY: Object.freeze([]),
+    useAppStore,
+  };
 });
 vi.mock('../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => ({}),
@@ -197,7 +202,11 @@ describe('useSuggestionActions', () => {
     await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
     expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['thread-1']);
     expect(spies.spawnAgent.mock.calls[0]?.[1].kindOverride).toBe('resolver');
-    await vi.waitFor(() => expect(spies.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review'));
+    await vi.waitFor(() =>
+      expect(spies.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      }),
+    );
   });
 
   it('combines every eligible conversation into one attempt instead of one agent each', async () => {

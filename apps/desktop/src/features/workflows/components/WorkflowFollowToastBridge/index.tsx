@@ -69,7 +69,6 @@ export const WorkflowFollowToastBridge = () => {
         title: `${detail.stepName} started`,
         message: 'The workflow moved on to the next step.',
         actionLabel: 'Follow',
-        lens: 'workflows',
       });
     };
     window.addEventListener('goodboy:workflow-step-started', onStepStarted);

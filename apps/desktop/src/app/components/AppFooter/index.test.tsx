@@ -6,11 +6,8 @@ import {
   type IntegrationGlyphProvider,
 } from '../../../features/integrations/components/IntegrationGlyph';
 import { FOOTER_INTEGRATIONS } from './categories';
-import {
-  footerTarget,
-  type ConnectedIntegrations,
-  type Overlay,
-} from '../../hooks/useAppOverlays/overlayState';
+import { footerTarget, type ConnectedIntegrations } from '../../hooks/useAppOverlays/overlayState';
+import type { StudioPlace } from '../../../store';
 
 vi.mock('./GoodboyChip', () => ({
   GoodboyChip: ({
@@ -77,7 +74,7 @@ const connectedWith = (
 });
 
 type TargetParams = {
-  readonly overlay: Overlay;
+  readonly overlay: StudioPlace;
   readonly connected?: ConnectedIntegrations;
 };
 
@@ -333,7 +330,7 @@ describe('AppFooter', () => {
   });
 
   it('holds the active state on the link action while a disconnected tool form is open', () => {
-    const overlay: Overlay = { kind: 'settings', focus: { scope: 'tools', tool: 'sentry' } };
+    const overlay: StudioPlace = { kind: 'settings', focus: { scope: 'tools', tool: 'sentry' } };
     render(<AppFooter {...footerProps({ overrides: { target: targetFor({ overlay }) } })} />);
 
     expect(screen.getByRole('button', { name: 'Link your first integration' }).className).toContain(
@@ -343,7 +340,7 @@ describe('AppFooter', () => {
 
   it('moves that active state onto the glyph once its inbox is open', () => {
     const connected = connectedWith(['sentry']);
-    const overlay: Overlay = {
+    const overlay: StudioPlace = {
       kind: 'inbox',
       focus: { provider: 'sentry', kind: null, recordKey: null, sessionId: null },
     };

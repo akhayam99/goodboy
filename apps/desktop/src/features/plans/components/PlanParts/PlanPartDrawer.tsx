@@ -1,6 +1,6 @@
 import { DrawerFrame, Markdown, SectionHeader } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionPlans } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionPlans, agentPlace } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { partRoutingLabel } from './partRoutingLabel';
 import { usePlanPartRows } from './usePlanPartRows';
@@ -17,7 +17,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
   const agents = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const plan = plans.find((candidate) => candidate.id === planId) ?? null;
   const rows = usePlanPartRows({ sessionId, plan, agents });
   const row = rows[index] ?? null;
@@ -47,7 +47,7 @@ export const PlanPartDrawer = ({ sessionId, planId, index, onClose }: Props) => 
               <span className="min-w-0 truncate">{`${row.node.label} as ${carrier.name}`}</span>
               <button
                 type="button"
-                onClick={() => void selectAgent(sessionId, carrier.id)}
+                onClick={() => navigate({ to: agentPlace({ sessionId, agentId: carrier.id }) })}
                 className="shrink-0 text-foreground underline-offset-2 hover:underline"
               >
                 Open

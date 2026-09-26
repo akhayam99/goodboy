@@ -1,6 +1,6 @@
 import { Markdown, Band, cn } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   if (question === null) {
     return null;
   }
@@ -23,7 +23,7 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
         {asker !== null && (
           <button
             type="button"
-            onClick={() => void selectAgent(sessionId, asker.id)}
+            onClick={() => navigate({ to: agentPlace({ sessionId, agentId: asker.id }) })}
             className={cn(
               'self-start rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
               'transition-colors duration-150 hover:text-foreground',

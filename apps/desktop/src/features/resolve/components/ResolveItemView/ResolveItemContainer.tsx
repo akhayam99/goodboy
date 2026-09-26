@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ResolveCheckRun, ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
@@ -23,6 +24,8 @@ import {
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
 import type { ResolveDecisionMode, ResolveItemDraft } from '../../resolveItemDraft';
+import type { PanelPosition } from '../ResolvePanelHeader';
+import type { ConversationTab } from '../../../../store/slices/drawer/state';
 
 type RequestAttemptParams = { readonly threadId: string; readonly instruction: string };
 type ReviewPublicationParams = { readonly threadId: string; readonly reconcile: boolean };
@@ -47,6 +50,12 @@ type Props = {
   readonly onNext?: () => void;
   readonly canPrevious?: boolean;
   readonly canNext?: boolean;
+  readonly position?: PanelPosition | null;
+  readonly tab?: ConversationTab;
+  readonly onTabChange?: (tab: ConversationTab) => void;
+  readonly agentPanel?: ReactNode;
+  readonly onOpenAgentPage?: (() => void) | null;
+  readonly onViewAgent?: () => void;
   readonly onReviewPublication?: (params: ReviewPublicationParams) => void;
 };
 
@@ -105,6 +114,12 @@ export const ResolveItemContainer = ({
   onNext = () => undefined,
   canPrevious = false,
   canNext = false,
+  position = null,
+  tab = 'comment',
+  onTabChange = () => undefined,
+  agentPanel = null,
+  onOpenAgentPage = null,
+  onViewAgent = () => undefined,
   onReviewPublication = () => undefined,
 }: Props) => {
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
@@ -124,7 +139,6 @@ export const ResolveItemContainer = ({
   const reopenResolveQueueItem = useAppStore((s) => s.reopenResolveQueueItem);
   const runResolveCheck = useAppStore((s) => s.runResolveCheck);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
-  const openResolveAgent = useAppStore((s) => s.openResolveAgent);
   const loadDiscoveredScripts = useAppStore((s) => s.loadDiscoveredScripts);
   const metrics = useAgentMetrics({ sessionId });
   const threadId = row.thread.threadId;
@@ -413,7 +427,7 @@ export const ResolveItemContainer = ({
       return;
     }
     if (id === 'view_agent' && row.attempt !== null) {
-      openResolveAgent({ sessionId, agentId: row.attempt.agentId, threadId, prNumber });
+      onViewAgent();
       return;
     }
     if (id === 'stop_run' && row.attempt !== null) {
@@ -425,7 +439,11 @@ export const ResolveItemContainer = ({
     <ResolveItemView
       sessionId={sessionId}
       row={row}
-      prNumber={prNumber}
+      position={position}
+      tab={tab}
+      onTabChange={onTabChange}
+      agentPanel={agentPanel}
+      onOpenAgentPage={onOpenAgentPage}
       coveredRows={coveredRows}
       files={diff.files}
       isDiffLoading={diff.isLoading}
@@ -477,10 +495,7 @@ export const ResolveItemContainer = ({
       onStopRun={() =>
         row.attempt !== null && void forceCloseResolver(sessionId, row.attempt.agentId)
       }
-      onViewWork={() =>
-        row.attempt !== null &&
-        openResolveAgent({ sessionId, agentId: row.attempt.agentId, threadId, prNumber })
-      }
+      onViewWork={onViewAgent}
       onSelectRelated={(relatedThreadId) => onSelect(relatedThreadId)}
       onOpenUrl={(url) => void openUrl(url)}
     />

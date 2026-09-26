@@ -24,7 +24,7 @@ import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpaw
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -52,8 +52,7 @@ export const CreatePrPanel = ({
 }: Props) => {
   const createPrForSession = useAppStore((s) => s.createPrForSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const navigate = useAppStore((s) => s.navigate);
   const announceAgentStarted = useAgentStartedToast();
   const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
   const repo = useSessionRepo({ sessionId });
@@ -196,8 +195,7 @@ export const CreatePrPanel = ({
         effort: agentConfig.effort,
         focus: 'none',
       });
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, null);
+      navigate({ to: sessionPlace({ sessionId }) });
       announceAgentStarted({
         sessionId,
         agentId,

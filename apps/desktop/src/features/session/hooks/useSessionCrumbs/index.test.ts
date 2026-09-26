@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import type {
   Agent,
   AgentId,
@@ -21,17 +22,18 @@ const { store, actions } = vi.hoisted(() => {
     answeredQuestions: ReadonlyArray<Record<string, unknown>>;
   } = { state: {}, openQuestions: [], answeredQuestions: [] };
   const actions = {
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
     setScriptsLensScope: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
     setFocusedArtifactId: vi.fn(),
-    selectAgent: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     setReviewMode: vi.fn(),
   };
   return { store, actions };
 });
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: Object.assign((selector: (state: StoreState) => unknown) => selector(store.state), {
     getState: () => store.state,
@@ -204,7 +206,9 @@ describe('useSessionCrumbs', () => {
 
     expect(result.current[3]?.id).toBe('selected-parent');
     result.current[3]?.onClick?.();
-    expect(actions.selectAgent).toHaveBeenCalledWith(SESSION_ID, STEP_AGENT_ID);
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: STEP_AGENT_ID },
+    });
   });
 
   it('keeps a top-level step free of any father crumb', () => {
@@ -259,6 +263,8 @@ describe('useSessionCrumbs', () => {
 
     result.current[1]?.onClick?.();
     expect(actions.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
-    expect(actions.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'workflows' }),
+    });
   });
 });

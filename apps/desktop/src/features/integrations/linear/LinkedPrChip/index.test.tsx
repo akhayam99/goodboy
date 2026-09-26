@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PullRequestState } from '@goodboy/types';
+import type { PullRequestState, SessionId } from '@goodboy/types';
 
 type Store = {
   currentSessionId: string | null;
@@ -10,10 +11,9 @@ type Store = {
   sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionGithub: Record<string, { pr: PullRequestState | null }>;
+  appStudio: { readonly kind: string } | null;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
-  readonly setActiveLens: ReturnType<typeof vi.fn>;
-  readonly setCurrentSession: ReturnType<typeof vi.fn>;
-  readonly reportError: ReturnType<typeof vi.fn>;
+  readonly navigate: ReturnType<typeof vi.fn>;
 };
 
 const h = vi.hoisted(() => ({
@@ -26,15 +26,15 @@ const h = vi.hoisted(() => ({
     ],
     sessionProjectPrs: {},
     sessionGithub: {},
+    appStudio: null,
     selectSessionPr: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
-    setCurrentSession: vi.fn(async () => undefined),
-    reportError: vi.fn(async () => undefined),
+    navigate: vi.fn(),
   } as Store,
   openUrl: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
@@ -65,9 +65,7 @@ beforeEach(() => {
   h.store.sessionProjectPrs = {};
   h.store.sessionGithub = {};
   h.store.selectSessionPr.mockClear();
-  h.store.setActiveLens.mockClear();
-  h.store.setCurrentSession.mockClear();
-  h.store.reportError.mockClear();
+  h.store.navigate.mockClear();
   h.openUrl.mockClear();
 });
 
@@ -85,12 +83,13 @@ describe('LinkedPrChip', () => {
     fireEvent.click(screen.getByRole('button'));
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
-    expect(h.store.setActiveLens).toHaveBeenCalledWith('session-1', 'pr');
-    expect(h.store.setCurrentSession).not.toHaveBeenCalled();
+    expect(h.store.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'pr' }),
+    });
     expect(h.openUrl).not.toHaveBeenCalled();
   });
 
-  it('switches to another session of the workspace that holds the pull request', async () => {
+  it('switches to another session of the workspace that holds the pull request', () => {
     h.store.sessionProjectPrs = { 'session-2': { 'project-1': [SESSION_PR] } };
 
     render(
@@ -99,12 +98,11 @@ describe('LinkedPrChip', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button'));
-    await Promise.resolve();
-    await Promise.resolve();
 
-    expect(h.store.setCurrentSession).toHaveBeenCalledWith('session-2');
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-2', 42);
-    expect(h.store.setActiveLens).toHaveBeenCalledWith('session-2', 'pr');
+    expect(h.store.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-2' as SessionId, lens: 'pr' }),
+    });
     expect(h.openUrl).not.toHaveBeenCalled();
   });
 
@@ -124,15 +122,12 @@ describe('LinkedPrChip', () => {
     fireEvent.click(screen.getByRole('button'));
 
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/other/pull/9');
-    expect(h.store.setActiveLens).not.toHaveBeenCalled();
-    expect(h.store.setCurrentSession).not.toHaveBeenCalled();
+    expect(h.store.navigate).not.toHaveBeenCalled();
   });
 
-  it('opens the pull request inside Goodboy even while a studio overlay is showing', () => {
+  it('falls back to the browser while a studio covers the session', () => {
     h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
-    const overlay = document.createElement('div');
-    overlay.setAttribute('data-studio-overlay', '');
-    document.body.appendChild(overlay);
+    h.store.appStudio = { kind: 'inbox' };
 
     render(
       <LinkedPrChip
@@ -141,9 +136,9 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
-    expect(h.store.setActiveLens).toHaveBeenCalledWith('session-1', 'pr');
-    expect(h.openUrl).not.toHaveBeenCalled();
-    overlay.remove();
+    expect(h.openUrl).toHaveBeenCalledWith(SESSION_PR.url);
+    expect(h.store.navigate).not.toHaveBeenCalled();
+    expect(h.store.selectSessionPr).not.toHaveBeenCalled();
+    h.store.appStudio = null;
   });
 });

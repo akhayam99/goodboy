@@ -9,6 +9,9 @@ import {
   useCurrentWorkspace,
   useSessions,
   useWorkspaces,
+  BOARD_PLACE,
+  agentPlace,
+  sessionPlace,
 } from '../../../../store';
 import { AGENT_KIND_META, agentKindPalette, classifyAgent, type AgentKind } from '../../agent-kind';
 import { parseQuery } from '../../../quick-actions';
@@ -147,8 +150,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
@@ -190,7 +192,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: inlineMarkdownText({ text: s.goal }) || 'untitled session',
         sublabel: ws?.name,
         group: 'session',
-        onSelect: () => void setCurrentSession(s.id),
+        onSelect: () => navigate({ to: sessionPlace({ sessionId: s.id }) }),
       });
     }
 
@@ -206,7 +208,10 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           sublabel: AGENT_KIND_META[kind].label,
           group: 'agent',
           accent: agentKindPalette({ kind }).bg,
-          onSelect: () => void selectAgent(currentSession.id, a.id as AgentId),
+          onSelect: () =>
+            navigate({
+              to: agentPlace({ sessionId: currentSession.id, agentId: a.id as AgentId }),
+            }),
         });
       }
       const sessionId = currentSession.id as SessionId;
@@ -230,7 +235,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         sublabel: shortcutGlyphs('session.board'),
         group: 'goto',
         icon: CONCEPT_ICONS.workspace,
-        onSelect: () => void setCurrentSession(null),
+        onSelect: () => navigate({ to: BOARD_PLACE }),
       });
     }
     if (currentWorkspace !== null) {
@@ -397,8 +402,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     agentKindOverride,
     destinations,
     openWorkspace,
-    setCurrentSession,
-    selectAgent,
+    navigate,
     theme,
     toggleTheme,
   ]);

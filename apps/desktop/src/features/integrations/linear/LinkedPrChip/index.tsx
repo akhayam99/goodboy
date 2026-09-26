@@ -8,7 +8,7 @@ import {
 } from '../../../../shared/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
-import { useAppStore } from '../../../../store';
+import { useAppStore, sessionPlace } from '../../../../store';
 import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
 
 type Props = {
@@ -16,34 +16,22 @@ type Props = {
 };
 
 export const LinkedPrChip = ({ pr }: Props) => {
-  const currentSessionId = useAppStore((s) => s.currentSessionId);
   const workspaceId = useAppStore((s) => s.currentWorkspaceId);
   const sessionMatch = useAppStore((s) =>
     workspaceId == null ? null : selectSessionForPr({ state: s, workspaceId, url: pr.url }),
   );
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const reportError = useAppStore((s) => s.reportError);
+  const navigate = useAppStore((s) => s.navigate);
+  const isUnderStudio = useAppStore((s) => s.appStudio !== null);
 
   const open = () => {
-    if (sessionMatch == null) {
+    if (sessionMatch == null || isUnderStudio) {
       void openUrl(pr.url);
       return;
     }
     const { sessionId, number } = sessionMatch;
-    if (sessionId === currentSessionId) {
-      void selectSessionPr(sessionId, number);
-      setActiveLens(sessionId, 'pr');
-      return;
-    }
-    void (async () => {
-      await setCurrentSession(sessionId);
-      await selectSessionPr(sessionId, number);
-      setActiveLens(sessionId, 'pr');
-    })().catch((error: unknown) => {
-      void reportError({ title: "Couldn't open this pull request", error });
-    });
+    void selectSessionPr(sessionId, number);
+    navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
   };
 
   const state = linearPrStateKind({ status: pr.status });

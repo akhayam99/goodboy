@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../sessionEviction';
 import type { AppState } from '../../types';
+import { dropSession } from '../navigation/history';
 
 type Params = {
   readonly set: (state: Partial<AppState>) => void;
@@ -56,6 +57,12 @@ export const evictSession = ({ set, get }: Params) => {
         (rule) => [rule.key, evictValue({ value: state[rule.key], ids: idsByScope[rule.keyedBy] })],
       ),
     );
-    set(changes);
+    const navigation = Object.fromEntries(
+      Object.entries(state.navigation).map(([key, stack]) => [
+        key,
+        dropSession({ stack, sessionId }),
+      ]),
+    );
+    set({ ...changes, navigation });
   };
 };

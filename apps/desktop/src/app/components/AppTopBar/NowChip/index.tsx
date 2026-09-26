@@ -15,6 +15,7 @@ import {
   useCurrentWorkspace,
   useSessions,
   useStageGroupedSessions,
+  sessionPlace,
 } from '../../../../store';
 import { RunningScriptRow } from '../../../../features/scripts/components/RunningScriptRow';
 import {
@@ -58,8 +59,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const sessions = useSessions();
   const groups = useStageGroupedSessions(workspace?.id ?? null, sessions);
   const scripts = useRunningScripts();
-  const setCurrentSession = useAppStore((state) => state.setCurrentSession);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
   const [now, setNow] = useState(() => Date.now());
   const dropdown = useDropdown({
@@ -101,9 +101,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
 
   const selectSession = ({ sessionId }: SelectParams) => {
     close();
-    void setCurrentSession(sessionId).then(() => {
-      setActiveLens(sessionId, null);
-    });
+    navigate({ to: sessionPlace({ sessionId }) });
   };
 
   const openScript = (run: RunningScript) => {

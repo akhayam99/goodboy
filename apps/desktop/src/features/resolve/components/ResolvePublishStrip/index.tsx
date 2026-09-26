@@ -9,7 +9,7 @@ import type {
   ResolveQueueItemWithThread,
   SessionId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { useToast } from '../../../../app/components/Toast';
 import { acceptedPublishCounts, previewPublishCounts } from '../../publishCounts';
@@ -74,8 +74,8 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const retryPublication = useAppStore((s) => s.retryPublication);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const publicationReturn = useAppStore((s) => s.resolvePublicationReturn?.[sessionId] ?? null);
+  const navigate = useAppStore((s) => s.navigate);
+  const publicationRequest = useAppStore((s) => s.resolvePublicationRequest?.[sessionId] ?? null);
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
   const entryRef = useRef<HTMLButtonElement | null>(null);
@@ -106,17 +106,17 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   }, [preview]);
 
   useEffect(() => {
-    if (publicationReturn === null || handledRequestRef.current === publicationReturn.requestId) {
+    if (publicationRequest === null || handledRequestRef.current === publicationRequest.requestId) {
       return;
     }
-    handledRequestRef.current = publicationReturn.requestId;
+    handledRequestRef.current = publicationRequest.requestId;
     entryRef.current?.focus();
-    if (publicationReturn.reconcile) {
+    if (publicationRequest.reconcile) {
       void retryPublication({ sessionId }).catch((error: unknown) =>
         reportError({ title: "Couldn't check the publication", error, sessionId }),
       );
     }
-  }, [publicationReturn, reportError, retryPublication, sessionId]);
+  }, [publicationRequest, reportError, retryPublication, sessionId]);
 
   const run = useCallback(
     async ({
@@ -220,13 +220,13 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           null,
         );
         if (attempt !== null) {
-          void selectAgent(sessionId, attempt.agentId);
+          navigate({ to: agentPlace({ sessionId, agentId: attempt.agentId }) });
         }
         return;
       }
       openDiffLens(sessionId, { kind: 'working', path: null });
     },
-    [attempts, onPrepare, openDiffLens, refreshSessionPrDetail, selectAgent, sessionId],
+    [attempts, onPrepare, openDiffLens, refreshSessionPrDetail, navigate, sessionId],
   );
 
   if (total === 0 && !isStuck && preview === null) {

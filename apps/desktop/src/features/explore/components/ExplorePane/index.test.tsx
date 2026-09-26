@@ -11,9 +11,8 @@ type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
-  readonly selectAgent: ReturnType<typeof vi.fn>;
-  readonly setCurrentSession: ReturnType<typeof vi.fn>;
-  readonly setActiveLens: ReturnType<typeof vi.fn>;
+  readonly navigate: ReturnType<typeof vi.fn>;
+  readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
   readonly providers: ReadonlyArray<{
     readonly id: ProviderId;
     readonly connection: string;
@@ -33,9 +32,8 @@ const h = vi.hoisted(() => ({
       args: { readonly model: string; readonly initialPrompt: string },
     ) => Promise<string>
   >(async () => 'agent-1'),
-  selectAgent: vi.fn(async () => undefined),
-  setCurrentSession: vi.fn(async () => undefined),
-  setActiveLens: vi.fn(),
+  navigate: vi.fn(),
+  loadAgentTranscript: vi.fn(async () => undefined),
   resetStore: (): void => undefined,
   showToast:
     vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
@@ -71,9 +69,7 @@ vi.mock('../../../../store', async () => {
   >('../../../../store/slices/drawer');
   const store = create<Record<string, unknown>>()((set, get) => ({
     spawnAgent: h.spawnAgent,
-    selectAgent: h.selectAgent,
-    setCurrentSession: h.setCurrentSession,
-    setActiveLens: h.setActiveLens,
+    navigate: h.navigate,
     get providers() {
       return h.providers;
     },
@@ -87,6 +83,7 @@ vi.mock('../../../../store', async () => {
   }));
   h.resetStore = () => store.setState({ drawer: null });
   return {
+    ...(await import('../../../../store/slices/navigation/place')),
     useAppStore: <T,>(selector: (state: Store) => T) =>
       store((state) => selector(state as unknown as Store)),
   };
@@ -141,7 +138,7 @@ beforeEach(() => {
   h.exploreRead.mockReset();
   h.spawnAgent.mockReset();
   h.spawnAgent.mockResolvedValue('agent-1');
-  h.selectAgent.mockClear();
+  h.navigate.mockClear();
   h.showToast.mockClear();
   h.providers = [{ id: 'anthropic' as ProviderId, connection: 'connected' }];
   h.resetStore();
@@ -336,14 +333,18 @@ describe('ExplorePane', () => {
       (spawnArgs?.initialPrompt.indexOf('Analyze this spreadsheet and summarize trends.') ?? 0) <
         (spawnArgs?.initialPrompt.indexOf('- budget.xlsx') ?? 0),
     ).toBe(true);
-    expect(h.selectAgent).not.toHaveBeenCalled();
+    expect(h.navigate).not.toHaveBeenCalled();
 
     expect(h.showToast.mock.calls[0]![0]?.kind).toBe('info');
     const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
     action?.onClick();
 
-    await waitFor(() => expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1'));
+    await waitFor(() =>
+      expect(h.navigate).toHaveBeenCalledWith({
+        to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
+      }),
+    );
   });
 
   it('keeps spawn disabled when the ask is empty', async () => {

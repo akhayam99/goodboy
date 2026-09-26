@@ -4,7 +4,7 @@ import { clampEffortForModel } from '@goodboy/core';
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { resolveLimitedTaskModel } from '../../../../store/slices/providerLimits/resolveLimitedTaskModel';
 import type { Agent, OpenQuestion, ProviderId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import {
   delegateRowState,
   latestQuestionDelegate,
@@ -42,7 +42,7 @@ export const useQuestionDelegateControls = ({
   question,
 }: Params): QuestionDelegateControls => {
   const setAnswerIntent = useOpenQuestions((state) => state.setAnswerIntent);
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const takeQuestionBack = useAppStore((state) => state.takeQuestionBack);
   const intent = useOpenQuestions(
     (state) => state.drafts[question.id]?.answerIntent ?? PERSON_ANSWERS,
@@ -121,8 +121,8 @@ export const useQuestionDelegateControls = ({
     if (delegateId === null) {
       return;
     }
-    void selectAgent(sessionId, delegateId);
-  }, [delegateId, selectAgent, sessionId]);
+    navigate({ to: agentPlace({ sessionId, agentId: delegateId }) });
+  }, [delegateId, navigate, sessionId]);
 
   const onTakeBackDelegate = useCallback(() => {
     setAnswerIntent(question.id, PERSON_ANSWERS);

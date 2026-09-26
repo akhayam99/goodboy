@@ -9,15 +9,21 @@ const { githubAuth } = vi.hoisted(() => ({ githubAuth: { isAuthenticated: false 
 
 vi.mock('../shared/platform', () => ({ currentPlatform: () => 'darwin' }));
 
-const { state, workspace } = vi.hoisted(() => {
+const { state, workspace, storeListeners } = vi.hoisted(() => {
+  const listeners = new Set<() => void>();
   const currentWorkspace = {
     id: 'workspace-1',
     name: 'Workspace',
     rootPath: '/repo',
     kind: 'repo' as const,
   };
+  const notify = () => listeners.forEach((listener) => listener());
+  const studioState = {
+    appStudio: null as { readonly kind: string } | null,
+  };
   return {
     workspace: currentWorkspace,
+    storeListeners: listeners,
     state: {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
@@ -30,17 +36,31 @@ const { state, workspace } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: {} as Record<string, string>,
-      setSessionStudio: vi.fn(),
       openWorkspace: vi.fn(),
-      setCurrentSession: vi.fn(),
-      lensGo: vi.fn(),
       currentWorkspaceId: 'workspace-1' as string | null,
       currentSessionId: null as string | null,
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
-      setActiveLens: vi.fn(),
       sessionWorktrees: {},
       providers: [] as ReadonlyArray<{ connection: string }>,
+      get appStudio() {
+        return studioState.appStudio;
+      },
+      set appStudio(next: { readonly kind: string } | null) {
+        studioState.appStudio = next;
+      },
+      openStudio: ({ studio }: { readonly studio: { readonly kind: string } }) => {
+        studioState.appStudio = studio;
+        notify();
+      },
+      amendStudio: ({ studio }: { readonly studio: { readonly kind: string } }) => {
+        studioState.appStudio = studio;
+        notify();
+      },
+      closeStudio: () => {
+        studioState.appStudio = null;
+        notify();
+      },
     },
   };
 });
@@ -224,9 +244,20 @@ vi.mock('../shared/hooks/useProviderRefreshOnFocus', () => ({
 vi.mock('../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));
-vi.mock('../store', () => {
+vi.mock('../store', async () => {
+  const { useEffect: useMountEffect, useReducer } = await import('react');
   const useAppStore = Object.assign(
-    vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
+    vi.fn((selector: (store: typeof state) => unknown) => {
+      const [, rerender] = useReducer((count: number) => count + 1, 0);
+      useMountEffect(() => {
+        const listener = () => rerender();
+        storeListeners.add(listener);
+        return () => {
+          storeListeners.delete(listener);
+        };
+      }, []);
+      return selector(state);
+    }),
     { getState: () => state, subscribe: () => () => undefined },
   );
   return {
@@ -246,6 +277,7 @@ import { App } from '../App';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudioEvent';
 
 beforeEach(() => {
+  state.appStudio = null;
   state.workspaceIntegrations = {};
   state.workspaces = [workspace];
   state.currentWorkspaceId = 'workspace-1';

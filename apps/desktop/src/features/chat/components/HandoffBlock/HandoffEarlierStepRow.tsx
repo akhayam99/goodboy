@@ -1,5 +1,5 @@
 import type { HandoffRef, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 
 type Props = {
   readonly entry: Extract<HandoffRef, { kind: 'agent' }>;
@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const HandoffEarlierStepRow = ({ entry, sessionId }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   return (
     <button
       type="button"
@@ -16,7 +16,7 @@ export const HandoffEarlierStepRow = ({ entry, sessionId }: Props) => {
         if (sessionId === null) {
           return;
         }
-        void selectAgent(sessionId, entry.agentId);
+        navigate({ to: agentPlace({ sessionId, agentId: entry.agentId }) });
       }}
       className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-label transition-colors hover:bg-hover"
     >

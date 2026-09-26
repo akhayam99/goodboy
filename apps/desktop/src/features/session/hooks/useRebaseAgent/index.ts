@@ -9,7 +9,7 @@ import type {
   SessionProjectMount,
   WorktreeStatus,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
 import { useToast } from '../../../../app/components/Toast';
@@ -142,8 +142,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     sessionId == null ? null : (state.sessionEvents?.[sessionId] ?? EMPTY_SESSION_EVENTS),
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const selectAgent = useAppStore((state) => state.selectAgent);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const navigate = useAppStore((state) => state.navigate);
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
   const recordSessionEvent = useAppStore((state) => state.recordSessionEvent);
@@ -225,8 +224,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       action: {
         label: 'Open the rebase agent',
         onClick: () => {
-          setActiveLens(sessionId, 'agents');
-          void selectAgent(sessionId, agentId);
+          navigate({ to: agentPlace({ sessionId, agentId }) });
         },
       },
     });
@@ -236,9 +234,8 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     pending,
     phaseRuns,
     reportError,
-    selectAgent,
+    navigate,
     sessionId,
-    setActiveLens,
     showToast,
   ]);
 
@@ -296,8 +293,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
         action: {
           label: 'Open the rebase agent',
           onClick: () => {
-            setActiveLens(sessionId, 'agents');
-            void selectAgent(sessionId, agentId);
+            navigate({ to: agentPlace({ sessionId, agentId }) });
           },
         },
       });

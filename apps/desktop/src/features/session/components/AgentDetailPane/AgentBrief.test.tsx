@@ -28,7 +28,7 @@ const state = vi.hoisted(() => ({
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
   sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<OpenQuestion>>,
   loadAgentHandoff: async () => undefined,
-  selectAgent: async () => undefined,
+  navigate: () => undefined,
   answerOpenQuestions: async () => undefined,
   dismissOpenQuestion: async () => undefined,
   loadSessionOpenQuestions: async () => undefined,
@@ -38,7 +38,8 @@ const transcriptItems = vi.hoisted(() => ({
   items: [] as ReadonlyArray<{ kind: string; text: string }>,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => state.openQuestions,
@@ -382,15 +383,17 @@ describe('AgentBrief delegated answers', () => {
   });
 
   it('opens the delegate from its row', () => {
-    const selectAgent = vi.fn(async () => undefined);
-    state.selectAgent = selectAgent;
+    const navigate = vi.fn();
+    state.navigate = navigate;
     state.sessionPhaseRuns = { [sessionId]: [makeAgent({}), delegate()] };
     state.openQuestions = [question];
 
     render(<AgentBrief session={session} agent={makeAgent({})} />);
     fireEvent.click(screen.getByTestId(`delegate-brief-row-${delegateId}`));
 
-    expect(selectAgent).toHaveBeenCalledWith(sessionId, delegateId);
+    expect(navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: delegateId },
+    });
   });
 
   it('keeps the delegate out of the generic children lane, so it is not listed twice', () => {
@@ -424,8 +427,8 @@ describe('AgentBrief delegated answers', () => {
   });
 
   it('quotes the question on the delegate itself, with a way back to the asker', () => {
-    const selectAgent = vi.fn(async () => undefined);
-    state.selectAgent = selectAgent;
+    const navigate = vi.fn();
+    state.navigate = navigate;
     state.sessionPhaseRuns = { [sessionId]: [makeAgent({ name: 'plan the work' }), delegate()] };
     state.answeredQuestions = [
       { ...question, status: 'answered', userAnswer: 'Postgres' } as unknown as OpenQuestion,
@@ -436,7 +439,9 @@ describe('AgentBrief delegated answers', () => {
     expect(screen.getByText('Answering for')).toBeTruthy();
     expect(screen.getByText('pick a database')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'asked by plan the work' }));
-    expect(selectAgent).toHaveBeenCalledWith(sessionId, agentId);
+    expect(navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: agentId },
+    });
   });
 
   it('says nothing about answering for on an agent that is not a delegate', () => {

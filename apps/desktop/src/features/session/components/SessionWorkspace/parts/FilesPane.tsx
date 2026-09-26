@@ -4,7 +4,6 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/co
 import { LensEmptyState } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { DIFF_PANE_TITLE, SessionDiffPane } from '../../../../diff/components/SessionDiffPane';
-import { ResolveReturnPill } from '../../../../resolve/components/ResolveReturnPill';
 import { DiffMountSwitcher } from './DiffMountSwitcher';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
@@ -98,7 +97,6 @@ export const FilesPane = ({
       onContentEmptyChange={setIsDiffEmpty}
       aboveBody={
         <>
-          <ResolveReturnPill sessionId={sessionId} />
           {mounts.length > 1 ? (
             <DiffMountSwitcher
               sessionId={sessionId}

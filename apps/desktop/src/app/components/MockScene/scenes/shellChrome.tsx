@@ -91,8 +91,7 @@ export const seedShellChrome = ({
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
     loadArchivedSessions: async () => undefined,
-    setCurrentSession: async () => undefined,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 
@@ -173,7 +172,7 @@ export const seedStudioChrome = (): void => {
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
-    setCurrentSession: async () => undefined,
+    navigate: () => undefined,
   });
 };
 

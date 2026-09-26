@@ -282,6 +282,13 @@ import type { Params as MarkChangelogSeenParams } from './slices/changelog/markC
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createDrawerSlice } from './slices/drawer';
+import { createNavigationSlice } from './slices/navigation';
+import {
+  initialNavigationState,
+  type AmendFocusParams,
+  type NavigateParams,
+  type StudioParams,
+} from './slices/navigation/types';
 import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
@@ -354,6 +361,14 @@ type AppActions = {
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
+  navigate(params: NavigateParams): void;
+  back(): void;
+  forward(): void;
+  up(): void;
+  amendFocus(params: AmendFocusParams): void;
+  openStudio(params: StudioParams): void;
+  amendStudio(params: StudioParams): void;
+  closeStudio(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;
@@ -703,7 +718,7 @@ type AppActions = {
   resetWorkflows(workspaceId: WorkspaceId, slugs: ReadonlyArray<string>): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  deselectAgent(sessionId: SessionId): void;
+  loadAgentTranscript(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAgentSeen(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAllAgentsSeen(sessionId: SessionId): Promise<void>;
@@ -975,8 +990,6 @@ type AppActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  replaceActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
@@ -1011,27 +1024,15 @@ type AppActions = {
   }): void;
   openResolveDiff(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly sha: string;
     readonly path: string | null;
-    readonly line: number | null;
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  returnFromResolveDiff(params: { readonly sessionId: SessionId }): void;
   openResolvePublication(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly reconcile: boolean;
   }): void;
-  returnFromResolvePublication(params: { readonly sessionId: SessionId }): void;
-  openResolveAgent(params: {
-    readonly sessionId: SessionId;
-    readonly agentId: AgentId;
-    readonly threadId: string;
-    readonly prNumber: number;
-  }): void;
-  returnFromResolveAgent(params: { readonly sessionId: SessionId }): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,
@@ -1067,6 +1068,7 @@ export const initialState: AppState = {
   ...initialChangelogState,
   ...initialBugReportDraftState,
   ...initialDrawerState,
+  ...initialNavigationState,
   ...initialScriptsState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
@@ -1291,4 +1293,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
   ...createDrawerSlice(set, get),
+  ...createNavigationSlice(set, get),
 }));

@@ -17,7 +17,6 @@ import { EMPTY_LOADING } from '../../session-mutators';
 import type { SessionLoadingFlags } from '../../types';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';
-import { drawerAfterMove } from '../drawer/drawerAfterMove';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
@@ -55,7 +54,6 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
       }
       return {
         currentSessionId: id,
-        drawer: drawerAfterMove({ drawer: state.drawer, sessionId: id }),
         sessionSummary: null,
         sessionLoading: id
           ? { ...state.sessionLoading, [id]: initialLoading }

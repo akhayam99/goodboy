@@ -7,7 +7,7 @@ import type {
   Session,
   SessionId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useDiffComments, sessionPlace } from '../../../../store';
 import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { selectPrWrite } from '../../../../store/slices/pr-writes/selectPrWrite';
@@ -87,7 +87,7 @@ export const ReviewPane = ({ session }: Props) => {
   const closePr = useAppStore((s) => s.closePr);
   const reopenPr = useAppStore((s) => s.reopenPr);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
@@ -262,7 +262,9 @@ export const ReviewPane = ({ session }: Props) => {
         <NoPullRequestState
           isDraftAgentRunning={isDraftAgentRunning}
           onDraft={() =>
-            isDraftAgentRunning ? setActiveLens(sessionId, 'agents') : setMode('create_pr')
+            isDraftAgentRunning
+              ? navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) })
+              : setMode('create_pr')
           }
         />
       </PaneShell>
@@ -313,7 +315,7 @@ export const ReviewPane = ({ session }: Props) => {
         sessionId={sessionId}
         pr={pr}
         detail={github?.detail ?? null}
-        onSelectLens={(lens) => setActiveLens(sessionId, lens)}
+        onSelectLens={(lens) => navigate({ to: sessionPlace({ sessionId, lens: lens }) })}
         onMutated={onMutated}
       />
     ) : mode === 'pr_activity' ? (

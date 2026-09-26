@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
+import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../../../store';
 import type { ShowToast } from '../../../../../../app/components/Toast';
 import {
   buildAgentActions,
@@ -48,7 +48,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     useShallow((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY),
   ) as ReadonlyArray<Agent>;
   const sessionAgentKindOverrides = useAppStore((s) => s.agentKindOverride);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const reportError = useAppStore((s) => s.reportError);
@@ -131,9 +131,9 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
     (agent: Agent) => {
       setValue('');
       setShowPopover(false);
-      void selectAgent(session.id, agent.id);
+      navigate({ to: agentPlace({ sessionId: session.id, agentId: agent.id }) });
     },
-    [selectAgent, session.id, setValue],
+    [navigate, session.id, setValue],
   );
 
   const onSpawnAgent = useCallback(async () => {

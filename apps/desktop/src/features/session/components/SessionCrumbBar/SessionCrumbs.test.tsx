@@ -2,6 +2,7 @@
 
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Agent, AgentId, Session, SessionId, SessionStageInfo } from '@goodboy/types';
 
@@ -19,8 +20,8 @@ const h = vi.hoisted(() => ({
     prState: null,
   } as SessionStageInfo,
   currentSession: null as Session | null,
-  selectAgent: vi.fn(),
-  setActiveLens: vi.fn(),
+  navigate: vi.fn(),
+  loadAgentTranscript: vi.fn(async () => undefined),
   setScriptsLensScope: vi.fn(),
   setFocusedArtifactId: vi.fn(),
   setFocusedWorkflowRun: vi.fn(),
@@ -41,7 +42,8 @@ vi.mock('../../hooks/useLensDestinations', async () => {
   };
 });
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: Object.assign(<T,>(selector: (state: typeof h.state) => T) => selector(h.state), {
     getState: () => h.state,
@@ -157,8 +159,7 @@ const resetState = () => {
     sessionGithub: {},
     phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
     sessionWorkflows: { [SESSION_ID]: [] },
-    selectAgent: h.selectAgent,
-    setActiveLens: h.setActiveLens,
+    navigate: h.navigate,
     setScriptsLensScope: h.setScriptsLensScope,
     setFocusedArtifactId: h.setFocusedArtifactId,
     setFocusedWorkflowRun: h.setFocusedWorkflowRun,
@@ -300,7 +301,9 @@ describe('SessionCrumbs', () => {
     expect(menu.textContent).not.toContain('workflow step');
 
     fireEvent.click(screen.getByRole('menuitem', { name: /implement two/ }));
-    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, implementer.id);
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: implementer.id },
+    });
   });
 
   it('seals the last crumb when the selected agent has no peers in its home lens', () => {
@@ -344,7 +347,9 @@ describe('SessionCrumbs', () => {
     );
 
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Review/ }));
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
   });
 
   it('switches page from the lens crumb of a deeper trail without navigating', () => {
@@ -363,7 +368,9 @@ describe('SessionCrumbs', () => {
 
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Questions/ }));
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'questions');
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'questions' }),
+    });
   });
 
   it('lands on the root of a destination, not on the object left open in it', () => {
@@ -382,7 +389,9 @@ describe('SessionCrumbs', () => {
 
     expect(h.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
+    });
   });
 
   it('marks only the open lens, never its neighbours on the same surface', () => {
@@ -437,7 +446,9 @@ describe('SessionCrumbs', () => {
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     fireEvent.click(within(menu).getByRole('menuitem', { name: /Overview/ }));
 
-    expect(h.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: null }),
+    });
   });
 
   it('carries the open question count on the questions destination only', () => {
@@ -520,7 +531,9 @@ describe('SessionCrumbs on a workflow step', () => {
     expect(menu.textContent).not.toContain('implement two');
 
     fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
-    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, laterWorkflowStep.id);
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: laterWorkflowStep.id },
+    });
   });
 });
 
@@ -558,7 +571,9 @@ describe('SessionCrumbs on a cluster child', () => {
     expect(menu.textContent).not.toContain('implement two');
 
     fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
-    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, laterWorkflowStep.id);
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: laterWorkflowStep.id },
+    });
   });
 
   it('scopes the child dropdown to the cluster siblings only', () => {
@@ -573,7 +588,9 @@ describe('SessionCrumbs on a cluster child', () => {
     expect(menu.textContent).not.toContain('implement two');
 
     fireEvent.click(screen.getByRole('menuitem', { name: /area beta/ }));
-    expect(h.selectAgent).toHaveBeenCalledWith(SESSION_ID, clusterBeta.id);
+    expect(h.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: clusterBeta.id },
+    });
   });
 
   it('truncates every agent crumb so long names never wrap the bar', () => {

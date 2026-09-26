@@ -221,8 +221,7 @@ const seedShellChrome = () => {
     scriptRuns: {},
     projectScripts: {},
     loadArchivedSessions: async () => undefined,
-    setCurrentSession: async () => undefined,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 

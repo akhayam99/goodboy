@@ -4,7 +4,7 @@ import type { Agent, AgentId, OpenQuestion, Session, Step } from '@goodboy/types
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import type { AgentKind } from '../../agent-kind';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace, sessionPlace } from '../../../../store';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import { SubagentTree } from '../../../workflows/components/RunTree/SubagentTree';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -17,8 +17,7 @@ type Props = {
 };
 
 export const AgentBriefChildren = ({ session, agent, kind, children }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
+  const navigate = useAppStore((state) => state.navigate);
   const focusQuestion = useOpenQuestions((state) => state.focusQuestion);
   const roleModels = useSessionRoleModels({ sessionId: session.id });
   const attachedRuns = useAttachedWorkflowRuns({ session });
@@ -40,13 +39,13 @@ export const AgentBriefChildren = ({ session, agent, kind, children }: Props) =>
   }
   const done = children.filter((child) => child.status === 'completed').length;
   const onSelect = (agentId: AgentId) => {
-    void selectAgent(session.id, agentId);
+    navigate({ to: agentPlace({ sessionId: session.id, agentId }) });
   };
   const onAnswer = (question: OpenQuestion | null) => {
     if (question != null) {
       focusQuestion(question.id);
     }
-    setActiveLens(session.id, 'questions');
+    navigate({ to: sessionPlace({ sessionId: session.id, lens: 'questions' }) });
   };
   return (
     <Band

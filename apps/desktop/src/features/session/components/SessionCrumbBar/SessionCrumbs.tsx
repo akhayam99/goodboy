@@ -2,7 +2,7 @@ import { Fragment, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, agentPlace } from '../../../../store';
 import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
@@ -46,7 +46,7 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
   );
   const agentKindOverride = useAppStore((state) => state.agentKindOverride);
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const resolveAttempts = useAppStore(
     (state) => state.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS,
   );
@@ -196,7 +196,7 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                   siblings={siblings}
                   selectedAgentId={selectedAgent.id}
                   onSelect={(id) => {
-                    void selectAgent(sessionId, id);
+                    navigate({ to: agentPlace({ sessionId, agentId: id }) });
                   }}
                 />
               ) : crumb.id === 'selected-parent' &&
@@ -210,7 +210,7 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
                   selectedAgentId={parentAgent.id}
                   onNavigate={crumb.onClick}
                   onSelect={(id) => {
-                    void selectAgent(sessionId, id);
+                    navigate({ to: agentPlace({ sessionId, agentId: id }) });
                   }}
                 />
               ) : index === destinationCrumbIndex ? (

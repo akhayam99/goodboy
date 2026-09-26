@@ -7,6 +7,7 @@ import {
   useSessionOpenQuestions,
   useSessionPlans,
   type LensKind,
+  agentPlace,
 } from '../../../../store';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
@@ -47,7 +48,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const plans = useSessionPlans(sessionId);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
   const setReviewMode = useAppStore((s) => s.setReviewMode);
   const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
@@ -156,13 +157,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             if (parentAgentId == null) {
               return;
             }
-            void selectAgent(sessionId, parentAgentId);
+            navigate({ to: agentPlace({ sessionId, agentId: parentAgentId }) });
           },
           toRootAgent: () => {
             if (rootAgentId == null) {
               return;
             }
-            void selectAgent(sessionId, rootAgentId);
+            navigate({ to: agentPlace({ sessionId, agentId: rootAgentId }) });
           },
           toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
         },
@@ -187,7 +188,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       sessionId,
       setFocusedWorkflowRun,
       setFocusedArtifactId,
-      selectAgent,
+      navigate,
       setReviewMode,
     ],
   );

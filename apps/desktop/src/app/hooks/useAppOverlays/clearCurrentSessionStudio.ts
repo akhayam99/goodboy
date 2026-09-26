@@ -5,5 +5,8 @@ export const clearCurrentSessionStudio = () => {
   if (state.currentSessionId === null) {
     return;
   }
-  state.setSessionStudio(state.currentSessionId, null);
+  if ((state.sessionStudio[state.currentSessionId] ?? null) === null) {
+    return;
+  }
+  state.up();
 };

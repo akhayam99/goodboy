@@ -10,11 +10,7 @@ import type {
   SessionId,
   SessionProjectMount,
 } from '@goodboy/types';
-import {
-  openDiffLens,
-  setActiveLens,
-  setDiffFocus,
-} from '../../../../../store/slices/session-view/workSurface';
+import { setActiveLens, setDiffFocus } from '../../../../../store/slices/session-view/workSurface';
 import type { GetFn, SetFn } from '../../../../../store/slices/session-view/types';
 import type { MountDiffStat } from '../../../../../store/selectors';
 
@@ -68,7 +64,8 @@ const set = ((updater: unknown) => {
 
 const get = (() => state) as unknown as GetFn;
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: State) => T) => selector(state),
   useMountDiffStats: () => diffStats,
 }));
@@ -205,8 +202,8 @@ describe('FilesPane', () => {
 
   it('carries the working tree focus into the diff', () => {
     reset();
-    setActiveLens(set)(SESSION_ID, 'review');
-    openDiffLens(get)(SESSION_ID, { kind: 'working', path: null });
+    setActiveLens(set)(SESSION_ID, 'files');
+    setDiffFocus(set)(SESSION_ID, { kind: 'working', path: null });
 
     renderPane({ worktreePath: '/tmp/wt' });
 

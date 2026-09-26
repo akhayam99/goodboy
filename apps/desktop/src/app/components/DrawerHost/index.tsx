@@ -8,6 +8,7 @@ import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunD
 import { DiffNotesDrawer } from '../../../features/diff/components/DiffNotesDrawer';
 import { FileDiffDrawer } from '../../../features/diff/components/FileDiffDrawer';
 import { ReviewDraftsDrawer } from '../../../features/review/components/ReviewDraftsDrawer';
+import { ConversationDrawerSlot } from '../../../features/resolve/components/ConversationDrawerSlot';
 import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
 export const DrawerHost = () => {
@@ -66,6 +67,8 @@ export const DrawerHost = () => {
       return <DiffNotesDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'review-drafts':
       return <ReviewDraftsDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'conversation':
+      return <ConversationDrawerSlot />;
     case 'file-diff':
       return (
         <FileDiffDrawer

@@ -20,12 +20,17 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
+} from './components/AppShell';
+export {
+  DRAWER_INSET,
+  DrawerColumn,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
-} from './components/AppShell';
+} from './components/DrawerColumn';
+export type { DrawerColumnProps } from './components/DrawerColumn';
 export { DrawerFrame } from './components/DrawerFrame';
 export type { DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';

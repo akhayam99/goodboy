@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, type LensKind } from '../../../store';
+import { useAppStore, type LensKind, sessionPlace } from '../../../store';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -8,21 +8,13 @@ type Params = {
   readonly onOpened?: () => void;
 };
 
-export const useOpenSession = (): ((params: Params) => Promise<void>) => {
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+export const useOpenSession = (): ((params: Params) => void) => {
+  const navigate = useAppStore((s) => s.navigate);
   return useCallback(
-    async ({ sessionId, lens, onOpened }: Params) => {
-      try {
-        await setCurrentSession(sessionId);
-      } catch {
-        return;
-      }
-      if (lens !== undefined) {
-        setActiveLens(sessionId, lens);
-      }
+    ({ sessionId, lens, onOpened }: Params) => {
+      navigate({ to: sessionPlace({ sessionId, lens: lens ?? null }) });
       onOpened?.();
     },
-    [setActiveLens, setCurrentSession],
+    [navigate],
   );
 };

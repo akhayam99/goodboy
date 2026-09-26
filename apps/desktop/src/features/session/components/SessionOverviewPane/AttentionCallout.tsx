@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, agentPlace } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { describeSessionStage } from '../../session-stage';
@@ -18,8 +18,7 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
   const stage = useSessionStageInfo(session);
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
 
   const target = useMemo(() => {
     const agentId = attentionAgentId({ stage, agents });
@@ -50,8 +49,7 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
       onSelectLens(target.lens);
       return;
     }
-    setActiveLens(sessionId, target.home);
-    void selectAgent(sessionId, target.agentId);
+    navigate({ to: agentPlace({ sessionId, agentId: target.agentId }) });
   };
 
   return (
