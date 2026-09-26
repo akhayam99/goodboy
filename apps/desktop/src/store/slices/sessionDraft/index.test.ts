@@ -159,7 +159,13 @@ describe('session draft slice', () => {
 
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
-      start: { kind: 'scout', focus: 'Find one small bug', prompt: 'Read this project' },
+      start: {
+        kind: 'scout',
+        agentKind: 'scout',
+        focus: 'Find one small bug',
+        prompt: 'Read this project',
+        routing: null,
+      },
     });
 
     expect(h.spies.createSession).toHaveBeenCalledWith({

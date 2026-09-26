@@ -138,7 +138,7 @@ describe('NextStepSlot', () => {
       suggestion({ id: 'answer', title: 'Answer open questions' }),
     ];
     transcriptState.proposals = [{ projectId: 'project-web' }];
-    render(<NextStepSlot session={SESSION} />);
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(screen.queryByText('Add web')).toBeNull();
     expect(screen.getByText('Answer open questions')).toBeTruthy();
   });
