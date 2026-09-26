@@ -465,6 +465,12 @@ export {
   PermissionAuditRecorder,
   type AuditRecorderDeps,
   type AuditQuery,
+  commandPrefix,
+  isFilePathTool,
+  oncePatternText,
+  prefixRuleFor,
+  type ActionTarget,
+  type PrefixRule,
 } from './permissions';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
