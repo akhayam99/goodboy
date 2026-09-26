@@ -1,5 +1,5 @@
 import { AlertTriangle, GitBranch } from 'lucide-react';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { ProjectGitDetail } from './ProjectGitDetail';
 import { projectGitPresentationOf } from './projectGitPresentationOf';
@@ -28,7 +28,7 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
       dropdown={dropdown}
       role="dialog"
       ariaLabel={`${project.name} git status`}
-      className={cn('max-h-[min(32rem,calc(100vh-2rem))] overflow-y-auto', isSetup && 'w-96')}
+      className={cn('flex max-h-[min(32rem,calc(100vh-2rem))] flex-col', isSetup && 'w-96')}
       trigger={
         <button
           type="button"
@@ -60,7 +60,9 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
         </button>
       }
     >
-      <ProjectGitDetail project={project} status={status} />
+      <PopoverBody>
+        <ProjectGitDetail project={project} status={status} />
+      </PopoverBody>
     </AnchoredPopover>
   );
 };

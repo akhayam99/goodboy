@@ -167,7 +167,7 @@ clears them after a confirm.
   for the first one, then the next provider in the fallback order when the default
   is not connected. On Claude, the Planner runs on Opus 5.5 (Opus 5 on an older CLI),
   the Debugger and the Reviewer on Sonnet 5 High, Docs on Sonnet 5 Low, Scout and
-  the small writing jobs on Haiku 4.5, and plan drafting, Custom, Report and the
+  the small writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the
   other roles on Sonnet 5 Medium
 - **If unavailable**: a pinned row has this line at the bottom of its picker. It is
   the second choice Goodboy uses when the pinned model cannot run. **Auto** lets the
@@ -547,7 +547,7 @@ When a provider ships or retires a model, update three files under
   the catalogs and snapshots the table
 - `ROLE_REGISTRY` holds no routing any more: the Claude column of `AUTO_DEFAULTS` is
   the reference. `kindRouting` maps an agent kind to its role and reads the same
-  ladder; there is no separate cheap tier for Scout, Docs or Custom
+  ladder; there is no separate cheap tier for Scout, Docs or Generalist
 - **Task models** are saved in `workspaces.task_models` and read through
   `resolveTaskModel` in `@goodboy/core`. A pin may carry an effort and a `fallback`.
   A pin without an effort runs at `medium`, clamped to the model's ladder. Models

@@ -97,9 +97,11 @@ export const ArtifactCreationFooter = ({
               onClick={onGenerate}
               disabled={gate.isDisabled}
               {...(gate.reason === null ? {} : { 'aria-describedby': GENERATE_REASON_ID })}
-              className={cn('shrink-0', isStarting && 'animate-border-pulse')}
+              className="shrink-0"
             >
-              {isStarting ? 'Starting…' : generateLabel}
+              <span className={cn(isStarting && 'text-shimmer')}>
+                {isStarting ? 'Starting…' : generateLabel}
+              </span>
             </Button>
           </div>
           {gate.reason === null ? null : (

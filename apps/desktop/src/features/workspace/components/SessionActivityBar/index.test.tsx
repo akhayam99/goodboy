@@ -507,7 +507,9 @@ describe('SessionActivityBar, row node', () => {
     expect(nodeOf(row).querySelector('[data-testid="session-row-ring"]')?.className).toContain(
       'animate-soft-pulse',
     );
-    expect(row.className).toContain('spin-rail');
+    const bar = row.querySelector('[data-testid="tone-bar"]');
+    expect(bar?.className).toContain('bg-info');
+    expect(bar?.className).toContain('motion-safe:animate-soft-pulse');
   });
 
   it('marks a question with ? and counts what is waiting on you', () => {
@@ -522,7 +524,7 @@ describe('SessionActivityBar, row node', () => {
 
     const row = rowAt(0);
     expect(nodeOf(row).textContent).toBe('?');
-    expect(row.className).toContain('border-l-warning');
+    expect(row.querySelector('[data-testid="tone-bar"]')?.className).toContain('bg-warning');
     expect(within(row).getByText('1 question to answer')).toBeDefined();
   });
 

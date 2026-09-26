@@ -50,12 +50,15 @@ export const IconButton = ({
           'hover:text-foreground disabled:opacity-50',
           FOCUS_RING,
           tone !== 'neutral' && toneClasses(tone, variant),
-          busy && 'animate-border-pulse',
           className,
         )}
         {...rest}
       >
-        <Icon size={iconSize} aria-hidden />
+        <Icon
+          size={iconSize}
+          aria-hidden
+          className={cn(busy && 'motion-safe:animate-soft-pulse')}
+        />
       </button>
     </Tooltip>
   );

@@ -267,9 +267,10 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
               onClick={() => void (isCreating ? onCreate() : onConvert())}
               disabled={primaryDisabled}
               aria-busy={isBusy}
-              className={isBusy ? 'animate-border-pulse' : undefined}
             >
-              {isCreating ? 'Create repository' : 'Convert to dev project'}
+              <span className={isBusy ? 'text-shimmer' : undefined}>
+                {isCreating ? 'Create repository' : 'Convert to dev project'}
+              </span>
             </Button>
           </>
         )

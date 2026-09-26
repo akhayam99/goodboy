@@ -37,6 +37,7 @@ mod remote_image;
 mod repo;
 mod scratch_dir;
 mod scripts;
+mod scroller_style;
 mod secrets;
 mod sentry;
 mod session_dir;
@@ -359,6 +360,7 @@ pub fn run() {
             settings_overrides::get_workspace_overrides,
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
+            scroller_style::system_scroller_style,
             config_export::export_config_to_file,
             config_export::import_config_from_file,
             github::gh_status,

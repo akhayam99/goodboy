@@ -260,9 +260,9 @@ describe('AGENT_KIND_PALETTE', () => {
     expect(AGENT_KIND_PALETTE.generic.label).toBe('Generalist');
   });
 
-  it('takes every badge from the one role name the rest of the app uses', () => {
+  it('takes every badge from the one agent-name label the rest of the app uses', () => {
     for (const kind of ALL_KINDS) {
-      expect(AGENT_KIND_PALETTE[kind].label).toBe(AGENT_KIND_META[kind].label);
+      expect(AGENT_KIND_PALETTE[kind].label).toBe(AGENT_KIND_META[kind].noun);
     }
   });
 });

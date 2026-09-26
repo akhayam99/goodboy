@@ -74,9 +74,11 @@ export const PlannerDraftRow = ({
         variant="secondary"
         onClick={onPlan}
         disabled={disabled || process.trim().length === 0}
-        className={cn('min-w-24', isPlanning && 'animate-border-pulse')}
+        className="min-w-24"
       >
-        {isPlanning ? 'Planning…' : hasPlan ? 'Re-plan' : 'Generate plan'}
+        <span className={cn(isPlanning && 'text-shimmer')}>
+          {isPlanning ? 'Planning…' : hasPlan ? 'Re-plan' : 'Generate plan'}
+        </span>
       </Button>
     </div>
   </div>

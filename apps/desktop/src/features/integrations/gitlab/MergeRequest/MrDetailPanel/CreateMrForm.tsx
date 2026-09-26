@@ -251,10 +251,9 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
             <Button
               onClick={() => void onCreate()}
               disabled={busy !== null || title.trim().length === 0 || branch == null}
-              className={busy === 'create' ? 'animate-border-pulse' : undefined}
             >
               {busy === 'create' ? (
-                'Creating…'
+                <span className="text-shimmer">Creating…</span>
               ) : (
                 <>
                   Create MR
@@ -266,10 +265,9 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
             <Button
               onClick={() => void onCreateWithAgent()}
               disabled={busy !== null || branch == null}
-              className={busy === 'agent' ? 'animate-border-pulse' : undefined}
             >
               {busy === 'agent' ? (
-                'Drafting…'
+                <span className="text-shimmer">Drafting…</span>
               ) : (
                 <>
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />

@@ -46,9 +46,11 @@ export const LaunchBar = ({
           onClick={onStart}
           disabled={isStartDisabled}
           {...(reason === null ? {} : { 'aria-describedby': START_REASON_ID })}
-          className={cn('shrink-0', isStarting && 'animate-border-pulse')}
+          className="shrink-0"
         >
-          {isStarting ? 'Starting…' : 'Start workflow'}
+          <span className={cn(isStarting && 'text-shimmer')}>
+            {isStarting ? 'Starting…' : 'Start workflow'}
+          </span>
         </Button>
       </div>
     </div>

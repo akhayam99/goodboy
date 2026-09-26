@@ -37,10 +37,8 @@ export const AgentKindChip = ({
   return (
     <span
       className={cn(
-        'inline-flex w-24 shrink-0 items-center justify-center rounded-sm px-1.5 py-0.5 text-2xs font-medium leading-none',
-        muted
-          ? 'bg-muted text-faint-foreground'
-          : [palette.fg, 'bg-current/12 ring-1 ring-inset ring-current/30'],
+        'inline-flex h-4.5 w-20 shrink-0 items-center justify-center rounded-sm px-1.5 text-secondary font-medium',
+        muted ? 'bg-muted text-faint-foreground' : [palette.fg, 'bg-current/12'],
         className,
       )}
       title={title}

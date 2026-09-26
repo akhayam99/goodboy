@@ -87,7 +87,7 @@ export const TimelineStreamRow = ({
   );
   const content = (
     <>
-      <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+      <span className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">
         <TimelineRowLabel
           item={item}
           diffStat={diffStat}

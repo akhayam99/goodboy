@@ -28,19 +28,16 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
         title={canRetry ? `${errorTitle}, click to retry` : errorTitle}
         aria-label={canRetry ? 'Retry summarizer' : 'Summarizer failed'}
         className={cn(
-          cn(
-            'inline-flex h-6 shrink-0 items-center gap-1 rounded-md',
-            tintClasses('danger').bg,
-            'px-2 text-secondary text-danger motion-safe:transition-colors',
-          ),
-          retrying && 'animate-border-pulse',
+          'inline-flex h-6 shrink-0 items-center gap-1 rounded-md',
+          tintClasses('danger').bg,
+          'px-2 text-secondary text-danger motion-safe:transition-colors',
           canRetry
             ? cn(tintClasses('danger').hoverBg, 'hover:text-on-tone')
             : 'cursor-not-allowed opacity-70',
         )}
       >
         <AlertTriangle size={10} aria-hidden />
-        Cannot summarize
+        <span className={cn(retrying && 'text-shimmer')}>Cannot summarize</span>
         <RotateCw size={10} aria-hidden className="shrink-0" />
       </button>
     );

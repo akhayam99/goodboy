@@ -8,6 +8,7 @@ import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
 import { SidebarToggle, type TopBarSidebar } from './SidebarToggle';
 import { SpendButton } from './SpendButton';
+import { ThemeToggle } from './ThemeToggle';
 
 type Props = {
   readonly sidebar: TopBarSidebar;
@@ -42,6 +43,8 @@ export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript, openProviderId =
         <LimitsStrip openProviderId={openProviderId} />
 
         <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
+
+        <ThemeToggle />
 
         <NotificationCenter />
       </div>

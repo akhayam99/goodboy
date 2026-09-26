@@ -32,6 +32,7 @@ describe('RoleSelect', () => {
       'custom',
     ]);
     expect(options.getByRole('option', { name: /^Debugger/ })).toBeDefined();
+    expect(options.getByRole('option', { name: /^Generalist/ })).toBeDefined();
   });
 
   it('omits artifact roles from the manual picker', () => {
@@ -43,7 +44,7 @@ describe('RoleSelect', () => {
 
   it('marks the current role without a primary tint', () => {
     const options = openRoles();
-    const custom = options.getByRole('option', { name: /^Custom/ });
+    const custom = options.getByRole('option', { name: /^Generalist/ });
 
     expect(custom.getAttribute('aria-selected')).toBe('true');
     expect(custom.className).not.toContain('primary');

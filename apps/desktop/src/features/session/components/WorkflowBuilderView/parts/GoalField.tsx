@@ -125,9 +125,10 @@ export const GoalField = ({
           onClick={onPolish}
           disabled={disabled || isPolishing || value.trim().length === 0}
           aria-label="Polish goal"
-          className={cn(TOOL_CLASS, isPolishing && 'animate-border-pulse')}
+          className={TOOL_CLASS}
         >
-          <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden /> Polish
+          <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
+          <span className={cn(isPolishing && 'text-shimmer')}>Polish</span>
         </button>
       </div>
     </div>

@@ -85,8 +85,8 @@ describe('AgentFollowUps suggestions', () => {
       />,
     );
 
-    expect(screen.getByText('Plan')).toBeDefined();
-    expect(screen.getByText('Implement')).toBeDefined();
+    expect(screen.getByText('Planner')).toBeDefined();
+    expect(screen.getByText('Implementer')).toBeDefined();
     expect(screen.getByText('Turn the review findings into a plan')).toBeDefined();
   });
 

@@ -212,12 +212,10 @@ export const ConnectForm = ({
         </Collapsible>
       ) : null}
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={isBusy || !canConnect}
-          className={isBusy ? 'animate-border-pulse' : undefined}
-        >
-          {isBusy ? 'Verifying…' : 'Connect'}
+        <Button type="submit" disabled={isBusy || !canConnect}>
+          <span className={isBusy ? 'text-shimmer' : undefined}>
+            {isBusy ? 'Verifying…' : 'Connect'}
+          </span>
         </Button>
       </div>
     </form>

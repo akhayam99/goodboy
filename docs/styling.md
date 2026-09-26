@@ -202,10 +202,22 @@ mask.
 ## Scroll edges fade, never hard-cut
 
 Every scroll region is wrapped in `ScrollFade` from `@goodboy/ui`. Raw
-`overflow-y-auto` is forbidden. The viewport hides its native scrollbar, so the
-fade is the only sign that a region scrolls. A region that must drive its own
-scroll (a log that follows its tail) passes `viewportRef` and
-`onViewportScroll` instead of reaching for a raw scroller.
+`overflow-y-auto` is forbidden (the `raw-scroller` ratchet only ever shrinks).
+The viewport hides its native scrollbar, and `ScrollFade` draws its own thumb
+in overlay: a track 2px from the edge, a 6px pill that grows to 8px under the
+pointer, in the `scrollbar-thumb` / `scrollbar-thumb-active` tokens. It never
+takes width from the content, so a mouse user can still see how long a list
+is without scrolling first; the fade is not the only sign a region scrolls
+anymore. It shows on scroll or on hover, hides 900ms after the last of either,
+and stays lit permanently under the system's "always show scrollbars" setting
+(read once through the `system_scroller_style` Tauri command, exposed to
+`ScrollFade` through `ScrollerStyleContext`). Pass `scrollbar="none"` to a
+`ScrollFade` that must never show a thumb (rare; most viewports want the
+default). A region that must drive its own scroll (a log that follows its
+tail) passes `viewportRef` and `onViewportScroll` instead of reaching for a
+raw scroller. A `textarea` or a `contenteditable`, which cannot be wrapped,
+gets the `.native-scroll` class instead: a thin native scrollbar in the same
+`scrollbar-thumb` token.
 
 **Give it a bounded height**: `min-h-0 flex-1` inside a flex column, or a
 `max-h-*` on the root. A root with no height limit does not throw an error. It

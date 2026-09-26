@@ -152,6 +152,7 @@
 
   --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;
+  --container-chrome-narrow: 720px;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -169,19 +170,6 @@
     }
     50% {
       opacity: 0.45;
-    }
-  }
-
-  /* Border-only pulse: animates border-color, leaves the content stable.
-     Used on pending session cards so the border breathes the warning color
-     to draw attention while the text stays fully legible. */
-  @keyframes border-pulse {
-    0%,
-    100% {
-      border-color: oklch(from var(--color-warning) l c h / 0.75);
-    }
-    50% {
-      border-color: oklch(from var(--color-warning) l c h / 0.2);
     }
   }
 
@@ -229,6 +217,19 @@
     to {
       opacity: 0;
       transform: scale(0.985);
+    }
+  }
+
+  --animate-theme-icon-in: theme-icon-in 200ms cubic-bezier(0.2, 0, 0, 1);
+
+  @keyframes theme-icon-in {
+    from {
+      opacity: 0;
+      transform: rotate(-90deg);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0deg);
     }
   }
 
@@ -310,6 +311,12 @@
       transform: scale(1);
     }
   }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-normal);
+  animation-timing-function: var(--ease-default);
 }
 
 /* Light palette, applied when html[data-theme="light"].
@@ -583,48 +590,6 @@ dialog[open]::backdrop {
   }
 }
 
-.spin-rail {
-  position: relative;
-}
-
-.spin-rail::before {
-  content: '';
-  position: absolute;
-  inset: -1px -1px -1px -2px;
-  border-radius: inherit;
-  padding-left: 2px;
-  background: var(--spin-border-color, var(--color-info));
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-@keyframes spin-rail {
-  from {
-    background-position: 0 -150%;
-  }
-  to {
-    background-position: 0 250%;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .spin-rail::before {
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        var(--spin-border-color, var(--color-info)),
-        transparent
-      )
-      no-repeat;
-    background-size: 100% 60%;
-    animation: spin-rail 2.4s ease-in-out infinite;
-  }
-}
-
 .spin-border-info {
   --spin-border-color: var(--color-info);
 }
@@ -657,12 +622,6 @@ dialog[open]::backdrop {
 }
 .spin-border-identity-8 {
   --spin-border-color: var(--color-identity-8);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .animate-border-pulse {
-    animation: border-pulse 2.8s ease-in-out infinite;
-  }
 }
 
 .density-trigger-label {
@@ -770,41 +729,7 @@ dialog[open]::backdrop {
   }
 }
 
-/* Thin, non-intrusive scrollbars across the whole app. */
-* {
+.native-scroll {
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-  background: transparent;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 999px;
-  transition: background-color var(--motion-normal) var(--ease-default);
-}
-
-*:hover::-webkit-scrollbar-thumb,
-*:focus-within::-webkit-scrollbar-thumb {
-  background: oklch(from var(--color-border) l c h / 0.5);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: oklch(from var(--color-border) l c h / 0.85);
-}
-
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-*:hover {
-  scrollbar-color: oklch(from var(--color-border) l c h / 0.5) transparent;
+  scrollbar-color: var(--color-scrollbar-thumb) transparent;
 }

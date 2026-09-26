@@ -425,11 +425,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
-        <ScrollFade
-          className="flex-1"
-          fadeSize="h-12"
-          viewportClassName="px-6 pb-4 pt-6 [scrollbar-gutter:stable]"
-        >
+        <ScrollFade className="flex-1" fadeSize="h-12" viewportClassName="px-6 pb-4 pt-6">
           {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
             <TranscriptSkeleton />
           ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (

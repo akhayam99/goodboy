@@ -374,18 +374,16 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 <Button variant="ghost" onClick={requestClose}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={() => void onSend({ requestClose })}
-                  disabled={!canSend}
-                  className={cn(sendState === 'sending' && 'animate-border-pulse')}
-                >
-                  {sendState === 'sending'
-                    ? sendsDirectly
-                      ? 'Sending…'
-                      : 'Opening…'
-                    : sendsDirectly
-                      ? 'Send'
-                      : 'Open on GitHub'}
+                <Button onClick={() => void onSend({ requestClose })} disabled={!canSend}>
+                  <span className={cn(sendState === 'sending' && 'text-shimmer')}>
+                    {sendState === 'sending'
+                      ? sendsDirectly
+                        ? 'Sending…'
+                        : 'Opening…'
+                      : sendsDirectly
+                        ? 'Send'
+                        : 'Open on GitHub'}
+                  </span>
                 </Button>
               </footer>
             </div>

@@ -304,7 +304,7 @@ describe('WorkflowsPanel editor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add step' }));
     fireEvent.click(screen.getByRole('option', { name: /Blank step/ }));
 
-    expect(screen.getByRole('button', { name: 'Step 2: Custom' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Step 2: Generalist' })).toBeDefined();
     expect(screen.getByLabelText('Title')).toBeDefined();
   });
 

@@ -231,13 +231,14 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           onClick={() => void onChangeBranch()}
           disabled={isBusy || target === '' || (branchMode === 'existing' && isBranchesLoading)}
           variant={needsConfirmation && isReuseConfirmed ? 'warning' : 'primary'}
-          className={isBusy ? 'animate-border-pulse' : undefined}
         >
-          {isBusy
-            ? 'Switching…'
-            : needsConfirmation && isReuseConfirmed
-              ? 'Confirm switch'
-              : 'Switch branch'}
+          <span className={isBusy ? 'text-shimmer' : undefined}>
+            {isBusy
+              ? 'Switching…'
+              : needsConfirmation && isReuseConfirmed
+                ? 'Confirm switch'
+                : 'Switch branch'}
+          </span>
         </Button>
       </div>
     </div>

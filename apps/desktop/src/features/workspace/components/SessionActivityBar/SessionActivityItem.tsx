@@ -1,7 +1,7 @@
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import type { Session, SessionId } from '@goodboy/types';
-import { PANE_RHYTHM, TERMINAL_DIM, cn, formatUsd, tintClasses, InlineMarkdown } from '@goodboy/ui';
-import { sessionRail } from '../../../session/components/sessionCardShell';
+import { PANE_RHYTHM, TERMINAL_DIM, ToneBar, cn, formatUsd, InlineMarkdown } from '@goodboy/ui';
+import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
 import { SessionRowMeta } from './SessionRowMeta';
@@ -32,7 +32,7 @@ export const SessionActivityItem = ({
   onClick,
 }: Props) => {
   const summary = useSessionSummary({ session });
-  const rail = sessionRail({ stage: summary.stage, attention: summary.attention });
+  const tone = sessionTone({ stage: summary.stage, attention: summary.attention });
   const hasCost = summary.cost > 0;
 
   return (
@@ -56,19 +56,20 @@ export const SessionActivityItem = ({
         onModifierClick(session.id as SessionId, event);
       }}
       className={cn(
-        '@container group/session-row flex w-full cursor-pointer items-start gap-2 rounded-md border-l-2 border-l-transparent text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        '@container group/session-row relative flex w-full cursor-pointer items-start gap-2 rounded-md text-left motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         PANE_RHYTHM.navRail.row,
-        rail,
-        isActive && 'bg-muted font-medium text-foreground',
-        isSelected && cn(tintClasses('primary').bg, 'ring-1', tintClasses('primary').ring),
+        'pl-3.5',
+        (isActive || isSelected) && 'bg-selected font-medium text-foreground',
         isDimmed && TERMINAL_DIM,
       )}
     >
+      <ToneBar tone={tone.tone} density="row" isBreathing={tone.isBreathing} />
       <SessionRowNode
         stage={summary.stage}
         attention={summary.attention}
         tone={summary.tone}
         prState={summary.prState}
+        isSelected={isSelected}
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex w-full min-w-0 items-baseline gap-2">
