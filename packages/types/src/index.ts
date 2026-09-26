@@ -418,3 +418,4 @@ export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
 export type { DeletedBranch } from './deleted-branch';
 export { DELETED_BRANCH_KEEP_DAYS } from './deleted-branch';
+export type { StarredIssue, StarredIssueState } from './starred-issue';

@@ -506,3 +506,10 @@ export {
   listProjectSentryLinks,
   removeProjectSentryLink,
 } from './queries/project-sentry-link';
+export {
+  listStarredIssues,
+  starIssue,
+  unstarIssue,
+  unstarClosedIssues,
+  updateStarredIssueSnapshots,
+} from './queries/starred-issue';
