@@ -216,7 +216,11 @@ export const WizardFrame = ({
       return;
     }
     runStepAction(async () => {
-      await startFirstScout({ workspaceId: workspace.id, prompt });
+      await startFirstScout({
+        workspaceId: workspace.id,
+        projectId: projects[0]?.id ?? null,
+        prompt,
+      });
       close();
       return 'stay';
     });
@@ -226,7 +230,13 @@ export const WizardFrame = ({
     if (workspace === null) {
       return;
     }
-    close(() => handOffFirstSession({ workspaceId: workspace.id, choice }));
+    close(() =>
+      handOffFirstSession({
+        workspaceId: workspace.id,
+        projectId: projects[0]?.id ?? null,
+        choice,
+      }),
+    );
   };
 
   const footer = wizardFooter({

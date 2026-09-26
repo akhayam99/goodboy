@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 
 const { discardUncreatedSession } = vi.hoisted(() => ({
   discardUncreatedSession: vi.fn(async (_params: unknown) => undefined),
@@ -147,6 +147,27 @@ describe('session draft slice', () => {
       initialPrompt: 'Read this project',
       focus: 'agent',
     });
+  });
+
+  it('creates the session in the project the draft carries', async () => {
+    h.slice.patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { projectId: 'project-ledger-core' as ProjectId },
+    });
+
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: { kind: 'scout', focus: 'Find one small bug', prompt: 'Read this project' },
+    });
+
+    expect(h.spies.createSession).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      goal: 'Find one small bug',
+      title: 'Find one small bug',
+      omitGoalSlot: false,
+      projectId: 'project-ledger-core',
+    });
+    expect(h.getState().sessionDrafts).toEqual({});
   });
 
   it('gives a Scout with no focus a plain title and no goal', async () => {

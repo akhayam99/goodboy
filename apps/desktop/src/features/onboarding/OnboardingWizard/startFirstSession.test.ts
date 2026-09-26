@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -17,6 +17,7 @@ import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/Scou
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
+const PROJECT_ID = 'project-ledger-core' as ProjectId;
 
 beforeEach(() => {
   store.startSessionFromDraft.mockClear();
@@ -25,8 +26,17 @@ beforeEach(() => {
 });
 
 describe('startFirstScout', () => {
-  it('starts the first session from a scout draft with the chosen prompt as its focus', async () => {
-    await startFirstScout({ workspaceId: WORKSPACE_ID, prompt: 'Find one small bug' });
+  it('starts the first session from a scout draft in the picked project, the prompt as its focus', async () => {
+    await startFirstScout({
+      workspaceId: WORKSPACE_ID,
+      projectId: PROJECT_ID,
+      prompt: 'Find one small bug',
+    });
+
+    expect(store.patchSessionDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      patch: { projectId: PROJECT_ID },
+    });
 
     expect(store.startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
@@ -40,12 +50,12 @@ describe('startFirstScout', () => {
 });
 
 describe('handOffFirstSession', () => {
-  it('opens the session draft on the picked choice', () => {
-    handOffFirstSession({ workspaceId: WORKSPACE_ID, choice: 'workflow' });
+  it('opens the session draft on the picked choice and project', () => {
+    handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'workflow' });
 
     expect(store.patchSessionDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      patch: { choice: 'workflow' },
+      patch: { choice: 'workflow', projectId: PROJECT_ID },
     });
     expect(store.openSessionDraft).toHaveBeenCalledOnce();
   });

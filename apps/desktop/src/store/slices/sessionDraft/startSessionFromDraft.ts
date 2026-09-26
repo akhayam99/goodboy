@@ -83,11 +83,13 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, start }: StartSessionFromDraftParams): Promise<Session> => {
     const { title, goal } = seedOf({ start });
     const candidate = start.kind === 'task' ? start.candidate : null;
+    const projectId = get().sessionDrafts[workspaceId]?.projectId ?? null;
     const { session } = await get().createSession({
       workspaceId,
       goal: goal === '' ? title : goal,
       title,
       omitGoalSlot: goal === '',
+      ...(projectId !== null && { projectId }),
       ...(candidate !== null && {
         externalTasks: [
           {

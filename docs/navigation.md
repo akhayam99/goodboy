@@ -481,7 +481,9 @@ workspace starts on Full access. The last step offers the same three ways as
 a new session, with Ask an agent picked and three starters: Start Scout
 starts the session from a Scout draft (`startSessionFromDraft`) with that
 starter as its focus, and Scout running. Pick up a task and Run a workflow
-close the wizard on the new session draft with that choice picked. With no
+close the wizard on the new session draft with that choice picked. Either
+way the draft carries the project picked in the Project step, so the session
+lands in it. With no
 issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
 items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
