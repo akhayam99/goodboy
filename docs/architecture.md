@@ -153,7 +153,11 @@ in one atomic step with SQLite's own reset (`SQLITE_DBCONFIG_RESET_DATABASE`
 plus `VACUUM`), and the chain replays from m001 on the empty file. It never
 drops tables one by one: that leaves views like `live_agents` behind, and the
 first `ALTER TABLE ... RENAME` of the replay fails on them (see
-[traps](traps.md#traps-in-the-toolchain)).
+[traps](traps.md#traps-in-the-toolchain)). Builds before 0.7.1 did exactly
+that, so `db::open` checks every view at launch. A view that reads a table
+that no longer exists can only come from that old wipe, so the file gets the
+same reset before the migrations run, and the wipe the user asked for
+finishes. Any other migration failure still shows the error screen.
 
 ### On-disk data layout
 
