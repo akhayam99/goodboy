@@ -1851,7 +1851,7 @@ mod tests {
         move_branch_blocking(&b.root, "feature", &b.c, &new_head).unwrap();
         let cwd = b.root.to_string_lossy().into_owned();
         let refspec = "refs/heads/feature:refs/heads/feature";
-        let stale = crate::github::run_git_push(
+        let stale = crate::github::run_git_authenticated(
             &[
                 "push",
                 &crate::github::lease_argument("feature", Some(&b.b)),
@@ -1866,7 +1866,7 @@ mod tests {
             crate::github::lease_push_outcome(&stale),
             crate::github::LeasePushOutcome::Stale { .. }
         ));
-        let fresh = crate::github::run_git_push(
+        let fresh = crate::github::run_git_authenticated(
             &[
                 "push",
                 &crate::github::lease_argument("feature", Some(&b.c)),

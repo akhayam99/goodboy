@@ -511,7 +511,7 @@ pub async fn git_push_with_lease(
         let token = read_token(workspace_id.as_deref(), project_id.as_deref());
         let lease = lease_argument(&branch, expected_remote_sha.as_deref());
         let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
-        let result = run_git_push(
+        let result = run_git_authenticated(
             &["push", &lease, "origin", &refspec],
             &cwd,
             token.as_deref(),
