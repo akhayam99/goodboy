@@ -105,8 +105,11 @@ export const SessionDiffPane = ({
   const emitNotification = useAppStore((s) => s.emitNotification);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
-  const mount = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath }) ?? null,
+  const mountName = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountName ?? null,
+  );
+  const mountBranch = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
   );
 
   const openInEditor = useCallback(
@@ -150,7 +153,7 @@ export const SessionDiffPane = ({
   const branchState = branchStateOf({ status: diff.status });
   const meta = (
     <span className="flex flex-wrap items-center gap-1.5">
-      {mount !== null ? <span>{mount.mountName}</span> : null}
+      {mountName !== null ? <span>{mountName}</span> : null}
       {ahead !== null ? (
         <>
           <span aria-hidden>·</span>
@@ -201,14 +204,14 @@ export const SessionDiffPane = ({
           },
         ]
       : []),
-    ...(mount !== null && mount.branch !== ''
+    ...(mountBranch !== null && mountBranch !== ''
       ? [
           {
             kind: 'item' as const,
             key: 'copy-branch',
             label: 'Copy branch name',
             icon: Copy,
-            onClick: () => void navigator.clipboard?.writeText(mount.branch),
+            onClick: () => void navigator.clipboard?.writeText(mountBranch),
           },
         ]
       : []),
