@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -15,17 +16,23 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   const loadSecurityFindings = useAppStore((state) => state.loadSecurityFindings);
   const dismissSecurityFinding = useAppStore((state) => state.dismissSecurityFinding);
   const flagSecurityFindingAgain = useAppStore((state) => state.flagSecurityFindingAgain);
-  const open = useAppStore((state) =>
-    workspaceId === null ? [] : (state.openSecurityFindings[workspaceId] ?? []),
+  const open = useAppStore(
+    useShallow((state) =>
+      workspaceId === null ? [] : (state.openSecurityFindings[workspaceId] ?? []),
+    ),
   );
-  const dismissed = useAppStore((state) =>
-    workspaceId === null ? [] : (state.dismissedSecurityFindings[workspaceId] ?? []),
+  const dismissed = useAppStore(
+    useShallow((state) =>
+      workspaceId === null ? [] : (state.dismissedSecurityFindings[workspaceId] ?? []),
+    ),
   );
-  const projectScripts = useAppStore((state) =>
-    workspaceId === null ? [] : (state.projectScripts[workspaceId] ?? []),
+  const projectScripts = useAppStore(
+    useShallow((state) => (workspaceId === null ? [] : (state.projectScripts[workspaceId] ?? []))),
   );
-  const projectNameById = useAppStore((state) =>
-    Object.fromEntries(state.projects.map((project) => [project.id, project.name])),
+  const projectNameById = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(state.projects.map((project) => [project.id, project.name])),
+    ),
   );
   const [isDismissedOpen, setIsDismissedOpen] = useState(false);
 
