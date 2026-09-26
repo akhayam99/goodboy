@@ -1,12 +1,17 @@
 import type {
   AgentId,
+  BranchCommit,
   HistoryPlanArgs,
+  HistoryPlanPrediction,
+  HistoryStep,
   HistoryShaMove,
   MountId,
   ProjectId,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+
+import type { HistoryEdit } from '../../../features/history/historyPlan';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -109,4 +114,29 @@ export type SettleHistoryRewriterInput = {
   readonly agentId: AgentId;
   readonly assistantText: string;
   readonly hasFailed: boolean;
+};
+
+export type HistoryDraft = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly planId: string | null;
+  readonly branch: string;
+  readonly baseSha: string;
+  readonly headSha: string;
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly prediction: HistoryPlanPrediction | null;
+  readonly isPredicting: boolean;
+  readonly lastEdit: HistoryEdit | null;
+  readonly conflictEdit: HistoryEdit | null;
+  readonly loadError: string | null;
+};
+
+export type EditHistoryDraftInput = HistoryMountInput & {
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly edit: HistoryEdit | null;
+};
+
+export type ApplyHistoryDraftInput = HistoryMountInput & {
+  readonly shouldPush: boolean;
 };

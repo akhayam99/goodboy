@@ -1,4 +1,10 @@
 import { applyHistoryRewrite, pushHistoryRewrite } from './applyHistoryRewrite';
+import {
+  applyHistoryDraft,
+  applyRewrittenHistory,
+  rewriteDraftWithAgent,
+} from './applyHistoryDraft';
+import { discardHistoryDraft, editHistoryDraft, loadHistoryDraft } from './historyDrafts';
 import { rebaseBranch } from './rebaseBranch';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
@@ -13,5 +19,11 @@ export const createHistorySlice = (set: SetFn, get: GetFn) => {
     pushHistoryRewrite: pushHistoryRewrite(set, get),
     startHistoryRewriter: startHistoryRewriter(set, get),
     settleHistoryRewriter: settleHistoryRewriter(set, get),
+    loadHistoryDraft: loadHistoryDraft(set, get),
+    editHistoryDraft: editHistoryDraft(set, get),
+    discardHistoryDraft: discardHistoryDraft(set, get),
+    applyHistoryDraft: applyHistoryDraft(set, get),
+    applyRewrittenHistory: applyRewrittenHistory(set, get),
+    rewriteDraftWithAgent: rewriteDraftWithAgent(set, get),
   };
 };

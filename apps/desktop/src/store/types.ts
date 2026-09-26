@@ -315,6 +315,7 @@ export type AppState = AppSliceState & {
   readonly retainedWorktreePaths: MountCleanupState['retainedWorktreePaths'];
   readonly historyRuns: HistoryState['historyRuns'];
   readonly historyRewriters: HistoryState['historyRewriters'];
+  readonly historyDrafts: HistoryState['historyDrafts'];
   readonly scribeWork: ScribeState['scribeWork'];
   readonly scribeAgents: ScribeState['scribeAgents'];
   readonly prSeries: PrSeriesState['prSeries'];

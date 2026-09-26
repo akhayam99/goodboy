@@ -225,8 +225,10 @@ import { createHistorySlice, historyInitialState } from './slices/history';
 import { createScribeSlice, scribeInitialState } from './slices/scribe';
 import type { RequestScribeInput, SettleScribeInput } from './slices/scribe/types';
 import type {
+  ApplyHistoryDraftInput,
   ApplyHistoryRewriteInput,
   ApplyHistoryRewriteOutcome,
+  EditHistoryDraftInput,
   HistoryMountInput,
   HistoryRunOrigin,
   RebaseBranchOutcome,
@@ -580,6 +582,12 @@ type AppActions = {
   }): Promise<ApplyHistoryRewriteOutcome>;
   startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
   settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
+  loadHistoryDraft(input: HistoryMountInput): Promise<void>;
+  editHistoryDraft(input: EditHistoryDraftInput): Promise<void>;
+  discardHistoryDraft(input: HistoryMountInput): Promise<void>;
+  applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
   refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;

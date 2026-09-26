@@ -22,6 +22,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('@goodboy/db', () => ({
   listResolvePublicationsForSession: vi.fn(async () => []),
   setResolvePublicationPhase: vi.fn(async () => undefined),
+  markHistoryPlan: vi.fn(async () => undefined),
 }));
 vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({

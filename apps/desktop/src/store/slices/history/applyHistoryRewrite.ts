@@ -1,4 +1,6 @@
+import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
 import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
 import { historyTargetOf } from './historyTargetOf';
@@ -91,6 +93,16 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
       await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      if (planId !== null) {
+        await markHistoryPlan({
+          db: tauriDatabase,
+          id: planId,
+          state: 'applied',
+          at: Date.now(),
+          backupRef: outcome.backupRef,
+          remoteShaAtApply: remote.sha,
+        }).catch(() => undefined);
+      }
       setHistoryRun({
         set,
         sessionId,
@@ -147,6 +159,14 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
     if (pushed.kind === 'pushed') {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
+      if (planId !== null) {
+        await markHistoryPlan({
+          db: tauriDatabase,
+          id: planId,
+          state: 'pushed',
+          at: Date.now(),
+        }).catch(() => undefined);
+      }
       void get()
         .refreshPrDescription({ sessionId, mountId })
         .catch(() => false);
