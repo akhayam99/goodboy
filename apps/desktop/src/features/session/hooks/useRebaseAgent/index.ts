@@ -95,6 +95,15 @@ const rebasingAgentIdsFor = ({ events, mountId }: RebasingAgentIdsParams): Reado
   return ids;
 };
 
+const mountLineFor = ({
+  mountId,
+  worktreePath,
+}: {
+  readonly mountId: MountId;
+  readonly worktreePath: string;
+}): string =>
+  `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`;
+
 export const rebasePromptFor = ({
   baseBranch,
   mountId,
@@ -106,7 +115,7 @@ export const rebasePromptFor = ({
 }): string =>
   [
     `Rebase this session branch onto origin/${baseBranch}.`,
-    `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
+    mountLineFor({ mountId, worktreePath }),
     `- Fetch origin ${baseBranch} before rebasing.`,
     `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
     "- Run the repository's typecheck to confirm nothing broke.",
@@ -122,7 +131,7 @@ export const resumeRebasePromptFor = ({
 }: PromptParams): string =>
   [
     `A rebase of this session branch onto origin/${baseBranch} stopped halfway. Finish it.`,
-    `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
+    mountLineFor({ mountId, worktreePath }),
     '- Read git status to find the conflicting files.',
     "- Resolve each conflict by favoring the branch's intent, stage it, and run git rebase --continue until the rebase finishes.",
     "- Run the repository's typecheck to confirm nothing broke.",
