@@ -14,7 +14,7 @@ describe('RoleSelect', () => {
   it('offers exactly the picker-eligible roles', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Generalist/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
     expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
@@ -26,14 +26,14 @@ describe('RoleSelect', () => {
       'Tester',
       'Resolver',
       'Docs',
-      'Custom',
+      'Generalist',
     ]);
   });
 
   it('omits artifact roles from the manual picker', () => {
     render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Generalist/i }));
     const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
 
     expect(options.queryByRole('button', { name: 'Report' })).toBeNull();

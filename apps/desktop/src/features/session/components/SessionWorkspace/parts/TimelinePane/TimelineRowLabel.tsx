@@ -129,7 +129,7 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     return <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />;
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-1">
+    <span className="inline-flex shrink-0 items-center gap-1 self-center">
       <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
       <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
     </span>
@@ -205,7 +205,9 @@ export const TimelineRowLabel = ({
         )}
       </span>
       {diffStat == null ? null : (
-        <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+        <span className="self-center">
+          <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+        </span>
       )}
       {secondary != null ? (
         <span className="min-w-0 truncate text-secondary text-muted-foreground">{secondary}</span>
