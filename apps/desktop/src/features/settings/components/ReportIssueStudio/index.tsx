@@ -11,7 +11,7 @@ import {
   ScrollFade,
   Band,
   SegmentedTabs,
-  Select,
+  Listbox,
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
@@ -313,28 +313,17 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 </FieldRow>
                 <FieldRow label="Area">
                   <div className="flex flex-col gap-2">
-                    <Select
-                      aria-label="Area"
+                    <Listbox
+                      ariaLabel="Area"
                       size="sm"
-                      value={area}
-                      onChange={(e) => {
-                        const nextArea = AREA_OPTIONS.find(
-                          (option) => option.value === e.target.value,
-                        )?.value;
-                        setSelectedArea(nextArea ?? '');
+                      placeholder="Choose an area"
+                      value={area === '' ? null : area}
+                      options={AREA_OPTIONS}
+                      onChange={(nextArea) => {
+                        setSelectedArea(nextArea);
                         setIsAreaTouched(true);
                       }}
-                      required
-                    >
-                      <option value="" disabled hidden>
-                        Choose an area
-                      </option>
-                      {AREA_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
+                    />
                     {isAreaGuessed ? (
                       <p className="text-2xs leading-relaxed text-info">
                         Guessed from your words. Change it if it's off.

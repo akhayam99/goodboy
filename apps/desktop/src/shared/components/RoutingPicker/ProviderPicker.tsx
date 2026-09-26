@@ -1,10 +1,8 @@
-import { ChevronDown } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
-import { AnchoredPopover, cn, useDropdown, tintClasses } from '@goodboy/ui';
+import { Listbox } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
-import { PickerSection } from './PickerSection';
 import { ProviderGlyph } from './ProviderGlyph';
-import { ProviderGrid } from './ProviderGrid';
+import { ROUTING_PICKER_CONSTANTS } from './constants';
 
 type Props = {
   readonly connectedProviders: ReadonlyArray<ProviderId>;
@@ -22,66 +20,25 @@ export const ProviderPicker = ({
   onProvider,
   align = 'start',
   ariaLabel = 'provider',
-}: Props) => {
-  const dropdown = useDropdown({
-    disabled,
-    align,
-    expectedHeight: 64,
-    expectedWidth: 384,
-    width: 'w-96 max-w-[calc(100vw-2rem)]',
-  });
-  const { open, close, toggle } = dropdown;
-  const summary = PROVIDER_LABEL[provider];
-
-  return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel={ariaLabel}
-      className="bg-subtle"
-      anchorClassName="flex w-full items-center"
-      trigger={
-        <button
-          type="button"
-          onClick={toggle}
-          disabled={disabled}
-          title={disabled ? summary : `${summary}. Click to change.`}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={`${ariaLabel}: ${summary}`}
-          className={cn(
-            'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-label transition-colors',
-            open
-              ? cn('border-primary', tintClasses('primary').bgSoft)
-              : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
-            disabled && 'cursor-not-allowed opacity-60',
-          )}
-        >
-          <ProviderGlyph id={provider} />
-          <span className="min-w-0 flex-1 truncate">{summary}</span>
-          <ChevronDown
-            size={11}
-            aria-hidden
-            className={cn(
-              'shrink-0 text-muted-foreground transition-transform',
-              open && 'rotate-180',
-            )}
-          />
-        </button>
-      }
-    >
-      <PickerSection label="Provider" hint="Which CLI agent starts new sessions">
-        <ProviderGrid
-          connectedProviders={connectedProviders}
-          activeProvider={provider}
-          disableDisconnected
-          showDisconnected
-          onSelect={(nextProvider) => {
-            onProvider(nextProvider);
-            close();
-          }}
-        />
-      </PickerSection>
-    </AnchoredPopover>
-  );
-};
+}: Props) => (
+  <Listbox
+    ariaLabel={ariaLabel}
+    size="sm"
+    isBlock
+    align={align}
+    noun="provider"
+    searchable={false}
+    disabled={disabled}
+    value={provider}
+    options={ROUTING_PICKER_CONSTANTS.providers.map((id) => ({
+      value: id,
+      label: PROVIDER_LABEL[id],
+      leading: <ProviderGlyph id={id} />,
+      disabledReason:
+        connectedProviders.includes(id) || id === provider
+          ? undefined
+          : `${PROVIDER_LABEL[id]} is not connected`,
+    }))}
+    onChange={onProvider}
+  />
+);

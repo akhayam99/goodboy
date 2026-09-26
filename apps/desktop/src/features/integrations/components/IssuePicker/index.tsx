@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   AnchoredPopover,
   cn,
   EmptyState,
+  filterOptions,
+  ListboxList,
+  listboxOptionId,
   Notice,
   ScrollFade,
   Skeleton,
   Tooltip,
   splitErrorMessage,
   useDropdown,
-  tintClasses,
+  useListboxKeyboard,
 } from '@goodboy/ui';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import type { IssueCandidate } from '../../fetchIssueCandidates';
@@ -46,9 +49,8 @@ export const IssuePicker = ({
   onClear,
 }: Props) => {
   const [query, setQuery] = useState('');
-  const [highlightIdx, setHighlightIdx] = useState(0);
+  const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
   const dropdown = useDropdown({ disabled, expectedHeight: 288 });
   const { open: isOpen, close, toggle } = dropdown;
 
@@ -79,16 +81,21 @@ export const IssuePicker = ({
     inputRef.current?.focus();
   };
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (needle === '') {
-      return rows;
-    }
-    return rows.filter(
-      (row) =>
-        row.identifier.toLowerCase().includes(needle) || row.title.toLowerCase().includes(needle),
-    );
-  }, [rows, query]);
+  const filtered = useMemo(
+    () =>
+      filterOptions({
+        options: rows.map((row, index) => ({
+          value: index,
+          label: row.title,
+          keywords: row.identifier,
+        })),
+        query,
+      }).flatMap(({ option }) => {
+        const row = rows[option.value];
+        return row === undefined ? [] : [row];
+      }),
+    [rows, query],
+  );
 
   const pasted = useMemo(
     () => (resolvePaste == null ? null : resolvePaste(query)),
@@ -105,49 +112,50 @@ export const IssuePicker = ({
     [close, onPick],
   );
 
-  useEffect(() => {
-    setHighlightIdx(0);
-  }, [query]);
+  const entries = options.map((row, index) => ({
+    option: {
+      value: index,
+      label: pasted == null ? row.title : `Link ${row.identifier}`,
+      meta: pasted == null ? row.identifier : undefined,
+    },
+    match: [],
+  }));
+
+  const keyboard = useListboxKeyboard({
+    items: entries.map(({ option }) => ({ label: option.label, isDisabled: false })),
+    isOpen,
+    isTypeaheadEnabled: false,
+    onOpen: openPanel,
+    onClose: close,
+    onCommit: (index) => {
+      const row = options[index];
+      if (row != null) {
+        select(row);
+      }
+    },
+    onTab: close,
+  });
+  const { activeIndex, setActiveIndex } = keyboard;
 
   useEffect(() => {
-    if (!isOpen || listRef.current == null) {
-      return;
-    }
-    const element = listRef.current.children[highlightIdx] as HTMLElement | undefined;
-    element?.scrollIntoView({ block: 'nearest' });
-  }, [highlightIdx, isOpen]);
+    setActiveIndex(0);
+  }, [query, isOpen]);
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (!isOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
-      openPanel();
-      event.preventDefault();
-      return;
-    }
+  useEffect(() => {
     if (!isOpen) {
       return;
     }
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        setHighlightIdx((index) => Math.min(index + 1, options.length - 1));
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        setHighlightIdx((index) => Math.max(index - 1, 0));
-        break;
-      case 'Enter': {
-        event.preventDefault();
-        const highlighted = options[highlightIdx];
-        if (highlighted != null) {
-          select(highlighted);
-        }
-        break;
-      }
-      case 'Escape':
-        event.preventDefault();
-        close();
-        break;
+    const element = document.getElementById(listboxOptionId({ id: listId, index: activeIndex }));
+    if (element !== null && typeof element.scrollIntoView === 'function') {
+      element.scrollIntoView({ block: 'nearest' });
     }
+  }, [activeIndex, isOpen, listId]);
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen && (event.key === 'Enter' || event.key === ' ')) {
+      return;
+    }
+    keyboard.onKeyDown(event);
   };
 
   const isLoadingState = pasted == null && isLoading && rows.length === 0;
@@ -160,7 +168,7 @@ export const IssuePicker = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className="bg-subtle"
+      className="motion-safe:animate-popover-in"
       anchorClassName="w-full"
       trigger={
         <div
@@ -179,6 +187,10 @@ export const IssuePicker = ({
             aria-label={inputId === undefined ? 'Issue' : undefined}
             role="combobox"
             aria-expanded={isOpen}
+            aria-controls={isOpen ? listId : undefined}
+            aria-activedescendant={
+              isOpen && hasOptions ? listboxOptionId({ id: listId, index: activeIndex }) : undefined
+            }
             aria-autocomplete="list"
             autoComplete="off"
             className="flex-1 truncate bg-transparent px-2 text-body text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
@@ -253,42 +265,25 @@ export const IssuePicker = ({
           )}
 
           {hasOptions && (
-            <ScrollFade className="max-h-72" viewportClassName="py-0.5" fadeFrom="subtle">
-              <ul ref={listRef} role="listbox">
-                {options.map((row, index) => (
-                  <li
-                    key={`${row.provider}:${row.externalId}`}
-                    role="option"
-                    aria-selected={highlightIdx === index}
-                    onMouseEnter={() => setHighlightIdx(index)}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      select(row);
-                    }}
-                    className={cn(
-                      'flex cursor-pointer flex-col gap-0.5 px-2.5 py-1.5',
-                      highlightIdx === index && cn(tintClasses('primary').bg),
-                    )}
-                  >
-                    <div className="flex items-center gap-2 text-body">
-                      {pasted == null ? (
-                        <>
-                          <span className="shrink-0 font-mono text-secondary text-muted-foreground">
-                            {row.identifier}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-foreground">
-                            {row.title}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="min-w-0 flex-1 truncate text-foreground">
-                          Link {row.identifier}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            <ScrollFade
+              className="max-h-72"
+              viewportClassName="p-1"
+              fadeFrom="floating"
+              fadeSize={12}
+            >
+              <ListboxList
+                id={listId}
+                entries={entries}
+                activeIndex={activeIndex}
+                selectedValues={[]}
+                onSelect={(index) => {
+                  const row = options[index];
+                  if (row != null) {
+                    select(row);
+                  }
+                }}
+                onActivate={setActiveIndex}
+              />
             </ScrollFade>
           )}
 

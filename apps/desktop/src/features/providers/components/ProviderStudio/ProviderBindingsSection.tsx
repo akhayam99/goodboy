@@ -1,6 +1,6 @@
 import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
 import { useMemo } from 'react';
-import { BAND_ROW_CLASS, Band, Select, cn } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Band, Listbox, cn } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -55,25 +55,22 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                 </span>
               </div>
               <div className="flex-1" />
-              <Select
+              <Listbox
                 size="sm"
+                ariaLabel={`Credential for ${ws.name}`}
                 value={bound}
-                onChange={(e) => {
-                  const next = e.target.value;
+                options={[
+                  ...(isApi ? [] : [{ value: CLI_CREDENTIAL, label: cliLabel }]),
+                  ...mine.map((c) => ({ value: c.id, label: c.label })),
+                ]}
+                onChange={(next) => {
                   void setWorkspaceProviderBinding(
                     ws.id,
                     providerId,
                     next === CLI_CREDENTIAL ? null : next,
                   );
                 }}
-              >
-                {!isApi ? <option value={CLI_CREDENTIAL}>{cliLabel}</option> : null}
-                {mine.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </Select>
+              />
             </li>
           );
         })}

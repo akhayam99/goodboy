@@ -10,33 +10,52 @@ afterEach(() => {
   cleanup();
 });
 
+const openRoles = () => {
+  render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
+  fireEvent.click(screen.getByRole('combobox', { name: 'Agent role' }));
+  return within(screen.getByRole('listbox', { name: 'Agent role' }));
+};
+
 describe('RoleSelect', () => {
   it('offers exactly the picker-eligible roles', () => {
-    render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
+    const options = openRoles();
 
-    fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
-    const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
-
-    expect(options.getAllByRole('button').map((option) => option.textContent)).toEqual([
-      'Scout',
-      'Debugger',
-      'Planner',
-      'Implementer',
-      'Reviewer',
-      'Tester',
-      'Resolver',
-      'Docs',
-      'Custom',
+    expect(options.getAllByRole('option').map((option) => option.dataset.value)).toEqual([
+      'scout',
+      'investigator',
+      'planner',
+      'implementer',
+      'reviewer',
+      'tester',
+      'resolver',
+      'docs',
+      'custom',
     ]);
+    expect(options.getByRole('option', { name: /^Debugger/ })).toBeDefined();
   });
 
   it('omits artifact roles from the manual picker', () => {
-    render(<RoleSelect value={'custom' as AgentRole} onChange={vi.fn()} disabled={false} />);
+    const options = openRoles();
 
-    fireEvent.click(screen.getByRole('button', { name: /Custom/i }));
-    const options = within(screen.getByRole('listbox', { name: 'Agent role' }));
+    expect(options.queryByRole('option', { name: /^Report/ })).toBeNull();
+    expect(options.queryByRole('option', { name: /^Wireframe/ })).toBeNull();
+  });
 
-    expect(options.queryByRole('button', { name: 'Report' })).toBeNull();
-    expect(options.queryByRole('button', { name: 'Wireframe' })).toBeNull();
+  it('marks the current role without a primary tint', () => {
+    const options = openRoles();
+    const custom = options.getByRole('option', { name: /^Custom/ });
+
+    expect(custom.getAttribute('aria-selected')).toBe('true');
+    expect(custom.className).not.toContain('primary');
+  });
+
+  it('chooses a role and closes', () => {
+    const onChange = vi.fn();
+    render(<RoleSelect value={'custom' as AgentRole} onChange={onChange} disabled={false} />);
+    fireEvent.click(screen.getByRole('combobox', { name: 'Agent role' }));
+    fireEvent.click(screen.getByRole('option', { name: /^Planner/ }));
+
+    expect(onChange).toHaveBeenCalledWith('planner');
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

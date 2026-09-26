@@ -64,6 +64,11 @@ const RULES = [
     why: 'standing motion is the registered soft pulse; only the skeleton pulses to load',
   },
   {
+    pattern: /<select\b|\bSelect\b[^'"`]*\bfrom '@goodboy\/ui'|^\s*Select,\s*$|components\/Select'/,
+    allow: NO_ALLOW,
+    why: 'a value picker is a Listbox: the native select ignores theme, density and keyboard',
+  },
+  {
     pattern: /\bz-\[/,
     allow: NO_ALLOW,
     why: 'global layers use the named z-index tokens',

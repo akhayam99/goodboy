@@ -7,14 +7,23 @@ import { VerbositySelect } from './index';
 afterEach(cleanup);
 
 describe('VerbositySelect', () => {
-  it('renders the current verbosity label and opens a menu on click', () => {
+  it('renders the current verbosity and lists every level', () => {
     render(<VerbositySelect value="normal" onChange={vi.fn()} disabled={false} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getAllByText(/brief|normal|verbose/i).length).toBeGreaterThan(0);
+    const trigger = screen.getByRole('combobox', { name: 'Reply verbosity' });
+    expect(trigger.textContent).toContain('Normal');
+
+    fireEvent.click(trigger);
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Brief',
+      'Normal',
+      'Verbose',
+    ]);
   });
 
   it('disables the trigger when disabled is true', () => {
     render(<VerbositySelect value="normal" onChange={vi.fn()} disabled />);
-    expect((screen.getByRole('button') as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      screen.getByRole<HTMLButtonElement>('combobox', { name: 'Reply verbosity' }).disabled,
+    ).toBe(true);
   });
 });

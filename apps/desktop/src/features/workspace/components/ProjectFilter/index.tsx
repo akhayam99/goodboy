@@ -1,14 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { ListFilter, X } from 'lucide-react';
-import {
-  AnchoredPopover,
-  cn,
-  Divider,
-  Eyebrow,
-  IconButton,
-  useDropdown,
-  tintClasses,
-} from '@goodboy/ui';
+import { useMemo } from 'react';
+import { ListFilter } from 'lucide-react';
+import { Listbox } from '@goodboy/ui';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -18,7 +10,6 @@ import {
   useSelectedProjectIds,
 } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { ProjectFilterOption } from './ProjectFilterOption';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -32,47 +23,11 @@ type FilterOption = {
   readonly isStarred?: boolean;
 };
 
-type UpdateOptionParams = {
-  readonly id: string;
-  readonly checked: boolean;
-};
-
-const MENU_WIDTH = {
-  className: 'w-[240px]',
-  expected: 240,
-};
-
 export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
   const selectedProjectIds = useSelectedProjectIds({ workspaceId });
   const setSelectedProjectIds = useAppStore((state) => state.setSelectedProjectIds);
   const projects = useAppStore((state) => state.projects);
   const sessionProjectMounts = useProjectMountsForSessions({ sessions });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdown = useDropdown({
-    align: 'end',
-    width: MENU_WIDTH.className,
-    expectedWidth: MENU_WIDTH.expected,
-    expectedHeight: 300,
-    isEscapeEnabled: false,
-  });
-  const { close, open, toggle } = dropdown;
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      event.preventDefault();
-      close();
-      triggerRef.current?.focus();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close, open]);
-
   const options = useMemo(() => {
     const counts = new Map<string, number>();
     let noProjectCount = 0;
@@ -107,79 +62,29 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
     ];
   }, [projects, sessionProjectMounts, sessions, workspaceId]);
 
-  const updateOption = ({ id, checked }: UpdateOptionParams) => {
-    const next = checked
-      ? [...selectedProjectIds, id]
-      : selectedProjectIds.filter((selectedId) => selectedId !== id);
-    setSelectedProjectIds({ workspaceId, selectedProjectIds: next });
-  };
-
   const activeCount = selectedProjectIds.length;
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel="Filter sessions by project"
-      className="py-1"
-      hasBackdrop
-      trigger={
-        <IconButton
-          ref={triggerRef}
-          variant="ghost"
-          icon={ListFilter}
-          iconSize={ICON_SIZE.row}
-          label={activeCount > 0 ? `Project filter, ${activeCount} active` : 'Project filter'}
-          tooltip={
-            activeCount > 0 ? `Filter by project, ${activeCount} active` : 'Filter by project'
-          }
-          onClick={toggle}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          className={cn(
-            'size-7 shrink-0',
-            (activeCount > 0 || open) &&
-              cn(
-                tintClasses('primary').bg,
-                'text-primary',
-                tintClasses('primary').hoverBg,
-                'hover:text-primary',
-              ),
-          )}
-        />
+    <Listbox
+      multiple
+      trigger="quiet"
+      size="sm"
+      align="end"
+      noun="project"
+      ariaLabel={activeCount > 0 ? `Project filter, ${activeCount} active` : 'Project filter'}
+      value={selectedProjectIds}
+      options={options.map((option) => ({
+        value: option.id,
+        label: option.label,
+        meta: option.count,
+      }))}
+      onChange={(next) => setSelectedProjectIds({ workspaceId, selectedProjectIds: next })}
+      valueLabel={
+        <>
+          <ListFilter size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          {activeCount > 0 ? <span className="tabular-nums">{activeCount}</span> : null}
+        </>
       }
-    >
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <Eyebrow label="Projects" muted />
-        {activeCount > 0 ? (
-          <button
-            type="button"
-            onClick={() => setSelectedProjectIds({ workspaceId, selectedProjectIds: [] })}
-            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground hover:bg-hover hover:text-foreground"
-          >
-            <X size={10} aria-hidden />
-            Clear
-          </button>
-        ) : null}
-      </div>
-      <Divider />
-      <div className="flex max-h-64 flex-col overflow-y-auto p-1">
-        {options.length === 0 ? (
-          <span className="px-2 py-3 text-label text-muted-foreground">
-            No projects in any session
-          </span>
-        ) : (
-          options.map((option) => (
-            <ProjectFilterOption
-              key={option.id}
-              label={option.label}
-              count={option.count}
-              checked={selectedProjectIds.includes(option.id)}
-              onChange={(checked) => updateOption({ id: option.id, checked })}
-            />
-          ))
-        )}
-      </div>
-    </AnchoredPopover>
+    />
   );
 };

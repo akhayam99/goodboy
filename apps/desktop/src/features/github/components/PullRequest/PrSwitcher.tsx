@@ -1,8 +1,6 @@
 import type { PullRequestState } from '@goodboy/types';
-import { AnchoredPopover, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
-import { Check, ChevronDown } from 'lucide-react';
+import { Listbox } from '@goodboy/ui';
 import { PullRequestChip } from '../PullRequestChip';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly prs: ReadonlyArray<PullRequestState>;
@@ -11,64 +9,33 @@ type Props = {
 };
 
 export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
-  const dropdown = useDropdown({
-    width: 'w-96',
-    expectedHeight: 288,
-  });
   const current = prs.find((p) => p.number === selected) ?? prs[0];
   if (!current) {
     return null;
   }
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
+    <Listbox
+      ariaLabel={`${prs.length} pull requests on this branch`}
+      size="sm"
+      noun="pull request"
       anchorClassName="shrink-0"
-      hasBackdrop
-      trigger={
-        <button
-          type="button"
-          onClick={dropdown.toggle}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-label font-medium text-foreground transition-colors hover:border-border hover:bg-hover"
-          aria-haspopup="listbox"
-          aria-expanded={dropdown.open}
-          title={`${prs.length} pull requests on this branch`}
-        >
+      value={current.number}
+      options={prs.map((p) => ({
+        value: p.number,
+        label: p.title,
+        leading: <PullRequestChip state={p.state} variant="icon" iconSize={12} />,
+        meta: `#${p.number}`,
+        keywords: String(p.number),
+      }))}
+      onChange={onSelect}
+      valueLabel={
+        <>
           <PullRequestChip state={current.state} variant="icon" iconSize={12} />
-          <span className="tabular-nums">#{current.number}</span>
+          <span className="tabular-nums text-foreground">#{current.number}</span>
           <span className="text-secondary text-muted-foreground">of {prs.length}</span>
-          <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
-        </button>
+        </>
       }
-    >
-      <ScrollFade className="max-h-72" viewportClassName="py-1">
-        <ul role="listbox">
-          {prs.map((p) => (
-            <li key={p.number}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={p.number === selected}
-                onClick={() => {
-                  onSelect(p.number);
-                  dropdown.close();
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-label transition-colors hover:bg-hover',
-                  p.number === selected && cn(tintClasses('primary').bgSoft),
-                )}
-              >
-                <PullRequestChip state={p.state} variant="icon" iconSize={12} />
-                <span className="shrink-0 tabular-nums text-muted-foreground">#{p.number}</span>
-                <span className="min-w-0 flex-1 truncate text-foreground">{p.title}</span>
-                {p.number === selected && (
-                  <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-primary" />
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </ScrollFade>
-    </AnchoredPopover>
+    />
   );
 };
