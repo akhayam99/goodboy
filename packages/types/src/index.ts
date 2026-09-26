@@ -15,6 +15,7 @@ export type {
   PermissionRuleId,
   ProviderRunId,
   SessionEventId,
+  SecurityFindingId,
   SessionId,
   SkillId,
   StepDefId,
@@ -409,3 +410,4 @@ export type {
   ResolvePublicationThread,
   PublicationBlocker,
 } from './resolve';
+export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';

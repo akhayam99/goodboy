@@ -1,6 +1,13 @@
 export { IllegalTurnTransitionError, turnReducer, type TurnLifecycleEvent } from './turn';
 
 export {
+  findSecretMatches,
+  scanTextForSecrets,
+  type SecretFinding,
+  type SecretMatch,
+} from './secret-scan';
+
+export {
   checkProviderBudget,
   checkSessionBudget,
   emitBudgetAlerts,

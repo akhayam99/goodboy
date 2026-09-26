@@ -49,6 +49,7 @@ import { m187ResolveReplySettings } from './m187-resolve-reply-settings';
 import { m188RefactorBuiltinName } from './m188-refactor-builtin-name';
 import { m189ArtifactOpenedKeep } from './m189-artifact-opened-keep';
 import { m190ProjectGoodboyIgnore } from './m190-project-goodboy-ignore';
+import { m191SecurityFindings } from './m191-security-findings';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -385,4 +386,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 188, sql: m188RefactorBuiltinName },
   { version: 189, sql: m189ArtifactOpenedKeep },
   { version: 190, sql: m190ProjectGoodboyIgnore },
+  { version: 191, sql: m191SecurityFindings },
 ];
