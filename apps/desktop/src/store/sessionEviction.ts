@@ -64,6 +64,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionAnsweredQuestions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionDismissedQuestions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionQuestionsLoadError', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionSlackDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionNudges', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionAttachments', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionOverrides', keyedBy: 'session', evictOn: 'archive' },

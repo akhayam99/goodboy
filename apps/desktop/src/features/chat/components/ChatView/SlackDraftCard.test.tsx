@@ -10,6 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { SlackChannel, SlackMessage, SlackUser } from '../../../integrations/slack/client';
+import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
 
 const client = vi.hoisted(() => ({
   slackGetThread: vi.fn(),
@@ -92,7 +93,9 @@ beforeEach(() => {
     slackThreads: {},
     slackUsers: {},
     slackChannels: {},
-    workspaceOverrides: { [WORKSPACE_ID]: { attributionFooter: false } },
+    workspaceOverrides: {
+      [WORKSPACE_ID]: overridesWithAttribution({ attributionFooter: false }),
+    },
     sessionSlackDrafts: { [SESSION_ID]: [draft] },
   });
 });
