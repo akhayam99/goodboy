@@ -9,8 +9,11 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
+  type ArtifactRevision,
   type ArtifactRevisionNote,
+  annotateArtifactRevision as dbAnnotateArtifactRevision,
   deleteArtifact as dbDeleteArtifact,
+  listArtifactRevisions as dbListArtifactRevisions,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
   insertArtifact as dbInsertArtifact,
   listArtifactsForSession as dbListArtifactsForSession,
@@ -108,3 +111,19 @@ export const discardArtifact = async (artifactId: ArtifactId): Promise<void> => 
 export const restoreArtifact = async (artifactId: ArtifactId): Promise<void> => {
   await dbRestoreArtifact({ db: tauriDatabase, artifactId });
 };
+
+export const listArtifactRevisions = async (
+  artifactId: ArtifactId,
+): Promise<ReadonlyArray<ArtifactRevision>> =>
+  dbListArtifactRevisions({ db: tauriDatabase, artifactId });
+
+export const annotateArtifactRevision = async ({
+  artifactId,
+  revision,
+  note,
+}: {
+  readonly artifactId: ArtifactId;
+  readonly revision: number;
+  readonly note: ArtifactRevisionNote;
+}): Promise<boolean> =>
+  dbAnnotateArtifactRevision({ db: tauriDatabase, artifactId, revision, note });

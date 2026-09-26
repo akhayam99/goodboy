@@ -3,7 +3,11 @@ import type { AgentId, ArtifactId, SessionId } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import { insertArtifact, removeArtifact, updateArtifactSource } from './artifact';
-import { listArtifactRevisions, loadArtifactRevision } from './artifactRevision';
+import {
+  annotateArtifactRevision,
+  listArtifactRevisions,
+  loadArtifactRevision,
+} from './artifactRevision';
 
 const artifactId = 'wireframe-1' as ArtifactId;
 
@@ -84,5 +88,23 @@ describe('artifact revisions', () => {
     expect((await loadArtifactRevision({ db, artifactId, revision: 2 }))?.author).toBe('user');
     await removeArtifact({ db, artifactId });
     expect(await listArtifactRevisions({ db, artifactId })).toEqual([]);
+  });
+
+  it('records what was asked on a revision the agent already wrote', async () => {
+    const db = await seed();
+    expect(
+      await annotateArtifactRevision({
+        db,
+        artifactId,
+        revision: 1,
+        note: { author: 'agent', ask: 'Split exceptions out', summary: { changed: 2 } },
+      }),
+    ).toBe(true);
+    const first = await loadArtifactRevision({ db, artifactId, revision: 1 });
+    expect(first?.ask).toBe('Split exceptions out');
+    expect(first?.summary).toEqual({ changed: 2 });
+    expect(
+      await annotateArtifactRevision({ db, artifactId, revision: 9, note: { author: 'agent' } }),
+    ).toBe(false);
   });
 });

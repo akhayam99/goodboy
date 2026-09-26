@@ -179,3 +179,29 @@ export const loadArtifactRevision = async ({
   const row = rows[0];
   return row === undefined ? null : toRevision({ row });
 };
+
+export const annotateArtifactRevision = async ({
+  db,
+  artifactId,
+  revision,
+  note,
+}: {
+  readonly db: Database;
+  readonly artifactId: ArtifactId;
+  readonly revision: number;
+  readonly note: ArtifactRevisionNote;
+}): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE artifact_revisions SET author = ?, ask = ?, pinned_json = ?, summary_json = ?
+     WHERE artifact_id = ? AND revision = ?`,
+    [
+      note.author,
+      note.ask ?? null,
+      note.pinned === undefined || note.pinned === null ? null : JSON.stringify(note.pinned),
+      note.summary === undefined || note.summary === null ? null : JSON.stringify(note.summary),
+      artifactId,
+      revision,
+    ],
+  );
+  return result.rowsAffected > 0;
+};

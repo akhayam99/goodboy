@@ -393,6 +393,7 @@ export {
   type UpdateArtifactSourceInput,
 } from './queries/artifact';
 export {
+  annotateArtifactRevision,
   listArtifactRevisions,
   loadArtifactRevision,
   type ArtifactRevision,
