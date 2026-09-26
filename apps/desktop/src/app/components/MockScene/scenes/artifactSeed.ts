@@ -1002,8 +1002,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Backfill the settled batches',
     bodyMd: ACTIVE_PLAN_BODY,
     status: 'active',
-    createdAt: clock.iso({ at: '2026-09-14T17:34:00.000Z' }),
-    updatedAt: clock.iso({ at: '2026-09-14T17:34:00.000Z' }),
+    createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
     consumptionCount: 0,
   },
 ];

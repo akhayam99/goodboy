@@ -33,7 +33,7 @@ import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { sceneClock } from '../sceneClock';
 
-const clock = sceneClock({ anchor: '2026-09-07T09:12:00.000Z' });
+const clock = sceneClock({ anchor: '2026-09-07T13:15:00.000Z' });
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
