@@ -18,7 +18,7 @@ export const CHANGELOG_SCREEN_VALUES = Object.keys(
   CHANGELOG_SCREENS,
 ) as ReadonlyArray<ChangelogScreen>;
 
-export const isChangelogScreen = ({ value }: { readonly value: string }): boolean =>
+export const isChangelogScreen = (value: string): value is ChangelogScreen =>
   Object.hasOwn(CHANGELOG_SCREENS, value);
 
 type ChangelogScreenLabelParams = {
