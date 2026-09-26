@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
-import { sentryFetchIssues, type SentryIssue } from '../client';
+import { sentryFetchIssues, type SentryIssue, type SentryIssuesPage } from '../client';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
 const SENTRY_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['sentry'];
@@ -42,7 +42,16 @@ export type UseSentryIssues = {
   readonly refetch: () => void;
 };
 
-export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): UseSentryIssues => {
+const NO_LINKED_PROJECTS: ReadonlyArray<string> = [];
+
+const EMPTY_PAGE: SentryIssuesPage = { issues: [], next_cursor: null };
+
+export const useSentryIssues = (
+  workspaceId: WorkspaceId,
+  isEnabled = true,
+  linkedProjects: ReadonlyArray<string> = NO_LINKED_PROJECTS,
+): UseSentryIssues => {
+  const linkedKey = [...new Set(linkedProjects)].sort().join('\n');
   const linkedSessions = useLinkedExternalIds({ providers: SENTRY_PROVIDERS });
   const [issues, setIssues] = useState<ReadonlyArray<SentryIssue>>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -63,8 +72,17 @@ export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
       setLoading(true);
       setError(null);
       try {
-        const page = await sentryFetchIssues(workspaceId, undefined, nextCursor ?? undefined);
-        setIssues((prev) => dedupById(reset ? page.issues : [...prev, ...page.issues]));
+        const extraSlugs = reset && linkedKey !== '' ? linkedKey.split('\n') : [];
+        const [page, ...extraPages] = await Promise.all([
+          sentryFetchIssues(workspaceId, undefined, nextCursor ?? undefined),
+          ...extraSlugs.map((slug) =>
+            sentryFetchIssues(workspaceId, undefined, undefined, undefined, slug).catch(
+              () => EMPTY_PAGE,
+            ),
+          ),
+        ]);
+        const fetched = [...page.issues, ...extraPages.flatMap((extra) => extra.issues)];
+        setIssues((prev) => dedupById(reset ? fetched : [...prev, ...fetched]));
         setCursor(page.next_cursor);
         setHasMore(page.next_cursor != null);
       } catch (err) {
@@ -73,7 +91,7 @@ export const useSentryIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
         setLoading(false);
       }
     },
-    [isEnabled, workspaceId],
+    [isEnabled, linkedKey, workspaceId],
   );
 
   useEffect(() => {

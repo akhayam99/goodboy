@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import type { InboxRecord } from './types';
 import {
   filterInboxRecords,
@@ -7,6 +7,7 @@ import {
   activeFilterCount,
   inboxFacetCounts,
   matchesKindFilter,
+  matchesProject,
   matchesSearch,
   visibleTypeFacets,
   type InboxFilters,
@@ -172,7 +173,30 @@ describe('activeFilterCount', () => {
   it('counts one per section away from its default', () => {
     expect(activeFilterCount({ filters: NO_INBOX_FILTERS })).toBe(0);
     expect(
-      activeFilterCount({ filters: { view: 'closed', kind: 'issue', source: 'github' } }),
+      activeFilterCount({
+        filters: { view: 'closed', kind: 'issue', source: 'github', project: null },
+      }),
     ).toBe(3);
+    expect(
+      activeFilterCount({ filters: { ...NO_INBOX_FILTERS, project: 'ledger' as ProjectId } }),
+    ).toBe(1);
+  });
+});
+
+describe('project filter', () => {
+  const withProjects = (key: string, projectIds?: ReadonlyArray<ProjectId>) =>
+    ({ key, projectIds }) as unknown as InboxRecord;
+
+  it('keeps records of the project and records no project claims', () => {
+    const ledger = 'ledger' as ProjectId;
+    expect(matchesProject({ record: withProjects('a', [ledger]), project: ledger })).toBe(true);
+    expect(
+      matchesProject({ record: withProjects('b', ['store' as ProjectId]), project: ledger }),
+    ).toBe(false);
+    expect(matchesProject({ record: withProjects('c'), project: ledger })).toBe(true);
+    expect(matchesProject({ record: withProjects('d', []), project: ledger })).toBe(true);
+    expect(
+      matchesProject({ record: withProjects('e', ['store' as ProjectId]), project: null }),
+    ).toBe(true);
   });
 });

@@ -9,6 +9,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
+import type { Project } from '@goodboy/types';
 import { StatusDot } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { FacetRail } from '../../../../shared/components/FacetRail';
@@ -39,6 +40,7 @@ type Props = {
   readonly connected: ReadonlyArray<InboxProvider>;
   readonly loading: Readonly<Record<InboxProvider, boolean>>;
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
+  readonly projects?: ReadonlyArray<Project>;
   readonly onFiltersChange: (filters: InboxFilters) => void;
   readonly onClearFilters: () => void;
 };
@@ -96,6 +98,7 @@ export const InboxFacetRail = ({
   connected,
   loading,
   errors,
+  projects = [],
   onFiltersChange,
   onClearFilters,
 }: Props) => {
@@ -157,6 +160,27 @@ export const InboxFacetRail = ({
                 onFiltersChange({
                   ...filters,
                   source: filters.source === provider ? null : provider,
+                })
+              }
+            />
+          ))}
+        </FacetSection>
+      ) : null}
+      {projects.length > 1 ? (
+        <FacetSection label="Project">
+          {projects.map((project) => (
+            <FacetRow
+              key={project.id}
+              icon={
+                project.kind === 'repo' ? CONCEPT_ICONS.projectRepo : CONCEPT_ICONS.projectFolder
+              }
+              label={project.name}
+              count={counts.project(project.id)}
+              isSelected={filters.project === project.id}
+              onClick={() =>
+                onFiltersChange({
+                  ...filters,
+                  project: filters.project === project.id ? null : project.id,
                 })
               }
             />

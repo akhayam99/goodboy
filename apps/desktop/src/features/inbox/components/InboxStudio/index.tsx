@@ -89,6 +89,7 @@ const initialFilters = ({
     view: 'all',
     kind: initialKind != null ? kindToFilter({ kind: initialKind }) : (stored?.kind ?? 'all'),
     source: initialProvider ?? (initialKind != null ? null : (stored?.source ?? null)),
+    project: null,
   };
 };
 
@@ -116,7 +117,7 @@ export const InboxStudio = ({
   onFocusChange,
   onClose,
 }: Props) => {
-  const { records, isLoading, loading, errors, connected, refetch } = useInboxRecords({
+  const { records, isLoading, loading, errors, connected, projects, refetch } = useInboxRecords({
     workspaceId,
     rootPath,
   });
@@ -252,6 +253,7 @@ export const InboxStudio = ({
       connected={connected}
       loading={loading}
       errors={errors}
+      projects={projects}
       onFiltersChange={setFilters}
       onClearFilters={clearFilters}
     />

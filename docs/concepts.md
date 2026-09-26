@@ -654,6 +654,17 @@ same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
 to it.
 
+With two or more projects in the workspace, the rail also filters by project.
+Code host records belong to the project at the workspace root. A Sentry error
+belongs to every project linked to its Sentry project in Settings, Integrations,
+Sentry, where each project can read several Sentry projects and one Sentry
+project can serve several projects (`project_sentry_links`, m191). Links can be
+suggested from Sentry code mappings and wait for your Link. The inbox reads the
+first page of every linked Sentry project besides the connected one. A record
+no project claims, such as a Linear or Jira issue, stays visible under every
+project filter. In Settings, Workspace, a project that reads Sentry shows the
+Sentry glyph, and its tooltip names the Sentry projects.
+
 ## Providers and routing
 
 Goodboy works with seven providers: **Claude**, **Cursor**, **Codex**,
