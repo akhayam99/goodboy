@@ -9,6 +9,7 @@ import type {
 import {
   describeProjectAdoption,
   findProjectByRootPath,
+  getWorkspaceById,
   insertProject,
   reconnectProject,
 } from '@goodboy/db';
@@ -63,10 +64,10 @@ export const buildAttachConflict = async ({
   get,
   project,
 }: BuildConflictParams): Promise<ProjectAttachConflict> => {
-  const sourceWorkspace = get().workspaces.find(
-    (workspace) => workspace.id === project.workspaceId,
-  );
-  if (sourceWorkspace === undefined) {
+  const sourceWorkspace =
+    get().workspaces.find((workspace) => workspace.id === project.workspaceId) ??
+    (await getWorkspaceById({ db: tauriDatabase, id: project.workspaceId }));
+  if (sourceWorkspace === null || sourceWorkspace === undefined) {
     throw new Error(`workspace not found: ${project.workspaceId}`);
   }
   const info = await describeProjectAdoption({ db: tauriDatabase, projectId: project.id });

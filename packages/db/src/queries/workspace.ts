@@ -213,6 +213,39 @@ export const disconnectWorkspace = async ({
   ]);
 };
 
+type DisconnectWorkspaceAndProjectsParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly projectIds: ReadonlyArray<string>;
+  readonly at: IsoDateTime;
+};
+
+export const disconnectWorkspaceAndProjects = async ({
+  db,
+  id,
+  projectIds,
+  at,
+}: DisconnectWorkspaceAndProjectsParams): Promise<void> => {
+  const timestamp = Date.parse(at);
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE workspaces SET disconnected_at = ?, updated_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, id],
+      },
+      ...projectIds.map((projectId) => ({
+        sql: 'UPDATE projects SET disconnected_at = ?, updated_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, projectId],
+      })),
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(
+      'The workspace could not be disconnected because the database rejected the write.',
+    );
+  }
+};
+
 export const reconnectWorkspace = async ({
   db,
   id,
@@ -223,6 +256,39 @@ export const reconnectWorkspace = async ({
     'UPDATE workspaces SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
     [timestamp, timestamp, id],
   );
+};
+
+type ReconnectWorkspaceAndProjectsParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly projectIds: ReadonlyArray<string>;
+  readonly at: IsoDateTime;
+};
+
+export const reconnectWorkspaceAndProjects = async ({
+  db,
+  id,
+  projectIds,
+  at,
+}: ReconnectWorkspaceAndProjectsParams): Promise<void> => {
+  const timestamp = Date.parse(at);
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE workspaces SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, id],
+      },
+      ...projectIds.map((projectId) => ({
+        sql: 'UPDATE projects SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, projectId],
+      })),
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(
+      'The workspace could not be reconnected because the database rejected the write.',
+    );
+  }
 };
 
 type RenameWorkspaceParams = {

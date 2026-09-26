@@ -22,7 +22,7 @@ export const ImportConfigDialog = ({ open, result, error, onClose }: Props) => {
     ? [
         { label: 'workspaces', value: result.stats.workspaces },
         ...(WORKSPACE_FEATURES.skills ? [{ label: 'skills', value: result.stats.skills }] : []),
-        { label: 'workflows', value: result.stats.workflows },
+        { label: 'workflows', value: result.stats.phaseTemplates },
         { label: 'permission rules', value: result.stats.permissionRules },
         ...(SESSION_FEATURES.budget
           ? [{ label: 'budget rules', value: result.stats.budgetRules }]
