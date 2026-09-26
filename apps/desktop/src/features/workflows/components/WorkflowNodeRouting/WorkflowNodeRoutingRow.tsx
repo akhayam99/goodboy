@@ -9,6 +9,7 @@ import type {
   WorkflowModelPick,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
+import { agentPlace } from '../../../../store/slices/navigation/place';
 import { selectWorkflowNodeRouting } from '../../../../store/slices/workflowRouting/selectWorkflowNodeRouting';
 import { workflowNodeRoutingKey } from '../../../../store/slices/workflowRouting/workflowNodeRoutingKey';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
@@ -35,7 +36,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
   const error = useAppStore((state) => state.workflowNodeRoutingErrors[key] ?? null);
   const setWorkflowNodeRoutingLock = useAppStore((state) => state.setWorkflowNodeRoutingLock);
   const resetWorkflowNodeRoutingLock = useAppStore((state) => state.resetWorkflowNodeRoutingLock);
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const view = selectWorkflowNodeRouting({ agent, step, isPending, error });
   const shown = view.executed ?? view.selected;
   const draftRef = useRef<WorkflowModelPick | null>(null);
@@ -71,7 +72,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
-          onClick={() => void selectAgent(sessionId, agent.id)}
+          onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
           className="min-w-0 flex-1 truncate text-left text-2xs font-medium text-foreground transition-colors hover:text-primary"
         >
           {agent.name}

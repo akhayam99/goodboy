@@ -4,7 +4,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   scriptsLensScope: null,
   sessionViewPrefs: {},
   activeLens: {},
-  lensHistory: {},
   focusedArtifactId: {},
   artifactFilter: {},
   artifactConversationAgentId: {},

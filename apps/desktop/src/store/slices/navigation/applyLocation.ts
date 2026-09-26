@@ -1,7 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
-import { writePersistedLens } from '../session-view/workSurfaceStorage';
 import { drawerAfterMove } from '../drawer/drawerAfterMove';
 import type { GetFn, Place, SessionView, SetFn } from './types';
 
@@ -107,7 +106,6 @@ export const applyLocation = ({ set, get, place, isRestore }: Params): void => {
     runs !== undefined &&
     !runs.some((run) => run.id === view.agentId);
   const resolved: SessionView = isAgentGone ? { ...view, agentId: null } : view;
-  writePersistedLens(sessionId, resolved.lens);
   set((state) => surfaceChanges({ state, sessionId, view: resolved, isRestore }));
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()

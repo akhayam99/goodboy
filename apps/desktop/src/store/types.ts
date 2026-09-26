@@ -113,7 +113,6 @@ import type {
   ArtifactCreationTarget,
   DiffFocus,
   FocusedExternalTask,
-  LensHistory,
   LensKind,
   ResolveDiffReturn,
   ResolveAgentReturn,
@@ -432,7 +431,6 @@ export type AppState = AppSliceState & {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;

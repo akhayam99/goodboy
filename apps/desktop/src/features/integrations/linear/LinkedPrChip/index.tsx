@@ -8,7 +8,7 @@ import {
 } from '../../../../shared/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 
 type Props = {
@@ -26,7 +26,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
     s.currentSessionId == null ? null : (s.sessionGithub[s.currentSessionId]?.pr ?? null),
   );
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const sessionPr =
     branchPrs.find((candidate) => candidate.url === pr.url) ??
     (canonicalPr?.url === pr.url ? canonicalPr : null);
@@ -38,7 +38,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
       return;
     }
     void selectSessionPr(sessionId, sessionPr.number);
-    setActiveLens(sessionId, 'pr');
+    navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
   };
 
   const state = linearPrStateKind({ status: pr.status });

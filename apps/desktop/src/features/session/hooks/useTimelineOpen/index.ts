@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 
@@ -68,8 +68,13 @@ export const useTimelineOpen = ({
         return {
           label: 'Open run',
           open: () => {
-            store.setFocusedWorkflowRun(sessionId, entry.run.id);
-            store.setActiveLens(sessionId, 'workflows');
+            store.navigate({
+              to: sessionPlace({
+                sessionId,
+                lens: 'workflows',
+                target: { kind: 'run', runId: entry.run.id },
+              }),
+            });
           },
         };
       }
@@ -78,10 +83,7 @@ export const useTimelineOpen = ({
         return {
           label: isResolver ? 'Open review' : 'Open chat',
           open: () => {
-            if (isResolver) {
-              store.setActiveLens(sessionId, 'review');
-            }
-            void store.selectAgent(sessionId, entry.agent.id);
+            store.navigate({ to: agentPlace({ sessionId, agentId: entry.agent.id }) });
           },
         };
       }
@@ -89,8 +91,13 @@ export const useTimelineOpen = ({
         return {
           label: 'Open plan',
           open: () => {
-            store.setFocusedArtifactId(sessionId, entry.plan.id);
-            store.setActiveLens(sessionId, 'plans');
+            store.navigate({
+              to: sessionPlace({
+                sessionId,
+                lens: 'plans',
+                target: { kind: 'artifact', artifactId: entry.plan.id },
+              }),
+            });
           },
         };
       }
@@ -99,8 +106,13 @@ export const useTimelineOpen = ({
         return {
           label: artifact.kind === 'report' ? 'Open report' : 'Open wireframe',
           open: () => {
-            store.setFocusedArtifactId(sessionId, artifact.id);
-            store.setActiveLens(sessionId, 'plans');
+            store.navigate({
+              to: sessionPlace({
+                sessionId,
+                lens: 'plans',
+                target: { kind: 'artifact', artifactId: artifact.id },
+              }),
+            });
           },
         };
       }
@@ -111,7 +123,10 @@ export const useTimelineOpen = ({
         };
       }
       if (entry.kind === 'branch') {
-        return { label: 'Open files', open: () => store.setActiveLens(sessionId, 'files') };
+        return {
+          label: 'Open files',
+          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) }),
+        };
       }
       if (entry.kind === 'event') {
         const target = eventOpenTarget({ kind: entry.event.kind });
@@ -120,12 +135,12 @@ export const useTimelineOpen = ({
         }
         return {
           label: target.label,
-          open: () => store.setActiveLens(sessionId, target.lens),
+          open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
         };
       }
       return {
         label: 'Open questions',
-        open: () => store.setActiveLens(sessionId, 'questions'),
+        open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),
       };
     },
     [sessionId],

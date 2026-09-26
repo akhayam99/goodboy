@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
@@ -45,9 +45,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   );
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const announceAgentStarted = useAgentStartedToast();
   const spawnedChildren = useMemo(
     () => selectSpawnedChildren({ runs, parentAgentId: sourceAgentId, turnStates }),
@@ -105,12 +103,8 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     if (spawnedChild == null) {
       return;
     }
-    void (async () => {
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'agents');
-      await selectAgent(sessionId, spawnedChild.agent.id);
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-    })();
+    navigate({ to: agentPlace({ sessionId, agentId: spawnedChild.agent.id }) });
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
   const statusLabel =

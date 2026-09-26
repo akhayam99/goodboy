@@ -20,8 +20,7 @@ const seedBoardChrome = (): void => {
     clearNotifications: async () => undefined,
     scriptRuns: {},
     projectScripts: {},
-    setCurrentSession: async () => undefined,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 

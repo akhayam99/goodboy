@@ -148,17 +148,6 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 6,
 };
 
-export type WorkSurfacePosition = {
-  readonly lens: LensKind | null;
-  readonly agentId: AgentId | null;
-  readonly studio: SessionStudio | null;
-};
-
-export type LensHistory = {
-  readonly entries: ReadonlyArray<WorkSurfacePosition>;
-  readonly index: number;
-};
-
 export type ArtifactCreationTarget = Readonly<{
   kind: GeneratedArtifactKind;
   note: string | null;
@@ -190,7 +179,6 @@ type SessionViewSliceState = {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -219,7 +207,6 @@ type SessionViewSliceActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;

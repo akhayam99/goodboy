@@ -8,9 +8,12 @@ import {
   useSessions,
   useWorkspaces,
   type LensKind,
+  BOARD_PLACE,
+  sessionPlace,
 } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
+import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -44,8 +47,9 @@ export const useAppShortcuts = ({
   const currentSession = useCurrentSession();
   const currentWorkspaceSessions = useSessions();
   const openWorkspace = useAppStore((state) => state.openWorkspace);
-  const setCurrentSession = useAppStore((state) => state.setCurrentSession);
-  const lensGo = useAppStore((state) => state.lensGo);
+  const navigate = useAppStore((state) => state.navigate);
+  const back = useAppStore((state) => state.back);
+  const forward = useAppStore((state) => state.forward);
 
   const selectWorkspaceByIndex = useCallback(
     ({ index }: IndexParams) => {
@@ -67,7 +71,7 @@ export const useAppShortcuts = ({
       if (currentSession == null) {
         const target = delta >= 0 ? list[0] : list[list.length - 1];
         if (target !== undefined) {
-          void setCurrentSession(target.id);
+          navigate({ to: sessionPlace({ sessionId: target.id }) });
         }
         return;
       }
@@ -77,20 +81,10 @@ export const useAppShortcuts = ({
       }
       const next = list[index + delta];
       if (next !== undefined) {
-        void setCurrentSession(next.id);
+        navigate({ to: sessionPlace({ sessionId: next.id }) });
       }
     },
-    [currentWorkspaceSessions, currentSession, setCurrentSession],
-  );
-
-  const navigateLens = useCallback(
-    ({ delta }: DeltaParams) => {
-      if (currentSession == null) {
-        return;
-      }
-      lensGo(currentSession.id, delta);
-    },
-    [currentSession, lensGo],
+    [currentWorkspaceSessions, currentSession, navigate],
   );
 
   const goToLens = useCallback(({ kind }: LensParams) => {
@@ -142,8 +136,9 @@ export const useAppShortcuts = ({
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),
   );
   useShortcut('column.toggle', toggleSidebar);
-  useShortcut('lens.back', () => navigateLens({ delta: -1 }));
-  useShortcut('lens.forward', () => navigateLens({ delta: 1 }));
+  useShortcut('nav.back', back);
+  useShortcut('nav.forward', forward);
+  useMouseHistoryButtons({ back, forward });
   useShortcut('workspace.1', () => selectWorkspaceByIndex({ index: 0 }));
   useShortcut('workspace.2', () => selectWorkspaceByIndex({ index: 1 }));
   useShortcut('workspace.3', () => selectWorkspaceByIndex({ index: 2 }));
@@ -159,7 +154,7 @@ export const useAppShortcuts = ({
   useShortcut('session.permissions', openPermissionPicker);
   useShortcut('session.prev', () => navigateSession({ delta: -1 }));
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
-  useShortcut('session.board', () => void setCurrentSession(null));
+  useShortcut('session.board', () => navigate({ to: BOARD_PLACE }));
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => goToLens({ kind: 'context' }));

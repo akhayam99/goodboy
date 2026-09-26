@@ -6,6 +6,7 @@ import {
   useAppStore,
   useSessionOpenQuestions,
   useSessionPlans,
+  agentPlace,
 } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { ArtifactCreationPane } from '../ArtifactCreationPane';
@@ -39,7 +40,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const focusedArtifactId = useAppStore((s) => s.focusedArtifactId[sessionId] ?? null);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const filter = useAppStore((s) => s.artifactFilter[sessionId] ?? 'all');
   const setArtifactFilter = useAppStore((s) => s.setArtifactFilter);
   const creation = useAppStore((s) => s.artifactCreation[sessionId] ?? null);
@@ -200,7 +201,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
     }
     const { generation } = row.target;
     if (generation.state === 'unproduced') {
-      void selectAgent(sessionId, generation.agentId);
+      navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) });
       return;
     }
     if (focusedArtifactId !== null) {

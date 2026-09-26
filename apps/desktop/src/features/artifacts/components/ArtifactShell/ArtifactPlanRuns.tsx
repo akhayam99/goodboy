@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { SectionHeader, cn } from '@goodboy/ui';
 import type { Agent, AgentId, PlanId, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 import { resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
 
@@ -16,13 +16,13 @@ const NO_RUNS: ReadonlyArray<never> = [];
 export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
   const consumptions = useAppStore((s) => s.planConsumptions[planId] ?? NO_RUNS);
   const loadConsumptionsForPlan = useAppStore((s) => s.loadConsumptionsForPlan);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
 
   useEffect(() => {
     void loadConsumptionsForPlan(planId);
   }, [planId, loadConsumptionsForPlan]);
 
-  const open = (agentId: AgentId) => void selectAgent(sessionId, agentId);
+  const open = (agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) });
 
   return (
     <section aria-label="Runs" className="flex min-w-0 flex-col gap-1.5">

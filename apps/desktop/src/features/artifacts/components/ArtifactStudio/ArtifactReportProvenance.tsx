@@ -7,7 +7,7 @@ import type {
   SessionArtifact,
   SessionId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { collectReportSourceLinks } from '../../../reports/reportSourceLinks';
 import { asReportType, REPORT_TYPE_LABEL } from '../../../reports/reportTypes';
 import { ReportProvenanceRow } from '../../../reports/components/ReportStudio/ReportProvenanceRow';
@@ -27,7 +27,7 @@ export const ArtifactReportProvenance = ({
   artifacts,
   onSelectArtifact,
 }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const links = useMemo(
     () =>
       collectReportSourceLinks({
@@ -46,7 +46,7 @@ export const ArtifactReportProvenance = ({
         reportType === null ? artifact.metadata.reportType : REPORT_TYPE_LABEL[reportType]
       }
       links={links}
-      onOpenAgent={(agentId: AgentId) => void selectAgent(sessionId, agentId)}
+      onOpenAgent={(agentId: AgentId) => navigate({ to: agentPlace({ sessionId, agentId }) })}
       onOpenArtifact={onSelectArtifact}
     />
   );

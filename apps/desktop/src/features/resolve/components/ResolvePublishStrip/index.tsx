@@ -9,7 +9,7 @@ import type {
   ResolveQueueItemWithThread,
   SessionId,
 } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { useToast } from '../../../../app/components/Toast';
 import { acceptedPublishCounts, previewPublishCounts } from '../../publishCounts';
@@ -74,7 +74,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const retryPublication = useAppStore((s) => s.retryPublication);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const publicationReturn = useAppStore((s) => s.resolvePublicationReturn?.[sessionId] ?? null);
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
@@ -220,13 +220,13 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           null,
         );
         if (attempt !== null) {
-          void selectAgent(sessionId, attempt.agentId);
+          navigate({ to: agentPlace({ sessionId, agentId: attempt.agentId }) });
         }
         return;
       }
       openDiffLens(sessionId, { kind: 'working', path: null });
     },
-    [attempts, onPrepare, openDiffLens, refreshSessionPrDetail, selectAgent, sessionId],
+    [attempts, onPrepare, openDiffLens, refreshSessionPrDetail, navigate, sessionId],
   );
 
   if (total === 0 && !isStuck && preview === null) {

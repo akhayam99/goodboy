@@ -714,7 +714,7 @@ type AppActions = {
   resetWorkflows(workspaceId: WorkspaceId, slugs: ReadonlyArray<string>): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  deselectAgent(sessionId: SessionId): void;
+  loadAgentTranscript(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAgentSeen(sessionId: SessionId, agentId: AgentId): Promise<void>;
   markAllAgentsSeen(sessionId: SessionId): Promise<void>;
@@ -986,7 +986,6 @@ type AppActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;

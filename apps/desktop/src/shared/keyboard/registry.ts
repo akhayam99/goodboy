@@ -97,8 +97,8 @@ export const SHORTCUTS = {
     family: 'workspace-digit',
   },
 
-  'lens.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
-  'lens.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
+  'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
+  'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
   'column.toggle': {
     combo: 'cmd+KeyB',
     label: 'Show or hide the session sidebar',

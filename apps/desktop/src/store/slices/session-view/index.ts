@@ -6,7 +6,6 @@ import { closeArtifactCreation, openArtifactCreation } from './artifactCreation'
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
 import {
-  lensGo,
   openDiffLens,
   openMountDiff,
   openMountTerminal,
@@ -36,7 +35,6 @@ export { sortAndGroupSessions } from './sortAndGroupSessions';
 export { deriveSessionStage } from './deriveSessionStage';
 export { resolveSessionRequest } from './resolveSessionRequest';
 export { isPrReviewSession } from './isPrReviewSession';
-export { readPersistedLens } from './workSurfaceStorage';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
@@ -44,7 +42,6 @@ export type {
   FocusedExternalTask,
   SessionStudio,
   LensKind,
-  LensHistory,
   DiffFocus,
   ResolveDiffReturn,
   ResolveQueueView,
@@ -63,7 +60,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),
     setActiveLens: setActiveLens(set),
-    lensGo: lensGo(set, get),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
     setFocusedArtifactId: setFocusedArtifactId(set),
@@ -84,9 +80,9 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     openResolveAgent: openResolveAgent(set, get),
     returnFromResolveAgent: returnFromResolveAgent(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
-    openMountDiff: openMountDiff(set, get),
-    openMountTerminal: openMountTerminal(set, get),
-    openExternalTaskLens: openExternalTaskLens(set, get),
+    openMountDiff: openMountDiff(get),
+    openMountTerminal: openMountTerminal(get),
+    openExternalTaskLens: openExternalTaskLens(get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
   };

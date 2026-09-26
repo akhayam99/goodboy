@@ -24,6 +24,7 @@ import { Button, cn, Divider, ScrollFade, Tooltip, tintClasses } from '@goodboy/
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
+  agentPlace,
   useAppStore,
   useSessionAnsweredQuestions,
   useSessionLoading,
@@ -126,7 +127,8 @@ export const ChatView = ({ session, isActive = true }: Props) => {
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const loadAgentTranscript = useAppStore((s) => s.loadAgentTranscript);
+  const navigate = useAppStore((s) => s.navigate);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
@@ -146,8 +148,8 @@ export const ChatView = ({ session, isActive = true }: Props) => {
     if (!isActive || !selectedAgentId || transcriptCached) {
       return;
     }
-    void selectAgent(session.id, selectedAgentId);
-  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
+    void loadAgentTranscript(session.id, selectedAgentId);
+  }, [isActive, selectedAgentId, transcriptCached, loadAgentTranscript, session.id]);
 
   useEffect(() => {
     if (!isActive) {
@@ -503,7 +505,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
             size="sm"
             className={cn(tintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
-              void selectAgent(session.id, otherAgentId);
+              navigate({ to: agentPlace({ sessionId: session.id, agentId: otherAgentId }) });
               requestOpenQuestionScroll({
                 agentId: otherAgentId,
                 questionId: otherAgentQuestion.id,

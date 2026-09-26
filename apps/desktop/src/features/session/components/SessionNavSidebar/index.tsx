@@ -1,6 +1,13 @@
 import { useCallback } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useCurrentWorkspace, useSessions } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useCurrentWorkspace,
+  useSessions,
+  BOARD_PLACE,
+  sessionPlace,
+} from '../../../../store';
 import { SessionActivityBar } from '../../../workspace/components/SessionActivityBar';
 import { BoardCta } from './parts/BoardCta';
 
@@ -12,7 +19,7 @@ type Props = {
 export const SessionNavSidebar = ({ session, onNavigate }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const sessions = useSessions();
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const navigate = useAppStore((s) => s.navigate);
   const archivedSessions = useAppStore((s) =>
     currentWorkspace ? (s.archivedSessions[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<Session>;
@@ -20,10 +27,10 @@ export const SessionNavSidebar = ({ session, onNavigate }: Props) => {
 
   const onSelectSession = useCallback(
     (id: SessionId) => {
-      void setCurrentSession(id);
+      navigate({ to: sessionPlace({ sessionId: id }) });
       onNavigate?.();
     },
-    [onNavigate, setCurrentSession],
+    [onNavigate, navigate],
   );
 
   const onArchivedTabOpen = useCallback(() => {
@@ -34,9 +41,9 @@ export const SessionNavSidebar = ({ session, onNavigate }: Props) => {
   }, [currentWorkspace, loadArchivedSessions]);
 
   const onBoard = useCallback(() => {
-    void setCurrentSession(null);
+    navigate({ to: BOARD_PLACE });
     onNavigate?.();
-  }, [onNavigate, setCurrentSession]);
+  }, [onNavigate, navigate]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">

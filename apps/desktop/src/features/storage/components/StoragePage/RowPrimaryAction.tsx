@@ -1,6 +1,6 @@
 import { Code } from 'lucide-react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import { useAppStore, sessionPlace } from '../../../../store';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { RemoveIntent } from './FolderRemoveConfirm';
@@ -16,7 +16,7 @@ type Props = {
 const REVEAL_ON_HOVER = 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100';
 
 export const RowPrimaryAction = ({ folder, status, isBusy, onRemove, onEditor }: Props) => {
-  const setCurrentSession = useAppStore((state) => state.setCurrentSession);
+  const navigate = useAppStore((state) => state.navigate);
   if (status === 'safe' && folder.origin !== 'in-use') {
     return (
       <Button
@@ -47,7 +47,11 @@ export const RowPrimaryAction = ({ folder, status, isBusy, onRemove, onEditor }:
     sessionId !== null && folder.why !== 'deleted-session' && folder.why !== 'no-session';
   if (status === 'writing' && hasLiveSession) {
     return (
-      <Button variant="ghost" size="sm" onClick={() => void setCurrentSession(sessionId)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate({ to: sessionPlace({ sessionId }) })}
+      >
         Open session
       </Button>
     );

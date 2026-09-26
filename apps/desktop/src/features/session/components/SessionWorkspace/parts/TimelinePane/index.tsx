@@ -23,6 +23,7 @@ import {
   useIsSessionCollectionLoaded,
   useSessionOpenQuestions,
   type MountDiffStat,
+  sessionPlace,
 } from '../../../../../../store';
 import { runSpendUsd } from '../../../../../../store/slices/workflows/runSpendUsd';
 import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionRoleModels';
@@ -95,7 +96,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
@@ -118,7 +119,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   const suggestionActions = useSuggestionActions({
     session,
     agents,
-    onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
+    onSelectQuestions: () => navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),
   });
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
@@ -395,7 +396,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
       if (question != null) {
         focusQuestion(question.id);
       }
-      setActiveLens(sessionId, 'questions');
+      navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
     },
   });
 

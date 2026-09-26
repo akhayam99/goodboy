@@ -1,5 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_RESOLVE_QUEUE_VIEW, type GetFn, type ResolveQueueView, type SetFn } from './types';
+import { agentPlace, sessionPlace } from '../navigation/place';
 
 type ViewParams = {
   readonly sessionId: SessionId;
@@ -64,7 +65,7 @@ export const openResolveDiff = (set: SetFn, get: GetFn) => {
 export const returnFromResolveDiff = (set: SetFn, get: GetFn) => {
   return ({ sessionId }: ReturnParams): void => {
     set((s) => ({ resolveDiffReturn: { ...s.resolveDiffReturn, [sessionId]: null } }));
-    get().setActiveLens(sessionId, 'review');
+    get().navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
   };
 };
 
@@ -127,7 +128,7 @@ export const openResolveAgent = (set: SetFn, get: GetFn) => {
         },
       },
     }));
-    void get().selectAgent(sessionId, agentId);
+    get().navigate({ to: agentPlace({ sessionId, agentId }) });
   };
 };
 
@@ -141,6 +142,6 @@ export const returnFromResolveAgent = (set: SetFn, get: GetFn) => {
       resolveQueueView: { ...s.resolveQueueView, [sessionId]: origin.view },
       resolveAgentReturn: { ...s.resolveAgentReturn, [sessionId]: null },
     }));
-    get().setActiveLens(sessionId, 'review');
+    get().navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
   };
 };

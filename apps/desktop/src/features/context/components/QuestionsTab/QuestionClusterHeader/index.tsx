@@ -1,7 +1,7 @@
 import { Bot, ChevronRight } from 'lucide-react';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, SessionId } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { useAppStore } from '../../../../../store';
+import { agentPlace, useAppStore } from '../../../../../store';
 import { RoutingLabel } from '../../../../../shared/components/RoutingLabel';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
@@ -12,28 +12,13 @@ type Props = {
   readonly creatorAgentName: string | null;
 };
 
-const openAgent = ({
-  sessionId,
-  agentId,
-  select,
-}: {
-  sessionId: SessionId;
-  agentId: AgentId | null;
-  select: (sessionId: SessionId, agentId: AgentId) => Promise<void>;
-}): void => {
-  if (agentId == null) {
-    return;
-  }
-  void select(sessionId, agentId);
-};
-
 export const QuestionClusterHeader = ({
   sessionId,
   ownerAgent,
   ownerAgentName,
   creatorAgentName,
 }: Props) => {
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const label = ownerAgentName ?? 'unknown agent';
   const canOpen = ownerAgent != null;
 
@@ -59,7 +44,7 @@ export const QuestionClusterHeader = ({
     return (
       <button
         type="button"
-        onClick={() => openAgent({ sessionId, agentId: ownerAgent.id, select: selectAgent })}
+        onClick={() => navigate({ to: agentPlace({ sessionId, agentId: ownerAgent.id }) })}
         className={cn(
           'flex min-w-0 items-center gap-1.5 rounded-md px-0.5 text-2xs font-medium',
           'hover:opacity-70 motion-safe:transition-opacity',

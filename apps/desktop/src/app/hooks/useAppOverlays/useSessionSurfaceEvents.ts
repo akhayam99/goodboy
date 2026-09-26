@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
-import { useAppStore } from '../../../store';
+import { sessionPlace, useAppStore } from '../../../store';
 import type { SessionStudio } from '../../../store/slices/session-view/types';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { eventSessionId, eventValue, isPlanId } from './eventDetail';
@@ -34,7 +34,10 @@ export const useSessionSurfaceEvents = ({
         return;
       }
       close();
-      useAppStore.getState().setSessionStudio(sessionId, studio);
+      const state = useAppStore.getState();
+      state.navigate({
+        to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null, studio }),
+      });
     };
     const openPlanStudio = (event: Event) => {
       const sessionId = eventSessionId(event);
@@ -43,9 +46,13 @@ export const useSessionSurfaceEvents = ({
       }
       const planId = eventValue({ event, key: 'planId' });
       close();
-      const state = useAppStore.getState();
-      state.setFocusedArtifactId(sessionId, isPlanId(planId) ? planId : null);
-      state.setActiveLens(sessionId, 'plans');
+      useAppStore.getState().navigate({
+        to: sessionPlace({
+          sessionId,
+          lens: 'plans',
+          target: isPlanId(planId) ? { kind: 'artifact', artifactId: planId } : null,
+        }),
+      });
     };
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-plan-studio', openPlanStudio],

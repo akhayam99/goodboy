@@ -465,7 +465,7 @@ const seedScriptsScene = (): void => {
     refreshDiscoveredScripts: async () => undefined,
     runDiscoveredScript: async () => STUB_RUN_RESULT,
     setScriptsLensScope: noop,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 

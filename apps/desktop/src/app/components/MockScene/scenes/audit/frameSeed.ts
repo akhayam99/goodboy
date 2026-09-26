@@ -26,8 +26,7 @@ export const seedFrameChromeStubs = (): void => {
     markNotificationsRead: async () => undefined,
     scriptRuns: {},
     projectScripts: {},
-    setCurrentSession: async () => undefined,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 

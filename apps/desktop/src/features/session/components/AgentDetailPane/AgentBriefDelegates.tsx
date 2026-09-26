@@ -1,6 +1,6 @@
 import { SectionSurface, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -20,14 +20,14 @@ const toneFor = ({ status }: { readonly status: Agent['status'] }) =>
     : ('neutral' as const);
 
 export const AgentBriefDelegates = ({ sessionId, delegates, questions }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   if (delegates.length === 0) {
     return null;
   }
   const textOf = ({ delegate }: { readonly delegate: Agent }): string =>
     questions.find((question) => question.id === delegate.sourceThreadId)?.text ?? delegate.name;
   const onSelect = (agentId: AgentId) => {
-    void selectAgent(sessionId, agentId);
+    navigate({ to: agentPlace({ sessionId, agentId }) });
   };
 
   return (

@@ -6,12 +6,7 @@ import { cn } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
-import {
-  EMPTY_ARRAY,
-  readPersistedLens,
-  useAppStore,
-  useIsSessionCollectionLoaded,
-} from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { SessionOverviewPane } from '../SessionOverviewPane';
 import { SessionCrumbs } from '../SessionCrumbBar/SessionCrumbs';
@@ -25,9 +20,8 @@ import { ContextPane } from './parts/ContextPane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { useSelectedAgentHome } from '../../hooks/useSelectedAgentHome';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
-import { resolveOverlayHome } from './resolveOverlayHome';
+import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from './resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
@@ -62,7 +56,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     isBranchless && storedActiveLens != null && !SIMPLE_LENSES.has(storedActiveLens)
       ? null
       : storedActiveLens;
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const up = useAppStore((s) => s.up);
   const focusedGithubIssueNumber = useAppStore(
     (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
   );
@@ -70,7 +64,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const selectedAgentId = useAppStore(
     (s) => s.selectedAgentId[sessionId] ?? null,
   ) as AgentId | null;
-  const agentHome = useSelectedAgentHome(sessionId);
   const workingDir = useAppStore((s) => resolveActiveMountPath({ state: s, sessionId }));
   const sessionRepo = useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
   const projectWorktreePath = sessionRepo?.worktreePath ?? null;
@@ -91,7 +84,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const artifactConversationAgentId = useAppStore(
     (s) => s.artifactConversationAgentId[sessionId] ?? null,
   );
-  const setSessionStudio = useAppStore((s) => s.setSessionStudio);
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const phaseRuns = useAppStore(
     (s) => s.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -102,25 +94,12 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
 
-  useEffect(() => {
-    if (activeLens === undefined) {
-      setActiveLens(sessionId, readPersistedLens(sessionId));
-    }
-  }, [activeLens, sessionId, setActiveLens]);
-
   const githubPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
   const gitlabMr = useAppStore((s) => s.sessionGitlabMr[sessionId]?.mr ?? null);
   const bitbucketPr = useAppStore((s) => s.sessionBitbucketPr[sessionId]?.pr ?? null);
   const remoteKind = useRemoteHostKind({ sessionId });
   const isGithubCodeHost =
     gitlabMr === null && bitbucketPr === null && (remoteKind === 'github' || githubPr !== null);
-
-  useEffect(() => {
-    if (activeLens !== 'pr' || !isGithubCodeHost) {
-      return;
-    }
-    setActiveLens(sessionId, 'review');
-  }, [activeLens, isGithubCodeHost, sessionId, setActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
   const surface = resolveLensSurface({ lens });
@@ -131,10 +110,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     void loadSessionPlans(sessionId);
   };
   const onSelectLens = (next: LensKind) => {
-    setActiveLens(sessionId, next);
+    openLens({ sessionId, lens: next });
   };
   const onSelectOverview = () => {
-    setActiveLens(sessionId, null);
+    openLens({ sessionId, lens: null });
   };
   const surfaceLayer = resolveSessionSurfaceLayer({
     lens,
@@ -149,7 +128,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => selectResolverAgentIds({ agents: phaseRuns, kindOverride: agentKindOverride }),
     [phaseRuns, agentKindOverride],
   );
-  const overlayHome = resolveOverlayHome({ lens, agentHome });
   const resolveAgentOrigin = useAppStore((s) => s.resolveAgentReturn[sessionId] ?? null);
   const returnFromResolveAgent = useAppStore((s) => s.returnFromResolveAgent);
   const githubTask = useMemo(
@@ -183,15 +161,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       returnFromResolveAgent({ sessionId });
       return;
     }
-    setActiveLens(sessionId, overlayHome);
-  }, [
-    overlayHome,
-    resolveAgentOrigin,
-    returnFromResolveAgent,
-    selectedAgentId,
-    sessionId,
-    setActiveLens,
-  ]);
+    up();
+  }, [resolveAgentOrigin, returnFromResolveAgent, selectedAgentId, sessionId, up]);
 
   useEffect(() => {
     if (!showAgentOverlay) return;
@@ -234,8 +205,10 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {surface === 'context' ? (
                 <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
               ) : null}
-              {lens === 'pr' ? <PrPane session={session} /> : null}
-              {lens === 'review' ? <ReviewPane session={session} /> : null}
+              {lens === 'pr' && !isGithubCodeHost ? <PrPane session={session} /> : null}
+              {lens === 'review' || (lens === 'pr' && isGithubCodeHost) ? (
+                <ReviewPane session={session} />
+              ) : null}
               {lens === 'linear' ? (
                 <IntegrationPane
                   sessionId={sessionId}
@@ -343,11 +316,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
           {studio != null ? (
             <div className="absolute inset-0 z-30">
-              <SessionStudioLayer
-                session={session}
-                studio={studio}
-                onClose={() => setSessionStudio(sessionId, null)}
-              />
+              <SessionStudioLayer session={session} studio={studio} onClose={up} />
             </div>
           ) : null}
         </div>

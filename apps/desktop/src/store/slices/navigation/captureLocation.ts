@@ -8,6 +8,7 @@ const ISSUE_LENSES: ReadonlySet<LensKind> = new Set<LensKind>([
   'gitlab_issues',
   'jira_issues',
   'slack_threads',
+  'pr',
 ]);
 
 type TargetParams = {
