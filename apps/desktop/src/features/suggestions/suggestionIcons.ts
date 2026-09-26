@@ -20,4 +20,5 @@ export const SUGGESTION_ICONS: Record<SuggestionKind, LucideIcon> = {
   'merge-pr': CONCEPT_ICONS.merge,
   'check-changes': CONCEPT_ICONS.review,
   'close-worktree': CONCEPT_ICONS.delete,
+  'continue-with-workflow': CONCEPT_ICONS.workflows,
 };

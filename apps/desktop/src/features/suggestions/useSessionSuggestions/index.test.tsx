@@ -34,6 +34,10 @@ const { store, worktreeStatus, listNudgeEvents } = vi.hoisted(() => ({
       { id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' },
     ] as ReadonlyArray<Record<string, string>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    phaseTemplates: {} as Record<
+      string,
+      ReadonlyArray<{ origin: string; id: string; name: string }>
+    >,
   },
 }));
 
@@ -60,7 +64,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 import { resetWorktreeStatusCache } from '../../session/hooks/useWorktreeStatuses/cache';
 import { useSessionSuggestions } from '.';
 
-const session = { id: 'session-1', workspaceId: 'ws-1' } as Session;
+const session = { id: 'session-1', workspaceId: 'ws-1', goal: 'Ship the thing' } as Session;
 
 beforeEach(() => {
   store.sessionProjectMounts = {

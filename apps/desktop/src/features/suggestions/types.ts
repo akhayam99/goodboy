@@ -8,6 +8,7 @@ import type {
   SessionEventId,
   SessionId,
   StepId,
+  WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
@@ -30,6 +31,7 @@ export const SUGGESTION_KINDS = [
   'merge-pr',
   'check-changes',
   'close-worktree',
+  'continue-with-workflow',
 ] as const;
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
@@ -177,4 +179,8 @@ export type SessionSuggestion =
         readonly branch: string;
         readonly prNumber: number | null;
       };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'continue-with-workflow';
+      readonly payload: { readonly workflowId: WorkflowId; readonly workflowName: string };
     });

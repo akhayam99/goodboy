@@ -99,6 +99,13 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
   );
+  const recommendedWorkflow = useAppStore(
+    useShallow((state) => {
+      const templates = state.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY;
+      const library = templates.find((template) => template.origin === 'library');
+      return library == null ? null : { id: library.id, name: library.name };
+    }),
+  );
   const agentKindOverride = useAppStore((state) => state.agentKindOverride);
   const blockedAgentIds = useAppStore(
     useShallow((state) =>
@@ -304,6 +311,8 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         ];
       }),
       hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
+      hasGoal: session.goal.trim() !== '',
+      recommendedWorkflow,
       demotedKinds,
     });
   }, [
@@ -320,6 +329,8 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     github,
     mountGithubByMountId,
     openQuestions,
+    recommendedWorkflow,
+    session.goal,
     planConsumptions,
     plans,
     projects,

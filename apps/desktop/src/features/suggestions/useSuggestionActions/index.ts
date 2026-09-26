@@ -99,6 +99,7 @@ export const useSuggestionActions = ({
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
+  const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
 
   const reportError = (title: string) => (message: string) => {
     void emitNotification({
@@ -448,6 +449,23 @@ export const useSuggestionActions = ({
             requestId: suggestion.payload.requestId,
             decision: 'keep',
           }),
+      };
+    }
+    if (suggestion.kind === 'continue-with-workflow') {
+      return {
+        primary: {
+          label: 'Set up',
+          isDisabled: false,
+          onAct: () => {
+            void attachWorkflowToSession(sessionId, suggestion.payload.workflowId, {
+              goal: session.goal,
+              navigate: true,
+            }).catch((error: unknown) =>
+              reportError("Couldn't attach the workflow")(formatError(error)),
+            );
+          },
+        },
+        onDismiss: null,
       };
     }
     return NO_ACTIONS;

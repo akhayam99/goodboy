@@ -8,6 +8,7 @@ import type {
   PullRequestState,
   SessionId,
   StepId,
+  WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
 import {
@@ -54,6 +55,11 @@ export type SuggestionMount = {
   readonly isClean: boolean | null;
   readonly pr: PullRequestState | null;
   readonly fetchedAt: string | null;
+};
+
+export type SuggestionRecommendedWorkflow = {
+  readonly id: WorkflowId;
+  readonly name: string;
 };
 
 export type SuggestionCleanupProposal = {
@@ -114,6 +120,8 @@ type Params = {
   readonly mounts?: ReadonlyArray<SuggestionMount>;
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
   readonly hasRunningAgent?: boolean;
+  readonly hasGoal?: boolean;
+  readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
   readonly now?: () => number;
   readonly dismissedFingerprints?: ReadonlySet<string>;
   readonly demotedKinds?: ReadonlySet<SuggestionKind>;
@@ -133,6 +141,8 @@ export const deriveNextSteps = ({
   mounts = [],
   cleanupProposals = [],
   hasRunningAgent = false,
+  hasGoal = false,
+  recommendedWorkflow = null,
   now = () => Date.now(),
   dismissedFingerprints,
   demotedKinds,
@@ -245,6 +255,26 @@ export const deriveNextSteps = ({
       targetKey: `agent:${lastStandaloneAgent.id}`,
       fingerprint: `check-changes:${lastStandaloneAgent.id}`,
       payload: { agentId: lastStandaloneAgent.id },
+    });
+  }
+  if (
+    lastStandaloneAgent?.status === 'completed' &&
+    (lastStandaloneAgent.roleKind === 'scout' || lastStandaloneAgent.roleKind === 'generic') &&
+    hasGoal &&
+    workflowRuns.length === 0 &&
+    recommendedWorkflow != null
+  ) {
+    suggestions.push({
+      id: `continue-with-workflow:${lastStandaloneAgent.id}`,
+      kind: 'continue-with-workflow',
+      priority: 52,
+      band: 3,
+      title: 'Continue with a workflow',
+      detail: `${recommendedWorkflow.name} picks up from what ${lastStandaloneAgent.label} found`,
+      sessionId,
+      targetKey: `agent:${lastStandaloneAgent.id}`,
+      fingerprint: `continue-with-workflow:${lastStandaloneAgent.id}:${recommendedWorkflow.id}`,
+      payload: { workflowId: recommendedWorkflow.id, workflowName: recommendedWorkflow.name },
     });
   }
   for (const run of workflowRuns) {

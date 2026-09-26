@@ -44,6 +44,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const markPrReady = vi.fn(async () => undefined);
   const mergePr = vi.fn(async () => undefined);
   const resolveMountCleanup = vi.fn(async () => undefined);
+  const attachWorkflowToSession = vi.fn(async () => undefined);
   return {
     spies: {
       ensureProjectMounted,
@@ -62,6 +63,7 @@ const { storeState, spies } = vi.hoisted(() => {
       markPrReady,
       mergePr,
       resolveMountCleanup,
+      attachWorkflowToSession,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseAgent: vi.fn((_params: unknown) => ({
         canRebase: false,
@@ -92,6 +94,7 @@ const { storeState, spies } = vi.hoisted(() => {
       markPrReady,
       mergePr,
       resolveMountCleanup,
+      attachWorkflowToSession,
     },
   };
 });
@@ -135,7 +138,7 @@ const WEB_MOUNT_ID = 'mount-web' as MountId;
 const WEB_SECOND_MOUNT_ID = 'mount-web-second' as MountId;
 const AGENT_ID = 'agent-1' as AgentId;
 
-const SESSION = { id: SESSION_ID, workspaceId: 'workspace-1' } as Session;
+const SESSION = { id: SESSION_ID, workspaceId: 'workspace-1', goal: 'Ship the thing' } as Session;
 
 const PENDING_AGENT = {
   id: AGENT_ID,
@@ -769,6 +772,26 @@ describe('useSuggestionActions', () => {
       sessionId: SESSION_ID,
       requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
       decision: 'keep',
+    });
+  });
+
+  it('attaches the recommended workflow with the session goal on Set up', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'continue-with-workflow:agent-1',
+        kind: 'continue-with-workflow',
+        band: 3,
+        payload: { workflowId: 'workflow-1', workflowName: 'Plan and ship' },
+      },
+    });
+
+    expect(actions.primary?.label).toBe('Set up');
+    actions.primary?.onAct();
+
+    expect(spies.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'workflow-1', {
+      goal: 'Ship the thing',
+      navigate: true,
     });
   });
 });

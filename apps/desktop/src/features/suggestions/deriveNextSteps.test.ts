@@ -8,6 +8,7 @@ import type {
   SessionEventId,
   SessionId,
   StepId,
+  WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
 import {
@@ -519,6 +520,78 @@ describe('deriveNextSteps eleven new kinds', () => {
       agents: [agent({ status: 'failed', workflowRunId: 'run-1' as WorkflowRunId })],
     });
     expect(suggestions.some((candidate) => candidate.kind === 'retry-agent')).toBe(false);
+  });
+
+  it('suggests continuing with the recommended workflow once a standalone scout finishes', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'scout', label: 'Scout' })],
+      hasGoal: true,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'continue-with-workflow');
+    expect(suggestion?.title).toBe('Continue with a workflow');
+    expect(suggestion?.detail).toBe('Plan and ship picks up from what Scout found');
+    expect(suggestion?.payload).toEqual({
+      workflowId: 'workflow-1',
+      workflowName: 'Plan and ship',
+    });
+  });
+
+  it('suggests continuing with a workflow once a standalone generic agent finishes too', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'generic' })],
+      hasGoal: true,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(true);
+  });
+
+  it('never suggests continuing with a workflow for an implementer, a running workflow, no goal, or no preset', () => {
+    const implementerFinished = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'implementer' })],
+      hasGoal: true,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    expect(
+      implementerFinished.some((candidate) => candidate.kind === 'continue-with-workflow'),
+    ).toBe(false);
+
+    const workflowAlreadyAttached = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'scout' })],
+      workflowRuns: [
+        {
+          id: 'run-1' as WorkflowRunId,
+          title: 'Existing run',
+          advanceState: { kind: 'blocked' },
+          isRunning: false,
+        },
+      ],
+      hasGoal: true,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    expect(
+      workflowAlreadyAttached.some((candidate) => candidate.kind === 'continue-with-workflow'),
+    ).toBe(false);
+
+    const noGoal = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'scout' })],
+      hasGoal: false,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    expect(noGoal.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(false);
+
+    const noPreset = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'scout' })],
+      hasGoal: true,
+      recommendedWorkflow: null,
+    });
+    expect(noPreset.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(false);
   });
 
   it('suggests fixing failing checks on an open PR', () => {
