@@ -12,6 +12,7 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   holder: { store: null as UseBoundStore<StoreApi<TestState>> | null },
   hooks: {
     isGithubAuthenticated: { current: false },
+    lookup: { current: null as unknown },
   },
   spies: {
     fetchIssueCandidates: vi.fn(
@@ -43,6 +44,10 @@ vi.mock('../../../integrations/jira/useJiraConfig', () => ({
   useJiraConfig: () => null,
 }));
 
+vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
+  useWorkspaceIssueLookup: () =>
+    hooks.lookup.current ?? { code: null, state: { status: 'idle' }, retry: () => undefined },
+}));
 vi.mock('../../../integrations/fetchIssueCandidates', () => ({
   fetchIssueCandidates: (params: unknown) => spies.fetchIssueCandidates(params as never),
 }));
@@ -51,6 +56,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   IntegrationGlyph: ({ provider }: { provider: string }) => (
     <span data-testid={`glyph-${provider}`} />
   ),
+  integrationLabel: ({ provider }: { provider: string }) => provider,
 }));
 
 import { SessionKickoff } from './index';
@@ -84,6 +90,7 @@ const resetStore = () => {
       githubStatus: null,
       workspaceIntegrations: {},
       projects: [],
+      workspaces: [],
       providers: [],
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
@@ -111,6 +118,7 @@ const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) }
 beforeEach(() => {
   resetStore();
   hooks.isGithubAuthenticated.current = false;
+  hooks.lookup.current = null;
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
   spies.startSessionFromDraft.mockReset();
@@ -345,6 +353,59 @@ describe('SessionKickoff', () => {
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
       },
     });
+  });
+
+  it('picks up an issue found by code that is not assigned to you', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    const found = candidate({
+      externalId: 'issue-231',
+      identifier: 'CAS-231',
+      title: 'Settle the month close',
+      url: 'https://linear.app/cascadia/issue/CAS-231',
+    });
+    hooks.lookup.current = {
+      code: 'CAS-231',
+      retry: () => undefined,
+      state: {
+        status: 'done',
+        key: 'CAS-231#0',
+        value: {
+          route: { kind: 'lookup', label: 'CAS-231', targets: [] },
+          result: {
+            hits: [
+              {
+                target: { provider: 'linear', identifier: 'CAS-231' },
+                candidate: found,
+                record: {
+                  key: 'linear:issue:issue-231',
+                  provider: 'linear',
+                  kind: 'issue',
+                  identifier: 'CAS-231',
+                  title: 'Settle the month close',
+                  state: 'open',
+                  stateLabel: 'Todo',
+                  updatedAt: '2026-09-20T10:00:00Z',
+                  url: found.url,
+                  context: 'Cascadia',
+                  payload: {},
+                },
+              },
+            ],
+            misses: [],
+          },
+        },
+      },
+    };
+    renderKickoff();
+    await screen.findByText('Not in your inbox');
+
+    fireEvent.click(screen.getByRole('option', { name: /CAS-231 Settle the month close/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up CAS-231' }));
+
+    expect(spies.requestIssueBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: WORKSPACE_ID, sessionId: null }),
+    );
   });
 
   it('hides issues a session already picked up and caps each tracker at five', async () => {
