@@ -1,32 +1,29 @@
 import { LayoutTemplate } from 'lucide-react';
-import { SplitButton, type OverflowMenuItem } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
-import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
+import { useShallow } from 'zustand/react/shallow';
+import { Button, OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
+import type { Session } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
 import { reportCreationAdapter } from '../../../../reports/reportCreationAdapter';
 import { wireframeCreationAdapter } from '../../../../wireframes/wireframeCreationAdapter';
 
 type Props = {
-  readonly sessionId: SessionId;
+  readonly session: Session;
   readonly onOpenWorkflowBuilder: () => void;
+  readonly onOpenRun: () => void;
 };
 
-const WORKFLOW_DESCRIPTION = 'Run a multi-step plan with checkpoints';
-
-export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => {
+export const OverviewActions = ({ session, onOpenWorkflowBuilder, onOpenRun }: Props) => {
+  const sessionId = session.id;
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
+  const agents = useAppStore(
+    useShallow((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
+  );
+  const isRunActive = hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents });
 
-  const items: ReadonlyArray<OverflowMenuItem> = [
-    {
-      kind: 'item',
-      key: 'workflow',
-      label: 'Workflow',
-      description: WORKFLOW_DESCRIPTION,
-      icon: CONCEPT_ICONS.workflows,
-      tone: 'primary',
-      onClick: onOpenWorkflowBuilder,
-    },
+  const createItems: ReadonlyArray<OverflowMenuItem> = [
     {
       kind: 'item',
       key: 'report',
@@ -48,13 +45,21 @@ export const OverviewActions = ({ sessionId, onOpenWorkflowBuilder }: Props) => 
   ];
 
   return (
-    <SplitButton
-      menuLabel="More ways to start"
-      items={items}
-      className="shrink-0"
-      primary={({ className }) => (
-        <CreateAgentPopover sessionId={sessionId} className={className} />
-      )}
-    />
+    <div className="flex shrink-0 items-center gap-1.5">
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={isRunActive ? onOpenRun : onOpenWorkflowBuilder}
+      >
+        <CONCEPT_ICONS.workflows
+          size={ICON_SIZE.control}
+          aria-hidden
+          className={tintClasses('primary').icon}
+        />
+        {isRunActive ? 'Open run' : 'Run workflow'}
+      </Button>
+      <CreateAgentPopover sessionId={sessionId} />
+      <OverflowMenu label="Create" items={createItems} />
+    </div>
   );
 };

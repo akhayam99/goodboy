@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { AnchoredPopover, Button, IconButton, cn, tintClasses, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -23,6 +24,15 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
   const Icon = SUGGESTION_ICONS[suggestion.kind];
   const tone = BAND_TONE[suggestion.band];
   const dropdown = useDropdown({ align: 'end', expectedWidth: 160, expectedHeight: 80 });
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    setIsConfirming(false);
+  }, [suggestion.id]);
+
+  const primary = actions.primary;
+  const isArmed = primary?.requiresConfirm === true && isConfirming;
+
   return (
     <div
       data-testid={`next-step-${suggestion.id}`}
@@ -38,14 +48,26 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
           <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
         )}
       </span>
-      {actions.primary != null && (
+      {isArmed && (
+        <Button size="sm" variant="ghost" onClick={() => setIsConfirming(false)}>
+          Cancel
+        </Button>
+      )}
+      {primary != null && (
         <Button
           size="sm"
-          variant={suggestion.band === 0 ? 'primary' : 'secondary'}
-          disabled={actions.primary.isDisabled}
-          onClick={actions.primary.onAct}
+          variant={suggestion.band === 0 || isArmed ? 'primary' : 'secondary'}
+          disabled={primary.isDisabled}
+          onClick={() => {
+            if (primary.requiresConfirm === true && !isConfirming) {
+              setIsConfirming(true);
+              return;
+            }
+            setIsConfirming(false);
+            primary.onAct();
+          }}
         >
-          {actions.primary.label}
+          {primary.label}
         </Button>
       )}
       <AnchoredPopover

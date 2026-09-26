@@ -29,12 +29,16 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       animationClassName="animate-fade-in"
     >
       <AttentionCallout session={session} onSelectLens={onSelectLens} />
-      <NextStepSlot session={session} />
+      <NextStepSlot session={session} onSelectLens={onSelectLens} />
       <TimelinePane
         session={session}
         actions={
           <ArchivedGate isArchived={isArchived}>
-            <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
+            <OverviewActions
+              session={session}
+              onOpenWorkflowBuilder={openWorkflowBuilder}
+              onOpenRun={() => onSelectLens('workflows')}
+            />
           </ArchivedGate>
         }
       />

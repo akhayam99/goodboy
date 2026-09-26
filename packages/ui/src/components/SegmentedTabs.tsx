@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import { Check } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../cn';
 import { tintClasses, type Tone } from '../tint';
@@ -21,6 +22,7 @@ export type Props<T extends string = string> = {
   readonly value: T;
   readonly onChange: (value: T) => void;
   readonly size?: 'sm' | 'md';
+  readonly variant?: 'pill' | 'card';
   readonly ariaLabel: string;
   readonly className?: string;
   readonly fill?: boolean;
@@ -56,15 +58,18 @@ export const SegmentedTabs = <T extends string>({
   value,
   onChange,
   size = 'md',
+  variant = 'pill',
   ariaLabel,
   className,
   fill = false,
 }: Props<T>) => {
   const tablistRef = useRef<HTMLDivElement>(null);
   const isMedium = size === 'md';
-  const gridStyle: CSSProperties | undefined = fill
-    ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }
-    : undefined;
+  const isCard = variant === 'card';
+  const gridStyle: CSSProperties | undefined =
+    fill && !isCard
+      ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }
+      : undefined;
 
   const onKeyDown = ({ event, index }: KeyDownParams) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
@@ -87,8 +92,12 @@ export const SegmentedTabs = <T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        'gap-1 rounded-lg border border-border-soft p-1',
-        fill ? 'grid w-full' : 'inline-flex items-center',
+        isCard
+          ? 'grid grid-cols-1 gap-2 sm:grid-cols-3'
+          : cn(
+              'gap-1 rounded-lg border border-border-soft p-1',
+              fill ? 'grid w-full' : 'inline-flex items-center',
+            ),
         className,
       )}
       style={gridStyle}
@@ -107,15 +116,66 @@ export const SegmentedTabs = <T extends string>({
             <span className="flex shrink-0 items-center">{glyph}</span>
           ) : Icon != null ? (
             <Icon
-              size={isMedium ? 15 : 13}
+              size={isCard ? 16 : isMedium ? 15 : 13}
               aria-hidden
               className={cn(
                 'shrink-0',
-                isActive && option.accent == null && tone != null && tone.icon,
+                isCard
+                  ? isActive
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+                  : isActive && option.accent == null && tone != null && tone.icon,
               )}
             />
           ) : null;
         const hasStackedHint = isMedium && option.hint != null;
+
+        if (isCard) {
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              disabled={option.disabled}
+              onClick={() => onChange(option.value)}
+              onKeyDown={(event) => onKeyDown({ event, index })}
+              className={cn(
+                'relative flex h-16 items-center gap-2.5 rounded-md border px-3 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                isActive
+                  ? cn('bg-selected', tintClasses('primary').border)
+                  : 'border-transparent hover:bg-hover',
+                option.disabled === true && 'cursor-not-allowed opacity-50 hover:bg-transparent',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-7 shrink-0 items-center justify-center rounded-md',
+                  isActive ? tintClasses('primary').bgSoft : 'bg-fill',
+                )}
+              >
+                {mark}
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-row text-foreground">{option.label}</span>
+                {option.hint != null && (
+                  <span className="truncate text-secondary text-muted-foreground">
+                    {option.hint}
+                  </span>
+                )}
+              </span>
+              {isActive && (
+                <Check
+                  size={12}
+                  aria-hidden
+                  className="absolute right-2 top-2 shrink-0 text-primary"
+                />
+              )}
+            </button>
+          );
+        }
+
         return (
           <button
             key={option.value}

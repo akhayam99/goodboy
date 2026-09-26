@@ -84,6 +84,7 @@ const resetStore = () => {
       githubStatus: null,
       workspaceIntegrations: {},
       projects: [],
+      providers: [],
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
       issueBriefs: {},
@@ -105,7 +106,7 @@ const resetStore = () => {
 
 const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
 
-const radio = (name: string) => screen.getByRole('radio', { name: new RegExp(name) });
+const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
 
 beforeEach(() => {
   resetStore();
@@ -120,14 +121,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionKickoff', () => {
-  it('asks one question with three options and no example tree or tiles', () => {
+  it('shows three choices on one row as tabs, no example tree or tiles', () => {
     renderKickoff();
 
-    expect(screen.getByRole('radiogroup', { name: 'How do you want to start?' })).toBeDefined();
-    expect(screen.getAllByRole('radio').map((node) => node.textContent)).toEqual([
-      'Pick up a taskStart from an issue in your tracker.',
-      'Run a workflowDescribe the goal, then pick a workflow.',
-      'Not sure yetA Scout reads the project and suggests where to start.',
+    expect(screen.getByRole('tablist', { name: 'How do you want to start?' })).toBeDefined();
+    expect(screen.getAllByRole('tab').map((node) => node.textContent)).toEqual([
+      'Pick up a taskAn issue from your tracker.',
+      'Run a workflowPreset or orchestrated.',
+      'Ask an agentScout or any other role.',
     ]);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
@@ -135,7 +136,7 @@ describe('SessionKickoff', () => {
   it('preselects Run a workflow when no tracker has candidates', () => {
     renderKickoff();
 
-    expect(radio('Run a workflow').getAttribute('aria-checked')).toBe('true');
+    expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
     expect(screen.getAllByRole('button', { name: 'Run workflow' })).toHaveLength(1);
   });
 
@@ -145,26 +146,26 @@ describe('SessionKickoff', () => {
     renderKickoff();
 
     await screen.findByText('ENG-1');
-    expect(radio('Pick up a task').getAttribute('aria-checked')).toBe('true');
+    expect(tab('Pick up a task').getAttribute('aria-selected')).toBe('true');
   });
 
   it('falls back to Run a workflow when the tracker has nothing open', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     renderKickoff();
 
-    await waitFor(() => expect(radio('Run a workflow').getAttribute('aria-checked')).toBe('true'));
+    await waitFor(() => expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true'));
   });
 
   it('keeps the choice and the text in the draft, and preselects again once it is gone', () => {
     const first = renderKickoff();
-    fireEvent.click(radio('Not sure yet'));
+    fireEvent.click(tab('Ask an agent'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the importer' },
     });
     first.unmount();
 
     const second = renderKickoff();
-    expect(radio('Not sure yet').getAttribute('aria-checked')).toBe('true');
+    expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('textbox', { name: 'Scout focus' })).toHaveProperty(
       'value',
       'the importer',
@@ -173,41 +174,39 @@ describe('SessionKickoff', () => {
 
     store().setState({ sessionDrafts: {} });
     renderKickoff();
-    expect(radio('Run a workflow').getAttribute('aria-checked')).toBe('true');
+    expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
   });
 
   it('shows only the selected option primary', () => {
     renderKickoff();
-    fireEvent.click(radio('Not sure yet'));
+    fireEvent.click(tab('Ask an agent'));
 
-    expect(screen.getByRole('button', { name: 'Start Scout' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Run workflow' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Pick up/ })).toBeNull();
   });
 
-  it('puts focus on the question when the draft opens', () => {
+  it('puts focus on the selected tab when the draft opens', () => {
     renderKickoff();
 
-    expect(document.activeElement).toBe(radio('Run a workflow'));
+    expect(document.activeElement).toBe(tab('Run a workflow'));
   });
 
-  it('moves with the arrow keys and confirms with Enter', async () => {
+  it('moves with the arrow keys and focuses the panel field right away', async () => {
     renderKickoff();
-    const workflow = radio('Run a workflow');
+    const workflow = tab('Run a workflow');
     workflow.focus();
 
-    fireEvent.keyDown(workflow, { key: 'ArrowDown' });
-    expect(radio('Not sure yet').getAttribute('aria-checked')).toBe('true');
-    expect(document.activeElement).toBe(radio('Not sure yet'));
+    fireEvent.keyDown(workflow, { key: 'ArrowRight' });
+    expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(tab('Ask an agent'));
 
-    fireEvent.keyDown(radio('Not sure yet'), { key: 'ArrowDown' });
-    expect(radio('Pick up a task').getAttribute('aria-checked')).toBe('true');
-
-    fireEvent.keyDown(radio('Pick up a task'), { key: 'ArrowUp' });
-    fireEvent.keyDown(radio('Not sure yet'), { key: 'Enter' });
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Scout focus' })),
     );
+
+    fireEvent.keyDown(tab('Ask an agent'), { key: 'ArrowLeft' });
+    expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
   });
 
   it('starts the session and the picked workflow in one gesture', async () => {
@@ -247,7 +246,7 @@ describe('SessionKickoff', () => {
     const onReveal = vi.fn();
     window.addEventListener('goodboy:reveal-chat', onReveal);
     renderKickoff();
-    fireEvent.click(radio('Not sure yet'));
+    fireEvent.click(tab('Ask an agent'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },
     });
@@ -258,12 +257,57 @@ describe('SessionKickoff', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'scout',
+        agentKind: 'scout',
         focus: 'the ledger-core importer',
         prompt: expect.stringContaining('Focus on: the ledger-core importer'),
+        routing: null,
       },
     });
     await waitFor(() => expect(onReveal).toHaveBeenCalledOnce());
     window.removeEventListener('goodboy:reveal-chat', onReveal);
+  });
+
+  it('requires a prompt for every role other than Scout', () => {
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+
+    const start = screen.getByRole('button', { name: 'Start Implementer' });
+    expect(start.hasAttribute('disabled')).toBe(true);
+    expect(start.getAttribute('title')).toBe('Write what Implementer should do');
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
+      target: { value: 'Build the login page' },
+    });
+    expect(screen.getByRole('button', { name: 'Start Implementer' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it('starts any role with the model auto until pinned', async () => {
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+
+    expect(screen.getByRole('button', { name: 'Auto' })).toBeDefined();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
+      target: { value: 'Build the login page' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Implementer' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'scout',
+        agentKind: 'implementer',
+        focus: 'Build the login page',
+        prompt: 'Build the login page',
+        routing: null,
+      },
+    });
   });
 
   it('proposes the brief of a picked issue and starts from it without linking first', async () => {
@@ -325,7 +369,7 @@ describe('SessionKickoff', () => {
     const onOpenSettings = vi.fn();
     window.addEventListener('goodboy:open-settings', onOpenSettings);
     renderKickoff();
-    fireEvent.click(radio('Pick up a task'));
+    fireEvent.click(tab('Pick up a task'));
 
     expect(screen.getByText('No tracker connected yet')).toBeDefined();
     for (const provider of ['linear', 'github', 'gitlab', 'jira', 'sentry']) {

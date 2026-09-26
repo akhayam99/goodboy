@@ -225,6 +225,23 @@ describe('filterTimelineEntries', () => {
   });
 });
 
+describe('the removed suggestions category', () => {
+  it('is gone from the category list, its toggle and label with it', () => {
+    expect(ACTIVITY_CATEGORIES).not.toContain('suggestions');
+    expect('suggestions' in ACTIVITY_CATEGORY_LABEL).toBe(false);
+    expect('suggestions' in DEFAULT_ACTIVITY_FILTER).toBe(false);
+  });
+
+  it('tolerates a payload stored before the toggle was removed, ignoring the stray key', () => {
+    const parsed = parseActivityFilter({ raw: '{"worktree":false,"suggestions":false}' });
+    expect(parsed).toEqual({ ...DEFAULT_ACTIVITY_FILTER, worktree: false });
+  });
+
+  it('is no longer a filterable toggle', () => {
+    expect(parseActivityFilter({ raw: '{"suggestions":false}' })).toEqual(DEFAULT_ACTIVITY_FILTER);
+  });
+});
+
 describe('the resolver category', () => {
   it('sits in the Work group with the label Resolvers, not Session log', () => {
     expect(ACTIVITY_CATEGORIES).toContain('resolver');
@@ -233,11 +250,6 @@ describe('the resolver category', () => {
     expect(ACTIVITY_GROUPS.find((group) => group.id === 'log')?.categories).not.toContain(
       'resolver',
     );
-  });
-
-  it('is no longer a filterable toggle', () => {
-    expect(ACTIVITY_CATEGORIES).not.toContain('suggestions');
-    expect(parseActivityFilter({ raw: '{"suggestions":false}' })).toEqual(DEFAULT_ACTIVITY_FILTER);
   });
 
   it('keeps the mount proposal events with the worktree category', () => {

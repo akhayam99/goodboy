@@ -1,16 +1,73 @@
-import type { MountId, PlanId, ProjectId, SessionId, StepId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentId,
+  MountId,
+  PlanId,
+  PrMergeMethod,
+  ProjectId,
+  ProviderId,
+  PullRequestState,
+  SessionId,
+  StepId,
+  WorkflowId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import {
   pendingMountEvents,
   type SuggestionMountEvent,
 } from '../../store/materializationProposals';
-import { applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
+import type { PendingAgentSignal } from './pendingAgentSignal';
+import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
+import { PROVIDER_LABEL } from '../providers/providerLabel';
+import type { AgentKind } from '../session/agent-kind';
 import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
+
+export type SuggestionFailedStep = {
+  readonly stepId: StepId;
+  readonly label: string | null;
+};
 
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
   readonly isRunning: boolean;
+  readonly failedStep?: SuggestionFailedStep | null;
+};
+
+export type SuggestionAgent = {
+  readonly id: AgentId;
+  readonly label: string;
+  readonly roleKind: AgentKind;
+  readonly status: string;
+  readonly workflowRunId: WorkflowRunId | null;
+  readonly ordinal: number;
+  readonly pendingSignal: PendingAgentSignal | null;
+};
+
+export type SuggestionMount = {
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+  readonly projectName: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  readonly aheadOfUpstream: number | null;
+  readonly aheadOfBase: number | null;
+  readonly isClean: boolean | null;
+  readonly pr: PullRequestState | null;
+  readonly fetchedAt: string | null;
+};
+
+export type SuggestionRecommendedWorkflow = {
+  readonly id: WorkflowId;
+  readonly name: string;
+};
+
+export type SuggestionCleanupProposal = {
+  readonly requestId: string;
+  readonly mountId: MountId;
+  readonly projectName: string;
+  readonly branch: string;
+  readonly prNumber: number | null;
 };
 
 export type SuggestionPlan = {
@@ -59,6 +116,13 @@ type Params = {
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
   readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
+  readonly agents?: ReadonlyArray<SuggestionAgent>;
+  readonly mounts?: ReadonlyArray<SuggestionMount>;
+  readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
+  readonly hasRunningAgent?: boolean;
+  readonly hasGoal?: boolean;
+  readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
+  readonly now?: () => number;
   readonly dismissedFingerprints?: ReadonlySet<string>;
   readonly demotedKinds?: ReadonlySet<SuggestionKind>;
 };
@@ -73,6 +137,13 @@ export const deriveNextSteps = ({
   eligibleThreadCount,
   projects,
   mountEvents,
+  agents = [],
+  mounts = [],
+  cleanupProposals = [],
+  hasRunningAgent = false,
+  hasGoal = false,
+  recommendedWorkflow = null,
+  now = () => Date.now(),
   dismissedFingerprints,
   demotedKinds,
 }: Params): ReadonlyArray<SessionSuggestion> => {
@@ -111,7 +182,124 @@ export const deriveNextSteps = ({
       payload: { count: openQuestionCount },
     });
   }
+  for (const agent of agents) {
+    if (agent.pendingSignal?.kind === 'permission') {
+      suggestions.push({
+        id: `approve-tool:${agent.id}`,
+        kind: 'approve-tool',
+        priority: 1,
+        band: 0,
+        title: 'Approve a command',
+        detail: `${agent.label} wants to run ${agent.pendingSignal.toolName}`,
+        sessionId,
+        targetKey: `agent:${agent.id}`,
+        fingerprint: `approve-tool:${agent.id}:${agent.pendingSignal.toolUseId}`,
+        payload: {
+          agentId: agent.id,
+          agentLabel: agent.label,
+          toolUseId: agent.pendingSignal.toolUseId,
+          toolName: agent.pendingSignal.toolName,
+        },
+      });
+      continue;
+    }
+    if (agent.pendingSignal?.kind === 'auth') {
+      const providerLabel = PROVIDER_LABEL[agent.pendingSignal.providerId];
+      suggestions.push({
+        id: `sign-in:${agent.id}`,
+        kind: 'sign-in',
+        priority: 2,
+        band: 0,
+        title: `Sign in to ${providerLabel}`,
+        detail: `${agent.label} stopped: signed out`,
+        sessionId,
+        targetKey: `agent:${agent.id}`,
+        fingerprint: `sign-in:${agent.id}:${agent.pendingSignal.providerId}`,
+        payload: {
+          agentId: agent.id,
+          agentLabel: agent.label,
+          providerId: agent.pendingSignal.providerId,
+        },
+      });
+    }
+  }
+  const lastStandaloneAgent = [...agents]
+    .filter((agent) => agent.workflowRunId === null)
+    .sort((first, second) => second.ordinal - first.ordinal)[0];
+  if (lastStandaloneAgent?.status === 'failed') {
+    suggestions.push({
+      id: `retry-agent:${lastStandaloneAgent.id}`,
+      kind: 'retry-agent',
+      priority: 11,
+      band: 1,
+      title: `Retry ${lastStandaloneAgent.label}`,
+      detail: 'Stopped: the run failed',
+      sessionId,
+      targetKey: `agent:${lastStandaloneAgent.id}`,
+      fingerprint: `retry-agent:${lastStandaloneAgent.id}`,
+      payload: { agentId: lastStandaloneAgent.id, agentKind: lastStandaloneAgent.roleKind },
+    });
+  }
+  if (
+    lastStandaloneAgent?.status === 'completed' &&
+    lastStandaloneAgent.roleKind === 'implementer'
+  ) {
+    suggestions.push({
+      id: `check-changes:${lastStandaloneAgent.id}`,
+      kind: 'check-changes',
+      priority: 50,
+      band: 3,
+      title: 'Review the changes',
+      detail: `${lastStandaloneAgent.label} finished without a reviewer`,
+      sessionId,
+      targetKey: `agent:${lastStandaloneAgent.id}`,
+      fingerprint: `check-changes:${lastStandaloneAgent.id}`,
+      payload: { agentId: lastStandaloneAgent.id },
+    });
+  }
+  if (
+    lastStandaloneAgent?.status === 'completed' &&
+    (lastStandaloneAgent.roleKind === 'scout' || lastStandaloneAgent.roleKind === 'generic') &&
+    hasGoal &&
+    workflowRuns.length === 0 &&
+    recommendedWorkflow != null
+  ) {
+    suggestions.push({
+      id: `continue-with-workflow:${lastStandaloneAgent.id}`,
+      kind: 'continue-with-workflow',
+      priority: 52,
+      band: 3,
+      title: 'Continue with a workflow',
+      detail: `${recommendedWorkflow.name} picks up from what ${lastStandaloneAgent.label} found`,
+      sessionId,
+      targetKey: `agent:${lastStandaloneAgent.id}`,
+      fingerprint: `continue-with-workflow:${lastStandaloneAgent.id}:${recommendedWorkflow.id}`,
+      payload: { workflowId: recommendedWorkflow.id, workflowName: recommendedWorkflow.name },
+    });
+  }
   for (const run of workflowRuns) {
+    if (run.failedStep != null) {
+      suggestions.push({
+        id: `unblock-step:${run.id}`,
+        kind: 'unblock-step',
+        priority: 3,
+        band: 0,
+        title:
+          run.failedStep.label == null
+            ? `Step failed: ${run.title}`
+            : `Step failed: ${run.failedStep.label}`,
+        detail: 'Tell the agent what to do next, or skip it',
+        sessionId,
+        targetKey: `workflow-run:${run.id}`,
+        fingerprint: `unblock-step:${run.id}:${run.failedStep.stepId}`,
+        payload: {
+          runId: run.id,
+          stepId: run.failedStep.stepId,
+          stepLabel: run.failedStep.label,
+        },
+      });
+      continue;
+    }
     if (run.advanceState.kind !== 'ready' || run.advanceState.stepId == null) {
       continue;
     }
@@ -161,6 +349,135 @@ export const deriveNextSteps = ({
       targetKey: `pr:${sessionId}`,
       fingerprint: `resolve-threads:${sessionId}:${eligibleThreadCount}`,
       payload: { eligibleThreadCount },
+    });
+  }
+  if (!hasRunningAgent) {
+    for (const mount of mounts) {
+      if (!isFresh({ fetchedAt: mount.fetchedAt, now })) {
+        continue;
+      }
+      const pr = mount.pr;
+      if (pr != null && pr.state !== 'merged' && pr.state !== 'closed') {
+        if (pr.checks === 'failure') {
+          suggestions.push({
+            id: `fix-checks:${mount.mountId}`,
+            kind: 'fix-checks',
+            priority: 12,
+            band: 1,
+            title: `Fix failing checks on #${pr.number}`,
+            detail: `${mount.projectName} · checks failed`,
+            sessionId,
+            targetKey: `pr:${mount.mountId}`,
+            fingerprint: `fix-checks:${mount.mountId}:${pr.number}`,
+            payload: {
+              mountId: mount.mountId,
+              projectName: mount.projectName,
+              prNumber: pr.number,
+            },
+          });
+        }
+        if (pr.isDraft && pr.checks === 'success') {
+          suggestions.push({
+            id: `mark-ready:${mount.mountId}`,
+            kind: 'mark-ready',
+            priority: 43,
+            band: 2,
+            title: `Mark #${pr.number} ready for review`,
+            detail: 'All checks passed',
+            sessionId,
+            targetKey: `pr:${mount.mountId}`,
+            fingerprint: `mark-ready:${mount.mountId}:${pr.number}`,
+            payload: {
+              mountId: mount.mountId,
+              projectName: mount.projectName,
+              prNumber: pr.number,
+            },
+          });
+        }
+        if (
+          !pr.isDraft &&
+          pr.reviewDecision === 'approved' &&
+          pr.checks === 'success' &&
+          pr.mergeable === true
+        ) {
+          suggestions.push({
+            id: `merge-pr:${mount.mountId}`,
+            kind: 'merge-pr',
+            priority: 44,
+            band: 2,
+            title: `Merge #${pr.number}`,
+            detail: 'Approved, checks passed',
+            sessionId,
+            targetKey: `pr:${mount.mountId}`,
+            fingerprint: `merge-pr:${mount.mountId}:${pr.number}`,
+            payload: {
+              mountId: mount.mountId,
+              projectName: mount.projectName,
+              prNumber: pr.number,
+              defaultMethod: 'squash',
+            },
+          });
+        }
+      }
+      if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
+        suggestions.push({
+          id: `open-pr:${mount.mountId}`,
+          kind: 'open-pr',
+          priority: 42,
+          band: 2,
+          title: `Open a pull request for ${mount.projectName}`,
+          detail: `${mount.aheadOfBase} ${mount.aheadOfBase === 1 ? 'commit' : 'commits'} ahead`,
+          sessionId,
+          targetKey: `pr:${mount.mountId}`,
+          fingerprint: `open-pr:${mount.mountId}:${mount.aheadOfBase}`,
+          payload: {
+            mountId: mount.mountId,
+            projectId: mount.projectId,
+            projectName: mount.projectName,
+            ahead: mount.aheadOfBase,
+          },
+        });
+      }
+      if (mount.aheadOfUpstream != null && mount.aheadOfUpstream > 0 && mount.isClean !== false) {
+        suggestions.push({
+          id: `push-branch:${mount.mountId}`,
+          kind: 'push-branch',
+          priority: 41,
+          band: 2,
+          title: `Push ${mount.aheadOfUpstream} ${mount.aheadOfUpstream === 1 ? 'commit' : 'commits'}`,
+          detail: `${mount.projectName} · ${mount.branch}`,
+          sessionId,
+          targetKey: `branch:${mount.mountId}`,
+          fingerprint: `push-branch:${mount.mountId}:${mount.aheadOfUpstream}`,
+          payload: {
+            mountId: mount.mountId,
+            projectId: mount.projectId,
+            projectName: mount.projectName,
+            branch: mount.branch,
+            worktreePath: mount.worktreePath,
+            ahead: mount.aheadOfUpstream,
+          },
+        });
+      }
+    }
+  }
+  for (const proposal of cleanupProposals) {
+    suggestions.push({
+      id: `close-worktree:${proposal.mountId}`,
+      kind: 'close-worktree',
+      priority: 51,
+      band: 3,
+      title: `Close the ${proposal.projectName} worktree`,
+      detail: proposal.prNumber == null ? 'Ready to remove' : `#${proposal.prNumber} merged`,
+      sessionId,
+      targetKey: `worktree:${proposal.mountId}`,
+      fingerprint: `close-worktree:${proposal.requestId}`,
+      payload: {
+        mountId: proposal.mountId,
+        requestId: proposal.requestId,
+        branch: proposal.branch,
+        prNumber: proposal.prNumber,
+      },
     });
   }
   const rebaseTargets: RebaseSuggestionTarget[] = [];
