@@ -440,10 +440,6 @@ describe('workflowRouting slice', () => {
 });
 
 describe('fan-out child routing precedence', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   const childRequest = {
     proposal: null,
     promptText: 'map the session guards',
@@ -505,7 +501,6 @@ describe('fan-out child routing precedence', () => {
   });
 
   it('budget block prevents partial child materialization', () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const { state, get } = buildHarness();
     state.budgetAlerts = [
       {
