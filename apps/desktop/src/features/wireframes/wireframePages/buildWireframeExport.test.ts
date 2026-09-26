@@ -113,8 +113,12 @@ describe('buildWireframeExport', () => {
 
   it('links screens to each other with plain relative links', () => {
     const batches = fileOf('screens/settlement-batches.html');
-    expect(batches).toContain('<a class="wf-button wf-button-primary" href="review-batch.html">');
-    expect(batches).toContain('<a class="wf-list-item" href="review-batch.html">');
+    expect(batches).toContain(
+      '<a class="wf-button wf-button-primary" id="open-review" data-node="open-review" data-kind="button" href="review-batch.html">',
+    );
+    expect(batches).toContain(
+      '<a class="wf-list-item" id="batch-1" data-node="batch-1" data-kind="item" href="review-batch.html">',
+    );
     expect(batches).toContain('href="../wireframe.css"');
     expect(batches).toContain('href="../index.html"');
     expect(fileOf('screens/review-batch.html')).toContain('href="settlement-batches.html"');
@@ -134,6 +138,14 @@ describe('buildWireframeExport', () => {
       expect(file.contents).not.toMatch(/<style/i);
       expect(file.contents).not.toMatch(/\sstyle=/i);
     }
+  });
+
+  it('marks every node with its id so the stage can find it', () => {
+    const batches = fileOf('screens/settlement-batches.html');
+    expect(batches).toContain('data-node="batches-root"');
+    expect(batches).toContain('data-node="batches-title"');
+    expect(batches).toContain('data-node="batches-list"');
+    expect(batches).toContain('class="wf-header wf-page-chrome"');
   });
 
   it('escapes the text of the document', () => {

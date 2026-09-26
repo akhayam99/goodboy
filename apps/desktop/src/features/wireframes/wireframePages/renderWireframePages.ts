@@ -64,17 +64,19 @@ export const renderWireframeScreenPage = ({
   const goesTo =
     outgoing.length === 0
       ? ''
-      : `<section class="wf-links"><h2>Goes to</h2><ul>${outgoing
+      : `<section class="wf-links wf-page-chrome"><h2>Goes to</h2><ul>${outgoing
           .map(
             (transition) =>
               `<li><a href="${escapeHtml(wireframeScreenFile({ screenId: transition.toScreenId }))}">${escapeHtml(screenTitle({ document, screenId: transition.toScreenId }))}</a> <span class="wf-muted">${escapeHtml(transition.label)}</span></li>`,
           )
           .join('')}</ul></section>`;
   const note =
-    screen.note === undefined ? '' : `<p class="wf-muted">${escapeHtml(screen.note)}</p>`;
+    screen.note === undefined
+      ? ''
+      : `<p class="wf-muted wf-page-chrome">${escapeHtml(screen.note)}</p>`;
   const body = [
-    `<header class="wf-header"><a href="../index.html">${escapeHtml(title)}</a><span class="wf-muted">${index + 1} of ${document.screens.length}</span>${step({ target: previous, label: 'Previous' })}${step({ target: next, label: 'Next' })}</header>`,
-    `<h1 class="wf-screen-title">${escapeHtml(screen.title)}</h1>`,
+    `<header class="wf-header wf-page-chrome"><a href="../index.html">${escapeHtml(title)}</a><span class="wf-muted">${index + 1} of ${document.screens.length}</span>${step({ target: previous, label: 'Previous' })}${step({ target: next, label: 'Next' })}</header>`,
+    `<h1 class="wf-screen-title wf-page-chrome">${escapeHtml(screen.title)}</h1>`,
     note,
     `<main class="wf-screen wf-viewport-${screen.viewport}">${renderWireframeNode({
       node: screen.root,

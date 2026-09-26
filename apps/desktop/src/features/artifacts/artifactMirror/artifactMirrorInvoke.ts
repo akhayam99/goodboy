@@ -61,6 +61,13 @@ export const removeArtifactMirror = async ({
 }: FolderParams): Promise<boolean> =>
   invoke<boolean>('artifact_mirror_remove', { workspaceSlug, folder });
 
+export const openArtifactMirrorFile = async ({
+  workspaceSlug,
+  folder,
+  file,
+}: FolderParams & { readonly file: string }): Promise<void> =>
+  invoke<void>('artifact_mirror_open', { workspaceSlug, folder, file });
+
 export const revealArtifactMirror = async ({
   workspaceSlug,
   folder,

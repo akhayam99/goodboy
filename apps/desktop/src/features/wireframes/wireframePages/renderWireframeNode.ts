@@ -23,6 +23,14 @@ export const wireframeLinks = ({
   return links;
 };
 
+export const nodeAttributes = ({
+  id,
+  kind,
+}: {
+  readonly id: string;
+  readonly kind: string;
+}): string => ` id="${escapeHtml(id)}" data-node="${escapeHtml(id)}" data-kind="${kind}"`;
+
 type TargetParams = {
   readonly id: string;
   readonly action: WireframeAction | undefined;
@@ -40,21 +48,23 @@ type LinkedParams = {
   readonly className: string;
   readonly target: string | null;
   readonly body: string;
+  readonly attributes: string;
 };
 
-const linked = ({ className, target, body }: LinkedParams): string =>
+const linked = ({ className, target, body, attributes }: LinkedParams): string =>
   target === null
-    ? `<span class="${className}">${body}</span>`
-    : `<a class="${className}" href="${escapeHtml(wireframeScreenFile({ screenId: target }))}">${body}</a>`;
+    ? `<span class="${className}"${attributes}>${body}</span>`
+    : `<a class="${className}"${attributes} href="${escapeHtml(wireframeScreenFile({ screenId: target }))}">${body}</a>`;
 
 const renderInput = ({ node }: { readonly node: WireframeInputNode }): string => {
+  const attributes = nodeAttributes({ id: node.id, kind: node.kind });
   const label =
     node.label === undefined ? '' : `<span class="wf-label">${escapeHtml(node.label)}</span>`;
   const shown = node.placeholder ?? node.options?.[0] ?? '';
   if (node.inputType === 'checkbox') {
-    return `<label class="wf-field wf-field-inline"><span class="wf-checkbox"></span>${label}</label>`;
+    return `<label class="wf-field wf-field-inline"${attributes}><span class="wf-checkbox"></span>${label}</label>`;
   }
-  return `<label class="wf-field">${label}<span class="wf-input wf-input-${node.inputType}">${escapeHtml(shown)}</span></label>`;
+  return `<label class="wf-field"${attributes}>${label}<span class="wf-input wf-input-${node.inputType}">${escapeHtml(shown)}</span></label>`;
 };
 
 type RenderParams = {
@@ -65,6 +75,7 @@ type RenderParams = {
 export const renderWireframeNode = ({ node, links }: RenderParams): string => {
   const children = ({ list }: { readonly list: ReadonlyArray<WireframeNode> }): string =>
     list.map((child) => renderWireframeNode({ node: child, links })).join('');
+  const attributes = nodeAttributes({ id: node.id, kind: node.kind });
   switch (node.kind) {
     case 'stack': {
       const classes = [
@@ -76,17 +87,18 @@ export const renderWireframeNode = ({ node, links }: RenderParams): string => {
         `wf-justify-${node.justify ?? 'start'}`,
         ...(node.surface === true ? ['wf-surface'] : []),
       ];
-      return `<div class="${classes.join(' ')}">${children({ list: node.children })}</div>`;
+      return `<div class="${classes.join(' ')}"${attributes}>${children({ list: node.children })}</div>`;
     }
     case 'grid':
-      return `<div class="wf-grid wf-cols-${node.columns} wf-gap-${node.gap ?? 'md'} wf-pad-${node.padding ?? 'none'}">${children({ list: node.children })}</div>`;
+      return `<div class="wf-grid wf-cols-${node.columns} wf-gap-${node.gap ?? 'md'} wf-pad-${node.padding ?? 'none'}"${attributes}>${children({ list: node.children })}</div>`;
     case 'text':
-      return `<p class="wf-text wf-text-${node.variant ?? 'body'}">${escapeHtml(node.text)}</p>`;
+      return `<p class="wf-text wf-text-${node.variant ?? 'body'}"${attributes}>${escapeHtml(node.text)}</p>`;
     case 'button':
       return linked({
         className: `wf-button wf-button-${node.variant ?? 'secondary'}`,
         target: targetOf({ id: node.id, action: node.action, links }),
         body: escapeHtml(node.label),
+        attributes,
       });
     case 'input':
       return renderInput({ node });
@@ -100,28 +112,30 @@ export const renderWireframeNode = ({ node, links }: RenderParams): string => {
           className: 'wf-list-item',
           target: targetOf({ id: item.id, action: item.action, links }),
           body: `<span class="wf-list-title">${escapeHtml(item.title)}</span>${subtitle}`,
+          attributes: nodeAttributes({ id: item.id, kind: 'item' }),
         })}</li>`;
       });
-      return `<ul class="wf-list">${items.join('')}</ul>`;
+      return `<ul class="wf-list"${attributes}>${items.join('')}</ul>`;
     }
     case 'table': {
       const head = node.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('');
       const rows = node.rows
         .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`)
         .join('');
-      return `<table class="wf-table"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+      return `<table class="wf-table"${attributes}><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
     }
     case 'image':
-      return `<div class="wf-image wf-ratio-${node.ratio ?? 'wide'}" role="img" aria-label="${escapeHtml(node.alt)}"><span>${escapeHtml(node.alt)}</span></div>`;
+      return `<div class="wf-image wf-ratio-${node.ratio ?? 'wide'}"${attributes} role="img" aria-label="${escapeHtml(node.alt)}"><span>${escapeHtml(node.alt)}</span></div>`;
     case 'navigation': {
       const items = node.items.map((item) =>
         linked({
           className: item.isActive === true ? 'wf-nav-item wf-active' : 'wf-nav-item',
           target: targetOf({ id: item.id, action: item.action, links }),
           body: escapeHtml(item.label),
+          attributes: nodeAttributes({ id: item.id, kind: 'item' }),
         }),
       );
-      return `<nav class="wf-nav wf-nav-${node.variant}">${items.join('')}</nav>`;
+      return `<nav class="wf-nav wf-nav-${node.variant}"${attributes}>${items.join('')}</nav>`;
     }
     default: {
       const exhaustive: never = node;

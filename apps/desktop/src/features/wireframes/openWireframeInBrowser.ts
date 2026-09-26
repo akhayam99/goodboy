@@ -1,0 +1,27 @@
+import type { WireframeArtifact } from '@goodboy/types';
+import { artifactFolderName } from '../artifacts/artifactFolderName';
+import { openArtifactMirrorFile } from '../artifacts/artifactMirror/artifactMirrorInvoke';
+import { mirrorArtifacts } from '../artifacts/artifactMirror/artifactMirrorQueue';
+import { screenPagePath, WIREFRAME_INDEX_PAGE } from './wireframePagePath';
+
+type Params = {
+  readonly artifact: WireframeArtifact;
+  readonly workspaceSlug: string;
+  readonly screenId: string | null;
+};
+
+export const wireframeBrowserFile = ({ screenId }: { readonly screenId: string | null }): string =>
+  screenId === null ? WIREFRAME_INDEX_PAGE : screenPagePath({ screenId, state: null });
+
+export const openWireframeInBrowser = async ({
+  artifact,
+  workspaceSlug,
+  screenId,
+}: Params): Promise<void> => {
+  await mirrorArtifacts({ items: [{ artifact, workspaceSlug }] });
+  await openArtifactMirrorFile({
+    workspaceSlug,
+    folder: artifactFolderName({ artifact }),
+    file: wireframeBrowserFile({ screenId }),
+  });
+};

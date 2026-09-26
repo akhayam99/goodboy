@@ -2,7 +2,7 @@ import { parseWireframeSource } from '@goodboy/core';
 import type { SessionArtifact } from '@goodboy/types';
 import type { ArtifactFolderFile } from '../artifactFile';
 import { artifactFolderName } from '../artifactFolderName';
-import { buildWireframeExport } from '../../wireframes/wireframeExport/buildWireframeExport';
+import { buildWireframeExport } from '../../wireframes/wireframePages/buildWireframeExport';
 import { artifactMirrorMeta } from './artifactMirrorMeta';
 import {
   ARTIFACT_DOCUMENT_CSS_FILE,

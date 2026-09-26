@@ -486,11 +486,12 @@ describe('ArtifactStudio shell', () => {
     );
   });
 
-  it('opens a wireframe on its flow, with Export as the secondary and the variant under More', () => {
+  it('opens a wireframe on its flow, with Open in browser as the secondary and the variant under More', () => {
     state.sessionArtifacts = { 'sess-1': [wireframe] };
     focus('artifact-wireframe');
     renderStudio();
-    expect(screen.getByTestId('wireframe-studio').getAttribute('data-view')).toBe('flow');
+    expect(screen.getByTestId('wireframe-viewer').getAttribute('data-view')).toBe('flow');
+    expect(screen.getByTestId('artifact-action-openInBrowser')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /New variant/ }));
     expect(state.spawnWireframeAgent).toHaveBeenCalledWith(
@@ -498,7 +499,7 @@ describe('ArtifactStudio shell', () => {
     );
   });
 
-  it('says what each export gives, and offers the screen only while one is open', async () => {
+  it('copies the spec from More', async () => {
     const writeText = vi.fn(async (text: string) => text.length);
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       configurable: true,
@@ -507,17 +508,9 @@ describe('ArtifactStudio shell', () => {
     state.sessionArtifacts = { 'sess-1': [wireframe] };
     focus('artifact-wireframe');
     renderStudio();
-    fireEvent.click(screen.getByTestId('artifact-action-export'));
-    const menu = screen.getByRole('menu', { name: 'Export' });
-    expect(within(menu).getByText('The validated document, ready to paste')).toBeDefined();
-    expect(within(menu).queryByRole('menuitem', { name: /Copy this screen/ })).toBeNull();
-    fireEvent.click(within(menu).getByRole('menuitem', { name: /Copy JSON/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Copy spec/ }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
-    fireEvent.click(screen.getByRole('tab', { name: 'Screens' }));
-    fireEvent.click(screen.getByTestId('artifact-action-export'));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Copy this screen as JSON/ }));
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
-    expect(JSON.parse(writeText.mock.calls[1]?.[0] ?? '{}').id).toBe('batches');
   });
 
   it('opens a plan another surface focused, as a plan', () => {

@@ -371,34 +371,13 @@ describe('ArtifactReaderView', () => {
     expect(screen.getByRole('alert').textContent).toContain('nothing was lost');
   });
 
-  it('lays a wireframe out as a contact sheet under the same letterhead', async () => {
+  it('leaves a wireframe to the browser instead of printing its source', async () => {
     listSpy.mockResolvedValueOnce([wireframe]);
     render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { level: 1, name: 'Harborline onboarding' }),
-      ).toBeDefined();
+      expect(screen.getByRole('alert').textContent).toContain('opens in the browser');
     });
-    const frames = screen.getAllByTestId('wireframe-sheet-frame');
-    expect(frames.map((frame) => frame.getAttribute('data-screen-id'))).toEqual([
-      'sign-in',
-      'console',
-    ]);
-    expect(screen.queryByRole('alert')).toBeNull();
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    await waitFor(() => {
-      expect(window.print).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it('refuses a wireframe it cannot read instead of dumping its source', async () => {
-    listSpy.mockResolvedValueOnce([{ ...wireframe, sourceText: '{"screens":[]}' }]);
-    render(<ArtifactReaderView request={request} />);
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('does not match the schema');
-    });
-    expect(screen.queryByText('{"screens":[]}')).toBeNull();
-    expect(screen.queryByTestId('wireframe-sheet-frame')).toBeNull();
+    expect(screen.queryByText(wireframe.sourceText)).toBeNull();
     expect(window.print).not.toHaveBeenCalled();
   });
 
@@ -409,31 +388,5 @@ describe('ArtifactReaderView', () => {
       expect(screen.getByRole('alert').textContent).toContain('no longer in the session');
     });
     expect(window.print).not.toHaveBeenCalled();
-  });
-
-  it('prints a desktop only wireframe on a landscape page and keeps it inert', async () => {
-    const desktopOnly = {
-      ...wireframeDocument,
-      initialScreenId: 'console',
-      screens: [wireframeDocument.screens[1]],
-    };
-    listSpy.mockResolvedValueOnce([{ ...wireframe, sourceText: JSON.stringify(desktopOnly) }]);
-    const { container } = render(<ArtifactReaderView request={request} />);
-    await waitFor(() => {
-      expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
-    });
-    expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('landscape');
-    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('landscape');
-    expect(container.querySelectorAll('[inert]')).toHaveLength(1);
-  });
-
-  it('keeps a mixed wireframe on the portrait page the report uses', async () => {
-    listSpy.mockResolvedValueOnce([wireframe]);
-    render(<ArtifactReaderView request={request} />);
-    await waitFor(() => {
-      expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
-    });
-    expect(screen.getByTestId('print-wireframe-sheet').getAttribute('data-page')).toBe('portrait');
-    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('portrait');
   });
 });

@@ -405,10 +405,16 @@ when the part is done.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
-colour) and the screens as a grid under it. A node or a tile opens
-**Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
-the clipboard, or only the open screen. **Export as a folder** writes, into a
+colour) and the screens as a grid of page previews under it. A node or a tile
+opens **Screens**: the screens on a rail, the real page of the open screen in
+the middle, inside the frame of its device, with a Fit or 100% zoom, and a
+**Notes** panel with the screen note, the numbered notes of its nodes (a click
+shows the node on the page) and where the screen goes. The pages are the same
+ones the saved copy holds, shown in an isolated frame
+([architecture.md](architecture.md#frames)); links inside them work, and the
+rail follows. **Open in browser** opens the screen you are looking at, or the
+index on the Flow, from the saved copy. Under `⋯`, **Copy spec** copies the
+JSON and **Save a copy to…** writes, into a
 folder you pick, `index.html` with the flow and the screens, one page per
 screen under `screens/` linked by plain links, one `wireframe.css`, the
 validated `wireframe.json`, its `wireframe.schema.json` (built from the code

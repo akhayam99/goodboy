@@ -277,6 +277,42 @@ pub async fn artifact_mirror_locate(
     locate_mirror(&home()?, &workspace_slug, &folder)
 }
 
+pub(crate) fn mirror_file(
+    home: &Path,
+    workspace_slug: &str,
+    folder: &str,
+    file: &str,
+) -> Result<PathBuf, ArtifactExportError> {
+    let segments: Vec<&str> = file.split('/').collect();
+    if segments.len() > 3 || !segments.iter().all(|segment| is_safe_segment(segment)) {
+        return Err(destination(
+            "the file is not a plain name inside the saved copy",
+        ));
+    }
+    if !file.ends_with(".html") {
+        return Err(destination("only pages open in the browser"));
+    }
+    let root = mirror_folder(home, workspace_slug, folder)?;
+    let path = segments
+        .iter()
+        .fold(root, |path, segment| path.join(segment));
+    if !path.is_file() {
+        return Err(destination("the saved copy is not on disk yet"));
+    }
+    Ok(path)
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_open(
+    workspace_slug: String,
+    folder: String,
+    file: String,
+) -> Result<(), ArtifactExportError> {
+    let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
+    crate::explore::spawn_open(&path, false)?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn artifact_mirror_reveal(
     workspace_slug: String,
@@ -477,6 +513,29 @@ mod tests {
         assert!(first
             .with_file_name("2026-09-25-other-report-aaaaaa")
             .is_dir());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn opens_only_pages_inside_the_saved_copy() {
+        let home = scratch_home();
+        write_mirror(
+            &home,
+            "harborline",
+            "flow",
+            &[
+                file("index.html", "i"),
+                file("screens/a.html", "a"),
+                file("meta.json", "{}"),
+            ],
+        )
+        .expect("write");
+        assert!(mirror_file(&home, "harborline", "flow", "screens/a.html").is_ok());
+        assert!(mirror_file(&home, "harborline", "flow", "index.html").is_ok());
+        assert!(mirror_file(&home, "harborline", "flow", "meta.json").is_err());
+        assert!(mirror_file(&home, "harborline", "flow", "../flow/index.html").is_err());
+        assert!(mirror_file(&home, "harborline", "flow", "screens/missing.html").is_err());
+        assert!(mirror_file(&home, "harborline", "..", "index.html").is_err());
         let _ = std::fs::remove_dir_all(home);
     }
 

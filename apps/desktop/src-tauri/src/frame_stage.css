@@ -1,0 +1,26 @@
+body.wf-page {
+  padding: 0;
+}
+.wf-page-chrome {
+  display: none !important;
+}
+body.wf-page > .wf-screen {
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+}
+.gb-reveal {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  transition: outline-color 200ms ease-out;
+}
+.gb-pick-hover {
+  outline: 2px dashed #2563eb;
+  outline-offset: 2px;
+  cursor: crosshair;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gb-reveal {
+    transition: none;
+  }
+}
