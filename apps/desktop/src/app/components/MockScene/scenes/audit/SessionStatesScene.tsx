@@ -50,6 +50,7 @@ const OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const MANY_PROJECTS: ReadonlyArray<Project> = PROJECT_NAMES.map((name) => ({

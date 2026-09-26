@@ -56,6 +56,7 @@ import { m194ProjectSentryLinks } from './m194-project-sentry-links';
 import { m195SessionBudgetMode } from './m195-session-budget-mode';
 import { m196SessionContextSeen } from './m196-session-context-seen';
 import { m197PrMergedHead } from './m197-pr-merged-head';
+import { m198MergedBranchCleanup } from './m198-merged-branch-cleanup';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -399,4 +400,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 195, sql: m195SessionBudgetMode },
   { version: 196, sql: m196SessionContextSeen },
   { version: 197, sql: m197PrMergedHead },
+  { version: 198, sql: m198MergedBranchCleanup },
 ];

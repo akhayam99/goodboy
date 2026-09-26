@@ -63,6 +63,7 @@ export type OverrideSettings = Readonly<{
   replyTemplateNoChange: string | null;
   resolveOnGithub: boolean | null;
   resolveCommitStyle: ResolveCommitStyle | null;
+  afterMerge: AfterMergeRule | null;
 }>;
 
 export const REPLY_VOICES = ['terse', 'friendly', 'formal', 'mine'] as const;
@@ -72,6 +73,10 @@ export type ReplyVoice = (typeof REPLY_VOICES)[number];
 export const RESOLVE_COMMIT_STYLES = ['new', 'fixup'] as const;
 
 export type ResolveCommitStyle = (typeof RESOLVE_COMMIT_STYLES)[number];
+
+export const AFTER_MERGE_RULES = ['ask', 'local', 'local-and-origin'] as const;
+
+export type AfterMergeRule = (typeof AFTER_MERGE_RULES)[number];
 
 export type ResolvedSettings = Readonly<{
   defaultProviderId: ProviderId;

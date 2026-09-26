@@ -29,6 +29,7 @@ describe('m187 resolve reply settings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     });
   });
 

@@ -739,6 +739,7 @@ export const emptyOverrides: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 type WorkspaceOverridesInput = Partial<Workspace> & { readonly id: WorkspaceId };

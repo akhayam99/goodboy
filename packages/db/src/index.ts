@@ -51,6 +51,7 @@ export {
   disconnectProject,
   reconnectProject,
   updateProjectKind,
+  updateProjectAfterMerge,
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
@@ -64,6 +65,14 @@ export {
   dismissSecurityFinding,
   flagSecurityFindingAgain,
 } from './queries/security-finding';
+export {
+  insertDeletedBranch,
+  listDeletedBranches,
+  getDeletedBranch,
+  markDeletedBranchRestored,
+  listExpiredDeletedBranches,
+  forgetDeletedBranch,
+} from './queries/deleted-branch';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,

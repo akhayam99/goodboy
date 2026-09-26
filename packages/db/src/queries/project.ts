@@ -1,4 +1,5 @@
 import type {
+  AfterMergeRule,
   GoodboyIgnoreMode,
   IsoDateTime,
   OverrideSettings,
@@ -92,8 +93,8 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        default_branch_prefix, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
        task_models, role_models, provider_pool, base_branch, attribution_footer,
-       description, starred_at, ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       description, starred_at, ${REPLY_SETTING_COLUMNS}, after_merge
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -121,6 +122,7 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
       project.description ?? null,
       project.starredAt === undefined ? null : Date.parse(project.starredAt),
       ...replySettingValues({ overrides: project.overrides }),
+      project.overrides.afterMerge,
     ],
   );
 };
@@ -257,6 +259,24 @@ export const updateProjectBaseBranch = async ({
 }: UpdateProjectBaseBranchParams): Promise<void> => {
   await db.execute('UPDATE projects SET base_branch = ?, updated_at = ? WHERE id = ?', [
     baseBranch,
+    Date.now(),
+    projectId,
+  ]);
+};
+
+type UpdateProjectAfterMergeParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly afterMerge: AfterMergeRule | null;
+};
+
+export const updateProjectAfterMerge = async ({
+  db,
+  projectId,
+  afterMerge,
+}: UpdateProjectAfterMergeParams): Promise<void> => {
+  await db.execute('UPDATE projects SET after_merge = ?, updated_at = ? WHERE id = ?', [
+    afterMerge,
     Date.now(),
     projectId,
   ]);

@@ -20,4 +20,5 @@ export const overridesWithAttribution = ({ attributionFooter }: Params): Overrid
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 });

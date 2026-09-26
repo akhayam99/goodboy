@@ -119,6 +119,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     },
     createdAt: NOW,
     updatedAt: NOW,

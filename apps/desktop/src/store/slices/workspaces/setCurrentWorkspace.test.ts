@@ -100,6 +100,7 @@ const overrides = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 } satisfies Project['overrides'];
 
 const project: Project = {

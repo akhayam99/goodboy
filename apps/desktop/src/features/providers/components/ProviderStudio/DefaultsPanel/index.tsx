@@ -60,6 +60,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 export const DefaultsPanel = ({ workspaceId }: Props) => {

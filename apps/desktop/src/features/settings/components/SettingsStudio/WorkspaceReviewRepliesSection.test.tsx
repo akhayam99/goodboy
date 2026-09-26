@@ -180,6 +180,7 @@ describe('WorkspaceReviewRepliesSection', () => {
           replyTemplateNoChange: null,
           resolveOnGithub: null,
           resolveCommitStyle: null,
+          afterMerge: null,
         },
       }),
     );

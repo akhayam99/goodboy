@@ -46,6 +46,7 @@ const OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const WORKSPACE: Workspace = {

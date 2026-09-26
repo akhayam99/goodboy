@@ -18,6 +18,7 @@ const overridesWith = (attributionFooter: boolean | null): OverrideSettings => (
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 });
 
 describe('isAttributionEnabled', () => {

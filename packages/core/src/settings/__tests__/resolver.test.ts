@@ -28,6 +28,7 @@ const NULL_OVERRIDE: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 describe('resolveSettings', () => {
@@ -56,6 +57,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
@@ -80,6 +82,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
@@ -104,6 +107,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
@@ -121,6 +125,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const result = resolveSettings({
       global: GLOBAL,
@@ -166,6 +171,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
@@ -183,6 +189,7 @@ describe('resolveSettings', () => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     };
     const result = resolveSettings({
       global: GLOBAL,

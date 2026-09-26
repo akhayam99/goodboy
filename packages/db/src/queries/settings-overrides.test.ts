@@ -22,6 +22,7 @@ const EMPTY: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 async function makeDb() {
