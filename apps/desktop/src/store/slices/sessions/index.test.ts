@@ -272,6 +272,23 @@ describe('store contract', () => {
       expect(store.getState().sessionSlotsLoad[SESSION_ID]).toBe('loaded');
     });
 
+    it('clears the previous session revealed activity rows on switch', async () => {
+      const store = useAppStore;
+      const OTHER_SESSION_ID = 'session-other' as SessionId;
+      store.setState({
+        currentSessionId: OTHER_SESSION_ID,
+        revealedActivityRows: {
+          [OTHER_SESSION_ID]: new Set(['row-1']),
+          [SESSION_ID]: new Set(['row-2']),
+        },
+      });
+
+      await store.getState().setCurrentSession(SESSION_ID);
+
+      expect(store.getState().revealedActivityRows[OTHER_SESSION_ID]).toBeUndefined();
+      expect(store.getState().revealedActivityRows[SESSION_ID]).toEqual(new Set(['row-2']));
+    });
+
     it('reads the database for a session whose slots were only ever written in memory', async () => {
       const store = useAppStore;
       const db = await import('@goodboy/db');

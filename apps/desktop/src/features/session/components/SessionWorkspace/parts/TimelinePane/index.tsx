@@ -295,6 +295,20 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
     [activity.filter, advanceByRunId, decidingRunIds, isNeedsYou, unreadAgentIds, visibleEntries],
   );
 
+  const unfilteredStream = useMemo(
+    () =>
+      buildTimelineStream({
+        entries: visibleEntries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+      }),
+    [advanceByRunId, decidingRunIds, unreadAgentIds, visibleEntries],
+  );
+
+  const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
+
   const listRef = useRef<HTMLDivElement>(null);
 
   const revealNeedsYou = () => {
@@ -487,13 +501,14 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
       suggestion.kind !== 'plan-ready' &&
       (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
   );
-  const visibleSuggestions = isNeedsYou ? [] : feedSuggestions;
+  const visibleSuggestions = feedSuggestions;
   const counts = activityCounts({ entries: model.entries });
-  const hiddenRows = hiddenRowCount({
-    entries: model.entries,
-    filter: activity.filter,
-    revealed: revealedRows,
-  });
+  const hiddenRows =
+    hiddenRowCount({
+      entries: model.entries,
+      filter: activity.filter,
+      revealed: revealedRows,
+    }) + hiddenChildRows;
   const rowKindCount = new Set(model.entries.map((entry) => activityCategoryOf({ entry }))).size;
   const hasFilter = rowKindCount >= 2 || activity.hidden.length > 0 || isNeedsYou;
   const isLoading = (!areEventsLoaded || !areAgentsLoaded) && model.entries.length === 0;
