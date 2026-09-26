@@ -6,6 +6,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use reqwest::redirect::Policy;
 use reqwest::{Client, Url};
+use tauri::State;
 use tokio::net::lookup_host;
 
 const MAX_URL_LEN: usize = 4096;
@@ -260,12 +261,134 @@ pub async fn fetch_remote_image(url: String) -> Result<String, String> {
     read_image_response(&host, &mut response).await
 }
 
+const GITHUB_REDIRECT_HOST: &str = "private-user-images.githubusercontent.com";
+
+fn tool_host_is_trusted(provider: &str, url: &Url) -> bool {
+    let host = url.host_str().unwrap_or("");
+    let path = url.path();
+    match provider {
+        "linear" => host == "uploads.linear.app",
+        "jira" => {
+            host.ends_with(".atlassian.net") && path.starts_with("/rest/api/3/attachment/content/")
+        }
+        "github" => host == "github.com" && path.starts_with("/user-attachments/assets/"),
+        _ => false,
+    }
+}
+
+fn validate_tool_image_url(provider: &str, url: &str) -> Result<Url, String> {
+    let parsed = validate_image_url(url)?;
+    if !tool_host_is_trusted(provider, &parsed) {
+        let host = parsed.host_str().unwrap_or(url);
+        return Err(format!("{host} is not a host {provider} images load from"));
+    }
+    Ok(parsed)
+}
+
+fn is_allowed_redirect(provider: &str, url: &Url) -> bool {
+    provider == "github" && url.scheme() == "https" && url.host_str() == Some(GITHUB_REDIRECT_HOST)
+}
+
+enum ToolAuth {
+    Raw(String),
+    Bearer(String),
+    Basic { email: String, token: String },
+}
+
+fn apply_tool_auth(builder: reqwest::RequestBuilder, auth: &ToolAuth) -> reqwest::RequestBuilder {
+    match auth {
+        ToolAuth::Raw(token) => builder.header("Authorization", token),
+        ToolAuth::Bearer(token) => builder.bearer_auth(token),
+        ToolAuth::Basic { email, token } => builder.basic_auth(email, Some(token)),
+    }
+}
+
+async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<String, String> {
+    let host = url
+        .host_str()
+        .ok_or_else(|| "that image address names no host".to_string())?
+        .to_string();
+    let addresses = resolve_public_addrs(&host).await?;
+    let client = build_image_client(&host, &addresses)?;
+    let response = apply_tool_auth(client.get(url), &auth)
+        .send()
+        .await
+        .map_err(|_| format!("could not load the image from {host}"))?;
+
+    if !(300..400).contains(&response.status().as_u16()) {
+        let mut response = response;
+        return read_image_response(&host, &mut response).await;
+    }
+
+    let location = response
+        .headers()
+        .get(reqwest::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string)
+        .ok_or_else(|| format!("{host} redirected without a location"))?;
+    let redirect_url =
+        Url::parse(&location).map_err(|_| format!("{host} redirected to an unusable address"))?;
+    if !is_allowed_redirect(provider, &redirect_url) {
+        return Err(format!(
+            "{host} redirected somewhere this loader does not trust"
+        ));
+    }
+    let redirect_host = redirect_url
+        .host_str()
+        .ok_or_else(|| "the redirect names no host".to_string())?
+        .to_string();
+    let redirect_addresses = resolve_public_addrs(&redirect_host).await?;
+    let redirect_client = build_image_client(&redirect_host, &redirect_addresses)?;
+    let mut redirected = redirect_client
+        .get(redirect_url)
+        .send()
+        .await
+        .map_err(|_| format!("could not load the image from {redirect_host}"))?;
+
+    read_image_response(&redirect_host, &mut redirected).await
+}
+
+#[tauri::command]
+pub async fn load_tool_image(
+    workspace_id: String,
+    project_id: Option<String>,
+    provider: String,
+    email: Option<String>,
+    url: String,
+    linear_cache: State<'_, crate::linear::LinearTokenCache>,
+    jira_cache: State<'_, crate::jira::JiraTokenCache>,
+) -> Result<String, String> {
+    let parsed = validate_tool_image_url(&provider, &url)?;
+    let auth = match provider.as_str() {
+        "linear" => {
+            let token =
+                crate::linear::read_token(&workspace_id, project_id.as_deref(), &linear_cache)
+                    .map_err(|e| e.to_string())?;
+            ToolAuth::Raw(token)
+        }
+        "jira" => {
+            let token = crate::jira::read_token(&workspace_id, project_id.as_deref(), &jira_cache)
+                .map_err(|e| e.to_string())?;
+            let email = email.ok_or_else(|| "jira images need the connected email".to_string())?;
+            ToolAuth::Basic { email, token }
+        }
+        "github" => {
+            let token = crate::github::read_token(Some(&workspace_id), project_id.as_deref())
+                .ok_or_else(|| "no github token stored for this workspace".to_string())?;
+            ToolAuth::Bearer(token)
+        }
+        other => return Err(format!("{other} does not host its own images")),
+    };
+    fetch_authed_image(&provider, parsed, auth).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        build_image_client, check_size, check_status, image_redirect_policy, is_blocked_host,
-        is_image_content_type, read_image_response, resolve_public_addrs, sniff_image_mime,
-        validate_image_url, ImageResponse, MAX_IMAGE_BYTES,
+        build_image_client, check_size, check_status, image_redirect_policy, is_allowed_redirect,
+        is_blocked_host, is_image_content_type, read_image_response, resolve_public_addrs,
+        sniff_image_mime, tool_host_is_trusted, validate_image_url, validate_tool_image_url,
+        ImageResponse, Url, MAX_IMAGE_BYTES,
     };
     use std::collections::VecDeque;
     use std::time::Duration;
@@ -549,5 +672,76 @@ mod tests {
             None
         );
         assert_eq!(sniff_image_mime(b"<!doctype html>"), None);
+    }
+
+    #[test]
+    fn trusts_only_each_providers_own_upload_host() {
+        let linear = Url::parse("https://uploads.linear.app/9f2c.png").unwrap();
+        assert!(tool_host_is_trusted("linear", &linear));
+
+        let jira =
+            Url::parse("https://acme.atlassian.net/rest/api/3/attachment/content/1").unwrap();
+        assert!(tool_host_is_trusted("jira", &jira));
+
+        let github = Url::parse("https://github.com/user-attachments/assets/9f2c").unwrap();
+        assert!(tool_host_is_trusted("github", &github));
+    }
+
+    #[test]
+    fn refuses_a_host_not_in_the_providers_own_table() {
+        let foreign = Url::parse("https://cdn.acme.dev/9f2c.png").unwrap();
+        assert!(!tool_host_is_trusted("linear", &foreign));
+        assert!(!tool_host_is_trusted("jira", &foreign));
+        assert!(!tool_host_is_trusted("github", &foreign));
+
+        let wrong_jira_path = Url::parse("https://acme.atlassian.net/rest/api/3/issue/1").unwrap();
+        assert!(!tool_host_is_trusted("jira", &wrong_jira_path));
+
+        let wrong_github_path = Url::parse("https://github.com/acme/repo").unwrap();
+        assert!(!tool_host_is_trusted("github", &wrong_github_path));
+
+        assert!(!tool_host_is_trusted("bitbucket", &linear_upload()));
+    }
+
+    fn linear_upload() -> Url {
+        Url::parse("https://uploads.linear.app/9f2c.png").unwrap()
+    }
+
+    #[test]
+    fn validate_tool_image_url_refuses_a_mismatched_host() {
+        assert!(validate_tool_image_url("linear", "https://cdn.acme.dev/a.png").is_err());
+        assert!(validate_tool_image_url("linear", "https://uploads.linear.app/a.png").is_ok());
+    }
+
+    #[test]
+    fn only_github_gets_one_redirect_and_only_to_its_own_asset_host() {
+        let target = Url::parse("https://private-user-images.githubusercontent.com/a.png").unwrap();
+        assert!(is_allowed_redirect("github", &target));
+        assert!(!is_allowed_redirect("linear", &target));
+        assert!(!is_allowed_redirect("jira", &target));
+
+        let elsewhere = Url::parse("https://attacker.example.com/a.png").unwrap();
+        assert!(!is_allowed_redirect("github", &elsewhere));
+    }
+
+    #[test]
+    fn the_redirect_hop_never_carries_the_first_hops_auth_header() {
+        let start = SELF_SRC
+            .find("async fn fetch_authed_image")
+            .expect("fetch_authed_image");
+        let rest = &SELF_SRC[start..];
+        let end = rest.find("\n}\n").expect("function end");
+        let body = &rest[..end];
+
+        assert_eq!(
+            body.matches("apply_tool_auth(").count(),
+            1,
+            "the auth header must be attached exactly once, to the first request"
+        );
+        assert!(
+            body.contains("redirect_client\n        .get(redirect_url)")
+                || body.contains("redirect_client.get(redirect_url)"),
+            "the redirect request must go out through a plain, unauthenticated client"
+        );
     }
 }

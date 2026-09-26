@@ -121,9 +121,64 @@ describe('HandoffBlock', () => {
     expect(screen.getByText('Backfill the settled batches behind a flag.')).toBeTruthy();
     expect(screen.getByText('Why: Rounding now lands once per batch.')).toBeTruthy();
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
-      'Ask1 earlier stepPlanImplementer instructions',
+      'Ask1 earlier stepPlanImplementer instructionsAll',
     );
     expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
+  });
+
+  it('keeps the chips visible once the block is open', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+
+    expect(screen.getByTestId('handoff-chips').textContent).toBe(
+      'Ask1 earlier stepPlanImplementer instructionsAll',
+    );
+  });
+
+  it('a second click on the same chip closes its section', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+
+    fireEvent.click(planChip);
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    expect(planChip.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(planChip);
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(planChip.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps only one section open: a second chip replaces the first', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer instructions' }));
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
+  });
+
+  it('Escape closes the open section and returns focus to its chip', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+    fireEvent.click(planChip);
+
+    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
+
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+    expect(document.activeElement).toBe(planChip);
+  });
+
+  it('All shows every section together', () => {
+    renderBlock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+
+    expect(screen.getByTestId('handoff-section-ask')).toBeTruthy();
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    expect(screen.getByTestId('handoff-section-role')).toBeTruthy();
   });
 
   it('opens by itself while the agent has not answered yet', () => {
@@ -189,7 +244,7 @@ describe('HandoffBlock', () => {
     expect(screen.getByText('Which services read the per-line totals?')).toBeTruthy();
     expect(screen.getByTestId('handoff-also-received').textContent).toContain('Also received');
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
-      '1 earlier stepPlanImplementer instructions',
+      '1 earlier stepPlanImplementer instructionsAll',
     );
   });
 

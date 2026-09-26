@@ -6,6 +6,7 @@ import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { HANDOFF_SENDER_ICON } from './handoffSenderIcon';
 import { HandoffChips } from './HandoffChips';
+import { HandoffPanel } from './HandoffPanel';
 import { HandoffSections } from './HandoffSections';
 import { useHandoffDisclosure } from './useHandoffDisclosure';
 import { useHandoffNames } from './useHandoffNames';
@@ -21,6 +22,11 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
   const disclosure = useHandoffDisclosure({ agentId: handoff.agentId, initiallyOpen });
   const names = useHandoffNames({ sessionId, sender: handoff.sender });
   const Icon = HANDOFF_SENDER_ICON[handoff.sender.kind];
+  const activeIndex =
+    disclosure.active === 'all' || disclosure.active === null
+      ? -1
+      : handoff.sections.findIndex((section) => section.kind === disclosure.active);
+  const activeSection = activeIndex === -1 ? null : handoff.sections[activeIndex]!;
 
   return (
     <TranscriptDisclosure
@@ -49,20 +55,38 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
             {handoff.why === null ? null : (
               <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>
             )}
-            {disclosure.open ? null : (
-              <HandoffChips sections={handoff.sections} onOpenSection={disclosure.openSection} />
-            )}
+            <HandoffChips
+              sections={handoff.sections}
+              active={disclosure.active}
+              onToggleSection={disclosure.toggleChip}
+              onShowAll={disclosure.showAll}
+            />
           </div>
         </div>
       }
     >
-      <HandoffSections
-        handoff={handoff}
-        sections={handoff.sections}
-        sessionId={sessionId}
-        openSections={disclosure.openSections}
-        onToggleSection={disclosure.toggleSection}
-      />
+      {activeSection === null ? null : (
+        <HandoffPanel
+          section={activeSection}
+          index={activeIndex}
+          total={handoff.sections.length}
+          doneWhen={activeSection.kind === 'ask' ? handoff.doneWhen : null}
+          sessionId={sessionId}
+          onStep={(delta) => {
+            const next =
+              handoff.sections[
+                (activeIndex + delta + handoff.sections.length) % handoff.sections.length
+              ];
+            if (next) {
+              disclosure.setActive(next.kind);
+            }
+          }}
+          onClose={disclosure.close}
+        />
+      )}
+      {disclosure.active === 'all' ? (
+        <HandoffSections handoff={handoff} sections={handoff.sections} sessionId={sessionId} />
+      ) : null}
     </TranscriptDisclosure>
   );
 };

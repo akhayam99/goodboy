@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button, Markdown, Textarea, cn } from '@goodboy/ui';
 import { useInlineProseEdit } from '../../hooks/useInlineProseEdit';
+import { isInteractiveClick } from '../../utils/isInteractiveClick';
 import { StudioWidget } from '@goodboy/ui';
 
 type Props = {
@@ -26,6 +27,13 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
   const edit = useInlineProseEdit({ value: text, onCommit: onSave });
   const [isExpanded, setIsExpanded] = useState(false);
   const isClamped = !isExpanded && overflowsClamp({ text });
+
+  const onBodyClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (isInteractiveClick({ target: event.target })) {
+      return;
+    }
+    edit.start();
+  };
 
   if (edit.isEditing) {
     return (
@@ -89,7 +97,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
       }
     >
       <div
-        onClick={edit.start}
+        onClick={onBodyClick}
         className={cn('flex flex-col', edit.canEdit && 'cursor-text')}
         data-testid="description-body"
       >

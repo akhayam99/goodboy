@@ -408,7 +408,7 @@ fn landed_equivalent(
         .lines()
         .filter_map(|line| line.strip_prefix("- "))
         .map(str::trim)
-        .last()
+        .next_back()
         .map(str::to_string))
 }
 

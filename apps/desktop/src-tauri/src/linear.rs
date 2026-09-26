@@ -82,7 +82,7 @@ async fn graphql<T: serde::de::DeserializeOwned>(
     serde_json::from_value(data).map_err(|e| LinearError::InvalidShape(e.to_string()))
 }
 
-fn read_token(
+pub(crate) fn read_token(
     workspace_id: &str,
     project_id: Option<&str>,
     cache: &LinearTokenCache,

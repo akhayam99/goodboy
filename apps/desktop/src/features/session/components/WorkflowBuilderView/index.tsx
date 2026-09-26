@@ -62,6 +62,7 @@ import {
 import { useWorkflowDraft } from '../../../workflows/engine/useWorkflowDraft';
 import { ROLE_LABEL, classifyStep } from '../../agent-kind';
 import { isWorkflowRunComplete } from '../../../workflows/isWorkflowRunComplete';
+import { isPresetWorkflow } from '../../../workflows/isPresetWorkflow';
 import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { useSaveAsStep } from '../../../workflows/hooks/useSaveAsStep';
 import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
@@ -192,7 +193,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     removeAttachment,
   } = usePendingAttachments({ showToast });
 
-  const presets = phaseTemplates.filter((t) => t.isPreset !== false && !t.deletedAt);
+  const presets = phaseTemplates.filter(isPresetWorkflow);
 
   const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id]);
 

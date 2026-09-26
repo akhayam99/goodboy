@@ -164,11 +164,7 @@ mod tests {
             ".hidden.html",
         ] {
             let error = write_folder(&parent, "flow", &[file(path, "x")]).unwrap_err();
-            assert_eq!(
-                error.to_string().contains("plain file name"),
-                true,
-                "{path}"
-            );
+            assert!(error.to_string().contains("plain file name"), "{path}");
         }
         let _ = std::fs::remove_dir_all(parent);
     }

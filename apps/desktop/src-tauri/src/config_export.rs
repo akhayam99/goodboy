@@ -389,7 +389,7 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
-             WHERE scope IN ('global', 'workspace') AND deleted_at IS NULL
+             WHERE scope IN ('global', 'workspace')
                AND (
                  workspace_id IS NULL
                  OR workspace_id IN (
@@ -684,11 +684,16 @@ pub fn import_config(
                    goal        = excluded.goal,
                    process_text = excluded.process_text",
                 rusqlite::params![
-                    t.id, t.workspace_id, t.name, t.description,
+                    t.id,
+                    t.workspace_id,
+                    t.name,
+                    t.description,
                     iso_to_ms(&t.created_at).unwrap_or(now_ms),
                     iso_to_ms(&t.updated_at).unwrap_or(now_ms),
                     if t.is_preset { 1 } else { 0 },
-                    t.origin, t.goal, t.process_text,
+                    t.origin,
+                    t.goal,
+                    t.process_text,
                 ],
             )?;
             for d in &t.steps {
@@ -1065,7 +1070,9 @@ mod tests {
             phase_templates: vec![],
             permission_rules: vec![],
             budget_rules: vec![],
-            settings: SettingsBundle { editor_binary: None },
+            settings: SettingsBundle {
+                editor_binary: None,
+            },
         };
         // Simulate the schema version check (no DB needed).
         let result: Result<(), _> = if bundle.schema_version != SCHEMA_VERSION {
@@ -1144,7 +1151,7 @@ mod tests {
                 id TEXT PRIMARY KEY, scope TEXT NOT NULL, workspace_id TEXT, session_id TEXT,
                 pattern_tool TEXT NOT NULL, pattern_args_matcher TEXT, decision TEXT NOT NULL,
                 priority INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL, deleted_at INTEGER
+                updated_at INTEGER NOT NULL
             );
             CREATE TABLE budget_rules (
                 id TEXT PRIMARY KEY, provider TEXT, period TEXT NOT NULL, cap_usd REAL NOT NULL,
@@ -1156,23 +1163,6 @@ mod tests {
         )
         .unwrap();
         conn
-    }
-
-    #[test]
-    fn export_excludes_soft_deleted_permission_rules() {
-        let conn = export_conn();
-        conn.execute_batch(
-            "INSERT INTO permission_rules
-               (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
-                decision, priority, created_at, updated_at, deleted_at)
-             VALUES
-               ('live', 'global', NULL, NULL, 'Bash', NULL, 'allow', 0, 1, 1, NULL),
-               ('gone', 'global', NULL, NULL, 'Bash', NULL, 'deny', 0, 1, 1, 1);",
-        )
-        .unwrap();
-        let bundle = export_config(&conn).expect("export failed");
-        assert_eq!(bundle.permission_rules.len(), 1);
-        assert_eq!(bundle.permission_rules[0].id, "live");
     }
 
     #[test]
@@ -1206,7 +1196,11 @@ mod tests {
         .unwrap();
         let bundle = export_config(&conn).expect("export failed");
         assert_eq!(
-            bundle.skills.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+            bundle
+                .skills
+                .iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>(),
             vec!["skill-active"]
         );
         assert_eq!(
@@ -1265,7 +1259,9 @@ mod tests {
             phase_templates: vec![],
             permission_rules: vec![],
             budget_rules: vec![],
-            settings: SettingsBundle { editor_binary: None },
+            settings: SettingsBundle {
+                editor_binary: None,
+            },
         };
 
         import_config(&conn, bundle).expect("import failed");
@@ -1281,10 +1277,15 @@ mod tests {
         assert_eq!(name, "new-name");
 
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM projects WHERE id = 'imported-project'", [], |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT COUNT(*) FROM projects WHERE id = 'imported-project'",
+                [],
+                |row| row.get(0),
+            )
             .unwrap();
-        assert_eq!(count, 0, "the colliding path should not create a duplicate project");
+        assert_eq!(
+            count, 0,
+            "the colliding path should not create a duplicate project"
+        );
     }
 }

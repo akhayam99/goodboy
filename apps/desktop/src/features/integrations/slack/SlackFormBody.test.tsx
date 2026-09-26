@@ -119,6 +119,16 @@ describe('SlackFormBody', () => {
     expect(screen.queryByText(/Public channels only/i)).toBeNull();
   });
 
+  it('rejects a pasted bot token before calling connectSlack', async () => {
+    const onConnected = vi.fn();
+    render(<SlackFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText(/user token/i), { target: { value: 'xoxb-bad' } });
+    fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
+    expect(await screen.findByText(/this is a bot token/i)).toBeDefined();
+    expect(state.connectSlack).not.toHaveBeenCalled();
+    expect(onConnected).not.toHaveBeenCalled();
+  });
+
   it('shows the failure and skips onConnected when the probe is rejected', async () => {
     const onConnected = vi.fn();
     state.connectSlack = vi.fn(async () => {

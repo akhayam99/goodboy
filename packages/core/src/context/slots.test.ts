@@ -11,7 +11,7 @@ type Params = {
 const slot = ({ key, value }: Params): ContextSlot => ({ key, value, enabled: true });
 
 describe('serializeSlotsBudgeted', () => {
-  it('keeps established decision lines and marks pending compaction', () => {
+  it('keeps the newest decision lines and marks pending compaction', () => {
     const established = '- established decision';
     const latest = '- latest decision';
     const filler = '- x'.repeat(SLOT_BUDGETS.decisions);
@@ -19,9 +19,9 @@ describe('serializeSlotsBudgeted', () => {
       slots: [slot({ key: 'decisions', value: `${established}\n${filler}\n${latest}` })],
     });
 
-    expect(output).toContain(established);
+    expect(output).toContain(latest);
     expect(output).toContain('- ...');
-    expect(output).not.toContain(latest);
+    expect(output).not.toContain(established);
   });
 
   it('hard-slices a first line that exceeds the decisions budget', () => {
