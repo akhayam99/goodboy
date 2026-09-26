@@ -112,12 +112,14 @@ export const SessionDiffPane = ({
   const mountBranch = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
   );
-  const baseBranch = useAppStore(
-    (s) =>
+  const baseBranch = useAppStore((s) => {
+    const mount = selectMountForPath({ state: s, sessionId, path: worktreePath });
+    return (
       mount?.baseBranch ??
       s.projects.find((project) => project.id === mount?.projectId)?.baseBranch ??
-      'main',
-  );
+      'main'
+    );
+  });
 
   const openInEditor = useCallback(
     async (filePath: string) => {
