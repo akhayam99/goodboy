@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
 import { changelogImageFilesForFeature } from './changelogImageFiles';
+import { fetchChangelogImage } from './fetchChangelogImage';
 import type { ReleaseEntry } from './parseChangelog';
 
 type ReleaseImageRequest = {
@@ -26,6 +26,6 @@ export const releaseImageRequests = ({
 
 export const prefetchReleaseImages = ({ release }: { readonly release: ReleaseEntry }): void => {
   releaseImageRequests({ release }).forEach((request) => {
-    void invoke('changelog_image', request).catch(() => undefined);
+    void fetchChangelogImage(request).catch(() => undefined);
   });
 };

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useThemeStore } from '../../../../shared/lib/theme';
 import { changelogImageFileName } from '../../changelogImageFiles';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
+import { fetchChangelogImage } from '../../fetchChangelogImage';
 
 export type ChangelogImageState =
   | { readonly kind: 'loading' }
@@ -36,7 +36,7 @@ export const useChangelogImage = ({
     let cancelled = false;
     setState(LOADING);
     const file = changelogImageFileName({ image, variant, theme });
-    invoke<string>('changelog_image', { version, file })
+    fetchChangelogImage({ version, file })
       .then((dataUri) => {
         if (cancelled) {
           return;

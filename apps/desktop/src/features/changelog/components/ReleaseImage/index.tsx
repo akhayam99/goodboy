@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SegmentedTabs } from '@goodboy/ui';
+import { SegmentedTabs, Skeleton } from '@goodboy/ui';
 import { useChangelogImage } from '../../hooks/useChangelogImage';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
@@ -44,7 +44,7 @@ export const ReleaseImage = ({ version, image, hasBefore, alt }: Props) => {
       ) : null}
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-frame-edge">
         {active.kind === 'loading' ? (
-          <div className="h-full w-full motion-safe:animate-pulse bg-subtle" />
+          <Skeleton className="h-full w-full rounded-none" />
         ) : (
           <button
             type="button"
