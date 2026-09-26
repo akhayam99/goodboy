@@ -573,6 +573,45 @@ list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
 the family does not have, add it to the family. A register never keeps a
 private one.
 
+## Listbox
+
+`Listbox` is the one control for picking a value from a list. There is no
+native `<select>`: the WebKit menu ignores theme, density and keyboard.
+`no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
+
+- **Trigger**: `field` in forms and Settings (hairline `border`, the
+  container's fill, 28px `sm` or 32px `md`, `rounded-md`), `quiet` for a value
+  inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps
+  (`chipClasses`). Open, the border goes to `border-strong` and the chevron
+  turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
+  `disabledReason` shows in a tooltip.
+- **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+  padding 4, at least the trigger's width and at most 360 by 320, scrolling in
+  a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`).
+- **Option**: 32px on one line, or two lines with an 11/16 faint description;
+  a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
+  keyboard, is `bg-selected`; the current value is a check on the right and
+  `text-row`. No primary tint. A blocked option stays visible in
+  `disabled-foreground` and says why on its second line. A group label is a
+  muted `Eyebrow`.
+- **Search** appears on its own above 8 options (or with `searchable`): a fuzzy
+  filter, the match underlined, a count ("3 of 41"), and an empty state in one
+  sentence plus the `create` row when the caller can make the value.
+- **Multiple**: a checkbox in the leading slot, Enter toggles and stays open,
+  a footer with the count and Clear.
+- **Keyboard and ARIA**: the APG select-only combobox. Enter, Space and the
+  arrows open on the current value; arrows, Home, End, PageUp and PageDown move;
+  letters run typeahead; Enter chooses; Escape and a click outside close and
+  give focus back to the trigger; Tab closes and moves on. The trigger is
+  `role="combobox"` with `aria-activedescendant` (the search field takes it
+  when it shows), the list `role="listbox"`, each row `role="option"`.
+
+`ListboxList` and `ListboxOptionRow` are the headless list and row for a list
+that lives inside another popover (chips input suggestions, a preset list with
+its own actions), so every value list draws the same row. Menus of actions stay
+on `MenuItems`, and inline choice rows stay inline.
+
 ## Notices
 
 `Notice` is the one shape for an error, a warning, an info line or a success

@@ -189,8 +189,6 @@ export type { FilteredOption } from './components/Listbox/filterOptions';
 export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
-export { Select } from './components/Select';
-export type { SelectProps, SelectSize } from './components/Select';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';

@@ -73,6 +73,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 import { ReportIssueStudio } from './index';
+import { chooseListboxValue, listboxValueOf } from '../../../../__tests__/helpers/listbox';
 import { useAppStore } from '../../../../store';
 import { initialBugReportDraftState } from '../../../../store/slices/bugReportDraft/state';
 
@@ -82,7 +83,7 @@ const setGithubStatus = (githubStatus: GhTokenStatus | null) => {
 
 const fillReport = ({ area, title, notes }: { area?: string; title?: string; notes?: string }) => {
   if (area != null) {
-    fireEvent.change(screen.getByLabelText('Area'), { target: { value: area } });
+    chooseListboxValue({ trigger: screen.getByLabelText('Area'), value: area });
   }
   if (title != null) {
     fireEvent.change(screen.getByPlaceholderText("What's wrong, in one line"), {
@@ -133,13 +134,13 @@ describe('ReportIssueStudio', () => {
     });
     render(<ReportIssueStudio onClose={vi.fn()} />);
 
-    expect(screen.getByLabelText<HTMLSelectElement>('Area').value).toBe('budget-spend');
+    expect(listboxValueOf({ trigger: screen.getByLabelText('Area') })).toBe('budget-spend');
     expect(screen.getByText("Guessed from your words. Change it if it's off.")).toBeDefined();
 
-    fireEvent.change(screen.getByLabelText('Area'), { target: { value: 'notifications' } });
+    chooseListboxValue({ trigger: screen.getByLabelText('Area'), value: 'notifications' });
     fireEvent.change(screen.getByLabelText('Notes'), { target: { value: 'provider model issue' } });
 
-    expect(screen.getByLabelText<HTMLSelectElement>('Area').value).toBe('notifications');
+    expect(listboxValueOf({ trigger: screen.getByLabelText('Area') })).toBe('notifications');
     expect(screen.queryByText("Guessed from your words. Change it if it's off.")).toBeNull();
   });
 

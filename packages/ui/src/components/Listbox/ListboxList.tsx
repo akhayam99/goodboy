@@ -60,6 +60,7 @@ export const ListboxList = <T extends ListboxValue>({
             ) : null}
             <ListboxOptionRow
               id={listboxOptionId({ id, index })}
+              value={String(option.value)}
               label={option.label}
               description={option.description}
               leading={option.leading}

@@ -6,6 +6,7 @@ import { HighlightedLabel } from './HighlightedLabel';
 
 export type ListboxOptionRowProps = {
   readonly id: string;
+  readonly value?: string;
   readonly label: string;
   readonly description?: string;
   readonly leading?: ReactNode;
@@ -25,6 +26,7 @@ const NO_MATCH: ListboxMatch = [];
 
 export const ListboxOptionRow = ({
   id,
+  value,
   label,
   description,
   leading,
@@ -47,6 +49,7 @@ export const ListboxOptionRow = ({
   return (
     <div
       id={id}
+      data-value={value}
       role="option"
       aria-selected={isSelected}
       aria-disabled={isDisabled || undefined}

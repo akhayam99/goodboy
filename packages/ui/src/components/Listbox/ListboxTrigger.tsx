@@ -12,6 +12,8 @@ export type ListboxTriggerProps = {
   readonly disabled: boolean;
   readonly isBlock: boolean;
   readonly id?: string;
+  readonly testId?: string;
+  readonly value: string;
   readonly ariaLabel?: string;
   readonly listboxId: string;
   readonly activeDescendant?: string;
@@ -71,6 +73,8 @@ export const ListboxTrigger = ({
   disabled,
   isBlock,
   id,
+  testId,
+  value,
   ariaLabel,
   listboxId,
   activeDescendant,
@@ -83,6 +87,8 @@ export const ListboxTrigger = ({
   <button
     ref={buttonRef}
     id={id}
+    data-testid={testId}
+    data-value={value}
     type="button"
     role="combobox"
     aria-label={ariaLabel}

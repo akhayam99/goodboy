@@ -32,6 +32,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly noun?: string;
   readonly ariaLabel?: string;
   readonly id?: string;
+  readonly testId?: string;
   readonly disabled?: boolean;
   readonly disabledReason?: string;
   readonly valueLabel?: ReactNode;
@@ -83,6 +84,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     noun = 'option',
     ariaLabel,
     id,
+    testId,
     disabled = false,
     disabledReason,
     valueLabel,
@@ -243,6 +245,8 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
       disabled={disabled}
       isBlock={isBlock}
       id={id}
+      testId={testId}
+      value={selectedValues.join(',')}
       ariaLabel={ariaLabel}
       listboxId={listboxId}
       activeDescendant={isSearchable ? undefined : activeId}

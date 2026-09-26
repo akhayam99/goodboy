@@ -17,6 +17,7 @@ vi.mock('../../../../store', () => ({
 }));
 
 import { WireframeStudio } from './index';
+import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-1'));
 
@@ -116,7 +117,7 @@ const renderScreens = (overrides: Record<string, unknown> = {}) => {
 };
 
 const selectScreen = (screenId: string) =>
-  fireEvent.change(screen.getByTestId('wireframe-screen-select'), { target: { value: screenId } });
+  chooseListboxValue({ trigger: screen.getByTestId('wireframe-screen-select'), value: screenId });
 
 const currentScreen = () => screen.getByTestId('wireframe-screen').getAttribute('data-screen-id');
 
@@ -171,8 +172,8 @@ describe('WireframeStudio', () => {
   it('renders the initial screen with a screen select that counts its place', () => {
     renderScreens();
     expect(currentScreen()).toBe('inbox');
-    const select = screen.getByTestId('wireframe-screen-select') as HTMLSelectElement;
-    expect([...select.options].map((option) => option.textContent)).toEqual([
+    fireEvent.click(screen.getByTestId('wireframe-screen-select'));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'Inbox',
       'Message',
       'Archive',

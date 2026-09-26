@@ -1,6 +1,6 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, formatError, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
+import { Button, Dialog, formatError, Input, Listbox, SegmentedTabs, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import {
   createGithubRepo,
@@ -396,22 +396,25 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           {!isCreating && host === 'github' && isConnected && (
             <div className="flex flex-col gap-1.5">
               <span className="text-label font-semibold text-foreground">repository</span>
-              <Select
-                block
+              <Listbox
+                isBlock
                 value={selectedRepo}
-                onChange={(event) => setSelectedRepo(event.target.value)}
+                options={[
+                  {
+                    value: MANUAL_REPO,
+                    label: areReposLoading
+                      ? 'loading your repositories…'
+                      : 'paste a remote url instead',
+                  },
+                  ...repos.map((repo) => ({
+                    value: repo.nameWithOwner,
+                    label: repo.nameWithOwner,
+                  })),
+                ]}
+                onChange={setSelectedRepo}
                 disabled={isBusy || areReposLoading}
-                aria-label="Repository"
-              >
-                <option value={MANUAL_REPO}>
-                  {areReposLoading ? 'loading your repositories…' : 'paste a remote url instead'}
-                </option>
-                {repos.map((repo) => (
-                  <option key={repo.nameWithOwner} value={repo.nameWithOwner}>
-                    {repo.nameWithOwner}
-                  </option>
-                ))}
-              </Select>
+                ariaLabel="Repository"
+              />
               {reposState.kind === 'ok' && repos.length === 0 && (
                 <span className="text-label text-muted-foreground">
                   this account owns no repositories yet
