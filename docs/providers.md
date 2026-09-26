@@ -578,17 +578,22 @@ network call for them and never reads a sign-in token or the keychain.
 
 - **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
   stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
-  of the transcript. Each event names one window (`five_hour`, `seven_day`,
-  `seven_day_opus`, `seven_day_sonnet`) and a status (`allowed`,
-  `allowed_warning`, `rejected`). Only `allowed_warning` carries `utilization`, so a
-  plain `allowed` window has no percentage. Claude reports only the window that
-  limits you right now, so `mergeProviderLimits` keeps the other windows it saw
-  until their reset. The numbers change only while a Claude agent runs
+  of the transcript. Every event carries `rate_limit_info.unifiedWindows` with
+  `five_hour` and `seven_day` (`utilization` 0 to 1, `resetsAt` in epoch seconds),
+  so both windows arrive together, 5-hour first. The top-level `rateLimitType`
+  names the window that limits you (`five_hour`, `seven_day`, `seven_day_opus`,
+  `seven_day_sonnet`) and its `status` (`allowed`, `allowed_warning`, `rejected`).
+  The status goes to that window, and a per-model type adds its own window. An
+  unknown type drops only its window, never the event. `mergeProviderLimits`
+  keeps windows it saw until their reset. The numbers change only while a Claude
+  agent runs
 - **Codex**: the `token_count` lines of the rollout files under
   `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
   `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
   `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
-  also sees Codex use outside Goodboy. The desktop asks for it at boot and after
+  also sees Codex use outside Goodboy. A reading with neither window is skipped:
+  Codex writes an empty `premium` bucket after the real `codex` one, and taking
+  it left the boot read with no data. The desktop asks for it at boot and after
   every Codex usage event
 - **Antigravity and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the
