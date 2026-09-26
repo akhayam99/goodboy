@@ -588,7 +588,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
   });
 
-  it('skips every push/PR/merge/rebase suggestion while an agent is running', () => {
+  it('skips every mount-derived push/PR/merge suggestion while an agent is running', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
       hasRunningAgent: true,
@@ -596,24 +596,10 @@ describe('deriveNextSteps eleven new kinds', () => {
         mount({ aheadOfUpstream: 4, pr: null, aheadOfBase: 7 }),
         mount({ mountId: 'mount-other' as MountId, pr: pr({ checks: 'failure' }) }),
       ],
-      projects: [
-        {
-          id: 'mount:mount-behind',
-          mountId: 'mount-behind' as MountId,
-          projectId: webId,
-          projectName: 'web',
-          branch: 'feature/web',
-          worktreePath: '/tmp/web',
-          baseBranch: 'main',
-          mainDistance: 3,
-        },
-      ],
     });
     expect(
       suggestions.some((candidate) =>
-        ['push-branch', 'open-pr', 'mark-ready', 'merge-pr', 'rebase-project'].includes(
-          candidate.kind,
-        ),
+        ['push-branch', 'open-pr', 'mark-ready', 'merge-pr', 'fix-checks'].includes(candidate.kind),
       ),
     ).toBe(false);
   });

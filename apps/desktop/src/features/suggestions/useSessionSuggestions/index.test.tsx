@@ -16,6 +16,9 @@ const { store, worktreeStatus, listNudgeEvents } = vi.hoisted(() => ({
     mountGithub: {} as Record<string, unknown>,
     mountGitlabMr: {} as Record<string, unknown>,
     mountBitbucketPr: {} as Record<string, unknown>,
+    mountCleanupProposals: {} as Record<string, ReadonlyArray<unknown>>,
+    agentTurnState: {} as Record<string, { readonly kind: string } | undefined>,
+    agentKindOverride: {} as Record<string, string | null>,
     sessionProjectMounts: {
       'session-1': [
         {
@@ -80,6 +83,7 @@ beforeEach(() => {
     branch: 'feat',
     mainDistance: { kind: 'known', ahead: 0, behind: 4 },
     upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
   });
   listNudgeEvents.mockReset();
   listNudgeEvents.mockResolvedValue([]);
@@ -311,7 +315,9 @@ describe('useSessionSuggestions demotion', () => {
     store.sessionEvents = {
       'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' }), mountProposed()],
     };
-    store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'failed' }] };
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', status: 'failed', workflowRunId: 'run-1' }],
+    };
     listNudgeEvents.mockResolvedValue([
       dismissedNextStep('mount-project', 1),
       dismissedNextStep('mount-project', 2),
@@ -330,7 +336,9 @@ describe('useSessionSuggestions demotion', () => {
     store.sessionEvents = {
       'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' }), mountProposed()],
     };
-    store.sessionPhaseRuns = { 'session-1': [{ id: 'agent-1', status: 'failed' }] };
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', status: 'failed', workflowRunId: 'run-1' }],
+    };
     listNudgeEvents.mockResolvedValue([
       dismissedNextStep('mount-project', 1),
       dismissedNextStep('mount-project', 2),

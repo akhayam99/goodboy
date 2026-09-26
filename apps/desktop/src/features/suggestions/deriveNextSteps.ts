@@ -476,7 +476,7 @@ export const deriveNextSteps = ({
       second.behind - first.behind || first.projectName.localeCompare(second.projectName),
   );
   const firstRebaseTarget = rebaseTargets[0];
-  if (firstRebaseTarget != null && !hasRunningAgent) {
+  if (firstRebaseTarget != null) {
     const projectCount = new Set(rebaseTargets.map((target) => target.projectId)).size;
     const isSingleTarget = rebaseTargets.length === 1;
     const isSingleProject = projectCount === 1;
