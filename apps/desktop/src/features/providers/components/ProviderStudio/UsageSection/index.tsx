@@ -1,10 +1,9 @@
-import { PROVIDERS_REPORTING_LIMITS } from '@goodboy/core';
+import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { Notice, STRIPED_LIST, STRIPED_MIN_ROWS, SectionHeader, cn } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useAutoDetour } from '../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../hooks/useProviderLimitsChip';
-import { sortLimitWindows } from '../../../limits/limitWindowLabel';
 import { usageNotice } from '../../../limits/usageNotice';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 import { SpendInGoodboy } from './SpendInGoodboy';

@@ -71,13 +71,18 @@ fn suppress_webkit_media_remote() {
 /// drained, so a second call after the window teardown finds nothing left.
 fn drain_child_processes(app: &tauri::AppHandle) {
     use tauri::Manager;
+    stop_running_work(app);
+    provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
+    query_bridge::shutdown();
+}
+
+pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
+    use tauri::Manager;
     turn::shutdown(&app.state::<turn::TurnRegistry>());
     summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
     planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
     terminal::shutdown(&app.state::<terminal::TerminalRegistry>());
-    provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
-    query_bridge::shutdown();
 }
 
 pub fn run_query_cli() -> Option<i32> {

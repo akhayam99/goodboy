@@ -9,7 +9,7 @@ import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LimitsBar } from './LimitsBar';
+import { LimitsBars } from './LimitsBars';
 
 type Props = {
   readonly hidden: ReadonlyArray<LimitsChip>;
@@ -103,9 +103,9 @@ export const LimitsOverflowPopover = ({ hidden, nowMs, className, onOpen }: Prop
                 <span className="w-21 truncate text-left text-foreground">
                   {PROVIDER_LABEL[chip.providerId]}
                 </span>
-                <LimitsBar
+                <LimitsBars
                   state={chip.state}
-                  usedFraction={chip.usedFraction}
+                  windows={chip.windows}
                   isStale={chip.isStale}
                   className="w-15"
                 />

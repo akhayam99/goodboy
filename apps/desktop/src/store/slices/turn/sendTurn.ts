@@ -16,6 +16,7 @@ import {
   runsForWorkflowRun,
   turnReducer,
   type ClaudeFlagSet,
+  resolveModeFor,
   CLI_CREDENTIAL,
   PROVIDER_API_KEY_ENV,
   composeHandoffBody,
@@ -818,7 +819,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const providerInfo = get().providers.find((p) => p.id === provider);
 
-    let claudeFlags: Partial<ClaudeFlagSet> = {};
+    const permissionMode = resolveModeFor({ provider, mode: session.permissionMode });
+    let claudeFlags: Partial<ClaudeFlagSet> = { permissionMode };
     let effectiveRules: ReadonlyArray<PermissionRule> = [];
     if (provider === 'anthropic') {
       try {
@@ -831,7 +833,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         const flags = buildClaudeFlags({
           rules: effectiveRules,
           scope: { workspaceId: session.workspaceId, sessionId },
-          permissionMode: session.permissionMode,
+          permissionMode,
         });
         claudeFlags = {
           allowedTools: flags.allowedTools,
@@ -846,7 +848,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         claudeFlags = {
           allowedTools: [],
           disallowedTools: [],
-          permissionMode: session.permissionMode,
+          permissionMode,
         };
       }
     }

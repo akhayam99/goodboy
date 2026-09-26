@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+use rusqlite::config::DbConfig;
 use rusqlite::types::{Value, ValueRef};
 use rusqlite::{params_from_iter, Connection, Statement, TransactionBehavior};
 use serde::{Deserialize, Serialize};
@@ -53,8 +54,90 @@ pub fn open() -> Result<Db, DbError> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let conn = open_connection(&path)?;
+    let conn = open_and_finish_wipe(&path)?;
     Ok(Db(Mutex::new(conn), path))
+}
+
+const CORE_TABLES: [&str; 3] = ["schema_version", "sessions", "agents"];
+
+fn open_and_finish_wipe(path: &std::path::Path) -> Result<Connection, DbError> {
+    let conn = open_connection(path)?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default();
+    match finish_interrupted_wipe(&conn, path, stamp) {
+        Ok(Some(backup)) => eprintln!(
+            "[goodboy] finished an interrupted wipe of the local database, copy kept at {}",
+            backup.display()
+        ),
+        Ok(None) => {}
+        Err(error) => eprintln!("[goodboy] left a possibly half-wiped database untouched: {error}"),
+    }
+    Ok(conn)
+}
+
+fn misses_a_core_table(conn: &Connection) -> Result<bool, DbError> {
+    for table in CORE_TABLES {
+        let found: i64 = conn.query_row(
+            "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = ?",
+            [table],
+            |row| row.get(0),
+        )?;
+        if found == 0 {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn back_up_before_reset(
+    conn: &Connection,
+    path: &std::path::Path,
+    stamp: u64,
+) -> Result<PathBuf, DbError> {
+    conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()))?;
+    let backup = with_suffix(path, &format!(".pre-reset-{stamp}.bak"));
+    let copy = |from: &std::path::Path, to: &std::path::Path| {
+        std::fs::copy(from, to)
+            .map(|_| ())
+            .map_err(|error| DbError::MigrationSnapshotFilesystem(error.to_string()))
+    };
+    copy(path, &backup)?;
+    for suffix in ["-wal", "-shm"] {
+        let source = with_suffix(path, suffix);
+        if source.exists() {
+            copy(&source, &with_suffix(&backup, suffix))?;
+        }
+    }
+    Ok(backup)
+}
+
+fn has_stranded_view(conn: &Connection) -> Result<bool, DbError> {
+    let views: Vec<String> = conn
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'view'")?
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<_, _>>()?;
+    Ok(views.iter().any(|name| {
+        let probe = format!("SELECT * FROM \"{}\" LIMIT 0", name.replace('"', "\"\""));
+        match conn.prepare(&probe) {
+            Ok(_) => false,
+            Err(error) => error.to_string().contains("no such table"),
+        }
+    }))
+}
+
+fn finish_interrupted_wipe(
+    conn: &Connection,
+    path: &std::path::Path,
+    stamp: u64,
+) -> Result<Option<PathBuf>, DbError> {
+    if !has_stranded_view(conn)? || !misses_a_core_table(conn)? {
+        return Ok(None);
+    }
+    let backup = back_up_before_reset(conn, path, stamp)?;
+    reset_database(conn)?;
+    Ok(Some(backup))
 }
 
 #[tauri::command]
@@ -277,27 +360,22 @@ pub fn db_execute(
     Ok(ExecResult { rows_affected })
 }
 
-#[tauri::command(async)]
-pub fn db_wipe(state: State<'_, Db>) -> Result<(), DbError> {
-    // Drop every user table + schema_version so the next runDbMigrations call
-    // replays the chain from m001. Done in-place via SQL so the TS side
-    // doesn't need to know the file path or close the connection.
-    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let table_names: Vec<String> = {
-        let mut stmt = conn.prepare(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-        )?;
-        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
-        rows.collect::<Result<Vec<_>, _>>()?
-    };
-    conn.execute_batch("PRAGMA foreign_keys = OFF;")?;
-    for name in &table_names {
-        // Identifiers can't be parameterised; names come from sqlite_master and
-        // are always valid SQL identifiers, so direct interpolation is safe.
-        conn.execute_batch(&format!("DROP TABLE IF EXISTS \"{}\";", name))?;
-    }
-    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+pub(crate) fn reset_database(conn: &Connection) -> Result<(), DbError> {
+    let _ = conn.query_row("SELECT count(*) FROM sqlite_master", [], |_| Ok(()));
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_RESET_DATABASE, true)?;
+    let vacuumed = conn.execute_batch("VACUUM;");
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_RESET_DATABASE, false)?;
+    vacuumed?;
+    conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
     Ok(())
+}
+
+#[tauri::command(async)]
+pub fn db_wipe(app: tauri::AppHandle, state: State<'_, Db>) -> Result<(), DbError> {
+    crate::stop_running_work(&app);
+    crate::query_bridge::shutdown();
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    reset_database(&conn)
 }
 
 #[tauri::command(async)]
@@ -698,6 +776,203 @@ mod tests {
             1,
         );
         assert!(matches!(outcome, Err(DbError::InvalidSnapshotPath)));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    const MIGRATED_SCHEMA: &str = "
+        CREATE TABLE schema_version (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL);
+        INSERT INTO schema_version (version, applied_at) VALUES (1, 0), (15, 0), (156, 0);
+        CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT NOT NULL);
+        CREATE TABLE sessions (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE);
+        CREATE TABLE agents (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            deleted_at INTEGER
+        );
+        CREATE INDEX idx_agents_session_id ON agents(session_id);
+        CREATE TRIGGER agents_touch_session AFTER INSERT ON agents BEGIN
+            UPDATE sessions SET workspace_id = workspace_id WHERE id = new.session_id;
+        END;
+        CREATE VIEW live_agents AS SELECT * FROM agents WHERE deleted_at IS NULL;
+        INSERT INTO workspaces (id, name) VALUES ('w', 'Harborline');
+        INSERT INTO sessions (id, workspace_id) VALUES ('s', 'w');
+        INSERT INTO agents (id, session_id) VALUES ('a', 's');
+    ";
+
+    const TABLE_REBUILD: &str = "
+        CREATE TABLE sessions_new (id TEXT PRIMARY KEY);
+        ALTER TABLE sessions_new RENAME TO sessions;
+    ";
+
+    fn migrated_file_db(name: &str) -> (PathBuf, Connection) {
+        let dir = scratch_dir(name);
+        let db_path = dir.join("data.db");
+        let conn = open_connection(&db_path).unwrap();
+        conn.execute_batch(MIGRATED_SCHEMA).unwrap();
+        (dir, conn)
+    }
+
+    fn schema_objects(conn: &Connection) -> i64 {
+        conn.query_row("SELECT count(*) FROM sqlite_master", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    fn drop_tables_one_by_one(conn: &Connection) {
+        let names: Vec<String> = conn
+            .prepare(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+            )
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = OFF;").unwrap();
+        for name in names {
+            conn.execute_batch(&format!("DROP TABLE \"{name}\";"))
+                .unwrap();
+        }
+    }
+
+    #[test]
+    fn dropping_tables_one_by_one_strands_the_view_that_blocks_a_table_rebuild() {
+        let (dir, conn) = migrated_file_db("strand");
+        drop_tables_one_by_one(&conn);
+        let error = conn.execute_batch(TABLE_REBUILD).unwrap_err().to_string();
+        assert!(error.contains("error in view live_agents: no such table: main.agents"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_reset_leaves_an_empty_schema_the_chain_can_replay_on() {
+        let (dir, conn) = migrated_file_db("reset");
+        let reader = Connection::open(dir.join("data.db")).unwrap();
+        assert_ne!(schema_objects(&reader), 0);
+
+        reset_database(&conn).unwrap();
+
+        assert_eq!(schema_objects(&conn), 0);
+        assert_eq!(schema_objects(&reader), 0);
+        let journal: String = conn
+            .query_row("PRAGMA journal_mode", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(journal, "wal");
+        let foreign_keys: i64 = conn
+            .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(foreign_keys, 1);
+        conn.execute_batch(TABLE_REBUILD).unwrap();
+        conn.execute_batch("DROP TABLE sessions;").unwrap();
+        conn.execute_batch(MIGRATED_SCHEMA).unwrap();
+        let live: i64 = conn
+            .query_row("SELECT count(*) FROM live_agents", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(live, 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    const PARTIAL_REPLAY: &str = "
+        CREATE TABLE schema_version (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL);
+        CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT NOT NULL);
+        CREATE TABLE sessions (id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE);
+    ";
+
+    fn half_wiped_file_db(name: &str) -> PathBuf {
+        let (dir, conn) = migrated_file_db(name);
+        drop_tables_one_by_one(&conn);
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        conn.execute_batch(PARTIAL_REPLAY).unwrap();
+        for version in 1..=14 {
+            conn.execute(
+                "INSERT INTO schema_version (version, applied_at) VALUES (?, 0)",
+                [version],
+            )
+            .unwrap();
+        }
+        assert!(conn.execute_batch(TABLE_REBUILD).is_err());
+        drop(conn);
+        dir
+    }
+
+    #[test]
+    fn opening_a_half_wiped_database_finishes_the_wipe() {
+        let dir = half_wiped_file_db("half-wiped");
+
+        let conn = open_and_finish_wipe(&dir.join("data.db")).unwrap();
+
+        assert_eq!(schema_objects(&conn), 0);
+        conn.execute_batch(TABLE_REBUILD).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_reset_on_open_keeps_a_complete_copy_first() {
+        let dir = half_wiped_file_db("backup");
+        let db_path = dir.join("data.db");
+        let conn = open_connection(&db_path).unwrap();
+
+        let backup = finish_interrupted_wipe(&conn, &db_path, 7)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(backup, dir.join("data.db.pre-reset-7.bak"));
+        assert!(backup.is_file());
+        let copy = Connection::open(&backup).unwrap();
+        let applied: i64 = copy
+            .query_row("SELECT count(*) FROM schema_version", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(applied, 14);
+        assert_eq!(schema_objects(&conn), 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_broken_view_on_a_complete_schema_is_not_reset() {
+        let (dir, conn) = migrated_file_db("broken-view");
+        conn.execute_batch(
+            "CREATE VIEW live_workspaces AS SELECT * FROM workspaces;
+             PRAGMA foreign_keys = OFF;
+             DROP TABLE workspaces;",
+        )
+        .unwrap();
+        let before = schema_objects(&conn);
+        drop(conn);
+
+        let conn = open_and_finish_wipe(&dir.join("data.db")).unwrap();
+
+        assert_eq!(schema_objects(&conn), before);
+        let live: i64 = conn
+            .query_row("SELECT count(*) FROM live_agents", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(live, 1);
+        let backups = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter(|entry| {
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(".pre-reset-")
+            })
+            .count();
+        assert_eq!(backups, 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn opening_a_healthy_database_keeps_its_data() {
+        let (dir, conn) = migrated_file_db("healthy");
+        let before = schema_objects(&conn);
+        drop(conn);
+
+        let conn = open_and_finish_wipe(&dir.join("data.db")).unwrap();
+
+        assert_eq!(schema_objects(&conn), before);
+        let live: i64 = conn
+            .query_row("SELECT count(*) FROM live_agents", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(live, 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

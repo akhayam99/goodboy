@@ -45,6 +45,7 @@ type ReopenParams = ItemParams & {
   readonly id: string;
   readonly candidateRevision: number;
 };
+type RebaseParams = ItemParams & { readonly candidateRevision: number };
 
 const ITEM_COLUMNS = `id, session_id AS sessionId, thread_id AS threadId, generation,
   reopened_from_item_id AS reopenedFromItemId, candidate_revision AS candidateRevision,
@@ -169,6 +170,22 @@ export const setResolveQueueItemApproval = async ({
      WHERE id = ? AND session_id = ? AND superseded_at IS NULL AND candidate_revision = ?
        AND EXISTS (SELECT 1 FROM resolve_threads r WHERE r.session_id = resolve_queue_items.session_id AND r.thread_id = resolve_queue_items.thread_id AND r.revision = ?)`,
     [revision, replyHash, now, itemId, sessionId, revision, revision],
+  );
+  return result.rowsAffected === 1;
+};
+
+export const rebaseResolveQueueItem = async ({
+  db,
+  sessionId,
+  itemId,
+  candidateRevision,
+}: RebaseParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE resolve_queue_items SET candidate_revision = ?, updated_at = ?
+     WHERE id = ? AND session_id = ? AND superseded_at IS NULL AND approval_state = 'none'
+       AND delivered_at IS NULL AND integrated_sha IS NULL
+       AND EXISTS (SELECT 1 FROM resolve_threads r WHERE r.session_id = resolve_queue_items.session_id AND r.thread_id = resolve_queue_items.thread_id AND r.revision = ?)`,
+    [candidateRevision, Date.now(), itemId, sessionId, candidateRevision],
   );
   return result.rowsAffected === 1;
 };

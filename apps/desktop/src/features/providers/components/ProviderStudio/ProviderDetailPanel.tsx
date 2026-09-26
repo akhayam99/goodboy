@@ -10,7 +10,7 @@ import {
   cn,
   tintClasses,
 } from '@goodboy/ui';
-import { RotateCw, Unplug, type LucideIcon } from 'lucide-react';
+import { LogIn, RotateCw, Unplug, type LucideIcon } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
@@ -95,6 +95,7 @@ function Detail({
 
   const [refreshing, setRefreshing] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [confirmReauth, setConfirmReauth] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -167,7 +168,19 @@ function Detail({
             identity={info.identity}
             canReauth={PROVIDER_CONNECT_CAPABILITIES[id].tier !== 'manual'}
             confirmDisconnect={confirmDisconnect}
-            onReauth={() => void connectProvider(id)}
+            confirmReauth={confirmReauth}
+            onReauth={() => {
+              if (PROVIDER_CONNECT_CAPABILITIES[id].reauthSignsOut) {
+                setConfirmReauth(true);
+                return;
+              }
+              void connectProvider(id);
+            }}
+            onCancelReauth={() => setConfirmReauth(false)}
+            onConfirmReauth={() => {
+              setConfirmReauth(false);
+              void connectProvider(id);
+            }}
             onAskDisconnect={() => setConfirmDisconnect(true)}
             onCancelDisconnect={() => setConfirmDisconnect(false)}
             onConfirmDisconnect={() => {
@@ -202,7 +215,10 @@ type ConnectedAccountProps = {
   readonly identity: string | null;
   readonly canReauth: boolean;
   readonly confirmDisconnect: boolean;
+  readonly confirmReauth: boolean;
   readonly onReauth: () => void;
+  readonly onCancelReauth: () => void;
+  readonly onConfirmReauth: () => void;
   readonly onAskDisconnect: () => void;
   readonly onCancelDisconnect: () => void;
   readonly onConfirmDisconnect: () => void;
@@ -213,7 +229,10 @@ const ConnectedAccount = ({
   identity,
   canReauth,
   confirmDisconnect,
+  confirmReauth,
   onReauth,
+  onCancelReauth,
+  onConfirmReauth,
   onAskDisconnect,
   onCancelDisconnect,
   onConfirmDisconnect,
@@ -225,7 +244,18 @@ const ConnectedAccount = ({
       <span className="text-secondary text-muted-foreground">connected</span>
     </div>
     <div className="flex-1" />
-    {confirmDisconnect ? (
+    {confirmReauth ? (
+      <InlineConfirm
+        role="alert"
+        icon={<LogIn size={ICON_SIZE.row} aria-hidden />}
+        title={`Sign in to ${label} again?`}
+        description={`Signing in again signs you out of ${label} first.`}
+        confirmLabel="Sign in again"
+        onConfirm={onConfirmReauth}
+        onCancel={onCancelReauth}
+        className="w-80 text-left"
+      />
+    ) : confirmDisconnect ? (
       <InlineConfirm
         role="alert"
         icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
@@ -240,7 +270,7 @@ const ConnectedAccount = ({
       <>
         {canReauth && (
           <Button variant="secondary" size="sm" onClick={onReauth}>
-            Re-authenticate
+            Sign in again
           </Button>
         )}
         <Button

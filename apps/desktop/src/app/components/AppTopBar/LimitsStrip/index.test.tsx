@@ -97,8 +97,45 @@ describe('LimitsStrip', () => {
     const [claude, codex] = chipButtons();
     expect(claude?.textContent).toBe('');
     expect(claude?.getAttribute('aria-label')).toContain('Claude Max · 47% of the week used');
-    expect(codex?.textContent).toBe('82%');
+    expect(codex?.textContent).toBe('5h 82%');
     expect(codex?.getAttribute('aria-label')).toContain('Codex is about to run out');
+  });
+
+  it('stacks the 5-hour bar over the weekly bar in one chip', () => {
+    store.providerLimits = {
+      anthropic: limits({
+        status: 'warning',
+        windows: [
+          {
+            kind: 'weekly',
+            model: null,
+            status: 'warning',
+            usedFraction: 0.94,
+            resetsAt: '2026-09-28T09:00:00.000Z' as IsoDateTime,
+          },
+          {
+            kind: 'fiveHour',
+            model: null,
+            status: 'ok',
+            usedFraction: 0.04,
+            resetsAt: '2026-09-25T14:30:00.000Z' as IsoDateTime,
+          },
+        ],
+      }),
+    };
+    render(<LimitsStrip />);
+
+    const [claude] = chipButtons();
+    const tracks = [...(claude?.querySelectorAll('[data-limits-track]') ?? [])];
+    expect(tracks.map((track) => track.getAttribute('data-limits-track'))).toEqual([
+      'fiveHour',
+      'weekly',
+    ]);
+    expect(tracks.map((track) => (track.firstElementChild as HTMLElement).style.width)).toEqual([
+      '4%',
+      '94%',
+    ]);
+    expect(claude?.textContent).toBe('wk 94%');
   });
 
   it('says out with the reset day when the provider stopped', () => {

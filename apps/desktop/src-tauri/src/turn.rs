@@ -148,11 +148,15 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 args.working_dir.to_string(),
                 "--model".to_string(),
                 args.model.to_string(),
-                "--force".to_string(),
             ];
+            if args.permission_mode == "bypassPermissions" {
+                v.push("--force".to_string());
+            } else {
+                v.push("--mode".to_string());
+                v.push("plan".to_string());
+            }
             // cursor-agent ignores permission rules + resume + system_prompt.
             let _ = (
-                args.permission_mode,
                 args.allowed_tools,
                 args.disallowed_tools,
                 args.resume_session_id,
@@ -178,10 +182,18 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 v.push("--effort".to_string());
                 v.push(eff.to_string());
             }
-            if args.permission_mode == "bypassPermissions" {
-                v.push("--dangerously-skip-permissions".to_string());
-            } else {
-                v.push("--sandbox".to_string());
+            match args.permission_mode {
+                "bypassPermissions" => v.push("--dangerously-skip-permissions".to_string()),
+                "acceptEdits" => v.extend([
+                    "--mode".to_string(),
+                    "accept-edits".to_string(),
+                    "--sandbox".to_string(),
+                ]),
+                _ => v.extend([
+                    "--mode".to_string(),
+                    "plan".to_string(),
+                    "--sandbox".to_string(),
+                ]),
             }
             v.shrink_to_fit();
             v
@@ -190,8 +202,6 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             // codex exec v0.130 gotchas:
             //   --cd, NOT --cwd (codex exits 1 with "unexpected argument").
             //   --skip-git-repo-check, else codex refuses non-trusted dirs.
-            //   default sandbox is read-only and silently drops writes; force
-            //     workspace-write unless bypass replaces it entirely.
             let _ = (args.resume_session_id, args.system_prompt);
             let mut v: Vec<String> = vec![
                 "exec".to_string(),
@@ -202,11 +212,13 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "--cd".to_string(),
                 args.working_dir.to_string(),
             ];
-            if args.permission_mode == "bypassPermissions" {
-                v.push("--dangerously-bypass-approvals-and-sandbox".to_string());
-            } else {
-                v.push("-s".to_string());
-                v.push("workspace-write".to_string());
+            let sandbox = match args.permission_mode {
+                "acceptEdits" | "bypassPermissions" => "workspace-write",
+                _ => "read-only",
+            };
+            v.push("-s".to_string());
+            v.push(sandbox.to_string());
+            if sandbox == "workspace-write" {
                 v.push("-c".to_string());
                 v.push("sandbox_workspace_write.network_access=true".to_string());
                 for root in args.writable_roots {
@@ -228,7 +240,6 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
         }
         "opencode" | "openrouter" | "moonshot" => {
             let _ = (
-                args.permission_mode,
                 args.allowed_tools,
                 args.disallowed_tools,
                 args.system_prompt,
@@ -243,6 +254,10 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 args.working_dir.to_string(),
                 "--dangerously-skip-permissions".to_string(),
             ];
+            if args.permission_mode != "bypassPermissions" {
+                v.push("--agent".to_string());
+                v.push("plan".to_string());
+            }
             if let Some(effort) = args.effort {
                 v.push("--variant".to_string());
                 v.push(effort.to_string());
@@ -799,7 +814,7 @@ mod tests {
             writable_roots: empty,
             query_socket_directory: Some("/tmp/goodboy-query"),
             prompt: "hi",
-            permission_mode: "default",
+            permission_mode: "bypassPermissions",
             allowed_tools: empty,
             disallowed_tools: empty,
             resume_session_id: resume,
@@ -1099,22 +1114,157 @@ mod tests {
         );
     }
 
+    fn args_for_mode<'a>(mode: &'a str, empty: &'a [String]) -> SpawnOneArgs<'a> {
+        let mut args = make_args(None, None, empty);
+        args.permission_mode = mode;
+        args
+    }
+
+    fn flag_value(cli: &[String], flag: &str) -> Option<String> {
+        cli.windows(2)
+            .find(|pair| pair[0] == flag)
+            .map(|pair| pair[1].clone())
+    }
+
     #[test]
-    fn codex_args_bypass_replaces_sandbox_flag() {
+    fn codex_args_full_access_keeps_the_workspace_sandbox() {
         let empty: Vec<String> = vec![];
-        let mut args = make_args(None, None, &empty);
-        args.binary = "codex";
-        args.permission_mode = "bypassPermissions";
+        let args = args_for_mode("bypassPermissions", &empty);
         let cli = build_provider_cli_args("codex", &args);
-        assert!(cli
+        assert_eq!(flag_value(&cli, "-s").as_deref(), Some("workspace-write"));
+        assert!(!cli
             .iter()
             .any(|a| a == "--dangerously-bypass-approvals-and-sandbox"));
-        assert!(!cli.iter().any(|a| a == "-s"));
-        assert!(!cli.iter().any(|a| a == "--add-dir"));
-        assert!(!cli.windows(2).any(|pair| {
-            pair[0] == "-c" && pair[1] == "sandbox_workspace_write.network_access=true"
-        }));
         assert!(cli.iter().any(|a| a == "--skip-git-repo-check"));
+    }
+
+    #[test]
+    fn codex_args_edits_allowed_use_the_workspace_sandbox() {
+        let empty: Vec<String> = vec![];
+        let args = args_for_mode("acceptEdits", &empty);
+        let cli = build_provider_cli_args("codex", &args);
+        assert_eq!(flag_value(&cli, "-s").as_deref(), Some("workspace-write"));
+    }
+
+    #[test]
+    fn codex_args_read_only_modes_use_the_read_only_sandbox() {
+        let empty: Vec<String> = vec![];
+        let roots = vec!["/repo/one/.git".to_string()];
+        for mode in ["plan", "default", "dontAsk", "unknown"] {
+            let mut args = args_for_mode(mode, &empty);
+            args.writable_roots = &roots;
+            let cli = build_provider_cli_args("codex", &args);
+            assert_eq!(
+                flag_value(&cli, "-s").as_deref(),
+                Some("read-only"),
+                "{mode}"
+            );
+            assert!(!cli.iter().any(|a| a == "--add-dir"), "{mode}");
+            assert!(
+                !cli.iter().any(|a| a.starts_with("sandbox_workspace_write")),
+                "{mode}"
+            );
+        }
+    }
+
+    #[test]
+    fn agy_args_full_access_skip_permissions() {
+        let empty: Vec<String> = vec![];
+        let args = args_for_mode("bypassPermissions", &empty);
+        let cli = build_provider_cli_args("agy", &args);
+        assert!(cli.iter().any(|a| a == "--dangerously-skip-permissions"));
+        assert!(!cli.iter().any(|a| a == "--sandbox" || a == "--mode"));
+    }
+
+    #[test]
+    fn agy_args_edits_allowed_use_accept_edits_mode() {
+        let empty: Vec<String> = vec![];
+        let args = args_for_mode("acceptEdits", &empty);
+        let cli = build_provider_cli_args("agy", &args);
+        assert_eq!(flag_value(&cli, "--mode").as_deref(), Some("accept-edits"));
+        assert!(cli.iter().any(|a| a == "--sandbox"));
+        assert!(!cli.iter().any(|a| a == "--dangerously-skip-permissions"));
+    }
+
+    #[test]
+    fn agy_args_stricter_modes_use_plan_mode() {
+        let empty: Vec<String> = vec![];
+        for mode in ["plan", "default", "dontAsk", "unknown"] {
+            let args = args_for_mode(mode, &empty);
+            let cli = build_provider_cli_args("agy", &args);
+            assert_eq!(
+                flag_value(&cli, "--mode").as_deref(),
+                Some("plan"),
+                "{mode}"
+            );
+            assert!(
+                !cli.iter().any(|a| a == "--dangerously-skip-permissions"),
+                "{mode}"
+            );
+        }
+    }
+
+    #[test]
+    fn cursor_args_force_only_on_full_access() {
+        let empty: Vec<String> = vec![];
+        let args = args_for_mode("bypassPermissions", &empty);
+        let cli = build_provider_cli_args("cursor-agent", &args);
+        assert!(cli.iter().any(|a| a == "--force"));
+        assert!(!cli.iter().any(|a| a == "--mode"));
+    }
+
+    #[test]
+    fn cursor_args_other_modes_plan_without_force() {
+        let empty: Vec<String> = vec![];
+        for mode in ["plan", "default", "dontAsk", "acceptEdits", "unknown"] {
+            let args = args_for_mode(mode, &empty);
+            let cli = build_provider_cli_args("cursor-agent", &args);
+            assert_eq!(
+                flag_value(&cli, "--mode").as_deref(),
+                Some("plan"),
+                "{mode}"
+            );
+            assert!(!cli.iter().any(|a| a == "--force"), "{mode}");
+        }
+    }
+
+    #[test]
+    fn opencode_args_other_modes_run_the_plan_agent() {
+        let empty: Vec<String> = vec![];
+        for binary in ["opencode", "openrouter", "moonshot"] {
+            for mode in ["plan", "default", "dontAsk", "acceptEdits", "unknown"] {
+                let args = args_for_mode(mode, &empty);
+                let cli = build_provider_cli_args(binary, &args);
+                assert_eq!(
+                    flag_value(&cli, "--agent").as_deref(),
+                    Some("plan"),
+                    "{binary} {mode}"
+                );
+            }
+            let args = args_for_mode("bypassPermissions", &empty);
+            let cli = build_provider_cli_args(binary, &args);
+            assert!(!cli.iter().any(|a| a == "--agent"), "{binary}");
+        }
+    }
+
+    #[test]
+    fn claude_args_pass_every_mode_through_unchanged() {
+        let empty: Vec<String> = vec![];
+        for mode in [
+            "plan",
+            "default",
+            "dontAsk",
+            "acceptEdits",
+            "bypassPermissions",
+        ] {
+            let args = args_for_mode(mode, &empty);
+            let cli = build_provider_cli_args("claude", &args);
+            assert_eq!(
+                flag_value(&cli, "--permission-mode").as_deref(),
+                Some(mode),
+                "{mode}"
+            );
+        }
     }
 
     #[test]

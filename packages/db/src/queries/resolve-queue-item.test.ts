@@ -13,6 +13,7 @@ import {
   insertResolveQueueItem,
   listResolveQueueItems,
   markResolveQueueItemDelivered,
+  rebaseResolveQueueItem,
   reopenResolveQueueItem,
   setResolveQueueItemApproval,
   undeferResolveQueueItem,
@@ -100,6 +101,32 @@ describe('resolve queue item queries', () => {
         replyHash: 'current',
       }),
     ).resolves.toBe(true);
+  });
+
+  it('moves only an undecided item, and only to the current thread revision', async () => {
+    expect(
+      await rebaseResolveQueueItem({ db, sessionId, itemId: item.id, candidateRevision: 3 }),
+    ).toBe(false);
+    await upsertResolveThread({ db, row: thread, expectedRevision: 2 });
+    expect(
+      await rebaseResolveQueueItem({ db, sessionId, itemId: item.id, candidateRevision: 3 }),
+    ).toBe(true);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.candidateRevision).toBe(3);
+    await setResolveQueueItemApproval({
+      db,
+      sessionId,
+      itemId: item.id,
+      revision: 3,
+      replyHash: 'hash',
+    });
+    await upsertResolveThread({ db, row: thread, expectedRevision: 3 });
+    expect(
+      await rebaseResolveQueueItem({ db, sessionId, itemId: item.id, candidateRevision: 4 }),
+    ).toBe(false);
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item).toMatchObject({
+      candidateRevision: 3,
+      approvalState: 'accepted',
+    });
   });
 
   it('defers and takes up an item without retaining approval data', async () => {

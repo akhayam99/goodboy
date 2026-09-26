@@ -82,6 +82,74 @@ describe('readClaudeRateLimitLine', () => {
   });
 });
 
+describe('parseClaudeRateLimitEvent unified windows', () => {
+  it('reads both the 5-hour and the weekly window, 5-hour first', () => {
+    const read = readClaudeRateLimitLine({
+      line: RATE_LIMIT_FIXTURES.claudeUnifiedWindows,
+      observedAt: OBSERVED_AT,
+    });
+    expect(read?.limits?.status).toBe('warning');
+    expect(read?.limits?.windows).toEqual([
+      {
+        kind: 'fiveHour',
+        model: null,
+        status: 'ok',
+        usedFraction: 0.01,
+        resetsAt: '2026-09-26T05:40:00.000Z',
+      },
+      {
+        kind: 'weekly',
+        model: null,
+        status: 'warning',
+        usedFraction: 0.93,
+        resetsAt: '2026-09-26T21:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('keeps a per model window next to the unified ones', () => {
+    const windows = parseClaudeRateLimitEvent({
+      value: {
+        type: 'rate_limit_event',
+        rate_limit_info: {
+          status: 'allowed',
+          rateLimitType: 'seven_day_opus',
+          utilization: 0.4,
+          unifiedWindows: {
+            five_hour: { utilization: 0.2, resetsAt: 1790401200 },
+            seven_day: { utilization: 0.5, resetsAt: 1790456400 },
+          },
+        },
+      },
+      observedAt: OBSERVED_AT,
+    })?.windows;
+    expect(windows?.map((window) => window.kind)).toEqual(['fiveHour', 'weekly', 'weeklyModel']);
+  });
+
+  it('still reads the unified windows when the top level type is unknown', () => {
+    const windows = parseClaudeRateLimitEvent({
+      value: {
+        type: 'rate_limit_event',
+        rate_limit_info: {
+          status: 'allowed',
+          rateLimitType: 'overage',
+          unifiedWindows: { five_hour: { utilization: 0.3, resetsAt: 1790401200 } },
+        },
+      },
+      observedAt: OBSERVED_AT,
+    })?.windows;
+    expect(windows).toEqual([
+      {
+        kind: 'fiveHour',
+        model: null,
+        status: 'ok',
+        usedFraction: 0.3,
+        resetsAt: '2026-09-26T05:40:00.000Z',
+      },
+    ]);
+  });
+});
+
 describe('parseClaudeRateLimitEvent', () => {
   it('names the model of a per model weekly window', () => {
     expect(

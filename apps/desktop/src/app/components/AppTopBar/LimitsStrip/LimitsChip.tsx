@@ -10,7 +10,8 @@ import { formatLimitResetShort } from '../../../../features/providers/limits/for
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
 import { limitsChipHeadline } from '../../../../features/providers/limits/limitsChipHeadline';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LimitsBar } from './LimitsBar';
+import { limitWindowShortLabel } from '../../../../features/providers/limits/limitWindowShortLabel';
+import { LimitsBars } from './LimitsBars';
 import { LimitsTooltip } from './LimitsTooltip';
 
 type Props = {
@@ -47,12 +48,17 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
           className={cn('shrink-0', chip.state === 'none' && 'text-faint-foreground')}
           {...(chip.state !== 'none' && { style: { color: brandColor(chip.providerId) } })}
         />
-        <LimitsBar state={chip.state} usedFraction={chip.usedFraction} isStale={chip.isStale} />
+        <LimitsBars state={chip.state} windows={chip.windows} isStale={chip.isStale} />
         {chip.state === 'warning' ? (
           <span className="flex items-center gap-0.5 text-warning">
             <TriangleAlert size={10} aria-hidden />
             {chip.usedFraction === null ? null : (
               <span className="font-medium tabular-nums">
+                {chip.window === null ? null : (
+                  <span className="font-normal">
+                    {limitWindowShortLabel({ window: chip.window })}{' '}
+                  </span>
+                )}
                 {formatUsedPercent({ usedFraction: chip.usedFraction })}
               </span>
             )}

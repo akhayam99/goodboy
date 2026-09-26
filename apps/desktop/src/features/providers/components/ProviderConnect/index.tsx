@@ -13,6 +13,7 @@ import { ManualNote } from './ManualNote';
 import { TrustNote } from './TrustNote';
 import { connectView, type ProviderConnectChrome } from './connectView';
 import { useConnectDetails } from './useConnectDetails';
+import { AUTH_LINK_REVEAL_MS, useDelayedReveal } from './useDelayedReveal';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -41,6 +42,10 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
     chrome,
   });
   const details = useConnectDetails({ autoOpenPhase: view.autoDetails ? connect.phase : null });
+  const isAuthLinkRevealed = useDelayedReveal({
+    isActive: view.showAuthLink && connect.authUrl !== null,
+    delayMs: AUTH_LINK_REVEAL_MS,
+  });
 
   useEffect(() => {
     if (!autoStart || startedRef.current === providerId) {
@@ -130,9 +135,9 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {view.showAuthLink && authUrl !== null && (
+          {isAuthLinkRevealed && authUrl !== null && (
             <Button variant="ghost" size="sm" onClick={() => void openUrl(authUrl)}>
-              Open the link again
+              Open the sign-in page again
             </Button>
           )}
           {view.primaryLabel !== null && (
