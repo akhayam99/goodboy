@@ -3,20 +3,19 @@ import { parseWireframeSource, type WireframeDocument } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact, WireframeArtifact } from '@goodboy/types';
 import { listArtifactsForSession } from '../../../artifacts/artifacts';
-import {
-  ArtifactDocument,
-  type ArtifactDocumentMedium,
-} from '../../../artifacts/components/ArtifactDocument';
+import { ArtifactDocument } from '../../../artifacts/components/ArtifactDocument';
+import { artifactMetaFields } from '../../../artifacts/components/ArtifactDocument/artifactMetaFields';
+import { PrintLetterhead } from '../../../artifacts/components/ArtifactDocument/PrintLetterhead';
 import { useRecordArtifactOpened } from '../../../artifacts/hooks/useRecordArtifactOpened';
 import type { ArtifactPrintRequest } from '../../artifactPrintRequest';
-import { artifactMetaFields } from './artifactMetaFields';
 import { closePrintWindow } from './closePrintWindow';
 import { openPrintDialog } from './openPrintDialog';
-import { PrintLetterhead } from './PrintLetterhead';
 import { PrintWireframeSheet } from './PrintWireframeSheet';
 import { printPage } from './printPage';
 import { ReaderToolbar } from './ReaderToolbar';
 import { removeBootShell } from './removeBootShell';
+
+export type ArtifactReaderMedium = 'window' | 'paper';
 
 type Props = {
   readonly request: ArtifactPrintRequest;
@@ -57,7 +56,8 @@ export const ArtifactReaderView = ({ request }: Props) => {
   const [printError, setPrintError] = useState<string | null>(null);
   const hasPrinted = useRef(false);
   const isReading = request.mode === 'read';
-  const medium: ArtifactDocumentMedium = isReading ? 'window' : 'paper';
+  const medium: ArtifactReaderMedium = isReading ? 'window' : 'paper';
+  const documentMedium = medium === 'window' ? 'screen' : 'file';
   const canPrint = status.kind === 'ready' || status.kind === 'wireframe';
   useRecordArtifactOpened({
     artifactId:
@@ -124,6 +124,10 @@ export const ArtifactReaderView = ({ request }: Props) => {
   }, [canPrint, isReading, print]);
 
   const page = printPage({ document: status.kind === 'wireframe' ? status.document : null });
+  const unsupportedMeta =
+    status.kind === 'unsupported'
+      ? artifactMetaFields({ artifact: status.artifact, workspaceName: '' })
+      : null;
 
   return (
     <div
@@ -146,12 +150,12 @@ export const ArtifactReaderView = ({ request }: Props) => {
           {status.message}. {SOURCE_IS_SAFE}
         </p>
       ) : null}
-      {status.kind === 'unsupported' ? (
+      {status.kind === 'unsupported' && unsupportedMeta !== null ? (
         <article className="print-document" data-medium={medium}>
           <PrintLetterhead
-            kind={status.artifact.kind}
+            eyebrowLabel={unsupportedMeta.eyebrowLabel}
+            dateLabel={unsupportedMeta.dateLabel}
             title={status.artifact.title}
-            fields={artifactMetaFields({ artifact: status.artifact })}
           />
           <p role="alert" className="print-note">
             {PRINT_UNSUPPORTED_COPY}. the {status.artifact.sourceFormat} source is still available
@@ -160,7 +164,7 @@ export const ArtifactReaderView = ({ request }: Props) => {
         </article>
       ) : null}
       {status.kind === 'ready' ? (
-        <ArtifactDocument artifact={status.artifact} medium={medium} />
+        <ArtifactDocument artifact={status.artifact} medium={documentMedium} workspaceName="" />
       ) : null}
       {status.kind === 'wireframe' ? (
         <PrintWireframeSheet

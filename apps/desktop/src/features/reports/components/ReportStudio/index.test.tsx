@@ -2,7 +2,10 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { SessionId } from '@goodboy/types';
 import { ReportStudio } from './index';
+
+const SESSION_ID = 'session-1' as SessionId;
 
 const report = {
   id: 'report-1',
@@ -23,7 +26,12 @@ const report = {
 };
 
 const renderStudio = (overrides: Record<string, unknown> = {}) =>
-  render(<ReportStudio artifact={JSON.parse(JSON.stringify({ ...report, ...overrides }))} />);
+  render(
+    <ReportStudio
+      sessionId={SESSION_ID}
+      artifact={JSON.parse(JSON.stringify({ ...report, ...overrides }))}
+    />,
+  );
 
 afterEach(cleanup);
 
@@ -47,22 +55,22 @@ describe('ReportStudio', () => {
     expect(rail.className).toContain('overflow-y-auto');
   });
 
-  it('reads the body at the document scale, not the 12px chat scale', () => {
+  it('renders the report through the document template, not the chat markdown scale', () => {
     renderStudio();
-    const prose = screen.getByTestId('artifact-prose');
-    expect(prose.className).toContain('artifact-prose');
-    expect(prose.innerHTML).not.toContain('text-xs');
+    const document = screen.getByTestId('artifact-document');
+    expect(document.getAttribute('data-medium')).toBe('screen');
+    expect(document.innerHTML).not.toContain('text-xs');
   });
 
-  it('shows the title once, in the header, not again as the first heading', () => {
+  it('shows the title once, in the document letterhead, not again as a body heading', () => {
     renderStudio({
       title: 'Rounding drift in ledger-core postings',
       sourceText:
         '# Rounding drift in ledger-core postings\n\nlead.\n\n## What was wrong\n\ndrift.',
     });
     expect(
-      screen.queryByRole('heading', { name: 'Rounding drift in ledger-core postings' }),
-    ).toBeNull();
+      screen.getAllByRole('heading', { name: 'Rounding drift in ledger-core postings' }),
+    ).toHaveLength(1);
     const outline = screen.getByRole('navigation', { name: 'Report outline' });
     expect([...outline.querySelectorAll('button')].map((node) => node.textContent)).toEqual([
       'What was wrong',

@@ -55,7 +55,10 @@ export const artifactMirrorFiles = ({
   return {
     folder,
     files: [
-      { path: 'index.html', contents: renderArtifactFile({ artifact }) },
+      {
+        path: 'index.html',
+        contents: renderArtifactFile({ artifact, workspaceName: workspaceSlug }),
+      },
       { path: ARTIFACT_DOCUMENT_CSS_FILE, contents: artifactDocumentCss() },
       { path: 'source.md', contents: `${artifact.sourceText}\n` },
       metaFile({ artifact, workspaceSlug, appVersion }),

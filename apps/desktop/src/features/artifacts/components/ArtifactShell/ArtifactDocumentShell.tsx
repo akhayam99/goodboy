@@ -352,7 +352,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           />
         ) : null}
         {draft === null && subject.kind === 'report' ? (
-          <ReportStudio artifact={subject.artifact} />
+          <ReportStudio sessionId={sessionId} artifact={subject.artifact} />
         ) : null}
         {subject.kind === 'wireframe' ? (
           <WireframeStudio

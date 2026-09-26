@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
-import type { ReportArtifact } from '@goodboy/types';
+import type { ReportArtifact, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { buildReportOutline } from '../../reportOutline';
-import { dropLeadingTitleHeading } from '../ArtifactReaderView/dropLeadingTitleHeading';
-import { ArtifactProse } from '../../../artifacts/components/ArtifactProse';
+import { ArtifactDocument } from '../../../artifacts/components/ArtifactDocument';
+import { dropLeadingTitleHeading } from '../../../artifacts/components/ArtifactDocument/dropLeadingTitleHeading';
 import { ReportContentsMenu } from './ReportContentsMenu';
 import { ReportOutlineNav } from './ReportOutlineNav';
 import { useOutlinePlacement } from './useOutlinePlacement';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly artifact: ReportArtifact;
 };
 
-export const ReportStudio = ({ artifact }: Props) => {
+export const ReportStudio = ({ sessionId, artifact }: Props) => {
+  const workspaceSlug = useAppStore((s) => {
+    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? '';
+  });
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
@@ -33,7 +39,9 @@ export const ReportStudio = ({ artifact }: Props) => {
     if (position < 0 || bodyRef.current === null) {
       return;
     }
-    const heading = bodyRef.current.querySelectorAll('h1, h2, h3').item(position);
+    const heading = bodyRef.current
+      .querySelectorAll('.print-body h1, .print-body h2, .print-body h3')
+      .item(position);
     heading?.scrollIntoView({ block: 'start' });
   };
 
@@ -66,7 +74,9 @@ export const ReportStudio = ({ artifact }: Props) => {
         />
       ) : null}
       <div ref={bodyRef} className="min-w-0 flex-1">
-        <ArtifactProse text={text} />
+        <div className="print-sheet" data-medium="screen">
+          <ArtifactDocument artifact={artifact} medium="screen" workspaceName={workspaceSlug} />
+        </div>
       </div>
     </div>
   );

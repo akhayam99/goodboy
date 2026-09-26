@@ -12,9 +12,7 @@ export const formatPrintDate = ({ iso }: Params): string => {
   }
   return new Intl.DateTimeFormat(APP_LOCALE, {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   }).format(date);
 };

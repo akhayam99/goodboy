@@ -177,27 +177,14 @@ describe('ArtifactReaderView', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(2);
   });
 
-  it('prints the mark as a plain image, since WebKit drops a css mask on paper', async () => {
+  it('names the report type in the eyebrow, with a human date and no raw timestamp', async () => {
     listSpy.mockResolvedValueOnce([report]);
     render(<ArtifactReaderView request={request} />);
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: 'Goodboy' })).toBeDefined();
+      expect(screen.getByText('Sep 15, 2026')).toBeDefined();
     });
-    const mark = screen.getByRole('img', { name: 'Goodboy' }).querySelector('.print-mark');
-    expect(mark?.tagName).toBe('IMG');
-    expect(mark?.getAttribute('style') ?? '').not.toContain('mask');
-  });
-
-  it('lays the facts out as labelled fields, with a human date and no raw timestamp', async () => {
-    listSpy.mockResolvedValueOnce([report]);
-    render(<ArtifactReaderView request={request} />);
-    await waitFor(() => {
-      expect(screen.getByText('September 15, 2026 at 10:00 AM')).toBeDefined();
-    });
-    expect(screen.getByText('Document').tagName).toBe('DT');
-    expect(screen.getByText('Session summary').tagName).toBe('DD');
-    expect(screen.getByText('Revision').tagName).toBe('DT');
-    expect(screen.getByText('Prepared').tagName).toBe('DT');
+    expect(screen.getByText('Sep 15, 2026').tagName).toBe('SPAN');
+    expect(document.querySelector('.print-kind')?.textContent).toContain('Session summary');
     expect(document.body.textContent).not.toContain('2026-09-15T10:00:00');
   });
 
@@ -287,7 +274,7 @@ describe('ArtifactReaderView', () => {
     });
     expect(window.print).not.toHaveBeenCalled();
     expect(screen.getByTestId('artifact-reader-view').getAttribute('data-medium')).toBe('window');
-    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('window');
+    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('screen');
     const toolbar = screen.getByRole('toolbar', { name: 'Document' });
     expect(toolbar.textContent).toContain('Print');
 
@@ -311,7 +298,7 @@ describe('ArtifactReaderView', () => {
       expect(window.print).toHaveBeenCalledTimes(1);
     });
     expect(screen.queryByRole('toolbar')).toBeNull();
-    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('paper');
+    expect(screen.getByTestId('artifact-document').getAttribute('data-medium')).toBe('file');
   });
 
   it('keeps the document on screen when a reader print fails', async () => {
