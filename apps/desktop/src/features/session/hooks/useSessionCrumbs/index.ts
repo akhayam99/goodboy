@@ -26,7 +26,7 @@ import { openLens } from '../../openLens';
 import { AGENT_KIND_PALETTE, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
-import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
+import { PULL_REQUEST_MODE_LABEL } from '../../../review/pullRequestModeLabel';
 import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
@@ -55,9 +55,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const navigate = useAppStore((s) => s.navigate);
-  const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
-  const setReviewMode = useAppStore((s) => s.setReviewMode);
-  const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
+  const pullRequestMode = useAppStore((s) => s.pullRequestModes?.[sessionId] ?? 'overview');
+  const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
+  const pullRequestModeLabel = PULL_REQUEST_MODE_LABEL[pullRequestMode];
+  const pullRequestNumber = useAppStore(
+    (s) =>
+      s.sessionSelectedPrNumber?.[sessionId] ?? s.sessionGithub?.[sessionId]?.pr?.number ?? null,
+  );
   const resolverThreadId = useAppStore((s) =>
     selectedAgentId == null || selectedChildHome !== 'review'
       ? null
@@ -178,7 +182,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedParentTone,
         selectedRootTone,
         selectedQuestionLabel,
-        reviewModeLabel,
+        pullRequestModeLabel:
+          pullRequestMode === 'create_pr' || pullRequestNumber !== null
+            ? pullRequestModeLabel
+            : null,
+        pullRequestNumber: pullRequestMode === 'create_pr' ? null : pullRequestNumber,
         diffBranchLabel,
         selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
@@ -212,7 +220,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             }
             navigate({ to: agentPlace({ sessionId, agentId: rootAgentId }) });
           },
-          toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
+          toPullRequestHome: () => setPullRequestMode({ sessionId, mode: 'overview' }),
           toThread: () => {
             if (resolverThreadId === null) {
               return;
@@ -244,7 +252,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedParentTone,
       selectedRootTone,
       selectedQuestionLabel,
-      reviewModeLabel,
+      pullRequestModeLabel,
+      pullRequestMode,
+      pullRequestNumber,
       diffBranchLabel,
       selectedThreadLabel,
       resolverThreadId,
@@ -255,7 +265,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       setFocusedWorkflowRun,
       setFocusedArtifactId,
       navigate,
-      setReviewMode,
+      setPullRequestMode,
     ],
   );
 };

@@ -54,6 +54,8 @@ import { agentMenu } from '../../trail/menus/agentMenu';
 import { stepMenu } from '../../trail/menus/stepMenu';
 import { runMenu, type RunEntry } from '../../trail/menus/runMenu';
 import { artifactEntryOf, artifactMenu } from '../../trail/menus/artifactMenu';
+import { pullRequestMenu } from '../../trail/menus/pullRequestMenu';
+import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
@@ -116,6 +118,15 @@ export const useTrailMenus = ({
   const branchStatuses = useWorktreeStatuses({ targets: branchTargets });
   const queueRows = useResolveQueueRows({ sessionId });
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const selectedPrNumber = useAppStore((s) => s.sessionSelectedPrNumber?.[sessionId] ?? null);
+  const branchPrs = useAppStore((s) => selectActiveProjectPrs({ state: s, sessionId }));
+  const canonicalPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
+  const pullRequests = useMemo(
+    () => (branchPrs.length > 0 ? branchPrs : canonicalPr === null ? [] : [canonicalPr]),
+    [branchPrs, canonicalPr],
+  );
+  const selectSessionPr = useAppStore((s) => s.selectSessionPr);
+  const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const threadId = useAppStore((s) =>
     selectedAgentId === null
       ? null
@@ -297,6 +308,32 @@ export const useTrailMenus = ({
         );
         return;
       }
+      if (crumb.id === 'pr-number' && pullRequests.length > 0) {
+        menus.set(
+          crumb.id,
+          pullRequestMenu({
+            prs: pullRequests,
+            currentNumber: selectedPrNumber ?? prNumber,
+            actions: [
+              {
+                id: 'new-pull-request',
+                label: 'New pull request',
+                icon: Plus,
+                confirm: null,
+                onRun: () => {
+                  setPullRequestMode({ sessionId, mode: 'create_pr' });
+                  openLens({ sessionId, lens: 'pr' });
+                },
+              },
+            ],
+            onSelect: (pr) => {
+              setPullRequestMode({ sessionId, mode: 'overview' });
+              void selectSessionPr(sessionId, pr.number);
+            },
+          }),
+        );
+        return;
+      }
       if (crumb.id === 'review-thread') {
         const current = queueRows.find((row) => row.thread.threadId === threadId) ?? null;
         const url = current?.commentThread?.head.url ?? null;
@@ -464,6 +501,10 @@ export const useTrailMenus = ({
     openMountDiff,
     queueRows,
     prNumber,
+    selectedPrNumber,
+    pullRequests,
+    selectSessionPr,
+    setPullRequestMode,
     threadId,
     copy,
   ]);

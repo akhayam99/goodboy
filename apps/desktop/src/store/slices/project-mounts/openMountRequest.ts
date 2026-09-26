@@ -36,11 +36,12 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
       return { kind: 'opened' };
     }
     if (requestNumber === undefined) {
-      return get().openReviewTarget({
-        sessionId,
-        destination: { kind: 'mount', mountId },
-        mode: 'create_pr',
-      });
+      await get()
+        .setSessionActiveMount({ sessionId, mountId })
+        .catch(() => undefined);
+      get().setPullRequestMode({ sessionId, mode: 'create_pr' });
+      get().navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      return { kind: 'opened' };
     }
     return get().openReviewTarget({
       sessionId,

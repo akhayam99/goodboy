@@ -369,7 +369,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     void openReview({
       sessionId,
       destination: reviewTarget.destination,
-      ...(reviewTarget.mode !== null && { mode: reviewTarget.mode }),
     });
   }, [reviewTarget, sessionId]);
 

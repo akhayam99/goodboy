@@ -30,6 +30,7 @@ import { LinkTicketPopover } from './parts/IntegrationPane/LinkTicketPopover';
 import { isStandaloneAgent, resolveRootAgent } from '../../agent-kind';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
 import { SessionOverviewLoading } from './parts/SessionOverviewLoading';
+import { PullRequestPage } from '../../../review/components/PullRequestPage';
 import { ReviewPane } from '../../../review/components/ReviewPane';
 import { useIsBranchlessSession } from '../../hooks/useIsBranchlessSession';
 import { useRemoteHostKind } from '../../../worktree/useRemoteHostKind';
@@ -183,9 +184,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
             ) : null}
             {lens === 'pr' && !isGithubCodeHost ? <PrPane session={session} /> : null}
-            {lens === 'review' || (lens === 'pr' && isGithubCodeHost) ? (
-              <ReviewPane session={session} />
-            ) : null}
+            {lens === 'pr' && isGithubCodeHost ? <PullRequestPage session={session} /> : null}
+            {lens === 'review' ? <ReviewPane session={session} /> : null}
             {lens === 'linear' ? (
               <IntegrationPane
                 sessionId={sessionId}
