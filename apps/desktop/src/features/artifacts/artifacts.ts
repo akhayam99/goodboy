@@ -34,6 +34,7 @@ export type CreateArtifactArgs = {
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
   readonly sourceTurnId: string;
+  readonly note?: ArtifactRevisionNote;
 };
 
 export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionArtifact> => {
@@ -57,6 +58,7 @@ export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionA
         sourceText: args.sourceText,
         metadata: args.metadata,
         sourceTurnId: args.sourceTurnId,
+        ...(args.note === undefined ? {} : { note: args.note }),
       },
     });
   } catch (error) {

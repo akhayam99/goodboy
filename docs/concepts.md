@@ -456,6 +456,14 @@ that kept its kind, text and place under a new id counts as changed. When a
 version lands, the notice offers `N changes · Compare` for 10 seconds; after
 that Compare stays in the versions popover.
 
+A spec made or edited outside comes back in. On the Artifacts page, **New ▾ >
+Import wireframe JSON…** picks a file (or drop a `.json` on the page); inside a
+wireframe, **Replace spec with JSON…** in the versions popover does the same
+for that wireframe. The validator answers inline, never in a dialog: what it
+adjusted, with **Import anyway** and **Cancel**, or why the file cannot be
+read. An import gets an idle Wireframe agent that owns it, the same agent you
+then ask for changes, and its version reads `Imported JSON`.
+
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
 

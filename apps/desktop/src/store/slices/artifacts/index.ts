@@ -2,6 +2,7 @@ import { deleteArtifact } from './deleteArtifact';
 import { loadSessionArtifacts } from './loadSessionArtifacts';
 import { restoreArtifact } from './restoreArtifact';
 import { restoreArtifactRevision } from './restoreArtifactRevision';
+import { importWireframe, replaceWireframeSpec } from './importWireframe';
 import { requestWireframeChange, settleWireframeDraft } from './requestWireframeChange';
 import { setArtifactStatus } from './setArtifactStatus';
 import { spawnReportAgent } from './spawnReportAgent';
@@ -27,6 +28,8 @@ export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
     deleteArtifact: deleteArtifact(set),
     restoreArtifact: restoreArtifact(set),
     restoreArtifactRevision: restoreArtifactRevision(set),
+    importWireframe: importWireframe(set, get),
+    replaceWireframeSpec: replaceWireframeSpec(set),
     requestWireframeChange: requestWireframeChange(set, get),
     settleWireframeDraft: settleWireframeDraft(set),
     spawnReportAgent: spawnReportAgent(get),

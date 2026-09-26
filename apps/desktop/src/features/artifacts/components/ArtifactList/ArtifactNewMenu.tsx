@@ -1,4 +1,4 @@
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, FileJson, Plus } from 'lucide-react';
 import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -7,14 +7,15 @@ import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly onImportWireframe: () => void;
 };
 
-export const ArtifactNewMenu = ({ sessionId }: Props) => {
+export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
   const openArtifactCreation = useAppStore((state) => state.openArtifactCreation);
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-72 max-w-[calc(100vw-2rem)]',
-    expectedHeight: 120,
+    expectedHeight: 170,
     expectedWidth: 288,
   });
 
@@ -58,6 +59,14 @@ export const ArtifactNewMenu = ({ sessionId }: Props) => {
             icon: CONCEPT_ICONS[ARTIFACT_KIND_CONCEPT.wireframe],
             onClick: () =>
               openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
+          },
+          {
+            kind: 'item',
+            key: 'import-wireframe',
+            label: 'Import wireframe JSON…',
+            description: 'Brings back a spec made or edited outside, or drop a .json on this page',
+            icon: FileJson,
+            onClick: onImportWireframe,
           },
         ]}
       />

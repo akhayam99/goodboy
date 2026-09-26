@@ -39,6 +39,7 @@ export type {
   WireframeAlignment,
   WireframeButtonNode,
   WireframeButtonVariant,
+  WireframeDevice,
   WireframeDirection,
   WireframeDocument,
   WireframeGridNode,

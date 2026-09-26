@@ -9,7 +9,9 @@ import { Button, Notice } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { modelLabel } from '../../../chat/utils/chat-constants';
+import { useWireframeImport } from '../../useWireframeImport';
 import { useWireframeIteration } from '../../useWireframeIteration';
+import { WireframeImportNotice } from '../WireframeImportNotice';
 import { useWireframeVersions } from '../../useWireframeVersions';
 import { diffChangeCount } from '../../wireframeCompare';
 import { ChangeComposer } from './ChangeComposer';
@@ -55,6 +57,10 @@ export const WireframeWorkspace = ({
   const draft = iteration.draft;
   const isDrafting = draft?.status === 'drafting';
   const agentName = creator?.name ?? 'Wireframe agent';
+  const replaceWireframeSpec = useAppStore((s) => s.replaceWireframeSpec);
+  const replacer = useWireframeImport({
+    commit: (ready) => replaceWireframeSpec({ sessionId, artifact, sourceText: ready.sourceText }),
+  });
   const readyChanges = useMemo(() => {
     if (draft?.status !== 'ready') {
       return null;
@@ -137,6 +143,25 @@ export const WireframeWorkspace = ({
           }
         />
       ) : null}
+      {replacer.pending === null ? null : (
+        <WireframeImportNotice
+          pending={replacer.pending}
+          isBusy={replacer.isBusy}
+          error={replacer.error}
+          confirmLabel={
+            replacer.pending.status === 'ready' && replacer.pending.adjustments.length > 0
+              ? 'Replace anyway'
+              : 'Replace'
+          }
+          onConfirm={replacer.confirm}
+          onCancel={replacer.cancel}
+        />
+      )}
+      {replacer.pending === null && replacer.error !== null ? (
+        <span role="alert" className="text-secondary text-danger">
+          {replacer.error}
+        </span>
+      ) : null}
       {iteration.restoreError === null ? null : (
         <span role="alert" className="text-secondary text-danger">
           {iteration.restoreError}
@@ -176,6 +201,7 @@ export const WireframeWorkspace = ({
           onView={(revision) => setViewing(revision === artifact.revision ? null : revision)}
           onCompare={(revision) => setCompare({ before: revision, after: artifact.revision })}
           onRestore={iteration.restore}
+          onReplace={replacer.pick}
         />
       }
       banner={banner}

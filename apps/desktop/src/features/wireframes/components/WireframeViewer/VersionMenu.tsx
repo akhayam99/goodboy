@@ -13,6 +13,7 @@ type Props = {
   readonly onView: (revision: number) => void;
   readonly onCompare: (revision: number) => void;
   readonly onRestore: (revision: number) => void;
+  readonly onReplace: () => void;
 };
 
 export const VersionMenu = ({
@@ -24,6 +25,7 @@ export const VersionMenu = ({
   onView,
   onCompare,
   onRestore,
+  onReplace,
 }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
@@ -95,6 +97,19 @@ export const VersionMenu = ({
           />
         ))}
       </ol>
+      <div className="flex">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onReplace();
+            dropdown.close();
+          }}
+          data-testid="wireframe-replace-spec"
+        >
+          Replace spec with JSON…
+        </Button>
+      </div>
     </AnchoredPopover>
   );
 };
