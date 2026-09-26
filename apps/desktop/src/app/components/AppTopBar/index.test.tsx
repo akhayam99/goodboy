@@ -184,14 +184,19 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: `Show sessions (${glyph})` })).toBeDefined();
   });
 
-  it('keeps theme, the brand and a workspace gear out of the bar', () => {
+  it('keeps the brand and a workspace gear out of the bar', () => {
     renderBar();
 
-    expect(screen.queryByRole('button', { name: /switch to (light|dark) mode/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Workspace settings' })).toBeNull();
     expect(screen.queryByText('Goodboy')).toBeNull();
     expect(screen.queryByRole('button', { name: /^open settings/i })).toBeNull();
     expect(screen.queryByTestId('update-indicator')).toBeNull();
+  });
+
+  it('gives the theme its place in the bar, after the divider and before notifications', () => {
+    renderBar();
+
+    expect(screen.getByRole('button', { name: /switch to (light|dark)/i })).toBeDefined();
   });
 
   it('leaves the now chip out when nothing needs you, and keeps spend', () => {

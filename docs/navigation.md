@@ -312,8 +312,14 @@ only drop under zoom.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
-- Theme is not in the bar. It lives in Settings > App > General and in the
-  palette, like the guide and pair-device.
+- **Theme is in the bar, after the fourth round of removing it.** A dark room,
+  a projector, a shared screen: the theme changes several times a day, and a
+  detour through Settings is friction each time. The toggle sits after the
+  vertical divider and before the bell, alternates dark and light on a click,
+  and turns Match system into an explicit choice the first time it is
+  clicked. Below the 720px `chrome-narrow` width it leaves the bar; it is not
+  in the never-hide list. The three-way choice (dark, light, Match system)
+  stays in Settings > App > General and in the palette.
 - The top bar never edits. Reporting a bug, the setup checklist, the update
   and the version are about Goodboy itself, so they live in the Goodboy chip in
   the footer.
