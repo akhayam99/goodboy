@@ -55,7 +55,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const addProjects = useAppStore((state) => state.addProjects);
   const adoptProject = useAppStore((state) => state.adoptProject);
   const removeProject = useAppStore((state) => state.removeProject);
-  const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
+  const openWorkspace = useAppStore((state) => state.openWorkspace);
   const projects = useAppStore((state) => state.projects);
   const { detected, detect, clear } = useChildRepoDetection();
 
@@ -90,7 +90,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly rootPaths: ReadonlyArray<string>;
   }) => {
     const workspace = await createWorkspace({ name });
-    await setCurrentWorkspace(workspace.id);
+    await openWorkspace(workspace.id, workspace.name);
     const result = await addProjects({ workspaceId: workspace.id, rootPaths });
     adoption.noteConflicts(result.conflicts);
     return workspace;
@@ -109,7 +109,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => {
-    await setCurrentWorkspace(workspace.id);
+    await openWorkspace(workspace.id, workspace.name);
     onComplete({ mode, workspace });
   };
 
@@ -248,7 +248,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const onCreateWorkspace = () =>
     run(async () => {
       const workspace = await createWorkspace({ name: workspaceName.trim() });
-      await setCurrentWorkspace(workspace.id);
+      await openWorkspace(workspace.id, workspace.name);
       setCreated(workspace);
     });
 

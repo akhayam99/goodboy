@@ -16,6 +16,8 @@ vi.mock('../../../store', async () => {
     readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
     readonly setCurrentWorkspace: (id: string) => Promise<void>;
+    readonly openWorkspace: (id: string, title: string) => Promise<void>;
+    readonly workspaces: ReadonlyArray<{ readonly id: string; readonly name: string }>;
     readonly setCurrentSession: (id: string | null) => Promise<void>;
     readonly setActiveLens: (sessionId: string, lens: string | null) => void;
     readonly selectAgent: (sessionId: string, agentId: string) => Promise<void>;
@@ -25,10 +27,12 @@ vi.mock('../../../store', async () => {
     currentSessionId: null,
     activeLens: {},
     selectedAgentId: {},
+    workspaces: [],
     setSessionStudio: () => undefined,
     setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
     setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id }),
+    openWorkspace: async (id) => set({ currentWorkspaceId: id }),
     setCurrentSession: async (id) => set({ currentSessionId: id }),
     setActiveLens: (sessionId, lens) =>
       set((state) => ({ activeLens: { ...state.activeLens, [sessionId]: lens } })),
@@ -233,6 +237,17 @@ describe('app overlay hook, navigation', () => {
 
     expect(await openStudios()).toEqual(['inbox']);
     expect(useAppStore.getState().currentWorkspaceId).toBe('ws-2');
+  });
+
+  it('does not open the inbox here when the other workspace opens in its own window', async () => {
+    useAppStore.setState({ openWorkspace: async () => undefined });
+    renderHarness();
+    act(() => overlays().openSettings());
+
+    fire({ name: 'goodboy:open-inbox', detail: { workspaceId: 'ws-2', provider: 'linear' } });
+
+    expect(await openStudios()).toEqual([]);
+    expect(useAppStore.getState().currentWorkspaceId).toBe(WORKSPACE_ID);
   });
 });
 

@@ -30,7 +30,16 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
       const workspaceId = eventValue({ event, key: 'workspaceId' });
       if (isWorkspaceId(workspaceId) && workspaceId !== useAppStore.getState().currentWorkspaceId) {
         close();
-        void useAppStore.getState().setCurrentWorkspace(workspaceId).then(openStudio, openStudio);
+        const store = useAppStore.getState();
+        const workspace = store.workspaces.find((candidate) => candidate.id === workspaceId);
+        void store
+          .openWorkspace(workspaceId, workspace?.name ?? '')
+          .catch(() => undefined)
+          .then(() => {
+            if (useAppStore.getState().currentWorkspaceId === workspaceId) {
+              openStudio();
+            }
+          });
         return;
       }
       openStudio();
