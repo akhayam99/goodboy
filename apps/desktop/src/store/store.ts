@@ -93,6 +93,8 @@ import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
+import { createSlackDraftsSlice } from './slices/slack-drafts';
+import type { DecideSessionSlackDraftParams } from './slices/slack-drafts';
 import type {
   QuestionDelegateOutcome,
   SpawnQuestionDelegatesParams,
@@ -1018,6 +1020,8 @@ type AppActions = {
   ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
   resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
   takeQuestionBack(params: TakeQuestionBackParams): Promise<void>;
+  loadSessionSlackDrafts(sessionId: SessionId): Promise<void>;
+  decideSessionSlackDraft(params: DecideSessionSlackDraftParams): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(
@@ -1276,6 +1280,7 @@ export const initialState: AppState = {
   sessionAnsweredQuestions: {},
   sessionDismissedQuestions: {},
   sessionQuestionsLoadError: {},
+  sessionSlackDrafts: {},
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,
@@ -1291,6 +1296,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createArtifactsSlice(set, get),
   ...createPlansSlice(set, get),
   ...createOpenQuestionsSlice(set, get),
+  ...createSlackDraftsSlice(set),
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
   ...createStorageSlice(set, get),

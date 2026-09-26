@@ -1,6 +1,12 @@
 import type { RetryRunParams } from '../../retryRun';
 import type { ReactNode } from 'react';
-import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  IntegrationDraft,
+  OpenQuestion,
+  ProviderRunId,
+  SessionId,
+} from '@goodboy/types';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
@@ -9,12 +15,14 @@ import { OperationsCluster } from '../OperationsCluster';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
+import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { isWorkflowRailRow } from './workflowRailGroup';
 
 type Props = {
   rows: ReadonlyArray<TranscriptRow>;
   oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<OpenQuestion>>;
+  slackDrafts?: ReadonlyArray<IntegrationDraft>;
   sessionId: SessionId;
   selectedAgentId: AgentId | null;
   workingDir: string | null;
@@ -62,6 +70,7 @@ const lastRowIndexByRun = ({
 export const TranscriptRows = ({
   rows,
   oqByTurnOrdinal,
+  slackDrafts = [],
   sessionId,
   selectedAgentId,
   workingDir,
@@ -235,6 +244,13 @@ export const TranscriptRows = ({
           sessionId={sessionId}
           viewerAgentId={selectedAgentId}
         />
+      </li>,
+    );
+  }
+  for (const draft of slackDrafts) {
+    out.push(
+      <li key={`slack-draft-${draft.id}`}>
+        <SlackDraftCard draft={draft} sessionId={sessionId} />
       </li>,
     );
   }

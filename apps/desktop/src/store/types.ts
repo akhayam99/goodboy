@@ -38,6 +38,7 @@ import type {
   IntegrationBinding,
   IntegrationCredential,
   IntegrationCredentialUsage,
+  IntegrationDraft,
   IsoDateTime,
   LinkedIssue,
   Message,
@@ -427,6 +428,7 @@ export type AppState = AppSliceState & {
   readonly sessionAnsweredQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionDismissedQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionQuestionsLoadError: Readonly<Record<SessionId, string | undefined>>;
+  readonly sessionSlackDrafts: Readonly<Record<SessionId, ReadonlyArray<IntegrationDraft>>>;
   readonly openQuestionScrollTarget: {
     readonly agentId: AgentId;
     readonly questionId: OpenQuestionId;
