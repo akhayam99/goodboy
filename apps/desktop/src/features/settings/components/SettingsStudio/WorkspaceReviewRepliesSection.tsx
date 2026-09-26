@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
-import { Button, InlineConfirm, Markdown, SegmentedTabs, Switch } from '@goodboy/ui';
+import {
+  Band,
+  BandStack,
+  Button,
+  Eyebrow,
+  InlineConfirm,
+  Markdown,
+  SegmentedTabs,
+  Switch,
+} from '@goodboy/ui';
 import { RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
@@ -21,7 +30,6 @@ import {
 import { ReplyStyleNoteField } from './ReplyStyleNoteField';
 import { ReplyTemplateField } from './ReplyTemplateField';
 import { WorkspaceDefaultRow } from './WorkspaceDefaultRow';
-import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
 const PREVIEW_SHA = '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd';
 const PREVIEW_PR_URL = 'https://github.com/acme/payments-api/pull/528';
@@ -82,7 +90,9 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   return (
     <section aria-labelledby={REVIEW_REPLIES_SECTION_ID} className="flex flex-col gap-3">
       <div className="flex flex-col gap-0.5">
-        <WorkspaceEyebrow id={REVIEW_REPLIES_SECTION_ID} label="Review replies" />
+        <h2 id={REVIEW_REPLIES_SECTION_ID}>
+          <Eyebrow label="Review replies" />
+        </h2>
         <p className="text-label text-muted-foreground">
           How Goodboy answers review comments on your pull requests.
         </p>
@@ -200,22 +210,24 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
         </div>
         <div className="flex min-w-0 flex-col gap-2" aria-label="Reply preview">
           <span className="text-label font-medium text-foreground">Preview</span>
-          <div className="flex flex-col gap-2 rounded-md border border-border bg-subtle px-3 py-2.5">
-            <p className="text-secondary text-muted-foreground">When fixed</p>
-            {preview !== null && (
-              <Markdown text={preview} variant="preview" className="text-label text-foreground" />
-            )}
-          </div>
-          <div className="flex flex-col gap-2 rounded-md border border-border bg-subtle px-3 py-2.5">
-            <p className="text-secondary text-muted-foreground">When not changing</p>
-            {noChangePreview !== null && (
-              <Markdown
-                text={noChangePreview}
-                variant="preview"
-                className="text-label text-foreground"
-              />
-            )}
-          </div>
+          <BandStack>
+            <Band inset="content">
+              <p className="text-secondary text-muted-foreground">When fixed</p>
+              {preview !== null && (
+                <Markdown text={preview} variant="preview" className="text-label text-foreground" />
+              )}
+            </Band>
+            <Band inset="content">
+              <p className="text-secondary text-muted-foreground">When not changing</p>
+              {noChangePreview !== null && (
+                <Markdown
+                  text={noChangePreview}
+                  variant="preview"
+                  className="text-label text-foreground"
+                />
+              )}
+            </Band>
+          </BandStack>
         </div>
       </div>
     </section>

@@ -1,6 +1,6 @@
 import { CLI_CREDENTIAL, isApiProvider } from '@goodboy/core';
 import { useMemo } from 'react';
-import { SectionHeader, Select } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Band, Select, cn } from '@goodboy/ui';
 import { FolderGit2 } from 'lucide-react';
 import { type ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -31,21 +31,17 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
   const cliLabel = cliIdentity ? `CLI login (${cliIdentity})` : 'CLI login';
 
   return (
-    <section className="flex flex-col gap-2">
-      <SectionHeader
-        label="Workspace credentials"
-        hint={`Pick which credential each workspace uses for ${providerId}.`}
-      />
-      <ul className="flex flex-col gap-2">
+    <Band
+      label="Workspace credentials"
+      hint={`Pick which credential each workspace uses for ${providerId}.`}
+    >
+      <ul className="flex flex-col">
         {connected.map((ws) => {
           const fallback = isApi ? (mine[0]?.id ?? '') : CLI_CREDENTIAL;
           const bound = workspaceOverrides[ws.id]?.providerBindings?.[providerId] ?? fallback;
           const usingKey = bound !== CLI_CREDENTIAL;
           return (
-            <li
-              key={ws.id}
-              className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-3"
-            >
+            <li key={ws.id} className={cn(BAND_ROW_CLASS, 'gap-3')}>
               <span
                 className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
                 aria-hidden
@@ -82,6 +78,6 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
           );
         })}
       </ul>
-    </section>
+    </Band>
   );
 };

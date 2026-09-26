@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId, WorkspaceProfile } from '@goodboy/types';
+import { Eyebrow } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
-import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -37,7 +37,9 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
 
   return (
     <section aria-labelledby="workspace-about-you" className="flex flex-col gap-3">
-      <WorkspaceEyebrow id="workspace-about-you" label="About you" />
+      <h2 id="workspace-about-you">
+        <Eyebrow label="About you" />
+      </h2>
       <ProfileForm value={draft} onChange={setDraft} onCommit={(next) => void commit(next)} />
     </section>
   );
