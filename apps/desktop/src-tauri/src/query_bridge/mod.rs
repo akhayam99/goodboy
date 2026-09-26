@@ -383,7 +383,10 @@ mod tests {
 
     #[cfg(unix)]
     fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("goodboy-query-bridge-{}", name));
+        static NEXT_SCRATCH: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let serial = NEXT_SCRATCH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let dir =
+            std::env::temp_dir().join(format!("gbqb-{}-{}-{}", name, std::process::id(), serial));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("a scratch directory");
         dir
@@ -594,9 +597,10 @@ mod tests {
 
     #[test]
     fn serving_needs_a_live_listener_and_the_socket_file_it_bound() {
-        let file = std::env::temp_dir().join("goodboy-query-bridge-serving.probe");
+        let pid = std::process::id();
+        let file = std::env::temp_dir().join(format!("gbqb-serving-{pid}.probe"));
         std::fs::write(&file, b"").expect("a probe file");
-        let missing = std::env::temp_dir().join("goodboy-query-bridge-serving.absent");
+        let missing = std::env::temp_dir().join(format!("gbqb-serving-{pid}.absent"));
         let _ = std::fs::remove_file(&missing);
 
         assert!(serving(true, Some(&file)));
