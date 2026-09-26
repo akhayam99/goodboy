@@ -80,11 +80,14 @@ the one Enter runs.
 
 In the composer, `$` lists every script of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then `package.json` and
-`composer.json` scripts by category, each tagged with its source. Manifests are
+`composer.json` scripts by category. A row's sublabel names its package (the
+manifest name, or `root`) and shows the script's body, not its invocation; the
+trailing badge is `Running` or the package's short name (`web`, not
+`package.json`) so twenty `dev` rows in a monorepo read apart. Manifests are
 read from each mount the first time `$` is typed. With more than one mount a
-row names its project. An empty list says why: no project in the session, no
-script in the project, or no match for the filter. Enter runs the row and opens
-its output in the right drawer; the composer text is cleared.
+row also names its project. An empty list says why: no project in the
+session, no script in the project, or no match for the filter. Enter runs the
+row and opens its output in the right drawer; the composer text is cleared.
 
 ## Surfaces
 
@@ -691,19 +694,42 @@ grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick
 where a script runs by picking the row in the right group. A group header
 collapses it, and the collapsed set is kept per workspace
-(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`). Saved scripts come
-first. When a group holds more than one manifest package (a pnpm, yarn or npm
-workspace, or package.json next to composer.json), its manifest rows sit under
-one `ScriptPackageSection` per package: the package name from its manifest,
-the manifest path and the count. The root package comes first, then workspace
-packages by folder, then composer. A manifest script runs in its package's
-folder, and the filter matches the package name and folder too. Every row is
-the same `ScriptRow`: category node, name, command, Source (`Saved`, `package.json`,
-`composer.json`), Last run in glyph and word, one Run or Stop button and a `⋯`
-menu (saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
-script, Copy command). Clicking a row opens its output in the `scriptRun`
-drawer, and the row whose output is open is selected. New script and Edit open
-the same inline `ScriptEditor` card, at the top of the active mount's group or
-in place of the edited row. Saved scripts of workspace projects that are not in
-the session are named in one line under the groups. The session sidebar has no
-scripts section: `$` launches, the Now chip watches.
+(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`).
+
+Inside a group, three levels: project (the group header above), then Saved
+(when at least one script is saved for that project) or a package, then the
+row. When a group holds more than one manifest package (a pnpm, yarn or npm
+workspace, or package.json next to composer.json), Saved gets its own titled
+`ScriptSavedSection` (eyebrow `Saved N`), sitting above one `ScriptPackageSection`
+per package: a `Package` glyph, the name from its manifest, the folder in mono
+(root has none), the script count and, when something is running in it, an
+info-toned `N running` badge. The root package comes first, then workspace
+packages by folder, then composer; the filter matches the package name,
+folder and a script's body too. Each package section has its own chevron:
+beyond six packages the sections default closed, except the root, one with a
+script running or run today, and any section a live filter matches (a filter
+always forces its matches open, regardless of the stored state). The closed
+or open state a person picks is kept per workspace and per package
+(`goodboy:scripts-packages-collapsed:v1:<workspaceId>`). With a single
+manifest package, rows stay flat under the project header, as before.
+
+Every row is the same `ScriptRow`: category node, name (its tooltip names the
+invocation, e.g. `Runs yarn workspace @northwind/web run dev`), the script's
+**body** (`vite --port 3000`, not `yarn run dev`: the invocation is what
+made every `dev` row look the same), Source (hidden inside a Saved or package
+section, since the header already says it; shown as `Saved`/`package.json`/
+`composer.json` only for a flat, single-package list), Last run in glyph and
+word, one Run or Stop button and a `⋯` menu (saved: Edit, Duplicate, Delete
+with an inline confirm; manifest: Save as script, Copy command, both using
+the invocation). "Save as script" from a workspace package writes a command
+that still runs in that package once saved at the project root
+(`workspaceInvocation`: `yarn workspace <pkg> run <name>`, `pnpm --filter
+<pkg> run <name>`, `npm run <name> --workspace <dir>`, `bun run --filter <pkg>
+<name>`, `composer run-script <name> -d <dir>`), because a saved script always
+runs from the worktree root. Clicking a row opens its output in the
+`scriptRun` drawer, and the row whose output is open is selected. New script
+and Edit open the same inline `ScriptEditor` card, at the top of the active
+mount's group or in place of the edited row. Saved scripts of workspace
+projects that are not in the session are named in one line under the groups.
+The session sidebar has no scripts section: `$` launches, the Now chip
+watches.
