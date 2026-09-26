@@ -31,3 +31,39 @@ export const toNextStepOutcomes = ({
     }
     return [{ kind, outcome: event.outcome, at: event.outcomeTs ?? event.ts }];
   });
+
+const fingerprintOf = ({ event }: { readonly event: NudgeEvent }): string | null => {
+  if (event.contextJson === null) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(event.contextJson) as { readonly fingerprint?: unknown };
+    return typeof parsed.fingerprint === 'string' ? parsed.fingerprint : null;
+  } catch {
+    return null;
+  }
+};
+
+export const dismissedFingerprintsFromEvents = ({
+  events,
+}: {
+  readonly events: ReadonlyArray<NudgeEvent>;
+}): ReadonlySet<string> => {
+  const sorted = [...events].sort(
+    (first, second) =>
+      Date.parse(first.outcomeTs ?? first.ts) - Date.parse(second.outcomeTs ?? second.ts),
+  );
+  const dismissed = new Set<string>();
+  for (const event of sorted) {
+    const fingerprint = fingerprintOf({ event });
+    if (fingerprint === null || event.outcome === null) {
+      continue;
+    }
+    if (event.outcome === 'dismissed') {
+      dismissed.add(fingerprint);
+      continue;
+    }
+    dismissed.delete(fingerprint);
+  }
+  return dismissed;
+};

@@ -32,7 +32,12 @@ export const NextStepSlot = ({ session }: Props) => {
 
   const onNotNow = (suggestion: SessionSuggestion) => {
     setNotNowIds((current) => new Set([...current, suggestion.id]));
-    void recordNextStepOutcome({ sessionId, kind: suggestion.kind, outcome: 'dismissed' });
+    void recordNextStepOutcome({
+      sessionId,
+      kind: suggestion.kind,
+      outcome: 'dismissed',
+      fingerprint: suggestion.fingerprint,
+    });
   };
 
   const trackedActions = (suggestion: SessionSuggestion): SuggestionActions => {
@@ -45,7 +50,12 @@ export const NextStepSlot = ({ session }: Props) => {
       primary: {
         ...actions.primary,
         onAct: () => {
-          void recordNextStepOutcome({ sessionId, kind: suggestion.kind, outcome: 'accepted' });
+          void recordNextStepOutcome({
+            sessionId,
+            kind: suggestion.kind,
+            outcome: 'accepted',
+            fingerprint: suggestion.fingerprint,
+          });
           actions.primary?.onAct();
         },
       },

@@ -11,6 +11,7 @@ import type {
   SessionEventId,
   SessionId,
   StepId,
+  WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
 import type { SessionSuggestion } from '../types';
@@ -45,6 +46,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const mergePr = vi.fn(async () => undefined);
   const resolveMountCleanup = vi.fn(async () => undefined);
   const attachWorkflowToSession = vi.fn(async () => undefined);
+  const announceAgentStarted = vi.fn();
   return {
     spies: {
       ensureProjectMounted,
@@ -64,6 +66,7 @@ const { storeState, spies } = vi.hoisted(() => {
       mergePr,
       resolveMountCleanup,
       attachWorkflowToSession,
+      announceAgentStarted,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseAgent: vi.fn((_params: unknown) => ({
         canRebase: false,
@@ -109,6 +112,9 @@ vi.mock('../../../store', async () => {
 });
 vi.mock('../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => ({}),
+}));
+vi.mock('../../../shared/hooks/useAgentStartedToast', () => ({
+  useAgentStartedToast: () => spies.announceAgentStarted,
 }));
 vi.mock('../../session/agent-kind', () => ({
   kindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
@@ -441,7 +447,7 @@ describe('useSuggestionActions', () => {
     );
   });
 
-  it('starts the implementer with the plan behind a plan-ready suggestion', () => {
+  it('starts the implementer with the plan behind a plan-ready suggestion, then announces it', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -455,6 +461,13 @@ describe('useSuggestionActions', () => {
     actions.primary?.onAct();
 
     expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spies.announceAgentStarted).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-implementer',
+      title: 'Implementer started',
+      message: 'An agent is running this plan. You can keep working.',
+    });
   });
 
   it('hands the questions lens the answer action', () => {
@@ -782,7 +795,7 @@ describe('useSuggestionActions', () => {
         id: 'continue-with-workflow:agent-1',
         kind: 'continue-with-workflow',
         band: 3,
-        payload: { workflowId: 'workflow-1', workflowName: 'Plan and ship' },
+        payload: { workflowId: 'workflow-1' as WorkflowId, workflowName: 'Plan and ship' },
       },
     });
 

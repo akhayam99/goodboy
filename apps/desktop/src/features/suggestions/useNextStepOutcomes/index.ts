@@ -4,7 +4,11 @@ import { insertNudgeEvent, listNudgeEvents, type NudgeOutcome } from '@goodboy/d
 import { EMPTY_ARRAY } from '../../../store';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { NextStepOutcome } from '../nextStepGates';
-import { nextStepNudgeKind, toNextStepOutcomes } from '../nextStepOutcomes';
+import {
+  dismissedFingerprintsFromEvents,
+  nextStepNudgeKind,
+  toNextStepOutcomes,
+} from '../nextStepOutcomes';
 import type { SuggestionKind } from '../types';
 
 const WINDOW_DAYS = 14;
@@ -14,10 +18,18 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-export const useNextStepOutcomes = ({ sessionId }: Params): ReadonlyArray<NextStepOutcome> => {
-  const [outcomes, setOutcomes] = useState<ReadonlyArray<NextStepOutcome>>(
-    EMPTY_ARRAY as ReadonlyArray<NextStepOutcome>,
-  );
+export type NextStepGateState = {
+  readonly outcomes: ReadonlyArray<NextStepOutcome>;
+  readonly dismissedFingerprints: ReadonlySet<string>;
+};
+
+const EMPTY_GATE_STATE: NextStepGateState = {
+  outcomes: EMPTY_ARRAY as ReadonlyArray<NextStepOutcome>,
+  dismissedFingerprints: new Set<string>(),
+};
+
+export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState => {
+  const [state, setState] = useState<NextStepGateState>(EMPTY_GATE_STATE);
 
   useEffect(() => {
     let isStale = false;
@@ -27,7 +39,10 @@ export const useNextStepOutcomes = ({ sessionId }: Params): ReadonlyArray<NextSt
         if (isStale) {
           return;
         }
-        setOutcomes(toNextStepOutcomes({ events }));
+        setState({
+          outcomes: toNextStepOutcomes({ events }),
+          dismissedFingerprints: dismissedFingerprintsFromEvents({ events }),
+        });
       })
       .catch(() => undefined);
     return () => {
@@ -35,19 +50,21 @@ export const useNextStepOutcomes = ({ sessionId }: Params): ReadonlyArray<NextSt
     };
   }, [sessionId]);
 
-  return outcomes;
+  return state;
 };
 
 type RecordParams = {
   readonly sessionId: SessionId;
   readonly kind: SuggestionKind;
   readonly outcome: NudgeOutcome;
+  readonly fingerprint?: string;
 };
 
 export const recordNextStepOutcome = async ({
   sessionId,
   kind,
   outcome,
+  fingerprint,
 }: RecordParams): Promise<void> => {
   const now = new Date().toISOString() as IsoDateTime;
   try {
@@ -56,7 +73,7 @@ export const recordNextStepOutcome = async ({
       sessionId,
       ts: now,
       kind: nextStepNudgeKind({ kind }),
-      contextJson: null,
+      contextJson: fingerprint == null ? null : JSON.stringify({ fingerprint }),
       outcome,
       outcomeTs: now,
     });

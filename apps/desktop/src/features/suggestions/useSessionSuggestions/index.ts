@@ -164,7 +164,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
-  const outcomes = useNextStepOutcomes({ sessionId });
+  const { outcomes, dismissedFingerprints } = useNextStepOutcomes({ sessionId });
   const demotedKinds = useMemo(() => {
     const now = () => Date.now();
     const demoted = new Set<SuggestionKind>();
@@ -313,9 +313,11 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
       hasGoal: session.goal.trim() !== '',
       recommendedWorkflow,
+      dismissedFingerprints,
       demotedKinds,
     });
   }, [
+    dismissedFingerprints,
     active,
     advanceByRunId,
     agentKindOverride,

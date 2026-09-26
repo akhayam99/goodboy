@@ -6,6 +6,7 @@ import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../sto
 import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
+import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
@@ -100,6 +101,7 @@ export const useSuggestionActions = ({
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
+  const announceAgentStarted = useAgentStartedToast();
 
   const reportError = (title: string) => (message: string) => {
     void emitNotification({
@@ -249,7 +251,14 @@ export const useSuggestionActions = ({
           label: 'Start implementer',
           isDisabled: false,
           onAct: () => {
-            void runPlan(sessionId, suggestion.payload.planId);
+            void runPlan(sessionId, suggestion.payload.planId).then((agentId) => {
+              announceAgentStarted({
+                sessionId,
+                agentId,
+                title: 'Implementer started',
+                message: 'An agent is running this plan. You can keep working.',
+              });
+            });
           },
         },
         onDismiss: null,

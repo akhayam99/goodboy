@@ -46,12 +46,60 @@ describe('useNextStepOutcomes', () => {
 
     const view = renderHook(() => useNextStepOutcomes({ sessionId }));
 
-    await waitFor(() => expect(view.result.current).toHaveLength(1));
-    expect(view.result.current[0]).toEqual({
+    await waitFor(() => expect(view.result.current.outcomes).toHaveLength(1));
+    expect(view.result.current.outcomes[0]).toEqual({
       kind: 'push-branch',
       outcome: 'dismissed',
       at: '2026-01-01T00:00:00.000Z',
     });
+  });
+
+  it('turns a dismissed event carrying a fingerprint into the dismissed set', async () => {
+    listNudgeEvents.mockResolvedValue([
+      {
+        id: 'ev-1',
+        sessionId,
+        ts: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        kind: 'next:push-branch',
+        contextJson: JSON.stringify({ fingerprint: 'push-branch:mount-web:4' }),
+        outcome: 'dismissed',
+        outcomeTs: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      },
+    ] satisfies ReadonlyArray<NudgeEvent>);
+
+    const view = renderHook(() => useNextStepOutcomes({ sessionId }));
+
+    await waitFor(() =>
+      expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(true),
+    );
+  });
+
+  it('drops a fingerprint from the dismissed set once it was later accepted', async () => {
+    listNudgeEvents.mockResolvedValue([
+      {
+        id: 'ev-1',
+        sessionId,
+        ts: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        kind: 'next:push-branch',
+        contextJson: JSON.stringify({ fingerprint: 'push-branch:mount-web:4' }),
+        outcome: 'dismissed',
+        outcomeTs: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      },
+      {
+        id: 'ev-2',
+        sessionId,
+        ts: '2026-01-02T00:00:00.000Z' as IsoDateTime,
+        kind: 'next:push-branch',
+        contextJson: JSON.stringify({ fingerprint: 'push-branch:mount-web:4' }),
+        outcome: 'accepted',
+        outcomeTs: '2026-01-02T00:00:00.000Z' as IsoDateTime,
+      },
+    ] satisfies ReadonlyArray<NudgeEvent>);
+
+    const view = renderHook(() => useNextStepOutcomes({ sessionId }));
+
+    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledTimes(1));
+    expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(false);
   });
 
   it('reloads when the session changes', async () => {
@@ -81,6 +129,18 @@ describe('recordNextStepOutcome', () => {
       outcome: 'accepted',
     });
     expect(event?.outcomeTs).not.toBeNull();
+  });
+
+  it('carries the fingerprint in contextJson when given one', async () => {
+    await recordNextStepOutcome({
+      sessionId,
+      kind: 'push-branch',
+      outcome: 'dismissed',
+      fingerprint: 'push-branch:mount-web:4',
+    });
+
+    const event = insertNudgeEvent.mock.calls[0]?.[1];
+    expect(event?.contextJson).toBe(JSON.stringify({ fingerprint: 'push-branch:mount-web:4' }));
   });
 
   it('swallows a write failure instead of throwing', async () => {

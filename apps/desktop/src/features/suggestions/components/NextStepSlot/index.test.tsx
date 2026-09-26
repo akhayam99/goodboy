@@ -86,6 +86,7 @@ describe('NextStepSlot', () => {
       sessionId: 'session-1',
       kind: 'answer-questions',
       outcome: 'accepted',
+      fingerprint: 'answer-questions:session-1:2',
     });
   });
 
@@ -115,6 +116,7 @@ describe('NextStepSlot', () => {
       sessionId: 'session-1',
       kind: 'mount-project',
       outcome: 'dismissed',
+      fingerprint: 'answer-questions:session-1:2',
     });
   });
 });

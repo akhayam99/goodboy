@@ -238,13 +238,18 @@ whether you clicked it on the board or in the session overview.
   suggestion per target key survives per render: `dedupeByTargetKey` keeps
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
-  "Not now" is scoped the same way. Three "Not now" on the same kind inside
-  a session in 14 days, with no acceptance between them, moves that kind
-  behind everything else instead of leading (`shouldDemote`,
-  `nextStepGates.ts`): the only learning this engine does, and it resets
-  the moment one of that kind is accepted. Every act or dismiss writes a
-  `next:<kind>` row to `nudge_events` (`useNextStepOutcomes`); the demotion
-  window reads the session's own history, not the workspace's.
+  "Not now" is scoped the same way, and both persist: the fingerprint rides
+  along in the same `next:<kind>` row's `contextJson`
+  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), so a reload
+  or a remount does not resurrect what you just dismissed or acted on,
+  inside the same 14-day window the demotion rule below reads. Three "Not
+  now" on the same kind inside a session in 14 days, with no acceptance
+  between them, moves that kind behind everything else instead of leading
+  (`shouldDemote`, `nextStepGates.ts`): the only learning this engine does,
+  and it resets the moment one of that kind is accepted. Every act or
+  dismiss writes a `next:<kind>` row to `nudge_events`
+  (`useNextStepOutcomes`); the demotion window reads the session's own
+  history, not the workspace's.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that
@@ -276,6 +281,11 @@ whether you clicked it on the board or in the session overview.
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
+- Accepting plan-ready announces the started implementer with the same
+  `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
+  started", with an "Open the agent" action) - the toast the standalone
+  `PlanReadySuggestion` used to show before the unified resolver replaced it
+  in E7-5, restored here.
 
 ## Agents
 
