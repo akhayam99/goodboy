@@ -4,7 +4,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
-import { resolveFacts, slackThreadFields } from '../../../../shared/detail-fields';
+import { recordByline, resolveFacts, slackThreadFields } from '../../../../shared/detail-fields';
 import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import { slackGetPermalink, type SlackMessage } from '../client';
@@ -65,14 +65,19 @@ export const SlackThreadDetail = ({
   const messages =
     thread.messages.length > 0 ? thread.messages : fallbackMessage == null ? [] : [fallbackMessage];
   const userNames = useMemo(() => slackUserNames({ users }), [users]);
-  const facts = useMemo(
-    () =>
-      resolveFacts({
-        registry: slackThreadFields,
-        entity: buildThreadProperties({ channelName, messages, userNames }),
-      }),
+  const threadProperties = useMemo(
+    () => buildThreadProperties({ channelName, messages, userNames }),
     [channelName, messages, userNames],
   );
+  const facts = useMemo(
+    () => resolveFacts({ registry: slackThreadFields, entity: threadProperties }),
+    [threadProperties],
+  );
+  const opener = threadProperties.participants[0] ?? null;
+  const byline = recordByline({
+    lead: opener == null ? null : `Started by ${opener} in #${channelName}`,
+    iso: threadProperties.lastActivityAt,
+  });
   const channels = thread.channels;
   const reply = actions.reply;
   const react = actions.react;
@@ -137,6 +142,7 @@ export const SlackThreadDetail = ({
           provider="slack"
           identifier={`#${channelName}`}
           title={title !== '' ? title : `#${channelName}`}
+          byline={byline}
           facts={<RecordProperties facts={facts} />}
           frame={frame}
           externalRef={
