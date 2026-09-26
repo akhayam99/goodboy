@@ -58,7 +58,11 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           provider="linear"
           identifier={issue.identifier}
           title={issue.title}
-          byline={recordByline({ verb: 'updated', iso: issue.updatedAt })}
+          byline={recordByline({
+            lead: issue.creator == null ? null : `Opened by ${issue.creator.name}`,
+            verb: 'updated',
+            iso: issue.updatedAt,
+          })}
           facts={
             <RecordProperties
               facts={resolveFacts({ registry: linearIssueFields, entity: issue })}

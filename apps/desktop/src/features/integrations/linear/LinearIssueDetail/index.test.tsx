@@ -169,4 +169,15 @@ describe('LinearIssueDetail', () => {
 
     expect(screen.getByRole('time')).toBeDefined();
   });
+
+  it('names who opened the issue in the byline', () => {
+    render(
+      <LinearIssueDetail
+        issue={{ ...ISSUE, creator: { name: 'Mara Lin' } }}
+        workspaceId={'workspace-1' as WorkspaceId}
+      />,
+    );
+
+    expect(screen.getByText(/Opened by Mara Lin/)).toBeDefined();
+  });
 });
