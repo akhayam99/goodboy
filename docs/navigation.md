@@ -349,7 +349,9 @@ N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
   that comment.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
-  Tools; the section segment lists the App sections. The first segment of a
+  Tools; the section segment lists the App sections. Neither carries an
+  action: Settings has no project scope, so there is no `Use workspace values`
+  to offer. The first segment of a
   studio has no menu: studios change from the footer.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
