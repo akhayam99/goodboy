@@ -444,6 +444,7 @@ export {
   type IssueBriefInput,
   type IssueBriefResult,
   type SummarizeInput,
+  type SummarizeMode,
   type SummarizerDeps,
   type SummarizerResult,
   type SummarizerUsage,

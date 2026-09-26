@@ -376,6 +376,16 @@ snapshot keep reading one string.
   reason, never reword, merge or withdraw.
 - A session made before the ledger is seeded from its slot the first time the
   ledger is read, numbered in the slot's order.
+- The summarizer never writes the `decisions` slot (an upsert of it is
+  dropped). It answers `{ upserts, decisionOps }` and names decisions by
+  number; an `add` without a `why` is dropped, because a line with no reason
+  is state, not a decision. Operations that do not parse fail the answer, which
+  is asked again once. Its summary is three sections, `Learned`, `State`,
+  `Next`; an old `Problem` section is dropped on the next pass.
+- A consolidation pass (`mode: 'consolidate'`) has no turn and keeps only
+  `merge` and `withdraw`. `packages/core/src/summarizer/decisions-eval.test.ts`
+  is the fixed eval: rewording, merge, contradiction, state dressed as a
+  decision, an Italian marker, a list over budget.
 
 ## Composer
 

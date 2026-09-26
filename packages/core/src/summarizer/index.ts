@@ -6,6 +6,7 @@ export {
   type ContextSlotDelta,
   type ContextSlotDeltaUpsert,
   type SummarizeInput,
+  type SummarizeMode,
   type SummarizerDeps,
   type SummarizerResult,
   type SummarizerUsage,
