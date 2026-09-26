@@ -193,6 +193,64 @@ describe('ScriptsPanel', () => {
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
   });
 
+  it('splits a monorepo into its packages, root first, and runs each in its folder', () => {
+    const dev = [{ name: 'dev', command: 'yarn run dev' }];
+    state.discovered = {
+      ...state.discovered,
+      [SETTLEMENT_PATH]: [
+        {
+          source: 'package-json',
+          packageName: 'northwind',
+          relDir: '',
+          manager: 'yarn',
+          scripts: dev,
+        },
+        {
+          source: 'package-json',
+          packageName: '@northwind/web',
+          relDir: 'apps/web',
+          manager: 'yarn',
+          scripts: dev,
+        },
+        {
+          source: 'package-json',
+          packageName: '@acme/api',
+          relDir: 'apps/api',
+          manager: 'yarn',
+          scripts: dev,
+        },
+      ],
+    };
+    renderPanel();
+    const settlement = group('ledger-core · nw/settlement');
+
+    expect(
+      within(settlement)
+        .getAllByRole('region')
+        .map((region) => region.getAttribute('aria-label')),
+    ).toEqual(['northwind scripts', '@acme/api scripts', '@northwind/web scripts']);
+    const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
+    expect(within(web).getByText('apps/web/package.json')).toBeDefined();
+
+    fireEvent.click(within(web).getByRole('button', { name: 'Run dev' }));
+    expect(state.runDiscoveredScript).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scriptId: JSON.stringify([SETTLEMENT_PATH, 'package-json', 'apps/web', 'dev']),
+        command: 'yarn run dev',
+        cwd: `${SETTLEMENT_PATH}/apps/web`,
+      }),
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter scripts' }), {
+      target: { value: '@acme' },
+    });
+    expect(
+      within(group('ledger-core · nw/settlement'))
+        .getAllByRole('region')
+        .map((region) => region.getAttribute('aria-label')),
+    ).toEqual(['@acme/api scripts']);
+  });
+
   it('says why a mount has no scripts and why a session has none', () => {
     renderPanel();
 

@@ -16,6 +16,7 @@ import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDraw
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
 import { filterScriptGroups } from '../../filterScriptGroups';
+import { groupScriptsByPackage } from '../../groupScriptsByPackage';
 import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
 import type { ScriptRunRecord } from '../../scripts';
@@ -24,6 +25,7 @@ import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { ScriptGroupSection } from './ScriptGroupSection';
+import { ScriptPackageSection } from './ScriptPackageSection';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote, type UnmountedScriptsEntry } from './UnmountedScriptsNote';
 import { useScriptDraft } from './useScriptDraft';
@@ -399,6 +401,31 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
+  const renderScripts = ({ group }: { readonly group: SessionScriptGroup }) => {
+    if (group.packageCount < 2) {
+      return group.scripts.map((script) => renderRow({ group, script }));
+    }
+    return (
+      <div className="flex flex-col gap-2">
+        {groupScriptsByPackage({ scripts: group.scripts }).map((section) => {
+          const rows = section.scripts.map((script) => renderRow({ group, script }));
+          if (section.source === 'saved') {
+            return (
+              <div key={section.key} className="flex flex-col gap-0.5">
+                {rows}
+              </div>
+            );
+          }
+          return (
+            <ScriptPackageSection key={section.key} section={section}>
+              {rows}
+            </ScriptPackageSection>
+          );
+        })}
+      </div>
+    );
+  };
+
   const meta = [
     plural({ count: projectCount, word: 'project' }),
     runningCount > 0 ? `${runningCount} running` : null,
@@ -479,7 +506,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
                   void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
                 }
               >
-                {group.scripts.map((script) => renderRow({ group, script }))}
+                {renderScripts({ group })}
               </ScriptGroupSection>
             );
           })}
