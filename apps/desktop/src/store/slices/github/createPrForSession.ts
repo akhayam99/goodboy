@@ -15,6 +15,7 @@ import { closingIssueReferences } from '../../../features/github/closingIssueRef
 import { partOfReferences } from '../../../features/github/partOfReferences';
 import { seriesReferenceLines } from '../pr-series/seriesReferences';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { signScribeBody } from '../scribe/scribeSignature';
 import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { githubRequestHost } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
@@ -30,6 +31,7 @@ export type CreatePrInput = {
   readonly base?: string;
   readonly draft?: boolean;
   readonly referenceMode?: CreatePrReferenceMode;
+  readonly isScribeBody?: boolean;
 };
 
 const PR_URL = /\/pull\/(\d+)(?:$|[?#/])/;
@@ -83,6 +85,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     base,
     draft,
     referenceMode,
+    isScribeBody,
   }: CreatePrInput): Promise<void> => {
     const target = resolveSessionPrFetch({
       state: get(),
@@ -133,26 +136,24 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
     if (hasFields) {
       const filledBody = body ?? '';
       args.push('--title', title?.trim() || session.goal);
-      args.push(
-        '--body',
-        appendClosingReferences({
+      const finalBody = appendClosingReferences({
+        body: filledBody,
+        references: closingIssueReferences({
+          tasks: references,
+          branch: mount.branch,
           body: filledBody,
-          references: closingIssueReferences({
-            tasks: references,
-            branch: mount.branch,
-            body: filledBody,
-          }),
-          lines:
-            mode === 'part-of'
-              ? partOfLines({
-                  membership,
-                  tasks: linkedTasks,
-                  branch: mount.branch,
-                  body: filledBody,
-                })
-              : [],
         }),
-      );
+        lines:
+          mode === 'part-of'
+            ? partOfLines({
+                membership,
+                tasks: linkedTasks,
+                branch: mount.branch,
+                body: filledBody,
+              })
+            : [],
+      });
+      args.push('--body', isScribeBody === true ? signScribeBody({ body: finalBody }) : finalBody);
     } else {
       args.push('--fill');
     }

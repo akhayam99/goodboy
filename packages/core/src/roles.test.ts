@@ -20,6 +20,8 @@ describe('ROLE_REGISTRY', () => {
       'investigator',
       'tester',
       'resolver',
+      'rewriter',
+      'scribe',
       'docs',
       'report',
       'wireframe',
@@ -121,6 +123,27 @@ describe('ROLE_REGISTRY contract', () => {
       'docs',
       'custom',
     ]);
+  });
+
+  it('keeps the scribe out of every picker, workflow and classifier', () => {
+    expect(ROLE_REGISTRY.scribe).toMatchObject({
+      presentationKey: 'scribe',
+      workflowEligible: false,
+      classifierEligible: false,
+      selectionEligible: false,
+      pickerEligible: false,
+    });
+  });
+
+  it('keeps the history rewriter out of every picker, workflow and classifier', () => {
+    expect(ROLE_REGISTRY.rewriter).toMatchObject({
+      presentationKey: 'rewriter',
+      workflowEligible: false,
+      classifierEligible: false,
+      selectionEligible: false,
+      pickerEligible: false,
+    });
+    expect(normalizeSelectableAgentRole({ role: 'rewriter' })).toBe('custom');
   });
 
   it('normalizes every selectable role to itself and the rest to custom', () => {

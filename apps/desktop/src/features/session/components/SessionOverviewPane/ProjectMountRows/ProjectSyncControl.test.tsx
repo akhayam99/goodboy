@@ -22,8 +22,8 @@ const { store, rebaseRun, pushRun, rebaseParams, pushParams, rebaseIsRunning } =
 vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
-vi.mock('../../../hooks/useRebaseAgent', () => ({
-  useRebaseAgent: (params: Record<string, unknown>) => {
+vi.mock('../../../hooks/useRebaseBranch', () => ({
+  useRebaseBranch: (params: Record<string, unknown>) => {
     rebaseParams.push(params);
     return { canRebase: true, isRunning: rebaseIsRunning.current, error: null, run: rebaseRun };
   },

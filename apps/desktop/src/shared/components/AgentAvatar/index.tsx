@@ -23,6 +23,8 @@ const KIND_IMAGE: Record<AgentKind, string | null> = {
   report: null,
   wireframe: null,
   resolver: null,
+  rewriter: null,
+  scribe: agentDocs,
 };
 
 const KIND_COLOR: Record<AgentKind, string> = {
@@ -38,6 +40,8 @@ const KIND_COLOR: Record<AgentKind, string> = {
   report: 'var(--color-agent-report)',
   wireframe: 'var(--color-agent-wireframe)',
   resolver: 'var(--color-agent-resolver)',
+  rewriter: 'var(--color-agent-rewriter)',
+  scribe: 'var(--color-agent-scribe)',
 };
 
 const SIZE_CLASS: Record<AvatarSize, string> = {

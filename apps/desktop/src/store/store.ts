@@ -77,7 +77,6 @@ import type {
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
-import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -221,6 +220,22 @@ import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
+import { createHistorySlice, historyInitialState } from './slices/history';
+import { createScribeSlice, scribeInitialState } from './slices/scribe';
+import type { RequestScribeInput, SettleScribeInput } from './slices/scribe/types';
+import type {
+  ApplyHistoryDraftInput,
+  ApplyHistoryRewriteInput,
+  ApplyHistoryRewriteOutcome,
+  EditHistoryDraftInput,
+  HistoryMountInput,
+  HistoryRunOrigin,
+  RebaseBranchOutcome,
+  SettleHistoryRewriterInput,
+  StartHistoryRewriterInput,
+} from './slices/history/types';
+import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
+import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -565,6 +580,28 @@ type AppActions = {
     input: SessionCleanupKeyInput,
   ): Promise<ReadonlyArray<MountCleanupProposal>>;
   resolveMountCleanup(input: ResolveMountCleanupInput): Promise<void>;
+  rebaseBranch(input: HistoryMountInput): Promise<RebaseBranchOutcome>;
+  applyHistoryRewrite(input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome>;
+  pushHistoryRewrite(input: {
+    sessionId: SessionId;
+    mountId: MountId;
+    origin: HistoryRunOrigin;
+    planId: string | null;
+    expectedRemoteSha: string | null;
+  }): Promise<ApplyHistoryRewriteOutcome>;
+  startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
+  settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
+  loadHistoryDraft(input: HistoryMountInput): Promise<void>;
+  editHistoryDraft(input: EditHistoryDraftInput): Promise<void>;
+  discardHistoryDraft(input: HistoryMountInput): Promise<void>;
+  applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
+  restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
+  hasPushedHistoryBefore(input: { mountId: MountId; branch: string }): Promise<boolean>;
+  requestScribe(input: RequestScribeInput): Promise<string>;
+  settleScribe(input: SettleScribeInput): Promise<void>;
+  refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
@@ -583,14 +620,6 @@ type AppActions = {
     args: { mountId: MountId; branch: string; createNew: boolean },
   ): Promise<void>;
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
-  amendSessionCommit(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
-  squashSessionCommits(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(
     sessionId: SessionId,
@@ -1063,6 +1092,8 @@ type AppActions = {
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
+  openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
+  closeRewriteHistory(sessionId: SessionId): void;
   openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   setResolveQueueView(params: {
     readonly sessionId: SessionId;
@@ -1177,6 +1208,8 @@ export const initialState: AppState = {
   sessionProjectMounts: {},
   ...projectMountsInitialState,
   ...mountCleanupInitialState,
+  ...historyInitialState,
+  ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
   ...issueBriefsInitialState,
@@ -1336,6 +1369,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createProjectsSlice(set, get),
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
+  ...createHistorySlice(set, get),
+  ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),

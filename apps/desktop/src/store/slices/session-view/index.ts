@@ -8,6 +8,8 @@ import { setSessionSort } from './setSessionSort';
 import {
   openDiffLens,
   openMountDiff,
+  openRewriteHistory,
+  closeRewriteHistory,
   openMountTerminal,
   openExternalTaskLens,
   setActiveLens,
@@ -68,6 +70,8 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     openResolvePublication: openResolvePublication(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(get),
+    openRewriteHistory: openRewriteHistory(get),
+    closeRewriteHistory: closeRewriteHistory(get),
     openMountTerminal: openMountTerminal(get),
     openExternalTaskLens: openExternalTaskLens(get),
     beginSessionCreation: beginSessionCreation(set),

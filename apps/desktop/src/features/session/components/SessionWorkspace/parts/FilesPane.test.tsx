@@ -18,9 +18,8 @@ type State = Record<string, unknown>;
 
 const state: State = {};
 
-const { amendSessionCommit, squashSessionCommits, branch } = vi.hoisted(() => ({
-  amendSessionCommit: vi.fn(async () => undefined),
-  squashSessionCommits: vi.fn(async () => undefined),
+const { openRewriteHistory, branch } = vi.hoisted(() => ({
+  openRewriteHistory: vi.fn(),
   branch: {
     mountId: null as string | null,
     commits: [] as ReadonlyArray<unknown>,
@@ -94,6 +93,12 @@ vi.mock('../../../../diff/components/SessionDiffPane', () => ({
   ),
 }));
 
+vi.mock('../../../../history/components/RewriteHistoryPage', () => ({
+  RewriteHistoryPage: ({ worktreePath }: { readonly worktreePath: string }) => (
+    <div data-testid="rewrite-history" data-worktree={worktreePath} />
+  ),
+}));
+
 vi.mock('./FileVersionsPane', () => ({
   FileVersionsPane: ({ onClose }: { onClose: () => void }) => (
     <div data-testid="file-versions">
@@ -110,8 +115,7 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
   for (const key of Object.keys(state)) {
     delete state[key];
   }
-  amendSessionCommit.mockClear();
-  squashSessionCommits.mockClear();
+  openRewriteHistory.mockClear();
   branch.mountId = null;
   branch.commits = [];
   Object.assign(state, {
@@ -128,8 +132,8 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
     sessionProjectMounts: { [SESSION_ID]: mounts },
     setDiffFocus: setDiffFocus(set),
     setActiveLens: setActiveLens(set),
-    amendSessionCommit,
-    squashSessionCommits,
+    diffPage: {},
+    openRewriteHistory,
   });
 };
 
@@ -158,7 +162,7 @@ const renderBranchlessPane = () =>
 afterEach(cleanup);
 
 describe('FilesPane', () => {
-  it('rewrites history on the worktree shown, by its mount id', async () => {
+  it('opens Rewrite history for the worktree shown', () => {
     reset();
     branch.mountId = WEB_MOUNT.mountId;
     branch.commits = [
@@ -173,23 +177,29 @@ describe('FilesPane', () => {
       },
     ];
 
-    renderPane({ worktreePath: '/tmp/wt' });
+    renderPane({ worktreePath: '/wt/web' });
+    fireEvent.click(screen.getByRole('button', { name: /Rewrite history/ }));
 
-    const rewrite = await screen.findByRole('button', { name: 'Rewrite branch' });
-    fireEvent.click(rewrite);
-    fireEvent.click(screen.getByRole('button', { name: 'Reword' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'new message for this commit' }), {
-      target: { value: 'New subject' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save message' }));
+    expect(openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/wt/web');
+  });
 
-    await vi.waitFor(() =>
-      expect(amendSessionCommit).toHaveBeenCalledWith(SESSION_ID, {
-        mountId: WEB_MOUNT.mountId,
-        sha: 'abcdef123456',
-        message: 'New subject',
-      }),
-    );
+  it('shows the Rewrite history page as the child page of the branch', () => {
+    reset();
+    state['diffPage'] = { [SESSION_ID]: 'history' };
+
+    renderPane({ worktreePath: '/wt/web' });
+
+    expect(screen.getByTestId('rewrite-history').getAttribute('data-worktree')).toBe('/wt/web');
+    expect(screen.queryByTestId('diff-viewer')).toBeNull();
+  });
+
+  it('hides Rewrite history on a branch without commits', () => {
+    reset();
+    branch.mountId = WEB_MOUNT.mountId;
+
+    renderPane({ worktreePath: '/wt/web' });
+
+    expect(screen.queryByRole('button', { name: /Rewrite history/ })).toBeNull();
   });
 
   it('carries the working tree focus into the diff', () => {

@@ -64,6 +64,12 @@ export {
   flagSecurityFindingAgain,
 } from './queries/security-finding';
 export {
+  getDraftHistoryPlan,
+  hasPushedHistoryPlan,
+  markHistoryPlan,
+  saveDraftHistoryPlan,
+} from './queries/history-plan';
+export {
   describeProjectAdoption,
   moveProjectToWorkspace,
   type ProjectAdoptionInfo,

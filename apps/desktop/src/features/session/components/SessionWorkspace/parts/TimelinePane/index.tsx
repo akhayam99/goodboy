@@ -3,7 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
-import { Button, IconButton, SectionHeader, useCopyLink } from '@goodboy/ui';
+import { Button, IconButton, OverflowMenu, SectionHeader, useCopyLink } from '@goodboy/ui';
+import { useHistoryRowActions } from '../../../../../history/useHistoryRowActions';
 import type {
   Agent,
   OpenQuestion,
@@ -104,6 +105,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const loadSessionDismissedQuestions = useAppStore((s) => s.loadSessionDismissedQuestions);
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
+  const historyRowFor = useHistoryRowActions({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
@@ -399,6 +401,12 @@ export const TimelinePane = ({ session, actions }: Props) => {
 
   const actionFor = ({ item }: { readonly item: TimelineRowItem }): TimelineRowAction | null => {
     const { entry } = item;
+    if (entry.kind === 'event') {
+      const history = historyRowFor({ event: entry.event, events });
+      if (history !== null) {
+        return history.action;
+      }
+    }
     const mountPath = mountPathFor({ item });
     if (mountPath != null) {
       const stat = diffStatFor({ item });
@@ -455,6 +463,19 @@ export const TimelinePane = ({ session, actions }: Props) => {
 
   const menuFor = ({ item }: { readonly item: TimelineRowItem }): ReactNode => {
     const { entry } = item;
+    if (entry.kind === 'event') {
+      const history = historyRowFor({ event: entry.event, events });
+      if (history === null || history.menu.length === 0) {
+        return null;
+      }
+      return (
+        <OverflowMenu
+          items={history.menu}
+          label="More for this rewrite"
+          triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:transition-opacity"
+        />
+      );
+    }
     if (entry.kind !== 'run') {
       return null;
     }
@@ -634,6 +655,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
                     isRevealed={revealedRows.has(entry.id)}
                     lanes={lanes}
                     runLane={runLaneFor({ item })}
+                    menu={menuFor({ item })}
                   />
                 );
               })}

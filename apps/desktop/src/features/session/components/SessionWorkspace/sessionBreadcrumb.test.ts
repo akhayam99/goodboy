@@ -66,6 +66,29 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.label).toBe('ledger-core fix/ledger-reconcile-postings');
   });
 
+  it('puts Rewrite history under the branch, and the branch leads back to the Diff', () => {
+    const toDiffBranch = vi.fn();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'files',
+          diffBranchLabel: 'ledger-core fix/ledger-reconcile-postings',
+          diffPageLabel: 'Rewrite history',
+        },
+        { ...makeHandlers(), toDiffBranch },
+      ),
+    );
+    expect(crumbs.map((crumb) => crumb.id)).toEqual([
+      'overview',
+      'lens-files',
+      'diff-branch',
+      'rewrite-history',
+    ]);
+    expect(last(crumbs)?.label).toBe('Rewrite history');
+    crumbs[2]?.onClick?.();
+    expect(toDiffBranch).toHaveBeenCalledOnce();
+  });
+
   it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(

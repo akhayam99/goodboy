@@ -266,6 +266,28 @@ export type {
 } from './settings';
 export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
 export type {
+  HistoryBackup,
+  HistoryMoveOutcome,
+  HistoryPlan,
+  HistoryPlanArgs,
+  HistoryPlanState,
+  HistoryPlanPrediction,
+  HistoryPlannedStep,
+  HistoryRebaseCommit,
+  HistoryRebasePlan,
+  HistoryRewriterCheck,
+  HistoryShaMove,
+  HistoryStep,
+  HistoryStepOutcome,
+  HistoryStepPrediction,
+  HistoryStopKind,
+  HistoryTrialResult,
+  HistoryTrialStop,
+  HistoryVerb,
+  LeasePushOutcome,
+} from './history';
+export { HISTORY_PLAN_STATES, HISTORY_VERBS } from './history';
+export type {
   BranchCommit,
   BranchIntegration,
   DiffView,

@@ -31,6 +31,10 @@ export const SESSION_EVENT_KINDS = [
   'write_destination_changed',
   'question_dismissed',
   'question_restored',
+  'history_rewritten',
+  'history_pushed',
+  'history_stopped',
+  'history_restored',
 ] as const;
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[number];
@@ -72,6 +76,13 @@ export type SessionEventPayload = Readonly<{
   turnRunId?: string;
   deferralCause?: MaterializationDeferralCause;
   questionId?: string;
+  planId?: string;
+  summary?: string;
+  origin?: 'plan' | 'rebase';
+  files?: ReadonlyArray<string>;
+  isTreeEqual?: boolean;
+  prNumber?: number;
+  backupRef?: string;
 }>;
 
 export type SessionEvent = Readonly<{

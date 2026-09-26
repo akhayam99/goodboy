@@ -9,7 +9,7 @@ import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
-import { useRebaseAgent } from '../../session/hooks/useRebaseAgent';
+import { useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
@@ -121,7 +121,7 @@ export const useSuggestionActions = ({
     }
     return null;
   }, [rebaseMounts, statuses]);
-  const rebase = useRebaseAgent({
+  const rebase = useRebaseBranch({
     sessionId,
     mountId: behind?.mountId ?? null,
     status: behind?.status ?? null,

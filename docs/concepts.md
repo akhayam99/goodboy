@@ -192,6 +192,17 @@ It includes:
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
+- History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
+  `history_pushed`, `history_stopped` and `history_restored`
+
+History rows are the only event rows with verbs, one primary and the rest in
+the row menu, and only while no later outcome of the same branch settled
+them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
+a note` when History rewriter needs you) with `Rewrite with an agent`,
+`Change the plan` and `Discard plan` behind it, a push `Restore previous
+history`. A stopped rewrite never hides behind the filter. Every notification
+of the engine points at the row with `Open in Activity`, so closing it loses
+nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
@@ -308,6 +319,24 @@ pick it when you start the agent.
 - **Report** and **Wireframe** run as workflow steps
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
+- **History rewriter** is hidden: nobody picks it. Goodboy starts it only
+  when replaying a branch history hits a conflict git cannot settle alone
+  (a rebase on main, or a Rewrite history plan). It works in a throwaway
+  copy of the branch, never in a mount. Its turn carries a git config that
+  points `origin` at a push URL that always fails, it has no GitHub token and
+  no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
+  `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
+  and authors, checks the count, and moves the branch itself
+- **Scribe** is hidden too: it writes text about the code and never code.
+  `Write it for me` in the pull request panel asks it for the title and
+  body, which fill the form for you to check before `Create PR`; it can also
+  write a commit message for a squash or a reword and a changelog entry. It
+  answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
+  `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
+  and Goodboy opens or edits the pull request itself. A body Scribe wrote
+  ends with an invisible `goodboy-scribe` signature; after Goodboy pushes new
+  history to the branch it rewrites the body only while that signature still
+  matches, so a body you edited stays yours
 
 A kind is worked out in the same order on every screen:
 
@@ -479,7 +508,9 @@ with a local commit and never pushes.
   shows `Fixed in 7c1e0aa · replaces 4f21c8b`
 - With the fixup commit style, Goodboy blames the commented line and asks the
   agent for `git commit --fixup=<sha>` of the commit that introduced it. The
-  default is a new commit for every fix. Goodboy never squashes or force-pushes
+  default is a new commit for every fix. Resolve never squashes or
+  force-pushes; history changes only when you press Apply or Push in Rewrite
+  history
 - Approving a fix fast-forwards the branch to it. When the branch moved on
   since the fix started, the fix is cherry-picked onto the new head and that
   commit becomes the sha on the branch. If it no longer applies, the pick is
@@ -811,20 +842,22 @@ Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
-| Kind          | Label       | Started from      |
-| ------------- | ----------- | ----------------- |
-| `planner`     | Plan        | spawn menu        |
-| `scout`       | Scout       | spawn menu        |
-| `implementer` | Implement   | spawn menu        |
-| `debugger`    | Debug       | spawn menu        |
-| `tester`      | Test        | spawn menu        |
-| `reviewer`    | Review      | spawn menu        |
-| `pr-reviewer` | PR reviewer | PR review session |
-| `docs`        | Docs        | spawn menu        |
-| `report`      | Report      | workflow step     |
-| `wireframe`   | Wireframe   | workflow step     |
-| `resolver`    | Resolve     | Review lens       |
-| `generic`     | Generalist  | spawn menu        |
+| Kind          | Label            | Started from                    |
+| ------------- | ---------------- | ------------------------------- |
+| `planner`     | Plan             | spawn menu                      |
+| `scout`       | Scout            | spawn menu                      |
+| `implementer` | Implement        | spawn menu                      |
+| `debugger`    | Debug            | spawn menu                      |
+| `tester`      | Test             | spawn menu                      |
+| `reviewer`    | Review           | spawn menu                      |
+| `pr-reviewer` | PR reviewer      | PR review session               |
+| `docs`        | Docs             | spawn menu                      |
+| `report`      | Report           | workflow step                   |
+| `wireframe`   | Wireframe        | workflow step                   |
+| `resolver`    | Resolve          | Review lens                     |
+| `rewriter`    | History rewriter | a history replay that conflicts |
+| `scribe`      | Scribe           | pull request panel              |
+| `generic`     | Generalist       | spawn menu                      |
 
 Other identifiers:
 

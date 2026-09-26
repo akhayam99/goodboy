@@ -92,10 +92,20 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "key": "sonnet-5",
       },
     ],
+    "rewriter": [
+      {
+        "key": "sonnet-5",
+      },
+    ],
     "scout": [
       {
         "effort": "low",
         "key": "haiku-4.5",
+      },
+    ],
+    "scribe": [
+      {
+        "key": "sonnet-5",
       },
     ],
     "summarizer": [
@@ -211,10 +221,20 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "key": "gpt-5.6-sol",
       },
     ],
+    "rewriter": [
+      {
+        "key": "gpt-5.6-terra",
+      },
+    ],
     "scout": [
       {
         "effort": "low",
         "key": "gpt-5.6-luna",
+      },
+    ],
+    "scribe": [
+      {
+        "key": "gpt-5.6-terra",
       },
     ],
     "summarizer": [
@@ -324,7 +344,17 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "thinking": true,
       },
     ],
+    "rewriter": [
+      {
+        "key": "composer-2.5",
+      },
+    ],
     "scout": [
+      {
+        "key": "auto",
+      },
+    ],
+    "scribe": [
       {
         "key": "auto",
       },
@@ -439,9 +469,19 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "key": "gemini-3.1-pro",
       },
     ],
+    "rewriter": [
+      {
+        "key": "gemini-3.1-pro",
+      },
+    ],
     "scout": [
       {
         "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "scribe": [
+      {
         "key": "gemini-3.8-flash",
       },
     ],

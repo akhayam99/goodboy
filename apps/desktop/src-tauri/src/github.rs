@@ -468,6 +468,60 @@ pub async fn git_push(
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum LeasePushOutcome {
+    Pushed,
+    Stale { message: String },
+    Failed { message: String },
+}
+
+pub(crate) fn lease_argument(branch: &str, expected_remote_sha: Option<&str>) -> String {
+    format!(
+        "--force-with-lease=refs/heads/{branch}:{}",
+        expected_remote_sha.unwrap_or_default()
+    )
+}
+
+pub(crate) fn lease_push_outcome(result: &GhRunResult) -> LeasePushOutcome {
+    if result.exit_code == 0 {
+        return LeasePushOutcome::Pushed;
+    }
+    let message = result.stderr.trim().to_string();
+    if message.contains("stale info") || message.contains("[rejected]") {
+        return LeasePushOutcome::Stale { message };
+    }
+    LeasePushOutcome::Failed { message }
+}
+
+#[tauri::command]
+pub async fn git_push_with_lease(
+    cwd: String,
+    branch: String,
+    expected_remote_sha: Option<String>,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<LeasePushOutcome, GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if branch.trim().is_empty() {
+            return Err(GithubError::Validation(
+                "the branch name is empty".to_string(),
+            ));
+        }
+        let token = read_token(workspace_id.as_deref(), project_id.as_deref());
+        let lease = lease_argument(&branch, expected_remote_sha.as_deref());
+        let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
+        let result = run_git_authenticated(
+            &["push", &lease, "origin", &refspec],
+            &cwd,
+            token.as_deref(),
+        )?;
+        Ok(lease_push_outcome(&result))
+    })
+    .await
+    .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
+}
+
 #[tauri::command]
 pub async fn gh_pr_diff(
     repo: String,

@@ -37,6 +37,10 @@ export const SESSION_EVICTION = [
   { key: 'sessionPhaseRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGithub', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'historyDrafts', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
+  { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectPrs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSelectedPrNumber', keyedBy: 'session', evictOn: 'archive' },
@@ -78,6 +82,7 @@ export const SESSION_EVICTION = [
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffMountPath', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'diffPage', keyedBy: 'session', evictOn: 'archive' },
   { key: 'terminalMountPath', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionCreations', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionStudio', keyedBy: 'session', evictOn: 'archive' },
@@ -241,6 +246,7 @@ export const NON_SESSION_STATE_KEYS = [
   'prWriteClaims',
   'issueBriefs',
   'workspaceDurationHistory',
+  'scribeWork',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

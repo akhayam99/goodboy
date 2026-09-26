@@ -55,6 +55,10 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   write_destination_changed: 'plain',
   question_dismissed: 'muted',
   question_restored: 'plain',
+  history_rewritten: 'plain',
+  history_pushed: 'success',
+  history_stopped: 'plain',
+  history_restored: 'muted',
 };
 
 export type SessionEventGlyph = {
@@ -116,6 +120,10 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     tone: CONCEPT_TONE.questions,
     label: 'Question',
   },
+  history_rewritten: { icon: CONCEPT_ICONS.history, tone: CONCEPT_TONE.history, label: 'History' },
+  history_pushed: { icon: CONCEPT_ICONS.history, tone: 'success', label: 'History' },
+  history_stopped: { icon: CONCEPT_ICONS.history, tone: 'warning', label: 'History' },
+  history_restored: { icon: CONCEPT_ICONS.history, tone: 'neutral', label: 'History' },
 };
 
 type TimelineValueVariant = 'project' | 'branch' | 'path' | 'pull-request' | 'issue' | 'workflow';
@@ -184,6 +192,71 @@ const decisionsChangedLabel = ({ payload }: PayloadParams): string => {
 
 type TitleParams = {
   readonly event: SessionEvent;
+};
+
+type HistoryEventKind = Extract<SessionEventKind, `history_${string}`>;
+
+const branchSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
+  payload?.branch == null
+    ? { kind: 'text', text: 'the branch' }
+    : { kind: 'value', text: payload.branch, variant: 'branch' };
+
+const stopDetail = ({ payload }: PayloadParams): string => {
+  const files = payload?.files ?? [];
+  if (payload?.reason === 'stuck' && files.length > 0) {
+    return ` · History rewriter couldn't merge ${files.join(', ')}, it needs you`;
+  }
+  if (files.length > 0) {
+    return ` · conflict in ${files.join(', ')}`;
+  }
+  return payload?.title == null ? '' : ` · ${payload.title}`;
+};
+
+const historyEventLabel = ({
+  kind,
+  payload,
+}: {
+  readonly kind: HistoryEventKind;
+  readonly payload: SessionEventPayload | null;
+}): ReadonlyArray<TimelineLabelSegment> => {
+  const isRebase = payload?.origin === 'rebase';
+  if (kind === 'history_rewritten') {
+    const summary =
+      payload?.summary == null || payload.summary === '' ? '' : ` · ${payload.summary}`;
+    const code =
+      payload?.isTreeEqual === true
+        ? ' · same code'
+        : payload?.isTreeEqual === false
+          ? ' · the code changes'
+          : '';
+    return isRebase
+      ? [
+          { kind: 'text', text: 'Rebased ' },
+          branchSegment({ payload }),
+          { kind: 'text', text: ' on main' },
+        ]
+      : [
+          { kind: 'text', text: 'Rewrote ' },
+          branchSegment({ payload }),
+          { kind: 'text', text: `${summary}${code}` },
+        ];
+  }
+  if (kind === 'history_pushed') {
+    const pr = payload?.prNumber == null ? '' : ` · PR #${payload.prNumber} updated`;
+    return [
+      { kind: 'text', text: 'Pushed the new history of ' },
+      branchSegment({ payload }),
+      { kind: 'text', text: pr },
+    ];
+  }
+  if (kind === 'history_stopped') {
+    return [
+      { kind: 'text', text: isRebase ? 'Rebase of ' : 'Rewrite of ' },
+      branchSegment({ payload }),
+      { kind: 'text', text: ` stopped${stopDetail({ payload })}` },
+    ];
+  }
+  return [{ kind: 'text', text: 'Restored the previous history of ' }, branchSegment({ payload })];
 };
 
 export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<TimelineLabelSegment> => {
@@ -360,6 +433,11 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
       return payload?.title == null
         ? [{ kind: 'text', text: 'Question brought back' }]
         : [{ kind: 'text', text: `Question brought back: ${payload.title}` }];
+    case 'history_rewritten':
+    case 'history_pushed':
+    case 'history_stopped':
+    case 'history_restored':
+      return historyEventLabel({ kind: event.kind, payload });
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

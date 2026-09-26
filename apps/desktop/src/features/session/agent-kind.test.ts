@@ -613,6 +613,8 @@ describe('kindForRole', () => {
     report: 'report',
     wireframe: 'wireframe',
     resolver: 'resolver',
+    rewriter: 'rewriter',
+    scribe: 'scribe',
     custom: 'generic',
   } satisfies Record<AgentRole, AgentKind>;
 
@@ -733,6 +735,17 @@ describe('agent visibility', () => {
     ]);
     expect(visibleAgentRoles()).toContain('docs');
     expect(visibleAgentRoles()).toContain('resolver');
+  });
+
+  it('keeps the history rewriter hidden but named where it works', () => {
+    expect(visibleAgentKinds()).not.toContain('rewriter');
+    expect(visibleAgentRoles()).not.toContain('rewriter');
+    expect(AGENT_KIND_DEFAULTS.rewriter.visible).toBe(false);
+    expect(AGENT_KIND_META.rewriter.label).toBe('History rewriter');
+    expect(
+      resolveAgentKind({ name: 'Rebase on main', firstUserText: null, override: 'rewriter' }),
+    ).toBe('rewriter');
+    expect(AGENT_KIND_DEFAULTS.rewriter.systemPrompt).toContain('<<history-done head=');
   });
 
   it('excludes artifact roles from the manual create-agent picker', () => {

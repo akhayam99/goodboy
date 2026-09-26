@@ -15,6 +15,8 @@ import type {
   StorageStats,
 } from './slices/storage/types';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
+import type { HistoryState } from './slices/history/state';
+import type { ScribeState } from './slices/scribe/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
@@ -313,6 +315,11 @@ export type AppState = AppSliceState & {
   readonly agentTurnDestination: Readonly<Record<AgentId, WriteDestination>>;
   readonly mountCleanupProposals: MountCleanupState['mountCleanupProposals'];
   readonly retainedWorktreePaths: MountCleanupState['retainedWorktreePaths'];
+  readonly historyRuns: HistoryState['historyRuns'];
+  readonly historyRewriters: HistoryState['historyRewriters'];
+  readonly historyDrafts: HistoryState['historyDrafts'];
+  readonly scribeWork: ScribeState['scribeWork'];
+  readonly scribeAgents: ScribeState['scribeAgents'];
   readonly prSeries: PrSeriesState['prSeries'];
   readonly sessionLanguageAnchor: Readonly<Record<SessionId, string>>;
   readonly sessionActiveProject: Readonly<Record<string, ProjectId>>;
@@ -443,6 +450,7 @@ export type AppState = AppSliceState & {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;

@@ -919,9 +919,43 @@ The Diff lens shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. The header speaks only for that branch:
 meta `repo · N commits · state word`, one primary chosen from the branch state
 (`Rebase on main` when it is behind main, `Push branch` when it is local only
-with commits, none otherwise), the history rewrite menu and `⋯` (Refresh, Open
+with commits, none otherwise), `Rewrite history` with the commit count and `⋯` (Refresh, Open
 all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
-mount's `mountId`, never the active mount. `Branch vs main` sits in the file
+mount's `mountId`, never the active mount. `Rebase on main` replays the
+branch on origin with the history engine and runs no agent. The engine first
+predicts the replay in memory; when it conflicts, the button reads
+`Rebase on main · N conflicts` and the tooltip names the files, and only then
+the hidden History rewriter merges the edits in a throwaway copy. The branch
+moves only after the engine checks the result, with a backup ref and a push
+with lease.
+
+`Rewrite history` is a child page of the branch: the trail reads
+`Overview › Diff › <branch> › Rewrite history`, the branch segment leads back
+to the Diff, and picking another branch from its popover keeps you on Rewrite
+history. The page lists the commits since main, newest first, split into
+`Only here` and `On origin`, over the merge base that is not editable. Each
+row has a verb column (Pick, Reword, Squash into the one below, Fold into,
+Drop, Move up or down) and every verb carries one line that says what happens
+to the code and to the message; the word fixup never shows. The keys are the
+ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move.
+Nothing touches git while you edit: the plan is a draft saved per worktree in
+`history_plans`, and 250ms after each edit the engine predicts it in memory
+with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
+whether the code changes, and `No conflicts expected`; when an edit breaks
+the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
+and offers `Rewrite with an agent` or undoing the change. `Apply and push`
+first replays the plan in a throwaway copy, then moves the branch with a
+backup ref and pushes with a lease; `Apply here, push later` stops before the
+push. Commits already on origin can be rewritten too: the dock counts them,
+names the pull request that updates, and the first push that rewrites origin
+on a branch asks once in an `InlineConfirm`. The push always carries
+`--force-with-lease` on the origin sha read at apply, never a bare force; if
+origin moved, nothing is pushed and the dock says so. After an apply the dock
+reads `Rewritten here · origin has the old history` with `Push with lease`
+and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
+kept 30 days; `Backups` in the page menu lists them with `Restore previous
+history`, which moves the branch back and, on a branch with an upstream,
+pushes it with a lease. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
