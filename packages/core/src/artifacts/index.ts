@@ -74,3 +74,12 @@ export type {
   WireframeViewport,
 } from './wireframe';
 export { PLAN_KIT_GUIDE, REPORT_KIT_GUIDE } from './reportKitGuide';
+export {
+  diffWireframeDocuments,
+  type WireframeDiff,
+  type WireframeDiffSummary,
+  type WireframeNodeChange,
+  type WireframeNodeChangeKind,
+  type WireframeScreenChange,
+  type WireframeScreenChangeKind,
+} from './wireframe';

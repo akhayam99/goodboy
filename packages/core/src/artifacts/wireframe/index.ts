@@ -75,3 +75,12 @@ export {
   wireframeNodeChildren,
   wireframeNodeItemIds,
 } from './wireframeNodeChildren';
+export {
+  diffWireframeDocuments,
+  type WireframeDiff,
+  type WireframeDiffSummary,
+  type WireframeNodeChange,
+  type WireframeNodeChangeKind,
+  type WireframeScreenChange,
+  type WireframeScreenChangeKind,
+} from './diffWireframeDocuments';

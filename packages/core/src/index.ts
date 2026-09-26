@@ -649,3 +649,12 @@ export {
   type WorkflowRoutingWireFields,
   type RunSummary,
 } from './orchestrator';
+export {
+  diffWireframeDocuments,
+  type WireframeDiff,
+  type WireframeDiffSummary,
+  type WireframeNodeChange,
+  type WireframeNodeChangeKind,
+  type WireframeScreenChange,
+  type WireframeScreenChangeKind,
+} from './artifacts';
