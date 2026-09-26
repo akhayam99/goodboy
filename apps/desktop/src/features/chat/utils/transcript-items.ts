@@ -55,6 +55,9 @@ export type TranscriptItem =
       output: unknown;
       isError: boolean;
       ended: boolean;
+      runId: ProviderRunId;
+      startedAt: IsoDateTime;
+      endedAt: IsoDateTime | null;
     }
   | { kind: 'file_edit'; key: string; path: string; editType: 'create' | 'modify' | 'delete' }
   | { kind: 'usage'; key: string; usage: ProviderUsage }
@@ -303,6 +306,9 @@ export const reduceTranscript = (
           output: null,
           isError: false,
           ended: false,
+          runId: event.runId,
+          startedAt: event.at,
+          endedAt: null,
         });
         break;
       }
@@ -316,6 +322,7 @@ export const reduceTranscript = (
               output: event.output,
               isError: event.isError,
               ended: true,
+              endedAt: event.at,
             };
           }
         }

@@ -15,6 +15,9 @@ type Params = {
   readonly overrides?: Partial<ToolItem>;
 };
 
+const runId = (value: string): ToolItem['runId'] => JSON.parse(JSON.stringify(value));
+const iso = (value: string): ToolItem['startedAt'] => JSON.parse(JSON.stringify(value));
+
 const tool = ({ overrides = {} }: Params = {}): ToolItem => ({
   kind: 'tool_call',
   key: 'tool-1',
@@ -24,6 +27,9 @@ const tool = ({ overrides = {} }: Params = {}): ToolItem => ({
   output: 'file content',
   isError: false,
   ended: true,
+  runId: runId('run-1'),
+  startedAt: iso('2026-06-08T10:00:00.000Z'),
+  endedAt: overrides.ended === false ? null : iso('2026-06-08T10:00:01.000Z'),
   ...overrides,
 });
 
@@ -62,7 +68,7 @@ describe('ToolCallCard', () => {
       fireEvent.click(screen.getByRole('button', { expanded: false }));
       expect(screen.getByRole('button', { name: /chars/, expanded: false })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Load image' })).toBeNull();
-      expect(screen.queryByRole('img')).toBeNull();
+      expect(document.querySelector('img')).toBeNull();
       expect(invoke).not.toHaveBeenCalled();
     },
   );
@@ -81,7 +87,7 @@ describe('ToolCallCard', () => {
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     expect(invoke).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
-    expect(await screen.findByRole('img', { name: 'out/chart.png' })).toBeTruthy();
+    expect(await screen.findByAltText('out/chart.png')).toBeTruthy();
     expect(screen.getByText('out/chart.png')).toBeTruthy();
   });
 
@@ -94,7 +100,7 @@ describe('ToolCallCard', () => {
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     expect(screen.getByText('out/chart.png')).toBeTruthy();
-    expect(screen.queryByRole('img')).toBeNull();
+    expect(document.querySelector('img')).toBeNull();
     expect(invoke).not.toHaveBeenCalled();
   });
 
@@ -112,7 +118,8 @@ describe('ToolCallCard', () => {
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
-    expect((await screen.findByRole('img')).getAttribute('src')).toBe(dataUri);
+    await screen.findByRole('button', { name: 'Open image /repo/out/chart.png' });
+    expect(document.querySelector('img')?.getAttribute('src')).toBe(dataUri);
     expect(invoke).toHaveBeenCalledWith('local_image_read', {
       sessionId: 'session-1',
       path: '/repo/out/chart.png',
@@ -120,7 +127,7 @@ describe('ToolCallCard', () => {
     expect(screen.getByText('/repo/out/chart.png')).toBeTruthy();
     expect(screen.getByText('/repo/out/report.txt')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Open image /repo/out/chart.png' }));
-    expect(screen.getAllByRole('img')).toHaveLength(2);
+    expect(document.querySelectorAll('img')).toHaveLength(2);
   });
 
   it('keeps non-image paths as text without reading files', () => {
@@ -132,7 +139,7 @@ describe('ToolCallCard', () => {
     );
     fireEvent.click(screen.getByRole('button', { expanded: false }));
     expect(screen.getByText('/repo/out/report.txt')).toBeTruthy();
-    expect(screen.queryByRole('img')).toBeNull();
+    expect(document.querySelector('img')).toBeNull();
     expect(invoke).not.toHaveBeenCalled();
   });
 
@@ -147,7 +154,7 @@ describe('ToolCallCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
     await screen.findByRole('button', { name: 'Try again' });
     expect(screen.getByText('/outside/chart.png')).toBeTruthy();
-    expect(screen.queryByRole('img')).toBeNull();
+    expect(document.querySelector('img')).toBeNull();
   });
 
   it('renders collapsed with tool name', () => {
@@ -163,23 +170,19 @@ describe('ToolCallCard', () => {
     expect(screen.getByText('file content')).toBeTruthy();
   });
 
-  it('pulses the state icon while running', () => {
+  it('shows a running node while the tool is in flight', () => {
     render(<ToolCallCard item={tool({ overrides: { ended: false, output: null } })} />);
-    const icon = screen.getByTestId('tool-state-icon');
-    expect(icon.getAttribute('class')).toContain('animate-soft-pulse');
-    expect(icon.getAttribute('class')).toContain('text-info');
+    expect(screen.getByTestId('tool-state-icon').getAttribute('data-node-state')).toBe('running');
   });
 
-  it('colors the state icon green once it succeeded', () => {
+  it('shows a done node once it succeeded', () => {
     render(<ToolCallCard item={tool()} />);
-    const icon = screen.getByTestId('tool-state-icon');
-    expect(icon.getAttribute('class')).toContain('text-success');
-    expect(icon.getAttribute('class')).not.toContain('animate-soft-pulse');
+    expect(screen.getByTestId('tool-state-icon').getAttribute('data-node-state')).toBe('done');
   });
 
-  it('colors the state icon red on error', () => {
+  it('shows a failed node on error', () => {
     render(<ToolCallCard item={tool({ overrides: { isError: true } })} />);
-    expect(screen.getByTestId('tool-state-icon').getAttribute('class')).toContain('text-danger');
+    expect(screen.getByTestId('tool-state-icon').getAttribute('data-node-state')).toBe('failed');
   });
 
   it('has a single leading chevron as the expand affordance', () => {
@@ -199,13 +202,16 @@ describe('ToolCallCard', () => {
 
   it('appends the run duration to the header once the tool ends', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-08T10:00:00.000Z'));
     const { rerender } = render(
       <ToolCallCard item={tool({ overrides: { ended: false, output: null } })} />,
     );
     act(() => {
       vi.advanceTimersByTime(2_000);
     });
-    rerender(<ToolCallCard item={tool()} />);
+    rerender(
+      <ToolCallCard item={tool({ overrides: { endedAt: iso('2026-06-08T10:00:02.000Z') } })} />,
+    );
     expect(screen.getByText('2s')).toBeTruthy();
     vi.useRealTimers();
   });

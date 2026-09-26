@@ -224,6 +224,13 @@ about its effect is a worse defect than one that reads badly.
   neutral elevation ramp (`bg-elevated` panels and insets), a choice the user
   made (the picked answer), and a badge or pill small enough to read as a
   label.
+- **A row that needs you or went wrong carries a tone rail. A neutral row
+  carries no rail: its kind lives in the icon column.** The transcript's
+  status column (`packages/ui/DESIGN-SYSTEM.md` → WorkNode) is where this
+  applies: a small `WorkNode` in the icon slot carries a lifecycle (running,
+  done, failed, waiting on your approval, stopped, denied), or a muted type
+  icon when the row has none. The rail stays for a Notice, an open question
+  and a pending permission, because their tone is the thing that matters.
 
 ## Status & signals
 

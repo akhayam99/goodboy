@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from './transcript-items';
 import { classifyThinkingContext } from './thinking-context';
+
+const runId = (value: string): ProviderRunId => JSON.parse(JSON.stringify(value));
+const iso = (value: string): IsoDateTime => JSON.parse(JSON.stringify(value));
 
 const toolCall = (toolName: string): TranscriptItem => ({
   kind: 'tool_call',
@@ -11,6 +15,9 @@ const toolCall = (toolName: string): TranscriptItem => ({
   output: null,
   isError: false,
   ended: true,
+  runId: runId('run-1'),
+  startedAt: iso('2026-06-08T10:00:00.000Z'),
+  endedAt: iso('2026-06-08T10:00:01.000Z'),
 });
 
 describe('classifyThinkingContext', () => {

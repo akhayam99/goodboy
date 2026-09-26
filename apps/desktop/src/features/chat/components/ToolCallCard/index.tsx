@@ -1,38 +1,56 @@
 import { useMemo, useState } from 'react';
-import { Wrench } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, WorkNode, type WorkNodeState } from '@goodboy/ui';
+import type { ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatDuration } from '../../utils/format-duration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
+import { toolStatus, type PermissionState, type ToolStatus } from '../../utils/toolStatus';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { StructuredData } from './StructuredData';
 import { hasImagePath } from './hasImagePath';
 import { Section } from './Section';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'tool_call' }>;
+  readonly activeRunId?: ProviderRunId | null;
+  readonly permission?: PermissionState;
 };
 
 const dangerTint = tintClasses('danger');
-const successTint = tintClasses('success');
-const runningTint = tintClasses('info');
 
-export const ToolCallCard = ({ item }: Props) => {
+const NODE_STATE_FOR: Record<ToolStatus, WorkNodeState> = {
+  running: 'running',
+  done: 'done',
+  failed: 'failed',
+  approval: 'approval',
+  stopped: 'stopped',
+  denied: 'skipped',
+};
+
+const NODE_LABEL_FOR: Record<ToolStatus, string> = {
+  running: 'Running',
+  done: 'Done',
+  failed: 'Failed',
+  approval: 'Needs approval',
+  stopped: 'Stopped',
+  denied: 'Denied',
+};
+
+export const ToolCallCard = ({ item, activeRunId, permission }: Props) => {
   const hasInputImages = useMemo(() => hasImagePath({ data: item.input }), [item.input]);
   const hasOutputImages = useMemo(() => hasImagePath({ data: item.output }), [item.output]);
   const [open, setOpen] = useState(false);
   const [rawMode, setRawMode] = useState(false);
-  const running = !item.ended;
-  const elapsedMs = useElapsedMs({ running });
-  const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
-
-  const stateIcon = item.isError
-    ? dangerTint.icon
-    : running
-      ? cn(runningTint.icon, 'motion-safe:animate-soft-pulse')
-      : successTint.icon;
+  const status = toolStatus({ item, activeRunId, permission });
+  const running = status === 'running';
+  const elapsedMs = useElapsedMs({
+    running,
+    startedAt: item.startedAt,
+    endedAt: item.endedAt,
+  });
+  const duration =
+    status === 'approval' || elapsedMs == null ? null : formatDuration({ durationMs: elapsedMs });
 
   return (
     <TranscriptDisclosure
@@ -44,12 +62,14 @@ export const ToolCallCard = ({ item }: Props) => {
           grouped
           tone="neutral"
           icon={
-            <Wrench
-              size={ICON_SIZE.row}
-              aria-hidden
-              data-testid="tool-state-icon"
-              className={cn('shrink-0', stateIcon)}
-            />
+            <span data-testid="tool-state-icon" data-node-state={status} className="shrink-0">
+              <WorkNode
+                size="sm"
+                state={NODE_STATE_FOR[status]}
+                mark={{ kind: 'dot' }}
+                label={NODE_LABEL_FOR[status]}
+              />
+            </span>
           }
           eyebrow="tool"
           open={open}
@@ -57,7 +77,7 @@ export const ToolCallCard = ({ item }: Props) => {
           preview={
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate font-mono text-muted-foreground">{item.toolName}</span>
-              {!running && item.isError && (
+              {status === 'failed' && (
                 <span
                   className={cn('shrink-0 text-2xs uppercase tracking-eyebrow', dangerTint.text)}
                 >

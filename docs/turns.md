@@ -184,6 +184,36 @@ behavior beyond rendering:
 - `unknown_payload` keeps provider output the parsers do not model yet,
   counted per provider and payload type.
 
+## Tool call states
+
+A `tool_call` transcript item carries `runId`, `startedAt` and `endedAt`
+(`apps/desktop/src/features/chat/utils/transcript-items.ts`), taken from the
+`at` of `tool_call_start`/`tool_call_end` rather than the moment the row
+mounts, so a duration survives a reload. `toolStatus`
+(`apps/desktop/src/features/chat/utils/toolStatus.ts`) is the pure selector
+that turns a tool call plus its context into one of six states, the same
+alphabet the timeline's `WorkNode` uses at its `sm` size:
+
+- `running`: started, not yet ended, and the caller vouches for its run
+  (`activeRunId` matches, or is not given at all).
+- `done`: ended without error.
+- `failed`: ended with `isError`.
+- `approval`: a `permission_request` for the same `toolUseId` has no
+  `permission_decision` yet. `permissionFor` scans the surrounding items for
+  this, since `cluster-operations.ts` now absorbs `permission_request` and
+  `permission_decision` into the same operations cluster as the tool call
+  they gate, instead of splitting the cluster around them.
+- `stopped`: never ended, and the run it belongs to is no longer the active
+  one (the turn ended, or a later run has started).
+- `denied`: `permission_decision` was `deny`, whether or not the tool ever
+  ended.
+
+`OperationsCluster` derives one aggregate state the same way (approval beats
+running beats stopped beats failed beats done) for its header glyph and
+sentence; the rail on that header only appears for `approval`, because a
+neutral row carries no rail (`DESIGN.md` → "A row that needs you or went
+wrong carries a tone rail").
+
 ## Context measurement
 
 Usage events feed telemetry and the context meter. Codex reports token totals

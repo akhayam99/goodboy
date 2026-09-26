@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { cn } from '@goodboy/ui';
-import { DogMascot } from '../../../../shared/components/DogMascot';
+import { WorkNode } from '@goodboy/ui';
 import type { ThinkingContext } from '../../utils/thinking-context';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useElapsedMs } from '../../hooks/useElapsedMs';
+import { formatDuration } from '../../utils/format-duration';
 
 type Props = {
   readonly context: ThinkingContext;
@@ -27,6 +27,7 @@ const prefersReducedMotion = () =>
 export const ThinkingIndicator = ({ context }: Props) => {
   const [reduced] = useState(prefersReducedMotion);
   const [tick, setTick] = useState(0);
+  const elapsedMs = useElapsedMs({ running: true });
 
   useEffect(() => {
     if (reduced) {
@@ -39,17 +40,23 @@ export const ThinkingIndicator = ({ context }: Props) => {
   const phrases = PHRASES[context];
   const phrase =
     !reduced && tick >= SETTLE_AFTER_TICKS ? SETTLED_PHRASE : phrases[tick % phrases.length];
+  const duration = elapsedMs != null ? formatDuration({ durationMs: elapsedMs }) : null;
 
   return (
     <div
       role="status"
       aria-label="Agent working"
-      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs animate-border-pulse"
+      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs"
     >
-      <DogMascot size={ICON_SIZE.row} className="text-faint-foreground" />
+      <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Thinking" />
       <span aria-hidden className="text-muted-foreground">
         {phrase}
       </span>
+      {duration != null && (
+        <span aria-hidden className="tabular-nums text-faint-foreground">
+          · {duration}
+        </span>
+      )}
     </div>
   );
 };

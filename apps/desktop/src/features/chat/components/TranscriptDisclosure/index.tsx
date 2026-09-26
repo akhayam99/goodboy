@@ -21,11 +21,16 @@ export const TranscriptDisclosure = ({
   'data-testid': testId,
 }: Props) => {
   const accent = tintClasses(tone);
+  const hasRail = tone !== 'neutral';
 
   return (
     <div
       data-testid={testId}
-      className={cn('flex min-w-0 flex-col rounded-r-md border-l-2', accent.border, className)}
+      className={cn(
+        'flex min-w-0 flex-col',
+        hasRail ? cn('rounded-r-md border-l-2', accent.border) : 'rounded-md',
+        className,
+      )}
     >
       {header}
       {open && children != null ? (

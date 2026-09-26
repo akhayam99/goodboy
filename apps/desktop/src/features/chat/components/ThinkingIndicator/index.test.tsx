@@ -60,4 +60,14 @@ describe('ThinkingIndicator', () => {
     });
     expect(screen.getByText('reasoning')).toBeTruthy();
   });
+
+  it('shows the running node and a live duration instead of a pulsing border', () => {
+    const { container } = render(<ThinkingIndicator context="think" />);
+    expect(container.querySelector('[data-node-state="running"]')).toBeTruthy();
+    expect(container.querySelector('.animate-border-pulse')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(2_000);
+    });
+    expect(screen.getByText('· 2s')).toBeTruthy();
+  });
 });

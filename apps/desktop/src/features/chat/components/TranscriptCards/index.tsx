@@ -3,6 +3,7 @@ import { memo, type ReactNode } from 'react';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemEqual } from '../../utils/transcriptItemEqual';
+import type { PermissionState } from '../../utils/toolStatus';
 import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -30,6 +31,8 @@ type TranscriptCardProps = {
   readonly onOpenDiff?: (filePath: string) => void;
   readonly onRetryRun?: (params: RetryRunParams) => void;
   readonly retryingRunId?: ProviderRunId | null;
+  readonly activeRunId?: ProviderRunId | null;
+  readonly permission?: PermissionState;
 };
 
 const TranscriptCardImpl = ({
@@ -41,6 +44,8 @@ const TranscriptCardImpl = ({
   onOpenDiff,
   onRetryRun,
   retryingRunId = null,
+  activeRunId,
+  permission,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -64,7 +69,7 @@ const TranscriptCardImpl = ({
     case 'artifact_block':
       return <ArtifactBlockCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'tool_call':
-      return <ToolCallCard item={item} />;
+      return <ToolCallCard item={item} activeRunId={activeRunId} permission={permission} />;
     case 'file_edit':
       return (
         <FileEditBlock
@@ -142,5 +147,8 @@ export const TranscriptCard = memo(
     prev.onRefreshAuth === next.onRefreshAuth &&
     prev.onOpenDiff === next.onOpenDiff &&
     prev.onRetryRun === next.onRetryRun &&
-    prev.retryingRunId === next.retryingRunId,
+    prev.retryingRunId === next.retryingRunId &&
+    prev.activeRunId === next.activeRunId &&
+    prev.permission?.requested === next.permission?.requested &&
+    prev.permission?.decision === next.permission?.decision,
 );

@@ -280,6 +280,9 @@ describe('reduceTranscript incremental resume', () => {
       output: null,
       isError: false,
       ended: false,
+      runId: RUN,
+      startedAt: AT,
+      endedAt: null,
     });
 
     const items = reduceTranscript(events);
@@ -292,6 +295,9 @@ describe('reduceTranscript incremental resume', () => {
       output: 'out-t9',
       isError: true,
       ended: true,
+      runId: RUN,
+      startedAt: AT,
+      endedAt: AT,
     });
     expect(items).toEqual(freshPass({ events }));
   });
@@ -310,6 +316,9 @@ describe('reduceTranscript incremental resume', () => {
       output: null,
       isError: false,
       ended: false,
+      runId: RUN,
+      startedAt: AT,
+      endedAt: null,
     });
   });
 

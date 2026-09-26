@@ -24,6 +24,7 @@ type Props = {
   onRetryRun: (params: RetryRunParams) => void;
   retryingRunId: ProviderRunId | null;
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
+  activeRunId?: ProviderRunId | null;
 };
 
 const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
@@ -69,6 +70,7 @@ export const TranscriptRows = ({
   onRetryRun,
   retryingRunId,
   mountSuggestionsByRun,
+  activeRunId,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -161,6 +163,7 @@ export const TranscriptRows = ({
           onOpenDiff={onOpenDiff}
           onRetryRun={onRetryRun}
           retryingRunId={retryingRunId}
+          activeRunId={activeRunId}
         />,
       );
       return;
@@ -178,6 +181,7 @@ export const TranscriptRows = ({
             onOpenDiff={onOpenDiff}
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
           />
         ) : (
           <TranscriptCard
@@ -189,6 +193,7 @@ export const TranscriptRows = ({
             onOpenDiff={onOpenDiff}
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
           />
         )}
       </li>,

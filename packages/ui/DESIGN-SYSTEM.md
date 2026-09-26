@@ -380,10 +380,11 @@ clock glyph.
 ### Work nodes and row states
 
 Every surface that draws a sequence of work (the activity feed, the workflow
-run tree, the agents on a project) draws its nodes with one primitive,
-`WorkNode` in `packages/ui/src/components/WorkTree/`. It is 20px on every
-grade, sits on the canvas so the lane never shows through it, and knows
-nothing about agents: the caller hands it a state, a mark and a label.
+run tree, the agents on a project, the transcript's status column) draws its
+nodes with one primitive, `WorkNode` in `packages/ui/src/components/WorkTree/`.
+It knows nothing about agents: the caller hands it a state, a mark, a label
+and a `size` (`md`, 20px, the default; `sm`, 14px, for a transcript row's
+icon column), and sits on the canvas so the lane never shows through it.
 
 | node       | ring                                    | centre                   |
 | ---------- | --------------------------------------- | ------------------------ |
@@ -392,12 +393,19 @@ nothing about agents: the caller hands it a state, a mark and a label.
 | `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot |
 | `question` | 1.5px `warning`                         | `?`, warning             |
 | `budget`   | 1.5px `warning`                         | `$`, warning             |
+| `approval` | 1.5px `warning`                         | shield, warning          |
 | `failed`   | 1.5px `danger`                          | `!`, danger              |
 | `done`     | 1px `success` over a `success/18` fill  | check, success           |
 | `closed`   | 1px `border`                            | check, muted             |
 | `stopped`  | 1px `border`                            | small square, muted      |
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+
+`approval` is a pending permission request without a decision yet: a tool
+call waiting on you, distinct from `question` (an open question waiting on
+you) even though both use the warning tone. The transcript also gives a
+turn's `blocked` state its own node this way instead of sharing `question`'s
+glyph.
 
 A node can also take `progress`, measured active time over the usual time,
 from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc

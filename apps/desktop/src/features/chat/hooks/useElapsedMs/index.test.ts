@@ -37,4 +37,36 @@ describe('useElapsedMs', () => {
     expect(result.current).toBe(frozen);
     expect(frozen).toBeGreaterThanOrEqual(5_000);
   });
+
+  it('anchors a running duration on the real startedAt, surviving a reload', () => {
+    vi.setSystemTime(new Date('2026-06-08T10:00:14.000Z'));
+    const { result } = renderHook(() =>
+      useElapsedMs({ running: true, startedAt: '2026-06-08T10:00:00.000Z' }),
+    );
+    expect(result.current).toBe(14_000);
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+    expect(result.current).toBe(15_000);
+  });
+
+  it('computes a done duration from startedAt to endedAt, ignoring the clock', () => {
+    vi.setSystemTime(new Date('2026-06-08T12:00:00.000Z'));
+    const { result } = renderHook(() =>
+      useElapsedMs({
+        running: false,
+        startedAt: '2026-06-08T10:00:00.000Z',
+        endedAt: '2026-06-08T10:00:03.200Z',
+      }),
+    );
+    expect(result.current).toBe(3_200);
+  });
+
+  it('reports a rough duration for a stopped tool with a startedAt but no endedAt', () => {
+    vi.setSystemTime(new Date('2026-06-08T10:00:18.000Z'));
+    const { result } = renderHook(() =>
+      useElapsedMs({ running: false, startedAt: '2026-06-08T10:00:00.000Z' }),
+    );
+    expect(result.current).toBe(18_000);
+  });
 });

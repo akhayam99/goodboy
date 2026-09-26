@@ -22,13 +22,12 @@ describe('SkillInvocationCard', () => {
     expect(screen.getByText('--check')).toBeDefined();
   });
 
-  it('sits on the machinery rail without an expand affordance', () => {
+  it('sits on the icon column without a rail and without an expand affordance', () => {
     render(<SkillInvocationCard item={item} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByTestId('transcript-chevron')).toBeNull();
     const header = screen.getByText('skill').closest('div')!;
     expect(header.className).not.toContain('border-l-2');
-    expect(header.parentElement?.className).toContain('border-l-2');
-    expect(header.parentElement?.className).toContain('border-border-soft');
+    expect(header.parentElement?.className).not.toContain('border-l-2');
   });
 });

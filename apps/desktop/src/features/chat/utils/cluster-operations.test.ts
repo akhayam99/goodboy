@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from './transcript-items';
 import { clusterOperations } from './cluster-operations';
+
+const runId = (value: string): ProviderRunId => JSON.parse(JSON.stringify(value));
+const iso = (value: string): IsoDateTime => JSON.parse(JSON.stringify(value));
 
 function tool(id: string, ended = true): TranscriptItem {
   return {
@@ -12,6 +16,9 @@ function tool(id: string, ended = true): TranscriptItem {
     output: null,
     isError: false,
     ended,
+    runId: runId('run-1'),
+    startedAt: iso('2026-06-08T10:00:00.000Z'),
+    endedAt: ended ? iso('2026-06-08T10:00:01.000Z') : null,
   };
 }
 
@@ -66,19 +73,35 @@ describe('clusterOperations', () => {
     expect(ops.kind === 'operations' && ops.items).toHaveLength(3);
   });
 
-  it('keeps non-clustered items (text, permissions) as standalone item rows', () => {
+  it('keeps unclustered text as standalone item rows and absorbs a permission into the cluster it touches', () => {
     const rows = clusterOperations([
       assistantText('t1'),
       permission('p1'),
       tool('a'),
       userText('u1'),
     ]);
-    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'operations', 'item']);
+    expect(rows.map((r) => r.kind)).toEqual(['item', 'operations', 'item']);
+    const ops = rows[1]!;
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(2);
   });
 
-  it('breaks the cluster when a non-clustered item interrupts the run', () => {
+  it('keeps a cluster whole across a permission gate instead of splitting it in two', () => {
     const rows = clusterOperations([tool('a'), permission('p1'), tool('b')]);
-    expect(rows.map((r) => r.kind)).toEqual(['operations', 'item', 'operations']);
+    expect(rows.map((r) => r.kind)).toEqual(['operations']);
+    const ops = rows[0]!;
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(3);
+  });
+
+  it('renders a lone permission line inline, not as a 1-item operations cluster', () => {
+    const rows = clusterOperations([assistantText('t1'), permission('p1'), assistantText('t2')]);
+    expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'item']);
+  });
+
+  it('absorbs a permission into a cluster when it sits next to a real operation', () => {
+    const rows = clusterOperations([tool('a'), permission('p1')]);
+    expect(rows.map((r) => r.kind)).toEqual(['operations']);
+    const ops = rows[0]!;
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(2);
   });
 
   it('derives a stable key from the first item in the group', () => {
