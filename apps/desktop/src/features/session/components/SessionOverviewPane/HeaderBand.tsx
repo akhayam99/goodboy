@@ -82,7 +82,7 @@ export const HeaderBand = ({
                 }}
                 title={inlineMarkdownText({ text: titleText })}
                 className={cn(
-                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-xl font-semibold leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isPlaceholderTitle ? 'text-faint-foreground' : 'text-foreground',
                 )}
               >

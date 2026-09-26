@@ -35,7 +35,7 @@ describe('PaneShell', () => {
     );
 
     const heading = screen.getByRole('heading', { name: 'Linear' });
-    expect(heading.className).toContain('text-lg');
+    expect(heading.className).toContain('text-title');
     expect(screen.getByText('3')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
     expect(screen.getByText('Body copy')).toBeDefined();

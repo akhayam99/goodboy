@@ -110,16 +110,14 @@ export const ChatEmptyState = ({ sessionId, selectedAgentId, phaseRuns, hasWorkf
     >
       <div className="flex items-center justify-center">
         {scenario === 'pick_agent' ? (
-          <span className="text-7xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
-            {phaseRuns.length}
-          </span>
+          <span className="text-display tabular-nums text-foreground">{phaseRuns.length}</span>
         ) : (
           <DogMascot size={128} className="text-primary" />
         )}
       </div>
       <div className="flex flex-col gap-1.5">
         <Eyebrow label={copy.eyebrow} muted />
-        <h2 className="text-base font-semibold text-foreground">{copy.title}</h2>
+        <h2 className="text-title text-foreground">{copy.title}</h2>
         <p className="text-prose text-muted-foreground">{copy.body}</p>
       </div>
       <ul className="flex flex-wrap items-center justify-center gap-1.5 text-secondary text-faint-foreground">

@@ -292,7 +292,7 @@ describe('AgentBrief type scale', () => {
     const heading = screen.getByRole('heading', { level: 2, name: 'Outcome' });
 
     expect(heading.className).not.toContain('text-base');
-    expect(screen.getByText('Outcome').className).toContain('text-2xs');
+    expect(screen.getByText('Outcome').className).toContain('text-eyebrow');
   });
 
   it('leaves the outcome body on the reading grade, since it is prose', () => {
@@ -300,7 +300,7 @@ describe('AgentBrief type scale', () => {
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
     );
 
-    const prose = screen.getByText('shipped the refactor').closest('.text-sm');
+    const prose = screen.getByText('shipped the refactor').closest('.text-body');
 
     expect(prose).not.toBeNull();
   });
@@ -310,8 +310,8 @@ describe('AgentBrief type scale', () => {
 
     const line = screen.getByText('queued').parentElement;
 
-    expect(line?.className).toContain('text-xs');
-    expect(line?.className).not.toContain('text-sm');
+    expect(line?.className).toContain('text-label');
+    expect(line?.className).not.toContain('text-body');
   });
 
   it('puts the time on the Now line and points at the transcript at twice the usual time', () => {

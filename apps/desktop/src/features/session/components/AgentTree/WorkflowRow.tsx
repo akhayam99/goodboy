@@ -235,7 +235,7 @@ export const WorkflowRow = ({
                       <div className="group/name flex min-w-0 items-start gap-1.5">
                         <h2
                           title={name}
-                          className="line-clamp-2 min-w-0 break-words text-xl font-semibold leading-snug text-foreground"
+                          className="line-clamp-2 min-w-0 break-words text-title text-foreground"
                         >
                           {name}
                         </h2>

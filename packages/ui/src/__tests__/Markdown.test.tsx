@@ -164,8 +164,7 @@ describe('Markdown document rhythm', () => {
     const { container } = render(
       <Markdown text={['| Name | Value |', '| --- | --- |', '| a | 1 |'].join('\n')} />,
     );
-    expect(container.querySelector('th')?.className).toContain('tracking-eyebrow');
-    expect(container.querySelector('th')?.className).toContain('text-2xs');
+    expect(container.querySelector('th')?.className).toContain('text-eyebrow');
     expect(container.querySelector('td')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
     expect(container.querySelector('table')?.className).not.toMatch(/\btext-(xs|sm|base)\b/);
   });

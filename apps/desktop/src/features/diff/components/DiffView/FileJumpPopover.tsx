@@ -88,7 +88,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
                 <span
                   aria-label={STATUS_WORD[file.status]}
                   className={cn(
-                    'flex size-4 items-center justify-center rounded-sm font-mono text-meta font-bold',
+                    'flex size-4 items-center justify-center rounded-sm font-mono text-meta font-semibold',
                     tone.text,
                     tone.bg,
                   )}

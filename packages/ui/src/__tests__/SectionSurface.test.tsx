@@ -47,7 +47,7 @@ describe('SectionSurface', () => {
     const heading = screen.getByRole('heading', { level: 2, name: 'Outcome' });
 
     expect(heading.className).not.toContain('text-base');
-    expect(screen.getByText('Outcome').className).toContain('text-2xs');
+    expect(screen.getByText('Outcome').className).toContain('text-eyebrow');
   });
 
   it('names the surface as a region only when it is given a name', () => {

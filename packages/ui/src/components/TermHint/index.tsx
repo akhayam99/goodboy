@@ -59,7 +59,7 @@ export const TermHint = ({ children, term, definition, action, className }: Term
           onFocus={onFocus}
           onBlur={onBlur}
           className={cn(
-            'cursor-help rounded-xs text-inherit underline decoration-current/60 decoration-dotted underline-offset-2',
+            'cursor-help rounded-sm text-inherit underline decoration-current/60 decoration-dotted underline-offset-2',
             'motion-safe:transition-colors hover:decoration-current',
             FOCUS_RING,
             className,
@@ -79,7 +79,7 @@ export const TermHint = ({ children, term, definition, action, className }: Term
             action.onAct();
           }}
           className={cn(
-            'self-start rounded-xs text-label text-primary hover:underline',
+            'self-start rounded-sm text-label text-primary hover:underline',
             FOCUS_RING,
           )}
         >
