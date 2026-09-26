@@ -86,6 +86,48 @@ row names its project. An empty list says why: no project in the session, no
 script in the project, or no match for the filter. Enter runs the row and opens
 its output in the right drawer; the composer text is cleared.
 
+## Addresses and history
+
+Every view has an address, and one history per window and workspace records
+them. The navigation slice (`store/slices/navigation/`) owns both.
+
+- **A `Location` is where you are plus how the page was.** Its `place` is the
+  board or a session view: lens, open agent, session studio and one target
+  (artifact, run, issue, diff focus, terminal mount). Its `focus` is the page
+  state: selection, scroll and revealed rows. `locationKey` prints the text
+  form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
+  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`.
+- **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
+  `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
+  `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
+  surfaces render from (`activeLens`, `selectedAgentId`, `sessionStudio`, the
+  focused target) are written only by the slice. A contract test
+  (`__tests__/navigation/oneDoor.test.ts`) fails when `features/`, `app/` or
+  `shared/` calls `setActiveLens`, `setCurrentSession`, `selectAgent` or
+  `setSessionStudio`.
+- **Aliases live in `canonicalLocation`, and only there.** An agent resolves
+  to its home lens (an unknown agent to Agents). `pr` on a GitHub session
+  becomes `review` before it is recorded, so no view redirects after it
+  mounts.
+- **Push, amend, replace.** A new place pushes: board and session, session to
+  session, lens, a child, a sibling from a switcher, a session studio. Pushing
+  the place you are on replaces it. Page state amends the current entry and
+  never adds one. Canonical rewrites replace. The stack keeps 50 entries and
+  lives in memory. Each workspace has its own stack, so switching workspace
+  finds that workspace's history again.
+- **Back restores the entry as it was; a forward move arrives clean.** Before a
+  push, the live view is captured into the current entry, so Back finds the
+  same run, artifact or diff focus. A forward move (crumb, sidebar, palette,
+  notification, Board) starts with an empty focus.
+- **Up goes to the parent.** When the previous entry is the parent, Up is Back.
+  Otherwise it pushes the parent. Closing a session studio pops every studio
+  entry stacked on the same base.
+- **Dead entries fall out.** An archived or deleted session removes its
+  entries and collapses the duplicates left behind. An agent that is gone
+  falls back to its home lens.
+- **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
+  back and forward buttons walk the stack.
+
 ## Surfaces
 
 **Shell layout.** One strip of chrome sits above, one footer below, and between

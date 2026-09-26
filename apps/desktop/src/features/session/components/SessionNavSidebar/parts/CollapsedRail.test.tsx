@@ -6,11 +6,12 @@ const { state } = vi.hoisted(() => ({
   state: {
     workspaces: [{ id: 'ws-1', kind: 'repo', name: 'Acme', rootPath: '/code/acme' }],
     openWorkspace: vi.fn(),
-    setCurrentSession: vi.fn(),
+    navigate: vi.fn(),
   },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => state.workspaces[0],
   useWorkspaces: () => state.workspaces,
@@ -20,7 +21,7 @@ vi.mock('../../../../../store', () => ({
 
 afterEach(() => {
   cleanup();
-  state.setCurrentSession.mockClear();
+  state.navigate.mockClear();
 });
 
 import { CollapsedRail } from './CollapsedRail';
@@ -32,7 +33,7 @@ describe('CollapsedRail', () => {
     expect(screen.queryByRole('button', { name: /show session/i })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+    expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
 
     const spy = vi.fn();
     window.addEventListener('goodboy:new-session', spy);

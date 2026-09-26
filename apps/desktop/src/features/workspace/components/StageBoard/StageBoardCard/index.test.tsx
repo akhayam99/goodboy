@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
@@ -35,8 +36,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     loadReviewDrafts: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
   },
   hooks: {
     stage: 'building' as SessionStage,
@@ -48,7 +48,8 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
   useDynamicActionsMock: vi.fn((): ReadonlyArray<MockDynamicAction> => []),
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useNonResolverStandaloneAgents: () => hooks.agents,
@@ -139,8 +140,7 @@ beforeEach(() => {
   state.phaseTemplates = {};
   state.sessionWorkflows = {};
   state.loadReviewDrafts.mockClear();
-  state.setCurrentSession.mockClear();
-  state.setActiveLens.mockClear();
+  state.navigate.mockClear();
   useDynamicActionsMock.mockReset();
   useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
@@ -520,8 +520,11 @@ describe('StageBoardCard review drafts', () => {
 
     fireEvent.click(chip);
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
-    await vi.waitFor(() => expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review'));
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      }),
+    );
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 

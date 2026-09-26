@@ -15,7 +15,8 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     sessions: [] as ReadonlyArray<Session>,
     selectedAgentId: {} as Record<string, string | null>,
     transcripts: {} as Record<string, unknown>,
-    selectAgent: vi.fn(async () => undefined),
+    loadAgentTranscript: vi.fn(async () => undefined),
+    navigate: vi.fn(),
     loadSessionArtifacts: vi.fn(async () => undefined),
     advanceClusterImplementation: vi.fn(async () => undefined),
     markAgentViewed: vi.fn(async () => undefined),
@@ -48,7 +49,8 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionLoading: () => ({ transcript: false }),
@@ -154,7 +156,8 @@ beforeEach(() => {
   state.loadSessionAnsweredQuestions.mockClear();
   state.clearOpenQuestionScroll.mockClear();
   state.requestOpenQuestionScroll.mockClear();
-  state.selectAgent.mockClear();
+  state.loadAgentTranscript.mockClear();
+  state.navigate.mockClear();
   state.loadSessionArtifacts.mockClear();
   state.advanceClusterImplementation.mockClear();
   transcriptRowsMock.mockClear();
@@ -317,7 +320,9 @@ describe('ChatView', () => {
     render(<ChatView session={session} />);
     fireEvent.click(screen.getByRole('button', { name: '1 open question from implementer' }));
 
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-2' },
+    });
     expect(state.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-2',
       questionId: 'q-other-agent',

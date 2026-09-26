@@ -6,12 +6,14 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 const { state } = vi.hoisted(() => ({
   state: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
-    selectAgent: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     plans: [] as ReadonlyArray<unknown>,
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessionPlans: () => state.plans,
@@ -118,6 +120,8 @@ describe('PlanPartDrawer', () => {
     );
     expect(screen.getByText('Running as Backfill')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-b');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-b' },
+    });
   });
 });

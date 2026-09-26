@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
@@ -11,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   useImpactMetrics: vi.fn(),
   sessions: [] as ReadonlyArray<{ id: string; goal: string }>,
   state: {
-    setCurrentSession: vi.fn(),
+    navigate: vi.fn(),
     currentSessionId: null,
     currentWorkspaceId: 'workspace-1',
     sessionTelemetry: {},
@@ -35,7 +36,8 @@ vi.mock('../../hooks/useImpactMetrics', () => ({
   useImpactMetrics: mocks.useImpactMetrics,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (state: typeof mocks.state) => T) => selector(mocks.state),
   useSessions: () => mocks.sessions,
@@ -134,7 +136,7 @@ const buildMetrics = (): ImpactMetrics => ({
 
 beforeEach(() => {
   mocks.retry.mockClear();
-  mocks.state.setCurrentSession.mockClear();
+  mocks.state.navigate.mockClear();
   mocks.useImpactMetrics.mockImplementation(() => mocks.metrics);
   mocks.metrics = buildMetrics();
 });
@@ -155,7 +157,9 @@ describe('ImpactStudio', () => {
     const drillDowns = screen.getAllByRole('button', { name: /ship impact studio/i });
     expect(drillDowns).toHaveLength(2);
     fireEvent.click(drillDowns[0]!);
-    expect(mocks.state.setCurrentSession).toHaveBeenCalledWith('session-1');
+    expect(mocks.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+    });
     expect(onClose).toHaveBeenCalled();
   });
 

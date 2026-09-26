@@ -2,6 +2,7 @@
 
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 
 type ToastAction = { readonly label: string; readonly onClick: () => void };
@@ -41,8 +42,8 @@ const { showToast, state } = vi.hoisted(() => ({
       ReadonlyArray<{ id: string; name: string; status: string }>
     >,
     spawnAgent: vi.fn(async () => 'agent-1'),
-    selectAgent: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     beginSessionCreation: vi.fn(() => 'creation-1'),
     endSessionCreation: vi.fn(),
@@ -50,7 +51,8 @@ const { showToast, state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T>(selector: (store: typeof state) => T) => selector(state),
 }));
 
@@ -91,9 +93,7 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.spawnAgent.mockReset();
   state.spawnAgent.mockResolvedValue('agent-1');
-  state.selectAgent.mockReset();
-  state.selectAgent.mockResolvedValue(undefined);
-  state.setActiveLens.mockReset();
+  state.navigate.mockReset();
   state.reportError.mockClear();
   state.beginSessionCreation.mockReset();
   state.beginSessionCreation.mockReturnValue('creation-1');
@@ -163,7 +163,7 @@ describe('useRebaseAgent', () => {
         initialPrompt: expect.stringContaining('- Fetch origin main before rebasing.'),
       }),
     );
-    expect(state.selectAgent).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('spawns without taking the focus and marks the branch action in flight', async () => {
@@ -192,8 +192,9 @@ describe('useRebaseAgent', () => {
 
     action?.onClick();
 
-    expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-new');
-    expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: 'agent-new' },
+    });
     expect(state.spawnAgent).toHaveBeenCalledTimes(1);
   });
 
@@ -210,12 +211,13 @@ describe('useRebaseAgent', () => {
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
     const action = showToast.mock.calls[1]?.[0]?.action;
     expect(action?.label).toBe('Open the rebase agent');
-    expect(state.selectAgent).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
 
     action?.onClick();
 
-    expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-1');
-    expect(state.setActiveLens).toHaveBeenCalledWith(sessionId, 'agents');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: 'agent-1' },
+    });
   });
 
   it('reports a stopped rebase agent to the log with a way to open it', async () => {

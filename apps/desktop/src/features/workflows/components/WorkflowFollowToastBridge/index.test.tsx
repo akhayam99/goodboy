@@ -11,7 +11,8 @@ const state = {
   visibleWorkflowStudioWorkspaceId: null,
 };
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: Object.assign((selector: (value: typeof state) => unknown) => selector(state), {
     getState: () => state,
   }),
@@ -62,7 +63,6 @@ describe('WorkflowFollowToastBridge', () => {
       title: 'Implement started',
       message: 'The workflow moved on to the next step.',
       actionLabel: 'Follow',
-      lens: 'workflows',
     });
   });
 

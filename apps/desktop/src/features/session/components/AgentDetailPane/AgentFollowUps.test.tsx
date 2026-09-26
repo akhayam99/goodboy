@@ -9,14 +9,14 @@ const state = vi.hoisted(() => ({
   agentTurnState: {} as Record<string, unknown>,
   openQuestions: [] as ReadonlyArray<OpenQuestion>,
   spawnAgent: vi.fn(async () => 'agent-2' as AgentId),
-  selectAgent: vi.fn(async () => undefined),
-  setCurrentSession: vi.fn(async () => undefined),
-  setActiveLens: vi.fn(() => undefined),
+  navigate: vi.fn(),
+  loadAgentTranscript: vi.fn(async () => undefined),
 }));
 
 const announce = vi.hoisted(() => vi.fn());
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
   useSessionOpenQuestions: () => state.openQuestions,
@@ -68,7 +68,7 @@ beforeEach(() => {
   state.agentTurnState = {};
   state.openQuestions = [];
   state.spawnAgent.mockClear();
-  state.selectAgent.mockClear();
+  state.navigate.mockClear();
   announce.mockClear();
 });
 
@@ -232,8 +232,10 @@ describe('AgentFollowUps after a spawn', () => {
     );
 
     screen.getByRole('button', { name: 'Go to chat' }).click();
-    await vi.waitFor(() => expect(state.selectAgent).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));
 
-    expect(state.selectAgent).toHaveBeenCalledWith(sessionId, 'agent-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: sessionId, agentId: 'agent-2' },
+    });
   });
 });

@@ -21,10 +21,12 @@ const state = vi.hoisted(() => ({
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   sessionAnsweredQuestions: {} as Record<string, ReadonlyArray<unknown>>,
   loadAgentHandoff: vi.fn(async () => undefined),
-  selectAgent: vi.fn(async () => undefined),
+  navigate: vi.fn(),
+  loadAgentTranscript: vi.fn(async () => undefined),
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (value: typeof state) => T) => selector(state),
 }));
@@ -105,7 +107,7 @@ describe('HandoffBlock', () => {
       [AGENT]: [{ kind: 'assistant_text', runId: 'r' as never, delta: 'On it.', at: AT }],
     };
     state.loadAgentHandoff.mockClear();
-    state.selectAgent.mockClear();
+    state.navigate.mockClear();
   });
 
   afterEach(() => {
@@ -137,7 +139,9 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 earlier step' }));
     fireEvent.click(screen.getByRole('button', { name: /Trace the rounding/ }));
 
-    expect(state.selectAgent).toHaveBeenCalledWith(SESSION, 'agent-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION, agentId: 'agent-2' },
+    });
   });
 
   it('shows the plan as a title and a link, never its body', () => {

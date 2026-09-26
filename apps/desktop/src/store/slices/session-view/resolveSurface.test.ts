@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { agentPlace, sessionPlace } from '../navigation/place';
 import { createSessionViewSlice } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
 
 type SliceState = ReturnType<typeof createSessionViewSlice>;
 
-const selectAgent = vi.fn(async () => undefined);
+const navigate = vi.fn((params: { readonly to: unknown }) => {
+  void params;
+});
 
 const buildSlice = (): { readonly actions: SliceState; readonly getState: () => SliceState } => {
   let state = {} as SliceState;
@@ -23,13 +26,14 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     ...actions,
     selectedAgentId: {},
     sessionPhaseRuns: {},
-    selectAgent,
+    diffMountPath: {},
+    navigate,
   } as unknown as SliceState;
   return { actions, getState: get };
 };
 
 beforeEach(() => {
-  selectAgent.mockClear();
+  navigate.mockClear();
   const store: Record<string, string> = {};
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => store[key] ?? null,
@@ -72,12 +76,17 @@ describe('the round trip between the resolve queue and the diff', () => {
       path: 'src/parser.ts',
       line: 31,
     });
-    expect(state.diffFocus[SESSION_ID]).toEqual({
-      kind: 'commit',
-      sha: 'candidate-sha',
-      path: 'src/parser.ts',
+    expect(navigate).toHaveBeenCalledWith({
+      to: sessionPlace({
+        sessionId: SESSION_ID,
+        lens: 'files',
+        target: {
+          kind: 'diff',
+          mountPath: null,
+          focus: { kind: 'commit', sha: 'candidate-sha', path: 'src/parser.ts' },
+        },
+      }),
     });
-    expect(state.activeLens[SESSION_ID]).toBe('files');
   });
 
   it('returns to the queue with the pinned position intact and the pill gone', () => {
@@ -96,7 +105,9 @@ describe('the round trip between the resolve queue and the diff', () => {
     actions.returnFromResolveDiff({ sessionId: SESSION_ID });
 
     const state = getState();
-    expect(state.activeLens[SESSION_ID]).toBe('review');
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
     expect(state.resolveDiffReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
       expandedThreadId: 't-parser',
@@ -141,7 +152,9 @@ describe('the round trip between the resolve queue and the agent', () => {
       prNumber: 264,
     });
 
-    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-7');
+    expect(navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: SESSION_ID, agentId: 'agent-7' as AgentId }),
+    });
     expect(getState().resolveAgentReturn[SESSION_ID]).toEqual({
       agentId: 'agent-7',
       threadId: 't-parser',
@@ -179,7 +192,9 @@ describe('the round trip between the resolve queue and the agent', () => {
     actions.returnFromResolveAgent({ sessionId: SESSION_ID });
 
     const state = getState();
-    expect(state.activeLens[SESSION_ID]).toBe('review');
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
     expect(state.resolveAgentReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
       expandedThreadId: 't-parser',
@@ -198,6 +213,7 @@ describe('the round trip between the resolve queue and the agent', () => {
 
     actions.returnFromResolveAgent({ sessionId: SESSION_ID });
 
-    expect(getState().activeLens[SESSION_ID]).toBeUndefined();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(getState().resolveAgentReturn[SESSION_ID]).toBeUndefined();
   });
 });

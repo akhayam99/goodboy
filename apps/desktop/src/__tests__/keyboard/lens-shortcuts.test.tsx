@@ -1,20 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../store/slices/navigation/place';
+import type { SessionId } from '@goodboy/types';
 import { act, cleanup, render } from '@testing-library/react';
 
 const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwin' | 'linux' } }));
 
 vi.mock('../../shared/platform', () => ({ currentPlatform: () => platform.current }));
 
-const { setActiveLens, sessionList, state } = vi.hoisted(() => {
-  const activeLensSetter = vi.fn();
+const { sessionList, state } = vi.hoisted(() => {
   const sessions = [
     { id: 'session-0', workspaceId: 'workspace-1' },
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
   return {
-    setActiveLens: activeLensSetter,
     sessionList: { current: sessions },
     state: {
       hydrate: vi.fn(async () => undefined),
@@ -35,15 +35,14 @@ const { setActiveLens, sessionList, state } = vi.hoisted(() => {
       sessionProjectMounts: {},
       sessionActiveProject: {},
       sessionBranches: { 'session-1': 'feature/branch' } as Record<string, string>,
-      setSessionStudio: vi.fn(),
+      navigate: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
       openWorkspace: vi.fn(),
-      setCurrentSession: vi.fn(),
-      lensGo: vi.fn(),
       currentWorkspaceId: 'workspace-1' as string | null,
       currentSessionId: 'session-1' as string | null,
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
-      setActiveLens: activeLensSetter,
       sessionWorktrees: {},
     },
   };
@@ -110,12 +109,14 @@ vi.mock('../../shared/hooks/useProviderRefreshOnFocus', () => ({
 vi.mock('../../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: vi.fn() }),
 }));
-vi.mock('../../store', () => {
+vi.mock('../../store', async () => {
+  const places = await import('../../store/slices/navigation/place');
   const useAppStore = Object.assign(
     vi.fn((selector: (store: typeof state) => unknown) => selector(state)),
     { getState: () => state, subscribe: () => () => undefined },
   );
   return {
+    ...places,
     EMPTY_ARRAY: [],
     useAppStore,
     useCurrentSession: () => state.sessions.find((s) => s.id === state.currentSessionId) ?? null,
@@ -132,6 +133,12 @@ vi.mock('../../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPol
 import { App } from '../../App';
 
 const reload = vi.fn();
+
+const lensCalls = (): ReadonlyArray<ReadonlyArray<unknown>> =>
+  state.navigate.mock.calls.map(([params]) => {
+    const place = (params as { to: { sessionId?: string; view?: { lens: unknown } } }).to;
+    return [place.sessionId, place.view?.lens];
+  });
 
 type KeyInit = {
   readonly code: string;
@@ -162,8 +169,9 @@ beforeEach(() => {
   state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
   state.activeLens = {};
-  setActiveLens.mockClear();
-  state.setCurrentSession.mockClear();
+  state.navigate.mockClear();
+  state.back.mockClear();
+  state.forward.mockClear();
   reload.mockClear();
   Object.defineProperty(window, 'location', {
     configurable: true,
@@ -173,7 +181,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  setActiveLens.mockClear();
+  state.navigate.mockClear();
 });
 
 describe('App lens shortcuts off darwin', () => {
@@ -186,7 +194,9 @@ describe('App lens shortcuts off darwin', () => {
 
     press({ code: 'KeyA', key: 'a', ctrlKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'agents' }),
+    });
   });
 
   it('walks to the previous session on ctrl', () => {
@@ -194,7 +204,9 @@ describe('App lens shortcuts off darwin', () => {
 
     press({ code: 'BracketLeft', key: '{', ctrlKey: true, shiftKey: true });
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-0');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+    });
   });
 
   it('reloads on ctrl', () => {
@@ -211,7 +223,7 @@ describe('App lens shortcuts off darwin', () => {
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
     press({ code: 'KeyR', key: 'r', metaKey: true });
 
-    expect(setActiveLens).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
   });
 });
@@ -222,7 +234,9 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'agents');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'agents' }),
+    });
   });
 
   it('leaves the lens alone when the session sidebar toggles', () => {
@@ -230,7 +244,7 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyB', key: 'b', metaKey: true });
 
-    expect(setActiveLens).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('toggles back to the overview when the lens is already active', () => {
@@ -239,7 +253,9 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', null);
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: null }),
+    });
   });
 
   it('reaches Context and every legacy Context region shortcut', () => {
@@ -250,7 +266,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyE', key: 'e', metaKey: true, altKey: true });
     press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
 
-    expect(setActiveLens.mock.calls).toEqual([
+    expect(lensCalls()).toEqual([
       ['session-1', 'context'],
       ['session-1', 'goal'],
       ['session-1', 'decisions'],
@@ -266,7 +282,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'Digit4', key: '4', metaKey: true, altKey: true });
     press({ code: 'Digit6', key: '6', metaKey: true, altKey: true });
 
-    expect(setActiveLens.mock.calls).toEqual([
+    expect(lensCalls()).toEqual([
       ['session-1', 'linear'],
       ['session-1', 'gitlab_issues'],
       ['session-1', 'slack_threads'],
@@ -278,7 +294,32 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'BracketLeft', key: '{', metaKey: true, shiftKey: true });
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-0');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+    });
+  });
+
+  it('walks the history back and forward on the bracket keys', () => {
+    render(<App />);
+
+    press({ code: 'BracketLeft', key: '[', metaKey: true });
+    press({ code: 'BracketRight', key: ']', metaKey: true });
+
+    expect(state.back).toHaveBeenCalledTimes(1);
+    expect(state.forward).toHaveBeenCalledTimes(1);
+  });
+
+  it('walks the history on the mouse back and forward buttons', () => {
+    render(<App />);
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mouseup', { button: 3 }));
+      window.dispatchEvent(new MouseEvent('mouseup', { button: 4 }));
+      window.dispatchEvent(new MouseEvent('mouseup', { button: 0 }));
+    });
+
+    expect(state.back).toHaveBeenCalledTimes(1);
+    expect(state.forward).toHaveBeenCalledTimes(1);
   });
 
   it('returns to the board', () => {
@@ -286,7 +327,7 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyH', key: 'h', metaKey: true, shiftKey: true });
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+    expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
   });
 
   it('routes the diff binding to the Diff lens for repo-backed sessions', () => {
@@ -295,7 +336,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
 
-    expect(setActiveLens.mock.calls).toEqual([['session-1', 'files']]);
+    expect(lensCalls()).toEqual([['session-1', 'files']]);
   });
 
   it('routes the explore binding to the Explore lens for branchless sessions', () => {
@@ -308,7 +349,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyX', key: 'x', metaKey: true, altKey: true });
     press({ code: 'KeyF', key: 'f', metaKey: true, altKey: true });
 
-    expect(setActiveLens.mock.calls).toEqual([['session-1', 'explore']]);
+    expect(lensCalls()).toEqual([['session-1', 'explore']]);
   });
 
   it('reloads on the plain reload combo', () => {
@@ -325,7 +366,7 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyR', key: 'r', metaKey: true, shiftKey: true });
 
     expect(reload).not.toHaveBeenCalled();
-    expect(setActiveLens).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('reaches the Review lens on the one lens binding it has', () => {
@@ -333,7 +374,9 @@ describe('App lens shortcuts on darwin', () => {
 
     press({ code: 'KeyR', key: 'r', metaKey: true, altKey: true });
 
-    expect(setActiveLens).toHaveBeenCalledWith('session-1', 'review');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'review' }),
+    });
     expect(reload).not.toHaveBeenCalled();
   });
 });
