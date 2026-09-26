@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
-import type { OpenWorkspaceResult } from '../../../../store';
+import type { OpenWorkspaceResult } from '../../../../store/slices/presence/openWorkspace';
 
 const { state } = vi.hoisted(() => ({
   state: {

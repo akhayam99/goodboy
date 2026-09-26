@@ -1,5 +1,4 @@
 export { useAppStore, type ProviderSpendEntry } from './store';
-export type { OpenWorkspaceParams, OpenWorkspaceResult } from './slices/presence/openWorkspace';
 
 export {
   agentHasUnread,
