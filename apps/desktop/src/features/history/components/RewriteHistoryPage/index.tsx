@@ -79,6 +79,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const [hasPushedBefore, setHasPushedBefore] = useState(false);
   const pushHistoryRewrite = useAppStore((s) => s.pushHistoryRewrite);
   const restoreHistory = useAppStore((s) => s.restoreHistory);
+  const bringOriginIntoHistory = useAppStore((s) => s.bringOriginIntoHistory);
   const hasPushedHistoryBefore = useAppStore((s) => s.hasPushedHistoryBefore);
   const prNumber = useAppStore((s) =>
     mountId === null ? null : (s.mountGithub[mountId]?.pr?.number ?? null),
@@ -587,6 +588,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
               }}
               onRewriteWithAgent={() => void rewriteDraftWithAgent({ sessionId, mountId })}
               onUndoEdit={undoStack.length > 0 ? undo : null}
+              onBringOrigin={() => void bringOriginIntoHistory({ sessionId, mountId })}
               onApplyRewritten={(shouldPush) =>
                 void applyRewrittenHistory({ sessionId, mountId, shouldPush })
               }

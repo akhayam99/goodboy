@@ -936,7 +936,7 @@ push. Commits already on origin can be rewritten too: the dock counts them,
 names the pull request that updates, and the first push that rewrites origin
 on a branch asks once in an `InlineConfirm`. The push always carries
 `--force-with-lease` on the origin sha read at apply, never a bare force; if
-origin moved, nothing is pushed and the dock says so. After an apply the dock
+origin moved, nothing is pushed and the dock offers `Bring them into the plan`, which fetches the commits origin gained, replays them on top of the rewrite in a copy and leaves `Push with lease` on the new origin sha. After an apply the dock
 reads `Rewritten here · origin has the old history` with `Push with lease`
 and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
 kept 30 days; `Backups` in the page menu lists them with `Restore previous

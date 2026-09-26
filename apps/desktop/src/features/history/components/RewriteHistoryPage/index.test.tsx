@@ -86,6 +86,7 @@ const setup = ({
     pushHistoryRewrite: vi.fn(async () => 'pushed'),
     restoreHistory: vi.fn(async () => 'restored'),
     hasPushedHistoryBefore: vi.fn(async () => pushedBefore),
+    bringOriginIntoHistory: vi.fn(async () => 'applied'),
   };
   h.state = {
     ...actions,
@@ -295,6 +296,40 @@ describe('RewriteHistoryPage', () => {
       mountId: MOUNT_ID,
       backupRef: 'refs/goodboy/backup/fix-ledger-postings/1790000000000000000',
       shouldPush: false,
+    });
+  });
+
+  it('brings what origin gained into the plan after the lease refused the push', () => {
+    const actions = setup({
+      run: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'stopped',
+        planId: 'plan-1',
+        agentId: null,
+        copyPath: null,
+        stop: {
+          reason: 'origin-moved',
+          message: 'Origin has new commits since the rewrite. Nothing was pushed.',
+          files: [],
+          sha: null,
+        },
+        result: null,
+        backupRef: null,
+        remoteSha: 'remote-sha',
+        holder: null,
+        updatedAt: 1,
+      },
+    });
+
+    expect(
+      screen.getByText('Origin has new commits since the rewrite. Nothing was pushed.'),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Bring them into the plan' }));
+    expect(actions.bringOriginIntoHistory).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
     });
   });
 });

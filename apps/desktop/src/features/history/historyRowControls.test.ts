@@ -56,6 +56,20 @@ describe('history activity rows', () => {
     );
   });
 
+  it('offers to bring origin into the plan when the lease refused the push', () => {
+    const moved = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'plan', reason: 'origin-moved' },
+    });
+
+    expect(historyRowControls({ event: moved, events: [moved] })).toEqual({
+      primary: 'bring-origin',
+      secondary: [],
+    });
+  });
+
   it('asks for a note when the history rewriter could not merge', () => {
     const stuck = event({
       id: 'ev-1',

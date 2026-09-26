@@ -261,6 +261,7 @@ pub fn run() {
             history::history_backups_list,
             history::history_git_supported,
             history::history_rebase_plan,
+            history::history_origin_ahead,
             history::history_rewriter_prepare,
             history::history_rewriter_collect,
             history::history_copy_discard,

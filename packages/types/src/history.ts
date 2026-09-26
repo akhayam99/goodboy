@@ -81,6 +81,12 @@ export type HistoryRebasePlan = {
   readonly fetchError: string | null;
 };
 
+export type HistoryOriginAhead = {
+  readonly remoteSha: string;
+  readonly commits: ReadonlyArray<HistoryRebaseCommit>;
+  readonly fetchError: string | null;
+};
+
 export type HistoryRewriterCheck = {
   readonly head: string | null;
   readonly map: ReadonlyArray<HistoryShaMove>;

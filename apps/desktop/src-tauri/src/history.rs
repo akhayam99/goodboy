@@ -1340,6 +1340,83 @@ pub async fn history_rebase_plan(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginAhead {
+    pub remote_sha: String,
+    pub commits: Vec<RebaseCommit>,
+    pub fetch_error: Option<String>,
+}
+
+pub(crate) fn origin_ahead(
+    cwd: &Path,
+    branch: &str,
+    since: Option<&str>,
+    token: Option<&str>,
+) -> Result<OriginAhead, WorktreeError> {
+    let refspec = format!("+refs/heads/{branch}:refs/remotes/origin/{branch}");
+    let cwd_text = cwd.to_string_lossy().to_string();
+    let fetch_error = match crate::github::run_git_authenticated(
+        &["fetch", "--quiet", "origin", &refspec],
+        &cwd_text,
+        token,
+    ) {
+        Ok(result) if result.exit_code == 0 => None,
+        Ok(result) => Some(result.stderr.trim().to_string()),
+        Err(error) => Some(error.to_string()),
+    };
+    let remote_sha = resolve_commit(cwd, &format!("origin/{branch}"))?;
+    let from = match since.map(str::trim).filter(|sha| !sha.is_empty()) {
+        Some(sha) => resolve_commit(cwd, sha)?,
+        None => resolve_commit(cwd, "HEAD")?,
+    };
+    let range = format!("{from}..{remote_sha}");
+    let raw = git(
+        cwd,
+        &["log", "--reverse", "--format=%H%x1f%P%x1f%s", &range],
+    )?;
+    let mut commits = Vec::new();
+    for line in raw.lines().filter(|line| !line.trim().is_empty()) {
+        let mut parts = line.splitn(3, '\u{1f}');
+        let sha = parts.next().unwrap_or_default().to_string();
+        if parts.next().unwrap_or_default().split_whitespace().count() != 1 {
+            return Err(plan_error(&format!(
+                "{} on origin is a merge commit: bring it in by hand",
+                short(&sha)
+            )));
+        }
+        commits.push(RebaseCommit {
+            sha,
+            subject: parts.next().unwrap_or_default().to_string(),
+        });
+    }
+    Ok(OriginAhead {
+        remote_sha,
+        commits,
+        fetch_error,
+    })
+}
+
+#[tauri::command]
+pub async fn history_origin_ahead(
+    worktree_path: String,
+    branch: String,
+    since: Option<String>,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<OriginAhead, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        origin_ahead(&cwd, &branch, since.as_deref(), token.as_deref())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RewriterPrepareArgs {
@@ -1909,6 +1986,92 @@ mod tests {
         assert_eq!(left.len(), 1);
         assert_eq!(left[0].ref_name, fresh);
     }
+
+    #[test]
+    fn commits_origin_gained_after_the_apply_come_into_the_plan_and_push_with_lease() {
+        let b = branch("origin-ahead");
+        let remote = b.root.join("remote.git");
+        git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &b.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+        let other = b.root.join("other");
+        git_ok(
+            &b.root,
+            &[
+                "clone",
+                "-q",
+                "-b",
+                "feature",
+                remote.to_str().unwrap(),
+                other.to_str().unwrap(),
+            ],
+        );
+        git_ok(&other, &["config", "user.email", "test@example.com"]);
+        git_ok(&other, &["config", "user.name", "teammate"]);
+        let theirs = commit(&other, "teammate.txt", "hello\n", "Teammate adds a note");
+        git_ok(&other, &["push", "-q", "origin", "feature"]);
+        let args = plan(
+            &b.root,
+            &b.base,
+            &b.c,
+            vec![
+                step(&b.a, HistoryVerb::Pick),
+                step(&b.b, HistoryVerb::Squash),
+                step(&b.c, HistoryVerb::Pick),
+            ],
+        );
+        let rewritten = trial(&args, &slug("origin-ahead"), false)
+            .unwrap()
+            .head
+            .unwrap();
+        move_branch_blocking(&b.root, "feature", &b.c, &rewritten).unwrap();
+
+        let ahead = origin_ahead(&b.root, "feature", Some(&b.c), None).unwrap();
+        assert_eq!(ahead.remote_sha, theirs);
+        assert_eq!(
+            ahead
+                .commits
+                .iter()
+                .map(|c| c.sha.clone())
+                .collect::<Vec<_>>(),
+            vec![theirs.clone()]
+        );
+        let bring = plan(
+            &b.root,
+            &rewritten,
+            &rewritten,
+            vec![step(&theirs, HistoryVerb::Pick)],
+        );
+        let joined = trial(&bring, &slug("origin-bring"), false)
+            .unwrap()
+            .head
+            .unwrap();
+        move_branch_blocking(&b.root, "feature", &rewritten, &joined).unwrap();
+        let cwd = b.root.to_string_lossy().into_owned();
+        let pushed = crate::github::run_git_authenticated(
+            &[
+                "push",
+                &crate::github::lease_argument("feature", Some(&ahead.remote_sha)),
+                "origin",
+                "refs/heads/feature:refs/heads/feature",
+            ],
+            &cwd,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            crate::github::lease_push_outcome(&pushed),
+            crate::github::LeasePushOutcome::Pushed
+        );
+        assert_eq!(
+            subjects(&b.root, &format!("{}..feature", b.base)),
+            vec!["Teammate adds a note", "C adds notes", "A edits the policy"]
+        );
+    }
+
     #[test]
     fn the_lease_push_refuses_when_origin_moved() {
         let b = branch("lease-push");

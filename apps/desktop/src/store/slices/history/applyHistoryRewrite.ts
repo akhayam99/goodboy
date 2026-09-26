@@ -199,7 +199,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       pushed.kind === 'stale'
         ? {
             reason: 'origin-moved',
-            message: 'Origin moved since the rewrite. Nothing was pushed.',
+            message: 'Origin has new commits since the rewrite. Nothing was pushed.',
             files: [],
             sha: null,
           }
