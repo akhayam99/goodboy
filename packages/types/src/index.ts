@@ -68,6 +68,7 @@ export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-d
 export type {
   SessionDecision,
   SessionDecisionAuthor,
+  SessionDecisionChange,
   SessionDecisionStatus,
 } from './session-decision';
 export type {

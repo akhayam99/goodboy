@@ -139,6 +139,84 @@ export const extractMarkers = (
   return { decisions, questions, resolved };
 };
 
+const DECISION_OPEN_PREFIX = '<<ctx-decision';
+const DECISION_REFERENCE_RE = /^\s*D?(\d+)\s*$/i;
+
+export type ExtractedDecisionOp =
+  | { readonly kind: 'add'; readonly text: string }
+  | {
+      readonly kind: 'replace';
+      readonly number: number;
+      readonly text: string;
+      readonly reason: string | null;
+    }
+  | { readonly kind: 'withdraw'; readonly number: number; readonly reason: string };
+
+type DecisionReferenceParams = {
+  readonly raw: string | undefined;
+};
+
+const decisionReference = ({ raw }: DecisionReferenceParams): number | null => {
+  if (raw === undefined) {
+    return null;
+  }
+  const match = DECISION_REFERENCE_RE.exec(raw);
+  return match === null ? null : Number(match[1]);
+};
+
+type DecisionMarkerParams = {
+  readonly attrs: Readonly<Record<string, string>>;
+  readonly body: string;
+};
+
+const decisionOpOf = ({ attrs, body }: DecisionMarkerParams): ExtractedDecisionOp | null => {
+  const withdrawn = decisionReference({ raw: attrs.withdraw });
+  if (withdrawn !== null) {
+    return body === '' ? null : { kind: 'withdraw', number: withdrawn, reason: body };
+  }
+  if (body === '') {
+    return null;
+  }
+  const replaced = decisionReference({ raw: attrs.replaces });
+  if (replaced !== null) {
+    const reason = (attrs.reason ?? '').trim();
+    return { kind: 'replace', number: replaced, text: body, reason: reason === '' ? null : reason };
+  }
+  return { kind: 'add', text: body };
+};
+
+export const extractDecisionOps = (text: string): ReadonlyArray<ExtractedDecisionOp> => {
+  const out: ExtractedDecisionOp[] = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const start = text.indexOf(DECISION_OPEN_PREFIX, cursor);
+    if (start === -1) {
+      break;
+    }
+    const headEnd = text.indexOf('>>', start + DECISION_OPEN_PREFIX.length);
+    if (headEnd === -1) {
+      break;
+    }
+    const head = text.slice(start + DECISION_OPEN_PREFIX.length, headEnd);
+    const isHead = head === '' || /^\s/.test(head);
+    const bodyStart = headEnd + 2;
+    const close = isHead ? text.indexOf(DECISION_CLOSE, bodyStart) : -1;
+    if (close === -1) {
+      cursor = start + DECISION_OPEN_PREFIX.length;
+      continue;
+    }
+    const op = decisionOpOf({
+      attrs: parseQuestionAttrs(head),
+      body: text.slice(bodyStart, close).trim(),
+    });
+    if (op !== null) {
+      out.push(op);
+    }
+    cursor = close + DECISION_CLOSE.length;
+  }
+  return out;
+};
+
 function parseQuestionAttrs(raw: string): Record<string, string> {
   const attrs: Record<string, string> = {};
   QUESTION_ATTR_RE.lastIndex = 0;

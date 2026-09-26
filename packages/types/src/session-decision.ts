@@ -26,3 +26,11 @@ export type SessionDecision = Readonly<{
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
+
+export type SessionDecisionChange =
+  | Readonly<{ kind: 'added'; number: number; text: string }>
+  | Readonly<{ kind: 'replaced'; number: number; by: number; text: string; reason: string | null }>
+  | Readonly<{ kind: 'withdrawn'; number: number; text: string; reason: string | null }>
+  | Readonly<{ kind: 'merged'; number: number; into: number; text: string }>
+  | Readonly<{ kind: 'reworded'; number: number; text: string; previousText: string }>
+  | Readonly<{ kind: 'restored'; number: number; text: string }>;

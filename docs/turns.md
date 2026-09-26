@@ -347,6 +347,36 @@ the chat's handoff, as the post-step summarizer is a workflow's
   its summary did.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
 
+## The decisions ledger
+
+Decisions live in a ledger (`session_decisions`, m197), not in the text of the
+`decisions` slot. Every decision has a number per session (`D7`), a status
+(`active`, `replaced` or `withdrawn`), who wrote it (an agent, the summarizer
+or you), the agent and turn it came from, and the reason it left. The slot is
+derived: the active decisions, newest first, one `- D7 text` line each,
+rewritten after every change, so the preamble, the mobile companion and the
+snapshot keep reading one string.
+
+- `packages/core/src/context/decisions-ledger.ts` is pure:
+  `applyDecisionOps` takes `add`, `reword`, `merge`, `replace`, `withdraw`
+  and `restore`, and returns the ledger, the changes and the refused
+  operations. `decisions-ledger-store.ts` loads, applies, saves and rewrites
+  the slot.
+- A decision nobody names stays as it is. Withdrawing or replacing needs a
+  reason from the summarizer; an agent's withdrawal carries its reason as the
+  marker body. Reword and merge keep the number; a merge keeps the lowest and
+  marks the others `replaced` by it.
+- Agents add with `<<ctx-decision>>`, replace with
+  `<<ctx-decision replaces="D3">>` (optional `reason="..."`) and withdraw with
+  `<<ctx-decision withdraw="D5">>why<</ctx-decision>>`. An addition that
+  matches an active decision after normalizing (case, bullets, spaces) is a
+  no-op.
+- What you withdrew is a tomb: a marker with the same text does not bring it
+  back. What you wrote or edited the summarizer can only replace with a
+  reason, never reword, merge or withdraw.
+- A session made before the ledger is seeded from its slot the first time the
+  ledger is read, numbered in the slot's order.
+
 ## Composer
 
 `ChatInput` is one shell: field, then a 32px action row, no divider between

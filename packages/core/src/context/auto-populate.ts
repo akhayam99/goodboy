@@ -13,8 +13,13 @@ import {
   type Database,
 } from '@goodboy/db';
 import { ContextEngine } from './engine';
+import { applyDecisionOpsToSession } from './decisions-ledger-store';
+import type { DecisionChange } from './decisions-ledger';
 import { extractMarkers, mergeIntoSlot, removeFromSlot } from './extractors';
+import { extractDecisionOps } from './marker-parsing';
 import type { SlotKey } from './slots';
+
+const SLOT_ORDER: ReadonlyArray<SlotKey> = ['files_touched', 'decisions', 'open_questions'];
 
 type AgentContext = {
   readonly agentId: AgentId;
@@ -35,6 +40,7 @@ export type AutoPopulateInput = {
 export type AutoPopulateResult = {
   readonly updatedSlots: ReadonlyArray<SlotKey>;
   readonly openQuestionsChanged: boolean;
+  readonly decisionChanges: ReadonlyArray<DecisionChange>;
 };
 
 export const autoPopulateContext = async (
@@ -43,7 +49,8 @@ export const autoPopulateContext = async (
   const engine = new ContextEngine({ db: input.db });
   const slots = await engine.load(input.sessionId);
 
-  const { decisions, questions, resolved } = extractMarkers(input.assistantText);
+  const { questions, resolved } = extractMarkers(input.assistantText);
+  const decisionOps = extractDecisionOps(input.assistantText);
 
   const resolvedTexts = await listResolvedQuestionTextsForSession(input.db, input.sessionId);
   const freshQuestions = questions.filter((q) => !matchesAny(q.text, resolvedTexts));
@@ -51,7 +58,6 @@ export const autoPopulateContext = async (
   const updates: Array<{ key: SlotKey; value: string }> = [];
 
   pushUpdate(updates, slots, 'files_touched', input.filesEdited);
-  pushUpdate(updates, slots, 'decisions', decisions);
 
   const existingQuestions = slots.find((s) => s.key === 'open_questions')?.value ?? '';
   let nextQuestions = mergeIntoSlot(
@@ -66,6 +72,22 @@ export const autoPopulateContext = async (
   for (const upd of updates) {
     await engine.upsert(input.sessionId, upd.key, upd.value);
   }
+
+  const decisions =
+    decisionOps.length === 0
+      ? null
+      : await applyDecisionOpsToSession({
+          db: input.db,
+          sessionId: input.sessionId,
+          ops: decisionOps,
+          actor: {
+            author: 'agent',
+            agentId: input.agentContext?.agentId ?? null,
+            turnOrdinal: input.agentContext?.turnOrdinal ?? null,
+          },
+        });
+  const hasDecisionsSlotChanged =
+    decisions !== null && decisions.slotValue !== decisions.previousSlotValue;
 
   let insertedCount = 0;
   for (const q of freshQuestions) {
@@ -91,9 +113,15 @@ export const autoPopulateContext = async (
 
   const resolvedCount = await markOpenQuestionsResolvedByText(input.db, input.sessionId, resolved);
 
+  const updatedKeys = new Set<SlotKey>(updates.map((u) => u.key));
+  if (hasDecisionsSlotChanged) {
+    updatedKeys.add('decisions');
+  }
+
   return {
-    updatedSlots: updates.map((u) => u.key),
+    updatedSlots: SLOT_ORDER.filter((key) => updatedKeys.has(key)),
     openQuestionsChanged: insertedCount > 0 || resolvedCount > 0,
+    decisionChanges: decisions?.changes ?? [],
   };
 };
 
