@@ -196,7 +196,7 @@ export const PrActionsMenu = ({
       label="PR actions"
       tooltip="Pull request actions"
       trigger={
-        <span className="inline-flex items-center gap-1 text-2xs font-medium">
+        <span className="inline-flex items-center gap-1 text-secondary font-medium">
           PR actions
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-70" />
         </span>

@@ -75,7 +75,7 @@ export const PublishBar = ({ sessionId, provider, draftCount, publishing, onPubl
             minRows={3}
             maxRows={8}
             disabled={publishing}
-            className="text-sm"
+            className="text-body"
           />
           {provider === 'github' ? (
             <SegmentedTabs<PublishPrReviewVerdict>
@@ -86,12 +86,12 @@ export const PublishBar = ({ sessionId, provider, draftCount, publishing, onPubl
               ariaLabel="Review verdict"
             />
           ) : (
-            <p className="text-2xs text-muted-foreground">
+            <p className="text-secondary text-muted-foreground">
               Comments post as merge request discussions; the summary posts as a note.
             </p>
           )}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-2xs tabular-nums text-muted-foreground">
+            <span className="text-secondary tabular-nums text-muted-foreground">
               {draftCount} {draftWord} will post
             </span>
             <Button

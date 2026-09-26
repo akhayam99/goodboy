@@ -12,10 +12,8 @@ export const WelcomeStep = () => {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          Welcome to Goodboy
-        </h2>
-        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+        <h2 className="text-display text-foreground">Welcome to Goodboy</h2>
+        <p className="max-w-md text-prose text-muted-foreground">
           Connect a provider, point it at your work, and start your first session.
         </p>
       </div>

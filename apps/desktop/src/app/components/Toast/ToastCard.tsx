@@ -84,7 +84,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
           <>
             {headline}
             {toast.count > 1 && (
-              <span className="ml-2 text-2xs font-medium tabular-nums text-muted-foreground">
+              <span className="ml-2 text-secondary font-medium tabular-nums text-muted-foreground">
                 ×{toast.count}
               </span>
             )}
@@ -95,7 +95,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
             <>
               {hasMessageInBody && <p>{toast.message}</p>}
               {hasContext && (
-                <p className="mt-0.5 line-clamp-2 text-2xs text-faint-foreground">
+                <p className="mt-0.5 line-clamp-2 text-secondary text-faint-foreground">
                   {toast.context}
                 </p>
               )}

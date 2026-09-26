@@ -115,7 +115,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
           />
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-sm font-medium text-foreground">
+          <span className="text-row text-foreground">
             {chrome === 'inline' ? `Connect ${label}` : label}
           </span>
           {view.status !== null && (
@@ -165,7 +165,7 @@ export const ProviderConnect = ({ providerId, chrome, autoStart = false, onDone 
           open={details.open}
           onOpenChange={details.setOpen}
           trigger={
-            <span className="text-xs">{details.open ? 'Hide details' : 'Show details'}</span>
+            <span className="text-label">{details.open ? 'Hide details' : 'Show details'}</span>
           }
         >
           <div ref={details.regionRef} onFocus={details.onFocus} onBlur={details.onBlur}>

@@ -40,7 +40,8 @@ const h = vi.hoisted(() => {
     retryPublication: vi.fn(async () => null as unknown),
     refreshSessionPrDetail: vi.fn(async () => undefined),
     openDiffLens: vi.fn(),
-    selectAgent: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
   };
   const useAppStore = Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -48,7 +49,8 @@ const h = vi.hoisted(() => {
   return { state, useAppStore, showToast: vi.fn() };
 });
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: h.useAppStore,
 }));
@@ -266,7 +268,9 @@ describe('ResolvePublishStrip', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'View work' }));
 
-    expect(h.state.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-new');
+    expect(h.state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-new' },
+    });
     expect(h.state.openDiffLens).not.toHaveBeenCalled();
   });
 

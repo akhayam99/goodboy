@@ -2,8 +2,8 @@ import { cn } from '@goodboy/ui';
 import type { AgentCardDensity } from './agentCardDensity';
 
 const SIZE: Record<AgentCardDensity, string> = {
-  lane: 'text-sm',
-  sidebar: 'text-2xs',
+  lane: 'text-body',
+  sidebar: 'text-secondary',
 };
 
 const RESTING_COLOR: Record<AgentCardDensity, string> = {

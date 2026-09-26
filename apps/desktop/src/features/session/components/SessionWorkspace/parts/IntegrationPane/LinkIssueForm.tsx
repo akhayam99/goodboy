@@ -103,7 +103,10 @@ export const LinkIssueForm = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={`${provider}-issue-picker`} className="text-xs font-medium text-foreground">
+      <label
+        htmlFor={`${provider}-issue-picker`}
+        className="text-label font-medium text-foreground"
+      >
         {`Link ${nounPhrase}`}
       </label>
       <IssuePicker
@@ -121,7 +124,7 @@ export const LinkIssueForm = ({
         onClear={() => undefined}
       />
       {error != null ? (
-        <footer role="alert" className="flex items-center gap-1 text-xs text-danger">
+        <footer role="alert" className="flex items-center gap-1 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
         </footer>

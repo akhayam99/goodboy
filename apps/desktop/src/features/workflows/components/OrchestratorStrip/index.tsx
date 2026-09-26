@@ -215,7 +215,7 @@ export const OrchestratorStrip = ({
           <p className="flex min-w-0 flex-1 items-baseline gap-2">
             <span
               data-testid="orchestrator-state"
-              className="min-w-0 truncate text-xs font-medium text-foreground"
+              className="min-w-0 truncate text-label font-medium text-foreground"
               title={state.sentence}
             >
               {state.sentence}
@@ -223,7 +223,7 @@ export const OrchestratorStrip = ({
             {elapsed == null ? null : (
               <span
                 data-testid="orchestrator-elapsed"
-                className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+                className="shrink-0 text-secondary tabular-nums text-muted-foreground"
               >
                 {elapsed}
               </span>

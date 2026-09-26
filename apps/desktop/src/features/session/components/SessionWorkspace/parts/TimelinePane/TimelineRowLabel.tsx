@@ -16,6 +16,7 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
+import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -27,6 +28,7 @@ type Props = {
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
   readonly stateNote?: string | null;
+  readonly isRevealed?: boolean;
 };
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -129,7 +131,7 @@ const chipOf = ({ entry, grade }: ChipParams) => {
     return <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />;
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-1">
+    <span className="inline-flex shrink-0 items-center gap-1 self-center">
       <CONCEPT_ICONS.chain size={10} aria-hidden className="text-faint-foreground" />
       <AgentKindChip kind={entry.agentKind} className={WORK_ROW.kindChip} />
     </span>
@@ -142,6 +144,7 @@ export const TimelineRowLabel = ({
   isLaneLit = false,
   worktrees = NO_WORKTREES,
   stateNote = null,
+  isRevealed = false,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
@@ -151,6 +154,7 @@ export const TimelineRowLabel = ({
         rowState={item.rowState}
         isLaneLit={isLaneLit}
         stateNote={stateNote}
+        isRevealed={isRevealed}
       />
     );
   }
@@ -166,7 +170,7 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
@@ -176,7 +180,7 @@ export const TimelineRowLabel = ({
         className={cn(
           'flex items-center overflow-hidden',
           entry.kind === 'agent' ? WORK_ROW.title : 'min-w-0',
-          isStep ? 'text-xs leading-4' : 'text-sm leading-5',
+          isStep ? 'text-label' : 'text-body',
           emphasis === 'muted' || isQueued
             ? 'text-muted-foreground'
             : item.rowState.phase === 'running' || item.hasUnread
@@ -205,13 +209,16 @@ export const TimelineRowLabel = ({
         )}
       </span>
       {diffStat == null ? null : (
-        <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+        <span className="self-center">
+          <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+        </span>
       )}
       {secondary != null ? (
-        <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
+        <span className="min-w-0 truncate text-secondary text-muted-foreground">{secondary}</span>
       ) : null}
       {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} note={stateNote} />}
       {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
+      {isRevealed ? <RevealedRowTag /> : null}
     </>
   );
 };

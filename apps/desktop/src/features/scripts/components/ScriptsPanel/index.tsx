@@ -15,18 +15,35 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { MountProjectAction } from '../../../session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import type { RunnableScript, SessionScriptGroup } from '../../buildSessionScripts';
+import { defaultClosedPackageKeys } from '../../defaultClosedPackageKeys';
 import { filterScriptGroups } from '../../filterScriptGroups';
+import { groupScriptsByPackage } from '../../groupScriptsByPackage';
 import { readCollapsedGroups, writeCollapsedGroups } from '../../groupsCollapsedStorage';
 import { useSessionScripts } from '../../hooks/useSessionScripts';
+import {
+  readPackagesCollapsedOverrides,
+  writePackagesCollapsedOverrides,
+} from '../../packagesCollapsedStorage';
 import type { ScriptRunRecord } from '../../scripts';
 import { startRunnableScript } from '../../startRunnableScript';
+import { workspaceInvocation } from '../../workspaceInvocation';
 import { ScriptEditor } from '../ScriptEditor';
 import { ScriptRow } from '../ScriptRow';
 import { DiscardDraftConfirm } from './DiscardDraftConfirm';
 import { ScriptGroupSection } from './ScriptGroupSection';
+import { ScriptPackageSection } from './ScriptPackageSection';
+import { ScriptSavedSection } from './ScriptSavedSection';
 import { ScriptsFilterInput } from './ScriptsFilterInput';
 import { UnmountedScriptsNote, type UnmountedScriptsEntry } from './UnmountedScriptsNote';
 import { useScriptDraft } from './useScriptDraft';
+
+const packageSectionKey = ({
+  mountId,
+  sectionKey,
+}: {
+  readonly mountId: MountId;
+  readonly sectionKey: string;
+}): string => `${mountId}:${sectionKey}`;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -92,6 +109,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   const [collapsed, setCollapsed] = useState<ReadonlySet<MountId>>(() =>
     readCollapsedGroups({ workspaceId }),
   );
+  const [packagesOverrides, setPackagesOverrides] = useState<Readonly<Record<string, boolean>>>(
+    () => readPackagesCollapsedOverrides({ workspaceId }),
+  );
   const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
   const [armedDelete, setArmedDelete] = useState<ArmedDelete | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -154,6 +174,25 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           next.delete(mountId);
         }
         writeCollapsedGroups({ workspaceId, collapsed: next });
+        return next;
+      });
+    },
+    [workspaceId],
+  );
+
+  const setPackageCollapsed = useCallback(
+    ({
+      mountId,
+      sectionKey,
+      isCollapsed,
+    }: {
+      readonly mountId: MountId;
+      readonly sectionKey: string;
+      readonly isCollapsed: boolean;
+    }) => {
+      setPackagesOverrides((current) => {
+        const next = { ...current, [packageSectionKey({ mountId, sectionKey })]: isCollapsed };
+        writePackagesCollapsedOverrides({ workspaceId, overrides: next });
         return next;
       });
     },
@@ -249,14 +288,28 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
               savedId: null,
               projectId: group.projectId,
               name: script.name,
-              body: script.command,
+              body: workspaceInvocation({
+                manager: script.manager,
+                packageName: script.packageName,
+                relDir: script.relDir,
+                name: script.name,
+              }),
             }),
         },
         {
           kind: 'item',
           key: 'copy',
           label: 'Copy command',
-          onClick: () => void copy({ text: script.command, key: script.key }),
+          onClick: () =>
+            void copy({
+              text: workspaceInvocation({
+                manager: script.manager,
+                packageName: script.packageName,
+                relDir: script.relDir,
+                name: script.name,
+              }),
+              key: script.key,
+            }),
         },
       ];
     }
@@ -271,7 +324,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
             savedId,
             projectId: group.projectId,
             name: script.name,
-            body: saved.find((candidate) => candidate.id === savedId)?.body ?? script.command,
+            body: saved.find((candidate) => candidate.id === savedId)?.body ?? script.invocation,
           }),
       },
       {
@@ -314,18 +367,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     if (!group.isReady) {
       return (
-        <p className="px-2 py-1.5 text-xs text-faint-foreground">
+        <p className="px-2 py-1.5 text-label text-faint-foreground">
           {group.projectName} is still preparing.
         </p>
       );
     }
     const scan = scans?.[group.worktreePath];
     if (scan?.status === 'error') {
-      return <p className="px-2 py-1.5 text-xs text-faint-foreground">{scan.error}</p>;
+      return <p className="px-2 py-1.5 text-label text-faint-foreground">{scan.error}</p>;
     }
     if (discovered?.[group.worktreePath] === undefined) {
       return (
-        <p className="px-2 py-1.5 text-xs text-faint-foreground">
+        <p className="px-2 py-1.5 text-label text-faint-foreground">
           Reading scripts in {group.projectName}…
         </p>
       );
@@ -335,7 +388,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     return (
       <div className="flex items-center gap-2 px-2 py-1">
-        <p className="min-w-0 flex-1 text-xs text-faint-foreground">
+        <p className="min-w-0 flex-1 text-label text-faint-foreground">
           No package.json or composer.json in {group.projectName}.
         </p>
         <Button
@@ -351,7 +404,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
-  const renderRow = ({ group, script }: RowParams) => {
+  const renderRow = ({ group, script }: RowParams, showSource: boolean) => {
     const isEditing =
       script.savedId !== null &&
       draft.draft?.savedId === script.savedId &&
@@ -385,6 +438,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         script={script}
         record={recordFor({ runs, group, script })}
         now={now}
+        showSource={showSource}
         isSelected={
           openPayload !== null &&
           openPayload.scriptKey === script.key &&
@@ -396,6 +450,74 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}
       />
+    );
+  };
+
+  const renderScripts = ({ group }: { readonly group: SessionScriptGroup }) => {
+    if (group.packageCount < 2) {
+      return group.scripts.map((script) => renderRow({ group, script }, true));
+    }
+    const sections = groupScriptsByPackage({ scripts: group.scripts });
+    const isSearching = query.trim() !== '';
+    const startedAtByKey: Record<string, number> = {};
+    const runningKeys = new Set<string>();
+    for (const script of group.scripts) {
+      const record = recordFor({ runs, group, script });
+      if (record === null) {
+        continue;
+      }
+      startedAtByKey[script.key] = record.startedAt;
+      if (record.status === 'pending') {
+        runningKeys.add(script.key);
+      }
+    }
+    const defaultClosed = defaultClosedPackageKeys({
+      sections,
+      packageCount: group.packageCount,
+      runningKeys,
+      startedAtByKey,
+      now,
+    });
+    return (
+      <div className="flex flex-col gap-2">
+        {sections.map((section) => {
+          const rows = section.scripts.map((script) => renderRow({ group, script }, false));
+          if (section.source === 'saved') {
+            return (
+              <ScriptSavedSection key={section.key} count={section.scripts.length}>
+                {rows}
+              </ScriptSavedSection>
+            );
+          }
+          const overrideKey = packageSectionKey({
+            mountId: group.mountId,
+            sectionKey: section.key,
+          });
+          const isCollapsed = isSearching
+            ? false
+            : (packagesOverrides[overrideKey] ?? defaultClosed.has(section.key));
+          const runningInSection = section.scripts.filter((script) =>
+            runningKeys.has(script.key),
+          ).length;
+          return (
+            <ScriptPackageSection
+              key={section.key}
+              section={section}
+              isCollapsed={isCollapsed}
+              runningCount={runningInSection}
+              onToggle={() =>
+                setPackageCollapsed({
+                  mountId: group.mountId,
+                  sectionKey: section.key,
+                  isCollapsed: !isCollapsed,
+                })
+              }
+            >
+              {rows}
+            </ScriptPackageSection>
+          );
+        })}
+      </div>
     );
   };
 
@@ -443,7 +565,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         />
       ) : null}
       {pageError === null ? null : (
-        <p role="alert" className="text-xs text-danger">
+        <p role="alert" className="text-label text-danger">
           {pageError}
         </p>
       )}
@@ -455,7 +577,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         />
       ) : null}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No scripts match "{query.trim()}".</p>
+        <p className="text-label text-muted-foreground">No scripts match "{query.trim()}".</p>
       ) : null}
       {visibleGroups.length > 0 ? (
         <div className="flex flex-col gap-4">
@@ -479,7 +601,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
                   void refreshDiscoveredScripts({ sessionId, worktreePath: group.worktreePath })
                 }
               >
-                {group.scripts.map((script) => renderRow({ group, script }))}
+                {renderScripts({ group })}
               </ScriptGroupSection>
             );
           })}

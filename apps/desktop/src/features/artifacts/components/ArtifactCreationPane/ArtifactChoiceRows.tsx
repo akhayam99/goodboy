@@ -74,7 +74,7 @@ export const ArtifactChoiceRows = ({ ariaLabel, options, value, onChange }: Prop
             onClick={() => onChange(option.value)}
             className="w-auto border border-border-soft bg-elevated px-2.5 py-1.5 data-[selected=true]:border-transparent"
           >
-            <span className="truncate text-xs font-medium">{option.label}</span>
+            <span className="truncate text-label font-medium">{option.label}</span>
           </SelectableRow>
         ))}
       </div>

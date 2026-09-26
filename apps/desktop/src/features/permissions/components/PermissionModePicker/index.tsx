@@ -153,18 +153,18 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
               </span>
               <span
                 className={cn(
-                  'block text-2xs',
+                  'block text-secondary',
                   isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
                 )}
               >
                 {m.description}
               </span>
               {isUnavailable ? (
-                <span className="block text-2xs text-muted-foreground">{reason}</span>
+                <span className="block text-secondary text-muted-foreground">{reason}</span>
               ) : null}
             </span>
             {active ? (
-              <span aria-hidden className="mt-0.5 text-2xs text-primary">
+              <span aria-hidden className="mt-0.5 text-secondary text-primary">
                 ✓
               </span>
             ) : null}

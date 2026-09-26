@@ -1,93 +1,58 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
+import { sessionPlace } from '../../../store/slices/navigation/place';
 import { useOpenSession } from './index';
 
-const setCurrentSession = vi.fn<() => Promise<void>>(async () => undefined);
-const setActiveLens = vi.fn();
+const navigate = vi.fn();
 
-vi.mock('../../../store', () => ({
-  useAppStore: (
-    selector: (s: {
-      setCurrentSession: typeof setCurrentSession;
-      setActiveLens: typeof setActiveLens;
-    }) => unknown,
-  ) => selector({ setCurrentSession, setActiveLens }),
+vi.mock('../../../store', async () => ({
+  useAppStore: (selector: (s: { navigate: typeof navigate }) => unknown) => selector({ navigate }),
+  sessionPlace: (await import('../../../store/slices/navigation/place')).sessionPlace,
 }));
 
 describe('useOpenSession', () => {
   beforeEach(() => {
-    setCurrentSession.mockReset();
-    setCurrentSession.mockResolvedValue(undefined);
-    setActiveLens.mockReset();
+    navigate.mockReset();
   });
 
-  it('sets the active lens after the current session resolves', async () => {
-    let resolveCurrentSession: (() => void) | undefined;
-    setCurrentSession.mockImplementation(
-      async () =>
-        new Promise<void>((resolve) => {
-          resolveCurrentSession = resolve;
-        }),
-    );
+  it('opens the session on the asked lens in one history voice', () => {
     const { result } = renderHook(() => useOpenSession());
-    let opening: Promise<void> | undefined;
 
     act(() => {
-      opening = result.current({ sessionId: 's1' as SessionId, lens: 'review' });
+      result.current({ sessionId: 's1' as SessionId, lens: 'review' });
     });
 
-    expect(setCurrentSession).toHaveBeenCalledWith('s1');
-    expect(setActiveLens).not.toHaveBeenCalled();
-
-    await act(async () => {
-      resolveCurrentSession?.();
-      await opening;
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 's1' as SessionId, lens: 'review' }),
     });
-
-    expect(setActiveLens).toHaveBeenCalledWith('s1', 'review');
   });
 
-  it('does not set an active lens when one is omitted', async () => {
+  it('opens the overview when no lens is asked', () => {
     const { result } = renderHook(() => useOpenSession());
 
-    await act(async () => {
-      await result.current({ sessionId: 's2' as SessionId });
+    act(() => {
+      result.current({ sessionId: 's2' as SessionId });
     });
 
-    expect(setActiveLens).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: 's2' as SessionId }) });
   });
 
-  it('runs onOpened last', async () => {
+  it('runs onOpened after navigating', () => {
     const calls: string[] = [];
-    setCurrentSession.mockImplementation(async () => {
-      calls.push('session');
-    });
-    setActiveLens.mockImplementation(() => {
-      calls.push('lens');
+    navigate.mockImplementation(() => {
+      calls.push('navigate');
     });
     const onOpened = vi.fn(() => {
       calls.push('opened');
     });
     const { result } = renderHook(() => useOpenSession());
 
-    await act(async () => {
-      await result.current({ sessionId: 's3' as SessionId, lens: 'review', onOpened });
+    act(() => {
+      result.current({ sessionId: 's3' as SessionId, lens: 'review', onOpened });
     });
 
-    expect(calls).toEqual(['session', 'lens', 'opened']);
-  });
-
-  it('does nothing after setting the current session fails', async () => {
-    setCurrentSession.mockRejectedValue(new Error('navigation failed'));
-    const onOpened = vi.fn();
-    const { result } = renderHook(() => useOpenSession());
-
-    await act(async () => {
-      await result.current({ sessionId: 's4' as SessionId, lens: 'review', onOpened });
-    });
-
-    expect(setActiveLens).not.toHaveBeenCalled();
-    expect(onOpened).not.toHaveBeenCalled();
+    expect(calls).toEqual(['navigate', 'opened']);
   });
 });

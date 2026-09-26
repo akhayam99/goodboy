@@ -26,10 +26,10 @@ export const HandoffSectionRow = ({ section, doneWhen, sessionId, open, onToggle
       )}
     >
       <TranscriptChevron open={open} />
-      <span className="w-32 shrink-0 text-2xs font-medium text-muted-foreground">
+      <span className="w-32 shrink-0 text-secondary font-medium text-muted-foreground">
         {HANDOFF_SECTION_LABEL[section.kind]}
       </span>
-      <span className="min-w-0 flex-1 truncate text-xs text-foreground">{section.summary}</span>
+      <span className="min-w-0 flex-1 truncate text-label text-foreground">{section.summary}</span>
     </button>
     {open ? (
       <div className="flex min-w-0 flex-col py-2 pl-7 pr-2">

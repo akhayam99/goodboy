@@ -75,7 +75,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             aria-expanded={open}
             data-testid="run-spend-limit-trigger"
             className={cn(
-              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-2xs motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-secondary motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               limitUsd == null
                 ? 'text-faint-foreground hover:bg-hover hover:text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -99,7 +99,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       }
     >
       <PopoverBody>
-        <header className="px-3 py-2 text-xs font-semibold text-foreground">
+        <header className="px-3 py-2 text-label font-semibold text-foreground">
           Spend limit for this run
         </header>
         <Divider />

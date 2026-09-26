@@ -15,9 +15,7 @@ import {
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -71,7 +69,6 @@ describe('workspace queries', () => {
           ...EMPTY_OVERRIDES,
           defaultProviderId: 'codex',
           defaultBranchPrefix: 'ak/',
-          parallelEnabled: true,
           providerPool: ['codex', 'anthropic'],
         },
       },

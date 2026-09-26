@@ -76,16 +76,16 @@ export const ReleaseDetail = ({
             <div className="flex flex-col gap-1.5">
               <ErrorStrip label="the latest releases" error={staleError} onRetry={onRetry} />
               {staleSince != null && (
-                <span className="text-2xs text-muted-foreground">
+                <span className="text-secondary text-muted-foreground">
                   last updated {formatRelativeAge({ fromIso: staleSince })}
                 </span>
               )}
             </div>
           ) : null}
           {release.body.trim() === '' ? (
-            <p className="text-sm italic text-faint-foreground">no notes for this release.</p>
+            <p className="text-body italic text-faint-foreground">no notes for this release.</p>
           ) : (
-            <Markdown text={release.body} className="text-sm leading-relaxed" />
+            <Markdown text={release.body} className="text-prose" />
           )}
         </>
       ) : null}

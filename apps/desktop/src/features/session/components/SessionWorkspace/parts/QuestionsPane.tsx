@@ -16,6 +16,7 @@ import {
   useAppStore,
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
+  agentPlace,
 } from '../../../../../store';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { AnsweredCard } from '../../../../chat/components/ChatView/AnsweredCard';
@@ -278,26 +279,26 @@ const AnsweredClusterHeader = ({
   newestAt,
   sessionId,
 }: AnsweredClusterHeaderProps) => {
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
 
   return (
     <div className="flex items-center justify-between gap-2 px-0.5">
       {agentId !== null && agentName !== null ? (
         <button
           type="button"
-          onClick={() => void selectAgent(sessionId, agentId)}
-          className="flex min-w-0 items-center gap-1.5 text-2xs font-medium hover:opacity-70 motion-safe:transition-opacity"
+          onClick={() => navigate({ to: agentPlace({ sessionId, agentId }) })}
+          className="flex min-w-0 items-center gap-1.5 text-secondary font-medium hover:opacity-70 motion-safe:transition-opacity"
         >
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground">{agentName}</span>
         </button>
       ) : (
-        <div className="flex min-w-0 items-center gap-1.5 text-2xs font-medium">
+        <div className="flex min-w-0 items-center gap-1.5 text-secondary font-medium">
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground">unknown agent</span>
         </div>
       )}
-      <span className="shrink-0 text-2xs text-muted-foreground">
+      <span className="shrink-0 text-secondary text-muted-foreground">
         {formatRelativeAge({ fromIso: newestAt })}
       </span>
     </div>

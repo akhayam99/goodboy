@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { useEffect } from 'react';
-import type { Agent, Session } from '@goodboy/types';
+import type { Agent, Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 
 type Store = {
@@ -14,7 +15,7 @@ type Store = {
   sessionBranches: Record<string, string>;
   sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveProject: Record<string, string>;
-  sessionStudio: Record<string, null>;
+  sessionStudio: Record<string, { readonly kind: 'workflow' } | null>;
   artifactConversationAgentId: Record<string, string | null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
@@ -37,9 +38,8 @@ type Store = {
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
   reviewModes: Record<string, string>;
   setReviewMode: ReturnType<typeof vi.fn>;
-  selectAgent: ReturnType<typeof vi.fn>;
-  setActiveLens: ReturnType<typeof vi.fn>;
-  setSessionStudio: ReturnType<typeof vi.fn>;
+  navigate: ReturnType<typeof vi.fn>;
+  up: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   reconcileSessionBranch: ReturnType<typeof vi.fn>;
   loadPhaseRunsForSession: ReturnType<typeof vi.fn>;
@@ -88,10 +88,10 @@ const { store, hooks } = vi.hoisted(() => ({
     resolveAgentReturn: {},
     reviewModes: {},
     setReviewMode: vi.fn(),
-    selectAgent: vi.fn(),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
+    up: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     returnFromResolveAgent: vi.fn(),
-    setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
     reconcileSessionBranch: vi.fn(async () => undefined),
     loadPhaseRunsForSession: vi.fn(async () => undefined),
@@ -107,7 +107,12 @@ const { store, hooks } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
+  useResolveQueueRows: () => [],
+}));
+
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
   agentHasUnread: (agent: Agent, isCurrentlyViewed: boolean) =>
     !isCurrentlyViewed &&
@@ -152,19 +157,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-vi.mock('../AgentDetailPane', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
-  return {
-    AgentDetailPane: ({ agent }: { agent: Agent }) => (
-      <div>
-        <PageCrumbRow />
-        <div data-testid="agent-detail-pane">{agent.id}</div>
-      </div>
-    ),
-  };
-});
+vi.mock('../AgentDetailPane', () => ({
+  AgentDetailPane: ({ agent }: { agent: Agent }) => (
+    <div>
+      <div data-testid="agent-detail-pane">{agent.id}</div>
+    </div>
+  ),
+}));
 vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
@@ -212,22 +211,13 @@ vi.mock('../CreateAgentPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../SessionOverviewPane', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
-  return {
-    SessionOverviewPane: () => (
-      <div role="region" aria-label="Session overview">
-        <PageCrumbRow />
-      </div>
-    ),
-  };
-});
+vi.mock('../SessionOverviewPane', () => ({
+  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
+}));
 vi.mock('../../../review/components/ReviewPane', () => ({
   ReviewPane: () => <div data-testid="review-board" />,
 }));
-vi.mock('../SessionCrumbBar/SessionCrumbs', () => ({
+vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
@@ -256,14 +246,10 @@ vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../shared/components/PaneShell', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
+vi.mock('../../../../shared/components/PaneShell', () => {
   return {
     PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
       <div>
-        <PageCrumbRow />
         {header ?? <h1>{title}</h1>}
         {meta != null && title != null ? (
           <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
@@ -318,7 +304,8 @@ beforeEach(() => {
   store.agentTurnState = {};
   store.agentKindOverride = {};
   store.sessionLoading = {};
-  store.setActiveLens.mockReset();
+  store.navigate.mockReset();
+  store.up.mockReset();
   store.loadPhaseRunsForSession.mockClear();
   store.loadSessionPlans.mockClear();
   hooks.agentHome = 'workflows';
@@ -380,11 +367,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
-      'Review',
-      'Standalone resolver',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Review', 'Agent']);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -482,17 +465,18 @@ describe('SessionWorkspace agent overlay', () => {
 });
 
 describe('SessionWorkspace code host routing', () => {
-  it('sends a saved pr lens to Review on a GitHub remote', () => {
+  it('renders Review for a saved pr lens on a GitHub remote', () => {
     hooks.remoteKind = 'github';
     store.activeLens = { [SESSION_ID]: 'pr' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(screen.getByTestId('review-board')).toBeDefined();
+    expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 
-  it('sends a pr lens to Review when a GitHub pull request is loaded on an unnamed remote', () => {
+  it('renders Review for a pr lens when a GitHub pull request is loaded on an unnamed remote', () => {
     hooks.remoteKind = null;
     store.sessionGithub = { [SESSION_ID]: { pr: { number: 248 } } };
     store.activeLens = { [SESSION_ID]: 'pr' };
@@ -500,7 +484,8 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(screen.getByTestId('review-board')).toBeDefined();
+    expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 
   it('keeps the code host lens for a GitLab session', () => {
@@ -512,7 +497,7 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(store.setActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(screen.queryByTestId('review-board')).toBeNull();
   });
 
   it('keeps the code host lens for a Bitbucket session', () => {
@@ -524,7 +509,7 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(store.setActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(screen.queryByTestId('review-board')).toBeNull();
   });
 });
 
@@ -608,6 +593,30 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
+  });
+
+  it('keeps one trail band mounted across lens, agent and studio changes', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+    const trail = screen.getByTestId('session-crumb-bar');
+    const band = view.container.querySelector('[data-slot="trail-bar"]');
+    expect(band?.className).toContain('h-10');
+
+    store.activeLens = { [SESSION_ID]: 'review' };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+
+    store.sessionStudio = { [SESSION_ID]: { kind: 'workflow' } };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
   });
 
   it('keeps the crumb bar mounted once an agent overlay owns the surface', () => {
@@ -700,7 +709,9 @@ describe('SessionWorkspace breadcrumb visibility', () => {
 
     act(() => result.current[2]!.onClick!());
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'workflows');
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID as SessionId, lens: 'workflows' }),
+    });
   });
 
   it('keeps the run crumb out of a trail whose agent belongs to no run', () => {
@@ -722,7 +733,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     ]);
   });
 
-  it('keeps review as the back target while the trail still names the run', () => {
+  it('goes up on Escape while the trail still names the run', () => {
     const workflowAgent = {
       ...selectedAgent,
       stepId: 'step-1',
@@ -751,8 +762,8 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByText('Part of')).toBeNull();
-    fireEvent.keyDown(window, { key: 'Escape' });
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(store.up).toHaveBeenCalledTimes(1);
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
     expect(result.current.map((crumb) => crumb.label)).toEqual([

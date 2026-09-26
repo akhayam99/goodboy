@@ -42,12 +42,12 @@ const DigestRow = ({ icon: Icon, label, entry, empty, unit, shortcut, onOpen }: 
       )}
     >
       <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      <span className="shrink-0 text-2xs font-medium text-foreground">{label}</span>
-      <span className="shrink-0 font-mono text-2xs tabular-nums text-faint-foreground">
+      <span className="shrink-0 text-secondary font-medium text-foreground">{label}</span>
+      <span className="shrink-0 font-mono text-secondary tabular-nums text-faint-foreground">
         {entry.count === 0 ? empty : count}
       </span>
       {entry.excerpt === '' ? null : (
-        <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
           {entry.excerpt}
         </span>
       )}

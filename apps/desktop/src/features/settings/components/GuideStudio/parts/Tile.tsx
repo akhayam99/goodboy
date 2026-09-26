@@ -19,7 +19,7 @@ export const Tile = ({ tone, label, mono, children }: Props) => (
     )}
   >
     <span
-      className={cn('text-xs font-semibold uppercase tracking-eyebrow', tintClasses(tone).text)}
+      className={cn('text-label font-semibold uppercase tracking-eyebrow', tintClasses(tone).text)}
     >
       {label}
     </span>

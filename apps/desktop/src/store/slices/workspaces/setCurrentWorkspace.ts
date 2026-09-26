@@ -63,6 +63,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
     set({
       currentWorkspaceId: id,
       currentSessionId: null,
+      appStudio: null,
       sessions: [],
       archivedSessions: {},
       sessionSummary: null,

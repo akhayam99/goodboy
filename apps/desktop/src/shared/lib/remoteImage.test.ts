@@ -4,7 +4,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
-import { loadRemoteImage } from './remoteImage';
+import { loadRemoteImage, loadToolImage } from './remoteImage';
 
 describe('loadRemoteImage', () => {
   beforeEach(() => {
@@ -33,5 +33,53 @@ describe('loadRemoteImage', () => {
     await expect(loadRemoteImage({ url: 'https://example.com/a.png' })).rejects.toBe(
       'example.com points at a private address, so nothing was loaded',
     );
+  });
+});
+
+describe('loadToolImage', () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockResolvedValue('data:image/png;base64,iVBORw0KGgo=');
+  });
+
+  it('asks the backend with the workspace, provider, email and connected site it was given', async () => {
+    await loadToolImage({
+      workspaceId: 'ws-1',
+      projectId: 'proj-1',
+      provider: 'jira',
+      email: 'mara@acme.dev',
+      siteUrl: 'https://acme.atlassian.net',
+      url: 'https://acme.atlassian.net/rest/api/3/attachment/content/1',
+    });
+
+    expect(invoke).toHaveBeenCalledWith('load_tool_image', {
+      args: {
+        workspaceId: 'ws-1',
+        projectId: 'proj-1',
+        provider: 'jira',
+        email: 'mara@acme.dev',
+        siteUrl: 'https://acme.atlassian.net',
+        url: 'https://acme.atlassian.net/rest/api/3/attachment/content/1',
+      },
+    });
+  });
+
+  it('sends null for the fields a provider does not need', async () => {
+    await loadToolImage({
+      workspaceId: 'ws-1',
+      provider: 'linear',
+      url: 'https://uploads.linear.app/a.png',
+    });
+
+    expect(invoke).toHaveBeenCalledWith('load_tool_image', {
+      args: {
+        workspaceId: 'ws-1',
+        projectId: null,
+        provider: 'linear',
+        email: null,
+        siteUrl: null,
+        url: 'https://uploads.linear.app/a.png',
+      },
+    });
   });
 });

@@ -79,8 +79,8 @@ describe('AnswerOptionRow', () => {
     );
     const btn = screen.getByRole('radio', { name: 'pnpm run build()' });
 
-    expect(btn.className).toContain('text-sm');
+    expect(btn.className).toContain('text-row');
     expect(btn.className).not.toContain('font-mono');
-    expect(btn.className).not.toContain('text-2xs');
+    expect(btn.className).not.toContain('text-secondary');
   });
 });

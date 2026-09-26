@@ -13,7 +13,7 @@ export const FIXED_IN_LABEL = 'Fixed in';
 export const ResolveCommitLine = ({ sha, onOpenCommit }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
     <SectionHeader label={RESOLVE_ITEM_LABEL.commit} headingLevel={3} />
-    <span className="flex min-w-0 items-baseline gap-1.5 text-xs text-muted-foreground">
+    <span className="flex min-w-0 items-baseline gap-1.5 text-label text-muted-foreground">
       {FIXED_IN_LABEL}
       <Tooltip content={sha} side="top">
         <button

@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
@@ -35,8 +36,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
     sessionWorkflows: {} as Record<string, ReadonlyArray<unknown>>,
     loadReviewDrafts: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
   },
   hooks: {
     stage: 'building' as SessionStage,
@@ -48,7 +48,8 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
   useDynamicActionsMock: vi.fn((): ReadonlyArray<MockDynamicAction> => []),
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useNonResolverStandaloneAgents: () => hooks.agents,
@@ -139,8 +140,7 @@ beforeEach(() => {
   state.phaseTemplates = {};
   state.sessionWorkflows = {};
   state.loadReviewDrafts.mockClear();
-  state.setCurrentSession.mockClear();
-  state.setActiveLens.mockClear();
+  state.navigate.mockClear();
   useDynamicActionsMock.mockReset();
   useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
@@ -159,14 +159,14 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    const metaRow = card.children[2];
+    const metaRow = card.children[3];
     expect(card.className).toContain('h-28');
     expect(card.className).not.toContain('min-h-28');
     expect(card.className).toContain('gap-y-1');
     expect(card.className).not.toContain('shadow-sm');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
-    expect(title.className).toContain('leading-5');
+    expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBe(session.goal);
     expect(metaRow?.className).toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
@@ -520,8 +520,11 @@ describe('StageBoardCard review drafts', () => {
 
     fireEvent.click(chip);
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
-    await vi.waitFor(() => expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review'));
+    await vi.waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+      }),
+    );
     expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
@@ -629,8 +632,8 @@ describe('StageBoardCard footer', () => {
     const updated = { ...session, updatedAt: new Date(Date.now() - 7_200_000).toISOString() };
     render(<StageBoardCard session={updated as unknown as Session} nav={nav} />);
     const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
-    expect(cost?.className).toContain('text-3xs');
-    expect(screen.getByText('2h ago').className).toContain('text-3xs');
+    expect(cost?.className).toContain('text-meta');
+    expect(screen.getByText('2h ago').className).toContain('text-meta');
   });
 
   it('singularizes the agent count label at one agent', () => {

@@ -7,6 +7,7 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 const MAX_SLUG_LEN: usize = 48;
+const NON_INTERACTIVE_EDITOR: &str = "true";
 
 #[derive(Debug, Error)]
 pub enum WorktreeError {
@@ -407,7 +408,7 @@ fn landed_equivalent(
         .lines()
         .filter_map(|line| line.strip_prefix("- "))
         .map(str::trim)
-        .last()
+        .next_back()
         .map(str::to_string))
 }
 
@@ -2480,7 +2481,10 @@ fn worktree_blame_line_blocking(
         return Ok(None);
     }
     let span = format!("{line},{line}");
-    let Ok(raw) = git(p, &["blame", "--porcelain", "-L", &span, "HEAD", "--", &path]) else {
+    let Ok(raw) = git(
+        p,
+        &["blame", "--porcelain", "-L", &span, "HEAD", "--", &path],
+    ) else {
         return Ok(None);
     };
     let sha = raw
@@ -3348,10 +3352,7 @@ pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
     if git_dir.join("MERGE_HEAD").is_file() {
         return Some(GitOperation::Merge);
     }
-    if git_dir.join("REBASE_HEAD").is_file()
-        || git_dir.join("rebase-merge").is_dir()
-        || git_dir.join("rebase-apply").is_dir()
-    {
+    if git_dir.join("rebase-merge").is_dir() || git_dir.join("rebase-apply").is_dir() {
         return Some(GitOperation::Rebase);
     }
     if git_dir.join("CHERRY_PICK_HEAD").is_file() {
@@ -3540,6 +3541,8 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
         .env("GIT_ASKPASS", "")
         .env("SSH_ASKPASS", "")
         .env("GIT_SSH_COMMAND", "ssh -oBatchMode=yes")
+        .env("GIT_EDITOR", NON_INTERACTIVE_EDITOR)
+        .env("GIT_SEQUENCE_EDITOR", NON_INTERACTIVE_EDITOR)
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
@@ -3960,6 +3963,35 @@ mod rewrite_tests {
             super::in_progress_operation(&root),
             Some(super::GitOperation::Merge)
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_finished_conflicted_rebase_is_not_in_progress() {
+        let root = init_repo("finished-conflicted-rebase");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "shared.txt", "feature\n", "feature change");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main change\n", "main change");
+        git_ok(&root, &["checkout", "feature"]);
+
+        let rebase = super::git(&root, &["rebase", "main"]);
+
+        assert!(rebase.is_err());
+        assert!(root.join(".git").join("rebase-merge").is_dir());
+
+        std::fs::write(root.join("shared.txt"), "resolved\n").unwrap();
+        git_ok(&root, &["add", "shared.txt"]);
+        git_ok(&root, &["rebase", "--continue"]);
+
+        assert!(
+            root.join(".git").join("REBASE_HEAD").is_file(),
+            "expected git's own leftover REBASE_HEAD after a finished rebase"
+        );
+        assert!(!root.join(".git").join("rebase-merge").exists());
+        assert!(!root.join(".git").join("rebase-apply").exists());
+        assert_eq!(super::in_progress_operation(&root), None);
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -6493,7 +6525,10 @@ mod candidate_tests {
         let base = commit(&root, "base.txt", "base", "base");
         commit(&root, "fix.txt", "fix", "fix");
         let candidate = quarantine(&root, "cand-1", &base).unwrap();
-        git_ok(&root, &["commit", "--amend", "--no-verify", "-m", "rewritten"]);
+        git_ok(
+            &root,
+            &["commit", "--amend", "--no-verify", "-m", "rewritten"],
+        );
         let rewritten = head(&root);
 
         let outcome = integrate(&root, "cand-1", &candidate, &base);

@@ -3,7 +3,6 @@ import { Button, EmptyState } from '@goodboy/ui';
 import { useSettleElapsed } from '../../../hooks/useSettleElapsed';
 import { SessionOverviewSkeleton } from './SessionOverviewSkeleton';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { PageCrumbRow } from '../../../../../shared/components/PaneShell/PageCrumbRow';
 
 const OVERVIEW_SETTLE_MS = 10_000;
 
@@ -18,7 +17,6 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
   if (!hasSettleElapsed) {
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <PageCrumbRow />
         <div className="min-h-0 flex-1">
           <SessionOverviewSkeleton isFreshLayout={isFreshLayout} />
         </div>
@@ -28,7 +26,6 @@ export const SessionOverviewLoading = ({ isFreshLayout, onRetry }: Props) => {
 
   return (
     <div className="flex h-full flex-col">
-      <PageCrumbRow />
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <EmptyState
           icon={TriangleAlert}

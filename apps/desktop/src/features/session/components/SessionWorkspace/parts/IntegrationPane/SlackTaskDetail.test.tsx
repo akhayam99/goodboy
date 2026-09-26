@@ -72,7 +72,7 @@ describe('SlackTaskDetail', () => {
   it('replies from the session lens to the thread the task points at', async () => {
     render(<SlackTaskDetail workspaceId={'workspace-1' as WorkspaceId} task={TASK} />);
 
-    screen.getByText('Sent as plain text by the connected bot, not by you.');
+    screen.getByText('Sent as plain text, posted as you in Slack.');
     fireEvent.change(screen.getByLabelText('Reply in thread'), { target: { value: 'on it' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 

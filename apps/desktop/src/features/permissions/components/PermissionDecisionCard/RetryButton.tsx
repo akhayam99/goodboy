@@ -33,7 +33,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
   };
 
   if (sent) {
-    return <span className="text-2xs text-muted-foreground">retry sent</span>;
+    return <span className="text-secondary text-muted-foreground">retry sent</span>;
   }
 
   const disabled = busy || isRunning;
@@ -48,7 +48,7 @@ export const RetryButton = ({ sessionId, agentId, toolName }: Props) => {
         cn(
           'flex items-center gap-1 rounded-sm border',
           tintClasses('primary').border,
-          'px-2 py-0.5 text-2xs font-medium text-primary transition-colors',
+          'px-2 py-0.5 text-secondary font-medium text-primary transition-colors',
           tintClasses('primary').hoverBg,
         ),
         disabled && 'cursor-not-allowed opacity-50',

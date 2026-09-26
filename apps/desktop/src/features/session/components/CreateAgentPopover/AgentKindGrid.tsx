@@ -19,7 +19,7 @@ export const AgentKindGrid = ({ kinds, value, onChange }: Props) => (
         />
       ))}
     </div>
-    <p className="truncate text-2xs text-muted-foreground" aria-live="polite">
+    <p className="truncate text-secondary text-muted-foreground" aria-live="polite">
       {AGENT_KIND_META[value].hint}
     </p>
   </div>

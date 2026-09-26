@@ -65,7 +65,7 @@ export const ArtifactCreationFooter = ({
             {error === null ? null : (
               <span
                 role="alert"
-                className="inline-flex min-w-0 items-start gap-1 text-xs text-danger"
+                className="inline-flex min-w-0 items-start gap-1 text-label text-danger"
               >
                 <AlertTriangle size={ICON_SIZE.row} className="mt-0.5 shrink-0" aria-hidden />
                 {error}
@@ -97,13 +97,15 @@ export const ArtifactCreationFooter = ({
               onClick={onGenerate}
               disabled={gate.isDisabled}
               {...(gate.reason === null ? {} : { 'aria-describedby': GENERATE_REASON_ID })}
-              className={cn('shrink-0', isStarting && 'animate-border-pulse')}
+              className="shrink-0"
             >
-              {isStarting ? 'Starting…' : generateLabel}
+              <span className={cn(isStarting && 'text-shimmer')}>
+                {isStarting ? 'Starting…' : generateLabel}
+              </span>
             </Button>
           </div>
           {gate.reason === null ? null : (
-            <span id={GENERATE_REASON_ID} className="text-2xs text-muted-foreground">
+            <span id={GENERATE_REASON_ID} className="text-secondary text-muted-foreground">
               {gate.reason}
             </span>
           )}

@@ -8,7 +8,15 @@ import {
   TASKS,
   type AutoContext,
 } from '@goodboy/core';
-import { EmptyState, Eyebrow, FieldRow, InlineConfirm, OverflowMenu } from '@goodboy/ui';
+import {
+  Band,
+  BandStack,
+  EmptyState,
+  Eyebrow,
+  FieldRow,
+  InlineConfirm,
+  OverflowMenu,
+} from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import { ROLE_LABEL } from '../../../../session/agent-kind';
 import { useAppStore } from '../../../../../store';
@@ -23,6 +31,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { ProviderPicker } from '../../../../../shared/components/RoutingPicker/ProviderPicker';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
+import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 
 type Props = {
@@ -37,9 +46,7 @@ const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -197,58 +204,70 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         </FieldRow>
       </section>
 
-      <section aria-label="Agents" className="flex flex-col gap-3">
+      <section aria-label="Agents" className="flex flex-col gap-2">
         <Eyebrow label="Agents" />
-        {DEFAULT_GROUPS.agents.map((group) => (
-          <div key={group.id} role="group" aria-label={group.label} className="flex flex-col">
-            <Eyebrow label={group.label} muted />
-            {group.members.map((role) => (
-              <RoleModelRow
-                key={role}
-                role={role}
-                label={ROLE_LABEL[role]}
-                help={ROLE_REGISTRY[role].summary}
-                preference={overrides.roleModels?.[role] ?? null}
-                autoContext={autoContext}
-                connectedProviderIds={connectedProviderIds}
-                disabled={busy}
-                onChange={(preference) => persistRoleModel({ role, preference })}
-              />
-            ))}
-          </div>
-        ))}
+        <BandStack>
+          {DEFAULT_GROUPS.agents.map((group) => (
+            <div key={group.id} role="group" aria-label={group.label}>
+              <Band
+                groupLabel={group.members.length > 1 ? group.label : undefined}
+                groupMeta={pluralize(group.members.length, 'role')}
+              >
+                {group.members.map((role) => (
+                  <RoleModelRow
+                    key={role}
+                    role={role}
+                    label={ROLE_LABEL[role]}
+                    help={ROLE_REGISTRY[role].summary}
+                    preference={overrides.roleModels?.[role] ?? null}
+                    autoContext={autoContext}
+                    connectedProviderIds={connectedProviderIds}
+                    disabled={busy}
+                    onChange={(preference) => persistRoleModel({ role, preference })}
+                  />
+                ))}
+              </Band>
+            </div>
+          ))}
+        </BandStack>
       </section>
 
-      <section aria-label="Background tasks" className="flex flex-col gap-3">
+      <section aria-label="Background tasks" className="flex flex-col gap-2">
         <Eyebrow label="Background tasks" />
-        {DEFAULT_GROUPS.tasks.map((group) => (
-          <div key={group.id} role="group" aria-label={group.label} className="flex flex-col">
-            <Eyebrow label={group.label} muted />
-            {group.members.map((taskId) => {
-              const task = TASK_BY_ID.get(taskId);
-              if (task == null) {
-                return null;
-              }
-              return (
-                <TaskModelRow
-                  key={task.id}
-                  task={task.id}
-                  label={task.label}
-                  help={task.description}
-                  preference={overrides.taskModels?.[task.id] ?? null}
-                  defaultProviderId={defaultProviderId}
-                  fallbackOrder={fallbackOrder}
-                  connectedProviderIds={connectedProviderIds}
-                  disabled={busy}
-                  onChange={(preference) => persistTaskModel({ task: task.id, preference })}
-                />
-              );
-            })}
-          </div>
-        ))}
+        <BandStack>
+          {DEFAULT_GROUPS.tasks.map((group) => (
+            <div key={group.id} role="group" aria-label={group.label}>
+              <Band
+                groupLabel={group.members.length > 1 ? group.label : undefined}
+                groupMeta={pluralize(group.members.length, 'task')}
+              >
+                {group.members.map((taskId) => {
+                  const task = TASK_BY_ID.get(taskId);
+                  if (task == null) {
+                    return null;
+                  }
+                  return (
+                    <TaskModelRow
+                      key={task.id}
+                      task={task.id}
+                      label={task.label}
+                      help={task.description}
+                      preference={overrides.taskModels?.[task.id] ?? null}
+                      defaultProviderId={defaultProviderId}
+                      fallbackOrder={fallbackOrder}
+                      connectedProviderIds={connectedProviderIds}
+                      disabled={busy}
+                      onChange={(preference) => persistTaskModel({ task: task.id, preference })}
+                    />
+                  );
+                })}
+              </Band>
+            </div>
+          ))}
+        </BandStack>
       </section>
 
-      {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+      {error != null ? <p className="text-label text-danger">{error}</p> : null}
     </PaneShell>
   );
 };

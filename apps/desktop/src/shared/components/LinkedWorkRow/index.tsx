@@ -80,11 +80,11 @@ export const LinkedWorkRow = ({
         className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
       >
         {glyph}
-        <span className="shrink-0 font-mono text-xs font-semibold text-foreground">
+        <span className="shrink-0 font-mono text-label font-semibold text-foreground">
           {identifier}
         </span>
         {title != null ? (
-          <span className="min-w-0 flex-1 truncate text-sm text-foreground">{title}</span>
+          <span className="min-w-0 flex-1 truncate text-body text-foreground">{title}</span>
         ) : null}
         {attribution}
         {navigation === 'internal' ? (

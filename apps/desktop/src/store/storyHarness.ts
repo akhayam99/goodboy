@@ -111,7 +111,6 @@ export const storySpies = {
   invokeWorkflowsForSession: vi.fn(async () => [] as ReadonlyArray<unknown>),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-  invokeAgentSetKind: vi.fn(async () => undefined),
   invokeAgentSetVerbosity: vi.fn(async () => undefined),
   invokeAgentMarkViewed: vi.fn(async () => undefined),
   invokeAgentSetProviderSessionId: vi.fn(async () => undefined),
@@ -494,10 +493,6 @@ export const dbLibModuleMock = () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 });
 
-export const lsToDbMigrationModuleMock = () => ({
-  migrateLsToDb: vi.fn(async () => undefined),
-});
-
 export const onboardingStoreModuleMock = () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
 });
@@ -569,7 +564,6 @@ export const workflowsModuleMock = () => ({
   invokeAgentList: storySpies.invokeAgentList,
   invokeAgentInsert: storySpies.invokeAgentInsert,
   invokeAgentUpdateStatus: storySpies.invokeAgentUpdateStatus,
-  invokeAgentSetKind: storySpies.invokeAgentSetKind,
   invokeAgentSetVerbosity: storySpies.invokeAgentSetVerbosity,
   invokeAgentMarkViewed: storySpies.invokeAgentMarkViewed,
   invokeAgentSetProviderSessionId: storySpies.invokeAgentSetProviderSessionId,
@@ -719,9 +713,7 @@ export const configExportModuleMock = () => ({
 
 export const emptyOverrides: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

@@ -108,7 +108,7 @@ export const DecisionBlock = ({
         value={instruction}
         rows={3}
         disabled={isBusy}
-        className="max-h-48 text-sm"
+        className="max-h-48 text-body"
         onChange={(event) => onChangeInstruction(event.target.value)}
       />
     ) : isDelivered ? (
@@ -116,10 +116,10 @@ export const DecisionBlock = ({
         <Markdown
           text={deliveredReply ?? reply}
           variant="preview"
-          className="max-w-[65ch] text-sm text-foreground"
+          className="max-w-[65ch] text-body text-foreground"
         />
         {deliverySupport !== null && (
-          <p className="text-2xs text-muted-foreground">{deliverySupport}</p>
+          <p className="text-secondary text-muted-foreground">{deliverySupport}</p>
         )}
       </>
     ) : mode === 'edit_reply' || mode === 'close' || mode === 'discuss' ? (
@@ -129,12 +129,16 @@ export const DecisionBlock = ({
         value={reply}
         rows={3}
         disabled={isBusy}
-        className="max-h-48 text-sm"
+        className="max-h-48 text-body"
         onChange={(event) => onChangeReply(event.target.value)}
       />
     ) : (
       <div className="flex min-w-0 flex-col items-start gap-2">
-        <Markdown text={reply} variant="preview" className="max-w-[65ch] text-sm text-foreground" />
+        <Markdown
+          text={reply}
+          variant="preview"
+          className="max-w-[65ch] text-body text-foreground"
+        />
         <Button size="sm" variant="ghost" onClick={onEditReply}>
           {RESOLVE_ITEM_LABEL.editReply}
         </Button>

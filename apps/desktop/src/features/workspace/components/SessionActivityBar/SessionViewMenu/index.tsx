@@ -162,7 +162,7 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       aria-checked={selected}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs motion-safe:transition-colors',
+        'flex items-center gap-2 rounded-sm px-2 py-1.5 text-left text-label motion-safe:transition-colors',
         selected ? 'text-foreground' : 'text-muted-foreground hover:bg-hover hover:text-foreground',
       )}
     >
@@ -171,7 +171,7 @@ function MenuItem({ label, hint, selected, onClick }: MenuItemProps) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate font-medium">{label}</span>
-        <span className="truncate text-2xs text-faint-foreground">{hint}</span>
+        <span className="truncate text-secondary text-faint-foreground">{hint}</span>
       </span>
     </button>
   );

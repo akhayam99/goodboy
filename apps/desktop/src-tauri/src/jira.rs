@@ -249,7 +249,7 @@ async fn send_no_content(
     Ok(())
 }
 
-fn read_token(
+pub(crate) fn read_token(
     workspace_id: &str,
     project_id: Option<&str>,
     cache: &JiraTokenCache,

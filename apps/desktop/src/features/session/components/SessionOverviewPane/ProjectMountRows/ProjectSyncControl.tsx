@@ -111,7 +111,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
       }
     >
       <div className="flex flex-col py-1">
-        <div className="flex flex-col gap-1 border-b border-border-soft px-3 py-2 text-xs tabular-nums text-muted-foreground">
+        <div className="flex flex-col gap-1 border-b border-border-soft px-3 py-2 text-label tabular-nums text-muted-foreground">
           <div className="flex items-center gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <span className="font-medium text-foreground">Compared with</span>
@@ -131,14 +131,16 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
               {distance?.ahead ?? '--'}
             </span>
           </div>
-          {baseError == null ? null : <span className="text-2xs text-danger">{baseError}</span>}
+          {baseError == null ? null : (
+            <span className="text-secondary text-danger">{baseError}</span>
+          )}
         </div>
         <button
           type="button"
           disabled={!rebase.canRebase || rebase.isRunning}
           onClick={() => void rebase.run({ mountId })}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-hover',
+            'flex items-center gap-2 px-3 py-2 text-left text-label hover:bg-hover',
             (!rebase.canRebase || rebase.isRunning) && 'opacity-40',
           )}
         >
@@ -150,7 +152,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
           disabled={!canPush || push.isBusy}
           onClick={() => void push.run()}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-hover',
+            'flex items-center gap-2 px-3 py-2 text-left text-label hover:bg-hover',
             (!canPush || push.isBusy) && 'opacity-40',
           )}
         >

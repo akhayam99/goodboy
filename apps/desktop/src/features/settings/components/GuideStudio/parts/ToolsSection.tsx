@@ -17,7 +17,7 @@ export const ToolsSection = ({}: Props) => (
     />
 
     <Block title="How they show up">
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-prose text-muted-foreground">
         In the transcript, each tool invocation collapses to a single row (
         <InlineCode>Bash</InlineCode>, <InlineCode>Read</InlineCode>, <InlineCode>Edit</InlineCode>
         ). Click to expand input and output. Consecutive tool rows are visually grouped to keep the
@@ -26,7 +26,7 @@ export const ToolsSection = ({}: Props) => (
     </Block>
 
     <Block title="Permissions">
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-prose text-muted-foreground">
         Goodboy proxies the CLI's own permission system. Above the input you see{' '}
         <InlineCode>permissions: X allow / Y deny</InlineCode>, the rule set the next turn will run
         under. Click it to manage rules in settings.
@@ -35,7 +35,7 @@ export const ToolsSection = ({}: Props) => (
 
     {WORKSPACE_FEATURES.skills ? (
       <Block title="Skills">
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="text-prose text-muted-foreground">
           Type <InlineCode>/</InlineCode> in the input to invoke a workspace skill, a pre-defined
           prompt template stored alongside your repo. Useful for repeatable flows: release notes,
           security reviews, migration plans.

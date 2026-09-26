@@ -10,7 +10,7 @@ export const RailBlock = ({ label, children }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <Eyebrow label={label} />
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-foreground wrap-anywhere">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-label text-foreground wrap-anywhere">
         {children}
       </div>
     </div>

@@ -22,9 +22,8 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
-import { readPersistedLens } from './workSurfaceStorage';
 import { LENS_KINDS } from './types';
+import { sessionPlace } from '../navigation/place';
 import { LENS_LABEL } from '../../../features/session/lens-labels';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -36,9 +35,6 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
-);
-vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
-  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
 );
 vi.mock('../../../features/onboarding/onboarding-store', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
@@ -115,9 +111,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     slug: 'ws',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -229,21 +223,6 @@ describe('store contract', () => {
       expect(store.getState().sessionViewPrefs[WS_ID]?.group).toBe('pr');
     });
 
-    it('setActiveLens persists and readPersistedLens restores it', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-      expect(readPersistedLens(SESSION_ID)).toBe('agents');
-    });
-
-    it('setActiveLens(null) clears the persisted lens (Overview empty-state)', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.getState().setActiveLens(SESSION_ID, null);
-      expect(store.getState().activeLens[SESSION_ID]).toBeNull();
-      expect(readPersistedLens(SESSION_ID)).toBeNull();
-    });
-
     it('opening artifact creation clears the studio, the selected agent and the focused artifact', async () => {
       const store = useAppStore;
       store.getState().setSessionStudio(SESSION_ID, { kind: 'workflow' });
@@ -283,127 +262,8 @@ describe('store contract', () => {
       expect(draft?.brief).toBe('the residual convention');
     });
 
-    it('migrates a legacy "dashboard" persisted value to null (Overview)', async () => {
-      globalThis.localStorage.setItem(
-        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
-        'dashboard',
-      );
-      expect(readPersistedLens(SESSION_ID)).toBeNull();
-    });
-
-    it('migrates a legacy resolve lens to the review board', async () => {
-      globalThis.localStorage.setItem(
-        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
-        'resolve',
-      );
-      expect(readPersistedLens(SESSION_ID)).toBe('review');
-    });
-
-    it('restores the shared Context surface', async () => {
-      globalThis.localStorage.setItem(
-        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
-        'context',
-      );
-      expect(readPersistedLens(SESSION_ID)).toBe('context');
-    });
-
-    it('degrades an unknown persisted lens to Overview', async () => {
-      globalThis.localStorage.setItem(
-        `${STORAGE_PREFIXES.workSurfaceView}${SESSION_ID}`,
-        'removed-integration',
-      );
-      expect(readPersistedLens(SESSION_ID)).toBeNull();
-    });
-
-    it('restores a persisted integration lens', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'linear');
-      expect(readPersistedLens(SESSION_ID)).toBe('linear');
-    });
-
     it('LENS_KINDS holds every lens kind the union declares', () => {
       expect([...LENS_KINDS].sort()).toEqual(Object.keys(LENS_LABEL).sort());
-    });
-
-    it.each([...LENS_KINDS])('every lens kind survives a restart: %s', async (lens) => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, lens);
-      expect(readPersistedLens(SESSION_ID)).toBe(lens);
-    });
-
-    it('lensGo walks back and forward through visited lenses', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-      store.getState().lensGo(SESSION_ID, -1);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-      store.getState().lensGo(SESSION_ID, 1);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
-    });
-
-    it('lensGo clamps at history bounds', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.getState().lensGo(SESSION_ID, -5);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-      store.getState().lensGo(SESSION_ID, 5);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-    });
-
-    it('lensGo restores the agent chat the user was on, not just its lens', async () => {
-      const store = useAppStore;
-      store.setState({
-        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
-      } as never);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-
-      store.getState().lensGo(SESSION_ID, -1);
-
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-      expect(store.getState().selectedAgentId[SESSION_ID]).toBe(AGENT_ID);
-    });
-
-    it('lensGo drops an agent that no longer exists and still restores its lens', async () => {
-      const store = useAppStore;
-      store.setState({
-        sessionPhaseRuns: { [SESSION_ID]: [buildAgent({ id: AGENT_ID })] },
-      } as never);
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.setState({ selectedAgentId: { [SESSION_ID]: AGENT_ID } } as never);
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-      store.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } } as never);
-
-      store.getState().lensGo(SESSION_ID, -1);
-
-      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
-      expect(store.getState().selectedAgentId[SESSION_ID]).toBeNull();
-    });
-
-    it('lensGo does not push a new entry, so back and forward stay symmetric', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-      const before = store.getState().lensHistory[SESSION_ID]?.entries.length;
-
-      store.getState().lensGo(SESSION_ID, -1);
-      store.getState().lensGo(SESSION_ID, -1);
-
-      expect(store.getState().lensHistory[SESSION_ID]?.entries.length).toBe(before);
-      expect(store.getState().lensHistory[SESSION_ID]?.index).toBe(0);
-      store.getState().lensGo(SESSION_ID, 1);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('plans');
-    });
-
-    it('selecting a new lens after going back truncates the forward history', async () => {
-      const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'agents');
-      store.getState().setActiveLens(SESSION_ID, 'plans');
-      store.getState().lensGo(SESSION_ID, -1);
-      store.getState().setActiveLens(SESSION_ID, 'files');
-      store.getState().lensGo(SESSION_ID, 1);
-      expect(store.getState().activeLens[SESSION_ID]).toBe('files');
     });
 
     it('toggleWorkflowExpand flips around the supplied default and persists per run', async () => {
@@ -500,10 +360,10 @@ describe('store contract', () => {
 
     it('openDiffLens carries a working-tree focus and leaves a step to go back to', async () => {
       const store = useAppStore;
-      store.getState().setActiveLens(SESSION_ID, 'review');
+      store.getState().navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }) });
       store.getState().openDiffLens(SESSION_ID, { kind: 'working', path: null });
       expect(store.getState().diffFocus[SESSION_ID]).toEqual({ kind: 'working', path: null });
-      store.getState().lensGo(SESSION_ID, -1);
+      store.getState().back();
       expect(store.getState().activeLens[SESSION_ID]).toBe('review');
     });
 

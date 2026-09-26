@@ -118,24 +118,18 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
     workspace.lastAccessedAt === undefined ? updatedAt : Date.parse(workspace.lastAccessedAt);
   await db.execute(
     `INSERT INTO workspaces (
-       id, name, slug, default_provider_id, default_workflow_id,
-       default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings,
+       id, name, slug, default_provider_id,
+       default_branch_prefix, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer,
        ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
       workspace.slug,
       workspace.overrides.defaultProviderId,
-      workspace.overrides.defaultWorkflowId,
       workspace.overrides.defaultBranchPrefix,
-      workspace.overrides.parallelEnabled === null
-        ? null
-        : workspace.overrides.parallelEnabled
-          ? 1
-          : 0,
       workspace.overrides.defaultVerbosity,
       serializeObject({ value: workspace.overrides.providerBindings }),
       serializeObject({ value: workspace.overrides.taskModels }),
@@ -213,6 +207,39 @@ export const disconnectWorkspace = async ({
   ]);
 };
 
+type DisconnectWorkspaceAndProjectsParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly projectIds: ReadonlyArray<string>;
+  readonly at: IsoDateTime;
+};
+
+export const disconnectWorkspaceAndProjects = async ({
+  db,
+  id,
+  projectIds,
+  at,
+}: DisconnectWorkspaceAndProjectsParams): Promise<void> => {
+  const timestamp = Date.parse(at);
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE workspaces SET disconnected_at = ?, updated_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, id],
+      },
+      ...projectIds.map((projectId) => ({
+        sql: 'UPDATE projects SET disconnected_at = ?, updated_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, projectId],
+      })),
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(
+      'The workspace could not be disconnected because the database rejected the write.',
+    );
+  }
+};
+
 export const reconnectWorkspace = async ({
   db,
   id,
@@ -223,6 +250,39 @@ export const reconnectWorkspace = async ({
     'UPDATE workspaces SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
     [timestamp, timestamp, id],
   );
+};
+
+type ReconnectWorkspaceAndProjectsParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly projectIds: ReadonlyArray<string>;
+  readonly at: IsoDateTime;
+};
+
+export const reconnectWorkspaceAndProjects = async ({
+  db,
+  id,
+  projectIds,
+  at,
+}: ReconnectWorkspaceAndProjectsParams): Promise<void> => {
+  const timestamp = Date.parse(at);
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'UPDATE workspaces SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, id],
+      },
+      ...projectIds.map((projectId) => ({
+        sql: 'UPDATE projects SET disconnected_at = NULL, updated_at = ?, last_accessed_at = ? WHERE id = ?',
+        params: [timestamp, timestamp, projectId],
+      })),
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    throw new Error(
+      'The workspace could not be reconnected because the database rejected the write.',
+    );
+  }
 };
 
 type RenameWorkspaceParams = {

@@ -40,10 +40,7 @@ export const MenuItems = ({ items, onClose }: Props) => (
       }
       if (item.kind === 'header') {
         return (
-          <div
-            key={item.key}
-            className="px-2.5 pt-1.5 pb-0.5 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <div key={item.key} className="px-2.5 pt-1.5 pb-0.5 text-eyebrow text-faint-foreground">
             {item.label}
           </div>
         );
@@ -94,13 +91,13 @@ export const MenuItems = ({ items, onClose }: Props) => (
           {hasDescription ? (
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate font-medium">{item.label}</span>
-              <span className="text-2xs text-muted-foreground">{item.description}</span>
+              <span className="text-secondary text-muted-foreground">{item.description}</span>
             </span>
           ) : (
             <span className="flex-1 truncate">{item.label}</span>
           )}
           {item.hint != null ? (
-            <kbd className="font-mono text-2xs text-faint-foreground">{item.hint}</kbd>
+            <kbd className="font-mono text-secondary text-faint-foreground">{item.hint}</kbd>
           ) : null}
         </button>
       );

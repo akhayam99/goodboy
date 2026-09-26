@@ -15,7 +15,6 @@ import type {
 } from '../../../features/workflows/workflows';
 import { resolveGeneratedStepRouting } from '../../../features/workflows/resolveGeneratedStepRouting';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { formatError } from '@goodboy/ui';
 import type { ProviderId, TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import type { GetFn, SetFn, StartWorkflowGenerationParams } from './types';
@@ -61,7 +60,7 @@ type GeneratedStepParams = {
   readonly step: FormattedWorkflowStep;
   readonly ordinal: number;
   readonly emittingProvider: ProviderId;
-  readonly availability: WorkflowRoutingAvailabilitySnapshot | null;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot;
 };
 
 const generatedStepArgs = ({
@@ -77,9 +76,6 @@ const generatedStepArgs = ({
     promptPrefix: step.promptPrefix,
     expectedOutput: step.expectedOutput,
   };
-  if (availability === null) {
-    return base;
-  }
   const routing = resolveGeneratedStepRouting({
     routing: step.routing,
     promptPrefix: step.promptPrefix,
@@ -120,10 +116,10 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
     }));
     try {
       const taskModel = generationTaskModel({ state: get(), workspaceId });
-      const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
-      const availability = isModelMetadataEnabled ? generationAvailability({ state: get() }) : null;
-      const modelMenu: ReadonlyArray<OrchestratorModelOption> =
-        availability === null ? [] : orchestratorModelPool({ availability });
+      const availability = generationAvailability({ state: get() });
+      const modelMenu: ReadonlyArray<OrchestratorModelOption> = orchestratorModelPool({
+        availability,
+      });
       const formatted = await formatWorkflowFromNL({
         deps: {
           ...taskModel,

@@ -9,6 +9,7 @@ import type { GithubIssue } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { githubIssueFields, resolveFacts } from '../../../shared/detail-fields';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
+import { ToolImageScope } from '../../../shared/components/ToolImageScope';
 import { stateWord } from '../../inbox/stateWord';
 import { useConversationPane } from '../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../shared/components/Conversation/types';
@@ -57,6 +58,7 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
   );
   const conversation = useConversationPane({ source, resetKey: issue.url });
 
+  const descriptionContent = <DescriptionSection text={description} onSave={save} />;
   const sections: ReadonlyArray<RecordSection> = [
     {
       key: 'description',
@@ -64,7 +66,14 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
       label: 'Description',
       isCollapsible: false,
       defaultOpen: true,
-      content: <DescriptionSection text={description} onSave={save} />,
+      content:
+        editContext == null ? (
+          descriptionContent
+        ) : (
+          <ToolImageScope workspaceId={editContext.workspaceId} provider="github">
+            {descriptionContent}
+          </ToolImageScope>
+        ),
     },
     ...(editContext != null ? [conversation.section] : []),
   ];

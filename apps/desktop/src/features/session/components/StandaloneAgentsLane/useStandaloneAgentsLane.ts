@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionLoading } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useSessionLoading, agentPlace } from '../../../../store';
 import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-kind';
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
@@ -37,7 +37,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
     }),
   );
   const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const renameAgent = useAppStore((state) => state.renameAgent);
   const deleteAgent = useAppStore((state) => state.deleteAgent);
   const setAgentDone = useAppStore((state) => state.setAgentDone);
@@ -162,11 +162,11 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
   const onPickAgent = useCallback(
     (agentId: AgentId) => {
       if (agentId !== selectedAgentId) {
-        void selectAgent(sessionId, agentId);
+        navigate({ to: agentPlace({ sessionId, agentId }) });
       }
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     },
-    [selectAgent, selectedAgentId, sessionId],
+    [navigate, selectedAgentId, sessionId],
   );
 
   const onRenameCommit = useCallback(

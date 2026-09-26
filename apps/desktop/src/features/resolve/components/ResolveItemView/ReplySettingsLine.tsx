@@ -22,7 +22,7 @@ export const ReplySettingsLine = ({ sessionId }: Props) => {
     replySettingsSummary({ settings: sessionReplySettings({ state, sessionId }) }),
   );
   return (
-    <p className="flex min-w-0 items-center gap-1 text-2xs text-faint-foreground">
+    <p className="flex min-w-0 items-center gap-1 text-secondary text-faint-foreground">
       <span className="min-w-0 truncate">{summary}</span>
       <IconButton
         icon={Settings}

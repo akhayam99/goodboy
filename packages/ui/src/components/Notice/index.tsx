@@ -43,10 +43,10 @@ const PLACEMENT_RAIL = {
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_TITLE = {
-  transcript: 'text-xs leading-4',
-  inline: 'text-xs leading-4',
-  banner: 'text-xs leading-4',
-  floating: 'text-sm',
+  transcript: 'text-label',
+  inline: 'text-label',
+  banner: 'text-label',
+  floating: 'text-body',
 } as const satisfies Record<NoticePlacement, string>;
 
 const PLACEMENT_ICON_SIZE = {
@@ -121,7 +121,7 @@ export const Notice = ({
             {title}
           </p>
           {hasContent({ node: body }) && (
-            <div className="w-full break-words text-xs leading-4 text-muted-foreground">{body}</div>
+            <div className="w-full break-words text-label text-muted-foreground">{body}</div>
           )}
           {hasDetail && (
             <button
@@ -130,7 +130,7 @@ export const Notice = ({
               aria-controls={isDetailOpen ? detailId : undefined}
               onClick={() => setIsDetailOpen((open) => !open)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-sm text-2xs text-faint-foreground hover:text-muted-foreground',
+                'inline-flex items-center gap-1 rounded-sm text-secondary text-faint-foreground hover:text-muted-foreground',
                 FOCUS_RING,
               )}
             >
@@ -145,7 +145,7 @@ export const Notice = ({
           {hasDetail && isDetailOpen && (
             <pre
               id={detailId}
-              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-2.5 py-2 font-mono text-2xs text-muted-foreground"
+              className="max-h-48 w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border-soft bg-background px-2.5 py-2 font-mono text-secondary text-muted-foreground"
             >
               {detail}
             </pre>

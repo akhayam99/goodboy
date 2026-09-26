@@ -7,6 +7,47 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.8.0
+
+Every studio, drawer and lens now shares one navigation history so Back does what you expect, every provider honors the permission mode you picked, and every list in the app behaves the same way when you pick from it.
+
+This release updates the database, and the change is one way: to go back to 0.7.x you need to restore the backup of your data, and the older version tells you so if you open it.
+
+### [#1899] Back always takes you back
+
+Studios, drawers and lenses now share one navigation history: opening one adds a step, closing it removes one, and Back or Esc walks it the same way everywhere. The Resolve panel has a Comment tab and an Agent tab instead of a separate full page and return pills, and a resolver notification opens straight to the right one. The Review conversation now opens in the same drawer as everything else, so Back restores it like any other panel.
+
+### [#1892] Every provider gets the permission mode you picked
+
+Cursor, Codex, Antigravity and the opencode-based providers now receive the session's permission mode, not only Claude. When a provider can't honor a mode exactly, Goodboy runs it as the next stricter one instead of a looser one, and the mode picker grays out the modes the active provider can't honor and says why. Signing in to a provider now opens exactly one tab, with a link to reopen it if it did not show up. Claude's usage chip reads both the 5 hour and the weekly window, Codex reads the right one, and the chip stacks both bars.
+
+### [#1896] One control for every list you pick from
+
+Every dropdown and hand-built list in the app now works the same way: type to filter, search once a list passes eight options, pick more than one where that makes sense, and see why an option is unavailable instead of guessing.
+
+### [#1893, #1901] A calmer, more consistent look
+
+Type sizes, corner radii and shadows now follow one scale across the app, and settings, model defaults and other boxed sections sit on a shared framed background. Tables with many columns stripe every five rows so your eye can track across them. The session list shows each stage with a tone bar instead of a colored rail, the theme toggle is back in the top bar with a smooth crossfade, and scrollbars now draw as a themed overlay that follows your system's "always show scrollbars" setting.
+
+### [#1894] Reconnecting and importing work the way you'd expect
+
+Re-adding the folder of a workspace that got disconnected reconnects it and every project inside it, instead of failing with "already linked in another workspace." Importing a workspace bundle restores your workflows as they were, including deleted ones and custom steps, and skips workspaces that are still disconnected. Notifications, the inbox and Add workspace no longer switch your open workspace behind your back and cancel whatever was running in it.
+
+### Fixes
+
+- If wiping the local database was interrupted, or an older version left it half wiped, Goodboy could get stuck at launch on a database migration error. The wipe now happens in one atomic step, and a half-done wipe from before this version finishes itself the next time Goodboy opens. [#1897]
+- Resolve now accepts a fix for a comment that was already in the queue before the fix ran, instead of failing with "Approval revision is stale." [#1891]
+- The pull request redirect into Review no longer breaks Back, and the linked pull request chip switches sessions properly. [#1898]
+- The activity filter now shows a count of the rows it hides, always shows suggestions, and keeps a row visible if you just started it. [#1898]
+- A leftover rebase marker from another worktree no longer makes Goodboy think a rebase is in progress. [#1898]
+- Clicking a link or a control inside a description or a pull request overview no longer toggles the block open or closed. [#1900]
+- Tool images from Linear, Jira and GitHub load through Goodboy directly, pinned to the tenant you're connected to. [#1900]
+- Goodboy no longer calls your own Slack token a bot, and a bot token pasted by mistake is rejected with a clear error. [#1900]
+- One-off run copies no longer show up in the preset list. [#1900]
+- Reworded decisions no longer count as both added and removed, and the running summary keeps the newest decisions. [#1900]
+- Handoff chips open one section at a time and stay visible, and a new "All" chip shows every section. [#1900]
+- The Scripts panel groups scripts by package in a monorepo, with each package collapsible and its own script count. [#1902]
+
 ## Goodboy v0.7.0
 
 Goodboy now keeps a copy of your plans, reports and wireframes on disk, fixes to review comments land even when the branch has moved on, and replies to reviewers follow a template in the voice your workspace picks.

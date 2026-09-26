@@ -103,6 +103,7 @@ import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { DrawerSliceState } from './slices/drawer/state';
+import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -112,11 +113,8 @@ import type {
   ArtifactCreationTarget,
   DiffFocus,
   FocusedExternalTask,
-  LensHistory,
   LensKind,
-  ResolveDiffReturn,
-  ResolveAgentReturn,
-  ResolvePublicationReturn,
+  ResolvePublicationRequest,
   ResolveQueueView,
   SessionCreation,
   SessionStudio,
@@ -253,7 +251,8 @@ type AppSliceState = ArtifactsState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState &
-  DrawerSliceState;
+  DrawerSliceState &
+  NavigationSliceState;
 
 export type NotificationScope = 'workspace' | 'all';
 
@@ -430,20 +429,18 @@ export type AppState = AppSliceState & {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
-  readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
-  readonly resolveAgentReturn: Readonly<Record<SessionId, ResolveAgentReturn | null>>;
+  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
+  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;

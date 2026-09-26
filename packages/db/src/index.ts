@@ -31,7 +31,9 @@ export {
   getWorkspaceById,
   listWorkspaces,
   disconnectWorkspace,
+  disconnectWorkspaceAndProjects,
   reconnectWorkspace,
+  reconnectWorkspaceAndProjects,
   renameWorkspace,
   touchWorkspaceLastAccessed,
   deleteWorkspace,
@@ -42,6 +44,7 @@ export {
   insertProject,
   getProjectById,
   listProjectsForWorkspace,
+  listAllProjectsForWorkspace,
   findProjectByRootPath,
   disconnectProject,
   reconnectProject,
@@ -288,7 +291,6 @@ export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings
 export {
   listProviderCredentials,
   insertProviderCredential,
-  renameProviderCredential,
   deleteProviderCredential,
 } from './queries/provider-credential';
 export {

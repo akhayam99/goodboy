@@ -30,7 +30,7 @@ export const ImportGroupSection = ({
         : null;
   return (
     <section aria-label={group.workspaceName} className="flex min-w-0 flex-col gap-1">
-      <h3 className="flex min-w-0 items-baseline gap-1 px-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground">
+      <h3 className="flex min-w-0 items-baseline gap-1 px-1.5 text-eyebrow text-faint-foreground">
         <span className="shrink-0">{group.workspaceName}</span>
         {detail === null ? null : (
           <span className="truncate font-normal normal-case tracking-normal">{`· ${detail}`}</span>
@@ -46,7 +46,7 @@ export const ImportGroupSection = ({
           ))}
         </ul>
       ) : group.status === 'failed' ? (
-        <p className="px-1.5 text-2xs text-danger">{`Couldn't load workflows. ${group.error ?? ''}`}</p>
+        <p className="px-1.5 text-secondary text-danger">{`Couldn't load workflows. ${group.error ?? ''}`}</p>
       ) : (
         <ul className="flex flex-col">
           {workflows.map((workflow) => (

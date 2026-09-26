@@ -22,7 +22,7 @@ export const WorkflowAttachButton = ({ sessionId, placement }: Props) => {
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground"
+        className="flex w-full items-center gap-2 rounded-md border border-dashed border-border-soft px-2 py-1.5 text-left text-label text-muted-foreground transition-colors hover:border-border hover:bg-hover hover:text-foreground"
       >
         <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="min-w-0 truncate">{LABEL}</span>

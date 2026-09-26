@@ -1,6 +1,6 @@
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
-import { ChevronDown } from 'lucide-react';
-import { BaseBranchSelectContent } from './BaseBranchSelectContent';
+import { useEffect, useState } from 'react';
+import { cn, Listbox } from '@goodboy/ui';
+import { listBranchNames } from './worktree';
 
 type Props = {
   readonly repoPath: string;
@@ -10,6 +10,15 @@ type Props = {
   readonly onCommit: (next: string | null) => void | Promise<void>;
 };
 
+type LoadState = 'idle' | 'loading' | 'ready' | 'failed';
+
+const STATUS_LABEL: Record<LoadState, string | undefined> = {
+  idle: undefined,
+  loading: 'Loading branches',
+  ready: undefined,
+  failed: 'Could not load branches',
+};
+
 export const BaseBranchSelect = ({
   repoPath,
   value,
@@ -17,41 +26,76 @@ export const BaseBranchSelect = ({
   disabled = false,
   onCommit,
 }: Props) => {
-  const dropdown = useDropdown({ disabled, width: 'w-64', expectedHeight: 248 });
-  const displayValue = value ?? placeholder;
+  const [isOpen, setIsOpen] = useState(false);
+  const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
+  const [loadState, setLoadState] = useState<LoadState>('idle');
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    let isCancelled = false;
+    setLoadState('loading');
+    listBranchNames({ repoPath })
+      .then((nextBranches) => {
+        if (isCancelled) {
+          return;
+        }
+        setBranches(nextBranches);
+        setLoadState('ready');
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setLoadState('failed');
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [isOpen, repoPath]);
+
+  const commit = (candidate: string) => {
+    const trimmed = candidate.trim();
+    void onCommit(trimmed === '' ? null : trimmed);
+  };
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      className="border-border-soft bg-subtle shadow-lg"
-      trigger={
-        <button
-          type="button"
-          disabled={disabled}
-          aria-label={`Base branch: ${displayValue}`}
-          aria-haspopup="listbox"
-          aria-expanded={dropdown.open}
-          onClick={dropdown.toggle}
-          className={cn(
-            'flex h-7 min-w-0 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-xs text-foreground hover:border-border-strong hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50',
-            value == null && 'text-muted-foreground',
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate text-left">{displayValue}</span>
-          <ChevronDown
-            size={11}
-            aria-hidden
-            className={cn('shrink-0 transition-transform', dropdown.open && 'rotate-180')}
-          />
-        </button>
+    <Listbox
+      ariaLabel="Base branch"
+      size="sm"
+      noun="branch"
+      searchable
+      searchLabel="Search branches"
+      searchPlaceholder="Search or enter a branch"
+      placeholder={placeholder}
+      disabled={disabled}
+      value={value}
+      options={branches.map((branch) => ({ value: branch, label: branch, isCode: true }))}
+      onChange={commit}
+      onOpenChange={setIsOpen}
+      create={{ label: (query) => `Use ${query}`, onCreate: commit }}
+      status={STATUS_LABEL[loadState]}
+      valueLabel={
+        <span className={cn('truncate text-code', value === null && 'text-faint-foreground')}>
+          {value ?? placeholder}
+        </span>
       }
-    >
-      <BaseBranchSelectContent
-        repoPath={repoPath}
-        value={value}
-        onCommit={onCommit}
-        onClose={dropdown.close}
-      />
-    </AnchoredPopover>
+      footer={
+        value === null
+          ? undefined
+          : ({ close }) => (
+              <button
+                type="button"
+                onClick={() => {
+                  commit('');
+                  close();
+                }}
+                className="flex h-8 items-center rounded-sm px-2 text-left text-label text-muted-foreground hover:bg-hover hover:text-foreground"
+              >
+                Use default
+              </button>
+            )
+      }
+    />
   );
 };

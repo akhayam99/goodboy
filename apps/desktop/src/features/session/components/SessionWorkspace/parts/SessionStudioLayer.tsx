@@ -5,10 +5,8 @@ import { useCurrentWorkspace, type SessionStudio } from '../../../../../store';
 import { WorkflowBuilderView } from '../../WorkflowBuilderView';
 import { MrSessionPane } from '../../../../integrations/gitlab/MrSessionPane';
 import { BitbucketStudio } from '../../../../integrations/bitbucket/BitbucketStudio';
-import { PageCrumbRow } from '../../../../../shared/components/PaneShell/PageCrumbRow';
-import { PageCrumbContext } from '../../../../../shared/components/PaneShell/PageCrumbContext';
 
-const STUDIO_OUT_MS = 200;
+const STUDIO_OUT_MS = 120;
 
 type Props = {
   readonly session: Session;
@@ -73,13 +71,10 @@ export const SessionStudioLayer = ({ session, studio, onClose }: Props) => {
     <div
       className={cn(
         'absolute inset-0 z-20 flex flex-col bg-background',
-        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+        closing ? 'motion-safe:animate-layer-out' : 'motion-safe:animate-layer-in',
       )}
     >
-      <PageCrumbRow />
-      <div className="relative min-h-0 flex-1">
-        <PageCrumbContext.Provider value={null}>{renderStudioContent()}</PageCrumbContext.Provider>
-      </div>
+      <div className="relative min-h-0 flex-1">{renderStudioContent()}</div>
     </div>
   );
 };

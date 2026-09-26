@@ -18,7 +18,7 @@ export const ResolvedThreadRow = ({ thread, isOpen, onToggle }: Props) => {
       aria-expanded={isOpen}
       onClick={onToggle}
       className={cn(
-        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
+        'flex h-8 w-full min-w-0 items-center gap-2 rounded-md bg-subtle px-2 text-left text-secondary text-muted-foreground hover:bg-hover hover:text-foreground',
         FOCUS_RING,
       )}
     >

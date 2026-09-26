@@ -44,7 +44,7 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
               selected={isActive}
               ariaCurrent={isActive}
               onClick={() => onSelect({ kind: section.id })}
-              className="items-center gap-2.5 px-2.5 py-2 text-sm"
+              className="items-center gap-2.5 px-2.5 py-2 text-body"
             >
               <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
               {section.label}
@@ -71,10 +71,10 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
                 >
                   <div className="flex w-full items-center gap-2.5">
                     <ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />
-                    <span className="flex-1 truncate text-sm font-medium capitalize text-foreground">
+                    <span className="flex-1 truncate text-row capitalize text-foreground">
                       {providerLabel({ provider: entry.provider })}
                     </span>
-                    <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+                    <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
                       {formatUsd(entry.spentUsd)}
                     </span>
                   </div>
@@ -117,8 +117,11 @@ export const ScopeRail = ({ scope, providers, sessions, onSelect }: Props) => (
                   ) : (
                     <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-border-soft" />
                   )}
-                  <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-sm" />
-                  <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+                  <InlineMarkdown
+                    text={session.goal}
+                    className="min-w-0 flex-1 truncate text-body"
+                  />
+                  <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
                     {formatUsd(session.spentUsd)}
                   </span>
                 </SelectableRow>

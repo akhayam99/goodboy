@@ -1,7 +1,7 @@
 import { Tooltip, WorkNode } from '@goodboy/ui';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, agentPlace } from '../../../../../store';
 import type {
   MountPresenceAgent,
   MountPresenceState,
@@ -36,7 +36,7 @@ const countLabel = ({ count }: CountLabelParams): string =>
   count === 1 ? '1 agent here' : `${count} agents here`;
 
 export const MountPresence = ({ sessionId, label, agents }: Props) => {
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   if (agents.length === 0) {
     return null;
   }
@@ -57,7 +57,7 @@ export const MountPresence = ({ sessionId, label, agents }: Props) => {
               <button
                 type="button"
                 aria-label={`Open ${agent.name}`}
-                onClick={() => void selectAgent(sessionId, agent.agentId)}
+                onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.agentId }) })}
                 className="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <WorkNode
@@ -70,10 +70,8 @@ export const MountPresence = ({ sessionId, label, agents }: Props) => {
           );
         })}
       </span>
-      {hidden > 0 && (
-        <span className="text-3xs tabular-nums text-muted-foreground">{`+${hidden}`}</span>
-      )}
-      <span className="truncate text-3xs tabular-nums text-faint-foreground">
+      {hidden > 0 && <span className="text-meta text-muted-foreground">{`+${hidden}`}</span>}
+      <span className="truncate text-meta text-faint-foreground">
         {countLabel({ count: agents.length })}
       </span>
     </span>

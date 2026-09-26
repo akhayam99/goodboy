@@ -38,7 +38,7 @@ export const BriefLoading = ({ source, onUseIssueText, onDismiss }: Props) => (
       <Skeleton className="h-2.5 w-1/2 rounded-sm" />
     </div>
     <footer className="flex items-center gap-2">
-      <span className="min-w-0 flex-1 truncate text-2xs text-shimmer">
+      <span className="min-w-0 flex-1 truncate text-secondary text-shimmer">
         {readingLabel({ source })}
       </span>
       <Button variant="ghost" size="sm" onClick={onUseIssueText}>

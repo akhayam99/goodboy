@@ -136,9 +136,7 @@ vi.mock('../../../../../shared/components/RoutingPicker/ProviderPicker', () => (
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -345,7 +343,7 @@ describe('DefaultsPanel', () => {
     expect(screen.getByText('Planner')).toBeDefined();
     expect(screen.getByText('Reviewer')).toBeDefined();
     expect(screen.getByText('Resolver')).toBeDefined();
-    expect(screen.getByText('Custom')).toBeDefined();
+    expect(screen.getByText('Generalist')).toBeDefined();
   });
 
   it('reads the resolver role with no override as its compiled default', () => {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, GitBranch } from 'lucide-react';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
@@ -55,7 +55,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Repository git statuses"
-      className="w-80 max-h-[min(32rem,calc(100vh-2rem))] overflow-y-auto"
+      className="flex w-80 max-h-[min(32rem,calc(100vh-2rem))] flex-col"
       trigger={
         <button
           type="button"
@@ -64,7 +64,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             actionableCount > 0 || hasWarning
               ? 'text-foreground hover:bg-hover'
               : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -82,7 +82,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
           ) : uncommittedCount > 0 ? (
             <span
               data-testid="project-git-summary-count"
-              className="shrink-0 text-2xs tabular-nums text-warning"
+              className="shrink-0 text-secondary tabular-nums text-warning"
             >
               {uncommittedCount} uncommitted
             </span>
@@ -91,7 +91,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
       }
     >
       {selectedEntry == null ? (
-        <div className="flex flex-col">
+        <PopoverBody>
           {summaryEntries.map((entry) => (
             <button
               key={entry.project.id}
@@ -99,36 +99,38 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
               onClick={() => setSelectedProjectId(entry.project.id)}
               className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-hover"
             >
-              <span className="min-w-0 flex-1 truncate text-xs font-medium">
+              <span className="min-w-0 flex-1 truncate text-label font-medium">
                 {entry.project.name}
               </span>
-              <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+              <span className="shrink-0 font-mono text-secondary text-muted-foreground">
                 {entry.branch}
               </span>
               <span className="flex shrink-0 justify-end">
                 {entry.isWarning ? (
                   <AlertTriangle size={11} aria-label="Warning" className="text-warning" />
                 ) : entry.uncommittedCount > 0 ? (
-                  <span className="text-2xs tabular-nums text-warning">
+                  <span className="text-secondary tabular-nums text-warning">
                     {entry.uncommittedCount} uncommitted
                   </span>
                 ) : null}
               </span>
             </button>
           ))}
-        </div>
+        </PopoverBody>
       ) : (
-        <div className="flex flex-col">
+        <>
           <button
             type="button"
             onClick={() => setSelectedProjectId(null)}
-            className="flex h-9 items-center gap-1.5 border-b border-border-soft px-3 text-xs font-medium transition-colors hover:bg-hover"
+            className="flex h-9 shrink-0 items-center gap-1.5 border-b border-border-soft px-3 text-label font-medium transition-colors hover:bg-hover"
           >
             <ChevronLeft size={ICON_SIZE.row} aria-hidden />
             <span className="truncate">{selectedEntry.project.name}</span>
           </button>
-          <ProjectGitDetail project={selectedEntry.project} status={selectedEntry.status} />
-        </div>
+          <PopoverBody>
+            <ProjectGitDetail project={selectedEntry.project} status={selectedEntry.status} />
+          </PopoverBody>
+        </>
       )}
     </AnchoredPopover>
   );

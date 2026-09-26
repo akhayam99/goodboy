@@ -73,13 +73,17 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
                 }}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-xs font-medium text-foreground">{item.label}</span>
+                  <span className="truncate text-label font-medium text-foreground">
+                    {item.label}
+                  </span>
                   {item.sublabel ? (
-                    <span className="truncate text-2xs text-muted-foreground">{item.sublabel}</span>
+                    <span className="truncate text-secondary text-muted-foreground">
+                      {item.sublabel}
+                    </span>
                   ) : null}
                 </div>
                 {item.trailing ? (
-                  <span className="flex shrink-0 items-center gap-1.5 text-2xs uppercase tracking-eyebrow text-muted-foreground">
+                  <span className="flex shrink-0 items-center gap-1.5 text-secondary uppercase tracking-eyebrow text-muted-foreground">
                     <span>{item.trailing.label}</span>
                     {item.trailing.kind ? (
                       <AgentAvatar kind={item.trailing.kind} size="sm" />

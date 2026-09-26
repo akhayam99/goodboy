@@ -40,7 +40,7 @@ export const HandoffOlderFormat = ({ text, at }: Props) => {
     >
       <div
         className={cn(
-          'overflow-hidden text-xs text-foreground',
+          'overflow-hidden text-label text-foreground',
           isLong && !showAll && 'line-clamp-8',
         )}
       >
@@ -50,7 +50,7 @@ export const HandoffOlderFormat = ({ text, at }: Props) => {
         <button
           type="button"
           onClick={() => setShowAll((value) => !value)}
-          className="w-fit text-2xs font-medium text-muted-foreground hover:text-foreground"
+          className="w-fit text-secondary font-medium text-muted-foreground hover:text-foreground"
         >
           {showAll ? 'Show less' : 'Show all'}
         </button>

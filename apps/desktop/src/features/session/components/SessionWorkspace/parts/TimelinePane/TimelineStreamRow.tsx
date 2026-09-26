@@ -37,6 +37,7 @@ type Props = {
   readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
+  readonly isRevealed?: boolean;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -57,6 +58,7 @@ export const TimelineStreamRow = ({
   menu = null,
   lanes = null,
   runLane = null,
+  isRevealed = false,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -87,17 +89,18 @@ export const TimelineStreamRow = ({
   );
   const content = (
     <>
-      <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+      <span className="flex min-w-0 flex-1 items-baseline gap-2 overflow-hidden">
         <TimelineRowLabel
           item={item}
           diffStat={diffStat}
           isLaneLit={isLaneLit}
           worktrees={worktrees}
           stateNote={stateNote}
+          isRevealed={isRevealed}
         />
       </span>
       {openTarget == null ? null : (
-        <span className={cn('shrink-0 text-3xs text-muted-foreground', WORK_ROW.hint)}>
+        <span className={cn('shrink-0 text-meta text-muted-foreground', WORK_ROW.hint)}>
           {`${openTarget.label} ↵`}
         </span>
       )}
@@ -115,7 +118,7 @@ export const TimelineStreamRow = ({
     >
       <span className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}>
         <span
-          className="flex items-center justify-end pr-2 text-3xs tabular-nums text-faint-foreground"
+          className="flex items-center justify-end pr-2 text-meta text-faint-foreground"
           style={{ height: boxHeight }}
         >
           {item.at == null ? null : formatCardTime(item.at)}

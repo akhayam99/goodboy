@@ -92,6 +92,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
 }));
 
 import { ArtifactCreationPane } from './index';
+import { chooseListboxValue, listboxValueOf } from '../../../../__tests__/helpers/listbox';
 
 const SESSION_ID = JSON.parse(JSON.stringify('session-harborline'));
 const WORKTREE = '/tmp/harborline-worktree';
@@ -312,7 +313,7 @@ describe('ArtifactCreationPane', () => {
     };
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
-    expect((screen.getByTestId('artifact-based-on') as HTMLSelectElement).value).toBe(RUN_ID);
+    expect(listboxValueOf({ trigger: screen.getByTestId('artifact-based-on') })).toBe(RUN_ID);
   });
 
   it('falls back to the session when the drafted run was discarded', () => {
@@ -331,13 +332,13 @@ describe('ArtifactCreationPane', () => {
       },
     };
     renderPane({ runs: [] });
-    expect((screen.getByTestId('artifact-based-on') as HTMLSelectElement).value).toBe('');
+    expect(listboxValueOf({ trigger: screen.getByTestId('artifact-based-on') })).toBe('');
   });
 
   it('says the run scope leaves events, checks and the local change session wide', () => {
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
-    fireEvent.change(screen.getByTestId('artifact-based-on'), { target: { value: RUN_ID } });
+    chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
     expect(
       screen.getByText(
         'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
@@ -369,7 +370,7 @@ describe('ArtifactCreationPane', () => {
     fireEvent.change(screen.getByTestId('artifact-brief'), {
       target: { value: 'call out the residual convention' },
     });
-    fireEvent.change(screen.getByTestId('artifact-based-on'), { target: { value: RUN_ID } });
+    chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
     fireEvent.click(screen.getByTestId('artifact-generate'));
     await waitFor(() => {
       expect(state.spawnReportAgent).toHaveBeenCalledWith({

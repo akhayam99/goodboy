@@ -81,7 +81,7 @@ export const ShippedPanel = ({
                 key={`${entry.sessionId}-${entry.number}`}
                 type="button"
                 onClick={() => onOpenSession(entry.sessionId)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-hover"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-label hover:bg-hover"
               >
                 <CONCEPT_ICONS.pr
                   size={ICON_SIZE.row}
@@ -136,16 +136,16 @@ export const ShippedPanel = ({
               },
             ]}
           />
-          <div className="grid grid-cols-3 gap-2 text-center text-2xs text-muted-foreground">
+          <div className="grid grid-cols-3 gap-2 text-center text-secondary text-muted-foreground">
             <span>&lt;1h {fastReviews}</span>
             <span>1h to 1d {sameDayReviews}</span>
             <span>&gt;1d {slowReviews}</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <span className="rounded-md bg-muted px-2 py-1.5 text-xs">
+            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
               Published drafts: {reviewData?.publishedDrafts ?? 0}
             </span>
-            <span className="rounded-md bg-muted px-2 py-1.5 text-xs">
+            <span className="rounded-md bg-muted px-2 py-1.5 text-label">
               Pushed resolutions: {reviewData?.pushedResolutions ?? 0}
             </span>
           </div>
@@ -153,7 +153,7 @@ export const ShippedPanel = ({
         <StudioWidget label="hot files" hint="most resolved review comments">
           <div className="flex flex-col gap-1">
             {reviewData?.hotFiles.map((file) => (
-              <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-xs">
+              <div key={file.filePath} className="flex items-center gap-3 px-2 py-1 text-label">
                 <span className="min-w-0 flex-1 truncate font-mono">{file.filePath}</span>
                 <span className="tabular-nums text-muted-foreground">{file.comments}</span>
               </div>

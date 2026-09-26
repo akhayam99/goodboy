@@ -59,7 +59,7 @@ export const NewBranchMountAction = ({
             onClick={() => dropdown.toggle()}
             className={cn(
               triggerClassName ??
-                'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-1.5 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
             <GitFork size={ICON_SIZE.row} aria-hidden />
@@ -72,10 +72,10 @@ export const NewBranchMountAction = ({
     >
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-foreground">
+          <span className="text-label font-medium text-foreground">
             {`New worktree in ${projectName}`}
           </span>
-          <span className="text-2xs text-muted-foreground">
+          <span className="text-secondary text-muted-foreground">
             It gets its own branch. The worktrees already here keep their branches and pull
             requests.
           </span>
@@ -94,7 +94,7 @@ export const NewBranchMountAction = ({
             event.preventDefault();
             void create();
           }}
-          className="h-8 w-full text-xs"
+          className="h-8 w-full text-label"
         />
         <div className="flex items-center justify-end gap-1">
           <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => dropdown.close()}>

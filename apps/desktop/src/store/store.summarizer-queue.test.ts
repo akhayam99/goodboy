@@ -102,6 +102,7 @@ type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
 let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
 let summarizerUpsertSequence: Array<ReadonlyArray<SummarizerUpsert>> = [];
 let summarizerConstructorCalls: Array<unknown> = [];
+let summarizeInputCalls: Array<{ readonly turnInput: string; readonly turnOutput: string }> = [];
 const summarizeSpy = vi.fn(
   () =>
     new Promise<void>((resolve) => {
@@ -118,7 +119,8 @@ vi.mock('@goodboy/core', async (importOriginal) => {
         summarizerConstructorCalls.push(deps);
       }
 
-      summarize() {
+      summarize(input: { readonly turnInput: string; readonly turnOutput: string }) {
+        summarizeInputCalls.push({ turnInput: input.turnInput, turnOutput: input.turnOutput });
         const upserts = summarizerUpsertSequence.shift() ?? summarizerUpserts;
         return summarizeSpy().then(() => ({
           delta: { upserts },
@@ -237,6 +239,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     insertSessionEventSpy.mockClear();
     summarizerUpsertSequence = [];
     summarizerConstructorCalls = [];
+    summarizeInputCalls = [];
     dbSlots = [];
     resolveTelemetryList = null;
     listTelemetryForSessionSpy.mockReset();
@@ -274,9 +277,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -300,27 +301,31 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const state = useAppStore.getState();
     const queue = {
       inFlight: true,
-      queued: null as null | {
+      queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
         workingDir: string | null;
         oversizeRetried: boolean;
-      },
+      }>,
     };
     summarizerQueues.set(SESSION_ID, queue);
 
     for (let i = 1; i <= 4; i++) {
       if (queue.inFlight) {
-        queue.queued = {
-          turnInput: `input-${i}`,
-          turnOutput: `output-${i}`,
-          workingDir: null,
-          oversizeRetried: false,
-        };
+        queue.queued = [
+          ...queue.queued,
+          {
+            turnInput: `input-${i}`,
+            turnOutput: `output-${i}`,
+            workingDir: null,
+            oversizeRetried: false,
+          },
+        ];
       }
     }
 
-    expect(queue.queued?.turnInput).toBe('input-4');
+    expect(queue.queued).toHaveLength(4);
+    expect(queue.queued.at(-1)?.turnInput).toBe('input-4');
 
     const callsBefore = summarizeSpy.mock.calls.length;
     firstResolve();
@@ -342,9 +347,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: null,
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: {
@@ -369,9 +372,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -470,9 +471,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: 'codex',
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: null,
@@ -516,9 +515,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: 'codex',
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: {
@@ -565,12 +562,12 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: false,
-      queued: null as null | {
+      queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
         workingDir: string | null;
         oversizeRetried: boolean;
-      },
+      }>,
     };
     sq.set(SESSION_ID, queue);
 
@@ -579,7 +576,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     queue.inFlight = false;
 
     expect(resolved).toBe(true);
-    expect(queue.queued).toBeNull();
+    expect(queue.queued).toEqual([]);
     expect(queue.inFlight).toBe(false);
 
     sq.delete(SESSION_ID);
@@ -626,9 +623,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -668,40 +663,81 @@ describe('summarizer queue, coalescing and no-stack', () => {
     ]);
   });
 
-  it('in-flight + multiple queued coalesces to one pending entry', async () => {
-    const { summarizerQueues: sq } = await import('./turn-helpers');
+  it('in-flight + multiple queued accumulates every turn instead of dropping all but the last', async () => {
+    const { summarizerQueues: sq, mergeQueuedSummarizerEntries } = await import('./turn-helpers');
     sq.clear();
 
     const queue = {
       inFlight: true,
-      queued: null as null | {
+      queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
         workingDir: string | null;
         oversizeRetried: boolean;
-      },
+      }>,
     };
     sq.set(SESSION_ID, queue);
 
     for (let i = 0; i < 10; i++) {
       if (queue.inFlight) {
-        queue.queued = {
-          turnInput: `t${i}`,
-          turnOutput: `o${i}`,
-          workingDir: null,
-          oversizeRetried: false,
-        };
+        queue.queued = [
+          ...queue.queued,
+          { turnInput: `t${i}`, turnOutput: `o${i}`, workingDir: null, oversizeRetried: false },
+        ];
       }
     }
 
-    expect(queue.queued).toEqual({
-      turnInput: 't9',
-      turnOutput: 'o9',
-      workingDir: null,
-      oversizeRetried: false,
-    });
+    expect(queue.queued).toHaveLength(10);
+
+    const merged = mergeQueuedSummarizerEntries(queue.queued);
+    expect(merged.turnInput).toContain('t0');
+    expect(merged.turnInput).toContain('t9');
+    expect(merged.turnOutput).toContain('o0');
+    expect(merged.turnOutput).toContain('o9');
 
     sq.delete(SESSION_ID);
+  });
+
+  it('merges the queued turns into one pass instead of running one pass per turn', async () => {
+    const { mergeQueuedSummarizerEntries } = await import('./turn-helpers');
+
+    const merged = mergeQueuedSummarizerEntries([
+      {
+        turnInput: 'first input',
+        turnOutput: 'first output',
+        workingDir: null,
+        oversizeRetried: false,
+      },
+      {
+        turnInput: 'second input',
+        turnOutput: 'second output',
+        workingDir: null,
+        oversizeRetried: false,
+      },
+    ]);
+
+    expect(merged.turnInput).toBe('Turn 1:\nfirst input\n\n---\n\nTurn 2:\nsecond input');
+    expect(merged.turnOutput).toBe('Turn 1:\nfirst output\n\n---\n\nTurn 2:\nsecond output');
+  });
+
+  it('drops the oldest turns behind a note once the merged text passes the budget', async () => {
+    const { mergeQueuedSummarizerEntries } = await import('./turn-helpers');
+
+    const big = 'x'.repeat(15_000);
+    const merged = mergeQueuedSummarizerEntries([
+      { turnInput: big, turnOutput: big, workingDir: null, oversizeRetried: false },
+      { turnInput: big, turnOutput: big, workingDir: null, oversizeRetried: false },
+      {
+        turnInput: 'latest input',
+        turnOutput: 'latest output',
+        workingDir: null,
+        oversizeRetried: false,
+      },
+    ]);
+
+    expect(merged.turnInput).toContain('earlier turn');
+    expect(merged.turnInput).toContain('latest input');
+    expect(merged.turnInput).not.toContain(big);
   });
 
   it('waitForSummarizerSettled is not exported, summarizer never blocks user actions (#461)', async () => {
@@ -714,26 +750,24 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     const queue = {
       inFlight: true,
-      queued: null as null | {
+      queued: [] as ReadonlyArray<{
         turnInput: string;
         turnOutput: string;
         workingDir: string | null;
         oversizeRetried: boolean;
-      },
+      }>,
     };
     sq.set(SESSION_ID, queue);
 
     const before = Date.now();
-    queue.queued = {
-      turnInput: 'next-input',
-      turnOutput: '',
-      workingDir: null,
-      oversizeRetried: false,
-    };
+    queue.queued = [
+      ...queue.queued,
+      { turnInput: 'next-input', turnOutput: '', workingDir: null, oversizeRetried: false },
+    ];
     const elapsed = Date.now() - before;
 
     expect(elapsed).toBeLessThan(50);
-    expect(queue.queued?.turnInput).toBe('next-input');
+    expect(queue.queued.at(-1)?.turnInput).toBe('next-input');
     expect(queue.inFlight).toBe(true);
 
     sq.delete(SESSION_ID);
@@ -770,9 +804,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -846,9 +878,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -917,9 +947,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -962,6 +990,62 @@ describe('summarizer queue, coalescing and no-stack', () => {
     expect(upsertContextSlotSpy).not.toHaveBeenCalled();
   });
 
+  it('reads every turn that finished while a pass was in flight, not only the last one', async () => {
+    let resolveFirst: () => void = () => undefined;
+    summarizeSpy
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValue(undefined);
+    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    queues.clear();
+    useAppStore.setState({
+      sessions: [buildSession()],
+      sessionSlots: { [SESSION_ID]: [] },
+      summarizerStatus: {},
+    });
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'first agent turn',
+      turnOutput: 'first agent output',
+      workingDir: null,
+    });
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
+
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'second agent turn',
+      turnOutput: 'second agent output',
+      workingDir: null,
+    });
+    enqueueSummarizer({
+      set: useAppStore.setState,
+      get: useAppStore.getState,
+      sessionId: SESSION_ID,
+      turnInput: 'third agent turn',
+      turnOutput: 'third agent output',
+      workingDir: null,
+    });
+    resolveFirst();
+
+    await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
+
+    const followUp = summarizeInputCalls[1];
+    expect(followUp?.turnInput).toContain('second agent turn');
+    expect(followUp?.turnInput).toContain('third agent turn');
+    expect(followUp?.turnOutput).toContain('second agent output');
+    expect(followUp?.turnOutput).toContain('third agent output');
+  });
+
   it('re-enqueues only once when every pass changes an oversize slot', async () => {
     summarizerUpsertSequence = Array.from({ length: 10 }, (_, index) => [
       { key: 'goal', value: `${index}${'x'.repeat(561)}` },
@@ -980,9 +1064,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1034,9 +1116,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,

@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { SectionSurface, cn } from '@goodboy/ui';
+import { Band, cn } from '@goodboy/ui';
 import type { Agent, PlanId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -66,7 +66,8 @@ export const AgentFollowUps = ({
   };
 
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Continue"
       hint={
         pending.length > 0
@@ -84,7 +85,7 @@ export const AgentFollowUps = ({
             type="button"
             onClick={() => onSpawn(move.kind)}
             className={cn(
-              'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-xs transition-colors hover:border-border',
+              'group flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-left text-label transition-colors hover:border-border',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             )}
           >
@@ -98,6 +99,6 @@ export const AgentFollowUps = ({
           </button>
         ))}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

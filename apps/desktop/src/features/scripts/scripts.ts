@@ -26,6 +26,7 @@ export type ScriptSource = 'package-json' | 'composer';
 export type DiscoveredScript = {
   readonly name: string;
   readonly command: string;
+  readonly body: string;
 };
 
 export type ScriptGroup = {

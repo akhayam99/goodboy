@@ -20,9 +20,7 @@ async function makeSeededDb(): Promise<DbInterface> {
       slug: 'test',
       overrides: {
         defaultProviderId: null,
-        defaultWorkflowId: null,
         defaultBranchPrefix: null,
-        parallelEnabled: null,
         defaultVerbosity: null,
         providerBindings: null,
         taskModels: null,

@@ -19,10 +19,12 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
       className="min-w-0 flex-1 text-left"
       aria-label={`Show ${run.scriptName} output from ${run.sessionGoal}`}
     >
-      <span className="block truncate text-xs font-medium text-foreground">{run.scriptName}</span>
-      <span className="block truncate text-2xs text-muted-foreground">{run.sessionGoal}</span>
+      <span className="block truncate text-label font-medium text-foreground">
+        {run.scriptName}
+      </span>
+      <span className="block truncate text-secondary text-muted-foreground">{run.sessionGoal}</span>
     </button>
-    <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+    <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
       {formatScriptDuration({ durationMs: now - run.startedAt })}
     </span>
     <Tooltip content={`Stop ${run.scriptName}`}>

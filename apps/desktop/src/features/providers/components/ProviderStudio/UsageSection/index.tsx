@@ -1,6 +1,6 @@
 import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
-import { Notice, SectionHeader } from '@goodboy/ui';
+import { Notice, STRIPED_LIST, STRIPED_MIN_ROWS, SectionHeader, cn } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useAutoDetour } from '../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../hooks/useProviderLimitsChip';
@@ -40,16 +40,19 @@ export const UsageSection = ({ providerId, billing }: Props) => {
           label="Usage limits"
           action={
             reportedBy === null ? undefined : (
-              <span className="text-2xs text-faint-foreground">{reportedBy}</span>
+              <span className="text-secondary text-faint-foreground">{reportedBy}</span>
             )
           }
         />
         {billing === 'token' ? (
-          <p className="text-xs text-muted-foreground">Billed per token. No usage windows.</p>
+          <p className="text-label text-muted-foreground">Billed per token. No usage windows.</p>
         ) : (
           <>
             {windows.length > 0 ? (
-              <ul aria-label={`${label} usage windows`} className="flex flex-col">
+              <ul
+                aria-label={`${label} usage windows`}
+                className={cn('flex flex-col', windows.length >= STRIPED_MIN_ROWS && STRIPED_LIST)}
+              >
                 {windows.map((window) => (
                   <UsageWindowRow
                     key={`${window.kind}:${window.model ?? ''}`}
@@ -69,7 +72,11 @@ export const UsageSection = ({ providerId, billing }: Props) => {
               />
             )}
             {reports ? (
-              <p className="text-2xs text-faint-foreground">{SOURCE_LINE[providerId]}</p>
+              <p className="text-secondary text-faint-foreground">
+                {providerId === 'anthropic' && windows.length === 1
+                  ? `${SOURCE_LINE[providerId] ?? ''} Claude reports only the window that limits you right now.`
+                  : SOURCE_LINE[providerId]}
+              </p>
             ) : null}
           </>
         )}

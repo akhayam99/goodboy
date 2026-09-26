@@ -25,7 +25,7 @@ describe('DiffStat', () => {
     const sized = screen.getByTestId('diff-stat');
 
     expect(sized.textContent).toBe('+1-2');
-    expect(sized.className).toContain('text-xs');
+    expect(sized.className).toContain('text-label');
     cleanup();
 
     render(<DiffStat additions={1} deletions={2} size="inherit" />);

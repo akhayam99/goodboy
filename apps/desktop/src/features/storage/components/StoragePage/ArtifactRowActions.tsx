@@ -87,7 +87,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
           items={keepItems}
           label="Keep"
           disabled={isBusy}
-          triggerClassName="flex items-center gap-1 px-2 text-xs"
+          triggerClassName="flex items-center gap-1 px-2 text-label"
           trigger={
             <>
               Keep

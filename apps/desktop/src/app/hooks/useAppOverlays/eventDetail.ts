@@ -14,7 +14,7 @@ import {
   type InboxProvider,
 } from '../../../features/inbox/types';
 import type { SettingsStudioScope } from '../../../features/settings/components/SettingsStudio/types';
-import type { Overlay } from './overlayState';
+import type { StudioPlace } from '../../../store';
 
 type EventValueParams = {
   readonly event: Event;
@@ -75,7 +75,7 @@ export const eventSessionId = (event: Event): SessionId | null => {
   return isSessionId(sessionId) && sessionId !== '' ? sessionId : null;
 };
 
-export const settingsOverlayFromEvent = (event: Event): Overlay => {
+export const settingsOverlayFromEvent = (event: Event): StudioPlace => {
   const scope = eventValue({ event, key: 'scope' });
   const tool = eventValue({ event, key: 'tool' });
   const section = eventValue({ event, key: 'section' });
@@ -94,7 +94,7 @@ export const settingsOverlayFromEvent = (event: Event): Overlay => {
   };
 };
 
-export const inboxOverlayFromEvent = (event: Event): Overlay => {
+export const inboxOverlayFromEvent = (event: Event): StudioPlace => {
   const provider = eventValue({ event, key: 'provider' });
   const kind = eventValue({ event, key: 'kind' });
   const recordKey = eventValue({ event, key: 'recordKey' });
@@ -109,7 +109,7 @@ export const inboxOverlayFromEvent = (event: Event): Overlay => {
   };
 };
 
-export const impactOverlayFromEvent = (event: Event): Overlay => {
+export const impactOverlayFromEvent = (event: Event): StudioPlace => {
   const scope = eventValue({ event, key: 'scope' });
   return { kind: 'impact', scope: isImpactScope(scope) ? scope : null };
 };

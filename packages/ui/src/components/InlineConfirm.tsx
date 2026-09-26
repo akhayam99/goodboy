@@ -92,7 +92,7 @@ export const InlineConfirm = ({
       aria-label={title}
       data-surface={surface}
       className={cn(
-        'flex min-w-0 flex-col gap-2 text-2xs',
+        'flex min-w-0 flex-col gap-2 text-secondary',
         surface === 'card' ? cn('rounded-lg border p-2.5', tint.border, tint.bg) : 'p-3',
         className,
       )}

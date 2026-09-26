@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId } from '../project-mounts/selectors';
+import { sessionPlace } from '../navigation/place';
 import { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
 import type {
   GetFn,
@@ -84,7 +85,7 @@ export const openReviewTarget = async ({
           ? { ...base, status: 'unavailable', reason: outcome.reason }
           : { ...base, status: 'failed', error: outcome.error };
     writeTarget({ set, sessionId, target });
-    get().setActiveLens(sessionId, 'review');
+    get().navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
     return outcome;
   };
 

@@ -14,7 +14,7 @@ export const FacetKeyHints = ({ hints }: Props) => (
     <Eyebrow label="Keys" muted />
     <dl className="flex flex-col gap-1">
       {hints.map((hint) => (
-        <div key={hint.label} className="flex items-center justify-between gap-2 text-2xs">
+        <div key={hint.label} className="flex items-center justify-between gap-2 text-secondary">
           <dt className="text-muted-foreground">{hint.label}</dt>
           <dd className="flex items-center gap-1">
             {hint.keys.map((key) => (

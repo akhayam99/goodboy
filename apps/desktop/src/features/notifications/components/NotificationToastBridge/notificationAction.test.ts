@@ -29,9 +29,7 @@ const publishConversationsSpy = vi.fn(async () => ({
   commented: 0,
   failed: 0,
 }));
-const setCurrentSessionSpy = vi.fn(async () => undefined);
-const setActiveLensSpy = vi.fn();
-const selectAgentSpy = vi.fn(async () => undefined);
+const navigateSpy = vi.fn();
 const emitNotificationSpy = vi.fn(async () => undefined);
 
 type FakeStore = {
@@ -43,9 +41,7 @@ type FakeStore = {
   retryStepSummary: typeof retryStepSummarySpy;
   retryPublication: typeof retryPublicationSpy;
   publishConversations: typeof publishConversationsSpy;
-  setCurrentSession: typeof setCurrentSessionSpy;
-  setActiveLens: typeof setActiveLensSpy;
-  selectAgent: typeof selectAgentSpy;
+  navigate: typeof navigateSpy;
   emitNotification: typeof emitNotificationSpy;
 };
 
@@ -56,9 +52,7 @@ function buildStore(overrides: Partial<FakeStore> = {}): FakeStore {
     retryStepSummary: retryStepSummarySpy,
     retryPublication: retryPublicationSpy,
     publishConversations: publishConversationsSpy,
-    setCurrentSession: setCurrentSessionSpy,
-    setActiveLens: setActiveLensSpy,
-    selectAgent: selectAgentSpy,
+    navigate: navigateSpy,
     emitNotification: emitNotificationSpy,
     ...overrides,
   };
@@ -141,9 +135,9 @@ describe('mapNotificationAction', () => {
     toastAction?.onClick();
     await vi.waitFor(() => expect(revealed).toHaveBeenCalled());
 
-    expect(setCurrentSessionSpy).toHaveBeenCalledWith(SESSION_ID);
-    expect(setActiveLensSpy).toHaveBeenCalledWith(SESSION_ID, 'agents');
-    expect(selectAgentSpy).toHaveBeenCalledWith(SESSION_ID, AGENT_ID);
+    expect(navigateSpy).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: AGENT_ID },
+    });
     window.removeEventListener('goodboy:reveal-chat', revealed);
   });
 

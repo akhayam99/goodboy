@@ -101,7 +101,7 @@ export const WorkspaceLauncher = () => {
       <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
           <DogMascot size={56} className="text-primary" />
-          <h1 className="text-lg font-semibold text-foreground">Open a workspace</h1>
+          <h1 className="text-title text-foreground">Open a workspace</h1>
         </div>
 
         <div className="relative">
@@ -116,7 +116,7 @@ export const WorkspaceLauncher = () => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search workspaces or paths…"
-            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-4 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           />
         </div>
 

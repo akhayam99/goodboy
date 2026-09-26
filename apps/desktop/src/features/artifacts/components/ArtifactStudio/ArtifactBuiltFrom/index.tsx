@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Button, Collapsible, SectionSurface, Eyebrow, Skeleton } from '@goodboy/ui';
+import { Button, Collapsible, Band, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
 import { BuiltFromRow } from './BuiltFromRow';
@@ -61,20 +61,20 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
 
   if (state.kind === 'loading') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
         <div role="status" aria-label="Loading built from" className="flex flex-col gap-2">
           <Skeleton className="h-3 w-2/3 rounded-sm" />
           <Skeleton className="h-3 w-1/2 rounded-sm" />
         </div>
-      </SectionSurface>
+      </Band>
     );
   }
 
   if (state.kind === 'failed') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             The record of this generation did not load.
           </p>
           <Button size="sm" variant="ghost" onClick={() => setLoadAttempt((n) => n + 1)}>
@@ -82,18 +82,18 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             Retry
           </Button>
         </div>
-      </SectionSurface>
+      </Band>
     );
   }
 
   if (state.kind === 'missing') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
-        <p data-testid="built-from-missing" className="text-xs text-muted-foreground">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
+        <p data-testid="built-from-missing" className="text-label text-muted-foreground">
           nothing was recorded for this generation. artifacts made before goodboy started keeping
           the request and the evidence behind them carry no record of either.
         </p>
-      </SectionSurface>
+      </Band>
     );
   }
 
@@ -104,7 +104,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
       : provenance.evidence.slice(0, EVIDENCE_PREVIEW);
 
   return (
-    <SectionSurface label="Built from" ariaLabel="Built from">
+    <Band inset="content" label="Built from" ariaLabel="Built from">
       <div data-testid="built-from" className="flex min-w-0 flex-col gap-3">
         <BuiltFromRow label="Brief">{provenance.brief ?? 'No brief was given'}</BuiltFromRow>
         <BuiltFromRow label="Based on">
@@ -121,7 +121,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
         <div className="flex min-w-0 flex-col gap-1">
           <Eyebrow label="Evidence sent" />
           {provenance.evidence.length === 0 ? (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-label text-muted-foreground">
               no session source was named in the pack
             </span>
           ) : (
@@ -130,7 +130,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
                 <li
                   key={`${entry.kind}-${entry.id}`}
                   data-testid="built-from-evidence"
-                  className="flex min-w-0 items-baseline gap-2 text-xs"
+                  className="flex min-w-0 items-baseline gap-2 text-label"
                 >
                   <Eyebrow label={entry.kind} className="shrink-0" />
                   <span className="min-w-0 truncate text-foreground">{entry.label}</span>
@@ -142,7 +142,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             <button
               type="button"
               data-testid="built-from-evidence-more"
-              className="self-start text-2xs text-muted-foreground hover:text-foreground"
+              className="self-start text-secondary text-muted-foreground hover:text-foreground"
               onClick={() => setIsEvidenceOpen(true)}
             >
               show all {provenance.evidence.length}
@@ -158,17 +158,17 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           <Collapsible
             open={isProfileOpen}
             onOpenChange={setIsProfileOpen}
-            trigger={<span className="text-xs">design profile</span>}
+            trigger={<span className="text-label">design profile</span>}
           >
             <pre
               data-testid="built-from-design-profile"
-              className="min-w-0 whitespace-pre-wrap break-words text-2xs text-muted-foreground"
+              className="min-w-0 whitespace-pre-wrap break-words text-secondary text-muted-foreground"
             >
               {provenance.designProfileSummary}
             </pre>
           </Collapsible>
         )}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

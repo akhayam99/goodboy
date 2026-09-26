@@ -1,5 +1,5 @@
 import type { Project, ProjectId } from '@goodboy/types';
-import { Select } from '@goodboy/ui';
+import { Listbox } from '@goodboy/ui';
 
 type Props = {
   readonly projects: ReadonlyArray<Project>;
@@ -9,16 +9,11 @@ type Props = {
 };
 
 export const ProjectSelect = ({ projects, projectId, ariaLabel, onChange }: Props) => (
-  <Select
+  <Listbox
     size="sm"
     value={projectId}
-    aria-label={ariaLabel}
-    onChange={(event) => onChange(event.target.value as ProjectId)}
-  >
-    {projects.map((project) => (
-      <option key={project.id} value={project.id}>
-        {project.name}
-      </option>
-    ))}
-  </Select>
+    ariaLabel={ariaLabel}
+    options={projects.map((project) => ({ value: project.id, label: project.name }))}
+    onChange={onChange}
+  />
 );

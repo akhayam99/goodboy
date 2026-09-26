@@ -14,7 +14,7 @@ export const ManualNote = ({ reason, docsUrl, docsLabel }: Props) => {
         href={docsUrl}
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center gap-1.5 text-secondary text-muted-foreground transition-colors hover:text-foreground"
       >
         <span>{docsLabel}</span>
         <ExternalLink size={10} aria-hidden />

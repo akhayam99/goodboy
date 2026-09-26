@@ -38,7 +38,7 @@ export const getWorkspaceOverrides = async (
   workspaceId: WorkspaceId,
 ): Promise<OverrideSettings | null> => {
   const rows = await db.select<OverrideRow>(
-    `SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, ${REPLY_SETTING_COLUMNS}
+    `SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer, ${REPLY_SETTING_COLUMNS}
      FROM workspaces WHERE id = ?`,
     [workspaceId],
   );
@@ -54,9 +54,7 @@ export const setWorkspaceOverrides = async (
   await db.execute(
     `UPDATE workspaces
      SET default_provider_id = ?,
-         default_workflow_id = ?,
          default_branch_prefix = ?,
-         parallel_enabled = ?,
          default_verbosity = ?,
          provider_bindings = ?,
          task_models = ?,
@@ -74,9 +72,7 @@ export const setWorkspaceOverrides = async (
      WHERE id = ?`,
     [
       overrides.defaultProviderId,
-      overrides.defaultWorkflowId,
       overrides.defaultBranchPrefix,
-      overrides.parallelEnabled === null ? null : overrides.parallelEnabled ? 1 : 0,
       overrides.defaultVerbosity,
       serializeBindings(overrides.providerBindings),
       serializeTaskModels(overrides.taskModels),

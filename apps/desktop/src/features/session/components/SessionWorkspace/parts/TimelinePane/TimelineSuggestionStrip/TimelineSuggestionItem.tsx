@@ -19,7 +19,7 @@ export const TimelineSuggestionItem = ({ suggestion, actions }: Props) => {
       className="flex min-h-6 min-w-0 items-center gap-2"
     >
       <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', tintClasses('info').icon)} />
-      <span className="truncate text-xs font-medium text-foreground">{suggestion.title}</span>
+      <span className="truncate text-label font-medium text-foreground">{suggestion.title}</span>
       {suggestion.detail == null ? null : (
         <span className="truncate text-2xs text-muted-foreground @max-md/activity:hidden">
           {suggestion.detail}

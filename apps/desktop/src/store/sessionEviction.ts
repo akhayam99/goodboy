@@ -19,9 +19,7 @@ export const SESSION_EVICTION = [
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewModes', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveQueueView', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'resolveDiffReturn', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'resolvePublicationReturn', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'resolveAgentReturn', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'resolvePublicationRequest', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveItemDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveUncapturedWork', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activePublicationPreview', keyedBy: 'session', evictOn: 'archive' },
@@ -72,7 +70,6 @@ export const SESSION_EVICTION = [
   { key: 'discoveredScriptScans', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionPanelExpanded', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activeLens', keyedBy: 'session', evictOn: 'archive' },
-  { key: 'lensHistory', keyedBy: 'session', evictOn: 'archive' },
   { key: 'workflowExpand', keyedBy: 'session', evictOn: 'archive' },
   { key: 'focusedWorkflowRunId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'diffFocus', keyedBy: 'session', evictOn: 'archive' },
@@ -127,6 +124,7 @@ export const SESSION_EVICTION = [
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'revealedActivityRows', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [
@@ -219,6 +217,8 @@ export const NON_SESSION_STATE_KEYS = [
   'changelogFocusVersion',
   'bugReportDraft',
   'drawer',
+  'navigation',
+  'appStudio',
   'slackChannels',
   'slackUsers',
   'slackThreadHeads',

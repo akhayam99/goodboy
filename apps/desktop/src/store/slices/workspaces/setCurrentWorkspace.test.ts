@@ -86,9 +86,7 @@ const NOW = '2026-09-12T00:00:00.000Z' as IsoDateTime;
 
 const overrides = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

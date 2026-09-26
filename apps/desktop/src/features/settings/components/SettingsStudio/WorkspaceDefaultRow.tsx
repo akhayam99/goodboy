@@ -11,7 +11,7 @@ type Props = {
 
 export const WorkspaceDefaultRow = ({ label, help, children }: Props) => (
   <div className="flex min-h-9 min-w-0 items-center justify-between gap-3">
-    <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-foreground">
+    <span className="flex min-w-0 items-center gap-1.5 text-label font-medium text-foreground">
       <span className="truncate">{label}</span>
       <Tooltip content={help} anchorClassName="flex shrink-0">
         <span

@@ -35,7 +35,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
           onClick={openPane}
           title="Open merge request"
           className={cn(
-            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs ring-1 transition-colors hover:bg-hover',
+            'flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-label ring-1 transition-colors hover:bg-hover',
             mr
               ? 'ring-border-soft'
               : 'text-faint-foreground ring-border-soft hover:text-foreground',
@@ -46,13 +46,13 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
               <span className="inline-flex items-center gap-1 font-medium">
                 <GitMerge size={11} aria-hidden />!{mr.iid}
               </span>
-              <span className="text-2xs text-muted-foreground">{mr.state}</span>
+              <span className="text-secondary text-muted-foreground">{mr.state}</span>
               {mr.draft ? (
                 <span
                   className={cn(
                     'rounded-sm',
                     tintClasses('warning').bg,
-                    'px-1 py-px text-3xs font-medium uppercase tracking-eyebrow text-warning',
+                    'px-1 py-px text-meta font-medium uppercase tracking-eyebrow text-warning',
                   )}
                 >
                   draft
@@ -77,7 +77,7 @@ export const GitlabMrStrip = ({ sessionId, onOpenStudio }: Props) => {
         />
       </div>
       {error ? (
-        <span className="px-1 text-2xs text-danger" title={error}>
+        <span className="px-1 text-secondary text-danger" title={error}>
           {error}
         </span>
       ) : null}

@@ -1,5 +1,5 @@
 import { AlertTriangle, GitBranch } from 'lucide-react';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { ProjectGitDetail } from './ProjectGitDetail';
 import { projectGitPresentationOf } from './projectGitPresentationOf';
@@ -28,7 +28,7 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
       dropdown={dropdown}
       role="dialog"
       ariaLabel={`${project.name} git status`}
-      className={cn('max-h-[min(32rem,calc(100vh-2rem))] overflow-y-auto', isSetup && 'w-96')}
+      className={cn('flex max-h-[min(32rem,calc(100vh-2rem))] flex-col', isSetup && 'w-96')}
       trigger={
         <button
           type="button"
@@ -37,7 +37,7 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
           aria-expanded={dropdown.open}
           onClick={dropdown.toggle}
           className={cn(
-            'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'relative inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-label font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             actionableCount > 0 || isWarning
               ? 'text-foreground hover:bg-hover'
               : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -52,7 +52,7 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
           ) : uncommittedCount > 0 ? (
             <span
               data-testid="project-git-count"
-              className="shrink-0 text-2xs tabular-nums text-warning"
+              className="shrink-0 text-secondary tabular-nums text-warning"
             >
               {uncommittedCount} uncommitted
             </span>
@@ -60,7 +60,9 @@ export const ProjectGitPill = ({ project, status, shouldShowProjectName }: Props
         </button>
       }
     >
-      <ProjectGitDetail project={project} status={status} />
+      <PopoverBody>
+        <ProjectGitDetail project={project} status={status} />
+      </PopoverBody>
     </AnchoredPopover>
   );
 };

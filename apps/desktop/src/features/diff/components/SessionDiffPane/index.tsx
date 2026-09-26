@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
-import { AlertTriangle, Copy, ExternalLink, GitBranch, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, type ReactNode } from 'react';
+import { Copy, ExternalLink, GitBranch, RefreshCw } from 'lucide-react';
 import {
   Button,
   ErrorStrip,
@@ -7,16 +7,19 @@ import {
   OverflowMenu,
   PageColumn,
   Skeleton,
+  cn,
   formatError,
   type OverflowMenuItem,
 } from '@goodboy/ui';
-import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
+import type { BranchCommit, DiffView as DiffViewKind, MountId, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
+import { branchStateOf } from '../../../session/trail/menus/branchMenu';
+import { PushBranchButton } from './PushBranchButton';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_DEFAULT_EDITOR,
@@ -32,15 +35,19 @@ import { DiffNotesDock } from '../DiffNotesDock';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
+export type BranchActionParams = {
+  readonly mountId: MountId | null;
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly onRewritten: () => void;
+};
+
 type Props = {
   readonly sessionId: SessionId;
   readonly workingDir: string | null;
   readonly worktreePath: string;
   readonly diffFocus: DiffFocus | null;
   readonly branchRevision: number;
-  readonly headerActions?: ReactNode;
-  readonly aboveBody?: ReactNode;
-  readonly onContentEmptyChange?: (isEmpty: boolean) => void;
+  readonly renderBranchActions?: (params: BranchActionParams) => ReactNode;
 };
 
 const emptyTitle = (view: DiffViewKind): string => {
@@ -81,9 +88,7 @@ export const SessionDiffPane = ({
   worktreePath,
   diffFocus,
   branchRevision,
-  headerActions,
-  aboveBody,
-  onContentEmptyChange,
+  renderBranchActions,
 }: Props) => {
   const diff = useSessionDiff({ sessionId, worktreePath, diffFocus, branchRevision });
   const { comments, openNotes } = useDiffNotes({ sessionId });
@@ -100,9 +105,9 @@ export const SessionDiffPane = ({
   const emitNotification = useAppStore((s) => s.emitNotification);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
-  useEffect(() => {
-    onContentEmptyChange?.(diff.error === null && diff.files.length === 0);
-  }, [diff.error, diff.files.length, onContentEmptyChange]);
+  const mount = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath }) ?? null,
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -142,34 +147,36 @@ export const SessionDiffPane = ({
   const ahead = mainDistance === null ? null : distanceAhead({ distance: mainDistance });
   const behind = mainDistance === null ? null : distanceBehind({ distance: mainDistance });
 
-  const meta =
-    diff.loading || diff.error !== null ? null : (
-      <span className="flex flex-wrap items-center gap-1.5">
-        <span>
-          {diff.files.length} {diff.files.length === 1 ? 'file' : 'files'}
-        </span>
-        <span aria-hidden>·</span>
-        <span className="text-success">+{totals.adds}</span>
-        <span className="text-danger">−{totals.dels}</span>
-        {ahead !== null ? (
-          <>
-            <span aria-hidden>·</span>
-            <span>
-              {ahead} {ahead === 1 ? 'commit' : 'commits'}
-            </span>
-          </>
-        ) : null}
-        {behind !== null && behind > 0 ? (
-          <>
-            <span aria-hidden>·</span>
-            <span className="inline-flex items-center gap-1 text-warning">
-              <AlertTriangle size={10} aria-hidden />
-              behind main by {behind}
-            </span>
-          </>
-        ) : null}
-      </span>
-    );
+  const branchState = branchStateOf({ status: diff.status });
+  const meta = (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {mount !== null ? <span>{mount.mountName}</span> : null}
+      {ahead !== null ? (
+        <>
+          <span aria-hidden>·</span>
+          <span>
+            {ahead} {ahead === 1 ? 'commit' : 'commits'}
+          </span>
+        </>
+      ) : null}
+      {branchState !== null ? (
+        <>
+          <span aria-hidden>·</span>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1',
+              branchState.tone === 'warning' && 'text-warning',
+            )}
+          >
+            {branchState.glyph !== undefined ? <branchState.glyph size={10} aria-hidden /> : null}
+            {branchState.word}
+          </span>
+        </>
+      ) : null}
+    </span>
+  );
+  const isLocalOnly = diff.status !== null && diff.status.upstream === null;
+  const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
 
   const overflow: OverflowMenuItem[] = [
     {
@@ -194,6 +201,17 @@ export const SessionDiffPane = ({
           },
         ]
       : []),
+    ...(mount !== null && mount.branch !== ''
+      ? [
+          {
+            kind: 'item' as const,
+            key: 'copy-branch',
+            label: 'Copy branch name',
+            icon: Copy,
+            onClick: () => void navigator.clipboard?.writeText(mount.branch),
+          },
+        ]
+      : []),
     ...(diff.patch !== ''
       ? [
           {
@@ -207,22 +225,37 @@ export const SessionDiffPane = ({
       : []),
   ];
 
+  const primary = canRebase ? (
+    <Button
+      variant="primary"
+      size="sm"
+      onClick={() => {
+        if (mountId === null) {
+          return;
+        }
+        void rebase.run({ mountId });
+      }}
+      disabled={rebase.isRunning}
+      title={rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'}
+    >
+      <GitBranch size={ICON_SIZE.row} aria-hidden />
+      Rebase on main
+    </Button>
+  ) : isLocalOnly && mountId !== null && (ahead ?? diff.commits.length) > 0 ? (
+    <PushBranchButton sessionId={sessionId} mountId={mountId} />
+  ) : null;
+
   const actions = (
     <>
-      {rebase.canRebase && mountId !== null && behind !== null && behind > 0 ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => void rebase.run({ mountId })}
-          disabled={rebase.isRunning}
-          title={rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'}
-        >
-          <GitBranch size={ICON_SIZE.row} aria-hidden />
-          Rebase
-        </Button>
-      ) : null}
       <ResolveOverviewAction sessionId={sessionId} />
-      {headerActions}
+      {renderBranchActions?.({ mountId, commits: diff.commits, onRewritten: diff.refresh })}
+      {primary}
+      <OverflowMenu items={overflow} label="More diff actions" align="right" />
+    </>
+  );
+
+  const toolbar = (
+    <div className="flex min-w-0 items-center gap-2">
       <DiffViewSelector
         view={diff.view}
         onChange={diff.setView}
@@ -231,20 +264,28 @@ export const SessionDiffPane = ({
         filesCount={diff.loading || diff.error !== null ? null : diff.files.length}
         loading={diff.loading}
       />
-      <OverflowMenu items={overflow} label="More diff actions" align="right" />
-    </>
+      {diff.loading || diff.error !== null ? null : (
+        <span className="flex items-center gap-1.5 text-secondary tabular-nums text-muted-foreground">
+          <span>
+            {diff.files.length} {diff.files.length === 1 ? 'file' : 'files'}
+          </span>
+          <span className="text-success">+{totals.adds}</span>
+          <span className="text-danger">−{totals.dels}</span>
+        </span>
+      )}
+    </div>
   );
 
   const notices =
     rebase.error !== null || diff.metaError !== null ? (
       <PageColumn className="pb-2">
         {rebase.error !== null ? (
-          <p role="alert" className="text-2xs text-danger" title={rebase.error}>
+          <p role="alert" className="text-secondary text-danger" title={rebase.error}>
             {rebase.error}
           </p>
         ) : null}
         {diff.metaError !== null ? (
-          <p role="status" className="text-2xs text-muted-foreground" title={diff.metaError}>
+          <p role="status" className="text-secondary text-muted-foreground" title={diff.metaError}>
             Couldn't read this branch's commits.
           </p>
         ) : null}
@@ -290,6 +331,7 @@ export const SessionDiffPane = ({
       title={DIFF_PANE_TITLE}
       meta={meta}
       actions={actions}
+      tabs={toolbar}
       scroll="self"
       dock={
         openNotes.length > 0 && !isEmpty ? (
@@ -298,7 +340,6 @@ export const SessionDiffPane = ({
       }
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {aboveBody}
         {notices}
         {body}
       </div>

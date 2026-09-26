@@ -21,7 +21,7 @@ export const ArtifactRoutingControl = ({
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <span className="text-2xs text-muted-foreground">Runs on</span>
+      <span className="text-secondary text-muted-foreground">Runs on</span>
       <RoutingPicker
         ariaLabel="Artifact routing"
         variant="pill"

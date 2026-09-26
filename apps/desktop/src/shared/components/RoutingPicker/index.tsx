@@ -194,7 +194,7 @@ export const RoutingPicker = ({
               aria-expanded={open}
               aria-label={ariaLabel != null ? `${ariaLabel}: ${summary}` : summary}
               className={cn(
-                'items-center gap-1.5 text-xs transition-colors',
+                'items-center gap-1.5 text-label transition-colors',
                 variant === 'pill'
                   ? 'inline-flex rounded-full px-2.5 py-0.5'
                   : 'flex w-full rounded-md border px-2 py-1.5 text-left',

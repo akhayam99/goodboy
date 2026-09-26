@@ -52,7 +52,7 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
         />
       </button>
       {error !== null && (
-        <span role="status" className="min-w-0 truncate text-2xs text-danger">
+        <span role="status" className="min-w-0 truncate text-secondary text-danger">
           {error}
         </span>
       )}

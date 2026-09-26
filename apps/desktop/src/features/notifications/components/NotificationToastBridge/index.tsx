@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Notification, NotificationAction } from '@goodboy/db';
 import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
 import { useToast, type ToastAction } from '../../../../app/components/Toast';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
@@ -80,14 +80,8 @@ export const mapNotificationAction = (
     return {
       label: 'Open agent',
       onClick: () => {
-        void (async () => {
-          await store.setCurrentSession(sessionId);
-          store.setActiveLens(sessionId, 'agents');
-          await store.selectAgent(sessionId, agentId);
-          window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-        })().catch((error: unknown) => {
-          void store.reportError({ title: "Couldn't open this notification", error });
-        });
+        store.navigate({ to: agentPlace({ sessionId, agentId }) });
+        window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
       },
     };
   }
@@ -165,9 +159,7 @@ export const mapNotificationAction = (
     return {
       label: 'Show output',
       onClick: () => {
-        void store.setCurrentSession(sessionId).then(() => {
-          store.setActiveLens(sessionId, lens);
-        });
+        store.navigate({ to: sessionPlace({ sessionId, lens }) });
       },
     };
   }

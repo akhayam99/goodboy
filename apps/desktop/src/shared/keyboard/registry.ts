@@ -97,8 +97,8 @@ export const SHORTCUTS = {
     family: 'workspace-digit',
   },
 
-  'lens.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
-  'lens.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
+  'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
+  'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
   'column.toggle': {
     combo: 'cmd+KeyB',
     label: 'Show or hide the session sidebar',
@@ -107,7 +107,7 @@ export const SHORTCUTS = {
   },
   'session.board': {
     combo: 'cmd+shift+KeyH',
-    label: 'Back to board',
+    label: 'Board',
     plane: 'session',
     group: 'navigate',
   },
@@ -192,7 +192,7 @@ export const SHORTCUTS = {
   'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Artifacts', plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: 'Scripts', plane: 'lens', group: 'views' },
   'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens', group: 'views' },
-  'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Code host', plane: 'lens', group: 'views' },
+  'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Pull request', plane: 'lens', group: 'views' },
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens', group: 'views' },
   'lens.gitlab_issues': {
     combo: 'cmd+alt+Digit4',

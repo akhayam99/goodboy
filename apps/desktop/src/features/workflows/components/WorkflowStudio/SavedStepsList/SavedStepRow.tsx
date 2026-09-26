@@ -37,14 +37,14 @@ export const SavedStepRow = ({ step, note, isExpanded, editor, onToggle }: Props
         </span>
         <span
           className={cn(
-            'w-40 shrink-0 truncate text-sm text-foreground',
+            'w-40 shrink-0 truncate text-body text-foreground',
             isExpanded && 'font-medium',
           )}
         >
           {step.name}
         </span>
-        <span className="min-w-0 flex-1 truncate text-2xs text-faint-foreground">{note}</span>
-        <span className="flex w-36 shrink-0 justify-end text-2xs text-faint-foreground">
+        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">{note}</span>
+        <span className="flex w-36 shrink-0 justify-end text-secondary text-faint-foreground">
           {hasRouting ? (
             <RoutingLabel
               provider={step.providerDefault}

@@ -39,7 +39,7 @@ export const Popover = ({
       tabIndex={tabIndex}
       style={style}
       className={cn(
-        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-md border border-border bg-floating text-xs shadow-lg',
+        'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-floating text-label shadow-lg',
         className,
       )}
     >
@@ -53,7 +53,7 @@ export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
     className={cn('flex min-h-0 flex-1 flex-col', className)}
     viewportClassName="h-auto min-h-0 flex-1"
     fadeSize={12}
-    fadeFrom="elevated"
+    fadeFrom="floating"
   >
     {children}
   </ScrollFade>

@@ -6,7 +6,7 @@ type Props = {
 
 export const LinearLabelChip = ({ label }: Props) => {
   return (
-    <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 text-secondary text-muted-foreground">
       <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: label.color }} />
       {label.name}
     </span>

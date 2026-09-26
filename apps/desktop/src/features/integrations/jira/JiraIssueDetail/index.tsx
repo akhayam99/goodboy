@@ -7,9 +7,11 @@ import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
+import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { jiraIssueFields, resolveFacts } from '../../../../shared/detail-fields';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
+import { useJiraConfig } from '../useJiraConfig';
 import { useJiraIssueActions } from '../useJiraIssueActions';
 import { useJiraIssueComments } from '../useJiraIssueComments';
 import { AssigneePicker } from '../AssigneePicker';
@@ -35,6 +37,9 @@ export const JiraIssueDetail = ({
 }: Props) => {
   const actions = useJiraIssueActions({ issue, workspaceId, projectId, onWritten: onIssueWritten });
   const live = actions.issue;
+  const jiraConfig = useJiraConfig({ workspaceId });
+  const email = jiraConfig?.email ?? null;
+  const siteUrl = jiraConfig?.siteUrl ?? null;
   const { comments, isLoading, error, reload, post } = useJiraIssueComments({
     issue: live,
     workspaceId,
@@ -119,7 +124,15 @@ export const JiraIssueDetail = ({
             isCollapsible: false,
             defaultOpen: true,
             content: (
-              <DescriptionSection text={live.description} onSave={actions.saveDescription} />
+              <ToolImageScope
+                workspaceId={workspaceId}
+                projectId={projectId}
+                provider="jira"
+                email={email}
+                siteUrl={siteUrl}
+              >
+                <DescriptionSection text={live.description} onSave={actions.saveDescription} />
+              </ToolImageScope>
             ),
           },
           conversation.section,

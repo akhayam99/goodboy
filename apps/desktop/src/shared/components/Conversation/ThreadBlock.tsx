@@ -82,7 +82,7 @@ export const ThreadBlock = ({ thread, source, model, isHeadContinuation }: Props
       ) : null}
       {renderMessage(thread.head, null, true)}
       {resolveError == null ? null : (
-        <p role="alert" className="px-1.5 text-2xs text-danger">
+        <p role="alert" className="px-1.5 text-secondary text-danger">
           {resolveError}
         </p>
       )}
@@ -95,7 +95,7 @@ export const ThreadBlock = ({ thread, source, model, isHeadContinuation }: Props
                 type="button"
                 onClick={() => setIsEarlierOpen(true)}
                 className={cn(
-                  'h-7 rounded-md px-1.5 text-2xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground',
+                  'h-7 rounded-md px-1.5 text-secondary font-medium text-muted-foreground hover:bg-hover hover:text-foreground',
                   FOCUS_RING,
                 )}
               >

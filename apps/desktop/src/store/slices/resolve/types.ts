@@ -42,9 +42,6 @@ export type AttemptParams = SessionParams & {
   readonly threadIds?: ReadonlyArray<string>;
   readonly candidateMode?: ResolveCandidateMode;
 };
-export type CancelAttemptParams = SessionParams & {
-  readonly attemptId: string;
-};
 export type CandidateBeginParams = SessionParams & {
   readonly attemptId: string;
   readonly mountTarget: MountTargetSnapshot | null;
@@ -135,12 +132,10 @@ export type ResolveActions = {
   readonly loadResolveSession: (params: SessionParams) => Promise<void>;
   readonly persistResolveTurn: (params: TurnParams) => Promise<void>;
   readonly recordResolveAttempt: (params: AttemptParams) => Promise<string>;
-  readonly cancelResolveAttempt: (params: CancelAttemptParams) => Promise<void>;
   readonly recordResolvePhase: (params: PhaseParams) => Promise<void>;
   readonly beginResolveCandidate: (params: CandidateBeginParams) => Promise<void>;
   readonly captureResolveCandidate: (params: CandidateCaptureParams) => Promise<string | null>;
   readonly runResolveCheck: (params: CheckRunParams) => Promise<ResolveCheckPair>;
-  readonly invalidateIntegratedApprovals: (params: SessionParams) => Promise<number>;
   readonly recoverUncapturedResolveWork: (
     params: SessionParams,
   ) => Promise<ResolveUncapturedWork | null>;

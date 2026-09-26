@@ -41,21 +41,21 @@ export const PlanPartRow = ({ row, hasRun, onOpen }: Props) => {
           title={row.title}
           className={cn(
             WORK_ROW.title,
-            'truncate text-sm leading-5',
+            'truncate text-body',
             row.node.state === 'queued' && hasRun ? 'text-muted-foreground' : 'text-foreground',
           )}
         >
           {row.title}
         </span>
         {doneWhen.length === 0 ? null : (
-          <span title={doneWhen} className="truncate text-xs leading-4 text-faint-foreground">
+          <span title={doneWhen} className="truncate text-label text-faint-foreground">
             {`Done when: ${doneWhen}`}
           </span>
         )}
       </span>
       <span
         data-testid="plan-part-meta"
-        className="flex shrink-0 items-center gap-3 text-2xs leading-4 tabular-nums text-muted-foreground"
+        className="flex shrink-0 items-center gap-3 text-secondary tabular-nums text-muted-foreground"
       >
         <span className="w-14 shrink-0 truncate text-right @max-[520px]:hidden">
           {filesLabel({ count: row.touches.length })}

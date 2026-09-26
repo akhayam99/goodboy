@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { CreateAgentPopover } from '../../CreateAgentPopover';
+import { createAgentEventName } from '../../../hooks/useTrailMenus';
 import { StandaloneAgentsLane } from '../../StandaloneAgentsLane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { WorkflowAutorunToggle } from '../../../../workflows/components/WorkflowAutorunToggle';
@@ -26,7 +27,7 @@ export const AgentsPane = ({ session, meta }: Props) => {
             isOn={autoRun}
             onToggle={() => void setSessionAutoRun(sessionId, !autoRun)}
           />
-          <CreateAgentPopover sessionId={sessionId} />
+          <CreateAgentPopover sessionId={sessionId} openEvent={createAgentEventName(sessionId)} />
         </>
       }
     >

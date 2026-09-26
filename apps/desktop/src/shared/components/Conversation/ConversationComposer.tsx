@@ -51,7 +51,7 @@ export const ConversationComposer = ({ source, model }: Props) => {
   return (
     <div data-slot="conversation-composer" className="flex min-w-0 flex-col gap-1.5">
       {source.composerNote == null ? null : (
-        <p className="text-2xs text-muted-foreground">{source.composerNote}</p>
+        <p className="text-secondary text-muted-foreground">{source.composerNote}</p>
       )}
       <div
         ref={boxRef}
@@ -69,11 +69,11 @@ export const ConversationComposer = ({ source, model }: Props) => {
           placeholder={placeholder}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
-          className="border-0 bg-transparent text-sm leading-relaxed shadow-none focus-visible:shadow-none focus-visible:ring-0"
+          className="border-0 bg-transparent text-prose shadow-none focus-visible:shadow-none focus-visible:ring-0"
         />
         <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-1.5">
-          <span className="flex items-center gap-1 text-3xs text-faint-foreground">
-            <KbdPill className="h-4 text-3xs">⌘↵</KbdPill>
+          <span className="flex items-center gap-1 text-meta text-faint-foreground">
+            <KbdPill className="h-4 text-meta">⌘↵</KbdPill>
             to send
           </span>
           <IconButton icon={ArrowUp} label="Send" disabled={isEmpty} onClick={submit} />

@@ -8,7 +8,7 @@ export const ConnectProviderChip = () => (
     type="button"
     onClick={() => openProviderUsage({ providerId: null })}
     className={cn(
-      'flex h-6 shrink-0 items-center gap-1.5 rounded-sm px-1.5 text-2xs font-medium motion-safe:transition-colors hover:bg-hover',
+      'flex h-6 shrink-0 items-center gap-1.5 rounded-sm px-1.5 text-secondary font-medium motion-safe:transition-colors hover:bg-hover',
       tintClasses('warning').text,
     )}
   >

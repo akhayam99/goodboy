@@ -48,7 +48,7 @@ export const ProjectLinkCompactRow = ({ project, busy, accessory, onUnlink }: Pr
           className="shrink-0 text-muted-foreground"
         />
         <Tooltip content={project.rootPath} anchorClassName="flex min-w-0 max-w-[40%] shrink-0">
-          <span tabIndex={0} className="truncate text-sm font-medium text-foreground">
+          <span tabIndex={0} className="truncate text-row text-foreground">
             {project.name}
           </span>
         </Tooltip>

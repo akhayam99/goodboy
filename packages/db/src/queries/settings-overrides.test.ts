@@ -8,9 +8,7 @@ const WS_ID = 'w1' as WorkspaceId;
 
 const EMPTY: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

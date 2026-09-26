@@ -8,6 +8,7 @@ import {
   InlineMarkdown,
   inlineMarkdownText,
   OverflowMenu,
+  ToneBar,
   type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
@@ -23,7 +24,7 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { sessionCardShell } from '../../../../session/components/sessionCardShell';
+import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -175,6 +176,8 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
+  const tone = sessionTone({ stage, attention });
+
   return (
     <article
       data-archived={archived || undefined}
@@ -186,10 +189,11 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
-        sessionCardShell({ stage, attention, selected }),
+        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-4.5 text-left',
+        sessionCardShell({ selected }),
       )}
     >
+      <ToneBar tone={tone.tone} density="card" isBreathing={tone.isBreathing} />
       <span className="flex min-w-0 flex-col justify-between">
         <span className="flex min-h-10 items-start gap-2">
           <PrRequestSlot
@@ -216,17 +220,14 @@ export const StageBoardCard = memo(function StageBoardCard({
             }}
             className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
-            <InlineMarkdown
-              text={session.goal}
-              className="line-clamp-2 min-h-10 text-sm font-medium leading-5"
-            />
+            <InlineMarkdown text={session.goal} className="line-clamp-2 min-h-10 text-row" />
           </button>
         </span>
 
         {progress !== null ? (
           <SessionProgress progress={progress} tone={summary.tone} />
         ) : reason !== '' ? (
-          <span className="truncate text-2xs text-muted-foreground">{reason}</span>
+          <span className="truncate text-secondary text-muted-foreground">{reason}</span>
         ) : null}
       </span>
 
@@ -270,7 +271,7 @@ export const StageBoardCard = memo(function StageBoardCard({
             <Tooltip content={agentCountLabel} side="top">
               <span
                 aria-label={agentCountLabel}
-                className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-faint-foreground"
+                className="inline-flex shrink-0 items-center gap-1 text-meta text-faint-foreground"
               >
                 <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
                 <span>{agentCount}</span>
@@ -320,12 +321,10 @@ export const StageBoardCard = memo(function StageBoardCard({
             <CostBadge
               value={sessionCost}
               title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-              className="shrink-0 text-3xs tabular-nums text-faint-foreground"
+              className="shrink-0 text-meta text-faint-foreground"
             />
           )}
-          {age && (
-            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{age}</span>
-          )}
+          {age && <span className="shrink-0 text-meta text-faint-foreground">{age}</span>}
         </span>
       </span>
     </article>

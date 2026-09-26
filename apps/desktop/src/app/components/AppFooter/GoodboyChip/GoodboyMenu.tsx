@@ -39,10 +39,10 @@ export const GoodboyMenu = ({
     <>
       <header className="flex items-center gap-1.5 px-3 py-2">
         <DogMascot size={MARK_SIZE} className="shrink-0 text-foreground" />
-        <span className="truncate text-xs font-semibold text-foreground">
+        <span className="truncate text-label font-semibold text-foreground">
           {version === null ? 'Goodboy' : `Goodboy ${version}`}
         </span>
-        <span className="text-2xs text-faint-foreground">beta</span>
+        <span className="text-secondary text-faint-foreground">beta</span>
         <Button variant="ghost" size="sm" onClick={onOpenChangelog} className="ml-auto">
           Release notes
         </Button>
@@ -76,7 +76,9 @@ export const GoodboyMenu = ({
             icon={<CONCEPT_ICONS.reportIssue size={ICON_SIZE.row} aria-hidden />}
             label="Report a bug"
             trailing={
-              hasDraft ? <span className="text-2xs text-faint-foreground">Draft saved</span> : null
+              hasDraft ? (
+                <span className="text-secondary text-faint-foreground">Draft saved</span>
+              ) : null
             }
             onClick={onReport}
           />
@@ -89,7 +91,7 @@ export const GoodboyMenu = ({
             icon={<CONCEPT_ICONS.shortcuts size={ICON_SIZE.row} aria-hidden />}
             label="Keyboard shortcuts"
             trailing={
-              <kbd className="font-sans text-2xs text-faint-foreground">
+              <kbd className="font-sans text-secondary text-faint-foreground">
                 {shortcutGlyphs('settings.shortcuts')}
               </kbd>
             }

@@ -14,7 +14,7 @@ export const BootSlowNotice = ({ elapsedMs, onRetry }: Props) => {
   }, [onRetry]);
 
   return (
-    <div className="flex flex-col items-center gap-1.5 text-2xs text-muted-foreground">
+    <div className="flex flex-col items-center gap-1.5 text-secondary text-muted-foreground">
       <span>this is taking longer than usual</span>
       <span>{`${Math.floor(elapsedMs / 1_000)}s in this step`}</span>
       {onRetry !== undefined && !hasRequestedRestart ? (

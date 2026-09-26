@@ -78,8 +78,8 @@ export const ShapeStep = ({
         </span>
 
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">Your workspace</h2>
-          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+          <h2 className="text-display text-foreground">Your workspace</h2>
+          <p className="mx-auto max-w-md text-prose text-muted-foreground">
             A workspace groups the projects, sessions, and connections of one product or team.
           </p>
         </div>
@@ -87,7 +87,7 @@ export const ShapeStep = ({
         <div className="flex w-full max-w-sm flex-col gap-1.5 text-left">
           <label
             htmlFor="onboarding-workspace-name"
-            className="text-xs font-medium text-foreground"
+            className="text-label font-medium text-foreground"
           >
             Workspace name
           </label>
@@ -110,9 +110,7 @@ export const ShapeStep = ({
       </span>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          What are you setting up?
-        </h2>
+        <h2 className="text-display text-foreground">What are you setting up?</h2>
       </div>
 
       <div className="flex w-full flex-col gap-5 text-left">
@@ -140,7 +138,7 @@ export const ShapeStep = ({
                 <option.icon size={ICON_SIZE.control} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-foreground">{option.label}</span>
+                <span className="block text-row text-foreground">{option.label}</span>
                 <span className="block text-xs leading-relaxed text-muted-foreground">
                   {option.hint}
                 </span>
@@ -153,7 +151,7 @@ export const ShapeStep = ({
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="onboarding-workspace-name"
-              className="text-xs font-medium text-foreground"
+              className="text-label font-medium text-foreground"
             >
               Workspace name
             </label>
@@ -170,7 +168,7 @@ export const ShapeStep = ({
 
         {shape === 'single' ? (
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-foreground">Your project folder</span>
+            <span className="text-label font-medium text-foreground">Your project folder</span>
             <div className="flex items-center gap-2">
               <Button variant="primary" disabled={busy} onClick={() => void pickFolder(false)}>
                 <FolderGit2 size={ICON_SIZE.control} aria-hidden />

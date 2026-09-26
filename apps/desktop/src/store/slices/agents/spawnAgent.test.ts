@@ -61,6 +61,7 @@ vi.mock('../workflows/clusterImplementation', async (importOriginal) => {
 
 import { spawnAgent } from './spawnAgent';
 import { beginSessionCreation, endSessionCreation } from '../session-view/sessionCreation';
+import { revealActivityRow } from '../session-view/revealActivityRow';
 import type { SetFn } from '../../slice-types';
 
 const WS_ID = 'ws-1' as WorkspaceId;
@@ -203,6 +204,7 @@ function buildHarness(
     agentEffortOverride: {},
     agentKindOverride: {},
     sessionCreations: {},
+    revealedActivityRows: {},
     sendTurn,
   };
   const get = (() => state) as unknown as Parameters<typeof spawnAgent>[1];
@@ -213,6 +215,7 @@ function buildHarness(
   Object.assign(state, {
     beginSessionCreation: beginSessionCreation(set as unknown as SetFn),
     endSessionCreation: endSessionCreation(set as unknown as SetFn),
+    revealActivityRow: revealActivityRow(set as unknown as SetFn),
   });
   return {
     getState: get,

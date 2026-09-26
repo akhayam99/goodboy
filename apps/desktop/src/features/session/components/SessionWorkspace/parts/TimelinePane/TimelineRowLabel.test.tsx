@@ -126,7 +126,7 @@ describe('TimelineRowLabel', () => {
   it('leads a resolver row with its role chip, like every other kind of agent', () => {
     renderKind({ agentKind: 'resolver', name: 'resolve: 2 review threads' });
 
-    expect(screen.getByText(AGENT_KIND_META.resolver.label)).toBeDefined();
+    expect(screen.getByText(AGENT_KIND_META.resolver.noun)).toBeDefined();
     expect(screen.getByText('resolve: 2 review threads')).toBeDefined();
   });
 
@@ -163,7 +163,7 @@ describe('TimelineRowLabel', () => {
   it('keeps a chained agent under its own name and its own role', () => {
     renderKind({ agentKind: 'planner', name: 'Draft the migration', isChained: true });
 
-    expect(screen.getByText(AGENT_KIND_META.planner.label)).toBeDefined();
+    expect(screen.getByText(AGENT_KIND_META.planner.noun)).toBeDefined();
     expect(screen.getByText('Draft the migration')).toBeDefined();
   });
 
@@ -192,14 +192,14 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(screen.getByText(AGENT_KIND_META.implementer.label)).toBeDefined();
+    expect(screen.getByText(AGENT_KIND_META.implementer.noun)).toBeDefined();
     expect(container.querySelector('svg')).not.toBeNull();
   });
 
   it('leaves the role chip unmarked when the agent belongs to no chain', () => {
     const { container } = renderKind({ agentKind: 'planner', name: 'Draft the migration' });
 
-    expect(screen.getByText(AGENT_KIND_META.planner.label)).toBeDefined();
+    expect(screen.getByText(AGENT_KIND_META.planner.noun)).toBeDefined();
     expect(container.querySelector('svg')).toBeNull();
   });
 
@@ -305,7 +305,7 @@ describe('TimelineRowLabel', () => {
       />,
     );
 
-    expect(screen.queryByText(AGENT_KIND_META.resolver.label)).toBeNull();
+    expect(screen.queryByText(AGENT_KIND_META.resolver.noun)).toBeNull();
   });
 
   it.each([
@@ -332,5 +332,17 @@ describe('TimelineRowLabel', () => {
     render(<TimelineRowLabel item={itemOf({ entry })} />);
 
     expect(screen.queryByText(expected)).not.toBeNull();
+  });
+
+  it('stays quiet about a row nobody just revealed', () => {
+    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} />);
+
+    expect(screen.queryByText('Shown because you started it')).toBeNull();
+  });
+
+  it('tags a row that the active filter would otherwise have hidden', () => {
+    render(<TimelineRowLabel item={itemOf({ entry: mountEntry() })} isRevealed />);
+
+    expect(screen.getByText('Shown because you started it')).toBeDefined();
   });
 });

@@ -53,7 +53,7 @@ export const ScriptRunLog = ({ stdout, stderr, placeholder }: Props) => {
         onViewportScroll={onViewportScroll}
       >
         {lines.length === 0 && placeholder !== null ? (
-          <p className="text-2xs text-muted-foreground">{placeholder}</p>
+          <p className="text-secondary text-muted-foreground">{placeholder}</p>
         ) : (
           <pre
             aria-label="Script output"

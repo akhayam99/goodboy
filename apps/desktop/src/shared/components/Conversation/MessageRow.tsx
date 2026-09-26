@@ -54,21 +54,21 @@ export const MessageRow = ({
       <div className="flex min-w-0 flex-col gap-0.5">
         {isContinuation ? null : (
           <div className="flex min-w-0 items-baseline gap-1.5">
-            <span className="truncate text-xs font-semibold text-foreground">
+            <span className="truncate text-label font-semibold text-foreground">
               {message.author.name}
             </span>
             <MessageStatus message={message} />
           </div>
         )}
         {anchor == null ? null : (
-          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-1.5 font-mono text-3xs text-muted-foreground">
+          <span className="inline-flex h-4.5 w-fit max-w-full items-center truncate rounded-sm bg-muted px-1.5 font-mono text-meta text-muted-foreground">
             {anchor}
           </span>
         )}
         <Markdown
           text={message.body}
           className={cn(
-            'text-sm leading-relaxed',
+            'text-prose',
             message.status === 'sent' ? 'text-foreground' : 'text-muted-foreground',
           )}
         />

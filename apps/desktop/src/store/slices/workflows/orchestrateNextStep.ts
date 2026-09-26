@@ -52,7 +52,6 @@ import {
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
-import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
   BUDGET_BLOCK_MESSAGE,
@@ -669,7 +668,6 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         providerPool: run.providerPool ?? null,
       });
       const modelMenu = orchestratorModelPool({ availability });
-      const isModelMetadataEnabled = workflowRoutingFlags().isModelMetadataEnabled;
       const client = new OrchestratorClient({
         ...routing,
         invokeFn: invoke,
@@ -687,7 +685,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           modelMenu,
           roleDefaults,
           stepsUsed: workflow.steps.length,
-          ...(isModelMetadataEnabled && { isModelMetadataEnabled }),
+          isModelMetadataEnabled: true,
           ...(run.spendLimitUsd != null && {
             spendLimitUsd: run.spendLimitUsd,
             spentUsd: spentUsdForRun({ get, sessionId, run }),
@@ -811,9 +809,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           fields: proposed,
           emittingProvider: routing.providerId,
         });
-        const routingProposal = isModelMetadataEnabled
-          ? hintedRoutingOutcome({ outcome: parsedProposal, promptText: proposed.promptPrefix })
-          : parsedProposal;
+        const routingProposal = hintedRoutingOutcome({
+          outcome: parsedProposal,
+          promptText: proposed.promptPrefix,
+        });
         const resolution = resolveWorkflowRouting({
           agentLock: null,
           stepLock: null,

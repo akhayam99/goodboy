@@ -20,13 +20,13 @@ export const ReadyStep = () => {
       </span>
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">You are all set</h2>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+        <h2 className="text-display text-foreground">You are all set</h2>
+        <p className="mx-auto max-w-md text-prose text-muted-foreground">
           Start your first session. Code hosts and tools connect any time from the footer.
         </p>
       </div>
 
-      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-xs text-faint-foreground">
+      <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-label text-faint-foreground">
         {READY_HINTS.map((id) => (
           <span key={id} className="inline-flex items-center gap-1.5">
             <KbdPill>{shortcutGlyphs(id)}</KbdPill>

@@ -26,12 +26,12 @@ export const ChangeBlock = ({ files, isLoading, error, onOpenInDiff }: Props) =>
         }
       />
       {isLoading && <Skeleton className="h-3.5 w-40" />}
-      {error !== null && <p className="text-2xs text-warning">{error}</p>}
+      {error !== null && <p className="text-secondary text-warning">{error}</p>}
       {!isLoading && error === null && files.length === 0 && (
-        <p className="text-3xs text-muted-foreground">{RESOLVE_ITEM_LABEL.noCapturedChange}</p>
+        <p className="text-meta text-muted-foreground">{RESOLVE_ITEM_LABEL.noCapturedChange}</p>
       )}
       {files.length > 0 && (
-        <p className="text-3xs tabular-nums text-muted-foreground">
+        <p className="text-meta text-muted-foreground">
           {changeSummaryLine({ fileCount: files.length, changedLines: plan.changedLines })}
         </p>
       )}

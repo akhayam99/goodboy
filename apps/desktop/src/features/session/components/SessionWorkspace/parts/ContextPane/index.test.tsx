@@ -196,7 +196,7 @@ describe('Context regions', () => {
     const heading = screen.getByRole('heading', { level: 2, name: 'Decisions' });
 
     expect(heading.className).not.toContain('text-base');
-    expect(screen.getByText('Decisions').className).toContain('text-2xs');
+    expect(screen.getByText('Decisions').className).toContain('text-eyebrow');
   });
 
   it('pairs the region description with its heading grade instead of the reading grade', () => {
@@ -204,8 +204,8 @@ describe('Context regions', () => {
 
     const hint = screen.getByText('One row per choice already settled along the way.');
 
-    expect(hint.className).toContain('text-2xs');
-    expect(hint.className).not.toContain('text-sm');
+    expect(hint.className).toContain('text-secondary');
+    expect(hint.className).not.toContain('text-body');
   });
 
   it('leaves the summary body on the reading grade, because the document is the artifact', () => {
@@ -310,7 +310,7 @@ describe('Session summary blocks', () => {
 
     expect(problem.className).not.toContain('border');
     expect(problem.className).not.toContain('bg-');
-    expect(within(problem).getByText('Problem').className).toContain('uppercase');
+    expect(within(problem).getByText('Problem').className).toContain('text-eyebrow');
   });
 
   it('offers the four blocks on an empty document instead of a bespoke placeholder', () => {

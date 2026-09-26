@@ -40,7 +40,7 @@ export const ProjectLinkRow = ({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-foreground">{project.name}</span>
+          <span className="truncate text-row text-foreground">{project.name}</span>
           <Chip
             tone="neutral"
             size="3xs"
@@ -49,9 +49,7 @@ export const ProjectLinkRow = ({
             className="shrink-0"
           />
         </span>
-        <span className="block truncate font-mono text-xs text-muted-foreground">
-          {project.rootPath}
-        </span>
+        <span className="block truncate text-code text-muted-foreground">{project.rootPath}</span>
       </span>
       {accessory}
       <ConfirmPopover

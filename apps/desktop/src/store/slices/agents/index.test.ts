@@ -31,9 +31,6 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
-  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
-);
 vi.mock('../../../features/onboarding/onboarding-store', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
@@ -109,9 +106,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     slug: 'ws',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -205,35 +200,10 @@ describe('store contract', () => {
       expect(store.getState().agentDraft[AGENT_ID]).toBeUndefined();
     });
 
-    it('setAgentKind stores override and persists', async () => {
-      const store = useAppStore;
-      store.getState().setAgentKind(AGENT_ID, 'implementer');
-      expect(store.getState().agentKindOverride[AGENT_ID]).toBe('implementer');
-      const { kindRouting } = await import('../../../features/session/agent-kind');
-      expect(store.getState().agentModelOverride[AGENT_ID]).toBe(
-        kindRouting({ kind: 'implementer' }).model,
-      );
-      expect(storySpies.invokeAgentSetKind).toHaveBeenCalledWith(AGENT_ID, 'implementer');
-    });
-
-    it('setAgentKind clears a stale provider pin when reseeding the model', async () => {
-      const store = useAppStore;
-      store.setState({ agentProviderOverride: { [AGENT_ID]: 'codex' } });
-      store.getState().setAgentKind(AGENT_ID, 'implementer');
-      expect(store.getState().agentProviderOverride[AGENT_ID]).toBeUndefined();
-    });
-
     it('setAgentEffortOverride pins the per-agent effort', async () => {
       const store = useAppStore;
       store.getState().setAgentEffortOverride(AGENT_ID, 'xhigh');
       expect(store.getState().agentEffortOverride[AGENT_ID]).toBe('xhigh');
-    });
-
-    it('setAgentKind clears a stale effort pin when reseeding the model', async () => {
-      const store = useAppStore;
-      store.setState({ agentEffortOverride: { [AGENT_ID]: 'max' } });
-      store.getState().setAgentKind(AGENT_ID, 'implementer');
-      expect(store.getState().agentEffortOverride[AGENT_ID]).toBeUndefined();
     });
 
     it('markAgentViewed no-ops when the agent has no lastFinishedAt', async () => {

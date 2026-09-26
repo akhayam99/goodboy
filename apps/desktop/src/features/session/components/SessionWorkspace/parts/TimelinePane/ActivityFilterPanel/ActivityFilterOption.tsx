@@ -49,7 +49,9 @@ export const ActivityFilterOption = ({
             {icon}
             <span className="truncate">{label}</span>
           </span>
-          <span className="shrink-0 text-2xs tabular-nums text-faint-foreground">{count}</span>
+          <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
+            {count}
+          </span>
         </>
       }
     />

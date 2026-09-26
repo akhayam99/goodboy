@@ -23,7 +23,7 @@ export const CommandCenter = () => {
         Search
         <span className="hidden @min-chrome-wide/topbar:inline"> {place}</span>
       </span>
-      <kbd className="shrink-0 font-sans text-2xs text-faint-foreground">{glyph}</kbd>
+      <kbd className="shrink-0 font-sans text-secondary text-faint-foreground">{glyph}</kbd>
     </button>
   );
 };

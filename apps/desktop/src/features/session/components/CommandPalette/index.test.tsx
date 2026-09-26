@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
+import type { SessionId } from '@goodboy/types';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { state, hooks, toastMock } = vi.hoisted(() => ({
@@ -12,9 +14,8 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     agentKindOverride: {} as Record<string, string>,
     openWorkspace: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    selectAgent: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
   },
@@ -39,7 +40,8 @@ vi.mock('../../hooks/useLensDestinations', async () => {
   };
 });
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -65,14 +67,14 @@ beforeEach(() => {
   state.sessionPhaseRuns = {};
   state.sessionWorktrees = {};
   state.agentKindOverride = {};
-  state.setActiveLens.mockReset();
+  state.navigate.mockReset();
   hooks.currentSession = null;
   hooks.sessions = [];
   hooks.workspaces = [];
   hooks.currentWorkspace = null;
   toastMock.mockReset();
   state.openWorkspace.mockClear();
-  state.setCurrentSession.mockClear();
+  state.navigate.mockClear();
 });
 afterEach(cleanup);
 
@@ -145,7 +147,9 @@ describe('CommandPalette', () => {
 
     fireEvent.mouseDown(screen.getByText(label));
 
-    expect(state.setActiveLens).toHaveBeenCalledWith('session-1', lens);
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: lens }),
+    });
   });
 
   it('offers Context as one destination, without its parts', () => {
@@ -221,7 +225,7 @@ describe('CommandPalette', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
 
     expect(state.openWorkspace).toHaveBeenCalledWith('workspace-1', 'Harborline');
-    expect(state.setCurrentSession).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -266,7 +270,7 @@ describe('CommandPalette', () => {
     render(<CommandPalette onClose={vi.fn()} initialQuery="board" />);
     fireEvent.mouseDown(screen.getByRole('option', { name: /back to board/i }));
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
+    expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
     expect(screen.getByText('Go to').getAttribute('role')).toBe('presentation');
   });
 

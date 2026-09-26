@@ -239,9 +239,9 @@ export const Tooltip = ({
               className={cn(
                 'pointer-events-none z-tooltip',
                 variant === 'label' &&
-                  'whitespace-nowrap rounded-sm bg-foreground px-1.5 py-0.5 text-xs font-medium text-background shadow-sm',
+                  'whitespace-nowrap rounded-sm bg-foreground px-1.5 py-0.5 text-label font-medium text-background shadow-sm',
                 variant === 'card' &&
-                  'w-65 rounded-md border border-border-soft bg-elevated p-2.5 text-xs text-foreground shadow-md',
+                  'w-65 rounded-md border border-border-soft bg-elevated p-2.5 text-label text-foreground shadow-md',
               )}
             >
               {content}

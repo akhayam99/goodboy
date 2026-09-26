@@ -112,9 +112,9 @@ export const ExplorePreviewPanel = ({
       return (
         <div className="flex flex-col gap-2">
           {isTruncated ? (
-            <p className="text-xs text-muted-foreground">Preview is truncated to 256 KB.</p>
+            <p className="text-label text-muted-foreground">Preview is truncated to 256 KB.</p>
           ) : null}
-          <Markdown text={previewText} className="text-sm text-foreground" />
+          <Markdown text={previewText} className="text-body text-foreground" />
         </div>
       );
     }
@@ -122,9 +122,9 @@ export const ExplorePreviewPanel = ({
       return (
         <div className="flex flex-col gap-2">
           {isTruncated ? (
-            <p className="text-xs text-muted-foreground">Preview is truncated to 256 KB.</p>
+            <p className="text-label text-muted-foreground">Preview is truncated to 256 KB.</p>
           ) : null}
-          <pre className="whitespace-pre-wrap break-words rounded-md bg-subtle p-3 font-mono text-xs text-foreground">
+          <pre className="whitespace-pre-wrap break-words rounded-md bg-subtle p-3 text-code text-foreground">
             {previewText}
           </pre>
         </div>
@@ -146,7 +146,7 @@ export const ExplorePreviewPanel = ({
     if (previewKind === 'pdf' && pdfDataUrl != null) {
       return (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground">PDF previews open in a focused viewer.</p>
+          <p className="text-label text-muted-foreground">PDF previews open in a focused viewer.</p>
           <Button size="sm" variant="secondary" onClick={() => setPdfViewerOpen(true)}>
             Open PDF preview
           </Button>
@@ -162,7 +162,7 @@ export const ExplorePreviewPanel = ({
       );
     }
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="text-label text-muted-foreground">
         Preview is not available for this format. Open it in the app that owns it.
       </p>
     );
@@ -170,8 +170,8 @@ export const ExplorePreviewPanel = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-        <p className="truncate font-mono text-2xs">{entry.relPath}</p>
+      <div className="flex flex-col gap-1 text-label text-muted-foreground">
+        <p className="truncate font-mono text-secondary">{entry.relPath}</p>
         <div className="flex flex-wrap items-center gap-2">
           <span>{sizeLabel}</span>
           <span>{modifiedLabel}</span>
@@ -184,7 +184,7 @@ export const ExplorePreviewPanel = ({
         </Button>
         <CopyButton value={absolutePath} label={`path for ${entry.name}`} />
       </div>
-      {openError != null ? <p className="text-xs text-danger">{openError}</p> : null}
+      {openError != null ? <p className="text-label text-danger">{openError}</p> : null}
       <Divider />
       {renderPreviewBody()}
       {previewKind === 'unsupported' ? (

@@ -30,7 +30,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-foreground">
+      <label htmlFor={id} className="text-label font-medium text-foreground">
         {label}
       </label>
       <Textarea
@@ -41,7 +41,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
         disabled={isDisabled}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => save(draft)}
-        className="font-mono text-xs"
+        className="text-code"
       />
       <div className="flex flex-wrap gap-1">
         {REPLY_TEMPLATE_VARIABLES.map((name) => (
@@ -61,7 +61,7 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
         ))}
       </div>
       {problems.map((problem) => (
-        <p key={problem} className="text-2xs text-danger">
+        <p key={problem} className="text-secondary text-danger">
           {problem}
         </p>
       ))}

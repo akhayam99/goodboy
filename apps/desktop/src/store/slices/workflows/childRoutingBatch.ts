@@ -9,8 +9,6 @@ import type {
   WorkflowRunId,
   WorkflowTaskProfile,
 } from '@goodboy/types';
-import type { WorkflowMissingProposalPolicy } from '@goodboy/core';
-import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { resolveWorkflowChildRouting } from '../workflowRouting/resolveWorkflowChildRouting';
 import type { AppStore } from '../../store';
 
@@ -33,48 +31,23 @@ export type ChildRoutingBatch =
   | Readonly<{ kind: 'ready'; entries: ReadonlyArray<ChildRoutingFields> }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
-const LEGACY_CHILD_ROUTING: ChildRoutingFields = {
-  routingLock: null,
-  routingDecision: null,
-  taskProfile: null,
-  providerOverride: null,
-  modelOverride: null,
-  effort: null,
-};
-
 type ResolveOneParams = {
   readonly state: AppStore;
   readonly sessionId: SessionId;
   readonly role: AgentRole;
   readonly request: ChildRoutingRequest;
-  readonly isChildSelectionEnabled: boolean;
   readonly workflowRunId?: WorkflowRunId | null;
 };
 
 type ChildRoutingOutcome =
   | Readonly<{ kind: 'routed'; fields: ChildRoutingFields }>
-  | Readonly<{ kind: 'legacy' }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
-
-type PolicyParams = {
-  readonly isChildSelectionEnabled: boolean;
-};
-
-const childMissingProposalPolicy = ({
-  isChildSelectionEnabled,
-}: PolicyParams): WorkflowMissingProposalPolicy => {
-  if (isChildSelectionEnabled === false) {
-    return 'configured_default';
-  }
-  return 'deterministic_pick';
-};
 
 export const resolveOneChildRouting = ({
   state,
   sessionId,
   role,
   request,
-  isChildSelectionEnabled,
   workflowRunId = null,
 }: ResolveOneParams): ChildRoutingOutcome => {
   const { resolution, taskProfile } = resolveWorkflowChildRouting({
@@ -82,15 +55,12 @@ export const resolveOneChildRouting = ({
     sessionId,
     role,
     childLock: request.childLock,
-    proposal: isChildSelectionEnabled === true ? request.proposal : null,
+    proposal: request.proposal,
     promptText: request.promptText,
-    missingProposal: childMissingProposalPolicy({ isChildSelectionEnabled }),
+    missingProposal: 'deterministic_pick',
     workflowRunId,
   });
   if (resolution.kind === 'blocked') {
-    if (isChildSelectionEnabled === false && request.childLock === null) {
-      return { kind: 'legacy' };
-    }
     return { kind: 'blocked', reason: resolution.reason };
   }
   const decision = resolution.decision;
@@ -122,7 +92,6 @@ export const childRoutingBatch = ({
   requests,
   workflowRunId = null,
 }: BatchParams): ChildRoutingBatch => {
-  const isChildSelectionEnabled = workflowRoutingFlags().isChildModelSelectionEnabled;
   const entries: Array<ChildRoutingFields> = [];
   for (const request of requests) {
     const outcome = resolveOneChildRouting({
@@ -130,13 +99,12 @@ export const childRoutingBatch = ({
       sessionId,
       role,
       request,
-      isChildSelectionEnabled,
       workflowRunId,
     });
     if (outcome.kind === 'blocked') {
       return { kind: 'blocked', reason: outcome.reason };
     }
-    entries.push(outcome.kind === 'legacy' ? LEGACY_CHILD_ROUTING : outcome.fields);
+    entries.push(outcome.fields);
   }
   return { kind: 'ready', entries };
 };

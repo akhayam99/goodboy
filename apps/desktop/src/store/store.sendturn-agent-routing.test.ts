@@ -508,9 +508,7 @@ describe('sendTurn, agent routing', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -658,9 +656,7 @@ describe('sendTurn, agent routing', () => {
           kind: 'folder',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1007,9 +1003,7 @@ describe('sendTurn, workflow carry-forward', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1184,9 +1178,7 @@ describe('sendTurn, workflow carry-forward', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1285,9 +1277,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1503,9 +1493,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1603,9 +1591,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1717,9 +1703,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1833,9 +1817,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -2373,9 +2355,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -2478,9 +2458,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -2796,9 +2774,7 @@ describe('sendTurn, budget routing notice', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -3020,9 +2996,7 @@ describe('sendTurn, role fallback model', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -3044,9 +3018,7 @@ describe('sendTurn, role fallback model', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: null,
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: null,

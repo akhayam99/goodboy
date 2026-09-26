@@ -170,7 +170,7 @@ describe('useChatPrefix, script quick action', () => {
               packageName: 'ledger-core',
               relDir: 'apps/api',
               manager: 'pnpm',
-              scripts: [{ name: 'test', command: 'pnpm run test' }],
+              scripts: [{ name: 'test', command: 'pnpm run test', body: 'vitest run' }],
             },
           ],
         },
@@ -181,8 +181,8 @@ describe('useChatPrefix, script quick action', () => {
     const [item] = result.current.filteredQuickItems;
     expect(item).toMatchObject({
       label: 'test',
-      sublabel: 'pnpm run test',
-      trailing: { label: 'package.json' },
+      sublabel: 'ledger-core · vitest run',
+      trailing: { label: 'ledger-core' },
     });
     act(() => {
       result.current.onQuickActionSelect(item!);

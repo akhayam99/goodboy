@@ -35,7 +35,7 @@ export const OrchestratorAction = ({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-60',
+        'inline-flex min-h-7 shrink-0 items-center gap-1 rounded-md px-2 text-secondary font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-60',
         variant === 'primary'
           ? cn('border', tint.border, tint.bg, tint.text, tint.hoverBg)
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',

@@ -31,7 +31,7 @@ export const ProviderChip = ({
       title={title}
       aria-pressed={selected}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs motion-safe:transition-colors',
+        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-label motion-safe:transition-colors',
         selected
           ? cn(tintClasses('primary').bg, 'font-medium text-primary')
           : 'text-muted-foreground hover:bg-hover hover:text-foreground',

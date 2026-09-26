@@ -7,12 +7,16 @@ type Params = {
   readonly initiallyOpen: boolean;
 };
 
+export type HandoffActive = HandoffSectionKind | 'all' | null;
+
 export type HandoffDisclosure = {
   readonly open: boolean;
   readonly toggle: () => void;
-  readonly openSections: ReadonlySet<HandoffSectionKind>;
-  readonly toggleSection: (kind: HandoffSectionKind) => void;
-  readonly openSection: (kind: HandoffSectionKind) => void;
+  readonly active: HandoffActive;
+  readonly setActive: (value: HandoffActive) => void;
+  readonly toggleChip: (kind: HandoffSectionKind) => void;
+  readonly showAll: () => void;
+  readonly close: () => void;
 };
 
 type OpenRequestParams = {
@@ -27,11 +31,20 @@ const isOpenRequestFor = ({ event, agentId }: OpenRequestParams): boolean =>
   'agentId' in event.detail &&
   event.detail.agentId === agentId;
 
+type InitialState = {
+  readonly open: boolean;
+  readonly active: HandoffActive;
+};
+
+const initialState = ({ agentId, initiallyOpen }: Params): InitialState => {
+  const open = takeHandoffOpenRequest({ agentId }) || initiallyOpen;
+  return { open, active: open ? 'all' : null };
+};
+
 export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): HandoffDisclosure => {
-  const [open, setOpen] = useState(() => takeHandoffOpenRequest({ agentId }) || initiallyOpen);
-  const [openSections, setOpenSections] = useState<ReadonlySet<HandoffSectionKind>>(
-    () => new Set(),
-  );
+  const [initial] = useState(() => initialState({ agentId, initiallyOpen }));
+  const [open, setOpen] = useState(initial.open);
+  const [active, setActive] = useState<HandoffActive>(initial.active);
 
   useEffect(() => {
     const reveal = (event: Event) => {
@@ -40,29 +53,31 @@ export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): Handof
       }
       takeHandoffOpenRequest({ agentId });
       setOpen(true);
+      setActive('all');
     };
     window.addEventListener(HANDOFF_OPEN_EVENT, reveal);
     return () => window.removeEventListener(HANDOFF_OPEN_EVENT, reveal);
   }, [agentId]);
 
-  const toggle = useCallback(() => setOpen((value) => !value), []);
-
-  const toggleSection = useCallback((kind: HandoffSectionKind) => {
-    setOpenSections((current) => {
-      const next = new Set(current);
-      if (next.has(kind)) {
-        next.delete(kind);
-        return next;
-      }
-      next.add(kind);
-      return next;
-    });
+  const toggle = useCallback(() => {
+    setOpen((value) => !value);
+    setActive((current) => current ?? 'all');
   }, []);
 
-  const openSection = useCallback((kind: HandoffSectionKind) => {
+  const toggleChip = useCallback(
+    (kind: HandoffSectionKind) => {
+      setActive((current) => (open && current === kind ? null : kind));
+      setOpen(true);
+    },
+    [open],
+  );
+
+  const showAll = useCallback(() => {
     setOpen(true);
-    setOpenSections((current) => (current.has(kind) ? current : new Set([...current, kind])));
+    setActive((current) => (current === 'all' ? null : 'all'));
   }, []);
 
-  return { open, toggle, openSections, toggleSection, openSection };
+  const close = useCallback(() => setActive(null), []);
+
+  return { open, toggle, active, setActive, toggleChip, showAll, close };
 };

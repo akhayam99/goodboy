@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { Button } from '../components/Button';
 import { Checkbox } from '../components/Checkbox';
-import { Select } from '../components/Select';
+import { Listbox } from '../components/Listbox';
 import { Skeleton } from '../components/Skeleton';
 import { Switch } from '../components/Switch';
 
@@ -24,11 +24,14 @@ describe('controls at 3:1', () => {
     expect(box.className).not.toContain('border-border-soft');
   });
 
-  it('strengthens the select border on hover', () => {
+  it('strengthens the listbox field border on hover', () => {
     render(
-      <Select aria-label="Verbosity">
-        <option>Balanced</option>
-      </Select>,
+      <Listbox
+        ariaLabel="Verbosity"
+        value="balanced"
+        options={[{ value: 'balanced', label: 'Balanced' }]}
+        onChange={() => undefined}
+      />,
     );
     expect(screen.getByRole('combobox', { name: 'Verbosity' }).className).toContain(
       'hover:border-border-strong',

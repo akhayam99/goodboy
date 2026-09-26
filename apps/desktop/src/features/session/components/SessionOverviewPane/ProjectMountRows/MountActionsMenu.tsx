@@ -329,20 +329,20 @@ export const MountActionsMenu = ({
 
   const forgetNote =
     keptPath === null ? (
-      <span className="text-2xs text-muted-foreground">
+      <span className="text-secondary text-muted-foreground">
         This branch leaves the session. The branch and any pull request stay.
       </span>
     ) : (
       <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-        <span className="text-2xs">Its files stay on disk at</span>
-        <span className="truncate font-mono text-2xs">{keptPath}</span>
+        <span className="text-secondary">Its files stay on disk at</span>
+        <span className="truncate font-mono text-secondary">{keptPath}</span>
       </div>
     );
 
   const keptNote = (
     <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-      <span className="text-2xs">Uncommitted changes stay on disk at</span>
-      <span className="truncate font-mono text-2xs">{worktreePath}</span>
+      <span className="text-secondary">Uncommitted changes stay on disk at</span>
+      <span className="truncate font-mono text-secondary">{worktreePath}</span>
     </div>
   );
 
@@ -407,7 +407,7 @@ export const MountActionsMenu = ({
           onCancel={() => setConfirming(null)}
         >
           {forgetBlockers.length > 0 ? (
-            <div className="flex min-w-0 flex-col gap-1 text-2xs text-muted-foreground">
+            <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
               {forgetBlockers.map((blocker) => (
                 <p key={blocker} className="break-words">
                   {BLOCKER_SENTENCE[blocker]({ projectName })}

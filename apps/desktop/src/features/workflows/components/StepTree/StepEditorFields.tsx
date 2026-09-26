@@ -60,7 +60,7 @@ export const StepEditorFields = ({
     <div className="grid grid-cols-1 gap-4 @min-[560px]:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-2.5">
         <div className="flex flex-col gap-1">
-          <label htmlFor={idOf('title')} className="text-2xs text-muted-foreground">
+          <label htmlFor={idOf('title')} className="text-secondary text-muted-foreground">
             Title
           </label>
           <Input
@@ -76,16 +76,16 @@ export const StepEditorFields = ({
             }}
             placeholder="step name"
             disabled={disabled}
-            className="h-7 bg-background text-xs"
+            className="h-7 bg-background text-label"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-2xs text-muted-foreground">Role</span>
+          <span className="text-secondary text-muted-foreground">Role</span>
           <RoleSelect value={step.role} onChange={onRole} disabled={disabled} />
         </div>
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
-            <label htmlFor={idOf('instruction')} className="text-2xs text-muted-foreground">
+            <label htmlFor={idOf('instruction')} className="text-secondary text-muted-foreground">
               Instruction
             </label>
             {polish === null ? null : (
@@ -94,13 +94,10 @@ export const StepEditorFields = ({
                 onClick={polish.onPolish}
                 disabled={disabled || polish.isPolishing || step.prompt.trim().length === 0}
                 aria-label="Polish step instruction"
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-sm px-1 text-2xs text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                  polish.isPolishing && 'animate-border-pulse',
-                )}
+                className="inline-flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
-                Polish
+                <span className={cn(polish.isPolishing && 'text-shimmer')}>Polish</span>
               </button>
             )}
           </div>
@@ -117,7 +114,7 @@ export const StepEditorFields = ({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor={idOf('expected')} className="text-2xs text-muted-foreground">
+          <label htmlFor={idOf('expected')} className="text-secondary text-muted-foreground">
             Expected output
           </label>
           <Textarea
@@ -142,7 +139,7 @@ export const StepEditorFields = ({
               type="button"
               onClick={onRoutingReset}
               disabled={disabled}
-              className="text-2xs text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed"
+              className="text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed"
             >
               {WORKFLOW_ROUTING_COPY.resetLabel}
             </button>

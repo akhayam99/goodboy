@@ -32,7 +32,7 @@ export const NewerDatabaseScreen = ({ restorableSnapshot, onRestore, onQuit }: P
       <div
         role="alert"
         className={cn(
-          'flex w-full max-w-sm flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs',
+          'flex w-full max-w-sm flex-col gap-3 rounded-r-md border-l-2 p-4 text-label',
           tintClasses('warning').border,
         )}
       >

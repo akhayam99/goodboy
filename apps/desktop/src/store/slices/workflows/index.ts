@@ -23,7 +23,6 @@ import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
 import { removeWorkflowOrchestratorHint } from './removeWorkflowOrchestratorHint';
 import { setWorkflowOrchestratorRouting } from './setWorkflowOrchestratorRouting';
 import { renameWorkflowRun } from './renameWorkflowRun';
-import { reorderSessionWorkflows } from './reorderSessionWorkflows';
 import { restoreWorkflow } from './restoreWorkflow';
 import { retryWorkflowOrchestration } from './retryWorkflowOrchestration';
 import { reprocessGoalForWorkflow } from './reprocessGoalForWorkflow';
@@ -57,7 +56,6 @@ export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
     detachWorkflowFromSession: detachWorkflowFromSession(set, get),
     discardWorkflow: discardWorkflow(set, get),
     restoreWorkflow: restoreWorkflow(set, get),
-    reorderSessionWorkflows: reorderSessionWorkflows(set, get),
     renameWorkflowRun: renameWorkflowRun(set, get),
     setWorkflowRunAutoRun: setWorkflowRunAutoRun(set, get),
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),

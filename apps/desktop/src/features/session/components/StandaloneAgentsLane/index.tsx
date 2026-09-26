@@ -95,7 +95,7 @@ export const StandaloneAgentsLane = ({
 
   const list = renderList(agents, false);
 
-  const error = lane.error != null && <p className="text-2xs text-danger">{lane.error}</p>;
+  const error = lane.error != null && <p className="text-secondary text-danger">{lane.error}</p>;
 
   if (!isLens) {
     return (

@@ -81,7 +81,7 @@ export const ArtifactRow = ({
       <div
         data-testid="storage-artifact-row"
         className={cn(
-          'group flex h-10 items-center gap-2.5 rounded-md px-2 text-sm hover:bg-hover',
+          'group flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
           isDeleting && 'opacity-60',
         )}
       >
@@ -99,22 +99,22 @@ export const ArtifactRow = ({
           <Icon size={ICON_SIZE.row} aria-label={kindLabel} />
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm text-foreground">{artifact.title}</span>
-          <span className="truncate text-2xs text-faint-foreground">
+          <span className="truncate text-body text-foreground">{artifact.title}</span>
+          <span className="truncate text-secondary text-faint-foreground">
             {goal === '' ? kindLabel : `${kindLabel} · session "${goal}"`}
             {note === null || isSuggested ? null : <span> · {note}</span>}
           </span>
         </div>
-        <span className={cn(ARTIFACT_COLUMN.workspace, 'text-2xs text-muted-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.workspace, 'text-secondary text-muted-foreground')}>
           {artifact.workspaceName}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.age, 'text-2xs text-muted-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.age, 'text-secondary text-muted-foreground')}>
           {formatAgo({ from: artifact.deletedAt, now })}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.age, 'text-2xs text-muted-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.age, 'text-secondary text-muted-foreground')}>
           {formatAgo({ from: storageArtifactLastUsed({ artifact }), now })}
         </span>
-        <span className={cn(ARTIFACT_COLUMN.size, 'text-2xs text-foreground')}>
+        <span className={cn(ARTIFACT_COLUMN.size, 'text-secondary text-foreground')}>
           {artifact.sizeBytes === null ? (
             <span className="text-faint-foreground">No copy</span>
           ) : (
@@ -123,7 +123,7 @@ export const ArtifactRow = ({
         </span>
         <span className={ARTIFACT_COLUMN.actions}>
           {isDeleting ? (
-            <span className="text-2xs text-muted-foreground">Deleting…</span>
+            <span className="text-secondary text-muted-foreground">Deleting…</span>
           ) : (
             <ArtifactRowActions
               artifact={artifact}

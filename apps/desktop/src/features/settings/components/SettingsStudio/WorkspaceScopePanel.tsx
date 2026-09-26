@@ -128,7 +128,7 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
                 <Unplug size={ICON_SIZE.row} aria-hidden />
                 Disconnect workspace
               </Button>
-              <span className="text-xs text-faint-foreground">Nothing on disk is deleted.</span>
+              <span className="text-label text-faint-foreground">Nothing on disk is deleted.</span>
             </span>
           )}
         </section>
