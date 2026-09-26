@@ -287,7 +287,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
                 "--model".to_string(),
                 args.model.to_string(),
                 "--permission-mode".to_string(),
-                claude_permission_mode(args.permission_mode).to_string(),
+                args.permission_mode.to_string(),
                 "--setting-sources".to_string(),
                 crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
             ]);
@@ -322,13 +322,6 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             v.push(disallowed_tools.join(","));
             v
         }
-    }
-}
-
-fn claude_permission_mode(mode: &str) -> &str {
-    match mode {
-        "default" => "manual",
-        other => other,
     }
 }
 
@@ -1255,20 +1248,15 @@ mod tests {
     }
 
     #[test]
-    fn claude_args_send_manual_for_ask_first() {
+    fn claude_args_pass_every_mode_through_unchanged() {
         let empty: Vec<String> = vec![];
-        let args = args_for_mode("default", &empty);
-        let cli = build_provider_cli_args("claude", &args);
-        assert_eq!(
-            flag_value(&cli, "--permission-mode").as_deref(),
-            Some("manual")
-        );
-    }
-
-    #[test]
-    fn claude_args_pass_other_modes_through() {
-        let empty: Vec<String> = vec![];
-        for mode in ["plan", "dontAsk", "acceptEdits", "bypassPermissions"] {
+        for mode in [
+            "plan",
+            "default",
+            "dontAsk",
+            "acceptEdits",
+            "bypassPermissions",
+        ] {
             let args = args_for_mode(mode, &empty);
             let cli = build_provider_cli_args("claude", &args);
             assert_eq!(

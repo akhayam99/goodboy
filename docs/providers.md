@@ -446,11 +446,13 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 | --------------------------------- | ------------------- | ----------------------------------------------------------- | -------------------------------- | --------------------------- | ------------------------------------------ |
 | Read only (`plan`)                | `plan`              | `-s read-only`                                              | `--mode plan --sandbox`          | `--mode plan`, no `--force` | `--agent plan`: no edits, shell still runs |
 | Don't ask (`dontAsk`)             | `dontAsk`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
-| Ask first (`default`)             | `manual`            | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
+| Ask first (`default`)             | `default`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
 | Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
 | Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
 
-- Claude 2.1.282 lists `manual` in place of `default`, so Ask first sends `manual`
+- Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
+  as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
+  is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
   `--disallowedTools`). The other CLIs have no equivalent flag
 - The composer's mode picker disables the rows the active provider can't honor
