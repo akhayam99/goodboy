@@ -5,6 +5,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CHANGELOG_PATH = resolve(ROOT_DIRECTORY, 'CHANGELOG.md');
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const RAW_CONTENT_ROOT = 'https://raw.githubusercontent.com/akhayam99/goodboy';
+const ENTRY_TITLE_PATTERN = /^#### (.+)$/;
+const IMAGE_TOKEN_PATTERN = /(?:^| )image=([a-z0-9]+(?:-[a-z0-9]+)*)(?= |$)/;
+const NEXT_HEADING_PATTERN = /^#{3,4} /;
 
 const parseVersion = ({ ref }) => {
   const withoutV = ref.startsWith('v') ? ref.slice(1) : ref;
@@ -40,6 +44,53 @@ const extractSection = ({ changelog, heading }) => {
   return trimBlankEdges({ lines: sectionLines }).join('\n');
 };
 
+const imageNameFromMeta = ({ metaLine }) => {
+  const match = IMAGE_TOKEN_PATTERN.exec(metaLine);
+  return match === null ? null : match[1];
+};
+
+const pictureBlockLines = ({ version, title, image }) => {
+  const base = `${RAW_CONTENT_ROOT}/v${version}/docs/changelog/${version}/${image}-after`;
+  const dark = `${base}-dark.webp`;
+  const light = `${base}-light.webp`;
+  return [
+    '<picture>',
+    `  <source media="(prefers-color-scheme: dark)" srcset="${dark}">`,
+    `  <source media="(prefers-color-scheme: light)" srcset="${light}">`,
+    `  <img alt="${title}" src="${light}">`,
+    '</picture>',
+  ];
+};
+
+const expandPictures = ({ notes, version }) => {
+  const lines = notes.split('\n');
+  const output = [];
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index];
+    const titleMatch = ENTRY_TITLE_PATTERN.exec(line);
+    const metaLine = titleMatch === null ? undefined : lines[index + 1];
+    const image = metaLine === undefined ? null : imageNameFromMeta({ metaLine });
+    if (titleMatch === null || image === null) {
+      output.push(line);
+      index += 1;
+      continue;
+    }
+    const title = titleMatch[1];
+    const body = [line, metaLine];
+    index += 2;
+    while (index < lines.length && !NEXT_HEADING_PATTERN.test(lines[index])) {
+      body.push(lines[index]);
+      index += 1;
+    }
+    while (body[body.length - 1] === '') {
+      body.pop();
+    }
+    output.push(...body, '', ...pictureBlockLines({ version, title, image }), '');
+  }
+  return output.join('\n');
+};
+
 const main = () => {
   const ref = process.argv[2];
   if (ref === undefined) {
@@ -58,7 +109,7 @@ const main = () => {
     process.exitCode = 1;
     return;
   }
-  process.stdout.write(`${notes}\n`);
+  process.stdout.write(`${expandPictures({ notes, version })}\n`);
 };
 
 main();
