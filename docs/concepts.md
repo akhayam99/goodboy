@@ -574,6 +574,9 @@ specific rule that fits wins.
   exact call once and resumes the turn by itself; the secondary "Always
   allow" actions write a rule (command-prefix for Bash, the whole tool for an
   edit) and need a manual retry
+- Settings › Workspace › Permissions lists the rules and adds one inline
+  (`Add rule`: Allow or Deny, a command prefix, this workspace or all of
+  them)
 - A workflow step that was denied pauses the run instead of finishing the
   step with whatever text the model produced meanwhile
 

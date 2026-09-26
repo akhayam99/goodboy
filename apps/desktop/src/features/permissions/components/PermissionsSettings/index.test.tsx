@@ -7,6 +7,7 @@ import type { IsoDateTime, PermissionRule, PermissionRuleId, WorkspaceId } from 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   remove: vi.fn(async () => undefined),
+  upsert: vi.fn(),
   setDefault: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   state: {
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../permissions', () => ({
   invokePermissionRuleList: mocks.list,
   invokePermissionRuleDelete: mocks.remove,
+  invokePermissionRuleUpsert: mocks.upsert,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -127,5 +129,40 @@ describe('PermissionsSettings', () => {
     await waitFor(() =>
       expect(screen.queryByText('Commands starting with "pnpm test"')).toBeNull(),
     );
+  });
+
+  it('adds a deny rule from a suggestion for every workspace', async () => {
+    mocks.upsert.mockResolvedValue(
+      rule({
+        id: 'rule-3' as PermissionRuleId,
+        scope: 'global',
+        workspaceId: undefined,
+        pattern: { tool: 'Bash', argsMatcher: 'git push --force *' },
+        decision: 'deny',
+      }),
+    );
+    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    await screen.findByText('Commands starting with "pnpm test"');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+    fireEvent.click(screen.getByRole('button', { name: 'git push' }));
+    const form = screen.getByRole('form', { name: 'Add rule' });
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Commands starting with' }), {
+      target: { value: 'git push --force' },
+    });
+    fireEvent.click(within(form).getByRole('tab', { name: 'All workspaces' }));
+    fireEvent.click(within(form).getByRole('button', { name: 'Add rule' }));
+
+    await waitFor(() =>
+      expect(mocks.upsert).toHaveBeenCalledWith({
+        scope: 'global',
+        patternTool: 'Bash',
+        patternArgsMatcher: 'git push --force *',
+        decision: 'deny',
+        priority: 100,
+      }),
+    );
+    expect(await screen.findByText('Commands starting with "git push --force"')).toBeDefined();
+    expect(screen.queryByRole('form', { name: 'Add rule' })).toBeNull();
   });
 });

@@ -11,6 +11,7 @@ import { DefaultModeCards } from './DefaultModeCards';
 import { IgnoredDenyNotice } from './IgnoredDenyNotice';
 import { ProviderSupportTable } from './ProviderSupportTable';
 import { RuleRow } from './RuleRow';
+import { AddRuleForm } from './AddRuleForm';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -52,6 +53,16 @@ export const PermissionsSettings = ({ workspaceId }: Props) => {
     }
   };
 
+  const addRule = async (rule: Parameters<typeof rules.add>[0]): Promise<boolean> => {
+    try {
+      await rules.add(rule);
+      return true;
+    } catch (error) {
+      void reportError({ title: "Couldn't add the rule", error, workspaceId });
+      return false;
+    }
+  };
+
   const removeRule = async (rule: Parameters<typeof rules.remove>[0]) => {
     try {
       await rules.remove(rule);
@@ -87,13 +98,14 @@ export const PermissionsSettings = ({ workspaceId }: Props) => {
 
       <div className="flex flex-col gap-2">
         <h3 className="text-label text-foreground">Rules</h3>
+        <AddRuleForm onAdd={addRule} />
         <ErrorStrip label="permission rules" error={rules.error} onRetry={rules.retry} />
         {rules.isLoading && rules.rules.length === 0 ? (
           <PanelLoading label="Loading rules" />
         ) : null}
         {!rules.isLoading && rules.error === null && rules.rules.length === 0 ? (
           <p className="text-secondary text-muted-foreground">
-            No rules yet. Rules appear here when you pick Always allow on an approval.
+            No rules yet. Add one here, or pick Always allow on an approval.
           </p>
         ) : null}
         {rules.rules.length > 0 ? (
