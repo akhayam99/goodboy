@@ -37,6 +37,8 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
     mountCleanupProposals: {},
     loadMountCleanupProposals: vi.fn(async () => []),
     resolveMountCleanup: vi.fn(async () => undefined),
+    settings: {} as Record<string, string>,
+    saveSetting: vi.fn(async () => undefined),
   },
   useWorktreeStatuses: vi.fn(() => new Map()),
   useWorktreeStatusPending: vi.fn(() => new Set()),
@@ -171,6 +173,7 @@ describe('ProjectMountRows', () => {
     store.sessionProjectMounts = {};
     store.mountGithub = {};
     store.prSeries = {};
+    store.settings = {};
   });
   afterEach(cleanup);
 
@@ -419,5 +422,34 @@ describe('ProjectMountRows', () => {
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.getByTestId('project-mount-row')).toBeDefined();
     expect(screen.queryByText(/No project yet/)).toBeNull();
+  });
+
+  it('explains the Projects block once a worktree exists, and dismisses it for good past the second', () => {
+    store.sessionMounts = {
+      'session-1': [mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' })],
+    };
+    const view = render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    expect(screen.getByText(/Where this session works/)).toBeDefined();
+    expect(store.saveSetting).not.toHaveBeenCalled();
+
+    view.unmount();
+    store.sessionMounts = {
+      'session-1': [
+        mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' }),
+        mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
+      ],
+    };
+    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    expect(store.saveSetting).toHaveBeenCalledWith('projects.hint.dismissed', 'true');
+  });
+
+  it('never shows the explainer once the dismissal flag is set', () => {
+    store.settings = { 'projects.hint.dismissed': 'true' };
+    store.sessionMounts = {
+      'session-1': [mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' })],
+    };
+    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+
+    expect(screen.queryByText(/Where this session works/)).toBeNull();
   });
 });

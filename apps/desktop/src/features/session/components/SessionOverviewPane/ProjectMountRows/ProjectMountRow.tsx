@@ -20,6 +20,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conce
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { useEditorMenuItems } from '../useEditorMenuItems';
 import { AlsoInChip } from './AlsoInChip';
+import { BranchPresenceLabel } from './BranchPresenceLabel';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
@@ -206,6 +207,7 @@ export const ProjectMountRow = ({
               className="shrink-0"
             />
           )}
+          {isRepo && row.branch !== '' ? <BranchPresenceLabel status={worktreeStatus} /> : null}
           {isRepo && row.branch !== '' ? (
             <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
           ) : null}
