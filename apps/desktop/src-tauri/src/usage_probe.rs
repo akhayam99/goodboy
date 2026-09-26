@@ -146,7 +146,11 @@ mod tests {
     #[test]
     fn run_probe_until_times_out_on_a_slow_command() {
         let cwd = std::env::temp_dir().to_string_lossy().into_owned();
-        let result = run_probe_until(&cwd, &["sleep", "5"], Instant::now() + Duration::from_millis(200));
+        let result = run_probe_until(
+            &cwd,
+            &["sleep", "5"],
+            Instant::now() + Duration::from_millis(200),
+        );
         assert!(matches!(result, Err(UsageProbeError::TimedOut)));
     }
 

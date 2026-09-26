@@ -311,6 +311,95 @@ pub async fn sentry_validate_connection(
     Ok(res.json().await?)
 }
 
+const MAX_LIST_PAGES: u32 = 10;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryOrganizationSummary {
+    pub slug: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryProjectSummary {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    #[serde(default)]
+    pub platform: Option<String>,
+}
+
+fn verified_secret(
+    credential_id: &str,
+    token: Option<String>,
+    cache: &SentryTokenCache,
+) -> Result<String, SentryError> {
+    integration_credentials::secret_to_verify(PROVIDER, credential_id, token, &cache.0)
+        .map(|raw| token_from_secret(&raw))
+        .map_err(SentryError::from)
+}
+
+async fn get_all_pages<T: serde::de::DeserializeOwned>(
+    url: &str,
+    secret: &str,
+) -> Result<Vec<T>, SentryError> {
+    let mut items: Vec<T> = Vec::new();
+    let mut cursor: Option<String> = None;
+    for _ in 0..MAX_LIST_PAGES {
+        let mut request = http_client().get(url).bearer_auth(secret);
+        if let Some(value) = cursor.as_deref() {
+            request = request.query(&[("cursor", value)]);
+        }
+        let res = request.send().await?;
+        let status = res.status();
+        if !status.is_success() {
+            let body = res.text().await.unwrap_or_default();
+            return Err(SentryError::Http(format!("status {}: {}", status, body)));
+        }
+        let next = res
+            .headers()
+            .get(reqwest::header::LINK)
+            .and_then(|v| v.to_str().ok())
+            .and_then(parse_next_cursor);
+        let body = res.text().await?;
+        let page: Vec<T> = serde_json::from_str(&body)?;
+        items.extend(page);
+        match next {
+            Some(value) if Some(&value) != cursor.as_ref() => cursor = Some(value),
+            _ => break,
+        }
+    }
+    Ok(items)
+}
+
+fn organizations_url() -> String {
+    format!("{}/organizations/?member=1", BASE_URL)
+}
+
+fn organization_projects_url(org: &str) -> String {
+    format!("{}/organizations/{}/projects/", BASE_URL, org)
+}
+
+#[tauri::command]
+pub async fn sentry_list_organizations(
+    credential_id: String,
+    token: Option<String>,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<Vec<SentryOrganizationSummary>, SentryError> {
+    let secret = verified_secret(&credential_id, token, &cache)?;
+    get_all_pages(&organizations_url(), &secret).await
+}
+
+#[tauri::command]
+pub async fn sentry_list_projects(
+    credential_id: String,
+    token: Option<String>,
+    org: String,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<Vec<SentryProjectSummary>, SentryError> {
+    let secret = verified_secret(&credential_id, token, &cache)?;
+    get_all_pages(&organization_projects_url(org.trim()), &secret).await
+}
+
 #[tauri::command]
 pub async fn sentry_connect(
     credential_id: String,
@@ -427,6 +516,51 @@ pub async fn sentry_fetch_issue_detail(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const ORGANIZATIONS_FIXTURE: &str = r#"[{"id":"1","slug":"northwind","name":"Northwind","dateCreated":"2024-01-01T00:00:00Z","isEarlyAdopter":false,"require2FA":false,"avatar":{"avatarType":"letter_avatar","avatarUuid":null},"features":[],"status":{"id":"active","name":"active"}},{"id":"2","slug":"harborline","name":"Harborline"}]"#;
+    const PROJECTS_FIXTURE: &str = r#"[{"id":"4501","slug":"payments-api","name":"payments-api","platform":"python","dateCreated":"2024-01-01T00:00:00Z","isBookmarked":false,"isMember":true,"features":[],"firstEvent":null,"hasAccess":true,"team":{"id":"9","slug":"core","name":"Core"},"teams":[]},{"id":"4502","slug":"storefront-web","name":"storefront-web","platform":null}]"#;
+
+    #[test]
+    fn organizations_fixture_reads_slug_and_name() {
+        let orgs: Vec<SentryOrganizationSummary> =
+            serde_json::from_str(ORGANIZATIONS_FIXTURE).expect("parses");
+        assert_eq!(
+            orgs,
+            vec![
+                SentryOrganizationSummary {
+                    slug: "northwind".to_string(),
+                    name: "Northwind".to_string()
+                },
+                SentryOrganizationSummary {
+                    slug: "harborline".to_string(),
+                    name: "Harborline".to_string()
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn projects_fixture_reads_id_slug_name_and_platform() {
+        let projects: Vec<SentryProjectSummary> =
+            serde_json::from_str(PROJECTS_FIXTURE).expect("parses");
+        assert_eq!(projects.len(), 2);
+        assert_eq!(projects[0].id, "4501");
+        assert_eq!(projects[0].slug, "payments-api");
+        assert_eq!(projects[0].platform.as_deref(), Some("python"));
+        assert_eq!(projects[1].platform, None);
+    }
+
+    #[test]
+    fn list_urls_point_at_the_member_orgs_and_the_org_projects() {
+        assert_eq!(
+            organizations_url(),
+            "https://sentry.io/api/0/organizations/?member=1"
+        );
+        assert_eq!(
+            organization_projects_url("northwind"),
+            "https://sentry.io/api/0/organizations/northwind/projects/"
+        );
+    }
 
     #[test]
     fn next_cursor_extracts_when_results_true() {

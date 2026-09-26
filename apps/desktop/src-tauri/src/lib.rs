@@ -7,6 +7,7 @@ mod bitbucket;
 mod boot_breadcrumb;
 mod bridge;
 mod budget;
+mod codex_app_server;
 mod codex_rollout;
 mod config_export;
 mod cursor_config;
@@ -48,7 +49,6 @@ mod storage;
 mod summarize;
 mod terminal;
 mod turn;
-mod codex_app_server;
 mod usage_probe;
 mod util;
 mod workflows;
@@ -386,6 +386,8 @@ pub fn run() {
             linear::linear_update_issue,
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
+            sentry::sentry_list_organizations,
+            sentry::sentry_list_projects,
             sentry::sentry_fetch_issues,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
@@ -413,6 +415,7 @@ pub fn run() {
             gitlab::gitlab_update_mr_state,
             jira::jira_validate_connection,
             jira::jira_connect,
+            jira::jira_list_projects,
             jira::jira_list_issues,
             jira::jira_get_issue,
             jira::jira_list_comments,

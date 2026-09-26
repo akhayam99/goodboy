@@ -7,6 +7,7 @@ import {
   jiraListAssignableUsers,
   jiraListComments,
   jiraListIssues,
+  jiraListProjects,
   jiraListTransitions,
   jiraSetAssignee,
   jiraTransitionIssue,
@@ -162,6 +163,24 @@ describe('jira client', () => {
     expect(mockInvoke).toHaveBeenCalledWith('jira_transition_issue', {
       ...target,
       transitionId: '31',
+    });
+  });
+  it('lists projects for a key that is not saved yet', async () => {
+    mockInvoke.mockResolvedValue([{ id: '10000', key: 'ENG', name: 'Engineering' }]);
+
+    const projects = await jiraListProjects({
+      credentialId,
+      siteUrl: site.siteUrl,
+      email: site.email,
+      apiToken: 'ATATT-token',
+    });
+
+    expect(projects).toEqual([{ id: '10000', key: 'ENG', name: 'Engineering' }]);
+    expect(mockInvoke).toHaveBeenCalledWith('jira_list_projects', {
+      credentialId,
+      siteUrl: site.siteUrl,
+      email: site.email,
+      apiToken: 'ATATT-token',
     });
   });
 });

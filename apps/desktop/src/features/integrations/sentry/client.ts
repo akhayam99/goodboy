@@ -78,6 +78,43 @@ export const sentryValidateConnection = async (
   });
 };
 
+export type SentryOrganizationSummary = {
+  readonly slug: string;
+  readonly name: string;
+};
+
+export type SentryProjectSummary = {
+  readonly id: string;
+  readonly slug: string;
+  readonly name: string;
+  readonly platform: string | null;
+};
+
+type SentryListParams = {
+  readonly credentialId: IntegrationCredentialId;
+  readonly token: string | null;
+};
+
+export const sentryListOrganizations = async ({
+  credentialId,
+  token,
+}: SentryListParams): Promise<ReadonlyArray<SentryOrganizationSummary>> =>
+  invoke<ReadonlyArray<SentryOrganizationSummary>>('sentry_list_organizations', {
+    credentialId,
+    token,
+  });
+
+export const sentryListProjects = async ({
+  credentialId,
+  token,
+  org,
+}: SentryListParams & { readonly org: string }): Promise<ReadonlyArray<SentryProjectSummary>> =>
+  invoke<ReadonlyArray<SentryProjectSummary>>('sentry_list_projects', {
+    credentialId,
+    token,
+    org,
+  });
+
 export const sentryConnect = async (
   credentialId: IntegrationCredentialId,
   token: string | null,
