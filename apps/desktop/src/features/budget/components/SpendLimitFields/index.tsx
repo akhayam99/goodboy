@@ -1,33 +1,29 @@
 import { Bell, Pause } from 'lucide-react';
 import { Input, SegmentedTabs, cn, type SegmentedTabOption } from '@goodboy/ui';
-import type { WorkflowSpendLimitMode } from '@goodboy/types';
+import type { SessionBudgetOnExceed } from '@goodboy/types';
+import { parseSpendLimit } from '../../parseSpendLimit';
 
-const MODE_OPTIONS: ReadonlyArray<SegmentedTabOption<WorkflowSpendLimitMode>> = [
-  { value: 'notify', label: 'Notify', hint: 'keep going, warn me', icon: Bell },
-  { value: 'pause', label: 'Pause', hint: 'stop the run', icon: Pause },
+const BEHAVIOR_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionBudgetOnExceed>> = [
+  { value: 'pause', label: 'Pause workflows', hint: 'stop at the limit', icon: Pause },
+  { value: 'warn', label: 'Only warn me', hint: 'keep going, tell me once', icon: Bell },
 ];
-
-export const parseSpendLimit = (draft: string): number | null => {
-  const amount = Number.parseFloat(draft.trim());
-  return Number.isFinite(amount) && amount > 0 ? amount : null;
-};
 
 type Props = {
   readonly amount: string;
-  readonly mode: WorkflowSpendLimitMode;
+  readonly behavior: SessionBudgetOnExceed;
   readonly inputId: string;
   readonly invalid?: boolean;
   readonly onAmount: (amount: string) => void;
-  readonly onMode: (mode: WorkflowSpendLimitMode) => void;
+  readonly onBehavior: (behavior: SessionBudgetOnExceed) => void;
 };
 
 export const SpendLimitFields = ({
   amount,
-  mode,
+  behavior,
   inputId,
   invalid = false,
   onAmount,
-  onMode,
+  onBehavior,
 }: Props) => (
   <div className="flex flex-col gap-2">
     <div className="relative">
@@ -57,9 +53,9 @@ export const SpendLimitFields = ({
         fill
         size="sm"
         ariaLabel="What happens at the limit"
-        options={MODE_OPTIONS}
-        value={mode}
-        onChange={onMode}
+        options={BEHAVIOR_OPTIONS}
+        value={behavior}
+        onChange={onBehavior}
       />
     )}
   </div>

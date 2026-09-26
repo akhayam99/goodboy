@@ -900,8 +900,8 @@ never mounts and unmounts its panel by hand.
   rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
   as one running state, not two claims. The bar for another lasting-state
   animation is high.
-- `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
-  the digit roll.
+- `cost-tick`: the spend chip's amount just changed. The figure rises 6px into
+  place in 160ms; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.

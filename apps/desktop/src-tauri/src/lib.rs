@@ -313,6 +313,7 @@ pub fn run() {
             budget::budget_rule_delete,
             budget::session_budget_set,
             budget::session_budget_get,
+            budget::session_budget_clear,
             budget::budget_alerts_list,
             budget::budget_alert_dismiss,
             budget::budget_emit_alerts,

@@ -1,9 +1,12 @@
 import { AnchoredPopover, Switch, cn, formatUsd, useDropdown } from '@goodboy/ui';
 import type { WorkflowSpendLimitMode } from '@goodboy/types';
+import { SpendLimitFields } from '../../../../budget/components/SpendLimitFields';
+import { parseSpendLimit } from '../../../../budget/parseSpendLimit';
 import {
-  SpendLimitFields,
-  parseSpendLimit,
-} from '../../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
+  SPEND_LIMIT_BEHAVIOR_SHORT,
+  behaviorOfRunMode,
+  runModeOfBehavior,
+} from '../../../../budget/spendLimitBehavior';
 import { ControlChip } from './ControlChip';
 
 type Props = {
@@ -30,7 +33,9 @@ const chipValueOf = ({ isEnabled, amount, mode }: ValueParams): string => {
     return 'None';
   }
   const parsed = parseSpendLimit(amount);
-  return parsed === null ? 'Set an amount' : `${formatUsd(parsed)}, ${mode}`;
+  return parsed === null
+    ? 'Set an amount'
+    : `${formatUsd(parsed)} · ${SPEND_LIMIT_BEHAVIOR_SHORT[behaviorOfRunMode({ mode })]}`;
 };
 
 export const SpendCapChip = ({
@@ -83,11 +88,11 @@ export const SpendCapChip = ({
         <>
           <SpendLimitFields
             amount={amount}
-            mode={mode}
+            behavior={behaviorOfRunMode({ mode })}
             inputId={AMOUNT_ID}
             invalid={isInvalid}
             onAmount={onAmount}
-            onMode={onMode}
+            onBehavior={(behavior) => onMode(runModeOfBehavior({ behavior }))}
           />
           <p
             className={cn(
@@ -98,7 +103,7 @@ export const SpendCapChip = ({
             {isInvalid
               ? 'Enter an amount above zero.'
               : hasAmount
-                ? 'Choose whether the run notifies you or pauses at this amount.'
+                ? 'Choose whether the run pauses or only warns you at this amount.'
                 : 'Set the maximum this run may spend.'}
           </p>
         </>

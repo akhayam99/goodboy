@@ -24,6 +24,7 @@ import type {
   StepId,
   Session,
   SessionId,
+  SessionBudgetOnExceed,
   SessionProviderPreference,
   StepDef,
   StepDefId,
@@ -671,7 +672,12 @@ type AppActions = {
   saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
   loadSessionBudget(sessionId: SessionId): Promise<void>;
-  setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
+  setSessionBudget(
+    sessionId: SessionId,
+    softCapUsd: number,
+    onExceed?: SessionBudgetOnExceed,
+  ): Promise<void>;
+  clearSessionBudget(sessionId: SessionId): Promise<void>;
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
   loadBudgetAlerts(): Promise<void>;
   dismissBudgetAlert(id: string): Promise<void>;

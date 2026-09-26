@@ -115,10 +115,7 @@ export const checkSessionBudget = async (
   }
 
   const budgetRow = budgetRows[0]!;
-  const budget: SessionBudget = {
-    sessionId: budgetRow.session_id as SessionId,
-    softCapUsd: budgetRow.soft_cap_usd,
-  };
+  const budget: Pick<SessionBudget, 'softCapUsd'> = { softCapUsd: budgetRow.soft_cap_usd };
 
   const costRows = await db.select<CostSumRow>(
     `SELECT COALESCE(SUM(estimated_cost_usd), 0) AS total

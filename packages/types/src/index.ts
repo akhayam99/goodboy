@@ -210,6 +210,7 @@ export type {
   BudgetPeriod,
   BudgetCheckResult,
   SessionBudget,
+  SessionBudgetOnExceed,
   RoutingReason,
   RoutingDecision,
   BudgetAlertKind,
