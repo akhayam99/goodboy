@@ -103,8 +103,9 @@ never touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
-**The strip** is one row closed by a `<Divider />`. It renders **outside** the
-grid, so no column resize, hide animation or overlay can move it.
+**The strip** is one row on the chrome, with no line under it: the edge of the
+content sheet closes it. It renders **outside** the grid, so no column resize,
+hide animation or overlay can move it.
 
 **The columns** are one grid at saved widths, clamped when read.
 

@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import {
-  Button,
-  cn,
-  Divider,
-  EmptyState,
-  ScrollFade,
-  Skeleton,
-  Tooltip,
-  tintClasses,
-} from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -263,6 +254,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         'mx-auto flex h-full w-full',
         PANE_RHYTHM.board.maxWidth,
         PANE_RHYTHM.stack,
+        'gap-6',
         PANE_RHYTHM.board.pad,
       )}
     >
@@ -289,7 +281,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               )}
             </span>
           </div>
-          <Divider />
         </>
       ) : null}
 

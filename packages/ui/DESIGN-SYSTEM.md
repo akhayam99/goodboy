@@ -23,15 +23,15 @@ controls. Opacity modifiers do not create additional text steps.
 Six opaque roles, from the back of the window to the eye. Components step
 between them instead of mixing one surface through opacity.
 
-| step | role     | class           | holds                                                   |
-| ---- | -------- | --------------- | ------------------------------------------------------- |
-| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer                 |
-| 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
-| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
-| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
-| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                          |
-| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
-| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
+| step | role     | class           | holds                                                 |
+| ---- | -------- | --------------- | ----------------------------------------------------- |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer, studio rails |
+| 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
+| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`     |
+| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
+| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
+| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                   |
 
 Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
 Light mode is ink on paper, read on two axes. On the elevation axis (what sits

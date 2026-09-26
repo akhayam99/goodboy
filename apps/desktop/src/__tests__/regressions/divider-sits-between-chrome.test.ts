@@ -28,13 +28,13 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
     count: 2,
     reason: 'chrome',
   },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
     { count: 1, reason: 'chrome' },
@@ -175,10 +175,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/workspace/components/StageBoard/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx': {
     count: 1,
     reason: 'debt',
@@ -193,10 +189,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
-  'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,

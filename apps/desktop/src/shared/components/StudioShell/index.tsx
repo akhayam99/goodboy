@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, type Tone } from '@goodboy/ui';
+import { cn, SHEET_CLASSES, type Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import { OverlayHeader } from '@goodboy/ui';
@@ -38,10 +38,10 @@ export const StudioShell = ({
       {...(variant === 'slot' ? {} : { 'data-studio-overlay': '' })}
       className={cn(
         variant === 'slot'
-          ? 'relative h-full w-full flex flex-col bg-background'
+          ? 'relative h-full w-full flex flex-col bg-chrome'
           : variant === 'viewport'
-            ? 'fixed inset-0 z-studio flex flex-col bg-background'
-            : 'relative flex h-full w-full min-h-0 flex-col bg-background',
+            ? 'fixed inset-0 z-studio flex flex-col bg-chrome'
+            : 'relative flex h-full w-full min-h-0 flex-col bg-chrome',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
@@ -58,9 +58,15 @@ export const StudioShell = ({
       >
         {headerAccessory}
       </OverlayHeader>
-      <Divider />
-
-      <div className="flex min-h-0 flex-1">{children(requestClose)}</div>
+      <div
+        className={cn(
+          'flex min-h-0 flex-1 bg-background',
+          SHEET_CLASSES.flush,
+          'has-[[data-studio-rail]]:border-y-0',
+        )}
+      >
+        {children(requestClose)}
+      </div>
     </div>
   );
 };
