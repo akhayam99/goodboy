@@ -443,7 +443,8 @@ one is open at a time.
   studio. Below a 720px list column the rail folds into a Filters button in
   the list header.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Help, Danger zone) always sit under the App row as indented
+  Backup, Storage, Security findings, Help, Danger zone) always sit under the
+  App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The panel shows one item at a time. Providers & models nests
   Defaults and one row per provider, and Tools nests one row per tool. Those
@@ -474,6 +475,17 @@ one is open at a time.
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
+- **Security findings is its own App page, workspace-scoped.** It scans the
+  text Goodboy keeps for a workspace (saved scripts today; workflow steps,
+  the profile, reply templates and permission rules are named in the design
+  but not wired to a scan call yet) for known token shapes
+  (`scanTextForSecrets`, packages/core), fingerprints each hit with sha256,
+  and never stores the value (`security_findings` table,
+  `recordSecurityFindings`). A save reconciles that subject's findings: new
+  fingerprints open, missing ones resolve, and a finding marked "Not a
+  secret" (`dismissSecurityFinding`) stays dismissed even if the exact same
+  value is scanned again, until "Flag again" clears it. The page needs a
+  workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
   doing: warning on Providers & models when a connected CLI is too old for a
@@ -481,7 +493,9 @@ one is open at a time.
   the reason as the row subtitle), info on General while an app update is
   ready, info on Storage with "N GB can go" as its subtitle once clean idle
   folders pass 10 GB (warning when the disk has under 10 GB free and at least
-  1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
+  1 GB can go, `selectStorageAttention`), warning on Security findings with
+  "N open" once the current workspace has an undismissed finding
+  (`selectSecurityFindingsAttention`). Danger zone reads in `text-danger`. Panel sections sit on
   `SectionSurface` cards with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,

@@ -1,9 +1,11 @@
+import type { WorkspaceId } from '@goodboy/types';
 import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
 import type { SettingsScopeChange, SettingsStudioScope } from './types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
+import { selectSecurityFindingsAttention } from '../../../../store/slices/security-findings/selectSecurityFindingsAttention';
 import {
   selectStorageAttention,
   selectStorageAttentionTone,
@@ -14,6 +16,7 @@ export type NestedScope = 'providers' | 'tools';
 type Props = {
   readonly scope: SettingsStudioScope;
   readonly appSection: AppSection;
+  readonly workspaceId: WorkspaceId | null;
   readonly workspaceName: string | null;
   readonly hasWorkspace: boolean;
   readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
@@ -56,6 +59,7 @@ export const settingsScopeAvailable = ({
 export const SettingsRail = ({
   scope,
   appSection,
+  workspaceId,
   workspaceName,
   hasWorkspace,
   nestedSlot,
@@ -66,6 +70,9 @@ export const SettingsRail = ({
   const hasUpdate = useAppStore((state) => state.updaterStatus === 'available');
   const storageAttention = useAppStore((state) => selectStorageAttention({ state }));
   const storageTone = useAppStore((state) => selectStorageAttentionTone({ state }));
+  const securityFindingsAttention = useAppStore((state) =>
+    selectSecurityFindingsAttention({ state, workspaceId }),
+  );
 
   return (
     <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
@@ -85,14 +92,30 @@ export const SettingsRail = ({
             const Icon = CONCEPT_ICONS[section.concept];
             const isGeneralUpdate = section.id === 'general' && hasUpdate;
             const isStorageNudge = section.id === 'storage' && storageTone !== null;
+            const isSecurityNudge =
+              section.id === 'security-findings' && securityFindingsAttention !== null;
             return (
               <li key={section.id}>
                 <StatusRailItem
                   icon={<Icon size={ICON_SIZE.row} />}
                   label={section.label}
                   density="compact"
-                  subtitle={isStorageNudge ? (storageAttention ?? undefined) : undefined}
-                  tone={isGeneralUpdate ? 'info' : isStorageNudge ? storageTone : undefined}
+                  subtitle={
+                    isStorageNudge
+                      ? (storageAttention ?? undefined)
+                      : isSecurityNudge
+                        ? (securityFindingsAttention ?? undefined)
+                        : undefined
+                  }
+                  tone={
+                    isGeneralUpdate
+                      ? 'info'
+                      : isStorageNudge
+                        ? storageTone
+                        : isSecurityNudge
+                          ? 'warning'
+                          : undefined
+                  }
                   statusLabel={isGeneralUpdate ? 'Update available' : undefined}
                   selected={scope === 'app' && appSection === section.id}
                   onClick={() => onSelect({ scope: 'app', section: section.id })}

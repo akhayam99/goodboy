@@ -231,6 +231,7 @@ import { durationEstimatesInitialState } from './slices/durationEstimates/state'
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
 import { createHandoffsSlice } from './slices/handoffs';
+import { createSecurityFindingsSlice } from './slices/security-findings';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -1064,7 +1065,8 @@ export type AppStore = AppState &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
   ReturnType<typeof createStorageSlice> &
-  ReturnType<typeof createHandoffsSlice>;
+  ReturnType<typeof createHandoffsSlice> &
+  ReturnType<typeof createSecurityFindingsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1287,6 +1289,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
   ...createHandoffsSlice(set, get),
+  ...createSecurityFindingsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

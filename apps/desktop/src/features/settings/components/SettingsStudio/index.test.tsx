@@ -53,6 +53,7 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<unknown>,
     cliRequirements: [] as ReadonlyArray<unknown>,
     agentTurnState: {},
+    openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
   },
   toastMock: vi.fn(),
 }));
@@ -197,6 +198,7 @@ describe('SettingsStudio', () => {
       'shortcuts',
       'backup',
       'storage',
+      'security-findings',
       'help',
       'danger',
     ]);
