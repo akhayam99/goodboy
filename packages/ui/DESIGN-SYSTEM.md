@@ -768,8 +768,11 @@ What "empty" means, and the copy rule for it, are product rules and live in
 ## Motion registry
 
 Seven animations, one meaning each. Transition keyframes (`fade-in`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
-states and sit outside the registry.
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
+`layer-out`, `trail-crumb-in`) move content between states and sit outside the
+registry. The `Trail` closes a crumb label with `grid-template-columns` from
+`1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
+trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
 from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`

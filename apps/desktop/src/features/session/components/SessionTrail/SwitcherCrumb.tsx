@@ -13,7 +13,9 @@ type SwitcherCrumbProps = {
   readonly label: string;
   readonly menuLabel: string;
   readonly icon?: LucideIcon;
+  readonly iconClassName?: string;
   readonly accessory?: ReactNode;
+  readonly isIconOnly?: boolean;
   readonly menuHeight?: number;
   readonly onNavigate?: () => void;
   readonly children: (params: MenuParams) => ReactNode;
@@ -23,7 +25,9 @@ export const SwitcherCrumb = ({
   label,
   menuLabel,
   icon: Icon,
+  iconClassName = 'text-faint-foreground',
   accessory,
+  isIconOnly = false,
   menuHeight = 260,
   onNavigate,
   children,
@@ -48,10 +52,10 @@ export const SwitcherCrumb = ({
         className={cn(CRUMB_BUTTON_CLASS, CRUMB_LAST_CLASS)}
       >
         {Icon == null ? null : (
-          <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+          <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', iconClassName)} />
         )}
-        <span className="min-w-0 max-w-48 truncate">{label}</span>
-        {accessory}
+        <span className={isIconOnly ? 'sr-only' : 'min-w-0 max-w-48 truncate'}>{label}</span>
+        {isIconOnly ? null : accessory}
         <ChevronDown
           size={11}
           aria-hidden
@@ -69,10 +73,10 @@ export const SwitcherCrumb = ({
           className={cn(CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS)}
         >
           {Icon == null ? null : (
-            <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+            <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', iconClassName)} />
           )}
-          <span className="min-w-0 truncate">{label}</span>
-          {accessory}
+          <span className={isIconOnly ? 'sr-only' : 'min-w-0 truncate'}>{label}</span>
+          {isIconOnly ? null : accessory}
         </button>
         <Tooltip content={menuLabel} anchorClassName="shrink-0">
           <button

@@ -41,6 +41,39 @@ const labels = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs.map
 const last = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs[crumbs.length - 1];
 
 describe('buildSessionBreadcrumb', () => {
+  it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'workflows',
+          selectedChildHome: 'workflows',
+          selectedChildWorkflowName: 'Ship webhook retries',
+          selectedChildLabel: 'Wire checkout errors',
+          selectedChildTone: 'text-agent-implementer',
+          selectedParentLabel: 'implementer',
+          selectedQuestionLabel: 'Which retry policy?',
+        },
+        h,
+      ),
+    );
+
+    expect(crumbs.every((crumb) => crumb.icon != null)).toBe(true);
+    expect(crumbs.find((crumb) => crumb.id === 'delegated-answers')).toBeDefined();
+    expect(
+      buildSessionBreadcrumb(
+        base(
+          {
+            selectedChildHome: 'agents',
+            selectedChildLabel: 'scout one',
+            selectedChildTone: 'text-agent-scout',
+          },
+          h,
+        ),
+      ).at(-1)?.iconClassName,
+    ).toBe('text-agent-scout');
+  });
+
   it('renders a single non-clickable Overview crumb on bare overview', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(base({}, h));

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn, Divider, tintClasses, Trail, type Tone } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
+import { CONCEPT_ICONS } from '../conceptIcons';
 
 type Props = {
   readonly crumbKey: string;
@@ -42,12 +43,12 @@ export const StudioBand = ({
       >
         {isTrailClaimed ? null : (
           <Trail
-            lead={glyph != null ? <span className="flex shrink-0">{glyph}</span> : undefined}
             segments={[
               {
                 id: crumbKey,
                 label: title,
-                icon: glyph != null ? null : (icon ?? null),
+                icon: icon ?? CONCEPT_ICONS.more,
+                ...(glyph != null && { glyph }),
                 iconClassName: tintClasses(tone).icon,
                 ...(subtitle != null &&
                   subtitle !== '' && {

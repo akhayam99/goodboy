@@ -54,9 +54,12 @@ vi.mock('../../../../store', async () => ({
     (h.state.sessionOpenQuestions as Record<string, ReadonlyArray<unknown>>)[id] ?? [],
 }));
 
-vi.mock('../../hooks/useSessionCrumbs', () => ({
-  useSessionCrumbs: () => h.crumbs,
-}));
+vi.mock('../../hooks/useSessionCrumbs', async () => {
+  const { Circle } = await import('lucide-react');
+  return {
+    useSessionCrumbs: () => h.crumbs.map((crumb) => ({ icon: Circle, ...crumb })),
+  };
+});
 
 vi.mock('@goodboy/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/ui')>();
@@ -593,7 +596,7 @@ describe('SessionCrumbs on a cluster child', () => {
     });
   });
 
-  it('truncates every agent crumb so long names never wrap the bar', () => {
+  it('truncates every agent crumb by the room left, never by a fixed cap', () => {
     openClusterSurface();
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },
@@ -614,7 +617,7 @@ describe('SessionCrumbs on a cluster child', () => {
       name: 'an extremely long father agent display name',
     });
     expect(father.className).toContain('truncate');
-    expect(father.className).toContain('max-w-64');
+    expect(father.className).not.toContain('max-w-64');
     const child = screen.getByRole('button', {
       name: /an even longer cluster child area description name/,
     });

@@ -10,6 +10,8 @@ type AgentSwitcherCrumbProps = {
   readonly label: string;
   readonly icon?: LucideIcon;
   readonly accessory?: ReactNode;
+  readonly isIconOnly?: boolean;
+  readonly iconClassName?: string;
   readonly siblings: ReadonlyArray<SwitcherEntry>;
   readonly selectedAgentId: AgentId;
   readonly onSelect: (id: AgentId) => void;
@@ -20,6 +22,8 @@ export const AgentSwitcherCrumb = ({
   label,
   icon,
   accessory,
+  isIconOnly = false,
+  iconClassName,
   siblings,
   selectedAgentId,
   onSelect,
@@ -35,6 +39,8 @@ export const AgentSwitcherCrumb = ({
       menuLabel="Switch agent"
       icon={icon}
       accessory={accessory}
+      isIconOnly={isIconOnly}
+      {...(iconClassName !== undefined && { iconClassName })}
       onNavigate={onNavigate}
     >
       {({ close }) => (

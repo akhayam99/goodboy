@@ -254,9 +254,17 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   goes deeper claims the band with `StudioTrail` (the workflow editor shows
   `Workflows > Ship a fix` with its save state and actions), so the app has one
   breadcrumb.
-- **Under 720px of pane width the middle collapses.** Crumbs between the
-  destination switcher and the last crumb fold into a `…` menu that lists them,
-  the way VS Code and GitHub fold long paths.
+- **Every crumb has an icon, and depth compacts the trail.** Agents carry the
+  agent glyph in their kind's colour, runs the run glyph, artifacts, questions
+  and pull request modes their own. The last crumb and its parent always stay
+  full. From four crumbs `Overview` turns into its icon; from five every
+  ancestor but the parent does. When the band still has no room, ancestors turn
+  to icons from the left, then the icons after `Overview` fold into a `…` menu
+  right after it; `Overview` is the anchor and never folds. An icon crumb keeps
+  its name as tooltip and accessible name. `compactTrail` in `@goodboy/ui` is
+  the pure rule; the label closes with a 220ms width transition (120ms fade),
+  and a new crumb enters from the right 60ms later. Under reduced motion only
+  the opacity changes.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.

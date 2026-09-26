@@ -16,7 +16,6 @@ import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
 import { LensSwitcherCrumb } from './LensSwitcherCrumb';
 import { switcherPeers } from './switcherPeers';
-import { CollapsedCrumbs } from './CollapsedCrumbs';
 import type { SwitcherEntry } from './switcherEntry';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
@@ -137,11 +136,8 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
   const isSelectedCrumbAnAgent = selectedAgent != null && lastCrumb?.id === 'selected-child';
   const canSwitchAgent = isSelectedCrumbAnAgent && siblings.length > 1;
   const destinationCrumbIndex = crumbs.length > 1 ? 1 : 0;
-  const isCollapsible = (index: number) =>
-    index > destinationCrumbIndex && index < crumbs.length - 1;
-  const collapsibleCrumbs = crumbs.filter((_, index) => isCollapsible(index));
 
-  const segments: ReadonlyArray<TrailSegmentModel> = crumbs.flatMap((crumb, index) => {
+  const segments: ReadonlyArray<TrailSegmentModel> = crumbs.map((crumb, index) => {
     const isLast = index === crumbs.length - 1;
     const accessory =
       isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
@@ -149,68 +145,66 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
       ) : (
         crumb.accessory
       );
-    const collapsed: ReadonlyArray<TrailSegmentModel> =
-      index === destinationCrumbIndex + 1 && collapsibleCrumbs.length > 0
-        ? [
-            {
-              id: 'collapsed',
-              label: 'Hidden pages',
-              icon: null,
-              className: 'hidden @max-[720px]:flex',
-              render: <CollapsedCrumbs crumbs={collapsibleCrumbs} />,
-            },
-          ]
-        : [];
-    const render =
-      isLast && canSwitchAgent && selectedAgent != null ? (
-        <AgentSwitcherCrumb
-          label={crumb.label}
-          icon={crumb.icon}
-          accessory={accessory}
-          siblings={siblings}
-          selectedAgentId={selectedAgent.id}
-          onSelect={(id) => {
-            navigate({ to: agentPlace({ sessionId, agentId: id }) });
-          }}
-        />
-      ) : crumb.id === 'selected-parent' && parentAgent != null && parentSiblings.length > 1 ? (
-        <AgentSwitcherCrumb
-          label={crumb.label}
-          icon={crumb.icon}
-          accessory={accessory}
-          siblings={parentSiblings}
-          selectedAgentId={parentAgent.id}
-          onNavigate={crumb.onClick}
-          onSelect={(id) => {
-            navigate({ to: agentPlace({ sessionId, agentId: id }) });
-          }}
-        />
-      ) : index === destinationCrumbIndex ? (
-        <LensSwitcherCrumb
-          label={crumb.label}
-          icon={crumb.icon}
-          accessory={accessory}
-          sessionId={sessionId}
-          activeLens={activeLens}
-          isBranchless={isBranchless}
-          onNavigate={crumb.onClick}
-          onSelect={(lens) => {
-            setFocusedArtifactId(sessionId, null);
-            setFocusedWorkflowRun(sessionId, null);
-            openLens({ sessionId, lens });
-          }}
-        />
-      ) : undefined;
-    const segment: TrailSegmentModel = {
+    const render: TrailSegmentModel['render'] =
+      isLast && canSwitchAgent && selectedAgent != null
+        ? ({ isIconOnly }) => (
+            <AgentSwitcherCrumb
+              label={crumb.label}
+              icon={crumb.icon}
+              {...(crumb.iconClassName !== undefined && { iconClassName: crumb.iconClassName })}
+              accessory={accessory}
+              isIconOnly={isIconOnly}
+              siblings={siblings}
+              selectedAgentId={selectedAgent.id}
+              onSelect={(id) => {
+                navigate({ to: agentPlace({ sessionId, agentId: id }) });
+              }}
+            />
+          )
+        : crumb.id === 'selected-parent' && parentAgent != null && parentSiblings.length > 1
+          ? ({ isIconOnly }) => (
+              <AgentSwitcherCrumb
+                label={crumb.label}
+                icon={crumb.icon}
+                {...(crumb.iconClassName !== undefined && { iconClassName: crumb.iconClassName })}
+                accessory={accessory}
+                isIconOnly={isIconOnly}
+                siblings={parentSiblings}
+                selectedAgentId={parentAgent.id}
+                onNavigate={crumb.onClick}
+                onSelect={(id) => {
+                  navigate({ to: agentPlace({ sessionId, agentId: id }) });
+                }}
+              />
+            )
+          : index === destinationCrumbIndex
+            ? ({ isIconOnly }) => (
+                <LensSwitcherCrumb
+                  label={crumb.label}
+                  icon={crumb.icon}
+                  accessory={accessory}
+                  isIconOnly={isIconOnly}
+                  sessionId={sessionId}
+                  activeLens={activeLens}
+                  isBranchless={isBranchless}
+                  onNavigate={crumb.onClick}
+                  onSelect={(lens) => {
+                    setFocusedArtifactId(sessionId, null);
+                    setFocusedWorkflowRun(sessionId, null);
+                    openLens({ sessionId, lens });
+                  }}
+                />
+              )
+            : undefined;
+    return {
       id: crumb.id,
       label: crumb.label,
-      icon: crumb.icon ?? null,
+      icon: crumb.icon,
+      ...(crumb.iconClassName !== undefined && { iconClassName: crumb.iconClassName }),
       accessory,
       ...(crumb.onClick !== undefined && { onSelect: crumb.onClick }),
       ...(render !== undefined && { render }),
-      ...(isCollapsible(index) && { className: '@max-[720px]:hidden' }),
     };
-    return [...collapsed, segment];
   });
 
   return (

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { lazy } from 'react';
+import { Workflow } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { StudioShell } from '../../../shared/components/StudioShell';
@@ -66,8 +67,8 @@ describe('StudioFrame', () => {
       <StudioFrame kind="workflow" onClose={() => undefined}>
         <StudioTrail
           segments={[
-            { id: 'workflows', label: 'Workflows', icon: null, onSelect: onBack },
-            { id: 'workflow', label: 'Ship a fix', icon: null },
+            { id: 'workflows', label: 'Workflows', icon: Workflow, onSelect: onBack },
+            { id: 'workflow', label: 'Ship a fix', icon: Workflow },
           ]}
         />
       </StudioFrame>,

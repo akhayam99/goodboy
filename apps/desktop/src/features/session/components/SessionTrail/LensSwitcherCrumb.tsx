@@ -9,6 +9,7 @@ type LensSwitcherCrumbProps = {
   readonly label: string;
   readonly icon?: LucideIcon;
   readonly accessory?: ReactNode;
+  readonly isIconOnly?: boolean;
   readonly sessionId: SessionId;
   readonly activeLens: LensKind | null;
   readonly isBranchless: boolean;
@@ -20,6 +21,7 @@ export const LensSwitcherCrumb = ({
   label,
   icon,
   accessory,
+  isIconOnly = false,
   sessionId,
   activeLens,
   isBranchless,
@@ -31,6 +33,7 @@ export const LensSwitcherCrumb = ({
     menuLabel="Switch page"
     icon={icon}
     accessory={accessory}
+    isIconOnly={isIconOnly}
     menuHeight={420}
     onNavigate={onNavigate}
   >

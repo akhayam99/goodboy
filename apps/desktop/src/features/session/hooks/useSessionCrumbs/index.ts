@@ -19,7 +19,7 @@ import { buildSessionBreadcrumb } from '../../components/SessionWorkspace/sessio
 import { lensLabelFor } from '../../lens-labels';
 import { supportedLens } from '../../supportedLens';
 import { openLens } from '../../openLens';
-import { resolveRootAgent } from '../../agent-kind';
+import { AGENT_KIND_PALETTE, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
 import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
@@ -87,6 +87,16 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     return question === null ? null : clipQuestionText({ text: question.text });
   }, [answeredQuestions, openQuestions, selectedAgent]);
 
+  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const toneOf = (agent: Agent | null): string | null =>
+    agent == null
+      ? null
+      : AGENT_KIND_PALETTE[classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null })]
+          .fg;
+  const selectedChildTone = toneOf(selectedAgent);
+  const selectedParentTone = toneOf(parentAgent);
+  const selectedRootTone = toneOf(rootAgent);
+
   const selectedParentLabel = parentAgent?.name ?? null;
   const selectedRootLabel =
     rootAgent != null && parentAgent != null && rootAgent.id !== parentAgent.id
@@ -132,6 +142,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedChildHome,
         selectedParentLabel,
         selectedRootLabel,
+        selectedChildTone,
+        selectedParentTone,
+        selectedRootTone,
         selectedQuestionLabel,
         reviewModeLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
@@ -180,6 +193,9 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedChildHome,
       selectedParentLabel,
       selectedRootLabel,
+      selectedChildTone,
+      selectedParentTone,
+      selectedRootTone,
       selectedQuestionLabel,
       reviewModeLabel,
       parentAgentId,
