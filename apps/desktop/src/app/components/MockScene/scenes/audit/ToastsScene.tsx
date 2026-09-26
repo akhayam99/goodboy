@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
 import { ToastProvider } from '../../../Toast';
 import { ReleaseNoticeBridge } from '../../../../../features/changelog/components/ReleaseNoticeBridge';
-import { UpdateIndicator } from '../../../../../features/updater/components/UpdateIndicator';
+import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';
 import { ToastsFirer } from './ToastsFirer';
 import { sceneParam } from './sceneParams';
@@ -25,7 +25,7 @@ export const ToastsScene = () => {
       changelogSeenHydrated: true,
       updaterStatus: VARIANT === 'downloading' ? 'downloading' : 'available',
       updateVersion: '0.3.14',
-      installUpdate: async () => undefined,
+      applyUpdate: async () => undefined,
     });
     setIsReady(true);
   }, []);
@@ -36,10 +36,8 @@ export const ToastsScene = () => {
     <ToastProvider>
       <main className="flex h-screen flex-col bg-background text-foreground">
         <div className="flex h-9 items-center justify-end gap-3 border-b border-border px-3">
-          <span className="text-2xs text-muted-foreground">footer pip</span>
-          <UpdateIndicator variant="pip" />
-          <span className="text-2xs text-muted-foreground">launcher bar</span>
-          <UpdateIndicator variant="bar" />
+          <span className="text-2xs text-muted-foreground">footer pill</span>
+          <UpdatePill />
         </div>
         <div className="flex-1" />
         <ToastsFirer variant={VARIANT} />

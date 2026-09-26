@@ -12,7 +12,7 @@ import { useAppStore } from '../../../../store';
 import { UpdatesSection, checkedLine } from './UpdatesSection';
 
 const checkForUpdates = vi.fn(async () => undefined);
-const installUpdate = vi.fn(async () => undefined);
+const applyUpdate = vi.fn(async () => undefined);
 
 type Seed = {
   readonly status: 'idle' | 'checking' | 'available' | 'uptodate' | 'error';
@@ -28,7 +28,7 @@ const seed = ({ status, failure = null, checkedAt = null }: Seed) => {
     updateCheckedAt: checkedAt,
     agentTurnState: {},
     checkForUpdates,
-    installUpdate,
+    applyUpdate,
   } as never);
 };
 
@@ -81,6 +81,6 @@ describe('UpdatesSection', () => {
     expect(screen.queryByRole('button', { name: 'Check now' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Update to 0.3.14' }));
     await userEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
-    expect(installUpdate).toHaveBeenCalledTimes(1);
+    expect(applyUpdate).toHaveBeenCalledTimes(1);
   });
 });

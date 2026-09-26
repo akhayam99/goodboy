@@ -276,6 +276,7 @@ import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSe
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
+import type { SetUpdateQueuedUntilIdleParams } from './slices/updater/setUpdateQueuedUntilIdle';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
@@ -340,7 +341,9 @@ type AppActions = {
   restoreNewerDatabaseBackup(): Promise<void>;
   quitApp(): Promise<void>;
   checkForUpdates(): Promise<void>;
-  installUpdate(): Promise<void>;
+  downloadUpdate(): Promise<void>;
+  applyUpdate(): Promise<void>;
+  setUpdateQueuedUntilIdle(params: SetUpdateQueuedUntilIdleParams): void;
   relaunchApp(): Promise<void>;
   loadChangelogDates(): Promise<void>;
   reloadChangelogDates(): Promise<void>;

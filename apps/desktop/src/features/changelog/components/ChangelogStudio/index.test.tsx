@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   reloadChangelogDates: vi.fn(async () => undefined),
   markChangelogSeen: vi.fn(async () => undefined),
   focusChangelogRelease: vi.fn(),
-  installUpdate: vi.fn(async () => undefined),
+  applyUpdate: vi.fn(async () => undefined),
   updater: { status: 'idle', version: null as string | null },
   installedVersion: null as string | null,
 }));
@@ -23,7 +23,7 @@ vi.mock('../../../../store', () => ({
       reloadChangelogDates: mocks.reloadChangelogDates,
       markChangelogSeen: mocks.markChangelogSeen,
       focusChangelogRelease: mocks.focusChangelogRelease,
-      installUpdate: mocks.installUpdate,
+      applyUpdate: mocks.applyUpdate,
       updaterStatus: mocks.updater.status,
       updateVersion: mocks.updater.version,
       updateFailure: null,

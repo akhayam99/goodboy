@@ -147,7 +147,7 @@ export const mapNotificationAction = (
     return {
       label: 'Retry',
       onClick: () => {
-        void store.installUpdate();
+        void store.applyUpdate();
       },
     };
   }

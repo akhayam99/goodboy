@@ -121,7 +121,7 @@ describe('GoodboyChip', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: an update is ready' });
-    expect(chip.textContent).toBe('Update ready');
+    expect(chip.textContent).toBe('0.5.2 available');
     expect(within(openMenu()).getByRole('button', { name: 'Restart to update' })).toBeDefined();
   });
 

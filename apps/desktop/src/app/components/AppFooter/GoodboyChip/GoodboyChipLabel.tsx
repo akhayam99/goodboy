@@ -1,7 +1,11 @@
-import { StatusDot, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import { ONBOARDING_STEPS } from '../../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { DogMascot } from '../../../../shared/components/DogMascot';
+import { useAppStore } from '../../../../store';
+import { useRunningAgentCount } from '../../../../features/updater/hooks/useRunningAgentCount';
+import { useUpdateSweep } from '../../../../features/updater/hooks/useUpdateSweep';
+import { UpdatePillVisual } from '../../../../features/updater/components/UpdatePill/UpdatePillVisual';
 
 export type GoodboyChipState = 'update' | 'setup' | 'rest';
 
@@ -13,12 +17,34 @@ type Props = {
 const MARK_SIZE = 14;
 
 export const GoodboyChipLabel = ({ state, progress }: Props) => {
+  const status = useAppStore((s) => s.updaterStatus);
+  const version = useAppStore((s) => s.updateVersion);
+  const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
+  const runningCount = useRunningAgentCount();
+  const isReady = status === 'ready';
+  const isAvailable = status === 'available';
+  const sweepKey = useUpdateSweep({ active: (isReady || isAvailable) && !isQueued });
+
   if (state === 'update') {
+    if (isQueued) {
+      return (
+        <UpdatePillVisual
+          isQueued
+          isReady={false}
+          version={version}
+          agentCount={runningCount}
+          sweepKey={null}
+        />
+      );
+    }
     return (
-      <>
-        <StatusDot tone="info" size="sm" />
-        <span className="font-semibold text-foreground">Update ready</span>
-      </>
+      <UpdatePillVisual
+        isQueued={false}
+        isReady={isReady}
+        version={version}
+        agentCount={runningCount}
+        sweepKey={sweepKey}
+      />
     );
   }
   if (state === 'setup') {
