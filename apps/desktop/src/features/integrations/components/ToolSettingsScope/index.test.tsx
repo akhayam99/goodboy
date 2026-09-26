@@ -170,10 +170,10 @@ describe('ToolSettingsScope', () => {
 
   it.each([
     { tool: 'linear', label: 'Linear', field: 'API key', id: 'linear-api-key' },
-    { tool: 'jira', label: 'Jira', field: 'Personal API key', id: 'jira-token' },
+    { tool: 'jira', label: 'Jira', field: 'Site', id: 'jira-site' },
     { tool: 'gitlab', label: 'GitLab', field: 'Personal API key', id: 'gitlab-pat' },
     { tool: 'bitbucket', label: 'Bitbucket', field: 'Personal API key', id: 'bitbucket-token' },
-    { tool: 'sentry', label: 'Sentry', field: 'Personal API key', id: 'sentry-token' },
+    { tool: 'sentry', label: 'Sentry', field: 'Auth token', id: 'sentry-token' },
     { tool: 'slack', label: 'Slack', field: 'User token', id: 'slack-token' },
   ])('focuses the $tool form from the rail', async ({ label, field, id }) => {
     await act(async () => {

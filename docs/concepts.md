@@ -632,6 +632,14 @@ Merge and pull requests launch with their text as it is.
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
 
+Linear, Jira and Sentry connect in numbered steps (`ConnectSteps`): a button
+opens the page where the key is made, the pasted key is checked on its own with
+no Connect button, and the last step picks from a list instead of free text
+(Jira projects from `jira_list_projects`, Sentry organizations and projects
+from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
+the tool's own name for the secret: API key on Linear, API token on Jira, auth
+token on Sentry. A key saved for another workspace can be picked instead.
+
 ## Inbox
 
 The inbox is the workspace's queue of incoming work from every connected
