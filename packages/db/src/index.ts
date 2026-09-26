@@ -433,6 +433,7 @@ export {
 
 export {
   listPendingSlackDrafts,
+  listPendingSlackDraftsForSession,
   listPendingIntegrationDraftsForWorkspace,
   decideIntegrationDraft,
 } from './queries/integration-draft';

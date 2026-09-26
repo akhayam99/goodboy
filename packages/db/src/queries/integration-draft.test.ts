@@ -5,6 +5,7 @@ import {
   decideIntegrationDraft,
   listPendingIntegrationDraftsForWorkspace,
   listPendingSlackDrafts,
+  listPendingSlackDraftsForSession,
 } from './integration-draft';
 
 const workspaceId = 'w1' as WorkspaceId;
@@ -96,6 +97,30 @@ describe('integration_drafts queries', () => {
     expect(ok).toBe(true);
     const [draft] = await listPendingIntegrationDraftsForWorkspace({ db, workspaceId });
     expect(draft).toBeUndefined();
+  });
+
+  it('lists only pending drafts for the given session, oldest first', async () => {
+    const db = await seed();
+    const otherSessionId = 's2' as SessionId;
+    const now = Date.now();
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      [otherSessionId, workspaceId, 'goal', 'idle', now, now],
+    );
+    await insertDraft(db, { id: 'first', target: { channelId: 'C1', threadTs: '1' } });
+    await insertDraft(db, { id: 'second', target: { channelId: 'C2', threadTs: '2' } });
+    await insertDraft(db, {
+      id: 'third',
+      target: { channelId: 'C1', threadTs: '1' },
+      status: 'sent',
+    });
+    await db.execute(`UPDATE integration_drafts SET session_id = ? WHERE id = 'second'`, [
+      otherSessionId,
+    ]);
+
+    const drafts = await listPendingSlackDraftsForSession({ db, sessionId });
+
+    expect(drafts.map((draft) => draft.id)).toEqual(['first']);
   });
 
   it('is a no-op when the draft is not pending', async () => {
