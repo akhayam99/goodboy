@@ -390,7 +390,14 @@ workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
 shows its path under **File**, with **Open in browser** and **Show in
 Finder** next to it. The lens's `⋯` also has **Open artifacts folder**, for
-the whole workspace folder at once.
+the whole workspace folder at once. Every write to a plan, report or
+wireframe keeps its own row in `artifact_revisions`
+([architecture.md](architecture.md#on-disk-data-layout)): the Details panel
+lists them newest first once there is more than one, names who wrote each
+(the agent, by name, or "You"), and **Restore** on an older one writes it
+back as a new revision, never over the history; the current row carries no
+Restore button. The wireframe viewer's own version pill and its node-level
+diff are a richer view of the same table, not a second one.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its
