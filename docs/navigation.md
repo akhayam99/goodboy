@@ -629,21 +629,30 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   value is scanned again, until "Flag again" clears it. The page needs a
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
-  concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
-  doing: warning on Providers & models when a connected CLI is too old for a
-  model it serves or no provider is connected (`selectProviderAttention`, with
-  the reason as the row subtitle), info on General while an app update is
-  ready, info on Storage with "N GB can go" as its subtitle once clean idle
-  folders pass 10 GB (warning when the disk has under 10 GB free and at least
-  1 GB can go, `selectStorageAttention`), warning on Security findings with
-  "N open" once the current workspace has an undismissed finding
-  (`selectSecurityFindingsAttention`). Danger zone reads in `text-danger`. Panel sections sit on
+  concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
+workspaceId })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`, and a regression test
+  spies on `invoke` to keep it invoke-free at render). A dot appears only
+  when something needs doing: warning on Providers & models when a connected
+  CLI is too old for a model it serves or no provider is connected
+  (`selectProviderAttention`, with the reason as the row subtitle), info on
+  General while an app update is ready, info on Storage with "N GB can go" as
+  its subtitle once clean idle folders pass 10 GB (warning when the disk has
+  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  warning on Security findings with "N open" once the current workspace has
+  an undismissed finding (`selectSecurityFindingsAttention`), and warning on
+  Workspace with "N folders not found" once one of its projects reads
+  `missing` in `projectGitStatus` (otherwise the row just names the
+  workspace). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)
-  with the path in the name's tooltip, open, copy and unlink under `⋯`, and
-  adding behind one `Add project` popover. New session defaults sit in a
+  renamed in place. Projects group Starred ahead of All (never in both), each
+  a 32px grid row (star, kind, name, description, a base-branch chip only
+  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
+  and Unlink in a reserved column, dim at rest; clicking the name opens an
+  inline editor below the row for the rest (description, base branch,
+  folder, facts, footer actions). New session defaults sit in a
   two-column grid with each help behind an info mark, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.

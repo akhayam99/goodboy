@@ -54,6 +54,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     cliRequirements: [] as ReadonlyArray<unknown>,
     agentTurnState: {},
     openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
+    projectGitStatus: {} as Record<string, unknown>,
   },
   toastMock: vi.fn(),
 }));
