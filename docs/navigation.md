@@ -244,7 +244,21 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
   Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links.
+  shows the connect links. The search, like the Inbox search, reads an issue
+  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
+  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
+  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
+  right tracker once (300 ms after typing, cached two minutes): a key goes to
+  Jira when it matches the Jira project, otherwise to Linear and Jira;
+  `#N` goes to every GitHub or GitLab repo of the workspace's projects (four
+  GitHub calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). Hits sit in a `Not in your inbox` group above
+  the list (`InboxLookupGroup`) and open or pick up like any other issue;
+  a miss is one row in that group that says why (not found or not visible,
+  key rejected with `Sign in again`, missing permission, rate limited or
+  unreachable with `Try again`, tracker not connected, no repo for `#N`).
+  The mobile companion resolves Linear, Sentry and GitLab issues through the
+  same direct lookups instead of searching only the issues assigned to you.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role and

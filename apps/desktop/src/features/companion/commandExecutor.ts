@@ -37,19 +37,28 @@ import type {
   IntegrationBindingProvider,
   WorkspaceIntegrationProvider,
 } from '@goodboy/types';
-import { linearFetchAssignedIssues, type LinearIssue } from '../integrations/linear/client';
+import {
+  linearFetchAssignedIssues,
+  linearFetchIssue,
+  type LinearIssue,
+} from '../integrations/linear/client';
 import { goalFromIssue as linearGoalFromIssue } from '../integrations/linear/goal-from-issue';
 import {
+  sentryFetchIssue,
   sentryFetchIssues,
   sentryFetchIssueDetail,
+  sentryResolveShortId,
   type SentryIssue,
 } from '../integrations/sentry/client';
 import { goalFromSentry } from '../integrations/sentry/goal-from-sentry';
 import {
   gitlabFetchAssignedIssues,
+  gitlabFetchIssue,
   issueIdentifier as gitlabIssueIdentifier,
   type GitlabIssue,
 } from '../integrations/gitlab/client';
+import { classifyLookupError } from '../integrations/issueCode/classifyLookupError';
+import { parseIssueCode } from '../integrations/issueCode/parseIssueCode';
 import { goalFromIssue as gitlabGoalFromIssue } from '../integrations/gitlab/goal-from-issue';
 import { jiraListIssues, jiraGetIssue, type JiraIssue } from '../integrations/jira/client';
 import { goalFromIssue as jiraGoalFromIssue } from '../integrations/jira/goal-from-issue';
@@ -322,6 +331,19 @@ async function queryIssuesForMobile(filter?: WorkspaceIntegrationProvider): Prom
   return { issues: settled.flat() };
 }
 
+const lookupBridgeError = ({
+  error,
+  provider,
+  identifier,
+}: {
+  readonly error: unknown;
+  readonly provider: WorkspaceIntegrationProvider;
+  readonly identifier: string;
+}): unknown =>
+  classifyLookupError(error) === 'not-found'
+    ? new BridgeSafeError(`${provider} issue not found: ${identifier}`)
+    : error;
+
 async function resolveIssueForSession(
   workspaceId: WorkspaceId,
   provider: WorkspaceIntegrationProvider,
@@ -338,12 +360,11 @@ async function resolveIssueForSession(
 }> {
   switch (provider) {
     case 'linear': {
-      const issue = (await linearFetchAssignedIssues(workspaceId)).find(
-        (i) => i.identifier === identifier,
+      const issue = await linearFetchIssue({ workspaceId, issueId: identifier }).catch(
+        (error: unknown) => {
+          throw lookupBridgeError({ error, provider, identifier });
+        },
       );
-      if (!issue) {
-        throw new BridgeSafeError(`linear issue not found: ${identifier}`);
-      }
       return {
         goal: linearGoalFromIssue({ issue }),
         externalTask: {
@@ -356,11 +377,13 @@ async function resolveIssueForSession(
       };
     }
     case 'sentry': {
-      const page = await sentryFetchIssues(workspaceId);
-      const issue = page.issues.find((i) => (i.shortId ?? i.id) === identifier);
-      if (!issue) {
-        throw new BridgeSafeError(`sentry issue not found: ${identifier}`);
-      }
+      const issue = await (
+        /^\d+$/.test(identifier)
+          ? sentryFetchIssue({ workspaceId, issueId: identifier })
+          : sentryResolveShortId({ workspaceId, shortId: identifier })
+      ).catch((error: unknown) => {
+        throw lookupBridgeError({ error, provider, identifier });
+      });
       const detail = await sentryFetchIssueDetail(workspaceId, issue.id).catch(() => null);
       return {
         goal: goalFromSentry({ issue, detail }),
@@ -378,9 +401,17 @@ async function resolveIssueForSession(
       if (!host) {
         throw new BridgeSafeError('gitlab host not configured for this workspace');
       }
-      const issue = (await gitlabFetchAssignedIssues(workspaceId, host)).find(
-        (i) => gitlabIssueIdentifier(i) === identifier,
-      );
+      const parsed = parseIssueCode(identifier);
+      const issue =
+        parsed.kind === 'slugNumber'
+          ? await gitlabFetchIssue(workspaceId, host, parsed.slug, parsed.number).catch(
+              (error: unknown) => {
+                throw lookupBridgeError({ error, provider, identifier });
+              },
+            )
+          : (await gitlabFetchAssignedIssues(workspaceId, host)).find(
+              (i) => gitlabIssueIdentifier(i) === identifier,
+            );
       if (!issue) {
         throw new BridgeSafeError(`gitlab issue not found: ${identifier}`);
       }
