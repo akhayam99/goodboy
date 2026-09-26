@@ -79,7 +79,7 @@ describe('PermissionDecisionCard', () => {
       />,
     );
     expect(screen.queryByTestId('retry-mock')).toBeNull();
-    expect(screen.getByText(/cannot carry into a new run/)).toBeDefined();
+    expect(screen.getByText(/continuing on its own/)).toBeDefined();
   });
 
   it('offers no retry affordance for a persisted decision without a scope', () => {

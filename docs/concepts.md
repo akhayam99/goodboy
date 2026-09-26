@@ -513,14 +513,23 @@ Settings can be set at four levels. The level closest to the work wins:
 ## Permission rules
 
 A **permission rule** matches a tool and says **allow**, **deny** or **ask**.
+It can match the whole tool or, for Bash, a command prefix ("pnpm test", not
+every Bash call) so approving one command never approves the rest of Bash.
 You can set it globally, or on a workspace, project or session. The most
 specific rule that fits wins.
 
 - Rules reach Claude only. The session's permission mode reaches every
   provider, and a mode a provider can't honor runs as a stricter one
   ([providers.md](providers.md#permission-modes-per-cli))
-- When a call is denied in a run with no one watching, the turn stops
-- You approve on purpose, and you can retry after approving
+- When a call is denied in a run with no one watching, the turn stops. The
+  agent's row, its session card and the top bar's Needs you all read **Needs
+  approval**, not running, until you answer
+- The approval card's primary action, **Allow and continue**, grants that
+  exact call once and resumes the turn by itself; the secondary "Always
+  allow" actions write a rule (command-prefix for Bash, the whole tool for an
+  edit) and need a manual retry
+- A workflow step that was denied pauses the run instead of finishing the
+  step with whatever text the model produced meanwhile
 
 ## Workspace profile
 

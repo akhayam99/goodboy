@@ -48,8 +48,7 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
       )}
       {isOnceAllow && (
         <span className="text-muted-foreground">
-          an approval for one use cannot carry into a new run: approve for the session or wider to
-          let the agent retry.
+          allowed for that exact call, and the agent is continuing on its own.
         </span>
       )}
     </TranscriptShell>
