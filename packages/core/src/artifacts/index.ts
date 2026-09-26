@@ -30,6 +30,9 @@ export {
   WIREFRAME_VIEWPORTS,
   parseWireframeSource,
   validateWireframeDocument,
+  walkWireframeNodes,
+  wireframeNodeChildren,
+  wireframeNodeItemIds,
 } from './wireframe';
 export type {
   WireframeAction,
@@ -55,6 +58,7 @@ export type {
   WireframeNode,
   WireframeNodeKind,
   WireframeScreen,
+  WireframeScreenState,
   WireframeSpacing,
   WireframeStackNode,
   WireframeTableNode,
@@ -66,6 +70,7 @@ export type {
   WireframeThemeRadius,
   WireframeTransition,
   WireframeValidationResult,
+  WireframeVariant,
   WireframeViewport,
 } from './wireframe';
 export { PLAN_KIT_GUIDE, REPORT_KIT_GUIDE } from './reportKitGuide';

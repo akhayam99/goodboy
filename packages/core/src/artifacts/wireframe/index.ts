@@ -1,12 +1,16 @@
 export {
   GENERIC_THEME_NAME,
+  WIREFRAME_BADGE_TONES,
   WIREFRAME_BUTTON_VARIANTS,
+  WIREFRAME_CHART_TYPES,
+  WIREFRAME_DEVICES,
   WIREFRAME_IMAGE_RATIOS,
   WIREFRAME_INPUT_TYPES,
   WIREFRAME_LIMITS,
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
   WIREFRAME_SCHEMA_VERSION,
+  WIREFRAME_SHEET_PLACEMENTS,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
   WIREFRAME_VIEWPORTS,
@@ -15,7 +19,14 @@ export {
 export type {
   WireframeAction,
   WireframeAlignment,
+  WireframeBadgeNode,
+  WireframeBadgeTone,
   WireframeButtonNode,
+  WireframeCardNode,
+  WireframeChartNode,
+  WireframeChartType,
+  WireframeContainerNode,
+  WireframeDevice,
   WireframeButtonVariant,
   WireframeDirection,
   WireframeDocument,
@@ -36,20 +47,31 @@ export type {
   WireframeNode,
   WireframeNodeKind,
   WireframeScreen,
+  WireframeScreenState,
+  WireframeSheetNode,
+  WireframeSheetPlacement,
   WireframeSpacing,
   WireframeStackNode,
   WireframeTableNode,
+  WireframeTabsNode,
   WireframeTextNode,
   WireframeTextVariant,
   WireframeTheme,
   WireframeThemeColorToken,
   WireframeThemeFont,
   WireframeThemeRadius,
+  WireframeToggleNode,
   WireframeTransition,
   WireframeValidationResult,
+  WireframeVariant,
   WireframeViewport,
 } from './schema';
 
 export { parseWireframeSource, validateWireframeDocument } from './validateWireframeDocument';
 export { WIREFRAME_SCHEMA_BRIEF } from './wireframeSchemaBrief';
 export { buildWireframeJsonSchema, WIREFRAME_JSON_SCHEMA_ID } from './buildWireframeJsonSchema';
+export {
+  walkWireframeNodes,
+  wireframeNodeChildren,
+  wireframeNodeItemIds,
+} from './wireframeNodeChildren';

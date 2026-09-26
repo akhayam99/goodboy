@@ -151,6 +151,9 @@ export {
   WIREFRAME_VIEWPORTS,
   parseWireframeSource,
   validateWireframeDocument,
+  walkWireframeNodes,
+  wireframeNodeChildren,
+  wireframeNodeItemIds,
   type WireframeAction,
   type WireframeAlignment,
   type WireframeButtonNode,
@@ -174,6 +177,7 @@ export {
   type WireframeNode,
   type WireframeNodeKind,
   type WireframeScreen,
+  type WireframeScreenState,
   type WireframeSpacing,
   type WireframeStackNode,
   type WireframeTableNode,
@@ -185,6 +189,7 @@ export {
   type WireframeThemeRadius,
   type WireframeTransition,
   type WireframeValidationResult,
+  type WireframeVariant,
   type WireframeViewport,
 } from './artifacts';
 

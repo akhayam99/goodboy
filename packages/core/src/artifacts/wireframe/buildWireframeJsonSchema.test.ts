@@ -22,7 +22,10 @@ const at = (path: ReadonlyArray<string>): unknown =>
 describe('buildWireframeJsonSchema', () => {
   it('defines every node kind the validator accepts, and only those', () => {
     const refs = at(['$defs', 'node', 'oneOf']);
-    expect(refs).toEqual(WIREFRAME_NODE_KINDS.map((kind) => ({ $ref: `#/$defs/${kind}Node` })));
+    expect(refs).toEqual([
+      ...WIREFRAME_NODE_KINDS.map((kind) => ({ $ref: `#/$defs/${kind}Node` })),
+      { $ref: '#/$defs/useNode' },
+    ]);
     for (const kind of WIREFRAME_NODE_KINDS) {
       expect(at(['$defs', `${kind}Node`, 'properties', 'kind'])).toEqual({ const: kind });
     }
@@ -31,8 +34,10 @@ describe('buildWireframeJsonSchema', () => {
   it('carries the limits from the code constants', () => {
     expect(at(['properties', 'screens', 'maxItems'])).toBe(WIREFRAME_LIMITS.maxScreens);
     expect(at(['properties', 'transitions', 'maxItems'])).toBe(WIREFRAME_LIMITS.maxTransitions);
-    expect(at(['properties', 'mockState', 'maxProperties'])).toBe(
-      WIREFRAME_LIMITS.maxMockStateKeys,
+    expect(at(['properties', 'patterns', 'maxProperties'])).toBe(WIREFRAME_LIMITS.maxPatterns);
+    expect(at(['properties', 'variants', 'maxItems'])).toBe(WIREFRAME_LIMITS.maxVariants);
+    expect(at(['properties', 'screens', 'items', 'properties', 'states', 'maxProperties'])).toBe(
+      WIREFRAME_LIMITS.maxStatesPerScreen,
     );
     expect(at(['$defs', 'gridNode', 'properties', 'columns', 'maximum'])).toBe(
       WIREFRAME_LIMITS.maxGridColumns,
