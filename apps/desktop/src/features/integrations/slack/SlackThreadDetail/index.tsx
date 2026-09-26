@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Notice } from '@goodboy/ui';
+import { Button, Notice } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
@@ -15,6 +15,7 @@ import { useConversationPane } from '../../../../shared/components/Conversation/
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
 import { SLACK_THREAD_CAPABILITIES, slackConversation } from '../slackConversation';
 import { ThreadReactions } from '../ThreadReactions';
+import { useSlackDraft } from '../useSlackDraft';
 import { useSlackThread } from '../useSlackThread';
 import { useSlackThreadActions } from '../useSlackThreadActions';
 
@@ -41,6 +42,13 @@ export const SlackThreadDetail = ({
   const isEnabled = channelId !== '' && threadTs !== '';
   const thread = useSlackThread({ workspaceId, channelId, threadTs, isEnabled });
   const actions = useSlackThreadActions({ workspaceId, channelId, threadTs, isEnabled });
+  const slackDraft = useSlackDraft({ workspaceId, channelId, threadTs });
+  const [draftBody, setDraftBody] = useState('');
+  const [isSendingDraft, setIsSendingDraft] = useState(false);
+
+  useEffect(() => {
+    setDraftBody(slackDraft.draft?.body ?? '');
+  }, [slackDraft.draft]);
 
   useEffect(() => {
     setPermalink(fallbackUrl);
@@ -133,6 +141,19 @@ export const SlackThreadDetail = ({
   const rootText = messages[0]?.text ?? '';
   const title = slackThreadTitle({ text: rootText });
 
+  const sendDraft = async (): Promise<void> => {
+    if (reply == null || slackDraft.draft == null) {
+      return;
+    }
+    setIsSendingDraft(true);
+    try {
+      await reply(draftBody);
+      await slackDraft.markSent(draftBody);
+    } finally {
+      setIsSendingDraft(false);
+    }
+  };
+
   return (
     <PaneShell
       scroll="body"
@@ -151,6 +172,35 @@ export const SlackThreadDetail = ({
         />
       }
     >
+      {slackDraft.draft == null ? null : (
+        <Notice
+          tone="info"
+          placement="inline"
+          title="Drafted by an agent"
+          body={draftBody}
+          actions={
+            <>
+              <Button
+                variant="primary"
+                size="sm"
+                isBusy={isSendingDraft}
+                busyLabel="Sending…"
+                onClick={() => void sendDraft()}
+              >
+                Send
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={isSendingDraft}
+                onClick={() => slackDraft.discard()}
+              >
+                Discard
+              </Button>
+            </>
+          }
+        />
+      )}
       {actions.error == null ? null : (
         <Notice
           tone="danger"

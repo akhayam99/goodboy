@@ -2,9 +2,9 @@ import { useShallow } from 'zustand/react/shallow';
 import type { SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
-import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
 import { SlackConnectGuide } from './SlackConnectGuide';
 import { buildSlackManifestUrl, SLACK_USER_SCOPES } from './slackAppManifest';
+import { SlackSettings } from './SlackSettings';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -23,19 +23,9 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
       (integration): integration is SlackIntegrationBinding => integration.provider === 'slack',
     ) ?? null;
   const connectSlack = useAppStore((state) => state.connectSlack);
-  const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
 
   if (slack != null) {
-    return (
-      <IntegrationConnectedRow
-        provider="slack"
-        credentialId={slack?.credentialId ?? null}
-        primary={`Connected to ${slack.config.teamName}`}
-        secondary={`as ${slack.config.botUserName ?? slack.config.botUserId}`}
-        disconnectDescription="Unlinks this workspace from the Slack token. The token stays saved for your other workspaces."
-        onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
-      />
-    );
+    return <SlackSettings workspaceId={workspaceId} slack={slack} />;
   }
 
   return (
@@ -76,7 +66,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
             'This is a bot token. Goodboy needs your user token, the one that starts with xoxp-.',
           );
         }
-        await connectSlack({ workspaceId, botToken: token, credentialId });
+        await connectSlack({ workspaceId, userToken: token, credentialId });
         onConnected?.();
       }}
     />

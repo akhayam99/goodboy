@@ -30,11 +30,11 @@ describe('slack client', () => {
   it('probes a token under a credential id, never under a goodboy workspace', async () => {
     mockInvoke.mockResolvedValue({ teamId: 'T01' });
 
-    await slackValidateConnection({ credentialId, botToken: 'xoxp-secret' });
+    await slackValidateConnection({ credentialId, userToken: 'xoxp-secret' });
 
     expect(mockInvoke).toHaveBeenCalledWith('slack_validate_connection', {
       credentialId,
-      botToken: 'xoxp-secret',
+      userToken: 'xoxp-secret',
     });
     expect(mockInvoke).not.toHaveBeenCalledWith(
       'slack_validate_connection',
@@ -43,11 +43,11 @@ describe('slack client', () => {
   });
 
   it('reuses a stored credential by naming it alone, with no token in the payload', async () => {
-    await slackConnect({ credentialId, botToken: null });
+    await slackConnect({ credentialId, userToken: null });
 
     expect(mockInvoke).toHaveBeenCalledWith('slack_connect', {
       credentialId,
-      botToken: null,
+      userToken: null,
     });
   });
 

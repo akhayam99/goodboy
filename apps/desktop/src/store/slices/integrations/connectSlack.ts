@@ -10,15 +10,15 @@ import type { SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly botToken: string | null;
+  readonly userToken: string | null;
   readonly credentialId: IntegrationCredentialId | null;
 };
 
 export const connectSlack = (set: SetFn) => {
-  return async ({ workspaceId, botToken, credentialId }: Params): Promise<SlackConnection> => {
+  return async ({ workspaceId, userToken, credentialId }: Params): Promise<SlackConnection> => {
     const chosen = credentialId ?? (crypto.randomUUID() as IntegrationCredentialId);
-    const supplied = credentialId === null ? botToken : null;
-    const connection = await slackValidateConnection({ credentialId: chosen, botToken: supplied });
+    const supplied = credentialId === null ? userToken : null;
+    const connection = await slackValidateConnection({ credentialId: chosen, userToken: supplied });
     await commitIntegrationConnection({
       set,
       workspaceId,
@@ -26,10 +26,8 @@ export const connectSlack = (set: SetFn) => {
       credentialId: chosen,
       config: configFromSlackConnection({ connection }),
       newCredential:
-        credentialId === null
-          ? { label: connection.botUserName ?? connection.teamName, account: connection.teamName }
-          : null,
-      storeSecret: () => slackConnect({ credentialId: chosen, botToken: supplied }),
+        credentialId === null ? { label: connection.userName, account: connection.teamName } : null,
+      storeSecret: () => slackConnect({ credentialId: chosen, userToken: supplied }),
     });
     return connection;
   };

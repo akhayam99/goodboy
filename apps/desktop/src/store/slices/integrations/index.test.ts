@@ -21,6 +21,7 @@ import type {
   ProviderRunId,
   Session,
   SessionId,
+  SlackIntegrationConfig,
   Workspace,
   WorkspaceId,
   IntegrationBinding,
@@ -109,6 +110,35 @@ vi.mock('../../../features/settings/config-export', async () =>
 
 const WS_ID = 'workspace-1' as WorkspaceId;
 const WS_ID_2 = 'workspace-2' as WorkspaceId;
+
+type SlackConfigParams = {
+  readonly teamId: string;
+  readonly teamName: string;
+  readonly userId: string;
+  readonly userName?: string;
+};
+
+const slackConfig = ({
+  teamId,
+  teamName,
+  userId,
+  userName,
+}: SlackConfigParams): SlackIntegrationConfig => ({
+  teamId,
+  teamName,
+  userId,
+  ...(userName !== undefined ? { userName } : {}),
+  followedChannels: [],
+  hasSelectedChannels: true,
+  includePrivate: false,
+  agentPolicy: {
+    readFollowed: 'allow',
+    readOthers: 'off',
+    reply: 'ask',
+    react: 'allow',
+  },
+  signature: { agents: true, own: false, text: 'Written with Goodboy' },
+});
 const PROJECT_ID = 'project-1' as ProjectId;
 const SESSION_ID = 'session-1' as SessionId;
 const SESSION_ID_2 = 'session-2' as SessionId;
@@ -610,28 +640,30 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
 
       const out = await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: ' xoxp-secret ', credentialId: null });
+        .connectSlack({ workspaceId: WS_ID, userToken: ' xoxp-secret ', credentialId: null });
 
       expect(out.teamId).toBe('T01');
       expect(storySpies.slackValidateConnection).toHaveBeenCalledWith({
         credentialId: expect.any(String),
-        botToken: ' xoxp-secret ',
+        userToken: ' xoxp-secret ',
       });
       const cached = store
         .getState()
         .workspaceIntegrations[WS_ID]?.find((i) => i.provider === 'slack');
-      expect(cached?.config).toEqual({
-        teamId: 'T01',
-        teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
-      });
+      expect(cached?.config).toEqual(
+        slackConfig({
+          teamId: 'T01',
+          teamName: 'Acme',
+          userId: 'U09',
+          userName: 'goodboy',
+        }),
+      );
       expect(cached?.credentialId).toBeDefined();
     });
 
@@ -640,13 +672,13 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
 
       await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null });
+        .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-secret', credentialId: null });
 
       const dbCallOrder = storySpies.upsertIntegrationBinding.mock.invocationCallOrder[0];
       const keychainCallOrder = storySpies.slackConnect.mock.invocationCallOrder[0];
@@ -660,15 +692,15 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
       storySpies.slackConnect.mockRejectedValueOnce(new Error('keychain unavailable'));
 
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(storySpies.upsertIntegrationBinding).toHaveBeenCalledTimes(1);
@@ -686,7 +718,7 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         projectId: null,
         provider: 'slack',
-        config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
+        config: slackConfig({ teamId: 'T00', teamName: 'Old', userId: 'U00' }),
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
@@ -695,15 +727,15 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'NewTeam',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
       storySpies.slackConnect.mockRejectedValueOnce(new Error('keychain unavailable'));
 
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-new', credentialId: CRED_ID }),
+          .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-new', credentialId: CRED_ID }),
       ).rejects.toThrow(/keychain unavailable/);
 
       expect(storySpies.deleteIntegrationBinding).not.toHaveBeenCalled();
@@ -718,8 +750,8 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
       storySpies.slackConnect.mockRejectedValueOnce(new Error('keychain unavailable'));
       storySpies.deleteIntegrationBinding.mockRejectedValueOnce(new Error('rollback failed'));
@@ -727,7 +759,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-secret', credentialId: null }),
       ).rejects.toThrow(/keychain unavailable/);
     });
 
@@ -738,7 +770,7 @@ describe('store contract', () => {
       await expect(
         store
           .getState()
-          .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-bad', credentialId: null }),
+          .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-bad', credentialId: null }),
       ).rejects.toThrow(/invalid_auth/);
 
       expect(storySpies.slackConnect).not.toHaveBeenCalled();
@@ -753,7 +785,7 @@ describe('store contract', () => {
         workspaceId: WS_ID,
         projectId: null,
         provider: 'slack',
-        config: { teamId: 'T00', teamName: 'Old', botUserId: 'U00' },
+        config: slackConfig({ teamId: 'T00', teamName: 'Old', userId: 'U00' }),
         credentialId: CRED_ID,
         createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
         updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
@@ -763,13 +795,13 @@ describe('store contract', () => {
       storySpies.slackValidateConnection.mockResolvedValueOnce({
         teamId: 'T01',
         teamName: 'Acme',
-        botUserId: 'U09',
-        botUserName: 'goodboy',
+        userId: 'U09',
+        userName: 'goodboy',
       });
 
       await store
         .getState()
-        .connectSlack({ workspaceId: WS_ID, botToken: 'xoxp-secret', credentialId: CRED_ID });
+        .connectSlack({ workspaceId: WS_ID, userToken: 'xoxp-secret', credentialId: CRED_ID });
 
       const rows = (store.getState().workspaceIntegrations[WS_ID] ?? []).filter(
         (i) => i.provider === 'slack',
@@ -778,6 +810,32 @@ describe('store contract', () => {
       expect(rows[0]?.id).toBe('sl-keep');
       expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
+    });
+
+    it('updateSlackConfig persists settings and refreshes the cached binding', async () => {
+      const store = useAppStore;
+      const existing: IntegrationBinding = {
+        id: 'sl-settings' as IntegrationBindingId,
+        workspaceId: WS_ID,
+        projectId: null,
+        provider: 'slack',
+        config: slackConfig({ teamId: 'T01', teamName: 'Acme', userId: 'U09' }),
+        credentialId: CRED_ID,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      const config = {
+        ...existing.config,
+        followedChannels: [{ id: 'C1', name: 'payments' }],
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+
+      await store.getState().updateSlackConfig({ workspaceId: WS_ID, config });
+
+      expect(storySpies.upsertIntegrationBinding).toHaveBeenCalledWith(
+        expect.objectContaining({ binding: expect.objectContaining({ config }) }),
+      );
+      expect(store.getState().workspaceIntegrations[WS_ID]?.[0]?.config).toEqual(config);
     });
   });
 });

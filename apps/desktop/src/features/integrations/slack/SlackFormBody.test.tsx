@@ -9,6 +9,9 @@ const { state } = vi.hoisted(() => ({
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
     connectSlack: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
+    refreshSlackChannels: vi.fn(async () => undefined),
+    updateSlackConfig: vi.fn(async () => undefined),
+    slackChannels: {} as Record<string, { readonly channels: ReadonlyArray<unknown> }>,
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
     integrationCredentialUsage: {} as Record<string, number>,
@@ -16,6 +19,7 @@ const { state } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
@@ -34,8 +38,18 @@ const slackIntegration: SlackIntegrationBinding = {
   config: {
     teamId: 'T01',
     teamName: 'Acme',
-    botUserId: 'U09',
-    botUserName: 'goodboy',
+    userId: 'U09',
+    userName: 'goodboy',
+    followedChannels: [],
+    hasSelectedChannels: true,
+    includePrivate: false,
+    agentPolicy: {
+      readFollowed: 'allow',
+      readOthers: 'off',
+      reply: 'ask',
+      react: 'allow',
+    },
+    signature: { agents: true, own: false, text: 'Written with Goodboy' },
   },
   createdAt: '2026-01-01T00:00:00.000Z' as never,
   updatedAt: '2026-01-01T00:00:00.000Z' as never,
@@ -45,6 +59,9 @@ beforeEach(() => {
   state.workspaceIntegrations = {};
   state.connectSlack = vi.fn(async () => undefined);
   state.disconnectIntegration = vi.fn(async () => undefined);
+  state.refreshSlackChannels = vi.fn(async () => undefined);
+  state.updateSlackConfig = vi.fn(async () => undefined);
+  state.slackChannels = {};
   state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
   state.integrationCredentialUsage = {};
@@ -90,7 +107,7 @@ describe('SlackFormBody', () => {
     await waitFor(() =>
       expect(state.connectSlack).toHaveBeenCalledWith({
         workspaceId: WS_ID,
-        botToken: 'xoxp-secret',
+        userToken: 'xoxp-secret',
         credentialId: null,
       }),
     );
@@ -148,8 +165,8 @@ describe('SlackFormBody', () => {
 
     it('names the person the token belongs to, never a bot', () => {
       render(<SlackFormBody workspaceId={WS_ID} />);
-      expect(screen.getByText(/Connected to Acme/i)).toBeDefined();
-      expect(screen.getByText('as goodboy')).toBeDefined();
+      expect(screen.getByText(/Connected as goodboy/i)).toBeDefined();
+      expect(screen.getByText('Acme')).toBeDefined();
       expect(screen.queryByText(/bot user/i)).toBeNull();
       expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
     });
@@ -159,6 +176,35 @@ describe('SlackFormBody', () => {
       fireEvent.click(screen.getByRole('button', { name: /disconnect slack/i }));
       expect(screen.getByText(/Disconnect Slack\?/i)).toBeDefined();
       expect(state.disconnectIntegration).not.toHaveBeenCalled();
+    });
+
+    it('persists a followed channel and exposes the agent defaults', () => {
+      state.slackChannels = {
+        [WS_ID]: {
+          channels: [
+            {
+              id: 'C1',
+              name: 'payments',
+              isMember: true,
+              topic: null,
+              memberCount: 8,
+            },
+          ],
+        },
+      };
+      render(<SlackFormBody workspaceId={WS_ID} />);
+
+      fireEvent.click(screen.getByRole('checkbox', { name: /payments/i }));
+
+      expect(state.updateSlackConfig).toHaveBeenCalledWith({
+        workspaceId: WS_ID,
+        config: expect.objectContaining({
+          followedChannels: [{ id: 'C1', name: 'payments' }],
+          hasSelectedChannels: true,
+        }),
+      });
+      expect(screen.getAllByRole('tab', { name: 'Ask me first' })).toHaveLength(2);
+      screen.getByDisplayValue('Written with Goodboy');
     });
 
     it('disconnects Slack for the workspace once the confirm is confirmed', async () => {

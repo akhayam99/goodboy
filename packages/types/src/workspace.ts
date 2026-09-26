@@ -240,8 +240,27 @@ export type BitbucketIntegrationConfig = Readonly<{
 export type SlackIntegrationConfig = Readonly<{
   teamId: string;
   teamName: string;
-  botUserId: string;
-  botUserName?: string;
+  userId: string;
+  userName?: string;
+  followedChannels: ReadonlyArray<
+    Readonly<{
+      id: string;
+      name: string;
+    }>
+  >;
+  hasSelectedChannels: boolean;
+  includePrivate: boolean;
+  agentPolicy: Readonly<{
+    readFollowed: 'allow' | 'off';
+    readOthers: 'allow' | 'off';
+    reply: 'allow' | 'ask' | 'never';
+    react: 'allow' | 'ask' | 'never';
+  }>;
+  signature: Readonly<{
+    agents: boolean;
+    own: boolean;
+    text: string;
+  }>;
 }>;
 
 export type GithubIntegrationConfig = Readonly<Record<string, never>>;

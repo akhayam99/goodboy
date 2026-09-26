@@ -4,8 +4,8 @@ import type { IntegrationCredentialId, IsoDateTime, WorkspaceId } from '@goodboy
 export type SlackConnection = {
   readonly teamId: string;
   readonly teamName: string;
-  readonly botUserId: string;
-  readonly botUserName: string;
+  readonly userId: string;
+  readonly userName: string;
 };
 
 export type SlackChannel = {
@@ -45,22 +45,22 @@ export type SlackUser = {
 
 type ValidateParams = {
   readonly credentialId: IntegrationCredentialId;
-  readonly botToken: string | null;
+  readonly userToken: string | null;
 };
 
 export const slackValidateConnection = async ({
   credentialId,
-  botToken,
+  userToken,
 }: ValidateParams): Promise<SlackConnection> =>
-  invoke<SlackConnection>('slack_validate_connection', { credentialId, botToken });
+  invoke<SlackConnection>('slack_validate_connection', { credentialId, userToken });
 
 type ConnectParams = {
   readonly credentialId: IntegrationCredentialId;
-  readonly botToken: string | null;
+  readonly userToken: string | null;
 };
 
-export const slackConnect = async ({ credentialId, botToken }: ConnectParams): Promise<void> => {
-  await invoke('slack_connect', { credentialId, botToken });
+export const slackConnect = async ({ credentialId, userToken }: ConnectParams): Promise<void> => {
+  await invoke('slack_connect', { credentialId, userToken });
 };
 
 type WorkspaceParams = {

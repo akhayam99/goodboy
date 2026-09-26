@@ -71,6 +71,7 @@ import type {
   PrMergeMethod,
   SessionViewPrefs,
   SessionSortKey,
+  SlackIntegrationConfig,
   SessionGroupKey,
   TaskModelPreference,
   PrReviewDraft,
@@ -530,9 +531,13 @@ type AppActions = {
   }): Promise<BitbucketConnection>;
   connectSlack(params: {
     workspaceId: WorkspaceId;
-    botToken: string | null;
+    userToken: string | null;
     credentialId: IntegrationCredentialId | null;
   }): Promise<SlackConnection>;
+  updateSlackConfig(params: {
+    workspaceId: WorkspaceId;
+    config: SlackIntegrationConfig;
+  }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     projectId?: ProjectId;
