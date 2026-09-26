@@ -699,7 +699,7 @@ one is open at a time.
   slot.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
-  the work. Slot and goal history and the Explore file preview open there.
+  the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
@@ -732,8 +732,9 @@ one is open at a time.
   opens the queue with that comment. There are no return pills: the Diff, the
   publication and the resolver page all come back through Back.
 - **The switcher and the palette list only destinations the session can
-  use.** One function feeds both. Context is one entry (its goal, decisions and
-  summary parts open through their shortcuts). Explore is always listed and
+  use.** One function feeds both. Context is a drawer, not a destination: the
+  palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  Explore is always listed and
   browses the active working directory. Diff and the other branch lenses need a
   branch. The code-host lens hides on GitHub. A tool lens appears once that
   tool is connected.
@@ -791,6 +792,22 @@ one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
 frame instead. A new kind adds a variant to `DrawerContent` and a case to the
 host.
+
+The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
+`summary`, in that order, and `view` is `current` or `versions` (the old
+versions of that slot, inside the same drawer, with Restore; Escape leaves the
+view before the drawer). The **Context** chip in the session header toggles it
+on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
+Decisions and Summary. The first open shows Summary, later ones the last tab
+used in that session. The chip says `2 new` when decisions were added since the
+Decisions tab was last shown (`sessions.context_seen_at`, counted from the
+`added` of `decisions_changed` events), and opens on Decisions then; it shows
+a pulsing dot while the summarizer writes and a danger glyph when it failed,
+with Retry in the drawer's status line. The old addresses `s/{session}/context`
+and `context/goal`, `context/decisions`, `context/summary` resolve in
+`canonicalLocation` to the overview with this drawer open on the matching tab.
+The drawer header has one action, **Copy as brief**, which copies Goal,
+Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;

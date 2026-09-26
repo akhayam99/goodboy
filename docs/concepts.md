@@ -390,12 +390,15 @@ code starts, Goodboy materializes those projects.
 Agents in the same session do **not** see each other's chats. What they share
 is the **session record** on the **Overview**:
 
-- The goal, the decisions and the session summary, in that order
+- The goal, the decisions and the summary, in that order, in the **Context**
+  drawer (the overview keeps one `Goal` line under the title when the goal
+  says more than the title). The summary reads as State, Next and Learned.
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
-Goodboy updates the goal, decisions and summary after every turn. You can
-edit them yourself too.
+Goodboy updates the decisions and the summary when the summarizer runs after a
+turn, and writes the goal when the session starts. You can edit all three
+yourself too.
 
 Each of those sections is a **lens**, a view of the session. You open it from
 rows and chips on the **Overview**. It opens in place or in a side panel, and

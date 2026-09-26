@@ -7,7 +7,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 const REVEAL_GROUP =
   'group-hover/decision-row:opacity-100 group-focus-within/decision-row:opacity-100';
 
-const ROW_PROSE = 'text-xs [&_li]:leading-5 [&_p]:leading-5';
+const ROW_PROSE = 'text-label';
 
 type Props = {
   readonly text: string;

@@ -38,10 +38,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/session/components/SummarizerBadge/index.tsx': {
-    count: 1,
-    reason: 'chip',
-  },
   'apps/desktop/src/features/session/components/AgentTree/ScoutSubtree.tsx': {
     count: 1,
     reason: 'chip',

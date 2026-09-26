@@ -673,7 +673,11 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
 its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
+`header` slot. The session overview's `HeaderBand` holds the title, then one
+`Goal` line (an 11px faint label, the goal in muted text on one line with an
+ellipsis) only when the goal says more than the title, or `Add a goal` when
+there is none, then the chips, `Context` first. Goal, decisions and summary
+live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a row to the bottom of the same column. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is

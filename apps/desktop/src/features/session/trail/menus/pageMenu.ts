@@ -24,7 +24,6 @@ const LINKED = new Set<LensKind>([
   'slack_threads',
   'github_issue',
 ]);
-const CONTEXT_PARTS = new Set<LensKind>(['goal', 'decisions', 'last_output_summary']);
 
 const isCurrentLens = ({
   lens,
@@ -32,9 +31,7 @@ const isCurrentLens = ({
 }: {
   readonly lens: LensKind | null;
   readonly activeLens: LensKind | null;
-}): boolean =>
-  lens === activeLens ||
-  (lens === 'context' && activeLens !== null && CONTEXT_PARTS.has(activeLens));
+}): boolean => lens === activeLens;
 
 export const pageMenu = ({
   destinations,

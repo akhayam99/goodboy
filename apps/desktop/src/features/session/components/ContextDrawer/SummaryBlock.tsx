@@ -67,7 +67,7 @@ export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Pr
           }}
         />
       ) : hasBody ? (
-        <div className="text-sm leading-relaxed [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
+        <div className="text-prose [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
           <Markdown text={body} />
         </div>
       ) : null}

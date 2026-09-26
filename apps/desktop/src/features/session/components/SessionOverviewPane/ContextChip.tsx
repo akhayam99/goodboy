@@ -82,7 +82,7 @@ export const ContextChip = ({ sessionId }: Props) => {
             </span>
           ) : null
         }
-        className={cn(isOpen && 'bg-selected ring-primary/50')}
+        className={cn(isOpen && 'bg-selected')}
       />
     </Tooltip>
   );

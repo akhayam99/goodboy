@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSlotHistory } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SlotHistoryPanel } from '../SessionWorkspace/parts/SlotHistoryPanel';
 import type { ContextSlotKey } from './contextTabs';
 
@@ -25,7 +26,7 @@ export const VersionsView = ({ sessionId, slotKey, backLabel, onBack }: Props) =
   return (
     <div className="flex flex-col gap-3">
       <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
-        <ChevronLeft size={12} aria-hidden />
+        <ChevronLeft size={ICON_SIZE.row} aria-hidden />
         {backLabel}
       </Button>
       <SlotHistoryPanel

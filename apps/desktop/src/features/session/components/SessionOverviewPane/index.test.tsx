@@ -32,8 +32,6 @@ vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
 }));
 
 vi.mock('./AttentionCallout', () => ({ AttentionCallout: () => null }));
-vi.mock('./GoalOverviewRegion', () => ({ GoalOverviewRegion: () => null }));
-vi.mock('./GoalDetailAction', () => ({ GoalDetailAction: () => null }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
 
 import { SessionOverviewPane } from './index';

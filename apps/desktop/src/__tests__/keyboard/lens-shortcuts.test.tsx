@@ -48,6 +48,7 @@ const { sessionList, state } = vi.hoisted(() => {
       openStudio: vi.fn(),
       amendStudio: vi.fn(),
       closeStudio: vi.fn(),
+      toggleContextDrawer: vi.fn(),
     },
   };
 });
@@ -262,7 +263,7 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('reaches Context and every legacy Context region shortcut', () => {
+  it('toggles the Context drawer on the page where you are, on the tab each chord names', () => {
     render(<App />);
 
     press({ code: 'KeyC', key: 'c', metaKey: true, altKey: true });
@@ -270,11 +271,12 @@ describe('App lens shortcuts on darwin', () => {
     press({ code: 'KeyE', key: 'e', metaKey: true, altKey: true });
     press({ code: 'KeyU', key: 'u', metaKey: true, altKey: true });
 
-    expect(lensCalls()).toEqual([
-      ['session-1', 'context'],
-      ['session-1', 'goal'],
-      ['session-1', 'decisions'],
-      ['session-1', 'last_output_summary'],
+    expect(lensCalls()).toEqual([]);
+    expect(state.toggleContextDrawer.mock.calls).toEqual([
+      [{ sessionId: 'session-1' }],
+      [{ sessionId: 'session-1', tab: 'goal' }],
+      [{ sessionId: 'session-1', tab: 'decisions' }],
+      [{ sessionId: 'session-1', tab: 'summary' }],
     ]);
   });
 

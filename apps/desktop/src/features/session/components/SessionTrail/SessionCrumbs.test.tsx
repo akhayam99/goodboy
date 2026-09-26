@@ -429,25 +429,6 @@ describe('SessionCrumbs', () => {
     });
   });
 
-  it('marks only the open lens, never its neighbours on the same surface', () => {
-    h.crumbs = [
-      { id: 'overview', label: 'Overview', onClick: vi.fn() },
-      { id: 'lens-decisions', label: 'Decisions' },
-    ];
-    h.state.activeLens = { [SESSION_ID]: 'decisions' };
-    h.state.selectedAgentId = {};
-    renderCrumbs();
-
-    fireEvent.click(screen.getByRole('button', { name: /Decisions/ }));
-    const menu = screen.getByRole('menu', { name: 'Switch page' });
-    const current = within(menu)
-      .getAllByRole('menuitemradio')
-      .filter((row) => row.getAttribute('aria-checked') === 'true');
-
-    expect(current).toHaveLength(1);
-    expect(current[0]?.textContent).toContain('Context');
-  });
-
   it('falls back to overview when the stored lens has no home on this session', () => {
     h.crumbs = [
       { id: 'overview', label: 'Overview', onClick: vi.fn() },

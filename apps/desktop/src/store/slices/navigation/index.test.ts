@@ -54,6 +54,7 @@ const makeStore = () =>
         focusedExternalTask: {},
         drawer: null,
         openSessionDraftWorkspaceId: null,
+        contextDrawerTab: {},
         sessionPhaseRuns: {
           [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
         },
@@ -84,6 +85,22 @@ const keyOf = (store: ReturnType<typeof makeStore>): string => {
 };
 
 describe('navigation slice', () => {
+  it('turns an old Context page into the overview with the Context drawer on its tab', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'decisions' }) });
+
+    expect(store.getState().activeLens[S1]).toBeNull();
+    expect(store.getState().drawer).toEqual({
+      kind: 'context',
+      sessionId: S1,
+      payload: { tab: 'decisions', view: 'current' },
+    });
+    expect(keyOf(store)).toBe(`s/${S1}`);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'context' }) });
+    expect(store.getState().drawer).toMatchObject({ payload: { tab: 'summary' } });
+  });
+
   it('opens the new session draft as its own entry and Back leaves it', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
