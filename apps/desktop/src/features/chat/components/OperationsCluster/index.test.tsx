@@ -2,7 +2,11 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+
+const runId = (value: string): ProviderRunId => JSON.parse(JSON.stringify(value));
+const iso = (value: string): IsoDateTime => JSON.parse(JSON.stringify(value));
 
 const cardRenders = vi.hoisted(() => ({ count: 0 }));
 
@@ -15,7 +19,12 @@ vi.mock('../TranscriptCards', () => ({
 
 import { OperationsCluster } from './index';
 
-function tool(id: string, ended = true, isError = false): TranscriptItem {
+function tool(
+  id: string,
+  ended = true,
+  isError = false,
+  endedAt = '2026-06-08T10:00:01.000Z',
+): TranscriptItem {
   return {
     kind: 'tool_call',
     key: `tool-${id}`,
@@ -25,6 +34,21 @@ function tool(id: string, ended = true, isError = false): TranscriptItem {
     output: null,
     isError,
     ended,
+    runId: runId('run-1'),
+    startedAt: iso('2026-06-08T10:00:00.000Z'),
+    endedAt: ended ? iso(endedAt) : null,
+  };
+}
+
+function request(toolUseId: string): TranscriptItem {
+  return {
+    kind: 'permission_request',
+    key: `perm-req-${toolUseId}`,
+    toolUseId,
+    toolName: 'bash',
+    runId: runId('run-1'),
+    input: null,
+    at: iso('2026-06-08T10:00:00.000Z'),
   };
 }
 
@@ -99,17 +123,26 @@ describe('OperationsCluster', () => {
     expect(screen.getByText('1')).toBeTruthy();
   });
 
-  it('carries state on the icon and never on the rail', () => {
+  it('carries state on the icon and drops the rail once the cluster is neutral', () => {
     const { container } = render(<OperationsCluster items={[tool('a'), tool('b')]} />);
-    expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
-      'text-success',
+    expect(screen.getByTestId('operations-state-icon').getAttribute('data-node-state')).toBe(
+      'done',
+    );
+    const rail = screen.getByRole('button').parentElement!;
+    expect(rail.className).not.toContain('border-l-2');
+    expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
+    expect(container.querySelectorAll('[class*="border-success"]')).toHaveLength(0);
+  });
+
+  it('carries a warning rail while a permission request waits on you', () => {
+    render(<OperationsCluster items={[tool('a', false), request('a')]} />);
+    expect(screen.getByTestId('operations-state-icon').getAttribute('data-node-state')).toBe(
+      'approval',
     );
     const rail = screen.getByRole('button').parentElement!;
     expect(rail.className).toContain('border-l-2');
-    expect(rail.className).toContain('border-border-soft');
-    expect(screen.getByRole('button').className).not.toContain('border-l-2');
-    expect(container.querySelectorAll('[class*="border-danger"]')).toHaveLength(0);
-    expect(container.querySelectorAll('[class*="border-success"]')).toHaveLength(0);
+    expect(rail.className).toContain('border-warning');
+    expect(screen.getByText('Waiting for your approval')).toBeTruthy();
   });
 
   it('keeps a user-opened cluster open once the run completes', () => {
@@ -122,12 +155,13 @@ describe('OperationsCluster', () => {
 
   it('runs a live elapsed timer that freezes on completion', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-08T10:00:00.000Z'));
     const { rerender } = render(<OperationsCluster items={[tool('b', false)]} />);
     act(() => {
       vi.advanceTimersByTime(3_000);
     });
     expect(screen.getByText('3s')).toBeTruthy();
-    rerender(<OperationsCluster items={[tool('b')]} />);
+    rerender(<OperationsCluster items={[tool('b', true, false, '2026-06-08T10:00:03.000Z')]} />);
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
@@ -140,17 +174,17 @@ describe('OperationsCluster', () => {
     expect(screen.queryByTestId('card')).toBeNull();
   });
 
-  it('pulses the state icon while a tool runs', () => {
+  it('shows a running node while a tool runs', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', false)]} />);
-    const icon = screen.getByTestId('operations-state-icon');
-    expect(icon.getAttribute('class')).toContain('text-info');
-    expect(icon.getAttribute('class')).toContain('animate-soft-pulse');
+    expect(screen.getByTestId('operations-state-icon').getAttribute('data-node-state')).toBe(
+      'running',
+    );
   });
 
-  it('turns the state icon red when a child errored', () => {
+  it('shows a failed node when a child errored and nothing runs', () => {
     render(<OperationsCluster items={[tool('a'), tool('b', true, true)]} />);
-    expect(screen.getByTestId('operations-state-icon').getAttribute('class')).toContain(
-      'text-danger',
+    expect(screen.getByTestId('operations-state-icon').getAttribute('data-node-state')).toBe(
+      'failed',
     );
   });
 

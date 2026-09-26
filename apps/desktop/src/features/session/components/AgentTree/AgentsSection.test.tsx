@@ -153,9 +153,6 @@ vi.mock('./SectionToggle', () => ({
   ),
 }));
 
-vi.mock('./PlanReadySuggestion', () => ({
-  PlanReadySuggestion: () => <div data-testid="plan-ready" />,
-}));
 vi.mock('../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <div data-testid="spawn" />,
 }));
@@ -332,13 +329,6 @@ describe('AgentsSection collapse defaults', () => {
     expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
     expect(screen.getByTestId('collapsed').textContent).toBe('No agents yet');
     expect(screen.queryByTestId('spawn')).toBeNull();
-  });
-
-  it('renders PlanReadySuggestion even when agents collapsed', () => {
-    render(<AgentsSection task={buildSession()} />);
-
-    expect(screen.getByTestId('toggle-agents').textContent).toBe('collapsed');
-    expect(screen.queryByTestId('plan-ready')).not.toBeNull();
   });
 
   it('with agents present, agents section defaults expanded', () => {

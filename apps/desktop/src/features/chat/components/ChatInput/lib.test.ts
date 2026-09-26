@@ -3,9 +3,9 @@ import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import {
   asEffortLevel,
   asProvider,
-  CHAT_PLACEHOLDER,
   CHAT_PREFIX_RE,
   CHAT_PREFIXES,
+  composerPlaceholder,
   dataUrlToBase64,
   extFromMime,
   readFileAsDataUrl,
@@ -116,13 +116,10 @@ describe('CHAT_PREFIX_RE', () => {
     expect(CHAT_PREFIX_RE.test('/cmd')).toBe(false);
   });
 
-  it('advertises exactly the prefixes it accepts', () => {
-    expect(CHAT_PLACEHOLDER).toBe('Message Claude · $ scripts · ~ workflows · @ agents');
+  it('accepts every prefix the grammar advertises', () => {
     for (const prefix of CHAT_PREFIXES) {
-      expect(CHAT_PLACEHOLDER, prefix.symbol).toContain(prefix.symbol);
       expect(CHAT_PREFIX_RE.test(`${prefix.symbol}x`), prefix.symbol).toBe(true);
     }
-    expect(CHAT_PLACEHOLDER).not.toContain('skills');
   });
 
   it('tolerates leading whitespace', () => {
@@ -135,6 +132,47 @@ describe('CHAT_PREFIX_RE', () => {
 
   it('rejects a prefix followed by a space and more text', () => {
     expect(CHAT_PREFIX_RE.test('$build now')).toBe(false);
+  });
+});
+
+describe('composerPlaceholder', () => {
+  it('leads with the first-message prompt over any other state', () => {
+    expect(
+      composerPlaceholder({
+        isRunning: true,
+        firstMessagePrompt: 'What should Scout look into?',
+        roleLabel: 'Scout',
+      }),
+    ).toBe('What should Scout look into?');
+  });
+
+  it('asks to reply to the role once a first message exists', () => {
+    expect(
+      composerPlaceholder({ isRunning: false, firstMessagePrompt: null, roleLabel: 'Implementer' }),
+    ).toBe('Reply to Implementer');
+  });
+
+  it('asks to queue a message while the turn runs', () => {
+    expect(
+      composerPlaceholder({ isRunning: true, firstMessagePrompt: null, roleLabel: 'Implementer' }),
+    ).toBe('Queue a message for Implementer');
+  });
+
+  it('never carries prefix syntax, learned from the + menu instead', () => {
+    const placeholder = composerPlaceholder({
+      isRunning: false,
+      firstMessagePrompt: null,
+      roleLabel: 'Implementer',
+    });
+    for (const prefix of CHAT_PREFIXES) {
+      expect(placeholder).not.toContain(prefix.symbol);
+    }
+  });
+
+  it('drops the role when none is known', () => {
+    expect(
+      composerPlaceholder({ isRunning: false, firstMessagePrompt: null, roleLabel: null }),
+    ).toBe('Reply');
   });
 });
 

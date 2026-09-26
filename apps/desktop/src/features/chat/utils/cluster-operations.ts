@@ -6,7 +6,10 @@ const OPERATION_KINDS = new Set<TranscriptItem['kind']>([
   'skill_invocation',
 ]);
 
-const ABSORBED_KINDS = new Set<TranscriptItem['kind']>(['usage']);
+const ABSORBED_KINDS = new Set<TranscriptItem['kind']>([
+  'permission_request',
+  'permission_decision',
+]);
 
 export type TranscriptRow =
   | { kind: 'item'; key: string; item: TranscriptItem }
