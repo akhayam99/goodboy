@@ -44,6 +44,7 @@ type ApprovalParams = QueueItemIdParams & {
   readonly replyHash: string;
 };
 type DeliveredParams = QueueItemIdParams & { readonly deliveredAt: number };
+type RebaseParams = QueueItemIdParams & { readonly candidateRevision: number };
 
 const ACTIVE_PHASES: ReadonlyArray<ResolvePublicationPhase> = [
   'confirmed',
@@ -204,6 +205,25 @@ export const createResolveQueryMocks = () => {
           approvedReplyHash: replyHash,
           deferredAt: null,
         });
+        return true;
+      },
+    ),
+    rebaseResolveQueueItem: vi.fn(
+      async ({ sessionId, itemId, candidateRevision }: RebaseParams) => {
+        const item = queueItems.get(itemId);
+        const thread = item === undefined ? undefined : threads.get(item.threadId);
+        if (
+          item === undefined ||
+          item.sessionId !== sessionId ||
+          item.supersededAt !== null ||
+          item.approvalState !== 'none' ||
+          item.deliveredAt !== null ||
+          item.integratedSha !== null ||
+          thread?.revision !== candidateRevision
+        ) {
+          return false;
+        }
+        queueItems.set(itemId, { ...item, candidateRevision });
         return true;
       },
     ),

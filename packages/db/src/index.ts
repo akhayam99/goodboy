@@ -431,6 +431,7 @@ export {
   insertResolveQueueItem,
   listResolveQueueItems,
   setResolveQueueItemApproval,
+  rebaseResolveQueueItem,
   refuseResolveQueueItem,
   deferResolveQueueItem,
   undeferResolveQueueItem,
