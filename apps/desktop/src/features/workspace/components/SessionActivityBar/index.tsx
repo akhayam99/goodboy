@@ -8,7 +8,7 @@ import {
   KbdPill,
   PANE_RHYTHM,
   cn,
-  ScrollArea,
+  ScrollFade,
   tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
@@ -172,7 +172,7 @@ export const SessionActivityBar = ({
         </div>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollFade className="min-h-0 flex-1">
         <div
           ref={listRef}
           onPointerDown={lasso.onPointerDown}
@@ -261,7 +261,7 @@ export const SessionActivityBar = ({
             />
           ) : null}
         </div>
-      </ScrollArea>
+      </ScrollFade>
 
       {selectedSessions.length > 0 ? (
         <div className="shrink-0 p-2">

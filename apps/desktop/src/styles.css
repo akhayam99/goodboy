@@ -123,25 +123,6 @@
   --container-chrome-wide: 1280px;
   --container-chrome-labels: 960px;
 
-  /* Density grade, name three opinionated triplets so siblings agree on
-     font-size + gap + padding instead of drifting independently. Apply via
-     `var(--density-<grade>-*)` from component CSS. The sidebar lives at
-     `compact`, right-panel content at `cozy`, transcript prose at
-     `comfortable`. Tool-call / system rows in the transcript may opt down to
-     `cozy` to read as devtool while prose stays conversational. */
-  --density-compact-text: var(--text-2xs);
-  --density-compact-gap: 0.375rem; /* 6px */
-  --density-compact-pad: 0.5rem; /* 8px */
-  --density-cozy-text: var(--text-xs);
-  --density-cozy-gap: 0.625rem; /* 10px */
-  --density-cozy-pad: 0.75rem; /* 12px */
-  --density-comfortable-text: var(--text-sm);
-  --density-comfortable-gap: 0.875rem; /* 14px */
-  --density-comfortable-pad: 1rem; /* 16px */
-  --density-scan-text: var(--text-2xs);
-  --density-scan-gap: 0.25rem;
-  --density-scan-pad: 0.375rem;
-
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -437,10 +418,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.shadow-glow-primary {
-  box-shadow: 0 0 50px oklch(from var(--color-primary) l c h / 0.25);
-}
-
 .shadow-inset-primary {
   box-shadow: inset 0 1px 2px oklch(from var(--color-primary) l c h / 0.18);
 }
@@ -581,9 +558,6 @@ dialog[open]::backdrop {
 .spin-border-info {
   --spin-border-color: var(--color-info);
 }
-.spin-border-danger {
-  --spin-border-color: var(--color-danger);
-}
 .spin-border-primary {
   --spin-border-color: var(--color-primary);
 }
@@ -615,27 +589,6 @@ dialog[open]::backdrop {
 @media (prefers-reduced-motion: no-preference) {
   .animate-border-pulse {
     animation: border-pulse 2.8s ease-in-out infinite;
-  }
-}
-
-.density-trigger-label {
-  display: inline-block;
-  max-width: 10rem;
-  overflow: hidden;
-  white-space: nowrap;
-  opacity: 1;
-}
-
-.density-trigger-label[data-density='compact'] {
-  max-width: 0;
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .density-trigger-label {
-    transition:
-      max-width 160ms cubic-bezier(0.2, 0, 0, 1),
-      opacity 120ms cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
