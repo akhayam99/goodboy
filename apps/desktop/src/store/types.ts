@@ -8,6 +8,7 @@ import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
   StorageFocus,
+  StorageScope,
   StorageFolder,
   StorageRemovalSummary,
   StorageRoot,
@@ -266,6 +267,7 @@ export type NotificationScope = 'workspace' | 'all';
 export type AppState = AppSliceState & {
   readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly disconnectedWorkspaces: ReadonlyArray<Workspace>;
   readonly projects: ReadonlyArray<Project>;
   readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
@@ -333,6 +335,7 @@ export type AppState = AppSliceState & {
   readonly storageRemovingPaths: Readonly<Record<string, true>>;
   readonly storageOutcome: StorageRemovalSummary | null;
   readonly storageFocus: StorageFocus | null;
+  readonly storageScope: StorageScope | null;
   readonly storageArtifacts: ReadonlyArray<StorageArtifact>;
   readonly storageDeletingArtifacts: Readonly<Record<string, true>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;

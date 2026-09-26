@@ -261,6 +261,8 @@ pub fn run() {
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,
+            worktree::worktree_repo_default_base_branch,
+            worktree::worktree_branch_merge_state,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,

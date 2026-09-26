@@ -25,7 +25,11 @@ export const WorkspaceStorageNotice = ({ workspaceId }: Props) => {
       title={title}
       body="No session uses them any more."
       actions={
-        <Button variant="secondary" size="sm" onClick={() => openStorage({ workspaceId })}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => openStorage({ scope: { kind: 'workspace', id: workspaceId } })}
+        >
           Review in Storage
         </Button>
       }

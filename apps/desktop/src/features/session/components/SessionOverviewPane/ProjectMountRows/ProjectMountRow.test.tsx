@@ -433,7 +433,7 @@ describe('ProjectMountRow menu', () => {
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'VS Code' }));
 
-    expect(openInEditor).toHaveBeenCalledWith('/api', 'code');
+    expect(openInEditor).toHaveBeenCalledWith({ path: '/api', editor: 'code' });
   });
 
   it('keeps no hover-only class on the menu and moves the editor off the row', () => {

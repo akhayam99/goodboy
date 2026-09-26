@@ -30,6 +30,7 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
+  listDisconnectedWorkspaces,
   disconnectWorkspace,
   disconnectWorkspaceAndProjects,
   reconnectWorkspace,

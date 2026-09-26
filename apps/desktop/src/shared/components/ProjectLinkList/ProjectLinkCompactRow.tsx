@@ -1,45 +1,44 @@
 import { useState, type ReactNode } from 'react';
-import { Copy, ExternalLink, Folder, FolderGit2, Unplug } from 'lucide-react';
-import type { Project } from '@goodboy/types';
-import { InlineConfirm, OverflowMenu, Tooltip } from '@goodboy/ui';
-import { openInEditor } from '../../lib/editor';
-import { useAppStore } from '../../../store';
+import { AlertTriangle, Folder, FolderGit2 } from 'lucide-react';
+import type { Project, WorkspaceGitStatus } from '@goodboy/types';
+import { InlineConfirm, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
-import { ProjectDescriptionField } from './ProjectDescriptionField';
+import { ProjectRowActions } from './ProjectRowActions';
+import { ProjectRowEditor } from './ProjectRowEditor';
 import { ProjectStarToggle } from './ProjectStarToggle';
 
 type Props = {
   readonly project: Project;
   readonly busy: boolean;
-  readonly accessory: ReactNode;
+  readonly status: WorkspaceGitStatus | null;
+  readonly editorExtra?: ReactNode;
+  readonly badge?: ReactNode;
   readonly onUnlink: (params: { readonly project: Project }) => Promise<void>;
 };
 
-export const ProjectLinkCompactRow = ({ project, busy, accessory, onUnlink }: Props) => {
-  const reportError = useAppStore((state) => state.reportError);
+export const ProjectLinkCompactRow = ({
+  project,
+  busy,
+  status,
+  editorExtra,
+  badge,
+  onUnlink,
+}: Props) => {
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isConfirming, setConfirming] = useState(false);
   const isRepo = project.kind === 'repo';
   const KindIcon = isRepo ? FolderGit2 : Folder;
+  const isFolderMissing = status?.state === 'missing';
+  const description = project.description ?? '';
 
-  const openProject = async () => {
-    try {
-      await openInEditor(project.rootPath);
-    } catch (error) {
-      void reportError({ title: `Couldn't open ${project.name}`, error });
-    }
-  };
-
-  const copyPath = async () => {
-    try {
-      await navigator.clipboard.writeText(project.rootPath);
-    } catch (error) {
-      void reportError({ title: "Couldn't copy the path", error });
-    }
-  };
+  const toggleEditor = () => setIsEditorOpen((open) => !open);
 
   return (
     <li className="flex flex-col gap-1">
-      <div className="flex h-9 min-w-0 items-center gap-2 rounded-md px-2 hover:bg-hover">
+      <div
+        onClick={toggleEditor}
+        className="group grid h-8 w-full min-w-0 cursor-pointer grid-cols-[16px_16px_180px_minmax(0,1fr)_auto_auto_88px] items-center gap-2 rounded-md px-2 text-left hover:bg-hover"
+      >
         <ProjectStarToggle project={project} busy={busy} />
         <KindIcon
           size={ICON_SIZE.row}
@@ -47,49 +46,63 @@ export const ProjectLinkCompactRow = ({ project, busy, accessory, onUnlink }: Pr
           aria-label={isRepo ? 'Repository' : 'Folder'}
           className="shrink-0 text-muted-foreground"
         />
-        <Tooltip content={project.rootPath} anchorClassName="flex min-w-0 max-w-[40%] shrink-0">
-          <span tabIndex={0} className="truncate text-row text-foreground">
+        <Tooltip content={project.rootPath} anchorClassName="flex min-w-0">
+          <button
+            type="button"
+            aria-expanded={isEditorOpen}
+            aria-label={`Edit ${project.name}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleEditor();
+            }}
+            className="truncate rounded-sm text-row text-foreground hover:underline"
+          >
             {project.name}
-          </span>
+          </button>
         </Tooltip>
-        <ProjectDescriptionField project={project} busy={busy} />
-        {accessory}
-        <OverflowMenu
-          label={`Actions for ${project.name}`}
-          disabled={busy}
-          items={[
-            {
-              kind: 'item',
-              key: 'open',
-              label: 'Open in editor',
-              icon: ExternalLink,
-              onClick: () => void openProject(),
-            },
-            {
-              kind: 'item',
-              key: 'copy',
-              label: 'Copy path',
-              icon: Copy,
-              onClick: () => void copyPath(),
-            },
-            { kind: 'separator', key: 'unlink-separator' },
-            {
-              kind: 'item',
-              key: 'unlink',
-              label: 'Unlink',
-              icon: Unplug,
-              destructive: true,
-              onClick: () => setConfirming(true),
-            },
-          ]}
-        />
+        <span className="flex min-w-0 items-center gap-1.5">
+          {badge}
+          <span className="min-w-0 truncate text-label text-muted-foreground">
+            {description !== '' ? (
+              description
+            ) : (
+              <span className="text-faint-foreground opacity-0 group-hover:opacity-100">
+                Add a description
+              </span>
+            )}
+          </span>
+        </span>
+        {project.baseBranch != null && project.baseBranch !== '' ? (
+          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
+            {project.baseBranch}
+          </span>
+        ) : (
+          <span />
+        )}
+        {isFolderMissing ? (
+          <span className="flex shrink-0 items-center gap-1 text-label text-warning">
+            <AlertTriangle size={ICON_SIZE.control} aria-hidden />
+            Folder not found
+          </span>
+        ) : (
+          <span />
+        )}
+        <ProjectRowActions project={project} busy={busy} onArmUnlink={() => setConfirming(true)} />
       </div>
+      {isEditorOpen ? (
+        <ProjectRowEditor
+          project={project}
+          busy={busy}
+          onArmUnlink={() => setConfirming(true)}
+          ignoreField={editorExtra}
+        />
+      ) : null}
       {isConfirming ? (
         <InlineConfirm
           role="danger"
-          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+          icon={<AlertTriangle size={ICON_SIZE.row} aria-hidden />}
           title={`Unlink ${project.name}?`}
-          description="The folder stays on disk. Link it again any time."
+          description="The folder stays on disk. Its sessions keep their history. Link it again any time."
           confirmLabel="Unlink"
           isBusy={busy}
           onConfirm={async () => {
