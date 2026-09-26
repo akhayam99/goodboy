@@ -4,7 +4,7 @@ export { recordByline, relativeTimeNode } from './recordByline';
 export { linearIssueFields, linearStateCategory } from './linearIssueFields';
 export { jiraIssueFields, jiraStateCategory } from './jiraIssueFields';
 export { sentryIssueFields, sentryStateCategory } from './sentryIssueFields';
-export { githubIssueFields } from './githubIssueFields';
+export { githubIssueFields, githubStateCategory } from './githubIssueFields';
 export { githubPullRequestFields } from './githubPullRequestFields';
 export { gitlabIssueFields } from './gitlabIssueFields';
 export { gitlabMergeRequestFields } from './gitlabMergeRequestFields';

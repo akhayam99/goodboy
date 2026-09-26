@@ -150,9 +150,9 @@ describe('fact registries', () => {
       'measure',
     ]);
     expect(slotsOf(resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }))).toEqual([
+      'state',
       'place',
       'labels',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }))).toEqual([
       'place',
@@ -217,11 +217,11 @@ describe('fact registries', () => {
   });
 
   it('shows time as a relative age with the absolute date in the hint', () => {
-    const [time] = resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }).filter(
+    const [time] = resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }).filter(
       (fact) => fact.slot === 'time',
     );
 
-    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITHUB_ISSUE.updatedAt })}`);
+    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITLAB_ISSUE.updatedAt })}`);
   });
 
   it('leaves no empty pill for a fact the payload does not carry', () => {
