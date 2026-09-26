@@ -11,7 +11,6 @@ import {
   sessionEventLabel,
   sessionEventProjectRunLabel,
   sessionEventSecondary,
-  sessionEventTitle,
 } from './sessionEventPresentation';
 
 type MakeParams = {
@@ -28,37 +27,48 @@ const event = ({ kind, payload }: MakeParams): SessionEvent =>
     createdAt: '2026-08-21T10:00:00.000Z',
   }) as unknown as SessionEvent;
 
-describe('sessionEventTitle', () => {
+describe('sessionEventLabel as text', () => {
   it('reads the container event as the session folder, path included', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'worktree_created', payload: { worktreePath: '/repo/wt/gb-trace' } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'worktree_created',
+            payload: { worktreePath: '/repo/wt/gb-trace' },
+          }),
+        }),
       }),
     ).toBe('Session folder created at /repo/wt/gb-trace');
   });
 
   it('names both branches of a switch', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'branch_switched', payload: { from: 'main', to: 'ak/feat' } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'branch_switched', payload: { from: 'main', to: 'ak/feat' } }),
+        }),
       }),
     ).toBe('Branch main → ak/feat');
   });
 
   it('reads a created branch with the name inside the sentence', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'branch_created', payload: { branch: 'ak/feat' } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'branch_created', payload: { branch: 'ak/feat' } }),
+        }),
       }),
     ).toBe('Branch ak/feat created');
   });
 
   it('reads an issue by identifier and title', () => {
     expect(
-      sessionEventTitle({
-        event: event({
-          kind: 'issue_unlinked',
-          payload: { identifier: 'GB-1', title: 'Persist the trace' },
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'issue_unlinked',
+            payload: { identifier: 'GB-1', title: 'Persist the trace' },
+          }),
         }),
       }),
     ).toBe('Unlinked GB-1: Persist the trace');
@@ -66,50 +76,66 @@ describe('sessionEventTitle', () => {
 
   it('reads a pull request by number', () => {
     expect(
-      sessionEventTitle({ event: event({ kind: 'pr_merged', payload: { number: 42 } }) }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'pr_merged', payload: { number: 42 } }),
+        }),
+      }),
     ).toBe('#42 merged');
   });
 
   it('pairs a discard with its restore', () => {
     const payload = { workflowName: 'Orchestrated workflow 24' };
-    expect(sessionEventTitle({ event: event({ kind: 'workflow_discarded', payload }) })).toBe(
-      'Orchestrated workflow 24 discarded',
-    );
-    expect(sessionEventTitle({ event: event({ kind: 'workflow_restored', payload }) })).toBe(
-      'Orchestrated workflow 24 restored',
-    );
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'workflow_discarded', payload }) }),
+      }),
+    ).toBe('Orchestrated workflow 24 discarded');
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'workflow_restored', payload }) }),
+      }),
+    ).toBe('Orchestrated workflow 24 restored');
   });
 
   it('names the run the user closed', () => {
     const payload = { workflowName: 'Add rate limiting' };
-    expect(sessionEventTitle({ event: event({ kind: 'workflow_closed', payload }) })).toBe(
-      'Closed Add rate limiting by you',
-    );
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'workflow_closed', payload }) }),
+      }),
+    ).toBe('Closed Add rate limiting by you');
     expect(sessionEventEmphasis({ kind: 'workflow_closed' })).toBe('muted');
   });
 
   it('counts decisions on both sides', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'decisions_changed', payload: { added: 3, removed: 1 } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'decisions_changed', payload: { added: 3, removed: 1 } }),
+        }),
       }),
     ).toBe('3 decisions added, 1 removed');
   });
 
   it('keeps a single decision singular', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'decisions_changed', payload: { added: 1, removed: 0 } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'decisions_changed', payload: { added: 1, removed: 0 } }),
+        }),
       }),
     ).toBe('1 decision added, 0 removed');
   });
 
   it('names the mounted project first when the payload carries it', () => {
     expect(
-      sessionEventTitle({
-        event: event({
-          kind: 'project_materialized',
-          payload: { projectName: 'api', branch: 'goodboy/untitled', reason: 'added manually' },
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'project_materialized',
+            payload: { projectName: 'api', branch: 'goodboy/untitled', reason: 'added manually' },
+          }),
         }),
       }),
     ).toBe('Added api on goodboy/untitled');
@@ -117,10 +143,12 @@ describe('sessionEventTitle', () => {
 
   it('falls back to the old mount copy without a project name, rationale left out', () => {
     expect(
-      sessionEventTitle({
-        event: event({
-          kind: 'project_materialized',
-          payload: { branch: 'goodboy/untitled', reason: 'added manually by the user' },
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'project_materialized',
+            payload: { branch: 'goodboy/untitled', reason: 'added manually by the user' },
+          }),
         }),
       }),
     ).toBe('Project added on goodboy/untitled');
@@ -128,8 +156,10 @@ describe('sessionEventTitle', () => {
 
   it('names the detached project and whether the worktree survived', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'project_detached', payload: { projectName: 'api', kept: true } }),
+        }),
       }),
     ).toBe('Detached api');
     expect(
@@ -155,15 +185,19 @@ describe('sessionEventTitle', () => {
     });
 
     expect(sessionEventSecondary({ event: mounted })).toBeNull();
-    expect(sessionEventTitle({ event: mounted })).toBe('Added api on goodboy/untitled');
+    expect(segmentsToText({ segments: sessionEventLabel({ event: mounted }) })).toBe(
+      'Added api on goodboy/untitled',
+    );
   });
 
   it('keeps the refusal reason, which is the whole point of that payload', () => {
     expect(
-      sessionEventTitle({
-        event: event({
-          kind: 'project_materialization_refused',
-          payload: { projectName: 'api', reason: 'branch already checked out' },
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'project_materialization_refused',
+            payload: { projectName: 'api', reason: 'branch already checked out' },
+          }),
         }),
       }),
     ).toBe("Couldn't add api: branch already checked out");
@@ -171,7 +205,9 @@ describe('sessionEventTitle', () => {
 
   it('stays readable when the payload is missing', () => {
     for (const kind of SESSION_EVENT_KINDS) {
-      expect(sessionEventTitle({ event: event({ kind }) }).length).toBeGreaterThan(0);
+      expect(
+        segmentsToText({ segments: sessionEventLabel({ event: event({ kind }) }) }).length,
+      ).toBeGreaterThan(0);
     }
   });
 });
@@ -399,40 +435,52 @@ describe('sessionEventProjectRunLabel', () => {
 
 describe('durable state change events', () => {
   it('names an archive and a restore without decoration', () => {
-    expect(sessionEventTitle({ event: event({ kind: 'session_archived' }) })).toBe(
-      'Session archived',
-    );
-    expect(sessionEventTitle({ event: event({ kind: 'session_restored' }) })).toBe(
-      'Session restored',
-    );
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'session_archived' }) }),
+      }),
+    ).toBe('Session archived');
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'session_restored' }) }),
+      }),
+    ).toBe('Session restored');
   });
 
   it('names the project and branch writes go to', () => {
     expect(
-      sessionEventTitle({
-        event: event({
-          kind: 'write_destination_changed',
-          payload: { projectName: 'storefront-web', branch: 'ak/feat-x' },
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'write_destination_changed',
+            payload: { projectName: 'storefront-web', branch: 'ak/feat-x' },
+          }),
         }),
       }),
     ).toBe('Writes now go to storefront-web on ak/feat-x');
   });
 
   it('falls back when the destination payload carries no project', () => {
-    expect(sessionEventTitle({ event: event({ kind: 'write_destination_changed' }) })).toBe(
-      'Write destination changed',
-    );
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({ event: event({ kind: 'write_destination_changed' }) }),
+      }),
+    ).toBe('Write destination changed');
   });
 
   it('quotes the discarded question and the one brought back', () => {
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'question_dismissed', payload: { title: 'Which base branch?' } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'question_dismissed', payload: { title: 'Which base branch?' } }),
+        }),
       }),
     ).toBe('Question discarded: Which base branch?');
     expect(
-      sessionEventTitle({
-        event: event({ kind: 'question_restored', payload: { title: 'Which base branch?' } }),
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({ kind: 'question_restored', payload: { title: 'Which base branch?' } }),
+        }),
       }),
     ).toBe('Question brought back: Which base branch?');
   });

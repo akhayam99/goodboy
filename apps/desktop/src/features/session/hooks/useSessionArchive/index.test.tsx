@@ -28,7 +28,7 @@ vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 
-import { sessionEventTitle } from '../../timeline/sessionEventPresentation';
+import { segmentsToText, sessionEventLabel } from '../../timeline/sessionEventPresentation';
 import { useSessionArchive } from './index';
 
 const session = (id: string): Session => ({ id, goal: id }) as unknown as Session;
@@ -109,8 +109,10 @@ describe('useSessionArchive', () => {
 
   it('titles the toast with the words the timeline row uses for the same fact', async () => {
     const titleOf = (kind: SessionEventKind): string =>
-      sessionEventTitle({
-        event: { kind, payload: null } as unknown as SessionEvent,
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: { kind, payload: null } as unknown as SessionEvent,
+        }),
       });
 
     render(<Harness sessions={[session('s-1')]} />);
