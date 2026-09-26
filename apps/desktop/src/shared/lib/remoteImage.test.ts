@@ -42,21 +42,25 @@ describe('loadToolImage', () => {
     invoke.mockResolvedValue('data:image/png;base64,iVBORw0KGgo=');
   });
 
-  it('asks the backend with the workspace, provider and email it was given', async () => {
+  it('asks the backend with the workspace, provider, email and connected site it was given', async () => {
     await loadToolImage({
       workspaceId: 'ws-1',
       projectId: 'proj-1',
       provider: 'jira',
       email: 'mara@acme.dev',
+      siteUrl: 'https://acme.atlassian.net',
       url: 'https://acme.atlassian.net/rest/api/3/attachment/content/1',
     });
 
     expect(invoke).toHaveBeenCalledWith('load_tool_image', {
-      workspaceId: 'ws-1',
-      projectId: 'proj-1',
-      provider: 'jira',
-      email: 'mara@acme.dev',
-      url: 'https://acme.atlassian.net/rest/api/3/attachment/content/1',
+      args: {
+        workspaceId: 'ws-1',
+        projectId: 'proj-1',
+        provider: 'jira',
+        email: 'mara@acme.dev',
+        siteUrl: 'https://acme.atlassian.net',
+        url: 'https://acme.atlassian.net/rest/api/3/attachment/content/1',
+      },
     });
   });
 
@@ -68,11 +72,14 @@ describe('loadToolImage', () => {
     });
 
     expect(invoke).toHaveBeenCalledWith('load_tool_image', {
-      workspaceId: 'ws-1',
-      projectId: null,
-      provider: 'linear',
-      email: null,
-      url: 'https://uploads.linear.app/a.png',
+      args: {
+        workspaceId: 'ws-1',
+        projectId: null,
+        provider: 'linear',
+        email: null,
+        siteUrl: null,
+        url: 'https://uploads.linear.app/a.png',
+      },
     });
   });
 });

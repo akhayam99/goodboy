@@ -6,6 +6,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use reqwest::redirect::Policy;
 use reqwest::{Client, Url};
+use serde::Deserialize;
 use tauri::State;
 use tokio::net::lookup_host;
 
@@ -263,22 +264,26 @@ pub async fn fetch_remote_image(url: String) -> Result<String, String> {
 
 const GITHUB_REDIRECT_HOST: &str = "private-user-images.githubusercontent.com";
 
-fn tool_host_is_trusted(provider: &str, url: &Url) -> bool {
+fn tool_host_is_trusted(provider: &str, url: &Url, jira_site_host: Option<&str>) -> bool {
     let host = url.host_str().unwrap_or("");
     let path = url.path();
     match provider {
         "linear" => host == "uploads.linear.app",
         "jira" => {
-            host.ends_with(".atlassian.net") && path.starts_with("/rest/api/3/attachment/content/")
+            jira_site_host == Some(host) && path.starts_with("/rest/api/3/attachment/content/")
         }
         "github" => host == "github.com" && path.starts_with("/user-attachments/assets/"),
         _ => false,
     }
 }
 
-fn validate_tool_image_url(provider: &str, url: &str) -> Result<Url, String> {
+fn validate_tool_image_url(
+    provider: &str,
+    url: &str,
+    jira_site_host: Option<&str>,
+) -> Result<Url, String> {
     let parsed = validate_image_url(url)?;
-    if !tool_host_is_trusted(provider, &parsed) {
+    if !tool_host_is_trusted(provider, &parsed, jira_site_host) {
         let host = parsed.host_str().unwrap_or(url);
         return Err(format!("{host} is not a host {provider} images load from"));
     }
@@ -348,17 +353,36 @@ async fn fetch_authed_image(provider: &str, url: Url, auth: ToolAuth) -> Result<
     read_image_response(&redirect_host, &mut redirected).await
 }
 
-#[tauri::command]
-pub async fn load_tool_image(
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadToolImageArgs {
     workspace_id: String,
     project_id: Option<String>,
     provider: String,
     email: Option<String>,
+    site_url: Option<String>,
     url: String,
+}
+
+#[tauri::command]
+pub async fn load_tool_image(
+    args: LoadToolImageArgs,
     linear_cache: State<'_, crate::linear::LinearTokenCache>,
     jira_cache: State<'_, crate::jira::JiraTokenCache>,
 ) -> Result<String, String> {
-    let parsed = validate_tool_image_url(&provider, &url)?;
+    let LoadToolImageArgs {
+        workspace_id,
+        project_id,
+        provider,
+        email,
+        site_url,
+        url,
+    } = args;
+    let jira_site_host = site_url
+        .as_deref()
+        .and_then(|site| Url::parse(site).ok())
+        .and_then(|url| url.host_str().map(str::to_string));
+    let parsed = validate_tool_image_url(&provider, &url, jira_site_host.as_deref())?;
     let auth = match provider.as_str() {
         "linear" => {
             let token =
@@ -677,30 +701,60 @@ mod tests {
     #[test]
     fn trusts_only_each_providers_own_upload_host() {
         let linear = Url::parse("https://uploads.linear.app/9f2c.png").unwrap();
-        assert!(tool_host_is_trusted("linear", &linear));
+        assert!(tool_host_is_trusted("linear", &linear, None));
 
         let jira =
             Url::parse("https://acme.atlassian.net/rest/api/3/attachment/content/1").unwrap();
-        assert!(tool_host_is_trusted("jira", &jira));
+        assert!(tool_host_is_trusted(
+            "jira",
+            &jira,
+            Some("acme.atlassian.net")
+        ));
 
         let github = Url::parse("https://github.com/user-attachments/assets/9f2c").unwrap();
-        assert!(tool_host_is_trusted("github", &github));
+        assert!(tool_host_is_trusted("github", &github, None));
+    }
+
+    #[test]
+    fn refuses_a_jira_attachment_from_a_tenant_other_than_the_one_connected() {
+        let foreign_tenant =
+            Url::parse("https://evil.atlassian.net/rest/api/3/attachment/content/1").unwrap();
+        assert!(!tool_host_is_trusted(
+            "jira",
+            &foreign_tenant,
+            Some("acme.atlassian.net")
+        ));
+    }
+
+    #[test]
+    fn refuses_a_jira_attachment_when_no_site_is_connected() {
+        let jira =
+            Url::parse("https://acme.atlassian.net/rest/api/3/attachment/content/1").unwrap();
+        assert!(!tool_host_is_trusted("jira", &jira, None));
     }
 
     #[test]
     fn refuses_a_host_not_in_the_providers_own_table() {
         let foreign = Url::parse("https://cdn.acme.dev/9f2c.png").unwrap();
-        assert!(!tool_host_is_trusted("linear", &foreign));
-        assert!(!tool_host_is_trusted("jira", &foreign));
-        assert!(!tool_host_is_trusted("github", &foreign));
+        assert!(!tool_host_is_trusted("linear", &foreign, None));
+        assert!(!tool_host_is_trusted(
+            "jira",
+            &foreign,
+            Some("acme.atlassian.net")
+        ));
+        assert!(!tool_host_is_trusted("github", &foreign, None));
 
         let wrong_jira_path = Url::parse("https://acme.atlassian.net/rest/api/3/issue/1").unwrap();
-        assert!(!tool_host_is_trusted("jira", &wrong_jira_path));
+        assert!(!tool_host_is_trusted(
+            "jira",
+            &wrong_jira_path,
+            Some("acme.atlassian.net")
+        ));
 
         let wrong_github_path = Url::parse("https://github.com/acme/repo").unwrap();
-        assert!(!tool_host_is_trusted("github", &wrong_github_path));
+        assert!(!tool_host_is_trusted("github", &wrong_github_path, None));
 
-        assert!(!tool_host_is_trusted("bitbucket", &linear_upload()));
+        assert!(!tool_host_is_trusted("bitbucket", &linear_upload(), None));
     }
 
     fn linear_upload() -> Url {
@@ -709,8 +763,10 @@ mod tests {
 
     #[test]
     fn validate_tool_image_url_refuses_a_mismatched_host() {
-        assert!(validate_tool_image_url("linear", "https://cdn.acme.dev/a.png").is_err());
-        assert!(validate_tool_image_url("linear", "https://uploads.linear.app/a.png").is_ok());
+        assert!(validate_tool_image_url("linear", "https://cdn.acme.dev/a.png", None).is_err());
+        assert!(
+            validate_tool_image_url("linear", "https://uploads.linear.app/a.png", None).is_ok()
+        );
     }
 
     #[test]

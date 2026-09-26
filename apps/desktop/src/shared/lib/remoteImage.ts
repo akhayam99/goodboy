@@ -15,6 +15,7 @@ type ToolImageParams = {
   readonly projectId?: string | null;
   readonly provider: ToolImageProvider;
   readonly email?: string | null;
+  readonly siteUrl?: string | null;
   readonly url: string;
 };
 
@@ -23,13 +24,17 @@ export const loadToolImage = async ({
   projectId,
   provider,
   email,
+  siteUrl,
   url,
 }: ToolImageParams): Promise<string> => {
   return invoke<string>('load_tool_image', {
-    workspaceId,
-    projectId: projectId ?? null,
-    provider,
-    email: email ?? null,
-    url,
+    args: {
+      workspaceId,
+      projectId: projectId ?? null,
+      provider,
+      email: email ?? null,
+      siteUrl: siteUrl ?? null,
+      url,
+    },
   });
 };

@@ -91,6 +91,7 @@ vi.mock('../../../../store', async () => {
     useAppStore: Object.assign(useAppStore, { getState: () => h.state }),
     useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
     useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
+    useSessionById: () => ({ id: 'session-1', workspaceId: 'workspace-1' }),
   };
 });
 vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({

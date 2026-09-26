@@ -34,6 +34,7 @@ describe('ToolImageScope', () => {
       projectId: undefined,
       provider: 'linear',
       email: undefined,
+      siteUrl: null,
       url: 'https://uploads.linear.app/a.png',
     });
   });

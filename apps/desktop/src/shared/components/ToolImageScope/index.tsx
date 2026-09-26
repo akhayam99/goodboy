@@ -8,11 +8,25 @@ type Props = {
   readonly projectId?: string | null;
   readonly provider: ToolImageProvider;
   readonly email?: string | null;
+  readonly siteUrl?: string | null;
   readonly children: ReactNode;
 };
 
-export const ToolImageScope = ({ workspaceId, projectId, provider, email, children }: Props) => {
-  const { load, shouldAutoLoad } = useToolImageLoader({ workspaceId, projectId, provider, email });
+export const ToolImageScope = ({
+  workspaceId,
+  projectId,
+  provider,
+  email,
+  siteUrl,
+  children,
+}: Props) => {
+  const { load, shouldAutoLoad } = useToolImageLoader({
+    workspaceId,
+    projectId,
+    provider,
+    email,
+    siteUrl,
+  });
 
   return (
     <RemoteImageLoaderProvider load={load} shouldAutoLoad={shouldAutoLoad}>

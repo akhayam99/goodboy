@@ -36,6 +36,7 @@ describe('useToolImageLoader', () => {
       projectId: undefined,
       provider: 'linear',
       email: undefined,
+      siteUrl: null,
       url: 'https://uploads.linear.app/a.png',
     });
     expect(loadRemoteImage).not.toHaveBeenCalled();
@@ -53,7 +54,13 @@ describe('useToolImageLoader', () => {
   });
 
   it('recognizes each provider its own host', () => {
-    const jira = renderHook(() => useToolImageLoader({ workspaceId: 'ws-1', provider: 'jira' }));
+    const jira = renderHook(() =>
+      useToolImageLoader({
+        workspaceId: 'ws-1',
+        provider: 'jira',
+        siteUrl: 'https://acme.atlassian.net',
+      }),
+    );
     expect(
       jira.result.current.shouldAutoLoad(
         'https://acme.atlassian.net/rest/api/3/attachment/content/1',
@@ -68,5 +75,31 @@ describe('useToolImageLoader', () => {
       github.result.current.shouldAutoLoad('https://github.com/user-attachments/assets/1'),
     ).toBe(true);
     expect(github.result.current.shouldAutoLoad('https://github.com/acme/repo')).toBe(false);
+  });
+
+  it('refuses a jira attachment from a tenant other than the one connected', () => {
+    const jira = renderHook(() =>
+      useToolImageLoader({
+        workspaceId: 'ws-1',
+        provider: 'jira',
+        siteUrl: 'https://acme.atlassian.net',
+      }),
+    );
+
+    expect(
+      jira.result.current.shouldAutoLoad(
+        'https://evil.atlassian.net/rest/api/3/attachment/content/1',
+      ),
+    ).toBe(false);
+  });
+
+  it('never treats a jira attachment as its own host when no site is connected', () => {
+    const jira = renderHook(() => useToolImageLoader({ workspaceId: 'ws-1', provider: 'jira' }));
+
+    expect(
+      jira.result.current.shouldAutoLoad(
+        'https://acme.atlassian.net/rest/api/3/attachment/content/1',
+      ),
+    ).toBe(false);
   });
 });

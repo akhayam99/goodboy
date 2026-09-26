@@ -280,11 +280,6 @@ fn operation_row(
     ))
 }
 
-/// Refuses a write whose caller captured the wipe generation before a
-/// `db_wipe` bumped it: the schema that write was aimed at is gone, and
-/// writing into the reset one instead would resurrect a stale operation
-/// row under a fresh session. Kept pure (plain integers, no `Db`/`AppHandle`)
-/// so it can be unit tested without a Tauri test harness.
 fn check_generation(expected: u64, current: u64) -> Result<(), BridgeError> {
     if expected != current {
         return Err(BridgeError::coded(
@@ -468,9 +463,6 @@ pub(super) async fn dispatch(
     scope: &Scope<'_>,
     verb: &str,
 ) -> Result<Value, BridgeError> {
-    // Captured now, at request-received time, rather than right before the
-    // write below: a wipe that lands anywhere in between is a wipe this
-    // request never saw, so its write must not land in the reset schema.
     let expected_generation = app.state::<Db>().generation();
     let args = scope.args;
     let rows = session_mounts(app, scope.workspace, scope.session)?;

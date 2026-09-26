@@ -48,10 +48,6 @@ impl DbError {
     }
 }
 
-/// `.2` is the wipe generation: bumped once per `db_wipe`, before the schema
-/// reset runs. A caller that captured a generation earlier (via
-/// `Db::generation`) and finds it stale after the fact knows its write would
-/// otherwise have landed in the freshly-reset database, and should refuse it.
 pub struct Db(pub Mutex<Connection>, pub PathBuf, pub AtomicU64);
 
 impl Db {
@@ -59,9 +55,6 @@ impl Db {
         self.2.load(Ordering::SeqCst)
     }
 
-    /// Bumps the wipe generation and returns the new value. Called once at
-    /// the start of `db_wipe`, before anything else runs, so every
-    /// generation captured before this point is immediately stale.
     fn bump_generation(&self) -> u64 {
         self.2.fetch_add(1, Ordering::SeqCst) + 1
     }

@@ -2,8 +2,9 @@ import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import { formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { ImagePlus, Pencil } from 'lucide-react';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useSessionById } from '../../../../store';
 import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
+import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { SaveCancel } from './SaveCancel';
 
 type Props = {
@@ -19,6 +20,7 @@ const IMG_URL_RE =
 
 export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   const editPr = useAppStore((s) => s.editPr);
+  const workspaceId = useSessionById(sessionId)?.workspaceId ?? null;
   const [editing, setEditing] = useState<Editing>(null);
   const [titleDraft, setTitleDraft] = useState(pr.title);
   const [bodyDraft, setBodyDraft] = useState(pr.body);
@@ -179,7 +181,13 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
             onClick={onDescClick}
             className="cursor-text rounded-md border border-transparent px-3 py-2 transition-colors hover:border-border-soft hover:bg-hover"
           >
-            <Markdown text={pr.body} className="text-prose" />
+            {workspaceId === null ? (
+              <Markdown text={pr.body} className="text-prose" />
+            ) : (
+              <ToolImageScope workspaceId={workspaceId} provider="github">
+                <Markdown text={pr.body} className="text-prose" />
+              </ToolImageScope>
+            )}
           </div>
         ) : (
           <button

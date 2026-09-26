@@ -37,7 +37,9 @@ export const JiraIssueDetail = ({
 }: Props) => {
   const actions = useJiraIssueActions({ issue, workspaceId, projectId, onWritten: onIssueWritten });
   const live = actions.issue;
-  const email = useJiraConfig({ workspaceId })?.email ?? null;
+  const jiraConfig = useJiraConfig({ workspaceId });
+  const email = jiraConfig?.email ?? null;
+  const siteUrl = jiraConfig?.siteUrl ?? null;
   const { comments, isLoading, error, reload, post } = useJiraIssueComments({
     issue: live,
     workspaceId,
@@ -127,6 +129,7 @@ export const JiraIssueDetail = ({
                 projectId={projectId}
                 provider="jira"
                 email={email}
+                siteUrl={siteUrl}
               >
                 <DescriptionSection text={live.description} onSave={actions.saveDescription} />
               </ToolImageScope>
