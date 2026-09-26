@@ -12,6 +12,89 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.10.0
+
+Rewrite a branch's history from its own page, watch every decision get a number, and give a wireframe a version you can compare or restore.
+
+This version updates your data in one direction. To go back to 0.9, restore the backup Goodboy made before updating.
+
+### New
+
+#### Rewrite history for any branch
+<!-- gb area=review -->
+
+A new Rewrite history page sits under any branch: reword, squash, fold into or drop a commit, or reorder the plan before you apply it. Every change to the plan checks for a conflict first, and the warning names the exact move that splits.
+
+Pushing a rewritten branch takes a lease and keeps a backup you can undo. Squash and reword messages are drafted for you, and the pull request title and body update to match.
+
+#### Review works before a pull request exists
+<!-- gb area=review -->
+
+Review no longer needs a pull request. Internal notes on a branch read like comments, and Resolve on one works the same way it does on a review thread.
+
+#### Every decision gets a number
+<!-- gb area=sessions -->
+
+Decisions in a session's Overview are numbered, so a reworded or replaced one still points back to what changed, with a reason attached. An agent or the summarizer can propose the same operations you would: replace, reword or withdraw one, always with a byline.
+
+#### A version history for every wireframe
+<!-- gb area=artifacts -->
+
+Every wireframe keeps its past versions. Compare two side by side to see exactly what changed, and bring in a wireframe made outside Goodboy through the same import flow.
+
+Ask for a change from a composer under the stage instead of leaving Goodboy, and the request tracks against the version it started from.
+
+#### Restore an earlier version of any artifact
+<!-- gb area=artifacts -->
+
+Plans, reports and wireframes keep every revision. Open one from the artifact's drawer and restore it, with the person, note and time it was captured.
+
+#### Star an issue to keep it up top
+<!-- gb area=inbox -->
+
+Star an issue from the Inbox or Pick up a task, the same star used for projects, and it stays in a Starred group at the top of both lists until you remove it. Closing a starred issue unstars it.
+
+#### Choose what happens after a pull request merges
+<!-- gb area=storage screen=settings/app/storage -->
+
+Set a default for every workspace: ask, delete the branch on this Mac, or delete it on origin too, with an override per project. A restored branch comes back for 14 days after you delete it.
+
+The Storage page lists every branch: yours, Goodboy's, merged or suspect, each with the session that made it and whether it only exists on this Mac, is gone on origin, or is ahead of main.
+
+#### Slack works like every other integration
+<!-- gb area=integrations screen=settings/tools -->
+
+Connect Slack the same way as every other integration, with a setup code and consent in the browser instead of pasting a token. Pick which channels Goodboy watches, and set what an agent can do in each one.
+
+Agent replies wait as a draft until you send them, and every message goes out with your signature.
+
+### Improved
+
+#### Pull request gets its own page
+<!-- gb area=review -->
+
+A pull request now has its own page and its own menu in the trail, instead of living inside Review. Its checks, activity and details use the same label and value list as every other linked record. Review keeps only the review itself, with a link to the pull request page when something needs fixing there.
+
+#### Reports look like a real document
+<!-- gb area=artifacts -->
+
+A report renders as one real document, not a stack of print sheets, with the type scale and font Goodboy uses everywhere else. Open it straight in your browser, and see the folder it and every other artifact live in on disk.
+
+#### Locate a project after you moved it
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Goodboy checks a project's identity, not just its path, so moving a folder no longer breaks it. Point Goodboy at the new location and it repairs the git worktree and reconnects, instead of asking you to add the project again.
+
+#### Export your setup in groups
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Exporting your configuration now works in groups instead of one file, previews what is inside before you import it, and leaves security findings out.
+
+#### Release notes get before and after images
+<!-- gb area=app -->
+
+A release note can carry a before and an after image next to the words, pulled from the same scenes Goodboy already checks against.
+
 ## Goodboy v0.9.0
 
 Starting a session now walks you through setup, every provider gets one settings page, and Goodboy scans saved scripts for secrets before they ship.

@@ -50,6 +50,7 @@ Every task you start is a **session**, and every session sits on one board.
 Open a session and the **Overview** holds everything about that task.
 
 - The goal, the decisions taken and a running summary
+- Each decision gets a number, so a reworded or replaced one still points back to what changed
 - The issues it is linked to, from GitHub, Linear, Sentry and the other tools
 - Every repository it works on, with its branch and pull request
 
@@ -92,6 +93,7 @@ Agents work in their own copy of the code, not in yours.
 - Several sessions run at the same time without conflicts
 - One session can work on more repositories, and on more branches of the same one, each with its own pull request
 - From each row you open a terminal, run a project script or open the code in your editor
+- Open **Rewrite history** on a branch to reword, squash, fold or drop commits, with conflicts flagged before you apply and a lease push you can undo
 
 ![The Overview of a session: its decisions and summary, a ledger-core repository with three branches of a six part pull request series, one merged and one with its files kept, a notify-relay branch in review with its terminal and script actions, and pull requests opened and merged in Activity](./docs/images/mounts.png)
 
@@ -104,6 +106,7 @@ When an agent writes a **plan**, a **report** or a **wireframe**, Goodboy saves 
 - The next agent reads it instead of scrolling a chat
 - A plan waits for you to run it, and says so, then stays in the list with the agent that ran it
 - Filter by plans, reports or wireframes, and reopen or print any of them whenever you want
+- A wireframe keeps every version: compare two side by side, or import one made outside Goodboy
 
 ![The Artifacts tab of a session filtered to plans: one active plan ready for the next agent and two consumed plans below it](./docs/images/artifacts-lens-shell.png)
 
