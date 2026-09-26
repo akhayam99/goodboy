@@ -103,6 +103,7 @@ import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { DrawerSliceState } from './slices/drawer/state';
+import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -253,7 +254,8 @@ type AppSliceState = ArtifactsState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState &
-  DrawerSliceState;
+  DrawerSliceState &
+  NavigationSliceState;
 
 export type NotificationScope = 'workspace' | 'all';
 
