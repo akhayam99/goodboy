@@ -1592,26 +1592,6 @@ fn write_agent_status(
     }
 }
 
-// Persists the agent role kind (planner/scout/implementer/...) so the
-// chip survives an app restart. agentKindOverride in the store mirrors
-// this column; both are kept in sync via this command.
-#[tauri::command]
-pub async fn agent_set_kind(
-    state: State<'_, Db>,
-    id: String,
-    kind: Option<String>,
-) -> Result<(), PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let affected = conn.execute(
-        "UPDATE agents SET kind = ?2 WHERE id = ?1",
-        rusqlite::params![id, kind],
-    )?;
-    if affected == 0 {
-        return Err(PhaseError::RunNotFound(id));
-    }
-    Ok(())
-}
-
 // Persists the agent-level verbosity override. NULL = inherit from workspace.
 #[tauri::command]
 pub async fn agent_set_verbosity(

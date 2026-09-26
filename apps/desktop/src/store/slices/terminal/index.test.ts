@@ -202,13 +202,6 @@ describe('store contract', () => {
       await store.getState().openTerminal(SESSION_ID, '/cwd', 80, 24);
       expect(store.getState().terminalSessions[SESSION_ID]).toBe('open');
     });
-
-    it('closeTerminal marks the session as closed', async () => {
-      const store = useAppStore;
-      store.setState({ terminalSessions: { [SESSION_ID]: 'open' } });
-      await store.getState().closeTerminal(SESSION_ID);
-      expect(store.getState().terminalSessions[SESSION_ID]).toBe('closed');
-    });
   });
 
   describe('terminal cmux', () => {

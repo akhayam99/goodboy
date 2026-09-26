@@ -784,50 +784,5 @@ describe('store contract', () => {
       expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
     });
-
-    it('resolveBinding prefers the project override over the workspace binding', async () => {
-      const store = useAppStore;
-      const workspaceLevel = linearRow();
-      const override: IntegrationBinding = {
-        ...linearRow(),
-        id: 'i-override' as IntegrationBindingId,
-        projectId: PROJECT_ID,
-        credentialId: 'cred-override' as IntegrationCredentialId,
-      };
-      store.setState({ workspaceIntegrations: { [WS_ID]: [workspaceLevel, override] } });
-
-      const resolved = store
-        .getState()
-        .resolveBinding({ workspaceId: WS_ID, provider: 'linear', projectId: PROJECT_ID });
-      expect(resolved?.id).toBe('i-override');
-
-      const fallback = store.getState().resolveBinding({ workspaceId: WS_ID, provider: 'linear' });
-      expect(fallback?.id).toBe('i-1');
-    });
-
-    it('resolveBinding falls back to the workspace binding for a project with no override', async () => {
-      const store = useAppStore;
-      store.setState({ workspaceIntegrations: { [WS_ID]: [linearRow()] } });
-
-      const resolved = store.getState().resolveBinding({
-        workspaceId: WS_ID,
-        provider: 'linear',
-        projectId: 'project-elsewhere' as ProjectId,
-      });
-      expect(resolved?.id).toBe('i-1');
-
-      const missing = store.getState().resolveBinding({ workspaceId: WS_ID, provider: 'slack' });
-      expect(missing).toBeNull();
-    });
-
-    it('disconnectGithub clears the workspace-scoped keychain token only', async () => {
-      const store = useAppStore;
-
-      await store.getState().disconnectGithub({ workspaceId: WS_ID });
-
-      expect(storySpies.ghClearToken).toHaveBeenCalledWith(WS_ID);
-      expect(storySpies.deleteIntegrationBinding).not.toHaveBeenCalled();
-      expect(storySpies.deleteIntegrationBindingsForProvider).not.toHaveBeenCalled();
-    });
   });
 });

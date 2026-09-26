@@ -69,7 +69,6 @@ vi.mock('../features/workflows/workflows', () => ({
   invokeAgentList: vi.fn(async () => []),
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
-  invokeAgentSetKind: vi.fn(async () => undefined),
   invokeAgentSetVerbosity: vi.fn(async () => undefined),
   invokeAgentMarkViewed: vi.fn(async () => undefined),
   invokeAgentSetProviderSessionId: vi.fn(async () => undefined),

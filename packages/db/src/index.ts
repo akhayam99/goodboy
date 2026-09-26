@@ -288,7 +288,6 @@ export { getWorkspaceOverrides, setWorkspaceOverrides } from './queries/settings
 export {
   listProviderCredentials,
   insertProviderCredential,
-  renameProviderCredential,
   deleteProviderCredential,
 } from './queries/provider-credential';
 export {

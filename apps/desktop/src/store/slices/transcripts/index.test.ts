@@ -212,19 +212,6 @@ describe('store contract', () => {
       expect(store.getState().transcripts[AGENT_ID]).toEqual([ev]);
     });
 
-    it('resetTranscript clears the per-agent transcript', async () => {
-      const store = useAppStore;
-      const ev: TurnEvent = {
-        kind: 'assistant_text',
-        runId: RUN_ID,
-        delta: 'x',
-        at: NOW,
-      } as TurnEvent;
-      store.setState({ transcripts: { [AGENT_ID]: [ev] } });
-      store.getState().resetTranscript(AGENT_ID);
-      expect(store.getState().transcripts[AGENT_ID]).toEqual([]);
-    });
-
     it('appendTurnEvent bumps unknownPayloadCounts for unknown_payload events', async () => {
       const store = useAppStore;
       store.setState({

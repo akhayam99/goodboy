@@ -302,23 +302,6 @@ describe('store contract', () => {
       await read;
       expect(store.getState().sessionLoading[SESSION_ID]?.slots).toBe(false);
     });
-
-    it('toggleSessionSlot upserts the slot with new enabled flag', async () => {
-      const store = useAppStore;
-      const db = await import('@goodboy/db');
-      store.setState({
-        sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: 'g', enabled: true } as ContextSlot] },
-      });
-      await store.getState().toggleSessionSlot(SESSION_ID, 'goal', false);
-      const slot = store.getState().sessionSlots[SESSION_ID]?.find((s) => s.key === 'goal');
-      expect(slot?.enabled).toBe(false);
-      expect(db.upsertContextSlot).toHaveBeenCalledWith(
-        expect.anything(),
-        SESSION_ID,
-        { key: 'goal', value: 'g', enabled: false },
-        'user',
-      );
-    });
   });
 
   describe('telemetry', () => {

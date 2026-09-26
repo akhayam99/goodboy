@@ -45,14 +45,6 @@ export const insertProviderCredential = async (
   );
 };
 
-export const renameProviderCredential = async (
-  db: Database,
-  id: CredentialId,
-  label: string,
-): Promise<void> => {
-  await db.execute('UPDATE provider_credentials SET label = ? WHERE id = ?', [label, id]);
-};
-
 export const deleteProviderCredential = async (db: Database, id: CredentialId): Promise<void> => {
   await db.execute('DELETE FROM provider_credentials WHERE id = ?', [id]);
 };
