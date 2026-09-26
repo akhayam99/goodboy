@@ -153,7 +153,7 @@ describe('SettingsStudio', () => {
         onClose={vi.fn()}
       />,
     );
-    expect((await screen.findByLabelText('Personal API key')).id).toBe('linear-pat');
+    expect((await screen.findByLabelText('API key')).id).toBe('linear-api-key');
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
     const tools = screen.getByRole('list', { name: 'Integrations settings' });
     expect(

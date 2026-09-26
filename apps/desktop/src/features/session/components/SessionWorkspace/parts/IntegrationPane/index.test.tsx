@@ -459,16 +459,17 @@ describe('IntegrationPane', () => {
 
     expect(screen.getByRole('heading', { name: 'Linear' })).toBeDefined();
     expect(screen.queryByRole('combobox', { name: 'Link an issue' })).toBeNull();
-    fireEvent.change(screen.getByLabelText('Personal API key'), {
+    fireEvent.change(screen.getByLabelText('API key'), {
       target: { value: 'lin_api_test' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
-    await waitFor(() =>
-      expect(h.store.connectLinear).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE_ID,
-        token: 'lin_api_test',
-        credentialId: null,
-      }),
+    await waitFor(
+      () =>
+        expect(h.store.connectLinear).toHaveBeenCalledWith({
+          workspaceId: WORKSPACE_ID,
+          token: 'lin_api_test',
+          credentialId: null,
+        }),
+      { timeout: 2000 },
     );
     expect(listener).not.toHaveBeenCalled();
     window.removeEventListener('goodboy:open-linear-studio', listener);
