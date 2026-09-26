@@ -60,6 +60,7 @@ type Harness = {
   }) => void;
   readonly identity: () => string | null;
   readonly errorTail: () => string | null;
+  readonly authUrl: () => string | null;
 };
 
 const providerConnection = ({
@@ -104,13 +105,19 @@ const harness = ({
     },
   );
   const get = vi.fn(() => state);
+  let current: ProviderId = 'anthropic';
   const entry = () =>
-    (state.providerConnect as Record<string, Record<string, unknown>>).anthropic ?? {};
+    (state.providerConnect as Record<string, Record<string, unknown>>)[current] ?? {};
+  const connect = connectProvider(set as never, get as never);
   return {
     phase: () => entry().phase as ProviderConnectPhase,
     identity: () => (entry().identity as string | null) ?? null,
     errorTail: () => (entry().errorTail as string | null) ?? null,
-    connect: connectProvider(set as never, get as never),
+    authUrl: () => (entry().authUrl as string | null) ?? null,
+    connect: (providerId: ProviderId) => {
+      current = providerId;
+      return connect(providerId);
+    },
     cancel: cancelProviderConnect(set as never, get as never),
     emitOutput: (text: string) => {
       mocks.outputHandler?.({
@@ -142,9 +149,9 @@ afterEach(() => {
 });
 
 describe('connectProvider', () => {
-  it('opens the detected auth url exactly once per run', async () => {
+  it('opens the detected auth url exactly once per run when goodboy owns the tab', async () => {
     const h = harness();
-    await h.connect('anthropic');
+    await h.connect('cursor');
     h.emitOutput(`visit ${AUTH_URL} to continue\n`);
     h.emitOutput(`still waiting, open ${AUTH_URL}\n`);
     expect(mocks.openUrl).toHaveBeenCalledTimes(1);
@@ -152,29 +159,41 @@ describe('connectProvider', () => {
     expect(h.phase()).toBe('handoff');
   });
 
+  it.each(['anthropic', 'codex'] as const)(
+    'never opens a tab for %s, whose cli opens its own, but keeps the url',
+    async (providerId) => {
+      const h = harness();
+      await h.connect(providerId);
+      h.emitOutput(`visit ${AUTH_URL} to continue\n`);
+      expect(mocks.openUrl).not.toHaveBeenCalled();
+      expect(h.phase()).toBe('handoff');
+      expect(h.authUrl()).toBe(AUTH_URL);
+    },
+  );
+
   it('ignores a docs link and still opens the real auth url printed after it', async () => {
     const h = harness();
-    await h.connect('anthropic');
-    h.emitOutput('see https://docs.anthropic.com/en/docs/claude-code/getting-started\n');
+    await h.connect('cursor');
+    h.emitOutput('see https://docs.cursor.com/en/cli/installation\n');
     expect(mocks.openUrl).not.toHaveBeenCalled();
     h.emitOutput(`open ${AUTH_URL}\n`);
     expect(mocks.openUrl).toHaveBeenCalledWith(AUTH_URL);
     expect(h.phase()).toBe('handoff');
   });
 
-  it('upgrades to a more auth-specific url after opening a weaker one', async () => {
+  it('keeps the more auth-specific url without opening a second tab', async () => {
     const h = harness();
-    await h.connect('anthropic');
-    h.emitOutput('trouble? https://claude.ai/login\n');
-    expect(mocks.openUrl).toHaveBeenCalledWith('https://claude.ai/login');
+    await h.connect('cursor');
+    h.emitOutput('trouble? https://cursor.com/login\n');
+    expect(mocks.openUrl).toHaveBeenCalledWith('https://cursor.com/login');
     h.emitOutput(`open ${AUTH_URL}\n`);
-    expect(mocks.openUrl).toHaveBeenLastCalledWith(AUTH_URL);
-    expect(mocks.openUrl).toHaveBeenCalledTimes(2);
+    expect(mocks.openUrl).toHaveBeenCalledTimes(1);
+    expect(h.authUrl()).toBe(AUTH_URL);
   });
 
   it('opens an auth url that arrives split across two pty chunks', async () => {
     const h = harness();
-    await h.connect('anthropic');
+    await h.connect('cursor');
     h.emitOutput('open https://claude.ai/oauth/authoriz');
     expect(mocks.openUrl).not.toHaveBeenCalled();
     h.emitOutput('e?code=1 to continue\n');
@@ -184,7 +203,7 @@ describe('connectProvider', () => {
 
   it('waits for the line to end before opening a url still being written', async () => {
     const h = harness();
-    await h.connect('anthropic');
+    await h.connect('cursor');
     h.emitOutput(`open ${AUTH_URL}`);
     expect(mocks.openUrl).not.toHaveBeenCalled();
   });

@@ -157,12 +157,12 @@ const LOGIN_GUIDES: Partial<Record<ProviderId, ProviderGuide>> = {
     subscription: 'Your ChatGPT plan.',
     steps: [
       {
-        title: 'Pick a method',
-        body: 'Codex offers ChatGPT login or API key in the terminal menu. Click in the terminal and use the arrow keys to pick one.',
+        title: 'Sign in in the browser',
+        body: 'Codex opens your browser on its own. Sign in with ChatGPT and approve. The credentials land in `~/.codex/auth.json`.',
       },
       {
-        title: 'ChatGPT flow opens the browser',
-        body: 'If you pick ChatGPT, the browser opens. Sign in and approve. The credentials land in `~/.codex/auth.json`.',
+        title: 'Signing in again signs you out first',
+        body: 'On a connected Codex, a new sign-in starts by signing you out. Finish it in the browser to stay connected.',
       },
     ],
     docsUrl: CODEX_DOCS,

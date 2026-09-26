@@ -72,9 +72,10 @@ machine, and you can sign back in any time.
 
 1. Click **Connect**
 2. If `codex` is missing, Goodboy installs it first
-3. If Codex asks how you want to sign in, a terminal appears on the card. Click it
-   and pick ChatGPT or API key with the arrow keys
-4. If you pick ChatGPT, your browser opens. Sign in and approve
+3. Codex opens your browser on its own. Sign in with ChatGPT and approve
+
+**Sign in again** on a connected Codex asks first: Codex signs you out before it
+signs you back in, so cancelling halfway leaves you signed out.
 
 Codex saves your sign-in in `~/.codex/auth.json`. You can also set `OPENAI_API_KEY`
 in your shell, or add a key under **API keys**. Either way, Codex shows as connected.
@@ -216,7 +217,7 @@ pays for every turn.
 - **Provider not detected**: Goodboy looks for CLIs on your `PATH`. Find where the
   CLI is (`which claude`, `npm root -g`), add that folder to your shell profile, open
   a new shell and restart Goodboy
-- **Browser sign-in stuck**: click **Show details**, then **Open the link again**.
+- **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
 - **How close am I to a limit?** The Limits chips in the top bar show a bar per
@@ -244,8 +245,15 @@ This part is for contributors and agents who change how providers work.
 **Connect** installs the CLI if it is missing, then runs its login. Both run in a
 hidden terminal (a PTY).
 
-- Goodboy opens the browser itself. It uses the first sign-in URL it finds in the CLI output
+- One owner per sign-in tab: `browserOwner` in the capability table. Claude and
+  Codex (`cli`) open the browser themselves, so Goodboy never does. Cursor and
+  the opencode family (`goodboy`) get their tab from Goodboy, once, on the first
+  sign-in URL in the CLI output
 - Goodboy starts Cursor with `NO_OPEN_BROWSER=1`, so Cursor does not open a second tab
+- The best sign-in URL seen stays on the card. **Open the sign-in page again**
+  shows after 4 seconds of waiting, not at once, so it never invites a second tab
+- `reauthSignsOut` marks a CLI whose login signs you out first (Codex). **Sign in
+  again** on it goes through an inline confirm
 - Goodboy checks that you are signed in by asking the CLI directly. It does not trust
   the exit code, because some CLIs keep running while they wait for the browser
 - The store keeps each connect attempt, one per provider. Closing the card does not stop it
@@ -273,7 +281,7 @@ Each provider's connect options live in one table, not in UI code. The table is
 - `assisted`: `opencode auth login` shows a menu. When it goes quiet, the terminal
   appears so you can pick. Goodboy still checks the sign-in at the end
 - `manual`: the card shows `manualReason` and a docs link. It has no **Connect** and
-  no **Re-authenticate** button
+  no **Sign in again** button
 - `isApiProvider` reads `PROVIDER_KIND` in `packages/types/src/provider-catalog.ts`.
   It marks openrouter and moonshot as `api`. Their card is `ApiProviderDetail`, which
   checks the runtime and lists keys, instead of the CLI connect card
