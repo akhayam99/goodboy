@@ -111,6 +111,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         patch: {
           phase: 'applied',
           backupRef: outcome.backupRef,
+          remoteSha: remote.sha,
           holder: null,
           stop: null,
           result: null,

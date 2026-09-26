@@ -63,10 +63,16 @@ const setup = ({
     changedFiles: [],
   },
   conflictEdit = null,
+  run = null,
+  pushedBefore = false,
+  prNumber = null,
 }: {
   readonly items?: ReadonlyArray<HistoryStep>;
   readonly prediction?: unknown;
   readonly conflictEdit?: unknown;
+  readonly run?: unknown;
+  readonly pushedBefore?: boolean;
+  readonly prNumber?: number | null;
 } = {}) => {
   const actions = {
     loadHistoryDraft: vi.fn(async () => undefined),
@@ -77,11 +83,15 @@ const setup = ({
     rewriteDraftWithAgent: vi.fn(async () => undefined),
     requestScribe: vi.fn(async () => 'commit-message:mount-ledger'),
     openMountTerminal: vi.fn(),
+    pushHistoryRewrite: vi.fn(async () => 'pushed'),
+    restoreHistory: vi.fn(async () => 'restored'),
+    hasPushedHistoryBefore: vi.fn(async () => pushedBefore),
   };
   h.state = {
     ...actions,
-    historyRuns: {},
+    historyRuns: run === null ? {} : { [MOUNT_ID]: run },
     scribeWork: {},
+    mountGithub: prNumber === null ? {} : { [MOUNT_ID]: { pr: { number: prNumber } } },
     historyDrafts: {
       [MOUNT_ID]: {
         sessionId: SESSION_ID,
@@ -229,6 +239,62 @@ describe('RewriteHistoryPage', () => {
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
       shouldPush: true,
+    });
+  });
+
+  it('asks once before a push rewrites commits already on origin, and names the PR', async () => {
+    const actions = setup({
+      items: [
+        { sha: 'aaa1111aaaa', verb: 'reword', message: 'Extract the settlement batch key' },
+        { sha: 'bbb2222bbbb', verb: 'pick' },
+        { sha: 'ccc3333cccc', verb: 'pick' },
+      ],
+      prNumber: 418,
+    });
+
+    expect(screen.getByText('Rewrites 1 commit on origin')).toBeDefined();
+    expect(screen.getByText(/PR #418 updates/)).toBeDefined();
+    await vi.waitFor(() => expect(actions.hasPushedHistoryBefore).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Apply and push' }));
+
+    expect(actions.applyHistoryDraft).not.toHaveBeenCalled();
+    expect(screen.getByText('Push with lease rewrites origin.')).toBeDefined();
+  });
+
+  it('pushes later with the lease read at apply, or undoes the rewrite from the backup', () => {
+    const actions = setup({
+      run: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'applied',
+        planId: 'plan-1',
+        agentId: null,
+        copyPath: null,
+        stop: null,
+        result: null,
+        backupRef: 'refs/goodboy/backup/fix-ledger-postings/1790000000000000000',
+        remoteSha: 'remote-sha',
+        holder: null,
+        updatedAt: 1,
+      },
+    });
+
+    expect(screen.getByText('Rewritten here · origin has the old history')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Push with lease' }));
+    expect(actions.pushHistoryRewrite).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      origin: 'plan',
+      planId: 'plan-1',
+      expectedRemoteSha: 'remote-sha',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Undo rewrite' }));
+    expect(actions.restoreHistory).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1790000000000000000',
+      shouldPush: false,
     });
   });
 });

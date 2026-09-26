@@ -9,10 +9,11 @@ const engine = vi.hoisted(() => ({
   collectHistoryRewrite: vi.fn(),
   applyHistoryPlan: vi.fn(),
   pushWithLease: vi.fn(),
+  restoreHistoryBackup: vi.fn(),
 }));
 
 const worktree = vi.hoisted(() => ({
-  worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings' })),
+  worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings', head: 'head-sha' })),
   worktreeRemoteHead: vi.fn(async () => 'remote-sha'),
 }));
 
@@ -99,6 +100,7 @@ const harness = () => {
     sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
     updateResolveThread: vi.fn(async () => true),
     refreshPrDescription: vi.fn(async () => false),
+    loadHistoryDraft: vi.fn(async () => undefined),
   };
   const set = ((patch: unknown) => {
     const next =
@@ -305,6 +307,56 @@ describe('rebase on main', () => {
     ).resolves.toBe('stopped');
 
     expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('origin-moved');
+  });
+});
+
+describe('restore previous history', () => {
+  it('moves the branch back to the backup and pushes it with the lease read before', async () => {
+    const { slice, read } = harness();
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'old-head',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/2',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+        shouldPush: true,
+      }),
+    ).resolves.toBe('pushed');
+
+    expect(engine.restoreHistoryBackup).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      branch: 'fix/ledger-postings',
+      expectedHead: 'head-sha',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+    });
+    expect(engine.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'remote-sha' }),
+    );
+    expect(read().historyRuns[MOUNT_ID]?.phase).toBe('restored');
+  });
+
+  it('undoes a rewrite that never left this machine without pushing', async () => {
+    const { slice } = harness();
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'old-head',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/2',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+        shouldPush: false,
+      }),
+    ).resolves.toBe('restored');
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
   });
 });
 

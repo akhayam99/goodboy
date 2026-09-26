@@ -932,7 +932,16 @@ the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
 and offers `Rewrite with an agent` or undoing the change. `Apply and push`
 first replays the plan in a throwaway copy, then moves the branch with a
 backup ref and pushes with a lease; `Apply here, push later` stops before the
-push. `Branch vs main` sits in the file
+push. Commits already on origin can be rewritten too: the dock counts them,
+names the pull request that updates, and the first push that rewrites origin
+on a branch asks once in an `InlineConfirm`. The push always carries
+`--force-with-lease` on the origin sha read at apply, never a bare force; if
+origin moved, nothing is pushed and the dock says so. After an apply the dock
+reads `Rewritten here · origin has the old history` with `Push with lease`
+and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
+kept 30 days; `Backups` in the page menu lists them with `Restore previous
+history`, which moves the branch back and, on a branch with an upstream,
+pushes it with a lease. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,

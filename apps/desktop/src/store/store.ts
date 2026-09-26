@@ -235,6 +235,7 @@ import type {
   StartHistoryRewriterInput,
 } from './slices/history/types';
 import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
+import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -587,6 +588,8 @@ type AppActions = {
   applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
   applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
   rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
+  restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
+  hasPushedHistoryBefore(input: { mountId: MountId; branch: string }): Promise<boolean>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
   refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;

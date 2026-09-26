@@ -4,7 +4,9 @@ import {
   Button,
   Eyebrow,
   ErrorStrip,
+  InlineConfirm,
   Input,
+  Notice,
   LensEmptyState,
   OverflowMenu,
   Skeleton,
@@ -32,6 +34,8 @@ import {
   type HistoryEdit,
 } from '../../historyPlan';
 import { REWRITE_HISTORY_TITLE } from '../../rewriteHistoryTitle';
+import { HistoryAfterApply } from './HistoryAfterApply';
+import { HistoryBackups } from './HistoryBackups';
 import { HistoryCommitRow } from './HistoryCommitRow';
 import { HistoryDock } from './HistoryDock';
 import { RewordEditor } from './RewordEditor';
@@ -70,6 +74,31 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const [squashMessage, setSquashMessage] = useState('');
   const [undoStack, setUndoStack] = useState<ReadonlyArray<ReadonlyArray<HistoryStep>>>([]);
   const [scribeFor, setScribeFor] = useState<string | null>(null);
+  const [isShowingBackups, setIsShowingBackups] = useState(false);
+  const [isConfirmingPush, setIsConfirmingPush] = useState(false);
+  const [hasPushedBefore, setHasPushedBefore] = useState(false);
+  const pushHistoryRewrite = useAppStore((s) => s.pushHistoryRewrite);
+  const restoreHistory = useAppStore((s) => s.restoreHistory);
+  const hasPushedHistoryBefore = useAppStore((s) => s.hasPushedHistoryBefore);
+  const prNumber = useAppStore((s) =>
+    mountId === null ? null : (s.mountGithub[mountId]?.pr?.number ?? null),
+  );
+  const branchName = mount?.branch ?? null;
+
+  useEffect(() => {
+    if (mountId === null || branchName === null) {
+      return;
+    }
+    let isCurrent = true;
+    void hasPushedHistoryBefore({ mountId, branch: branchName }).then((found) => {
+      if (isCurrent) {
+        setHasPushedBefore(found);
+      }
+    });
+    return () => {
+      isCurrent = false;
+    };
+  }, [branchName, hasPushedHistoryBefore, mountId, run?.phase]);
 
   useEffect(() => {
     if (mountId === null) {
@@ -336,6 +365,13 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const overflow: OverflowMenuItem[] = [
     {
       kind: 'item',
+      key: 'backups',
+      label: 'Backups',
+      icon: CONCEPT_ICONS.backup,
+      onClick: () => setIsShowingBackups(true),
+    },
+    {
+      kind: 'item',
       key: 'terminal',
       label: 'Open terminal here',
       icon: SquareTerminal,
@@ -394,6 +430,23 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
       />
     ) : (
       <div className="flex flex-col gap-4">
+        {isShowingBackups ? (
+          <HistoryBackups
+            worktreePath={worktreePath}
+            branch={mount.branch}
+            hasUpstream={hasUpstream}
+            revision={run?.updatedAt ?? 0}
+            onRestore={(backup) =>
+              void restoreHistory({
+                sessionId,
+                mountId,
+                backupRef: backup.refName,
+                shouldPush: hasUpstream,
+              })
+            }
+            onClose={() => setIsShowingBackups(false)}
+          />
+        ) : null}
         {selectedShas.length >= 2 ? (
           <div className="flex min-w-0 flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-2.5">
             <span className="text-label text-foreground">
@@ -462,26 +515,83 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
       scroll="body"
       dock={
         draft !== null && commits.length > 0 ? (
-          <HistoryDock
-            summary={summaryLine({ summary })}
-            hasChanges={hasChanges({ summary })}
-            prediction={draft.prediction}
-            isPredicting={draft.isPredicting}
-            conflictEdit={draft.conflictEdit}
-            run={run}
-            hasUpstream={hasUpstream}
-            originCount={touchedOrigin}
-            onApply={(shouldPush) => void applyHistoryDraft({ sessionId, mountId, shouldPush })}
-            onDiscard={() => {
-              setUndoStack([]);
-              void discardHistoryDraft({ sessionId, mountId });
-            }}
-            onRewriteWithAgent={() => void rewriteDraftWithAgent({ sessionId, mountId })}
-            onUndoEdit={undoStack.length > 0 ? undo : null}
-            onApplyRewritten={(shouldPush) =>
-              void applyRewrittenHistory({ sessionId, mountId, shouldPush })
-            }
-          />
+          <div className="flex flex-col gap-3">
+            {run !== null ? (
+              <HistoryAfterApply
+                run={run}
+                hasUpstream={hasUpstream}
+                prNumber={prNumber}
+                onPushWithLease={() =>
+                  void pushHistoryRewrite({
+                    sessionId,
+                    mountId,
+                    origin: run.origin,
+                    planId: run.planId,
+                    expectedRemoteSha: run.remoteSha,
+                  })
+                }
+                onUndo={() => {
+                  if (run.backupRef !== null) {
+                    void restoreHistory({
+                      sessionId,
+                      mountId,
+                      backupRef: run.backupRef,
+                      shouldPush: false,
+                    });
+                  }
+                }}
+                onShowBackups={() => setIsShowingBackups(true)}
+              />
+            ) : null}
+            {touchedOrigin > 0 && prNumber !== null ? (
+              <Notice
+                tone="info"
+                placement="inline"
+                title={`Rewrites ${touchedOrigin} ${touchedOrigin === 1 ? 'commit' : 'commits'} on origin`}
+                body={`PR #${prNumber} updates, and review comments on changed lines may show as outdated.`}
+              />
+            ) : null}
+            {isConfirmingPush ? (
+              <InlineConfirm
+                role="danger"
+                icon={<CONCEPT_ICONS.history size={ICON_SIZE.row} aria-hidden />}
+                title="Push with lease rewrites origin."
+                description="Your backup stays here."
+                confirmLabel="Apply and push"
+                onConfirm={() => {
+                  setIsConfirmingPush(false);
+                  void applyHistoryDraft({ sessionId, mountId, shouldPush: true });
+                }}
+                onCancel={() => setIsConfirmingPush(false)}
+              />
+            ) : null}
+            <HistoryDock
+              summary={summaryLine({ summary })}
+              hasChanges={hasChanges({ summary })}
+              prediction={draft.prediction}
+              isPredicting={draft.isPredicting}
+              conflictEdit={draft.conflictEdit}
+              run={run}
+              hasUpstream={hasUpstream}
+              originCount={touchedOrigin}
+              onApply={(shouldPush) => {
+                if (shouldPush && touchedOrigin > 0 && !hasPushedBefore) {
+                  setIsConfirmingPush(true);
+                  return;
+                }
+                void applyHistoryDraft({ sessionId, mountId, shouldPush });
+              }}
+              onDiscard={() => {
+                setUndoStack([]);
+                void discardHistoryDraft({ sessionId, mountId });
+              }}
+              onRewriteWithAgent={() => void rewriteDraftWithAgent({ sessionId, mountId })}
+              onUndoEdit={undoStack.length > 0 ? undo : null}
+              onApplyRewritten={(shouldPush) =>
+                void applyRewrittenHistory({ sessionId, mountId, shouldPush })
+              }
+            />
+          </div>
         ) : null
       }
     >

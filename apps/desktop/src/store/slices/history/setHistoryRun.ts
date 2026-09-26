@@ -17,6 +17,7 @@ const EMPTY_RUN = {
   stop: null,
   result: null,
   backupRef: null,
+  remoteSha: null,
   holder: null,
 } satisfies Omit<HistoryRun, 'sessionId' | 'mountId' | 'origin' | 'updatedAt'>;
 

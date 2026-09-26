@@ -27,6 +27,7 @@ export type HistoryRunPhase =
   | 'rewritten'
   | 'applied'
   | 'pushed'
+  | 'restored'
   | 'stopped';
 
 export type HistoryStopReason =
@@ -59,6 +60,7 @@ export type HistoryRun = {
   readonly stop: HistoryStop | null;
   readonly result: HistoryRewriteResult | null;
   readonly backupRef: string | null;
+  readonly remoteSha: string | null;
   readonly holder: string | null;
   readonly updatedAt: number;
 };
