@@ -268,6 +268,44 @@ describe('ScriptsPanel', () => {
     ).toEqual(['@acme/api scripts']);
   });
 
+  it('copies the workspace-scoped invocation for a nested package, not the package-local one', () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      writable: true,
+      configurable: true,
+    });
+    const dev = [{ name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' }];
+    state.discovered = {
+      ...state.discovered,
+      [SETTLEMENT_PATH]: [
+        {
+          source: 'package-json',
+          packageName: 'northwind',
+          relDir: '',
+          manager: 'yarn',
+          scripts: dev,
+        },
+        {
+          source: 'package-json',
+          packageName: '@northwind/web',
+          relDir: 'apps/web',
+          manager: 'yarn',
+          scripts: dev,
+        },
+      ],
+    };
+    renderPanel();
+    const settlement = group('ledger-core · nw/settlement');
+    const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
+
+    fireEvent.click(within(web).getByRole('button', { name: 'More for dev' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Copy command' }));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      'yarn workspace @northwind/web run dev',
+    );
+  });
+
   it('closes packages beyond six by default, keeps the root open, and the filter opens a match', () => {
     const dev = [{ name: 'dev', command: 'yarn run dev', body: 'vite' }];
     state.discovered = {

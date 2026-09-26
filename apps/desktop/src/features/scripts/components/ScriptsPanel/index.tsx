@@ -300,7 +300,16 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           kind: 'item',
           key: 'copy',
           label: 'Copy command',
-          onClick: () => void copy({ text: script.invocation, key: script.key }),
+          onClick: () =>
+            void copy({
+              text: workspaceInvocation({
+                manager: script.manager,
+                packageName: script.packageName,
+                relDir: script.relDir,
+                name: script.name,
+              }),
+              key: script.key,
+            }),
         },
       ];
     }
