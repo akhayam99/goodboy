@@ -67,23 +67,32 @@ on macOS and Linux.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
-### Document windows
+### Opening an artifact outside the app
 
-- **A document window loads only a route of the bundle.** `Open in window` and
-  `Print` open the same hash route (`#print=artifact&session=…&artifact=…`),
-  rendered by `ArtifactReaderView` with `ArtifactDocument`. `mode=read` shows
-  the document with a Print and Copy toolbar; without it the window opens the
-  print dialog once. Reader windows are labelled `win-reader-*` and print
-  windows `win-print-*`.
-- **Every `win-*` window gets the full IPC grant** of
-  `apps/desktop/src-tauri/capabilities/default.json`. So no `win-*` window may
-  ever load remote content or a file from disk. A future window that shows
-  remote pages needs its own label outside `win-*`, no capability, and its
-  own CSP.
+- **There is no reader window and no print window.** A plan, a report and a
+  wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
+  themed) and on disk through the same component (`medium="file"`, always
+  light). `Open in browser` (`artifact_mirror_open`) opens that file with the
+  OS default web browser, never with a `.html` file's default app: macOS
+  resolves the `https` handler from `LaunchServices`, Windows reads the
+  `UrlAssociations` registry key for `https`, and both fall back to the
+  platform opener (`spawn_open`) if resolution fails; Linux always uses that
+  opener. `⌘P` from there prints, with the browser's own print dialog.
+- **The file is never stale.** `meta.json` carries `rendererVersion`
+  (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
+  `is_current` compares all three, so a restyle that bumps the version alone,
+  with no artifact change, marks every mirrored file pending and the
+  post-boot backfill rewrites the whole archive.
 - **The document carries no runtime style.** No `<style>` element and no
   `style` string built at runtime: Tauri adds a nonce to the CSP and the
   webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
-  keyed on `data-medium` (`window` for the reader, `paper` for print).
+  keyed on `data-medium` (`screen` in the app, `file` on disk; `@media print`
+  inside `file` covers paper). Every file on disk also carries its own
+  `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
+  in a browser makes no network call.
+- **The artifacts folder is one command away.** The lens's `More` menu opens
+  `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
+  (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
 
 ### Git status reads
 
@@ -186,9 +195,9 @@ Everything the app saves for itself lives in `~/.goodboy`.
   `artifact_mirror_remove` (confined to the mirror root) before it deletes the
   row. If the row survives a failed delete, the next backfill writes its copy
   again. `session_artifacts`
-  also stores `opened_at` (written when the artifact shell or the reader
-  window opens it, at most once per artifact every 10 minutes), `kept_at` and
-  `kept_until` for the Storage Keep action.
+  also stores `opened_at` (written when the artifact shell opens it, at most
+  once per artifact every 10 minutes), `kept_at` and `kept_until` for the
+  Storage Keep action.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.

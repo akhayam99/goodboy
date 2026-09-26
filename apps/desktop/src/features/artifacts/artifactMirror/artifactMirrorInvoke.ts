@@ -74,3 +74,9 @@ export const openArtifactMirror = async ({
   file,
 }: FolderParams & { readonly file: string }): Promise<void> =>
   invoke<void>('artifact_mirror_open', { workspaceSlug, folder, file });
+
+export const openArtifactsFolder = async ({
+  workspaceSlug,
+}: {
+  readonly workspaceSlug: string;
+}): Promise<void> => invoke<void>('artifact_mirror_open_root', { workspaceSlug });

@@ -6,6 +6,7 @@ import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { ArtifactFilterTabs } from '../ArtifactStudio/ArtifactFilterTabs';
+import { ArtifactListOverflowMenu } from './ArtifactListOverflowMenu';
 import { ArtifactListRow } from './ArtifactListRow';
 import { ArtifactNewMenu } from './ArtifactNewMenu';
 
@@ -67,8 +68,9 @@ export const ArtifactList = ({
             ) : null}
           </div>
           <ArtifactFilterTabs value={filter} counts={counts} onChange={onFilterChange} />
-          <div className="ml-auto flex shrink-0 items-center">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <ArtifactNewMenu sessionId={sessionId} />
+            <ArtifactListOverflowMenu sessionId={sessionId} />
           </div>
         </div>
       }

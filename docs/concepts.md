@@ -383,13 +383,14 @@ used which plan. The Artifacts page lists plans, reports and wireframes as one
 list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
 for its details and for a chat with the agent that wrote it. **Open in
-window**, under `⋯`, shows the same document as a light page in its own
-window, with Print and Copy; **Print** opens that page straight in the print
-dialog, where the system saves the PDF. Goodboy also keeps a copy of every
-artifact on disk, under the workspace folder described in
+browser** opens the file Goodboy keeps on disk with the system's default web
+browser, never with an editor; from there `⌘P` prints and the system saves
+the PDF. Goodboy also keeps a copy of every artifact on disk, under the
+workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
-shows its path under **Saved copy**, and **Show in Finder**, under `⋯` or
-next to the path, opens its folder.
+shows its path under **File**, with **Open in browser** and **Show in
+Finder** next to it. The lens's `⋯` also has **Open artifacts folder**, for
+the whole workspace folder at once.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its

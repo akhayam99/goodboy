@@ -382,6 +382,18 @@ pub async fn artifact_mirror_open(
 }
 
 #[tauri::command]
+pub async fn artifact_mirror_open_root(workspace_slug: String) -> Result<(), ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = mirror_root(&home()?, &workspace_slug)?;
+        std::fs::create_dir_all(&root)?;
+        crate::explore::spawn_open(&root, false)?;
+        Ok(())
+    })
+    .await
+    .map_err(|error| destination(&error.to_string()))?
+}
+
+#[tauri::command]
 pub async fn artifact_mirror_measure(
     entries: Vec<MirrorFolderRef>,
 ) -> Result<Vec<MirrorSize>, ArtifactExportError> {

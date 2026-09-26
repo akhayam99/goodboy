@@ -218,6 +218,7 @@ pub fn run() {
             artifact_mirror::artifact_mirror_locate,
             artifact_mirror::artifact_mirror_reveal,
             artifact_mirror::artifact_mirror_open,
+            artifact_mirror::artifact_mirror_open_root,
             artifact_mirror::artifact_mirror_measure,
             artifact_mirror::artifact_mirror_remove,
             artifacts::export_artifact_to_file,
