@@ -3,6 +3,7 @@ import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
 import { resolverPagePlace, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
+import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import type { CanonicalPlace, Place, PlaceRequest } from './types';
 
 type GithubParams = {
@@ -57,6 +58,20 @@ const canonicalPlace = ({ state, request }: PlaceParams): Place => {
   const { view, sessionId } = request;
   if (view.lens === 'pr' && isGithubReviewSession({ state, sessionId })) {
     return { ...request, view: { ...view, lens: 'review', target: null } };
+  }
+  if (
+    view.lens === 'files' &&
+    (view.target === null || (view.target.kind === 'diff' && view.target.mountPath === null))
+  ) {
+    const mounts = state.sessionProjectMounts?.[sessionId] ?? [];
+    const mountPath =
+      mounts.length === 0
+        ? null
+        : (resolveActiveMountPath({ state, sessionId }) ?? mounts[0]?.worktreePath ?? null);
+    if (mountPath !== null) {
+      const focus = view.target?.kind === 'diff' ? view.target.focus : null;
+      return { ...request, view: { ...view, target: { kind: 'diff', mountPath, focus } } };
+    }
   }
   if (view.studio !== null && view.agentId !== null) {
     return { ...request, view: { ...view, agentId: null } };

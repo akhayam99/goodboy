@@ -1,6 +1,14 @@
 import { StatusDot, Tooltip, Trail, type TrailSegmentModel } from '@goodboy/ui';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useMountDiffStats,
+  useSessionStageInfo,
+} from '../../../../store';
+import { resolveDiffMount } from '../SessionWorkspace/parts/resolveDiffMount';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { DiffStat } from '../DiffStat';
 import { describeSessionStage } from '../../session-stage';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
@@ -31,12 +39,23 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
       ) ?? null,
   );
   const menus = useTrailMenus({ session, crumbs, activeLens, isBranchless });
+  const diffPath = useAppStore((s) =>
+    resolveDiffMount({
+      mounts: s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY,
+      requestedPath: s.diffMountPath?.[sessionId] ?? null,
+      fallbackPath: resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null,
+    }),
+  );
+  const diffStats = useMountDiffStats(sessionId);
+  const branchStat = diffPath === null ? null : (diffStats.get(diffPath) ?? null);
 
   const segments: ReadonlyArray<TrailSegmentModel> = crumbs.map((crumb, index) => {
     const isLast = index === crumbs.length - 1;
     const accessory =
       isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
         <AgentStatusIcon status={selectedAgent.status} />
+      ) : crumb.id === 'diff-branch' && branchStat !== null ? (
+        <DiffStat additions={branchStat.additions} deletions={branchStat.deletions} />
       ) : (
         crumb.accessory
       );
@@ -49,6 +68,7 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
       accessory,
       ...(crumb.onClick !== undefined && { onSelect: crumb.onClick }),
       menu,
+      ...(crumb.id === 'diff-branch' && { isPinned: true }),
     };
   });
 

@@ -16,6 +16,8 @@ import { stepMenu } from './stepMenu';
 import { runMenu } from './runMenu';
 import { agentMenu } from './agentMenu';
 import { artifactMenu } from './artifactMenu';
+import { branchMenu } from './branchMenu';
+import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 
 const rowsOf = (menu: CrumbMenuModel) => menu.groups.flatMap((group) => group.rows);
 const labelsOf = (menu: CrumbMenuModel) => rowsOf(menu).map((row) => row.label);
@@ -229,5 +231,60 @@ describe('artifactMenu', () => {
     expect(menu.groups.map((group) => group.label)).toEqual(['Wireframes', 'Reports']);
     expect(rowsOf(menu)[0]?.metaA).toBe('v3 · 20m ago');
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+  });
+});
+
+describe('branchMenu', () => {
+  const mount = (repo: string, branch: string, path: string) =>
+    ({ mountName: repo, branch, worktreePath: path }) as unknown as SessionProjectMount;
+  const status = (upstream: string | null, behind: number) =>
+    ({
+      upstream,
+      mainDistance: { kind: 'known', ahead: 1, behind },
+    }) as unknown as WorktreeStatus;
+
+  it('groups the session branches by repo with one state word each', () => {
+    const mounts = [
+      mount('ledger-core', 'fix/ledger-reconcile-postings', '/w/a'),
+      mount('ledger-core', 'fix/ledger-backfill', '/w/b'),
+      mount('notify-relay', 'fix/notify-backoff', '/w/c'),
+    ];
+    const statuses = new Map([
+      ['/w/a', status('origin/fix/ledger-reconcile-postings', 0)],
+      ['/w/b', status(null, 0)],
+      ['/w/c', status('origin/fix/notify-backoff', 6)],
+    ]);
+    const menu = branchMenu({
+      mounts,
+      currentPath: '/w/a',
+      statOf: (candidate) =>
+        candidate.worktreePath === '/w/b'
+          ? { additions: 0, deletions: 0 }
+          : { additions: 187, deletions: 42 },
+      statusOf: (candidate) => statuses.get(candidate.worktreePath) ?? null,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(menu.groups.map((group) => group.label)).toEqual(['ledger-core', 'notify-relay']);
+    expect(rowsOf(menu).map((row) => row.state?.word)).toEqual([
+      'On origin',
+      'Local only',
+      'Behind main by 6',
+    ]);
+    expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+    expect(menu.width).toBe('wide');
+  });
+
+  it('keeps the menu with a single branch', () => {
+    const menu = branchMenu({
+      mounts: [mount('notify-relay', 'fix/notify-backoff', '/w/c')],
+      currentPath: '/w/c',
+      statOf: () => null,
+      statusOf: () => null,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+    expect(rowsOf(menu)).toHaveLength(1);
   });
 });

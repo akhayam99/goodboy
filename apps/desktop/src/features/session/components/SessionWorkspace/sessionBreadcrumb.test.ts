@@ -41,6 +41,17 @@ const labels = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs.map
 const last = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs[crumbs.length - 1];
 
 describe('buildSessionBreadcrumb', () => {
+  it('carries the shown branch as the last crumb of the Diff', () => {
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        { lens: 'files', diffBranchLabel: 'ledger-core fix/ledger-reconcile-postings' },
+        makeHandlers(),
+      ),
+    );
+    expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'lens-files', 'diff-branch']);
+    expect(last(crumbs)?.label).toBe('ledger-core fix/ledger-reconcile-postings');
+  });
+
   it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(

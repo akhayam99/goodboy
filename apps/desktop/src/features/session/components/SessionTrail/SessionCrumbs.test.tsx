@@ -51,8 +51,13 @@ vi.mock('../../../../store', async () => ({
   useCurrentSession: () => h.currentSession,
   useSessionStageInfo: () => h.stage,
   useSessionPlans: () => [],
+  useMountDiffStats: () => new Map(),
   useSessionOpenQuestions: (id: SessionId) =>
     (h.state.sessionOpenQuestions as Record<string, ReadonlyArray<unknown>>)[id] ?? [],
+}));
+
+vi.mock('../../hooks/useWorktreeStatuses', () => ({
+  useWorktreeStatuses: () => new Map(),
 }));
 
 vi.mock('../../hooks/useSessionCrumbs', async () => {
@@ -175,6 +180,8 @@ const resetState = () => {
     },
     sessionWorkflows: { [SESSION_ID]: [] },
     focusedWorkflowRunId: {},
+    diffMountPath: {},
+    sessions: [],
     focusedArtifactId: {},
     sessionArtifacts: {},
     sessionProjectMounts: {},

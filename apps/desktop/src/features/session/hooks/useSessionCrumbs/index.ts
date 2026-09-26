@@ -24,6 +24,8 @@ import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
 import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
 import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
+import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 
 type Params = {
   readonly session: Session;
@@ -52,6 +54,19 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
   const setReviewMode = useAppStore((s) => s.setReviewMode);
   const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
+  const diffBranchLabel = useAppStore((s) => {
+    const mounts = s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY;
+    const path = resolveDiffMount({
+      mounts,
+      requestedPath: s.diffMountPath?.[sessionId] ?? null,
+      fallbackPath: resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null,
+    });
+    const mount = mounts.find((candidate) => candidate.worktreePath === path) ?? null;
+    if (mount === null) {
+      return null;
+    }
+    return mount.branch === '' ? mount.mountName : `${mount.mountName} ${mount.branch}`;
+  });
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -147,6 +162,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedRootTone,
         selectedQuestionLabel,
         reviewModeLabel,
+        diffBranchLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -198,6 +214,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedRootTone,
       selectedQuestionLabel,
       reviewModeLabel,
+      diffBranchLabel,
       parentAgentId,
       rootAgentId,
       isBranchless,

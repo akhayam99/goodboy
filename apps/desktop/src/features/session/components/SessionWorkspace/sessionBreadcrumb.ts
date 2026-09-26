@@ -31,6 +31,7 @@ export type SessionBreadcrumbInput = {
   selectedRootTone?: string | null;
   selectedQuestionLabel: string | null;
   reviewModeLabel: string | null;
+  diffBranchLabel?: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -59,6 +60,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedRootTone = null,
     selectedQuestionLabel,
     reviewModeLabel,
+    diffBranchLabel = null,
     lensLabel,
     handlers,
   } = input;
@@ -223,6 +225,14 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         onClick: handlers.toReviewHome,
       },
       { id: 'review-mode', label: reviewModeLabel, icon: CONCEPT_ICONS.pr },
+    ]);
+  }
+
+  if (lens === 'files' && diffBranchLabel != null) {
+    return sealLast([
+      overview,
+      { id: 'lens-files', label: lensLabel('files'), icon: LENS_ICON.files },
+      { id: 'diff-branch', label: diffBranchLabel, icon: CONCEPT_ICONS.branch },
     ]);
   }
 

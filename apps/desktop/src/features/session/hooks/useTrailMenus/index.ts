@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Plus, Square } from 'lucide-react';
+import { LayoutDashboard, Plus, Square } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -10,7 +10,17 @@ import type {
 } from '@goodboy/types';
 import { sessionTitle } from '../../sessionTitle';
 import type { CrumbMenuAction, CrumbMenuModel } from '@goodboy/ui';
-import { EMPTY_ARRAY, agentPlace, useAppStore, type LensKind } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  agentPlace,
+  useAppStore,
+  useMountDiffStats,
+  type LensKind,
+} from '../../../../store';
+import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
+import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { useWorktreeStatuses } from '../useWorktreeStatuses';
+import { branchMenu } from '../../trail/menus/branchMenu';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import {
   AGENT_KIND_PALETTE,
@@ -77,6 +87,26 @@ export const useTrailMenus = ({
   const selectedWorkflowRun = useSelectedWorkflowRun({ session });
   const destinations = useLensDestinations({ sessionId });
   const summaries = usePageSummaries({ session });
+  const mounts = useAppStore((s) => s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
+  const diffPath = useAppStore((s) =>
+    resolveDiffMount({
+      mounts: s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY,
+      requestedPath: s.diffMountPath?.[sessionId] ?? null,
+      fallbackPath: resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null,
+    }),
+  );
+  const openMountDiff = useAppStore((s) => s.openMountDiff);
+  const diffStats = useMountDiffStats(sessionId);
+  const branchTargets = useMemo(
+    () =>
+      mounts.flatMap((mount) =>
+        mount.worktreePath === '' || !mount.isAttached
+          ? []
+          : [{ worktreePath: mount.worktreePath, baseBranch: mount.baseBranch ?? undefined }],
+      ),
+    [mounts],
+  );
+  const branchStatuses = useWorktreeStatuses({ targets: branchTargets });
 
   return useMemo(() => {
     const menus = new Map<string, CrumbMenuModel>();
@@ -252,6 +282,28 @@ export const useTrailMenus = ({
         );
         return;
       }
+      if (crumb.id === 'diff-branch') {
+        menus.set(
+          crumb.id,
+          branchMenu({
+            mounts,
+            currentPath: diffPath,
+            statOf: (mount) => diffStats.get(mount.worktreePath) ?? null,
+            statusOf: (mount) => branchStatuses.get(mount.worktreePath) ?? null,
+            actions: [
+              {
+                id: 'all-branches',
+                label: 'All branches in Overview',
+                icon: LayoutDashboard,
+                confirm: null,
+                onRun: () => openLens({ sessionId, lens: null }),
+              },
+            ],
+            onSelect: (mount) => openMountDiff(sessionId, mount.worktreePath),
+          }),
+        );
+        return;
+      }
       if (crumb.id === 'artifact' && artifacts.length > 0) {
         const nowMs = Date.now();
         menus.set(
@@ -317,5 +369,10 @@ export const useTrailMenus = ({
     setFocusedArtifactId,
     setFocusedWorkflowRun,
     cancelCurrentTurn,
+    mounts,
+    diffPath,
+    diffStats,
+    branchStatuses,
+    openMountDiff,
   ]);
 };
