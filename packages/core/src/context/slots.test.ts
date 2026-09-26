@@ -11,12 +11,12 @@ type Params = {
 const slot = ({ key, value }: Params): ContextSlot => ({ key, value, enabled: true });
 
 describe('serializeSlotsBudgeted', () => {
-  it('keeps the newest decision lines and marks pending compaction', () => {
-    const established = '- established decision';
-    const latest = '- latest decision';
-    const filler = '- x'.repeat(SLOT_BUDGETS.decisions);
+  it('keeps the newest decision lines, which the ledger writes first, and marks pending compaction', () => {
+    const established = '- D1 established decision';
+    const latest = '- D3 latest decision';
+    const filler = '- D2 x'.repeat(SLOT_BUDGETS.decisions);
     const output = serializeSlotsBudgeted({
-      slots: [slot({ key: 'decisions', value: `${established}\n${filler}\n${latest}` })],
+      slots: [slot({ key: 'decisions', value: `${latest}\n${filler}\n${established}` })],
     });
 
     expect(output).toContain(latest);

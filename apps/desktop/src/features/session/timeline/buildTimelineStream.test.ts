@@ -1062,6 +1062,66 @@ describe('buildTimelineStream, session events', () => {
     });
   });
 
+  it('adds up ledger changes and keeps a consolidation on its own row', () => {
+    const result = stream({
+      agents: [],
+      events: [
+        sessionEvent({
+          id: 'ev-first',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 10 }),
+          payload: {
+            added: 1,
+            replaced: 0,
+            withdrawn: 0,
+            merged: 0,
+            restored: 0,
+            decisionChanges: [{ kind: 'added', number: 3, text: 'Key on the event id' }],
+          },
+        }),
+        sessionEvent({
+          id: 'ev-second',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 11 }),
+          payload: {
+            added: 0,
+            replaced: 1,
+            withdrawn: 0,
+            merged: 0,
+            restored: 0,
+            decisionChanges: [
+              { kind: 'replaced', number: 1, by: 4, text: 'Third retry', reason: null },
+            ],
+          },
+        }),
+        sessionEvent({
+          id: 'ev-consolidated',
+          kind: 'decisions_changed',
+          at: localIso({ day: 18, hour: 12 }),
+          payload: {
+            added: 0,
+            replaced: 0,
+            withdrawn: 0,
+            merged: 2,
+            restored: 0,
+            consolidatedAfter: 'the run finished',
+          },
+        }),
+      ],
+    });
+    const payloads = result.items.flatMap((item) =>
+      item.kind === 'row' && item.entry.kind === 'event' ? [item.entry.event.payload] : [],
+    );
+
+    expect(payloads).toHaveLength(2);
+    expect(payloads).toContainEqual(
+      expect.objectContaining({ added: 1, replaced: 1, withdrawn: 0, merged: 0 }),
+    );
+    expect(payloads).toContainEqual(
+      expect.objectContaining({ consolidatedAfter: 'the run finished', merged: 2 }),
+    );
+  });
+
   it('keeps decision runs separate across a day boundary', () => {
     const result = stream({
       agents: [],

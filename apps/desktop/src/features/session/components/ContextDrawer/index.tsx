@@ -69,7 +69,14 @@ export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
   const decisions = slotValue({ slots, key: 'decisions' });
   const summary = slotValue({ slots, key: 'last_output_summary' });
   const value = slotValue({ slots, key: slotKey });
-  const decisionCount = useMemo(() => parseDecisions({ text: decisions }).rows.length, [decisions]);
+  const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
+  const decisionCount = useMemo(
+    () =>
+      ledger === undefined
+        ? parseDecisions({ text: decisions }).rows.length
+        : ledger.filter((row) => row.status === 'active').length,
+    [decisions, ledger],
+  );
   const hasSlot = slots.some((slot) => slot.key === slotKey);
   const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
   const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
@@ -151,31 +158,14 @@ export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
         />
       );
     }
-    if (tab === 'decisions' && value.trim() === '' && !isLoading && !isRawEditing) {
-      return (
-        <div className="flex flex-col gap-3">
-          <p className="text-body text-muted-foreground">
-            No decisions yet. Agents record one when they settle a choice; you can add your own.
-          </p>
-          <DecisionsSection
-            value={value}
-            isLoading={false}
-            isLocked={isLocked}
-            isRawEditing={false}
-            onWrite={onWrite}
-            onCloseRawEditor={() => setIsRawEditing(false)}
-          />
-        </div>
-      );
-    }
     if (tab === 'decisions') {
       return (
         <DecisionsSection
-          value={value}
-          isLoading={isLoading}
+          sessionId={sessionId}
           isLocked={isLocked}
           isRawEditing={isRawEditing}
-          onWrite={onWrite}
+          sourceValue={value}
+          onWriteSource={onWrite}
           onCloseRawEditor={() => setIsRawEditing(false)}
         />
       );

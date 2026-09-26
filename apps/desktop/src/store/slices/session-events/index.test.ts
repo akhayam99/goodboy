@@ -10,7 +10,6 @@ vi.mock('@goodboy/db', () => ({ insertSessionEvent, listSessionEvents }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import type { AppStore } from '../../store';
-import { decisionsDelta } from './decisionsDelta';
 import { loadSessionEvents } from './loadSessionEvents';
 import { recordSessionEvent } from './recordSessionEvent';
 import { recordSessionEventOnce } from './recordSessionEventOnce';
@@ -74,7 +73,7 @@ describe('session events slice', () => {
 
   it('persists a recorded event and appends it to a loaded session', async () => {
     const store = makeStore({ sessionEvents: { [sessionId]: [] } });
-    const record = recordSessionEvent(store.set);
+    const record = recordSessionEvent(store.set, store.get);
 
     await record({ sessionId, kind: 'pr_created', payload: { number: 7, title: 'Ship it' } });
 
@@ -86,9 +85,9 @@ describe('session events slice', () => {
 
   it('keeps an unloaded session unloaded after recording', async () => {
     const store = makeStore({ sessionEvents: {} });
-    const record = recordSessionEvent(store.set);
+    const record = recordSessionEvent(store.set, store.get);
 
-    await record({ sessionId, kind: 'pr_merged' });
+    await record({ sessionId, kind: 'pr_closed' });
 
     expect(insertSessionEvent).toHaveBeenCalledTimes(1);
     expect(store.read().sessionEvents[sessionId]).toBeUndefined();
@@ -103,7 +102,7 @@ describe('session events slice', () => {
       createdAt: '2020-01-01T00:00:00.000Z' as SessionEvent['createdAt'],
     };
     const store = makeStore({ sessionEvents: { [sessionId]: [earlier] } });
-    const record = recordSessionEvent(store.set);
+    const record = recordSessionEvent(store.set, store.get);
 
     await record({ sessionId, kind: 'branch_created' });
 
@@ -113,10 +112,23 @@ describe('session events slice', () => {
     ]);
   });
 
+  it('asks for a context consolidation when a pull request merges', async () => {
+    const consolidateSessionContext = vi.fn();
+    const store = makeStore({ sessionEvents: { [sessionId]: [] } });
+    const get = () => ({ ...store.read(), consolidateSessionContext }) as unknown as AppStore;
+    const record = recordSessionEvent(store.set, get);
+
+    await record({ sessionId, kind: 'pr_merged', payload: { number: 612 } });
+    await record({ sessionId, kind: 'pr_closed', payload: { number: 613 } });
+
+    expect(consolidateSessionContext).toHaveBeenCalledTimes(1);
+    expect(consolidateSessionContext).toHaveBeenCalledWith({ sessionId, after: '#612 merged' });
+  });
+
   it('leaves the loaded list untouched when the write fails', async () => {
     insertSessionEvent.mockRejectedValueOnce(new Error('disk full'));
     const store = makeStore({ sessionEvents: { [sessionId]: [] } });
-    const record = recordSessionEvent(store.set);
+    const record = recordSessionEvent(store.set, store.get);
 
     await record({ sessionId, kind: 'pr_closed' });
 
@@ -246,69 +258,5 @@ describe('recordSessionEventOnce', () => {
     await recordSessionEventOnce(get)({ sessionId, kind: 'pr_discovered', payload });
 
     expect(record).not.toHaveBeenCalled();
-  });
-});
-
-describe('decisionsDelta', () => {
-  it('counts a decision appended to the slot', () => {
-    expect(
-      decisionsDelta({ previous: '- keep sqlite', next: '- keep sqlite\n- ship the trace' }),
-    ).toEqual({ added: 1, removed: 0 });
-  });
-
-  it('counts a decision dropped from the slot', () => {
-    expect(
-      decisionsDelta({ previous: '- keep sqlite\n- ship the trace', next: '- keep sqlite' }),
-    ).toEqual({ added: 0, removed: 1 });
-  });
-
-  it('ignores bullet punctuation and blank lines', () => {
-    expect(decisionsDelta({ previous: '- keep sqlite', next: '\n*  keep sqlite\n\n' })).toEqual({
-      added: 0,
-      removed: 0,
-    });
-  });
-
-  it('reports both sides of a replacement', () => {
-    expect(decisionsDelta({ previous: '- old call', next: '- new call' })).toEqual({
-      added: 1,
-      removed: 1,
-    });
-  });
-
-  it('does not count a reformulation as an add and a remove', () => {
-    expect(
-      decisionsDelta({
-        previous: '- Key idempotency on the provider event id',
-        next: '- Use the provider event id as the idempotency key',
-      }),
-    ).toEqual({ added: 0, removed: 0 });
-  });
-
-  it('does not count a light rewording of the same decision', () => {
-    expect(
-      decisionsDelta({
-        previous: '- ship the migration behind a flag',
-        next: '- ship the migration behind a feature flag',
-      }),
-    ).toEqual({ added: 0, removed: 0 });
-  });
-
-  it('still counts a genuinely unrelated replacement inside a bigger rewrite', () => {
-    expect(
-      decisionsDelta({
-        previous: '- keep sqlite\n- ship the trace',
-        next: '- keep sqlite\n- drop the legacy webhook retry',
-      }),
-    ).toEqual({ added: 1, removed: 1 });
-  });
-
-  it('counts a polarity reversal as a real change, not a reword', () => {
-    expect(
-      decisionsDelta({
-        previous: '- enable caching for reads',
-        next: '- disable caching for reads',
-      }),
-    ).toEqual({ added: 1, removed: 1 });
   });
 });

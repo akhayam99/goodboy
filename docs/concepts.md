@@ -432,7 +432,10 @@ is the **session record** on the **Overview**:
 
 Goodboy updates the decisions and the summary when the summarizer runs after a
 turn, and writes the goal when the session starts. You can edit all three
-yourself too.
+yourself too. Each decision keeps a number for the life of the session: agents
+and the summarizer replace or withdraw it by that number, with a reason, and
+one nobody names stays as it is. When a run finishes or a pull request merges,
+Goodboy consolidates the decisions and the summary once more.
 
 Each of those sections is a **lens**, a view of the session. You open it from
 rows and chips on the **Overview**. It opens in place or in a side panel, and

@@ -1,35 +1,51 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
-import { CardAction, CardActionSlot, InlineConfirm, Markdown, cn } from '@goodboy/ui';
+import { Minus, Pencil } from 'lucide-react';
+import { CardAction, CardActionSlot, Chip, Markdown, cn } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { DecisionNumber } from './DecisionNumber';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+
+const RewordIcon = CONCEPT_ICONS.enhance;
 
 const REVEAL_GROUP =
   'group-hover/decision-row:opacity-100 group-focus-within/decision-row:opacity-100';
 
-const ROW_PROSE = 'text-label';
-
 type Props = {
+  readonly number: number;
   readonly text: string;
-  readonly position: number;
+  readonly byline: string;
+  readonly isNew: boolean;
+  readonly reworded: { readonly age: string; readonly previousText: string } | null;
   readonly isLocked: boolean;
-  readonly onCommit: (text: string) => void;
-  readonly onDelete: () => void;
+  readonly isHighlighted: boolean;
+  readonly rowRef: (element: HTMLDivElement | null) => void;
+  readonly onReword: (text: string) => void;
+  readonly onWithdraw: () => void;
 };
 
-export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }: Props) => {
+export const DecisionRowItem = ({
+  number,
+  text,
+  byline,
+  isNew,
+  reworded,
+  isLocked,
+  isHighlighted,
+  rowRef,
+  onReword,
+  onWithdraw,
+}: Props) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleteArmed, setIsDeleteArmed] = useState(false);
+  const [isPreviousShown, setIsPreviousShown] = useState(false);
   const [draft, setDraft] = useState(text);
-  const label = `Decision ${position}`;
+  const label = `Decision ${number}`;
 
   const commit = () => {
     setIsEditing(false);
-    const next = draft.trim();
-    if (next === '' || draft === text) {
+    if (draft.trim() === '' || draft === text) {
       return;
     }
-    onCommit(draft);
+    onReword(draft);
   };
 
   if (isEditing) {
@@ -37,6 +53,7 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
       <BlockEditor
         value={draft}
         label={`Edit ${label.toLowerCase()}`}
+        minRows={2}
         onChange={setDraft}
         onCommit={commit}
         onCancel={() => {
@@ -48,57 +65,64 @@ export const DecisionRowItem = ({ text, position, isLocked, onCommit, onDelete }
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div
-        className={cn(
-          'group/decision-row flex items-center gap-2 rounded-lg bg-subtle px-3 py-2 motion-safe:transition-colors',
-          isLocked ? '' : 'hover:bg-hover',
+    <div
+      ref={rowRef}
+      data-decision={number}
+      className={cn(
+        'group/decision-row flex items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors',
+        isHighlighted ? 'bg-selected' : 'hover:bg-hover',
+      )}
+    >
+      <DecisionNumber number={number} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="line-clamp-2 [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
+          <Markdown text={text} className="text-label" />
+        </div>
+        <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
+          {isNew ? <Chip tone="primary" size="3xs" label="New" /> : null}
+          {byline}
+        </p>
+        {reworded === null ? null : (
+          <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
+            <RewordIcon size={10} aria-hidden className="shrink-0" />
+            {`Reworded by Goodboy · ${reworded.age}`}
+            <button
+              type="button"
+              aria-expanded={isPreviousShown}
+              onClick={() => setIsPreviousShown(!isPreviousShown)}
+              className="rounded-sm text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              {isPreviousShown ? 'Hide previous' : 'Show previous'}
+            </button>
+          </p>
         )}
-      >
-        <button
-          type="button"
-          disabled={isLocked}
-          aria-label={`Edit ${label.toLowerCase()}`}
-          onClick={() => {
-            setDraft(text);
-            setIsEditing(true);
-          }}
-          className={cn(
-            'min-w-0 flex-1 rounded-md text-left [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring [&_pre]:whitespace-pre-wrap',
-            isLocked ? 'cursor-default' : 'cursor-text',
-          )}
-        >
-          <Markdown text={text} className={ROW_PROSE} />
-        </button>
+        {reworded !== null && isPreviousShown ? (
+          <p className="text-secondary text-faint-foreground line-through">
+            {reworded.previousText}
+          </p>
+        ) : null}
+      </div>
+      {isLocked ? null : (
         <CardActionSlot label={`${label} actions`}>
           <CardAction
-            icon={Trash2}
-            label={`Delete ${label.toLowerCase()}`}
-            tone="danger"
-            reveal={isDeleteArmed === false}
+            icon={Pencil}
+            label={`Edit ${label.toLowerCase()}`}
+            reveal
             revealGroup={REVEAL_GROUP}
-            highlighted={isDeleteArmed}
-            expanded={isDeleteArmed}
-            disabled={isLocked}
-            onClick={() => setIsDeleteArmed(true)}
+            onClick={() => {
+              setDraft(text);
+              setIsEditing(true);
+            }}
+          />
+          <CardAction
+            icon={Minus}
+            label={`Withdraw ${label.toLowerCase()}`}
+            reveal
+            revealGroup={REVEAL_GROUP}
+            onClick={onWithdraw}
           />
         </CardActionSlot>
-      </div>
-      {isDeleteArmed ? (
-        <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title="Delete this decision?"
-          description="Removes the row from the decisions document."
-          confirmLabel="Delete decision"
-          autoDisarmMs={4000}
-          onConfirm={() => {
-            onDelete();
-            setIsDeleteArmed(false);
-          }}
-          onCancel={() => setIsDeleteArmed(false)}
-        />
-      ) : null}
+      )}
     </div>
   );
 };

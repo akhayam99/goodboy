@@ -118,6 +118,39 @@ describe('sessionEventLabel as text', () => {
     ).toBe('3 decisions added, 1 removed');
   });
 
+  it('says what the ledger really changed, leaving out what did not', () => {
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'decisions_changed',
+            payload: { added: 1, replaced: 1, withdrawn: 1, merged: 0, restored: 0 },
+          }),
+        }),
+      }),
+    ).toBe('Decisions · 1 added, 1 replaced, 1 withdrawn');
+  });
+
+  it('names a consolidation and what set it off', () => {
+    expect(
+      segmentsToText({
+        segments: sessionEventLabel({
+          event: event({
+            kind: 'decisions_changed',
+            payload: {
+              added: 0,
+              replaced: 0,
+              withdrawn: 1,
+              merged: 2,
+              restored: 0,
+              consolidatedAfter: '#612 merged',
+            },
+          }),
+        }),
+      }),
+    ).toBe('Context consolidated after #612 merged · 1 withdrawn, 2 merged');
+  });
+
   it('keeps a single decision singular', () => {
     expect(
       segmentsToText({

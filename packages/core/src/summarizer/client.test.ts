@@ -33,26 +33,31 @@ describe('Summarizer client prompt', () => {
     expect(systemPrompt).toBe(SUMMARIZER_SYSTEM_PROMPT);
     expect(systemPrompt).toContain('- last_output_summary (session summary)');
     expect(systemPrompt).toContain(
-      '- goal: 280\n- files_touched: 1600\n- decisions: 1200\n- open_questions: 800\n- last_output_summary: 2000\n\nIf a current or updated slot exceeds its budget, emit a compacted full value within the budget. Merge semantic duplicates, replace superseded decisions with the final decision, and keep the most recent and most relevant facts.',
+      '- goal: 280\n- files_touched: 1600\n- decisions: 1200\n- open_questions: 800\n- last_output_summary: 2000\n\nIf a current or updated slot exceeds its budget, emit a compacted full value within the budget.',
     );
     expect(systemPrompt).toContain(
-      'For last_output_summary, compaction MUST preserve all four section headings; compress the content within each section, never drop a section.',
+      'For last_output_summary, compaction MUST preserve all three section headings; compress the content within each section, never drop a section.',
     );
     expect(systemPrompt).toContain(
-      'Per-slot format rules override these general rules: last_output_summary follows its four-section format above, and its Problem section is sentences, not bullets.',
+      'bring them under it with merge and withdraw operations, each withdraw with its reason; never by dropping a decision silently.',
+    );
+    expect(systemPrompt).toContain('- decisions: never emit this slot in upserts.');
+    expect(systemPrompt).toContain(
+      'A decision you do not name stays exactly as it is, so never re-emit the list and never name a decision just to keep it.',
     );
     expect(systemPrompt).toContain(
-      'A newer decision that reverses or contradicts an earlier one REPLACES it, so the emitted set must never contain two entries that contradict each other.',
+      'A newer decision that reverses or contradicts an earlier one uses replace, so two active decisions never contradict each other.',
     );
     expect(systemPrompt).toContain(
-      'when this slot changes, emit the ENTIRE set rewritten compactly, one line per decision',
+      'Decisions marked "(yours)" were written by the user: never reword, merge or withdraw them',
     );
     expect(systemPrompt).toContain(
-      'a standard structured document with four fixed sections, in this exact order, each opened by a level-4 markdown heading on its own line: `#### Problem`, `#### Learned`, `#### State`, `#### Next`',
+      'a standard structured document with three fixed sections, in this exact order, each opened by a level-4 markdown heading on its own line: `#### Learned`, `#### State`, `#### Next`',
     );
     expect(systemPrompt).toContain(
-      'Problem: why the session exists, the original problem or request, in one or two sentences. Sticky: write it once, then only sharpen or compress it.',
+      'If the previous value still opens with a `#### Problem` section, drop it',
     );
+    expect(systemPrompt).not.toContain('Problem: why the session exists');
     expect(systemPrompt).toContain(
       'Learned: durable discoveries that changed the understanding or approach',
     );
@@ -63,7 +68,10 @@ describe('Summarizer client prompt', () => {
       'Next: what remains and what is in flight. Fully rewritten every pass.',
     );
     expect(systemPrompt).toContain(
-      'The only exception is last_output_summary, which MUST open each of its four sections with the mandated `####` heading.',
+      'The only exception is last_output_summary, which MUST open each of its three sections with the mandated `####` heading.',
+    );
+    expect(systemPrompt).toContain(
+      'A line with no why (a verified fact, a test count, a status) is not a decision',
     );
     expect(systemPrompt).toContain(
       'Never exceed two sentences. If the current value exceeds two sentences, rewrite it down to two sentences or fewer.',

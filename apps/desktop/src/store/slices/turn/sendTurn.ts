@@ -114,7 +114,6 @@ import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { clearMaterializationBatch } from '../../materializationGate';
-import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import {
@@ -1410,9 +1409,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         } catch {
           turnOrdinal = transcriptTurnOrdinal;
         }
-        const decisionsBefore =
-          (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'decisions')?.value ??
-          '';
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
@@ -1433,18 +1429,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           set((state) => ({
             sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
           }));
-          const delta = decisionsDelta({
-            previous: decisionsBefore,
-            next: refreshedSlots.find((slot) => slot.key === 'decisions')?.value ?? '',
-          });
-          if (delta.added > 0 || delta.removed > 0) {
-            await get().recordSessionEvent({
-              sessionId,
-              kind: 'decisions_changed',
-              payload: { added: delta.added, removed: delta.removed },
-            });
-          }
         }
+        await get().noteDecisionChanges({ sessionId, changes: result.decisionChanges });
         if (result.openQuestionsChanged) {
           await get().loadSessionOpenQuestions(sessionId);
           if (resolveAttemptId !== undefined && agentRowEarly !== null && !wasCancelled) {

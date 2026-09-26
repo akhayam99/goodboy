@@ -1,4 +1,5 @@
 import type { IsoDateTime, SessionEventId, SessionId } from './ids';
+import type { SessionDecisionChange } from './session-decision';
 
 export const SESSION_EVENT_KINDS = [
   'worktree_created',
@@ -52,6 +53,12 @@ export type SessionEventPayload = Readonly<{
   runId?: string;
   added?: number;
   removed?: number;
+  replaced?: number;
+  withdrawn?: number;
+  merged?: number;
+  restored?: number;
+  decisionChanges?: ReadonlyArray<SessionDecisionChange>;
+  consolidatedAfter?: string;
   projectId?: string;
   mountId?: string;
   host?: string;
