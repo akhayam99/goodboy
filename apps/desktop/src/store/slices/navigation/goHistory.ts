@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly delta: -1 | 1;
+  readonly delta: number;
 };
 
 export const goHistory = ({ set, get, delta }: Params): boolean => {

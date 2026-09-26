@@ -212,11 +212,6 @@ export const App = () => {
       <AppShell
         topBar={
           <AppTopBar
-            sidebar={{
-              hasSidebar: arrangement.leftSlot !== 'none',
-              isCollapsed: sessionSidebar.isCollapsed,
-              onToggle: sessionSidebar.toggle,
-            }}
             onOpenSpend={openSpend}
             onOpenScript={openScript}
             openProviderId={settingsProviderId}
@@ -240,9 +235,9 @@ export const App = () => {
         leftSidebar={
           currentSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail />
+              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} />
             ) : (
-              <SessionNavSidebar session={currentSession} />
+              <SessionNavSidebar session={currentSession} onToggleSidebar={sessionSidebar.toggle} />
             )
           ) : undefined
         }
@@ -260,7 +255,12 @@ export const App = () => {
               onHold={sessionSidebar.holdPeek}
               onRelease={sessionSidebar.releasePeek}
             >
-              <SessionNavSidebar session={currentSession} onNavigate={sessionSidebar.closePeek} />
+              <SessionNavSidebar
+                session={currentSession}
+                onNavigate={sessionSidebar.closePeek}
+                isCollapsed={sessionSidebar.isCollapsed}
+                onToggleSidebar={sessionSidebar.toggle}
+              />
             </SidebarPeekOverlay>
           ) : undefined
         }

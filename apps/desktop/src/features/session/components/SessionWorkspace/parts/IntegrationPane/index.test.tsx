@@ -112,6 +112,8 @@ vi.mock('../../../../../worktree/useRemoteHostKind', () => ({
   useRemoteHostKind: () => 'github',
 }));
 
+import { useInheritedPaneActions } from '../../../../../../shared/components/PaneShell/paneActionsContext';
+
 vi.mock('./LinearTaskDetail', () => ({
   LinearTaskDetail: ({ task }: TaskDetailProps) => (
     <div data-testid="task-detail">
@@ -119,6 +121,7 @@ vi.mock('./LinearTaskDetail', () => ({
         Linear detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
+      <div data-testid="task-detail-actions">{useInheritedPaneActions()}</div>
     </div>
   ),
 }));
@@ -130,6 +133,7 @@ vi.mock('./GitlabTaskDetail', () => ({
         GitLab detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
+      <div data-testid="task-detail-actions">{useInheritedPaneActions()}</div>
     </div>
   ),
 }));
@@ -343,15 +347,14 @@ describe('IntegrationPane', () => {
     expect(screen.queryByTestId('task-detail')).toBeNull();
   });
 
-  it('states the section title above the focused record and holds its actions', () => {
+  it('hands its actions to the focused record header, with no eyebrow row above it', () => {
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
 
-    const detail = screen.getByTestId('task-detail');
+    const actions = screen.getByTestId('task-detail-actions');
 
-    expect(screen.getByText('Linear')).toBeDefined();
-    expect(within(detail).queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
+    expect(screen.queryByText('Linear')).toBeNull();
+    expect(within(actions).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Link issue' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
   });

@@ -289,6 +289,7 @@ import {
   type NavigateParams,
   type StudioParams,
 } from './slices/navigation/types';
+import type { GoToHistoryParams } from './slices/navigation/goToHistory';
 import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
@@ -364,6 +365,7 @@ type AppActions = {
   navigate(params: NavigateParams): void;
   back(): void;
   forward(): void;
+  goToHistory(params: GoToHistoryParams): void;
   up(): void;
   amendFocus(params: AmendFocusParams): void;
   openStudio(params: StudioParams): void;
@@ -548,11 +550,11 @@ type AppActions = {
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
-    args: { sha: string; message: string },
+    args: { mountId: MountId; sha: string; message: string },
   ): Promise<RewrittenHead>;
   squashSessionCommits(
     sessionId: SessionId,
-    args: { sha: string; message: string },
+    args: { mountId: MountId; sha: string; message: string },
   ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(

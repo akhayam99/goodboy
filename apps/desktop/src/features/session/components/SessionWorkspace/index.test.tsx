@@ -15,7 +15,7 @@ type Store = {
   sessionBranches: Record<string, string>;
   sessionProjectMounts: Record<string, ReadonlyArray<never>>;
   sessionActiveProject: Record<string, string>;
-  sessionStudio: Record<string, null>;
+  sessionStudio: Record<string, { readonly kind: 'workflow' } | null>;
   artifactConversationAgentId: Record<string, string | null>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   sessionPlans: Record<string, ReadonlyArray<unknown>>;
@@ -107,6 +107,10 @@ const { store, hooks } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
+  useResolveQueueRows: () => [],
+}));
+
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
@@ -153,19 +157,13 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
   };
 });
 
-vi.mock('../AgentDetailPane', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
-  return {
-    AgentDetailPane: ({ agent }: { agent: Agent }) => (
-      <div>
-        <PageCrumbRow />
-        <div data-testid="agent-detail-pane">{agent.id}</div>
-      </div>
-    ),
-  };
-});
+vi.mock('../AgentDetailPane', () => ({
+  AgentDetailPane: ({ agent }: { agent: Agent }) => (
+    <div>
+      <div data-testid="agent-detail-pane">{agent.id}</div>
+    </div>
+  ),
+}));
 vi.mock('../../../terminal/components/TerminalDock', () => ({ TerminalDock: () => null }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../scripts', () => ({ ScriptsPanel: () => null }));
@@ -213,22 +211,13 @@ vi.mock('../CreateAgentPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../SessionOverviewPane', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
-  return {
-    SessionOverviewPane: () => (
-      <div role="region" aria-label="Session overview">
-        <PageCrumbRow />
-      </div>
-    ),
-  };
-});
+vi.mock('../SessionOverviewPane', () => ({
+  SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
+}));
 vi.mock('../../../review/components/ReviewPane', () => ({
   ReviewPane: () => <div data-testid="review-board" />,
 }));
-vi.mock('../SessionCrumbBar/SessionCrumbs', () => ({
+vi.mock('../SessionTrail/SessionCrumbs', () => ({
   SessionCrumbs: () => <div data-testid="session-crumb-bar" />,
 }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
@@ -257,14 +246,10 @@ vi.mock('./parts/IntegrationPane/LinkTicketPopover', () => ({
     </button>
   ),
 }));
-vi.mock('../../../../shared/components/PaneShell', async () => {
-  const { PageCrumbRow } = await vi.importActual<
-    typeof import('../../../../shared/components/PaneShell/PageCrumbRow')
-  >('../../../../shared/components/PaneShell/PageCrumbRow');
+vi.mock('../../../../shared/components/PaneShell', () => {
   return {
     PaneShell: ({ title, header, meta, children }: PaneShellMockProps) => (
       <div>
-        <PageCrumbRow />
         {header ?? <h1>{title}</h1>}
         {meta != null && title != null ? (
           <span data-testid={`pane-meta-${title.toLowerCase()}`}>{meta}</span>
@@ -382,11 +367,7 @@ describe('SessionWorkspace agent overlay', () => {
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
 
     const { result } = renderHook(() => useSessionCrumbs({ session }));
-    expect(result.current.map((crumb) => crumb.label)).toEqual([
-      'Overview',
-      'Review',
-      'Standalone resolver',
-    ]);
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'Review', 'Agent']);
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
@@ -612,6 +593,30 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('session-crumb-bar')).toBeDefined();
+  });
+
+  it('keeps one trail band mounted across lens, agent and studio changes', () => {
+    store.activeLens = { [SESSION_ID]: null };
+    store.selectedAgentId = {};
+    store.sessionPhaseRuns = { [SESSION_ID]: [selectedAgent] };
+    const view = render(<SessionWorkspace session={session} isActive />);
+    const trail = screen.getByTestId('session-crumb-bar');
+    const band = view.container.querySelector('[data-slot="trail-bar"]');
+    expect(band?.className).toContain('h-10');
+
+    store.activeLens = { [SESSION_ID]: 'review' };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+
+    store.activeLens = { [SESSION_ID]: 'agents' };
+    store.selectedAgentId = { [SESSION_ID]: selectedAgent.id };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+
+    store.sessionStudio = { [SESSION_ID]: { kind: 'workflow' } };
+    view.rerender(<SessionWorkspace session={session} isActive />);
+    expect(screen.getByTestId('session-crumb-bar')).toBe(trail);
+    expect(view.container.querySelectorAll('[data-slot="trail-bar"]')).toHaveLength(1);
   });
 
   it('keeps the crumb bar mounted once an agent overlay owns the surface', () => {

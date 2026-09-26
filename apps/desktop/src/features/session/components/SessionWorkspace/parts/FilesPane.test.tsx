@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
 
-import { PANE_RHYTHM } from '@goodboy/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   BranchCommit,
   MountId,
@@ -12,7 +11,6 @@ import type {
 } from '@goodboy/types';
 import { setActiveLens, setDiffFocus } from '../../../../../store/slices/session-view/workSurface';
 import type { GetFn, SetFn } from '../../../../../store/slices/session-view/types';
-import type { MountDiffStat } from '../../../../../store/selectors';
 
 const SESSION_ID = 'ses-1' as SessionId;
 
@@ -20,17 +18,14 @@ type State = Record<string, unknown>;
 
 const state: State = {};
 
-let diffStats: ReadonlyMap<string, MountDiffStat> = new Map();
-
-let reportDiffEmpty: ((isEmpty: boolean) => void) | undefined;
-
-const { listBranchCommits, amendSessionCommit, squashSessionCommits } = vi.hoisted(() => ({
-  listBranchCommits: vi.fn(async () => [] as ReadonlyArray<BranchCommit>),
+const { amendSessionCommit, squashSessionCommits, branch } = vi.hoisted(() => ({
   amendSessionCommit: vi.fn(async () => undefined),
   squashSessionCommits: vi.fn(async () => undefined),
+  branch: {
+    mountId: null as string | null,
+    commits: [] as ReadonlyArray<unknown>,
+  },
 }));
-
-vi.mock('../../../../worktree/worktree', () => ({ listBranchCommits }));
 
 const mountOf = ({
   name,
@@ -67,7 +62,6 @@ const get = (() => state) as unknown as GetFn;
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: State) => T) => selector(state),
-  useMountDiffStats: () => diffStats,
 }));
 
 vi.mock('../../../../diff/components/SessionDiffPane', () => ({
@@ -75,29 +69,29 @@ vi.mock('../../../../diff/components/SessionDiffPane', () => ({
   SessionDiffPane: ({
     diffFocus,
     worktreePath,
-    onContentEmptyChange,
-    headerActions,
-    aboveBody,
+    renderBranchActions,
   }: {
     diffFocus: { readonly kind: string } | null;
     worktreePath?: string;
-    onContentEmptyChange?: (isEmpty: boolean) => void;
-    headerActions?: React.ReactNode;
-    aboveBody?: React.ReactNode;
-  }) => {
-    reportDiffEmpty = onContentEmptyChange;
-    return (
-      <>
-        {headerActions}
-        {aboveBody}
-        <div
-          data-testid="diff-viewer"
-          data-focus-kind={diffFocus?.kind ?? 'none'}
-          data-worktree={worktreePath ?? 'none'}
-        />
-      </>
-    );
-  },
+    renderBranchActions?: (params: {
+      readonly mountId: MountId | null;
+      readonly commits: ReadonlyArray<BranchCommit>;
+      readonly onRewritten: () => void;
+    }) => React.ReactNode;
+  }) => (
+    <>
+      {renderBranchActions?.({
+        mountId: branch.mountId as MountId | null,
+        commits: branch.commits as ReadonlyArray<BranchCommit>,
+        onRewritten: () => undefined,
+      })}
+      <div
+        data-testid="diff-viewer"
+        data-focus-kind={diffFocus?.kind ?? 'none'}
+        data-worktree={worktreePath ?? 'none'}
+      />
+    </>
+  ),
 }));
 
 vi.mock('./FileVersionsPane', () => ({
@@ -112,17 +106,14 @@ vi.mock('./FileVersionsPane', () => ({
 
 import { FilesPane } from './FilesPane';
 
-const openMountDiff = vi.fn();
-
 const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProjectMount> } = {}) => {
   for (const key of Object.keys(state)) {
     delete state[key];
   }
-  openMountDiff.mockClear();
   amendSessionCommit.mockClear();
   squashSessionCommits.mockClear();
-  diffStats = new Map();
-  reportDiffEmpty = undefined;
+  branch.mountId = null;
+  branch.commits = [];
   Object.assign(state, {
     activeLens: {},
     selectedAgentId: {},
@@ -137,7 +128,6 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
     sessionProjectMounts: { [SESSION_ID]: mounts },
     setDiffFocus: setDiffFocus(set),
     setActiveLens: setActiveLens(set),
-    openMountDiff,
     amendSessionCommit,
     squashSessionCommits,
   });
@@ -168,8 +158,10 @@ const renderBranchlessPane = () =>
 afterEach(cleanup);
 
 describe('FilesPane', () => {
-  it('hosts branch surgery and amends the unpushed head commit', async () => {
-    listBranchCommits.mockResolvedValueOnce([
+  it('rewrites history on the worktree shown, by its mount id', async () => {
+    reset();
+    branch.mountId = WEB_MOUNT.mountId;
+    branch.commits = [
       {
         sha: 'abcdef123456',
         shortSha: 'abcdef1',
@@ -179,8 +171,7 @@ describe('FilesPane', () => {
         timestamp: 1,
         pushed: false,
       },
-    ]);
-    reset();
+    ];
 
     renderPane({ worktreePath: '/tmp/wt' });
 
@@ -194,6 +185,7 @@ describe('FilesPane', () => {
 
     await vi.waitFor(() =>
       expect(amendSessionCommit).toHaveBeenCalledWith(SESSION_ID, {
+        mountId: WEB_MOUNT.mountId,
         sha: 'abcdef123456',
         message: 'New subject',
       }),
@@ -219,143 +211,14 @@ describe('FilesPane', () => {
     expect(screen.getByText('No worktree for this session')).toBeTruthy();
   });
 
-  it('shows no mount switcher when the session has a single mount', () => {
-    reset({ mounts: [API_MOUNT] });
+  it('shows one branch and no worktree tabs above the diff', () => {
+    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
     setActiveLens(set)(SESSION_ID, 'files');
 
     renderPane({ worktreePath: API_MOUNT.worktreePath });
 
     expect(screen.queryByTestId('diff-mount-switcher')).toBeNull();
-  });
-
-  it('lists every mount with its diff stat when the session has more than one', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    diffStats = new Map([[WEB_MOUNT.worktreePath, { additions: 4, deletions: 2 }]]);
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: API_MOUNT.worktreePath });
-
-    expect(screen.getByTestId('diff-mount-switcher')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /api/ })).toBeTruthy();
-    const web = screen.getByRole('button', { name: /web/ });
-    expect(web.textContent).toContain('+4');
-    expect(web.textContent).toContain('-2');
-    expect(web.getAttribute('data-stat')).toBe('changed');
-  });
-
-  it('renders the mounts as one segmented control aligned with the pane column', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: API_MOUNT.worktreePath });
-
-    const switcher = screen.getByTestId('diff-mount-switcher');
-    expect(switcher.className).toContain('rounded-lg');
-    expect(switcher.className).toContain('border-border-soft');
-    expect(switcher.className).toContain('bg-subtle');
-    expect(screen.getAllByTestId('diff-mount-option')).toHaveLength(2);
-    for (const cls of PANE_RHYTHM.column.split(' ')) {
-      expect(switcher.parentElement?.className).toContain(cls);
-    }
-    expect(switcher.parentElement?.parentElement?.className).toContain('px-6');
-  });
-
-  it('frees the switcher to the full pane width once the diff has files', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: API_MOUNT.worktreePath });
-    act(() => {
-      reportDiffEmpty?.(false);
-    });
-
-    const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
-    expect(wrapper?.className).not.toContain('max-w-[var(--column-max)]');
-    expect(wrapper?.className).not.toContain('mx-auto');
-    expect(wrapper?.parentElement?.className).toContain('px-6');
-  });
-
-  it('returns the switcher to the capped column when the diff empties again', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: API_MOUNT.worktreePath });
-    act(() => {
-      reportDiffEmpty?.(false);
-    });
-    act(() => {
-      reportDiffEmpty?.(true);
-    });
-
-    const wrapper = screen.getByTestId('diff-mount-switcher').parentElement;
-    for (const cls of PANE_RHYTHM.column.split(' ')) {
-      expect(wrapper?.className).toContain(cls);
-    }
-  });
-
-  it('keeps an untouched mount visible and marks it quiet', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    diffStats = new Map([
-      [API_MOUNT.worktreePath, { additions: 0, deletions: 0 }],
-      [WEB_MOUNT.worktreePath, { additions: 4, deletions: 2 }],
-    ]);
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: WEB_MOUNT.worktreePath });
-
-    const api = screen.getByRole('button', { name: /api/ });
-    expect(api.getAttribute('data-stat')).toBe('quiet');
-    expect(api.textContent).toContain('no changes');
-  });
-
-  it('holds the stat slot open while the counts are still resolving', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    const { rerender } = renderPane({ worktreePath: API_MOUNT.worktreePath });
-
-    const pending = screen.getAllByTestId('diff-mount-option');
-    expect(pending.map((option) => option.getAttribute('data-stat'))).toEqual([
-      'pending',
-      'pending',
-    ]);
-    for (const option of pending) {
-      expect(option.lastElementChild?.className).toContain('min-w-16');
-      expect(option.textContent).not.toContain('+');
-    }
-
-    diffStats = new Map([
-      [API_MOUNT.worktreePath, { additions: 0, deletions: 0 }],
-      [WEB_MOUNT.worktreePath, { additions: 4, deletions: 2 }],
-    ]);
-    rerender(
-      <FilesPane
-        sessionId={SESSION_ID}
-        sessionDir="/tmp/wt"
-        worktreePath={API_MOUNT.worktreePath}
-        isBranchless={false}
-        onClose={() => undefined}
-      />,
-    );
-
-    const resolved = screen.getAllByTestId('diff-mount-option');
-    expect(resolved.map((option) => option.getAttribute('data-stat'))).toEqual([
-      'quiet',
-      'changed',
-    ]);
-    for (const option of resolved) {
-      expect(option.lastElementChild?.className).toContain('min-w-16');
-    }
-  });
-
-  it('opens the mount diff for the mount the user picks', () => {
-    reset({ mounts: [API_MOUNT, WEB_MOUNT] });
-    setActiveLens(set)(SESSION_ID, 'files');
-
-    renderPane({ worktreePath: API_MOUNT.worktreePath });
-    fireEvent.click(screen.getByRole('button', { name: /web/ }));
-
-    expect(openMountDiff).toHaveBeenCalledWith(SESSION_ID, WEB_MOUNT.worktreePath);
+    expect(screen.queryByRole('button', { name: /web/ })).toBeNull();
   });
 
   it('diffs the mount it was handed, not the first one mounted', () => {
@@ -367,8 +230,6 @@ describe('FilesPane', () => {
     expect(screen.getByTestId('diff-viewer').getAttribute('data-worktree')).toBe(
       WEB_MOUNT.worktreePath,
     );
-    expect(screen.getByRole('button', { name: /web/ }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: /api/ }).getAttribute('aria-pressed')).toBe('false');
   });
 
   it('shows the file versions pane with its own close control when branchless', () => {

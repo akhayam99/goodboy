@@ -51,6 +51,14 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       archivedSessions: {} as Record<string, ReadonlyArray<Session>>,
       providers: [] as ReadonlyArray<never>,
       providerLimits: {},
+      navigation: {},
+      currentSessionId: null,
+      appStudio: null,
+      back: vi.fn(),
+      forward: vi.fn(),
+      goToHistory: vi.fn(),
+      navigate: vi.fn(),
+      closeStudio: vi.fn(),
     },
   };
 });
@@ -63,7 +71,10 @@ vi.mock('../../../store', () => ({
   useWorkspaceRollup: () => hooks.rollup,
   useStageGroupedSessions: () => hooks.groups,
   useSessionStageInfo: () => ({ stage: 'attention', reason: 'Needs attention', attention: null }),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
+    getState: () => store,
+  }),
+  BOARD_PLACE: { at: 'board' },
 }));
 
 vi.mock('../../../features/notifications/components/NotificationCenter', () => ({
@@ -80,7 +91,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 import { AppTopBar } from './index';
-import type { TopBarSidebar } from './SidebarToggle';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 
@@ -90,21 +100,13 @@ const ATTENTION_SESSION = {
 } as unknown as Session;
 
 const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open Impact';
-const BOARD: TopBarSidebar = { hasSidebar: false, isCollapsed: false, onToggle: () => undefined };
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
-  readonly sidebar?: TopBarSidebar;
 };
 
 const renderBar = (overrides: BarOverrides = {}) =>
-  render(
-    <AppTopBar
-      sidebar={overrides.sidebar ?? BOARD}
-      onOpenSpend={overrides.onOpenSpend ?? vi.fn()}
-      onOpenScript={vi.fn()}
-    />,
-  );
+  render(<AppTopBar onOpenSpend={overrides.onOpenSpend ?? vi.fn()} onOpenScript={vi.fn()} />);
 
 const zones = (container: HTMLElement) =>
   Array.from(container.querySelector('[data-tauri-drag-region]')?.children ?? []);
@@ -156,32 +158,18 @@ describe('AppTopBar', () => {
     expect(center.querySelector('kbd')?.className).not.toContain('hidden');
   });
 
-  it('reserves the sidebar toggle slot on the board so identity never moves', () => {
+  it('clusters Back, Forward and Board by the search, and leaves the sidebar toggle out', () => {
     const { container } = renderBar();
+    const center = zones(container)[1] as HTMLElement;
 
-    expect(screen.getByTestId('sidebar-toggle-slot')).toBeDefined();
+    const cluster = center.querySelector('[data-nav-cluster]') as HTMLElement;
+    expect(cluster).not.toBeNull();
+    expect(
+      cluster.compareDocumentPosition(screen.getByRole('button', { name: /^Search/ })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Board' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /sessions \(/ })).toBeNull();
-    expect(zones(container)[0]?.firstElementChild).toBe(screen.getByTestId('sidebar-toggle-slot'));
-  });
-
-  it('toggles the session sidebar from the bar, right after the traffic lights', () => {
-    const onToggle = vi.fn();
-    const glyph = shortcutGlyphs('column.toggle');
-    const { rerender } = renderBar({
-      sidebar: { hasSidebar: true, isCollapsed: false, onToggle },
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: `Hide sessions (${glyph})` }));
-    expect(onToggle).toHaveBeenCalledOnce();
-
-    rerender(
-      <AppTopBar
-        sidebar={{ hasSidebar: true, isCollapsed: true, onToggle }}
-        onOpenSpend={vi.fn()}
-        onOpenScript={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole('button', { name: `Show sessions (${glyph})` })).toBeDefined();
   });
 
   it('keeps the brand and a workspace gear out of the bar', () => {

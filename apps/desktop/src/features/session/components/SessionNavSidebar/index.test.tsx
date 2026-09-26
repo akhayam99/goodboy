@@ -52,17 +52,14 @@ describe('SessionNavSidebar', () => {
     expect(screen.queryByRole('button', { name: 'ship the nav' })).toBeNull();
   });
 
-  it('keeps the board CTA reachable', () => {
-    render(<SessionNavSidebar session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
-  });
+  it('opens on the collapse control, with Board gone to the top bar', () => {
+    const onToggle = vi.fn();
+    render(<SessionNavSidebar session={session} onToggleSidebar={onToggle} />);
 
-  it('opens on the board row, leaving the collapse control and identity to the top bar', () => {
-    render(<SessionNavSidebar session={session} />);
-
+    fireEvent.click(screen.getByRole('button', { name: /^Hide sessions/ }));
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /board/i })).toBeNull();
     expect(screen.queryByText('Sessions')).toBeNull();
-    expect(screen.queryByRole('button', { name: /hide sessions|session sidebar/i })).toBeNull();
     expect(screen.queryByLabelText(/switch workspace/i)).toBeNull();
     expect(screen.queryByLabelText('Preferences')).toBeNull();
   });

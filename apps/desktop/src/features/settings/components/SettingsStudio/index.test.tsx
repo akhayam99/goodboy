@@ -154,16 +154,18 @@ describe('SettingsStudio', () => {
       />,
     );
     expect((await screen.findByLabelText('Personal API key')).id).toBe('linear-pat');
-    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
     const tools = screen.getByRole('list', { name: 'Tools settings' });
     expect(
       within(tools)
         .getByRole('button', { name: /^Linear/ })
         .getAttribute('aria-current'),
     ).toBe('true');
-    expect(screen.getByRole('button', { name: 'Tools' }).getAttribute('aria-current')).toBe(
-      'false',
-    );
+    expect(
+      within(screen.getByRole('navigation', { name: 'Settings scopes' }))
+        .getByRole('button', { name: 'Tools' })
+        .getAttribute('aria-current'),
+    ).toBe('false');
   });
 
   const renderApp = ({
@@ -185,7 +187,7 @@ describe('SettingsStudio', () => {
   it('nests the app items under App in the one navigation rail', () => {
     renderApp();
 
-    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
     const items = screen.getByRole('list', { name: 'App settings' });
     expect(
       within(items)
@@ -239,7 +241,7 @@ describe('SettingsStudio', () => {
         name: 'Providers & models settings',
       }),
     ).toBeDefined();
-    expect(screen.getAllByRole('navigation')).toHaveLength(1);
+    expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
   it('keeps one rail mounted across scopes, with the App list always open', () => {
@@ -391,5 +393,30 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
+  });
+});
+
+describe('SettingsStudio trail', () => {
+  it('names the studio, the scope and the section, with a menu on the section', () => {
+    render(
+      <SettingsStudio
+        currentWorkspace={null}
+        focus={{ scope: 'app', section: 'shortcuts' }}
+        onScopeChange={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(trail.textContent).toContain('Settings');
+    expect(trail.textContent).toContain('App');
+    expect(trail.textContent).toContain('Shortcuts');
+    fireEvent.click(within(trail).getByRole('button', { name: /Shortcuts/ }));
+    const menu = screen.getByRole('menu', { name: 'Switch section' });
+    expect(
+      within(menu)
+        .getByRole('menuitemradio', { name: /Shortcuts/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
   });
 });

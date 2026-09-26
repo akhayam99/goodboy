@@ -656,7 +656,7 @@ The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
 and `Divider`, not a pane frame. `PaneShell` is a desktop component at
 `apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
 and it is the one wrapper every main pane uses. It is a scroll region whose
-crumb, header and body share one `PageColumn`. It has one `h1` per surface.
+header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
 `meta` holds counts and totals in `tabular-nums`, never a control. The header
 row wraps, so actions drop under the title instead of squeezing it. The pane
 owns the gap below the header, and children add no top margins. The root is
@@ -664,9 +664,11 @@ owns the gap below the header, and children add no top margins. The root is
 `StudioShell` it fills the pane and the column centres in the full width.
 
 **One title grade, one header height.** Every lens pane and studio detail gets
-its title from `PaneShell`: the crumb row (24px, only inside a session), then an
-`h1` at `text-lg` with `meta` inline and actions on the right (32px). Padding
-is 12px above and 16px below, 92px in all, 128px with the optional `tabs` row.
+its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
+actions on the right (32px), 16px below. Inside a session the `Trail` band
+(40px: 12 above, a 24px row, 4 below) sits above it and the header adds no top
+padding; outside a session the header keeps 12px above. 92px in all, 128px
+with the optional `tabs` row.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
@@ -674,8 +676,7 @@ its own header row passes `HeaderBand` (also an `h1`) through the custom
 `header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a row to the bottom of the same column. Studio
-chrome (`OverlayHeader`) and the focused-pane lens label are window chrome,
-not headings. The header is named with `aria-label`, so the detail title is
+chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
 **The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
@@ -684,6 +685,15 @@ the only `h1` on the surface.
 width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
+
+**Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
+`floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
+(`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots
+(20px lead, 12px label with an 11px faint second part, fixed-width tabular
+meta, a state word with its dot or glyph, a 14px check on the current row on
+`overlay-selected`), and an action band on `fill` under the list with at most
+two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
+4px drop) and closes without motion.
 
 ## Action zones
 
@@ -861,9 +871,12 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Six animations, one meaning each. Transition keyframes (`fade-in`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
-states and sit outside the registry.
+Seven animations, one meaning each. Transition keyframes (`fade-in`,
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`) move content between states and sit outside the
+registry. The `Trail` closes a crumb label with `grid-template-columns` from
+`1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
+trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
 from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`
@@ -915,7 +928,10 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.ts` pins both. Widening the rail to fix a padding is
+`collapsed-rail-width.test.ts` pins both. The sidebar toggle is therefore not
+in the top bar: it is the first `size-8` button of the collapsed rail and of
+the open sidebar's first row, on the same axis in both states
+(`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

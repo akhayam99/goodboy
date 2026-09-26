@@ -217,6 +217,32 @@
 
   --animate-drawer-swap: drawer-swap 120ms ease-out;
 
+  --animate-layer-in: layer-in 150ms cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-trail-crumb-in: trail-crumb-in 180ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+
+  --animate-crumb-menu-in: crumb-menu-in 120ms cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-layer-out: layer-out 120ms ease-out forwards;
+
+  @keyframes layer-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes layer-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
   @keyframes studio-out {
     from {
       opacity: 1;
@@ -276,6 +302,28 @@
    so reduced-motion users get no fade/rise — the animation resolves to a no-op
    (unknown animation name) instead of a movement neutralized after the fact. */
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes crumb-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes trail-crumb-in {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   @keyframes fade-in {
     from {
       opacity: 0;

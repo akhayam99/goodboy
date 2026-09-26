@@ -167,8 +167,9 @@ no other `max-w-*` layout width lives under `features/`.
 `shared/layout/columnContract.test.ts` fails on `PANE_RHYTHM.measure`,
 `DIFF_CAPPED_COLUMN_CLASS` and `max-w-3xl` to `max-w-7xl` there (with an
 explicit allowlist, such as the image lightbox), and on a lens the session
-workspace mounts without `PaneShell`. The few views still on a hand-built band
-render the crumb through `PageCrumbRow` until they move.
+workspace mounts without `PaneShell`, or a root that draws a crumb of its own.
+The session trail lives only in `TrailBar`, a 40px band above every layer; the
+panes under it start with their title.
 
 Detail views (an agent, a pull request, an issue from any tracker, a Review
 mode) use `PaneShell` like every other pane. A detail keeps its own header

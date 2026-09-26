@@ -6,6 +6,8 @@ import { ToolSettingsScope } from '../../../integrations/components/ToolSettings
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
+import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
+import { settingsTrail } from '../../trail/settingsMenus';
 import { AppScopePanel } from './AppScopePanel';
 import {
   SettingsRail,
@@ -142,6 +144,14 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
     >
       {(requestClose) => (
         <>
+          <StudioTrail
+            segments={settingsTrail({
+              scope: availableScope,
+              appSection: appSectionOf({ section: focus.section }),
+              workspaceName: currentWorkspace?.name ?? null,
+              onSelect: onScopeChange,
+            })}
+          />
           <StudioRailLayout
             railLabel="Settings scopes"
             railWidth="narrow"

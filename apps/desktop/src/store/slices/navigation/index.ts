@@ -1,6 +1,7 @@
 import { amendFocus } from './amendFocus';
 import { back } from './back';
 import { forward } from './forward';
+import { goToHistory } from './goToHistory';
 import { navigate } from './navigate';
 import { amendStudio, closeStudio, openStudio } from './studioMoves';
 import { up } from './up';
@@ -11,6 +12,7 @@ export const createNavigationSlice = (set: SetFn, get: GetFn) => {
     navigate: navigate(set, get),
     back: back(set, get),
     forward: forward(set, get),
+    goToHistory: goToHistory(set, get),
     up: up(set, get),
     amendFocus: amendFocus(set, get),
     openStudio: openStudio(set, get),

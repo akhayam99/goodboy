@@ -13,6 +13,7 @@ export type PanelPosition = {
 type Props = {
   readonly status: ResolveUiState;
   readonly location: string | null;
+  readonly onOpenLocation?: (() => void) | null;
   readonly position: PanelPosition | null;
   readonly overflow: ReadonlyArray<ResolveItemAction>;
   readonly canPrevious: boolean;
@@ -29,6 +30,7 @@ export const OPEN_AGENT_PAGE_LABEL = 'Open agent full page';
 export const ResolvePanelHeader = ({
   status,
   location,
+  onOpenLocation = null,
   position,
   overflow,
   canPrevious,
@@ -72,7 +74,18 @@ export const ResolvePanelHeader = ({
           className="min-w-0 flex-1 truncate font-mono text-secondary text-muted-foreground"
           title={location ?? RESOLVE_ITEM_LABEL.comment}
         >
-          {location ?? RESOLVE_ITEM_LABEL.comment}
+          {onOpenLocation !== null && location !== null ? (
+            <button
+              type="button"
+              onClick={onOpenLocation}
+              aria-label={`Open ${location} in the diff`}
+              className="max-w-full truncate rounded-sm hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              {location}
+            </button>
+          ) : (
+            (location ?? RESOLVE_ITEM_LABEL.comment)
+          )}
         </h2>
         <div className="flex shrink-0 items-center gap-0.5">
           <IconButton

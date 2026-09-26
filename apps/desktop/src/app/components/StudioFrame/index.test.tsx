@@ -1,9 +1,11 @@
 // @vitest-environment happy-dom
 
 import { lazy } from 'react';
+import { Workflow } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { StudioShell } from '../../../shared/components/StudioShell';
+import { StudioTrail } from '../../../shared/components/StudioShell/StudioTrail';
 import { StudioFrame } from './index';
 
 afterEach(() => {
@@ -41,10 +43,42 @@ describe('StudioFrame', () => {
     );
 
     const frame = container.querySelector('[data-studio-frame]');
-    expect(frame?.className).toContain('bg-background');
+    expect(frame?.className).toContain('bg-chrome');
     expect(screen.getByRole('status', { name: 'Loading Workflows' })).toBeDefined();
     expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
     expect(screen.getByRole('banner', { name: 'Workflows' })).toBeDefined();
+  });
+
+  it('names the studio with the trail primitive in its band', () => {
+    render(
+      <StudioFrame kind="inbox" onClose={() => undefined}>
+        <Body />
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner', { name: 'Inbox' });
+    const trail = within(band).getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByText('Inbox').getAttribute('aria-current')).toBe('page');
+  });
+
+  it('lets a studio body carry its own trail into the band, in place of the root', () => {
+    const onBack = vi.fn();
+    render(
+      <StudioFrame kind="workflow" onClose={() => undefined}>
+        <StudioTrail
+          segments={[
+            { id: 'workflows', label: 'Workflows', icon: Workflow, onSelect: onBack },
+            { id: 'workflow', label: 'Ship a fix', icon: Workflow },
+          ]}
+        />
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner', { name: 'Workflows' });
+    expect(within(band).getAllByRole('navigation', { name: 'Breadcrumb' })).toHaveLength(1);
+    expect(within(band).getByText('Ship a fix').getAttribute('aria-current')).toBe('page');
+    fireEvent.click(within(band).getByRole('button', { name: 'Workflows' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
   it('draws the band once and lets the body fill it', () => {

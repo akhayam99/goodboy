@@ -26,6 +26,7 @@ import {
 } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
 import { ResolvePanelHeader, type PanelPosition } from '../ResolvePanelHeader';
+import { threadLocationOf } from '../../threadLocationOf';
 import { ActionButton } from './ActionButton';
 import type { ResolveItemActionId, ResolveItemActionSet } from '../../resolveItemActions';
 import { ChangeBlock } from './ChangeBlock';
@@ -72,6 +73,7 @@ type Props = {
   readonly onCancelEditing: () => void;
   readonly onCommitEditing: () => void;
   readonly onBack: () => void;
+  readonly onOpenLocation?: (path: string) => void;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly canPrevious: boolean;
@@ -177,6 +179,7 @@ export const ResolveItemView = ({
   onCancelEditing,
   onCommitEditing,
   onBack,
+  onOpenLocation,
   onPrevious,
   onNext,
   canPrevious,
@@ -198,6 +201,7 @@ export const ResolveItemView = ({
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
   const hasAgentTab = row.attempt !== null && agentPanel !== null;
+  const location = threadLocationOf({ row });
   const isAgentShown = hasAgentTab && tab === 'agent';
   const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank });
   const commitLabel =
@@ -215,7 +219,12 @@ export const ResolveItemView = ({
     >
       <ResolvePanelHeader
         status={row.status}
-        location={row.reviewerNote?.location ?? null}
+        location={location?.label ?? null}
+        onOpenLocation={
+          location?.path == null || onOpenLocation === undefined
+            ? null
+            : () => onOpenLocation(location.path ?? '')
+        }
         position={position}
         overflow={actions.overflow}
         canPrevious={canPrevious}

@@ -20,7 +20,7 @@ import {
 } from '../../../../../../shared/components/conceptIcons';
 import { GhostActionButton } from '@goodboy/ui';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
-import { FocusedPane } from '../../../../../../shared/components/PaneShell/FocusedPane';
+import { PaneActionsContext } from '../../../../../../shared/components/PaneShell/paneActionsContext';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
@@ -180,10 +180,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
 
   if (focusedTask != null) {
     return (
-      <FocusedPane
-        lens={meta.label}
-        count={tasks.length}
-        actions={
+      <PaneActionsContext.Provider
+        value={
           isUnlinkArmed ? (
             <InlineConfirm
               role="danger"
@@ -217,7 +215,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           )
         }
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
           {unlinkError != null ? (
             <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
               {unlinkError}
@@ -232,7 +230,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
             isConnected={connection.isConnected}
           />
         </div>
-      </FocusedPane>
+      </PaneActionsContext.Provider>
     );
   }
 

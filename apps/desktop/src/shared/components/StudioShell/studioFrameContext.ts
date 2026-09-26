@@ -16,6 +16,8 @@ export type StudioChrome = {
 export type StudioFrameHandle = {
   readonly setChrome: (chrome: StudioChrome | null) => void;
   readonly requestClose: () => void;
+  readonly trailSlot: HTMLElement | null;
+  readonly claimTrail: () => () => void;
 };
 
 export const StudioFrameContext = createContext<StudioFrameHandle | null>(null);

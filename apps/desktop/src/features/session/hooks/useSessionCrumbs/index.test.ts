@@ -32,6 +32,10 @@ const { store, actions } = vi.hoisted(() => {
   return { store, actions };
 });
 
+vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
+  useResolveQueueRows: () => [],
+}));
+
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
@@ -186,8 +190,8 @@ describe('useSessionCrumbs', () => {
     expect(labelsOf(null, ADHOC_AGENT_ID)).toEqual(['Overview', 'Agents', 'scout one']);
   });
 
-  it('gives a resolver opened from the feed the review home as parent', () => {
-    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'resolve one']);
+  it('gives a resolver opened from the feed the review home as parent, named Agent', () => {
+    expect(labelsOf(null, RESOLVER_AGENT_ID)).toEqual(['Overview', 'Review', 'Agent']);
   });
 
   it('parents a cluster child on its father, under the run', () => {

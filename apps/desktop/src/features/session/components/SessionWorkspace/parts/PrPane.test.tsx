@@ -140,7 +140,6 @@ vi.mock('../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,
 }));
 
-import { PageCrumbContext } from '../../../../../shared/components/PaneShell/PageCrumbContext';
 import { PrPane } from './PrPane';
 
 const DATE = '2026-07-22T10:00:00.000Z' as IsoDateTime;
@@ -254,19 +253,13 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PrPane', () => {
-  it('renders the session crumb above the host title, in the same column', () => {
+  it('renders the host title in the content column', () => {
     h.remoteKind = 'gitlab';
 
-    render(
-      <PageCrumbContext.Provider value={<span>Session crumb</span>}>
-        <PrPane session={session} />
-      </PageCrumbContext.Provider>,
-    );
+    render(<PrPane session={session} />);
 
-    const crumb = screen.getByText('Session crumb');
     const title = screen.getByRole('heading', { level: 1 });
-    expect(crumb.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(crumb.closest('[data-page-column]')).toBe(title.closest('[data-page-column]'));
+    expect(title.closest('[data-page-column]')).not.toBeNull();
   });
 
   it('names the host it is actually pointed at', () => {

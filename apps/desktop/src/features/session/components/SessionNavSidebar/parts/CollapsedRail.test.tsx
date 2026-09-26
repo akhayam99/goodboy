@@ -27,13 +27,15 @@ afterEach(() => {
 import { CollapsedRail } from './CollapsedRail';
 
 describe('CollapsedRail', () => {
-  it('keeps board and new session reachable without labels, leaving expand to the top bar', () => {
-    render(<CollapsedRail />);
+  it('opens the sidebar from its first button and keeps new session, with no Board', () => {
+    const onToggle = vi.fn();
+    render(<CollapsedRail onToggleSidebar={onToggle} />);
 
-    expect(screen.queryByRole('button', { name: /show session/i })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.navigate).toHaveBeenCalledWith({ to: { at: 'board' } });
+    const buttons = screen.getAllByRole('button');
+    expect(buttons[0]?.getAttribute('aria-label')).toMatch(/^Show sessions/);
+    fireEvent.click(buttons[0] as HTMLElement);
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /board/i })).toBeNull();
 
     const spy = vi.fn();
     window.addEventListener('goodboy:new-session', spy);
@@ -59,7 +61,7 @@ describe('CollapsedRail', () => {
   });
 
   it('offers no lens navigation, per the session-list-only sidebar', () => {
-    render(<CollapsedRail />);
+    render(<CollapsedRail onToggleSidebar={vi.fn()} />);
 
     expect(screen.queryByRole('navigation')).toBeNull();
     expect(screen.getAllByRole('button')).toHaveLength(2);

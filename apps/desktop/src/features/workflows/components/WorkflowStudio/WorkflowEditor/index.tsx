@@ -29,7 +29,7 @@ import { StepRow } from '../../StepTree/StepRow';
 import type { useWorkflowEditor } from '../../WorkflowsPanel/useWorkflowEditor';
 import { useWorkflowPolish } from '../../WorkflowsPanel/useWorkflowPolish';
 import { DragGhost } from '../DragGhost';
-import { EditorCrumb } from './EditorCrumb';
+import { EditorTrail } from './EditorTrail';
 import { NoProvidersNotice } from './NoProvidersNotice';
 
 type Props = {
@@ -150,7 +150,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <EditorCrumb
+        <EditorTrail
           name={form.name}
           saveStatus={editor.saveStatus}
           isSavedWorkflow={editor.isSavedWorkflow}

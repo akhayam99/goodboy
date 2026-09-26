@@ -45,14 +45,16 @@ type Props = {
   readonly sessionId: SessionId;
   readonly className?: string;
   readonly onSpawned?: () => void;
+  readonly openEvent?: string;
 };
 
-export const CreateAgentPopover = ({ sessionId, className, onSpawned }: Props) => {
+export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent }: Props) => {
   const dropdown = useDropdown({
     align: 'center',
     expectedHeight: 460,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
+    ...(openEvent !== undefined && { openEvent }),
   });
   const { open, close, toggle } = dropdown;
   const [kind, setKind] = useState<AgentKind>('generic');

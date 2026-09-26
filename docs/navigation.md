@@ -33,10 +33,12 @@
   and what is it costing"). The footer is access ("where do I go"). The sidebar is
   presence ("what else is going on"). The ⌘K palette is transit ("where do I
   want to be").
-- **The top bar carries state and identity, never destinations.** It never
-  edits a record in place. Anything that opens a destination belongs in the
-  footer. The spend chip is the one exception: it is state that opens the
-  studio that owns that number, the impact overview.
+- **The top bar carries state, identity and movement.** Movement is Back,
+  Forward, Board and Search, clustered in the centre. Destinations (studios)
+  stay in the footer, and the bar never edits a record in place. The spend
+  chip is the one exception: it is state that opens the studio that owns that
+  number, the impact overview. Board is not a destination like Inbox: it is
+  home, and home sits with the arrows.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
   is always pinned at the left of the top bar. Neither the sidebar nor a studio
@@ -140,9 +142,10 @@ context, never navigation.** A session draws one full-width pane, and its
 navigation lives in that single left sidebar. The right drawer holds reference
 material beside the page and closes with the pane that opened it. The
 sidebar carries presence. It appears when something else is going on. Inside a
-session it follows a saved preference, toggled from one control in the top bar
-or ⌘B. Peek
-never touches that preference.
+session it follows a saved preference, toggled from the first button of the
+sidebar (or of the collapsed rail, on the same axis) or ⌘B. ⌘B does nothing on
+the board or under a studio, where the sidebar is not there to see. Peek never
+touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
@@ -240,18 +243,33 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome.** It sits in the content
-  column, directly above the title, never in the top bar and never as a
-  full-width strip. The top bar is workspace chrome, and a session trail is
-  page context. `SessionWorkspace` hands the trail down through
-  `PageCrumbContext`, and `PaneShell` draws it inside the same `PageColumn` as
-  the title and body, outside the mount animation, so it holds still while the
-  view under it changes. Whatever draws the trail clears the context for its
-  children, so a nested shell never draws a second one. Outside a session the
-  context is empty and the row does not exist.
-- **Under 720px of pane width the middle collapses.** Crumbs between the
-  destination switcher and the last crumb fold into a `…` menu that lists them,
-  the way VS Code and GitHub fold long paths.
+- **The trail belongs to the page, not to the chrome, and it is mounted
+  once.** `TrailBar` sits at the top of `SessionWorkspace`, above every layer
+  (lens, child page, session studio) and outside every animation, in a 40px
+  band (12 above, a 24px row, 4 below) on the same `PageColumn` as the title
+  and body. It is never in the top bar and never a full-width strip. Changing
+  lens, opening an agent or opening a session studio keeps the same DOM node;
+  only the segments change. The layers under it fade in over 150ms with no
+  scale. Panes under the band get one header grammar from `PaneShell`: title,
+  optional tabs, 16 below, no crumb row of their own. A session studio (builder,
+  merge request, Bitbucket) has no second title bar: its title is the crumb,
+  and Esc or the parent crumb is Up.
+- **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
+  name through the `Trail` primitive from `@goodboy/ui`. A studio body that
+  goes deeper claims the band with `StudioTrail` (the workflow editor shows
+  `Workflows > Ship a fix` with its save state and actions), so the app has one
+  breadcrumb.
+- **Every crumb has an icon, and depth compacts the trail.** Agents carry the
+  agent glyph in their kind's colour, runs the run glyph, artifacts, questions
+  and pull request modes their own. The last crumb and its parent always stay
+  full. From four crumbs `Overview` turns into its icon; from five every
+  ancestor but the parent does. When the band still has no room, ancestors turn
+  to icons from the left, then the icons after `Overview` fold into a `…` menu
+  right after it; `Overview` is the anchor and never folds. An icon crumb keeps
+  its name as tooltip and accessible name. `compactTrail` in `@goodboy/ui` is
+  the pure rule; the label closes with a 220ms width transition (120ms fade),
+  and a new crumb enters from the right 60ms later. Under reduced motion only
+  the opacity changes.
 - **The trail starts at `Overview`, and the session name is not a crumb.** The
   sidebar already shows the session identity. Repeating it in the trail spends
   a crumb on something the user is already looking at.
@@ -274,16 +292,40 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
   you were, while the trail says where you are.
-- **A crumb with siblings is a switcher.** It is plain text when the agent is
-  alone in its home lens. Otherwise it is a popover that switches the open
-  agent in place.
-- **The depth-one crumb is the session's destination switcher.** It is the
-  lens crumb when the trail has one, or the `Overview` crumb when that crumb is
-  alone. It lists the session's own destinations, grouped by what they are
-  for. A count in that menu follows the rule below: it is the number the
-  destination itself lists, read from the same selector the destination reads.
-  Deeper crumbs never carry the switcher. No second persistent strip, tab bar
-  or rail carries it either.
+- **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
+  (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
+  the siblings of what that segment names, plus at most two actions that belong
+  to that thing. The page segment (depth one, or `Overview` when it is alone)
+  lists the session's pages with a count that names what it counts
+  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Overview`
+  has no menu once it has children. A run lists the session's runs (Running,
+  Finished, a chained run indented under its own with `after ...`); a step
+  lists every step of its run in order, the ones not started switched off; an
+  agent lists the agents of the same home grouped Needs you, Running, Done,
+  newest first; an artifact lists the session's artifacts by kind.
+- **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
+  lists the session's branches by repo with one state word each (`Local only`,
+  `Behind main by N`, `On origin`) and `All branches in Overview`. It never
+  turns into an icon. A Diff opened without a branch lands on the active mount.
+- **The resolver's page reads Review, the comment, Agent.** The comment segment
+  (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
+  apart, with `Open on GitHub` and `Copy link`; `Agent` lists the attempts on
+  that comment.
+- **Settings claims its studio band** with Settings, the scope and the App
+  section. The scope segment lists App, the workspace, Providers & models and
+  Tools; the section segment lists the App sections. The first segment of a
+  studio has no menu: studios change from the footer.
+- **Every menu row has five slots**: lead, label with a faint second part,
+  meta, a state that is always a word (from `agentStateWord`, the same reading
+  `isAgentFinished` makes), and a check on the current row, which is there even
+  when it is the only row. The last segment opens its menu from the whole
+  segment and always shows the chevron; an ancestor goes up by its name and
+  shows its chevron on hover. Widths are 300 (pages, scopes, sections), 380
+  (runs, steps, agents, artifacts, conversations, attempts) and 460 (branches);
+  a filter appears from nine rows up. An action that breaks something (Stop
+  this step) confirms inside the menu's action band with `InlineConfirm`;
+  Escape cancels the confirm first, then closes. Shortcuts live in the segment
+  tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
   `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
@@ -307,12 +349,17 @@ drops never lets another zone slide into its column. When the right zone
 outgrows its half, the command center slides off the midpoint instead of being
 covered.
 
-- Left: the sidebar toggle, then workspace identity. On views without a
-  sidebar the toggle's slot stays reserved, so identity never moves. The
-  sidebar keeps no header and the collapsed rail no toggle of their own.
-  Identity has a 200px limit and truncates, with the full name in its tooltip.
-- Centre: the command center. It opens the palette and shows ⌘K. It never
-  takes typing itself.
+- Left: workspace identity. It has a 200px limit and truncates, with the full
+  name in its tooltip. The sidebar toggle lives in the sidebar, not here.
+- Centre: the movement cluster, then the command center. `Back` and `Forward`
+  (24px icons) name their destination in the tooltip (`Back to Review ·
+{session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
+  empty, and open the last 12 entries on right click or a 400ms hold. `Board`
+  is `SquareKanban` plus the word, 24px high like the search: on the board it
+  is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
+  over a studio on the board it closes the studio; in a session it navigates
+  to the board as a history entry. ⌘⇧H does the same. The command center opens
+  the palette and shows ⌘K; it never takes typing itself.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
@@ -340,7 +387,8 @@ viewport, so app zoom takes the same path as a narrow window:
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
-The traffic lights, identity, the command center, the needs-you count, the
+The traffic lights, identity, the movement cluster (Board keeps its word),
+the command center, the needs-you count, the
 spend figure, the first Limits chip and the bell never hide. The Limits chips
 past the ones that fit are the only overflow: a `+N` chip takes the tone of
 the worst hidden provider and lists them. No other control moves into an
@@ -769,7 +817,17 @@ Every diff in the app is one `DiffView` (`features/diff`): the Diff lens, Write
 review, the Bitbucket pull request changes and the `file-diff` drawer. Only the
 comment behavior changes: a note for the agents in the Diff lens, a review
 draft in Write review, none in Bitbucket and the drawer. There is no file
-sidebar. The toolbar row holds `N files` (the file jump, also `T`: filter,
+sidebar.
+
+The Diff lens shows one branch. The trail carries the choice (see Segment
+menus); there are no worktree tabs. The header speaks only for that branch:
+meta `repo · N commits · state word`, one primary chosen from the branch state
+(`Rebase on main` when it is behind main, `Push branch` when it is local only
+with commits, none otherwise), the history rewrite menu and `⋯` (Refresh, Open
+all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
+mount's `mountId`, never the active mount. `Branch vs main` sits in the file
+toolbar under the title, with `N files +N -M`, because it decides which files
+you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
 saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
 previous and next file. Each file has a sticky header (status letter, path,

@@ -177,13 +177,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/shared/components/PaneShell/FocusedPane.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/shared/components/RoutingPicker/RoutingPickerBody.tsx': {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioShell/StudioBand.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
