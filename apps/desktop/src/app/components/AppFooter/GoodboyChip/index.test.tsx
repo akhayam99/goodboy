@@ -121,7 +121,7 @@ describe('GoodboyChip', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: an update is ready' });
-    expect(chip.textContent).toBe('Update ready');
+    expect(chip.textContent).toBe('0.5.2 available');
     expect(within(openMenu()).getByRole('button', { name: 'Restart to update' })).toBeDefined();
   });
 
@@ -146,10 +146,10 @@ describe('GoodboyChip', () => {
     expect(mocks.finish).toHaveBeenCalledOnce();
   });
 
-  it('opens release notes and shortcuts, and closes on the way out', () => {
+  it("opens what's new and shortcuts, and closes on the way out", () => {
     const { onOpenChangelog, onOpenShortcuts } = renderChip();
 
-    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Release notes' }));
+    fireEvent.click(within(openMenu()).getByText("What's new"));
     expect(onOpenChangelog).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
 

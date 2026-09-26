@@ -13,10 +13,12 @@ const { state } = vi.hoisted(() => ({
     openWorkspace: vi.fn(async () => undefined),
     saveSetting: vi.fn(async () => undefined),
     disconnectWorkspace: vi.fn(async () => undefined),
-    installUpdate: vi.fn(async () => undefined),
+    applyUpdate: vi.fn(async () => undefined),
+    setUpdateQueuedUntilIdle: vi.fn(),
     settings: {} as Record<string, string>,
     updaterStatus: 'idle' as string,
     updateVersion: null as string | null,
+    updateQueuedUntilIdle: false,
   },
 }));
 
@@ -28,10 +30,12 @@ vi.mock('../../../../store', () => ({
       openWorkspace: typeof state.openWorkspace;
       saveSetting: typeof state.saveSetting;
       disconnectWorkspace: typeof state.disconnectWorkspace;
-      installUpdate: typeof state.installUpdate;
+      applyUpdate: typeof state.applyUpdate;
+      setUpdateQueuedUntilIdle: typeof state.setUpdateQueuedUntilIdle;
       settings: Record<string, string>;
       updaterStatus: string;
       updateVersion: string | null;
+      updateQueuedUntilIdle: boolean;
       updateFailure: null;
       updateProgress: null;
       agentTurnState: Record<string, never>;
@@ -42,10 +46,12 @@ vi.mock('../../../../store', () => ({
       openWorkspace: state.openWorkspace,
       saveSetting: state.saveSetting,
       disconnectWorkspace: state.disconnectWorkspace,
-      installUpdate: state.installUpdate,
+      applyUpdate: state.applyUpdate,
+      setUpdateQueuedUntilIdle: state.setUpdateQueuedUntilIdle,
       settings: state.settings,
       updaterStatus: state.updaterStatus,
       updateVersion: state.updateVersion,
+      updateQueuedUntilIdle: state.updateQueuedUntilIdle,
       updateFailure: null,
       updateProgress: null,
       agentTurnState: {},
@@ -65,10 +71,12 @@ beforeEach(() => {
   state.openWorkspace = vi.fn(async () => undefined);
   state.saveSetting = vi.fn(async () => undefined);
   state.disconnectWorkspace = vi.fn(async () => undefined);
-  state.installUpdate = vi.fn(async () => undefined);
+  state.applyUpdate = vi.fn(async () => undefined);
+  state.setUpdateQueuedUntilIdle = vi.fn();
   state.settings = {};
   state.updaterStatus = 'idle';
   state.updateVersion = null;
+  state.updateQueuedUntilIdle = false;
 });
 afterEach(cleanup);
 
@@ -105,14 +113,14 @@ describe('WorkspaceLauncher', () => {
     state.updaterStatus = 'available';
     state.updateVersion = '0.1.99';
     render(<WorkspaceLauncher />);
-    fireEvent.click(screen.getByRole('button', { name: 'Update to 0.1.99' }));
+    fireEvent.click(screen.getByRole('button', { name: '0.1.99 available' }));
     fireEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
-    expect(state.installUpdate).toHaveBeenCalled();
+    expect(state.applyUpdate).toHaveBeenCalled();
   });
 
   it('hides the update action when the app is current', () => {
     render(<WorkspaceLauncher />);
-    expect(screen.queryByRole('button', { name: /Update to/ })).toBeNull();
+    expect(screen.queryByTestId('update-pill')).toBeNull();
   });
 
   it('opens app settings from the launcher corner', () => {

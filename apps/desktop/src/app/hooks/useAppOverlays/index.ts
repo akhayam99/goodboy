@@ -5,6 +5,8 @@ import type { IntegrationGlyphProvider } from '../../../features/integrations/co
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
+import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
+import { resolveChangelogScreenOverlay } from '../../../features/changelog/resolveChangelogScreenOverlay';
 import {
   useAppStore,
   useSessionById,
@@ -100,6 +102,12 @@ export const useAppOverlays = ({
 
   const openChangelog = useCallback(() => open({ overlay: { kind: 'changelog' } }), [open]);
 
+  const onOpenChangelogScreen = useCallback(
+    ({ screen }: { readonly screen: ChangelogScreen }) =>
+      open({ overlay: resolveChangelogScreenOverlay({ screen }) }),
+    [open],
+  );
+
   const openWorkflows = useCallback(() => open({ overlay: { kind: 'workflow' } }), [open]);
 
   const openProviders = useCallback(
@@ -176,6 +184,7 @@ export const useAppOverlays = ({
           onSettingsScopeChange: changeSettingsScope,
           onInboxFocusChange: changeInboxFocus,
           onImpactScopeChange: changeImpactScope,
+          onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
@@ -187,6 +196,7 @@ export const useAppOverlays = ({
     onSettingsScopeChange: changeSettingsScope,
     onInboxFocusChange: changeInboxFocus,
     onImpactScopeChange: changeImpactScope,
+    onOpenChangelogScreen,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

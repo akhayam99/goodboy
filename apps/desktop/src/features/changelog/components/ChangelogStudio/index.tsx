@@ -4,30 +4,38 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
+import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
-import type { ReleaseNote } from '../../changelog';
+import type { ReleaseEntry } from '../../parseChangelog';
+import type { ChangelogScreen } from '../../changelogScreens';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
-import { resolveChangelogView } from '../../resolveChangelogView';
 import { ChangelogRail } from './ChangelogRail';
-import { ReleaseDetail } from './ReleaseDetail';
+import { CatchUpReader } from './CatchUpReader';
+import { ReleaseReader } from './ReleaseReader';
+import { searchReleases } from '../../searchReleases';
 
 type PickReleaseParams = {
-  readonly releases: ReadonlyArray<ReleaseNote>;
+  readonly releases: ReadonlyArray<ReleaseEntry>;
   readonly selectedVersion: string | null;
   readonly focusVersion: string | null;
   readonly installedVersion: string | null;
 };
 
-const sameVersion = ({ tag, version }: { tag: string; version: string | null }): boolean =>
-  isInstalledRelease({ tag, installed: version });
+const sameVersion = ({
+  tag,
+  version,
+}: {
+  readonly tag: string;
+  readonly version: string | null;
+}): boolean => isInstalledRelease({ tag, installed: version });
 
 export const pickRelease = ({
   releases,
   selectedVersion,
   focusVersion,
   installedVersion,
-}: PickReleaseParams): ReleaseNote | null =>
+}: PickReleaseParams): ReleaseEntry | null =>
   releases.find((release) => release.version === selectedVersion) ??
   releases.find((release) => sameVersion({ tag: release.version, version: focusVersion })) ??
   releases.find((release) => sameVersion({ tag: release.version, version: installedVersion })) ??
@@ -36,15 +44,14 @@ export const pickRelease = ({
 
 type Props = {
   readonly onClose: () => void;
+  readonly onOpenScreen: (params: { readonly screen: ChangelogScreen }) => void;
 };
 
-export const ChangelogStudio = ({ onClose }: Props) => {
+export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
   const releases = useAppStore((state) => state.changelogReleases);
-  const status = useAppStore((state) => state.changelogStatus);
-  const error = useAppStore((state) => state.changelogError);
-  const fetchedAt = useAppStore((state) => state.changelogFetchedAt);
-  const loadChangelog = useAppStore((state) => state.loadChangelog);
-  const reloadChangelog = useAppStore((state) => state.reloadChangelog);
+  const dates = useAppStore((state) => state.changelogDates);
+  const loadChangelogDates = useAppStore((state) => state.loadChangelogDates);
+  const seenVersion = useAppStore((state) => state.changelogSeenVersion);
   const markChangelogSeen = useAppStore((state) => state.markChangelogSeen);
   const focusChangelogRelease = useAppStore((state) => state.focusChangelogRelease);
   const updateVersion = useAppStore((state) =>
@@ -52,38 +59,34 @@ export const ChangelogStudio = ({ onClose }: Props) => {
   );
   const installedVersion = useInstalledVersion();
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [isCatchUpSelected, setIsCatchUpSelected] = useState(true);
   const focusAtOpen = useAppStore((state) => state.changelogFocusVersion);
   const [focusVersion] = useState(focusAtOpen);
 
   useEffect(() => {
-    void loadChangelog();
-  }, [loadChangelog]);
+    void loadChangelogDates();
+  }, [loadChangelogDates]);
 
   useEffect(() => {
     focusChangelogRelease({ version: null });
   }, [focusChangelogRelease]);
 
-  const installedReleaseIsLoaded =
-    installedVersion != null &&
-    releases.some((release) =>
-      isInstalledRelease({ tag: release.version, installed: installedVersion }),
-    );
-
   useEffect(() => {
-    if (installedVersion == null) {
-      return;
-    }
-    if (status !== 'ready') {
-      return;
-    }
-    if (!installedReleaseIsLoaded) {
+    if (installedVersion === null || installedVersion.trim() === '') {
       return;
     }
     void markChangelogSeen({ version: installedVersion });
-  }, [installedVersion, installedReleaseIsLoaded, markChangelogSeen, status]);
+  }, [installedVersion, markChangelogSeen]);
 
-  const view = resolveChangelogView({ status, releaseCount: releases.length });
-  const selected = pickRelease({ releases, selectedVersion, focusVersion, installedVersion });
+  const catchUp = changelogCatchUp({ releases, seenVersion, installedVersion });
+  const filteredReleases = searchReleases({ releases, query });
+  const selected = pickRelease({
+    releases: filteredReleases,
+    selectedVersion,
+    focusVersion,
+    installedVersion,
+  });
   const updateRelease =
     updateVersion !== null &&
     selected !== null &&
@@ -100,10 +103,17 @@ export const ChangelogStudio = ({ onClose }: Props) => {
         )}
       />
     );
-  const isStale = status === 'error' && releases.length > 0;
-  const retry = () => {
-    void reloadChangelog();
+
+  const selectRelease = (version: string): void => {
+    setSelectedVersion(version);
+    setIsCatchUpSelected(false);
   };
+
+  const selectCatchUp = (): void => {
+    setIsCatchUpSelected(true);
+  };
+
+  const showCatchUp = catchUp !== null && isCatchUpSelected && query.trim() === '';
 
   return (
     <StudioShell
@@ -117,27 +127,35 @@ export const ChangelogStudio = ({ onClose }: Props) => {
       {() => (
         <StudioRailLayout
           railLabel="Releases"
-          railWidth="narrow"
+          railWidth="standard"
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <ChangelogRail
-                releases={releases}
-                selectedVersion={selected?.version ?? null}
+                releases={filteredReleases}
+                dates={dates}
+                selectedVersion={showCatchUp ? null : (selected?.version ?? null)}
                 installedVersion={installedVersion}
-                isLoading={view === 'loading'}
-                onSelect={setSelectedVersion}
+                query={query}
+                onQueryChange={setQuery}
+                catchUp={catchUp}
+                isCatchUpSelected={showCatchUp}
+                onSelect={selectRelease}
+                onSelectCatchUp={selectCatchUp}
               />
             </ScrollFade>
           }
           detail={
-            <ReleaseDetail
-              release={selected}
-              view={view}
-              staleError={isStale && error != null ? new Error(error) : null}
-              staleSince={isStale ? fetchedAt : null}
-              onRetry={retry}
-              action={updateAction}
-            />
+            showCatchUp && catchUp !== null ? (
+              <CatchUpReader catchUp={catchUp} dates={dates} installedVersion={installedVersion} />
+            ) : selected !== null ? (
+              <ReleaseReader
+                release={selected}
+                dateLabel={dates[selected.version] ?? null}
+                installedVersion={installedVersion}
+                onOpenScreen={onOpenScreen}
+                action={updateAction}
+              />
+            ) : null
           }
         />
       )}

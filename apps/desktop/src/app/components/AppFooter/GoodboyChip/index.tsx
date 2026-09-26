@@ -7,6 +7,8 @@ import { useOnboardingProgress } from '../../../../features/onboarding/hooks/use
 import { useInstalledVersion } from '../../../../features/changelog/hooks/useInstalledVersion';
 import { ReportIssueForm } from '../../../../features/settings/components/ReportIssueForm';
 import { useHasBugReportDraft } from '../../../../features/settings/hooks/useHasBugReportDraft';
+import { UpdateArrivalCard } from '../../../../features/updater/components/UpdateArrivalCard';
+import { useRestartWhenIdle } from '../../../../features/updater/hooks/useRestartWhenIdle';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
@@ -32,6 +34,7 @@ const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
 };
 
 export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
+  useRestartWhenIdle();
   const progress = useOnboardingProgress();
   const updaterStatus = useAppStore((s) => s.updaterStatus);
   const version = useInstalledVersion();
@@ -45,7 +48,12 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     openEvent: OPEN_GOODBOY_MENU_EVENT,
   });
   const { open: isOpen, close, toggle } = dropdown;
-  const hasUpdate = updaterStatus === 'available' || updaterStatus === 'downloading';
+  const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
+  const hasUpdate =
+    updaterStatus === 'available' ||
+    updaterStatus === 'downloading' ||
+    updaterStatus === 'ready' ||
+    isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
   const shouldAutoOpen = !progress.finished && progress.hasProjects && !progress.collapsed;
@@ -73,61 +81,66 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     };
 
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      role="dialog"
-      ariaLabel="Goodboy"
-      hasBackdrop
-      className="flex flex-col"
-      anchorClassName="flex"
-      trigger={
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={TRIGGER_LABEL[state]}
-          aria-expanded={isOpen}
-          data-testid="goodboy-chip"
-          className={cn(
-            'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
-            isOpen ? 'bg-muted' : 'hover:bg-hover',
-          )}
-        >
-          <GoodboyChipLabel state={state} progress={progress} />
-        </button>
-      }
-    >
-      {view === 'report' ? (
-        <>
-          <header className="flex items-center gap-1.5 px-2 py-1.5">
-            <IconButton
-              variant="ghost"
-              icon={ArrowLeft}
-              iconSize={ICON_SIZE.row}
-              label="Back"
-              onClick={() => setView('menu')}
-            />
-            <span className="text-label font-semibold text-foreground">Report a bug</span>
-            {hasDraft ? (
-              <span className="ml-auto pr-1 text-secondary text-faint-foreground">Draft saved</span>
-            ) : null}
-          </header>
-          <Divider />
-          <ReportIssueForm onOpenFullForm={close} />
-        </>
-      ) : (
-        <GoodboyMenu
-          version={version}
-          progress={progress}
-          hasUpdate={hasUpdate}
-          hasDraft={hasDraft}
-          onReport={() => setView('report')}
-          onOpenChangelog={leaveFor({ action: onOpenChangelog })}
-          onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
-          onSponsor={() => {
-            void openUrl(SPONSOR_URL);
-          }}
-        />
-      )}
-    </AnchoredPopover>
+    <>
+      <UpdateArrivalCard onOpenChangelog={leaveFor({ action: onOpenChangelog })} />
+      <AnchoredPopover
+        dropdown={dropdown}
+        role="dialog"
+        ariaLabel="Goodboy"
+        hasBackdrop
+        className="flex flex-col"
+        anchorClassName="flex"
+        trigger={
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={TRIGGER_LABEL[state]}
+            aria-expanded={isOpen}
+            data-testid="goodboy-chip"
+            className={cn(
+              'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
+              isOpen ? 'bg-muted' : 'hover:bg-hover',
+            )}
+          >
+            <GoodboyChipLabel state={state} progress={progress} />
+          </button>
+        }
+      >
+        {view === 'report' ? (
+          <>
+            <header className="flex items-center gap-1.5 px-2 py-1.5">
+              <IconButton
+                variant="ghost"
+                icon={ArrowLeft}
+                iconSize={ICON_SIZE.row}
+                label="Back"
+                onClick={() => setView('menu')}
+              />
+              <span className="text-label font-semibold text-foreground">Report a bug</span>
+              {hasDraft ? (
+                <span className="ml-auto pr-1 text-secondary text-faint-foreground">
+                  Draft saved
+                </span>
+              ) : null}
+            </header>
+            <Divider />
+            <ReportIssueForm onOpenFullForm={close} />
+          </>
+        ) : (
+          <GoodboyMenu
+            version={version}
+            progress={progress}
+            hasUpdate={hasUpdate}
+            hasDraft={hasDraft}
+            onReport={() => setView('report')}
+            onOpenChangelog={leaveFor({ action: onOpenChangelog })}
+            onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
+            onSponsor={() => {
+              void openUrl(SPONSOR_URL);
+            }}
+          />
+        )}
+      </AnchoredPopover>
+    </>
   );
 };

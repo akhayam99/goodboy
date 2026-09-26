@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
+  updateSweep: `${PREFIX}update-sweep:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

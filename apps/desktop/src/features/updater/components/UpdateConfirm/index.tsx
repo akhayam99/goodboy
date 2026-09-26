@@ -23,12 +23,14 @@ export const runningAgentsCopy = ({ count }: { count: number }): string => {
 
 export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props) => {
   const version = useAppStore((state) => state.updateVersion);
+  const status = useAppStore((state) => state.updaterStatus);
   const failure = useAppStore((state) => state.updateFailure);
-  const installUpdate = useAppStore((state) => state.installUpdate);
+  const applyUpdate = useAppStore((state) => state.applyUpdate);
   const focusChangelogRelease = useAppStore((state) => state.focusChangelogRelease);
   const runningCount = useRunningAgentCount();
   const target = version ?? 'The new version';
   const installFailed = failure?.phase === 'install';
+  const isReady = status === 'ready';
 
   return (
     <ConfirmPopover
@@ -37,9 +39,13 @@ export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props
       width="w-96"
       role="primary"
       icon={<ArrowUpCircle size={ICON_SIZE.control} aria-hidden />}
-      title={installFailed ? `Couldn't install ${target}` : `Goodboy ${target} is available`}
+      title={
+        installFailed
+          ? `Couldn't install ${target}`
+          : `Goodboy ${target} is ${isReady ? 'ready' : 'available'}`
+      }
       description={installFailed ? failure.message : runningAgentsCopy({ count: runningCount })}
-      confirmLabel={installFailed ? 'Retry' : 'Download and restart'}
+      confirmLabel={installFailed ? 'Retry' : isReady ? 'Restart now' : 'Download and restart'}
       cancelLabel="Not now"
       altAction={
         onOpenChangelog === undefined
@@ -53,7 +59,7 @@ export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props
             }
       }
       onConfirm={() => {
-        void installUpdate();
+        void applyUpdate();
       }}
     />
   );

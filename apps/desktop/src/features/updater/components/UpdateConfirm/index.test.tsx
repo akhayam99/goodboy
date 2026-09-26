@@ -7,7 +7,7 @@ import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { UpdateConfirm, runningAgentsCopy } from './index';
 
-const installUpdate = vi.fn(async () => undefined);
+const applyUpdate = vi.fn(async () => undefined);
 const focusChangelogRelease = vi.fn();
 const at = '2026-09-23T10:00:00Z' as IsoDateTime;
 
@@ -23,7 +23,7 @@ const seed = ({ running }: { running: number }) => {
     updateVersion: '0.3.14',
     updateFailure: null,
     agentTurnState: turnStates,
-    installUpdate,
+    applyUpdate,
     focusChangelogRelease,
   } as never);
 };
@@ -76,6 +76,23 @@ describe('UpdateConfirm', () => {
     await userEvent.click(screen.getByRole('button', { name: "What's new" }));
     expect(focusChangelogRelease).toHaveBeenCalledWith({ version: '0.3.14' });
     expect(onOpenChangelog).toHaveBeenCalledTimes(1);
-    expect(installUpdate).not.toHaveBeenCalled();
+    expect(applyUpdate).not.toHaveBeenCalled();
+  });
+
+  it('offers a plain restart once the update is already downloaded', async () => {
+    seed({ running: 0 });
+    useAppStore.setState({ updaterStatus: 'ready' } as never);
+    render(
+      <UpdateConfirm
+        trigger={({ arm }) => (
+          <button type="button" onClick={arm}>
+            open
+          </button>
+        )}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'open' }));
+    expect(screen.getByText('Goodboy 0.3.14 is ready')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Restart now' })).toBeTruthy();
   });
 });

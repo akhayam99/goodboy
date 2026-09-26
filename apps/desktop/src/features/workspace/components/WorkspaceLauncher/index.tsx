@@ -15,7 +15,7 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
-import { UpdateIndicator } from '../../../updater/components/UpdateIndicator';
+import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceRow } from '../WorkspaceRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
@@ -85,7 +85,7 @@ export const WorkspaceLauncher = () => {
         data-tauri-drag-region="false"
         className="absolute right-4 top-3 flex items-center gap-2"
       >
-        <UpdateIndicator variant="bar" />
+        <UpdatePill />
         <IconButton
           icon={CONCEPT_ICONS.settings}
           label="Open settings"

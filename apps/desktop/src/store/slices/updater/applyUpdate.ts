@@ -25,10 +25,29 @@ const progressFrom = ({
   }
 };
 
-export const installUpdate = (set: SetFn, get: GetFn) => {
+export const applyUpdate = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     const update = getPendingUpdate();
     if (update === null) {
+      return;
+    }
+    const wasReady = get().updaterStatus === 'ready';
+    if (wasReady) {
+      set({ updaterStatus: 'downloading', updateFailure: null });
+      try {
+        await update.install();
+        await relaunch();
+      } catch (err) {
+        set({
+          updaterStatus: 'ready',
+          updateFailure: { phase: 'install', message: formatError(err) },
+        });
+        void get().reportError({
+          title: `Couldn't install ${update.version}`,
+          error: err,
+          action: { kind: 'retry-update' },
+        });
+      }
       return;
     }
     set({

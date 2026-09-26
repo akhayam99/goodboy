@@ -89,18 +89,57 @@ and never edited onto the release after the build.
 - BEFORE writing, read [tone-of-voice.md](tone-of-voice.md) and obey it, its
   "Release notes" section in particular. It is the law here, not a suggestion.
 
-### Format (match the curated changelog of v0.1.7 through v0.1.11)
+### Format (v2, from v0.5.0 on)
 
-- Section heading `## Goodboy vX`, with no codename (dropped from v0.1.8 on).
-  Add it above the previous one. Under it, write a one-line lead summary.
-- Each feature is an `### sentence-case heading`, with its PR ref(s) in square
-  brackets at the START, e.g.
-  `### [#1241, #1243] Review a Bitbucket pull request in place`. If
-  `CHANGELOG.md` and this doc disagree, match the file and fix this doc.
-- Marquee feature first, then the rest in priority order.
-- End with `### Fixes` (or `### Smaller fixes`): one bullet per fix, with the
-  PR ref at the end of the line. If one PR covered several fixes, repeat it on
-  each of those bullets.
+Goodboy reads `CHANGELOG.md` packaged into the app (from v0.5.0 on; older
+entries fall back to plain markdown). `changelogFormat.test.ts` lints every
+release from v0.5.0 on in CI: a release that breaks this contract fails the
+build. If `CHANGELOG.md` and this doc disagree, match the file and fix this
+doc.
+
+```text
+## Goodboy v0.7.0
+
+Plans and reports are saved as files you can open, review fixes land on a branch that moved, and replies to reviewers sound like you.
+
+This version updates your data in one direction. To go back to 0.6, restore the backup Goodboy made before updating.
+
+### New
+
+#### Replies to reviewers in your voice
+<!-- gb area=review screen=settings/workspace/review-replies pr=1886 -->
+
+Replies to review comments follow two templates, one for a fix and one for a change you decline, and the agent writes only the reason.
+
+### Fixed
+
+- Learning your reply style skips a provider that reached its usage limit, like other tasks on Auto. <!-- gb area=review pr=1886 -->
+```
+
+- Section heading `## Goodboy vX.Y.Z`, exact. Add it above the previous one.
+- One opening sentence under the heading: max 160 characters, no PR refs.
+- The one-way paragraph is a FIXED sentence, only when the release migrates
+  the database, with `X.Y` the previous minor:
+  `This version updates your data in one direction. To go back to X.Y, restore
+the backup Goodboy made before updating.` Nothing else.
+- Then `### New`, `### Improved`, `### Fixed`, in that order, at least one.
+  Never `### Fixes`.
+- A New/Improved entry is a `#### ` title (sentence case, no PR ref, no
+  period, max 60 characters), followed immediately (no blank line) by a
+  hidden meta comment: `<!-- gb area=<area> screen=<screen> image=<name>
+pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
+  value). Then one or two paragraphs (the first entry of the release may have
+  three), max 70 words each.
+- A Fixed entry is one line: a bullet, its text (max 30 words), then the meta
+  comment at the end, e.g. `- text here <!-- gb area=<area> pr=<numbers> -->`.
+- `area` is a closed list: `sessions`, `agents`, `workflows`, `review`,
+  `artifacts`, `inbox`, `providers`, `integrations`, `scripts`, `storage`,
+  `settings`, `app`. `screen` is a closed list of in-app destinations, see
+  `features/changelog/changelogScreens.ts`.
+- Never put a PR number in the visible text (no `[#1886]`): it lives only in
+  the `pr=` meta. Never link in the prose. `code` only for keys and commands.
+- Denylist enforced by the lint: em dash, middot, "follow-up", "not yet",
+  "coming soon", "will".
 
 ## Finish
 

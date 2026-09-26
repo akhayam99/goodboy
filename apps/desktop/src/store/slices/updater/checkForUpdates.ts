@@ -1,10 +1,11 @@
 import { check } from '@tauri-apps/plugin-updater';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
+import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../features/settings/settings';
 import { getPendingUpdate, setPendingUpdate } from './pendingUpdate';
 import type { GetFn, SetFn } from './types';
 
-export const checkForUpdates = (set: SetFn, _get: GetFn) => {
+export const checkForUpdates = (set: SetFn, get: GetFn) => {
   return async (): Promise<void> => {
     set({ updaterStatus: 'checking' });
     try {
@@ -15,6 +16,7 @@ export const checkForUpdates = (set: SetFn, _get: GetFn) => {
         set({
           updaterStatus: 'uptodate',
           updateVersion: null,
+          updateNotes: null,
           updateFailure: null,
           updateCheckedAt: checkedAt,
         });
@@ -24,9 +26,14 @@ export const checkForUpdates = (set: SetFn, _get: GetFn) => {
       set({
         updaterStatus: 'available',
         updateVersion: update.version,
+        updateNotes: null,
         updateFailure: null,
         updateCheckedAt: checkedAt,
       });
+      const autoDownload = await get().loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD);
+      if (autoDownload !== 'false') {
+        void get().downloadUpdate();
+      }
     } catch (err) {
       const hasPending = getPendingUpdate() !== null;
       set({
