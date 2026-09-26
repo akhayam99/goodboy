@@ -11,7 +11,7 @@ type GlyphParams = {
   readonly kind: BranchPresence['kind'];
 };
 
-const PresenceGlyph = ({ kind }: GlyphParams) => {
+const presenceGlyphOf = ({ kind }: GlyphParams) => {
   switch (kind) {
     case 'local-only':
       return <House size={11} aria-hidden />;
@@ -43,12 +43,12 @@ export const BranchPresenceLabel = ({ status }: Props) => {
   return (
     <span
       className={cn(
-        'flex shrink-0 items-center gap-1 text-2xs',
+        'flex shrink-0 items-center gap-1 text-secondary',
         presence.kind === 'gone-on-origin' ? 'text-warning' : 'text-muted-foreground',
       )}
       title={presence.label}
     >
-      <PresenceGlyph kind={presence.kind} />
+      {presenceGlyphOf({ kind: presence.kind })}
       {label}
     </span>
   );

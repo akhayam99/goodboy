@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Upload,
 } from 'lucide-react';
-import { AnchoredPopover, cn, formatError, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Tooltip, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { distanceAhead } from '../../../../../shared/lib/gitStatus';
@@ -22,12 +22,14 @@ type MainPresenceGlyphParams = {
   readonly kind: MainPresence['kind'];
 };
 
-const MainPresenceGlyph = ({ kind }: MainPresenceGlyphParams) => {
+const mainPresenceGlyphOf = ({ kind }: MainPresenceGlyphParams) => {
   switch (kind) {
     case 'behind-main':
       return <ArrowDown size={11} aria-hidden className="text-info" />;
     case 'rebasing-on-main':
-      return <RefreshCw size={11} aria-hidden className="text-info animate-spin" />;
+      return (
+        <RefreshCw size={11} aria-hidden className="text-info motion-safe:animate-soft-pulse" />
+      );
     case 'rebase-stopped':
       return <AlertTriangle size={11} aria-hidden className="text-warning" />;
     case 'up-to-date':
@@ -126,28 +128,30 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
       ariaLabel="Branch sync actions"
       anchorClassName="shrink-0"
       trigger={
-        <button
-          type="button"
-          aria-label="Branch sync actions"
-          aria-haspopup="menu"
-          aria-expanded={dropdown.open}
-          onClick={dropdown.toggle}
-          data-testid="project-sync-trigger"
-          className={cn(
-            'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-label transition-colors hover:bg-hover',
-            main == null ? 'text-muted-foreground' : mainPresenceToneClass(main.kind),
-          )}
-        >
-          {main == null ? (
-            '--'
-          ) : (
-            <>
-              <MainPresenceGlyph kind={main.kind} />
-              <span className="whitespace-nowrap">{main.label}</span>
-              <ChevronDown size={10} aria-hidden className="text-faint-foreground" />
-            </>
-          )}
-        </button>
+        <Tooltip content="Branch sync actions">
+          <button
+            type="button"
+            aria-label="Branch sync actions"
+            aria-haspopup="menu"
+            aria-expanded={dropdown.open}
+            onClick={dropdown.toggle}
+            data-testid="project-sync-trigger"
+            className={cn(
+              'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-label transition-colors hover:bg-hover',
+              main == null ? 'text-muted-foreground' : mainPresenceToneClass(main.kind),
+            )}
+          >
+            {main == null ? (
+              '--'
+            ) : (
+              <>
+                {mainPresenceGlyphOf({ kind: main.kind })}
+                <span className="whitespace-nowrap">{main.label}</span>
+                <ChevronDown size={10} aria-hidden className="text-faint-foreground" />
+              </>
+            )}
+          </button>
+        </Tooltip>
       }
     >
       <div className="flex flex-col py-1">

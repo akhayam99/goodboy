@@ -52,7 +52,7 @@ const rowTierOf = (entry: SummaryEntry): number => {
   return 1;
 };
 
-const RowGlyph = ({ kind }: RowGlyphParams) => {
+const rowGlyphOf = ({ kind }: RowGlyphParams) => {
   switch (kind) {
     case 'behind':
       return <ArrowDown size={11} aria-hidden className="text-info" />;
@@ -253,9 +253,9 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
         <>
           <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border-soft px-3">
             <div className="min-w-0 flex-1">
-              <div className="text-label font-medium text-foreground">{entries.length} repos</div>
+              <div className="text-label text-foreground">{entries.length} repos</div>
               {summaryPhrase != null ? (
-                <div className="truncate text-2xs text-muted-foreground">{summaryPhrase}</div>
+                <div className="truncate text-secondary text-muted-foreground">{summaryPhrase}</div>
               ) : null}
             </div>
             <IconButton
@@ -265,11 +265,11 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
               label="Check origin"
               tooltip="Check origin"
               onClick={() => void onCheckOrigin()}
-              className={cn('size-7 shrink-0', isCheckingOrigin && 'animate-spin')}
+              className={cn('size-7 shrink-0', isCheckingOrigin && 'spin-border spin-border-info')}
             />
             {updatableProjects.length === 0 ? (
               <span className="flex shrink-0 items-center gap-1 text-label text-muted-foreground">
-                <CheckCheck size={12} aria-hidden />
+                <CheckCheck size={ICON_SIZE.row} aria-hidden />
                 All up to date
               </span>
             ) : (
@@ -301,7 +301,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
                   <span className="shrink-0 font-mono text-secondary text-muted-foreground">
                     {entry.branch}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 justify-end text-2xs">
+                  <span className="flex shrink-0 items-center gap-1 justify-end text-secondary">
                     {result?.kind === 'updating' ? (
                       <span className="text-muted-foreground">Updating…</span>
                     ) : result?.kind === 'updated' ? (
@@ -318,7 +318,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
                           rowToneClass(entry.rowStatus.kind),
                         )}
                       >
-                        <RowGlyph kind={entry.rowStatus.kind} />
+                        {rowGlyphOf({ kind: entry.rowStatus.kind })}
                         {entry.rowStatus.label}
                       </span>
                     ) : entry.isWarning ? (
