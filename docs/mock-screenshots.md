@@ -36,10 +36,10 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   Without that half, every suite that renders `App` gets a mock scene instead.
   It then fails in a way that looks like a regression in the feature under
   test.
-- `App.tsx` checks it on the very first line of the `App` component body,
-  before any hook: `if (MOCK_ENABLED) { return <MockScene />; }`. It has to
-  come before the hooks, not after. Otherwise React's rule about a fixed number
-  of hooks breaks on the next hot-reload.
+- `main.tsx` checks it once, outside any component, when it decides what to
+  render at the root: `MOCK_ENABLED ? <MockScene /> : <App />`. `App.tsx`
+  itself has no mock branch, so a hot-reload never has to reconcile a
+  different hook count between the two.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
   `?scene=` query param and renders one of several scene components, one per
   screenshot. To add a scene, add a file under `scenes/` and a line in the
@@ -101,9 +101,10 @@ the component instead of a gap in the mock.
   step. `RunTree` numbers it (`2.1`, `2.2`) and draws it on its own lane one
   column right. You don't compute or render that yourself.
 - **Mounting anything that calls `useToast` on its own throws `useToast must
-be used inside ToastProvider`.** `App` returns `MockScene` under the
-  `MOCK_ENABLED` gate before it mounts `ToastProvider`. So a scene that renders
-  such a component wraps itself in `ToastProvider`.
+be used inside ToastProvider`.** `main.tsx` renders `MockScene` in place of
+  `App` under the `MOCK_ENABLED` gate, so a scene never inherits `App`'s
+  `ToastProvider`. A scene that renders such a component wraps itself in
+  `ToastProvider`.
 - **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
   layout code to add the real session sidebar or the real app footer to a
   scene. Pass the components into those two props.

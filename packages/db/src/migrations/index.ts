@@ -48,6 +48,7 @@ import { m186ResolveCommitLinks } from './m186-resolve-commit-links';
 import { m187ResolveReplySettings } from './m187-resolve-reply-settings';
 import { m188RefactorBuiltinName } from './m188-refactor-builtin-name';
 import { m189ArtifactOpenedKeep } from './m189-artifact-opened-keep';
+import { m190DropUnusedOverrides } from './m190-drop-unused-overrides';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -383,4 +384,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 187, sql: m187ResolveReplySettings },
   { version: 188, sql: m188RefactorBuiltinName },
   { version: 189, sql: m189ArtifactOpenedKeep },
+  { version: 190, sql: m190DropUnusedOverrides },
 ];

@@ -7,12 +7,8 @@ use crate::db::{Db, DbError};
 pub struct SettingsOverrides {
     #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultWorkflowId")]
-    pub default_workflow_id: Option<String>,
     #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
-    #[serde(rename = "parallelEnabled")]
-    pub parallel_enabled: Option<bool>,
     #[serde(rename = "defaultVerbosity")]
     pub default_verbosity: Option<String>,
     #[serde(rename = "providerBindings")]
@@ -73,33 +69,30 @@ pub async fn get_workspace_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
+        "SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
                 reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
-        let parallel_raw: Option<i64> = row.get(3)?;
-        let parallel_agents_raw: Option<i64> = row.get(8)?;
-        let attribution_footer_raw: Option<i64> = row.get(10)?;
-        let resolve_on_github_raw: Option<i64> = row.get(15)?;
+        let parallel_agents_raw: Option<i64> = row.get(6)?;
+        let attribution_footer_raw: Option<i64> = row.get(8)?;
+        let resolve_on_github_raw: Option<i64> = row.get(13)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
-            default_workflow_id: row.get(1)?,
-            default_branch_prefix: row.get(2)?,
-            parallel_enabled: parallel_raw.map(|v| v != 0),
-            default_verbosity: row.get(4)?,
-            provider_bindings: json_from_text(row.get(5)?),
-            task_models: json_from_text(row.get(6)?),
-            role_models: json_from_text(row.get(7)?),
+            default_branch_prefix: row.get(1)?,
+            default_verbosity: row.get(2)?,
+            provider_bindings: json_from_text(row.get(3)?),
+            task_models: json_from_text(row.get(4)?),
+            role_models: json_from_text(row.get(5)?),
             parallel_agents: parallel_agents_raw.map(|v| v != 0),
-            provider_pool: string_array_from_text(row.get(9)?),
+            provider_pool: string_array_from_text(row.get(7)?),
             attribution_footer: attribution_footer_raw.map(|v| v != 0),
-            reply_voice: row.get(11)?,
-            reply_style_note: row.get(12)?,
-            reply_template_fixed: row.get(13)?,
-            reply_template_no_change: row.get(14)?,
+            reply_voice: row.get(9)?,
+            reply_style_note: row.get(10)?,
+            reply_template_fixed: row.get(11)?,
+            reply_template_no_change: row.get(12)?,
             resolve_on_github: resolve_on_github_raw.map(|v| v != 0),
-            resolve_commit_style: row.get(16)?,
+            resolve_commit_style: row.get(14)?,
         })
     })?;
     match rows.next() {
@@ -115,7 +108,6 @@ pub async fn set_workspace_overrides(
     overrides: SettingsOverrides,
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let parallel_val: Option<i64> = overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
     let parallel_agents_val: Option<i64> = overrides.parallel_agents.map(|v| if v { 1 } else { 0 });
     let attribution_footer_val: Option<i64> =
         overrides.attribution_footer.map(|v| if v { 1 } else { 0 });
@@ -123,29 +115,25 @@ pub async fn set_workspace_overrides(
     conn.execute(
         "UPDATE workspaces
          SET default_provider_id = ?1,
-             default_workflow_id = ?2,
-             default_branch_prefix = ?3,
-             parallel_enabled = ?4,
-             default_verbosity = ?5,
-             provider_bindings = ?6,
-             task_models = ?7,
-             role_models = ?8,
-             parallel_agents = ?9,
-             provider_pool = ?10,
-             attribution_footer = ?11,
-             reply_voice = ?12,
-             reply_style_note = ?13,
-             reply_template_fixed = ?14,
-             reply_template_no_change = ?15,
-             resolve_on_github = ?16,
-             resolve_commit_style = ?17,
-             updated_at = ?18
-         WHERE id = ?19",
+             default_branch_prefix = ?2,
+             default_verbosity = ?3,
+             provider_bindings = ?4,
+             task_models = ?5,
+             role_models = ?6,
+             parallel_agents = ?7,
+             provider_pool = ?8,
+             attribution_footer = ?9,
+             reply_voice = ?10,
+             reply_style_note = ?11,
+             reply_template_fixed = ?12,
+             reply_template_no_change = ?13,
+             resolve_on_github = ?14,
+             resolve_commit_style = ?15,
+             updated_at = ?16
+         WHERE id = ?17",
         rusqlite::params![
             overrides.default_provider_id,
-            overrides.default_workflow_id,
             overrides.default_branch_prefix,
-            parallel_val,
             overrides.default_verbosity,
             json_to_text(&overrides.provider_bindings),
             json_to_text(&overrides.task_models),
@@ -173,18 +161,15 @@ pub async fn get_session_overrides(
 ) -> Result<Option<SettingsOverrides>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled, provider_bindings
+        "SELECT default_provider_id, default_branch_prefix, provider_bindings
          FROM sessions WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
-        let parallel_raw: Option<i64> = row.get(3)?;
         Ok(SettingsOverrides {
             default_provider_id: row.get(0)?,
-            default_workflow_id: row.get(1)?,
-            default_branch_prefix: row.get(2)?,
-            parallel_enabled: parallel_raw.map(|v| v != 0),
+            default_branch_prefix: row.get(1)?,
             default_verbosity: None,
-            provider_bindings: json_from_text(row.get(4)?),
+            provider_bindings: json_from_text(row.get(2)?),
             task_models: None,
             role_models: None,
             parallel_agents: None,
@@ -212,9 +197,7 @@ mod tests {
     fn the_provider_pool_survives_the_wire_names_the_frontend_sends() {
         let payload = serde_json::json!({
             "defaultProviderId": "anthropic",
-            "defaultWorkflowId": null,
             "defaultBranchPrefix": null,
-            "parallelEnabled": null,
             "defaultVerbosity": null,
             "providerBindings": null,
             "taskModels": null,
@@ -244,9 +227,7 @@ mod tests {
     fn reply_settings_travel_on_the_wire_and_default_when_absent() {
         let payload = serde_json::json!({
             "defaultProviderId": null,
-            "defaultWorkflowId": null,
             "defaultBranchPrefix": null,
-            "parallelEnabled": null,
             "defaultVerbosity": null,
             "providerBindings": null,
             "taskModels": null,

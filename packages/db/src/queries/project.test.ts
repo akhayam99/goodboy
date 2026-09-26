@@ -24,9 +24,7 @@ import {
 const workspaceId = 'workspace-1' as WorkspaceId;
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

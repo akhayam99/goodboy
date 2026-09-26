@@ -9,9 +9,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
     slug: 'harborline',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,

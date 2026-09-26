@@ -4,9 +4,7 @@ import type { GetFn, SetFn } from './types';
 
 const EMPTY_OVERRIDE: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

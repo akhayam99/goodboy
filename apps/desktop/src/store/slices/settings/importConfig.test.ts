@@ -37,9 +37,7 @@ const workspace = (id: string): Workspace => ({
   slug: id,
   overrides: {
     defaultProviderId: null,
-    defaultWorkflowId: null,
     defaultBranchPrefix: null,
-    parallelEnabled: null,
     defaultVerbosity: null,
     providerBindings: null,
     taskModels: null,
@@ -66,9 +64,7 @@ const project = (id: string, workspaceId: string): Project => ({
   kind: 'repo',
   overrides: {
     defaultProviderId: null,
-    defaultWorkflowId: null,
     defaultBranchPrefix: null,
-    parallelEnabled: null,
     defaultVerbosity: null,
     providerBindings: null,
     taskModels: null,

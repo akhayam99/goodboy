@@ -178,9 +178,7 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
   slug: name.toLowerCase(),
   overrides: {
     defaultProviderId: null,
-    defaultWorkflowId: null,
     defaultBranchPrefix: null,
-    parallelEnabled: null,
     defaultVerbosity: null,
     providerBindings: null,
     taskModels: null,

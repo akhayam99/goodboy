@@ -404,9 +404,6 @@ export const segmentsToText = ({
   readonly segments: ReadonlyArray<TimelineLabelSegment>;
 }): string => segments.map((segment) => segment.text).join('');
 
-export const sessionEventTitle = ({ event }: TitleParams): string =>
-  segmentsToText({ segments: sessionEventLabel({ event }) });
-
 export const sessionEventSecondary = ({ event }: TitleParams): string | null => {
   const { payload } = event;
   if (event.kind === 'project_detached') {

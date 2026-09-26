@@ -139,7 +139,7 @@
     "apps/desktop/src-tauri/src/skills.rs": 33,
     "apps/desktop/src-tauri/src/terminal.rs": 2,
     "apps/desktop/src-tauri/src/turn.rs": 21,
-    "apps/desktop/src-tauri/src/workflows.rs": 61,
+    "apps/desktop/src-tauri/src/workflows.rs": 58,
     "apps/desktop/src-tauri/src/worktree.rs": 78,
     "apps/desktop/src/features/integrations/bitbucket/normalizeWorkspaceSlug.ts": 2,
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/useGitlabMrs/index.ts": 1,
@@ -276,8 +276,7 @@
     "packages/db/src/migrations/m161-workflow-preset-name-unique.ts": 1,
     "packages/db/src/migrations/m163-open-question-answer-delivery.ts": 1,
     "packages/db/src/migrations/m164-orchestrator-hint-log.ts": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 1,
-    "packages/ui/src/components/ScrollArea.tsx": 2
+    "packages/ui/src/components/Markdown/index.tsx": 1
   },
   "config-comment": {
     ".github/workflows/homebrew.yml": 6,

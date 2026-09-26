@@ -277,9 +277,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -349,9 +347,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: null,
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: {
@@ -376,9 +372,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -477,9 +471,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: 'codex',
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: null,
@@ -523,9 +515,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       workspaceOverrides: {
         [WORKSPACE_ID]: {
           defaultProviderId: 'codex',
-          defaultWorkflowId: null,
           defaultBranchPrefix: null,
-          parallelEnabled: null,
           defaultVerbosity: null,
           providerBindings: null,
           taskModels: {
@@ -633,9 +623,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -816,9 +804,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -892,9 +878,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -963,9 +947,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1082,9 +1064,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,
@@ -1136,9 +1116,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,

@@ -4,9 +4,7 @@ import { appendAttribution, ATTRIBUTION_TEXT, isAttributionEnabled } from './att
 
 const overridesWith = (attributionFooter: boolean | null): OverrideSettings => ({
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

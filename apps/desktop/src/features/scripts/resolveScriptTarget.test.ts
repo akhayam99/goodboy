@@ -7,8 +7,11 @@ const SAVED: RunnableScript = {
   key: 'script-1',
   kind: 'saved',
   name: 'Replay settlement batch',
-  command: 'node ./tools/replay.mjs',
+  body: 'node ./tools/replay.mjs',
+  invocation: 'node ./tools/replay.mjs',
+  manager: '',
   source: 'saved',
+  packageName: '',
   relDir: '',
   category: 'other',
   savedId: 'script-1' as ProjectScriptId,
@@ -22,6 +25,7 @@ const group = ({ mountId, branch }: { readonly mountId: string; readonly branch:
     branch,
     worktreePath: `/work/${mountId}`,
     isReady: true,
+    packageCount: 0,
     scripts: [SAVED],
   }) satisfies SessionScriptGroup;
 

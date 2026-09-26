@@ -36,9 +36,7 @@ const LONG_BRANCH = 'nw/fix-billing-api-settlement-exports-stuck-deliveries-surf
 
 const OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

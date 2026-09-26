@@ -83,7 +83,6 @@ export type ResolveQueueView = {
   readonly order: ReadonlyArray<string>;
   readonly scrollTop: number;
   readonly detailScrollTop: number;
-  readonly detailFocus: 'heading' | 'primary';
   readonly isDeferredShown: boolean;
   readonly isCompletedShown: boolean;
   readonly lastRouting: AgentKindRouting | null;
@@ -98,7 +97,6 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   order: [],
   scrollTop: 0,
   detailScrollTop: 0,
-  detailFocus: 'primary',
   isDeferredShown: false,
   isCompletedShown: false,
   lastRouting: null,

@@ -691,9 +691,6 @@ dialog[open]::backdrop {
 .spin-border-info {
   --spin-border-color: var(--color-info);
 }
-.spin-border-danger {
-  --spin-border-color: var(--color-danger);
-}
 .spin-border-primary {
   --spin-border-color: var(--color-primary);
 }

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { IconButton, ScrollArea } from '@goodboy/ui';
+import { IconButton, ScrollFade } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind, SessionId } from '@goodboy/types';
 import { HANDOFF_SECTION_LABEL } from '../../utils/handoffLabels';
 import { HandoffSectionBody } from './HandoffSectionBody';
@@ -74,8 +74,8 @@ export const HandoffPanel = ({
         </div>
       ) : null}
     </div>
-    <ScrollArea className="max-h-80">
+    <ScrollFade className="max-h-80">
       <HandoffSectionBody section={section} doneWhen={doneWhen} sessionId={sessionId} />
-    </ScrollArea>
+    </ScrollFade>
   </div>
 );

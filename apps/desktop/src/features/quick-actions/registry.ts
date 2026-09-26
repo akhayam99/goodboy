@@ -1,6 +1,5 @@
 import type { Agent, AgentId, Skill, Workflow } from '@goodboy/types';
 import type { RunnableScript, SessionScriptGroup } from '../scripts/buildSessionScripts';
-import { SCRIPT_SOURCE_LABEL } from '../scripts/scriptSourceLabel';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../session/agent-kind';
 import type { QuickActionItem } from './types';
 
@@ -25,6 +24,24 @@ const mountLabel = ({ group, groups }: MountLabelParams): string =>
     ? `${group.projectName} · ${group.branch}`
     : group.projectName;
 
+const packageDescriptor = ({ script }: { readonly script: RunnableScript }): string => {
+  if (script.source === 'saved') {
+    return 'Saved';
+  }
+  return script.relDir === '' ? 'root' : script.packageName;
+};
+
+const shortPackageLabel = ({ script }: { readonly script: RunnableScript }): string => {
+  if (script.source === 'saved') {
+    return 'Saved';
+  }
+  if (script.relDir === '') {
+    return 'root';
+  }
+  const segments = script.packageName.split('/');
+  return segments[segments.length - 1] ?? script.packageName;
+};
+
 export const buildScriptActions = ({
   groups,
   runningKeys,
@@ -39,9 +56,11 @@ export const buildScriptActions = ({
     return group.scripts.map((script) => ({
       id: `script:${group.mountId}:${script.key}`,
       label: script.name,
-      sublabel: showsMount ? `${mount} · ${script.command}` : script.command,
+      sublabel: showsMount
+        ? `${mount} · ${packageDescriptor({ script })} · ${script.body}`
+        : `${packageDescriptor({ script })} · ${script.body}`,
       trailing: {
-        label: runningKeys.has(script.key) ? 'Running' : SCRIPT_SOURCE_LABEL[script.source],
+        label: runningKeys.has(script.key) ? 'Running' : shortPackageLabel({ script }),
       },
       group: 'script',
       perform: () => onPick({ script, group }),

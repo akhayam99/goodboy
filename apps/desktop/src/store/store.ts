@@ -51,13 +51,11 @@ import type {
   SessionMountView,
   SessionEventKind,
   SessionEventPayload,
-  IntegrationBindingProvider,
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
   WorktreeRemovalMode,
-  IntegrationBinding,
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
   MountId,
@@ -75,7 +73,7 @@ import type {
   PrReviewDraft,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
-import { buildProviderList, type ProviderStatus } from '../features/providers/providers';
+import { buildProviderList } from '../features/providers/providers';
 import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
@@ -380,10 +378,8 @@ type AppActions = {
   loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
   loadSetting(key: string): Promise<string | null>;
   saveSetting(key: string, value: string): Promise<void>;
-  refreshProviderStatus(status: ProviderStatus): void;
   refreshProviders(): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
-  cancelProviderLifecycle(providerId: ProviderId): Promise<void>;
   connectProvider(providerId: ProviderId): Promise<void>;
   cancelProviderConnect(providerId: ProviderId): Promise<void>;
   dismissProviderConnect(providerId: ProviderId): void;
@@ -437,11 +433,6 @@ type AppActions = {
     workspaceId: WorkspaceId;
     provider: WorkspaceIntegrationProvider;
   }): Promise<void>;
-  resolveBinding(params: {
-    workspaceId: WorkspaceId;
-    provider: IntegrationBindingProvider;
-    projectId?: ProjectId;
-  }): IntegrationBinding | null;
   connectLinear(params: {
     workspaceId: WorkspaceId;
     token: string | null;
@@ -480,7 +471,6 @@ type AppActions = {
     botToken: string | null;
     credentialId: IntegrationCredentialId | null;
   }): Promise<SlackConnection>;
-  disconnectGithub(params: { workspaceId: WorkspaceId }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     projectId?: ProjectId;
@@ -589,10 +579,6 @@ type AppActions = {
   detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   discardWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
   restoreWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  reorderSessionWorkflows(
-    sessionId: SessionId,
-    workflowRunIds: ReadonlyArray<WorkflowRunId>,
-  ): Promise<void>;
   activateWorkflowAgent(params: ActivateWorkflowAgentParams): Promise<void>;
   addStepToWorkflowRun(params: AddStepToWorkflowRunParams): Promise<AddStepToWorkflowRunResult>;
   advanceClusterImplementation(
@@ -648,9 +634,7 @@ type AppActions = {
     mode: WorkflowSpendLimitMode,
   ): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
-  loadTranscript(agentId: AgentId, sessionId: SessionId): Promise<void>;
   appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;
-  resetTranscript(agentId: AgentId): void;
   sendTurn(input: {
     sessionId: SessionId;
     agentId?: AgentId;
@@ -676,7 +660,6 @@ type AppActions = {
   ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;
   upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
   loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
-  toggleSessionSlot(sessionId: SessionId, key: SlotKey, enabled: boolean): Promise<void>;
   loadBudgetRules(): Promise<void>;
   saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
@@ -749,7 +732,6 @@ type AppActions = {
   ): Promise<AgentId>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
   renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
-  setAgentKind(agentId: AgentId, kind: AgentKind): void;
   setAgentEffortOverride(agentId: AgentId, effort: string): void;
   setAgentDraft(agentId: AgentId, value: string): void;
   clearAgentDraft(agentId: AgentId): void;
@@ -799,7 +781,6 @@ type AppActions = {
     apiKey: string,
   ): Promise<ProviderCredential>;
   deleteCredential(id: CredentialId): Promise<void>;
-  renameCredential(id: CredentialId, label: string): Promise<void>;
   setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
   renameTask(sessionId: SessionId, goal: string): Promise<void>;
   deleteTask(sessionId: SessionId): Promise<void>;
@@ -1043,7 +1024,6 @@ type AppActions = {
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
   revealActivityRow(sessionId: SessionId, rowId: string): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
-  closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
   reattachTerminalTabs(): Promise<void>;
   closeTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;

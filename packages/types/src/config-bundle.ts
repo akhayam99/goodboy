@@ -20,9 +20,7 @@ export type ConfigBundleWorkspace = Readonly<{
   updatedAt: string;
   overrides: {
     defaultProviderId: string | null;
-    defaultWorkflowId: string | null;
     defaultBranchPrefix: string | null;
-    parallelEnabled: boolean | null;
   };
 }>;
 
