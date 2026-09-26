@@ -6,7 +6,7 @@ import {
   isAgentStatusSettled,
   stripControlMarkers,
 } from '@goodboy/core';
-import { Markdown, SectionSurface, StatusDot, Tooltip } from '@goodboy/ui';
+import { Markdown, Band, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -130,7 +130,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     <div className="flex flex-col gap-4">
       <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
       {!isTerminal ? (
-        <SectionSurface label="Now">
+        <Band inset="content" label="Now">
           <div className="flex items-center gap-2 text-label text-foreground">
             <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
             <span className="min-w-0 flex-1 truncate">{now.label}</span>
@@ -146,19 +146,19 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
             )}
           </div>
           {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
-        </SectionSurface>
+        </Band>
       ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
       {summary !== '' && !isSplitIntoSubagents ? (
-        <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
+        <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-body text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
           </div>
           {!hasOutputSummary ? (
             <span className="text-secondary text-muted-foreground">from the last reply</span>
           ) : null}
-        </SectionSurface>
+        </Band>
       ) : null}
       <AgentBriefPlans
         plans={plans.filter((plan) => plan.agentId === agent.id)}

@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { SectionSurface, cn } from '@goodboy/ui';
+import { Band, cn } from '@goodboy/ui';
 import type { Agent, PlanId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -66,7 +66,8 @@ export const AgentFollowUps = ({
   };
 
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Continue"
       hint={
         pending.length > 0
@@ -98,6 +99,6 @@ export const AgentFollowUps = ({
           </button>
         ))}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

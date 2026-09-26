@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SectionSurface } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, Session, Step } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -49,7 +49,8 @@ export const AgentBriefChildren = ({ session, agent, kind, children }: Props) =>
     setActiveLens(session.id, 'questions');
   };
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Subagents"
       action={
         <span className="text-secondary tabular-nums text-muted-foreground">
@@ -70,6 +71,6 @@ export const AgentBriefChildren = ({ session, agent, kind, children }: Props) =>
         onSelect={onSelect}
         onAnswer={onAnswer}
       />
-    </SectionSurface>
+    </Band>
   );
 };

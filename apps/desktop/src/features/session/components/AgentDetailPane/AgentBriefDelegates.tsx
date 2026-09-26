@@ -1,4 +1,4 @@
-import { SectionSurface, StatusDot } from '@goodboy/ui';
+import { Band, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -31,7 +31,8 @@ export const AgentBriefDelegates = ({ sessionId, delegates, questions }: Props) 
   };
 
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Delegated answers"
       hint="Agents answering an open question on your behalf."
       action={
@@ -63,6 +64,6 @@ export const AgentBriefDelegates = ({ sessionId, delegates, questions }: Props) 
           </button>
         ))}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

@@ -1,4 +1,4 @@
-import { SectionSurface, cn, tintClasses } from '@goodboy/ui';
+import { Band, cn, tintClasses } from '@goodboy/ui';
 import type { PlanWithCount, SessionId } from '@goodboy/types';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { planConsumerLabel, resolvePlanConsumer } from '../../../../shared/utils/planConsumer';
@@ -16,7 +16,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
     return null;
   }
   return (
-    <SectionSurface label="Plans">
+    <Band inset="content" label="Plans">
       <div className="flex flex-col gap-2">
         {plans.map((plan) => {
           const lastConsumer = plan.lastConsumer;
@@ -56,6 +56,6 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
           );
         })}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

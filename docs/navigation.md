@@ -483,7 +483,7 @@ one is open at a time.
   ready, info on Storage with "N GB can go" as its subtitle once clean idle
   folders pass 10 GB (warning when the disk has under 10 GB free and at least
   1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
-  `SectionSurface` cards with gap between them and no `Divider`; a danger zone
+  bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)

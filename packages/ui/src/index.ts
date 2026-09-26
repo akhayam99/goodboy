@@ -159,8 +159,16 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
-export { SectionSurface } from './components/SectionSurface';
-export type { SectionSurfaceProps } from './components/SectionSurface';
+export {
+  Band,
+  BandRow,
+  BandStack,
+  BAND_ROW_CLASS,
+  STRIPED_BLOCK_ROW,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+} from './components/Band';
+export type { BandProps } from './components/Band';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Select } from './components/Select';

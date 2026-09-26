@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { Button, Collapsible, SectionSurface, Eyebrow, Skeleton } from '@goodboy/ui';
+import { Button, Collapsible, Band, Eyebrow, Skeleton } from '@goodboy/ui';
 import type { ArtifactKind, ArtifactProvenance, SessionArtifact } from '@goodboy/types';
 import { loadArtifactProvenance } from '../../../artifactProvenance';
 import { BuiltFromRow } from './BuiltFromRow';
@@ -61,18 +61,18 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
 
   if (state.kind === 'loading') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
         <div role="status" aria-label="Loading built from" className="flex flex-col gap-2">
           <Skeleton className="h-3 w-2/3 rounded-sm" />
           <Skeleton className="h-3 w-1/2 rounded-sm" />
         </div>
-      </SectionSurface>
+      </Band>
     );
   }
 
   if (state.kind === 'failed') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
         <div data-testid="built-from-failed" className="flex items-center justify-between gap-3">
           <p className="text-label text-muted-foreground">
             The record of this generation did not load.
@@ -82,18 +82,18 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
             Retry
           </Button>
         </div>
-      </SectionSurface>
+      </Band>
     );
   }
 
   if (state.kind === 'missing') {
     return (
-      <SectionSurface label="Built from" ariaLabel="Built from">
+      <Band inset="content" label="Built from" ariaLabel="Built from">
         <p data-testid="built-from-missing" className="text-label text-muted-foreground">
           nothing was recorded for this generation. artifacts made before goodboy started keeping
           the request and the evidence behind them carry no record of either.
         </p>
-      </SectionSurface>
+      </Band>
     );
   }
 
@@ -104,7 +104,7 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
       : provenance.evidence.slice(0, EVIDENCE_PREVIEW);
 
   return (
-    <SectionSurface label="Built from" ariaLabel="Built from">
+    <Band inset="content" label="Built from" ariaLabel="Built from">
       <div data-testid="built-from" className="flex min-w-0 flex-col gap-3">
         <BuiltFromRow label="Brief">{provenance.brief ?? 'No brief was given'}</BuiltFromRow>
         <BuiltFromRow label="Based on">
@@ -169,6 +169,6 @@ export const ArtifactBuiltFrom = ({ artifact }: Props) => {
           </Collapsible>
         )}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

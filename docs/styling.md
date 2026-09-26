@@ -232,7 +232,7 @@ floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
 Inside content, separation comes from gap (the `gap-4/6/8` scale), from
-surface (`SectionSurface`, `bg-subtle` against the canvas), or from a label
+a band (`Band`, `bg-fill` inside its parent), or from a label
 that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that
 sits inside content does not get its own `<Divider>` either: it gets a `gap`

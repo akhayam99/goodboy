@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, FieldRow, SectionSurface } from '@goodboy/ui';
+import { Button, FieldRow, Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
@@ -54,7 +54,8 @@ export const UpdatesSection = () => {
   const target = version ?? 'the new version';
 
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Updates"
       hint="Goodboy looks for a new version every hour."
       icon={<CONCEPT_ICONS.updates size={ICON_SIZE.row} aria-hidden />}
@@ -96,6 +97,6 @@ export const UpdatesSection = () => {
           </p>
         )}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

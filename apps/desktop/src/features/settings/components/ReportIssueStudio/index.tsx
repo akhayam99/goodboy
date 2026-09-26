@@ -9,7 +9,7 @@ import {
   Input,
   PANE_RHYTHM,
   ScrollFade,
-  SectionSurface,
+  Band,
   SegmentedTabs,
   Select,
   Skeleton,
@@ -346,7 +346,8 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
               <Divider />
 
-              <SectionSurface
+              <Band
+                inset="content"
                 label="Preview"
                 ariaLabel="Preview"
                 hint={previewHint({ mode })}
@@ -361,7 +362,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
                   ) : null}
                 </div>
-              </SectionSurface>
+              </Band>
 
               <footer className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">

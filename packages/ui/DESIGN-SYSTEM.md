@@ -27,7 +27,7 @@ between them instead of mixing one surface through opacity.
 | ---- | -------- | --------------- | ----------------------------------------------------- |
 | 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer, studio rails |
 | 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
-| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`     |
+| 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
 | 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
@@ -688,14 +688,32 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 
 **The outline is independent of the grade.** `headingLevel` turns an eyebrow-grade label into an `h2` or `h3`. So a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading does not need bigger type because of that.
 
-`SectionSurface` is `SectionHeader` on the one raised section surface. Use it
-for a reading surface whose sections would otherwise be separated by empty
-space alone. It sits on the panel step of the surface ladder, so the cards
-inside it take the raised step and nothing stacks another level. A metadata line is not a
-section and does not get a surface. Its optional `icon` goes to the heading,
-the same slot `SectionHeader` gives it, at the row icon size.
+**A group of rows that belong together under one name is a `Band`.** The band
+is `bg-fill` and `rounded-lg`, with 4px of padding (`inset="rows"`) or 12px
+for prose (`inset="content"`). `fill` and not `subtle`: `subtle` on the sheet
+is 1.06:1 and does not read, `fill` is 1.17:1 in dark and 1.12:1 in light, and
+because it is relative to its parent it steps down on its own inside a drawer.
+The section keeps its uppercase eyebrow **outside** the band (`label`, with the
+same `icon`, `hint`, `action` and `headingLevel` slots `SectionHeader` gives).
+A group inside a section names itself on the band's first row (`groupLabel`),
+in sentence case on `text-label` medium muted, with a faint count on the right
+(`groupMeta`, "3 roles"). A group of one row drops its label. Rows inside are
+`BandRow`: `rounded-sm` (8 minus 4, concentric) with `bg-hover` when they act.
+Bands of one block stack 8px apart (`BandStack`), sections 24px.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, `SectionSurface`, or a labeled rule like `Eyebrow` instead.
+Use a band where something is configured in groups: defaults, the provider
+page, settings, a tool's detail, skills. Never on a navigation or selection
+list (sidebar, inbox, facet rail, popover, palette: there the background means
+hover and selection), never in a creation flow, never in a card or in another
+band (`Band` throws when nested), never together with a border or a divider.
+
+**A table read across columns stripes its rows.** From five rows up, even rows
+take `bg-fill` (`STRIPED_ROW` on a `<tr>`, `STRIPED_BLOCK_ROW` on a row of
+blocks) with `rounded-sm` at the ends, under an eyebrow header with no line.
+
+A metadata line is not a section and does not get a band.
+
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 

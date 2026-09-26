@@ -1,4 +1,4 @@
-import { Markdown, SectionSurface, cn } from '@goodboy/ui';
+import { Markdown, Band, cn } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
@@ -15,7 +15,7 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
   }
 
   return (
-    <SectionSurface label="Answering for" hint="This answer lands as the user's own.">
+    <Band inset="content" label="Answering for" hint="This answer lands as the user's own.">
       <div className="flex flex-col gap-2">
         <blockquote className="border-l-2 border-border pl-2 text-body text-foreground">
           <Markdown text={question.text} className="min-w-0 gap-2 break-words leading-relaxed" />
@@ -34,6 +34,6 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
           </button>
         )}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

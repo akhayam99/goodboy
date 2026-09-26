@@ -285,7 +285,7 @@ describe('a divider sits between chrome and content, never inside content', () =
       .map(([path, count]) => `${path}: ${count} (allowed ${ALLOWED[path]?.count ?? 0})`);
     expect(
       offenders,
-      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a surface (SectionSurface, bg-subtle) or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
+      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a Band or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 

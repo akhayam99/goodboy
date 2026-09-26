@@ -631,6 +631,7 @@
     "apps/desktop/src/shared/components/StudioDetail/RecordHeader/index.tsx": 1,
     "apps/desktop/src/shared/components/StudioDetail/RecordSections/RecordSectionBlock.tsx": 1,
     "packages/ui/src/components/Avatar.tsx": 1,
+    "packages/ui/src/components/Band/index.tsx": 1,
     "packages/ui/src/components/Button.tsx": 1,
     "packages/ui/src/components/CardAction.tsx": 1,
     "packages/ui/src/components/Chip.tsx": 1,

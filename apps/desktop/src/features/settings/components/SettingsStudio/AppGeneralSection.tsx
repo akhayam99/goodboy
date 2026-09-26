@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FieldRow, SectionSurface, Select } from '@goodboy/ui';
+import { FieldRow, Band, Select } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
@@ -54,7 +54,8 @@ export const AppGeneralSection = () => {
     <div className="flex flex-col gap-4">
       <UpdatesSection />
 
-      <SectionSurface
+      <Band
+        inset="content"
         label="Appearance"
         hint="How the app looks on this computer."
         icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
@@ -82,9 +83,10 @@ export const AppGeneralSection = () => {
             </Select>
           </FieldRow>
         </div>
-      </SectionSurface>
+      </Band>
 
-      <SectionSurface
+      <Band
+        inset="content"
         label="Editor"
         hint="How session worktrees open."
         icon={<CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />}
@@ -106,7 +108,7 @@ export const AppGeneralSection = () => {
             </Select>
           </FieldRow>
         </div>
-      </SectionSurface>
+      </Band>
     </div>
   );
 };

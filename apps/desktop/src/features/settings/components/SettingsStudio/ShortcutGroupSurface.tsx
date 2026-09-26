@@ -1,5 +1,5 @@
 import { AppWindow, Command, Compass, PanelsTopLeft, type LucideIcon } from 'lucide-react';
-import { KbdPill, SectionSurface } from '@goodboy/ui';
+import { KbdPill, Band } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutGroup } from '../../../../shared/keyboard/registry';
@@ -30,7 +30,8 @@ type Props = {
 export const ShortcutGroupSurface = ({ group }: Props) => {
   const Icon = GROUP_ICON[group];
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label={GROUP_LABEL[group]}
       icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       headingLevel={3}
@@ -45,6 +46,6 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
           </li>
         ))}
       </ul>
-    </SectionSurface>
+    </Band>
   );
 };
