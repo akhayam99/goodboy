@@ -54,6 +54,7 @@ export {
   updateProjectStar,
   updateProjectDescription,
   updateProjectGoodboyIgnore,
+  updateProjectIdentity,
 } from './queries/project';
 export {
   recordSecurityFindings,
