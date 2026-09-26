@@ -179,6 +179,189 @@ pub struct ChildRepo {
     pub path: String,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoIdentity {
+    pub root_commits: Vec<String>,
+    pub remote_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MovedProjectInput {
+    pub id: String,
+    pub name: String,
+    pub root_commit: Option<String>,
+    pub remote_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FindMovedProjectsArgs {
+    pub parent: String,
+    pub projects: Vec<MovedProjectInput>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum MovedProjectVerdict {
+    SameRepository,
+    SameNameUnconfirmed,
+    DifferentRepository,
+    NotFound,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MovedProjectMatch {
+    pub project_id: String,
+    pub path: Option<String>,
+    pub verdict: MovedProjectVerdict,
+    pub identity: Option<RepoIdentity>,
+}
+
+fn normalize_remote_url(remote: &str) -> Option<String> {
+    let trimmed = remote.trim().trim_end_matches('/').trim_end_matches(".git");
+    if trimmed.is_empty() {
+        return None;
+    }
+    let scheme_separator = format!(":{}", "/".repeat(2));
+    let scheme = trimmed.split_once(&scheme_separator);
+    let without_scheme = scheme.map(|(_, value)| value).unwrap_or(trimmed);
+    let without_credentials = without_scheme
+        .rsplit_once('@')
+        .map(|(_, value)| value)
+        .unwrap_or(without_scheme);
+    let normalized = if scheme.is_some() {
+        without_credentials.to_string()
+    } else {
+        without_credentials.replacen(':', "/", 1)
+    };
+    Some(normalized.trim_end_matches('/').to_lowercase())
+}
+
+fn repo_identity_blocking(path: &Path) -> Result<RepoIdentity, RepoInitError> {
+    if !path.is_dir() || !is_repo_root(path) {
+        return Err(RepoInitError::DirNotFound(
+            path.to_string_lossy().into_owned(),
+        ));
+    }
+    let roots = run_git(path, &["rev-list", "--max-parents=0", "HEAD"])?;
+    let mut root_commits: Vec<String> = roots
+        .lines()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .collect();
+    root_commits.sort();
+    let remote_url = run_git(path, &["config", "--get", "remote.origin.url"])
+        .ok()
+        .and_then(|value| normalize_remote_url(&value));
+    Ok(RepoIdentity {
+        root_commits,
+        remote_url,
+    })
+}
+
+#[tauri::command]
+pub async fn repo_identity(path: String) -> Result<RepoIdentity, RepoInitError> {
+    tauri::async_runtime::spawn_blocking(move || repo_identity_blocking(Path::new(&path)))
+        .await
+        .map_err(|error| RepoInitError::Git {
+            message: error.to_string(),
+        })?
+}
+
+fn candidate_directories(parent: &Path) -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    if is_repo_root(parent) {
+        candidates.push(parent.to_path_buf());
+    }
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return candidates;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() && is_repo_root(&path) {
+            candidates.push(path);
+        }
+    }
+    candidates.sort();
+    candidates
+}
+
+fn identities_match(project: &MovedProjectInput, identity: &RepoIdentity) -> bool {
+    let root_matches = project
+        .root_commit
+        .as_ref()
+        .map(|root| identity.root_commits.contains(root))
+        .unwrap_or(false);
+    let remote_matches = project
+        .remote_url
+        .as_ref()
+        .zip(identity.remote_url.as_ref())
+        .map(|(expected, actual)| expected == actual)
+        .unwrap_or(false);
+    root_matches && remote_matches
+}
+
+fn find_moved_projects_blocking(args: FindMovedProjectsArgs) -> Vec<MovedProjectMatch> {
+    let candidates: Vec<(PathBuf, RepoIdentity)> = candidate_directories(Path::new(&args.parent))
+        .into_iter()
+        .filter_map(|path| {
+            repo_identity_blocking(&path)
+                .ok()
+                .map(|identity| (path, identity))
+        })
+        .collect();
+    args.projects
+        .into_iter()
+        .map(|project| {
+            if let Some((path, identity)) = candidates
+                .iter()
+                .find(|(_, identity)| identities_match(&project, identity))
+            {
+                return MovedProjectMatch {
+                    project_id: project.id,
+                    path: Some(path.to_string_lossy().into_owned()),
+                    verdict: MovedProjectVerdict::SameRepository,
+                    identity: Some(identity.clone()),
+                };
+            }
+            let named = candidates.iter().find(|(path, _)| {
+                path.file_name()
+                    .map(|name| name.to_string_lossy() == project.name)
+                    .unwrap_or(false)
+            });
+            let Some((path, identity)) = named else {
+                return MovedProjectMatch {
+                    project_id: project.id,
+                    path: None,
+                    verdict: MovedProjectVerdict::NotFound,
+                    identity: None,
+                };
+            };
+            let has_saved_identity = project.root_commit.is_some() && project.remote_url.is_some();
+            MovedProjectMatch {
+                project_id: project.id,
+                path: Some(path.to_string_lossy().into_owned()),
+                verdict: if has_saved_identity {
+                    MovedProjectVerdict::DifferentRepository
+                } else {
+                    MovedProjectVerdict::SameNameUnconfirmed
+                },
+                identity: Some(identity.clone()),
+            }
+        })
+        .collect()
+}
+
+#[tauri::command]
+pub async fn find_moved_projects(args: FindMovedProjectsArgs) -> Vec<MovedProjectMatch> {
+    tauri::async_runtime::spawn_blocking(move || find_moved_projects_blocking(args))
+        .await
+        .unwrap_or_default()
+}
+
 #[tauri::command]
 pub async fn scan_child_repos(path: String) -> Vec<ChildRepo> {
     tauri::async_runtime::spawn_blocking(move || scan_child_repos_blocking(path))
@@ -1084,5 +1267,100 @@ mod tests {
         assert_eq!(found[0].path, canonical_target.to_string_lossy());
         std::fs::remove_dir_all(root).unwrap();
         std::fs::remove_dir_all(target).unwrap();
+    }
+
+    #[test]
+    fn identity_normalizes_credentials_and_git_suffix() {
+        let root = test_root("repo-identity");
+        git_run(&root, &["init"]);
+        git_run(&root, &["config", "user.name", "Goodboy Test"]);
+        git_run(&root, &["config", "user.email", "goodboy@localhost"]);
+        std::fs::write(root.join("README.md"), "ledger").unwrap();
+        git_run(&root, &["add", "README.md"]);
+        git_run(&root, &["commit", "-m", "initial"]);
+        git_run(
+            &root,
+            &[
+                "remote",
+                "add",
+                "origin",
+                &format!(
+                    "https:{}token@github.com/acme/ledger-core.git",
+                    "/".repeat(2)
+                ),
+            ],
+        );
+
+        let identity = super::repo_identity_blocking(&root).unwrap();
+
+        assert_eq!(identity.root_commits.len(), 1);
+        assert_eq!(
+            identity.remote_url.as_deref(),
+            Some("github.com/acme/ledger-core")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn moved_project_search_distinguishes_history_from_name() {
+        let parent = test_root("moved-projects");
+        let matching = parent.join("ledger-core");
+        let different = parent.join("payments-api");
+        for root in [&matching, &different] {
+            std::fs::create_dir_all(root).unwrap();
+            git_run(root, &["init"]);
+            git_run(root, &["config", "user.name", "Goodboy Test"]);
+            git_run(root, &["config", "user.email", "goodboy@localhost"]);
+            std::fs::write(root.join("README.md"), root.to_string_lossy().as_bytes()).unwrap();
+            git_run(root, &["add", "README.md"]);
+            git_run(root, &["commit", "-m", "initial"]);
+            git_run(
+                root,
+                &[
+                    "remote",
+                    "add",
+                    "origin",
+                    &format!(
+                        "git@github.com:acme/{}.git",
+                        root.file_name().unwrap().to_string_lossy()
+                    ),
+                ],
+            );
+        }
+        let identity = super::repo_identity_blocking(&matching).unwrap();
+        let found = super::find_moved_projects_blocking(super::FindMovedProjectsArgs {
+            parent: parent.to_string_lossy().into_owned(),
+            projects: vec![
+                super::MovedProjectInput {
+                    id: "matching".to_string(),
+                    name: "ledger-core".to_string(),
+                    root_commit: identity.root_commits.first().cloned(),
+                    remote_url: identity.remote_url,
+                },
+                super::MovedProjectInput {
+                    id: "different".to_string(),
+                    name: "payments-api".to_string(),
+                    root_commit: Some("unrelated".to_string()),
+                    remote_url: Some("github.com/acme/payments-api".to_string()),
+                },
+                super::MovedProjectInput {
+                    id: "legacy".to_string(),
+                    name: "payments-api".to_string(),
+                    root_commit: None,
+                    remote_url: None,
+                },
+            ],
+        });
+
+        assert_eq!(found[0].verdict, super::MovedProjectVerdict::SameRepository);
+        assert_eq!(
+            found[1].verdict,
+            super::MovedProjectVerdict::DifferentRepository
+        );
+        assert_eq!(
+            found[2].verdict,
+            super::MovedProjectVerdict::SameNameUnconfirmed
+        );
+        std::fs::remove_dir_all(parent).unwrap();
     }
 }
