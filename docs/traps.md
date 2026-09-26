@@ -126,6 +126,12 @@ fails silently at runtime.
   order. If the higher one merges first, it leaves a gap and turns `main` red.
   Renumbering is covered in [architecture.md](architecture.md) → Database
   migrations.
+- SQLite lets `DROP TABLE` remove a table a view still reads, and it keeps
+  the view. The next `ALTER TABLE ... RENAME`, on any table, checks every
+  view and fails with `error in view <name>: no such table`. So a reset that
+  drops tables one by one strands `live_agents` (m156), and the replayed
+  chain dies at m015's table rebuild. Reset a database with
+  `reset_database` in `db.rs`, never with a loop of `DROP TABLE`.
 - `cargo fmt` formats the whole crate, whatever file you give it, and `main`
   is not fmt-clean (`rust.yml` runs the check as advisory). A local run
   rewrites files the change never touched. Revert those hunks before you

@@ -147,6 +147,14 @@ or it can quit. Restoring moves the current file aside as
 `data.db.newer-build-<ms>.bak`, so nothing is lost, puts the copy in its place,
 and starts the boot again.
 
+Settings > Danger zone > Wipe local database stops every running turn,
+summary, planner, script and terminal first. Then `db_wipe` empties the file
+in one atomic step with SQLite's own reset (`SQLITE_DBCONFIG_RESET_DATABASE`
+plus `VACUUM`), and the chain replays from m001 on the empty file. It never
+drops tables one by one: that leaves views like `live_agents` behind, and the
+first `ALTER TABLE ... RENAME` of the replay fails on them (see
+[traps](traps.md#traps-in-the-toolchain)).
+
 ### On-disk data layout
 
 Everything the app saves for itself lives in `~/.goodboy`.
