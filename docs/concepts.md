@@ -577,7 +577,8 @@ specific rule that fits wins.
 ## Workspace profile
 
 Each workspace can have one profile, edited under "About you" on the workspace
-page and in onboarding. It has four fields:
+page. Onboarding does not ask for it: "Tell agents about you" in the setup
+checklist opens it. It has four fields:
 
 - **Your roles**: chips from a library of about 30 roles, or your own
 - **About your work**: what you do and for whom

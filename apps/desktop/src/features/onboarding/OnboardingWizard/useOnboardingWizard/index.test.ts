@@ -165,6 +165,20 @@ describe('useOnboardingWizard', () => {
       expect(result.current.open).toBe(true);
     });
 
+    it('opens one step on its own when the checklist asks for it', () => {
+      wizardDone = true;
+      workspaces.push({ id: 'w1' });
+      const { result } = renderHook(() => useOnboardingWizard());
+      act(() => {
+        window.dispatchEvent(
+          new CustomEvent(OPEN_WIZARD_EVENT, { detail: { mode: 'single', step: 'tasks' } }),
+        );
+      });
+      expect(result.current.open).toBe(true);
+      expect(result.current.mode).toBe('single');
+      expect(result.current.start).toBe('tasks');
+    });
+
     it('reopens in full mode when the event omits a mode', () => {
       wizardDone = true;
       workspaces.push({ id: 'w1' });

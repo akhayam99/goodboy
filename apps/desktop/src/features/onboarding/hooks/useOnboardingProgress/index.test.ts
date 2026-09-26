@@ -2,13 +2,17 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OnboardingStepId } from '../../onboarding-store';
 
+type Workspace = { id: string; profile?: { roles: ReadonlyArray<string> } };
+
 let completed: Array<OnboardingStepId> = [];
-const workspaces: Array<{ id: string }> = [];
+const workspaces: Array<Workspace> = [];
 let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
-let sessions: Array<unknown> = [];
-let sessionPhaseRuns: Record<string, unknown[]> = {};
-let sessionPlans: Record<string, unknown[]> = {};
+let sessionPhaseRuns: Record<string, Array<{ status: string }>> = {};
+let agentTurnState: Record<string, { kind: string }> = {};
+let providers: Array<{ connection: string }> = [];
+let projects: Array<{ workspaceId: string }> = [];
+let githubStatus: { mode: string } | null = null;
 
 const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   markStepCompleteMock: vi.fn(),
@@ -17,13 +21,12 @@ const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
 
 const { STEPS } = vi.hoisted(() => ({
   STEPS: [
-    { id: 'workspace', title: 'x', why: 'x' },
+    { id: 'provider', title: 'x', why: 'x' },
+    { id: 'project', title: 'x', why: 'x' },
     { id: 'codeHost', title: 'x', why: 'x' },
-    { id: 'tools', title: 'x', why: 'x' },
-    { id: 'session', title: 'x', why: 'x' },
-    { id: 'agent', title: 'x', why: 'x' },
-    { id: 'plan', title: 'x', why: 'x' },
-    { id: 'palette', title: 'x', why: 'x' },
+    { id: 'taskManager', title: 'x', why: 'x' },
+    { id: 'firstSession', title: 'x', why: 'x' },
+    { id: 'profile', title: 'x', why: 'x' },
   ],
 }));
 
@@ -32,6 +35,7 @@ vi.mock('../../onboarding-store', () => ({
   getCompleted: () => completed,
   isCollapsed: () => false,
   isFinished: () => false,
+  isWizardDone: () => true,
   markStepComplete: markStepCompleteMock,
 }));
 
@@ -40,25 +44,16 @@ vi.mock('../../../github/github', () => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: (
-    selector: (s: {
-      sessions: typeof sessions;
-      sessionPhaseRuns: Record<string, unknown[]>;
-      sessionPlans: Record<string, unknown[]>;
-      currentWorkspaceId: string | null;
-      workspaceIntegrations: typeof workspaceIntegrations;
-      projects: Array<{ workspaceId: string }>;
-    }) => unknown,
-  ) =>
+  useAppStore: (selector: (s: object) => unknown) =>
     selector({
-      sessions,
       sessionPhaseRuns,
-      sessionPlans,
+      agentTurnState,
+      providers,
+      projects,
+      githubStatus,
       currentWorkspaceId,
       workspaceIntegrations,
-      projects: [],
     }),
-  useCurrentSession: () => null,
   useWorkspaces: () => workspaces,
 }));
 
@@ -67,9 +62,11 @@ function reset() {
   workspaces.length = 0;
   currentWorkspaceId = null;
   workspaceIntegrations = {};
-  sessions = [];
   sessionPhaseRuns = {};
-  sessionPlans = {};
+  agentTurnState = {};
+  providers = [];
+  projects = [];
+  githubStatus = null;
   markStepCompleteMock.mockReset();
   ghStatusMock.mockReset();
   ghStatusMock.mockResolvedValue({ scoped: false });
@@ -77,13 +74,22 @@ function reset() {
 
 import { useOnboardingProgress } from './index';
 
-describe('useOnboardingProgress auto-mark', () => {
+describe('useOnboardingProgress', () => {
   beforeEach(reset);
   afterEach(reset);
 
-  it('marks codeHost when GitLab is connected for the workspace', () => {
+  it('marks the provider and the project once they exist', () => {
     workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
+    providers = [{ connection: 'connected' }];
+    projects = [{ workspaceId: 'w1' }];
+    renderHook(() => useOnboardingProgress());
+    expect(markStepCompleteMock).toHaveBeenCalledWith('provider');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('project');
+  });
+
+  it('marks codeHost when GitLab or Bitbucket is connected for the workspace', () => {
+    workspaces.push({ id: 'w1' });
+    workspaceIntegrations = { w1: [{ provider: 'bitbucket' }] };
     renderHook(() => useOnboardingProgress());
     expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost');
   });
@@ -95,90 +101,65 @@ describe('useOnboardingProgress auto-mark', () => {
     await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost'));
   });
 
-  it('marks tools when Linear is connected for the workspace', () => {
+  it('marks codeHost when gh is signed in on this Mac', () => {
     workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'linear' }] };
+    githubStatus = { mode: 'cli' };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost');
   });
 
-  it('marks tools when Jira is connected for the workspace', () => {
+  it.each(['linear', 'jira'])('marks taskManager when %s is connected', (provider) => {
     workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'jira' }] };
+    workspaceIntegrations = { w1: [{ provider }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('taskManager');
   });
 
-  it('marks tools when Sentry is connected for the workspace', () => {
+  it('does not count Sentry or Slack as a task manager', () => {
     workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'sentry' }] };
+    workspaceIntegrations = { w1: [{ provider: 'sentry' }, { provider: 'slack' }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('taskManager');
   });
 
-  it('marks tools when Slack is connected for the workspace', () => {
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'slack' }] };
+  it('leaves the first session open while an agent only exists', () => {
+    sessionPhaseRuns = { s1: [{ status: 'running' }] };
+    agentTurnState = { a1: { kind: 'running' } };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('firstSession');
   });
 
-  it('does not mark codeHost or tools when no workspace exists', () => {
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
+  it('ticks the first session once an agent finishes a turn', () => {
+    sessionPhaseRuns = { s1: [{ status: 'running' }] };
+    agentTurnState = { a1: { kind: 'idle' } };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('codeHost');
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('firstSession');
+  });
+
+  it('ticks the profile only once it holds something', () => {
+    workspaces.push({ id: 'w1', profile: { roles: [] } });
+    const { result, rerender } = renderHook(() => useOnboardingProgress());
+    expect(result.current.completed.has('profile')).toBe(false);
+    workspaces[0] = { id: 'w1', profile: { roles: ['Designer'] } };
+    rerender();
+    expect(result.current.completed.has('profile')).toBe(true);
   });
 
   it('skips already-completed steps and never re-queries gh status', () => {
-    completed = ['workspace', 'codeHost', 'tools'];
+    completed = ['codeHost'];
     workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
+    workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalled();
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('codeHost');
     expect(ghStatusMock).not.toHaveBeenCalled();
   });
 
-  it('reports completed count and total from the store', () => {
-    completed = ['workspace', 'codeHost'];
+  it('reports completed count and total', () => {
+    completed = ['provider', 'project'];
     const { result } = renderHook(() => useOnboardingProgress());
     expect(result.current.completedCount).toBe(2);
-    expect(result.current.totalCount).toBe(7);
+    expect(result.current.totalCount).toBe(6);
     expect(result.current.isDone).toBe(false);
-  });
-
-  it('unions live completion over persisted completion on the first render', () => {
-    completed = ['palette'];
-    workspaces.push({ id: 'w1' });
-    workspaceIntegrations = { w1: [{ provider: 'gitlab' }, { provider: 'linear' }] };
-    sessions = [{}];
-    sessionPhaseRuns = { s1: [{}] };
-    sessionPlans = { s1: [{}] };
-    const { result } = renderHook(() => useOnboardingProgress());
-    expect([...result.current.completed]).toEqual([
-      'palette',
-      'workspace',
-      'codeHost',
-      'tools',
-      'session',
-      'agent',
-      'plan',
-    ]);
-    expect(result.current.completedCount).toBe(7);
-    expect(result.current.isDone).toBe(true);
-  });
-
-  it('keeps palette purely persisted', () => {
-    const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.completed.has('palette')).toBe(false);
-  });
-
-  it('keeps the code host step for every workspace', () => {
-    completed = ['workspace', 'tools', 'session', 'agent', 'plan', 'palette'];
-    workspaces.push({ id: 'w1' });
-    const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.completedCount).toBe(6);
-    expect(result.current.totalCount).toBe(7);
-    expect(result.current.isDone).toBe(false);
+    expect(result.current.wizardDone).toBe(true);
   });
 });

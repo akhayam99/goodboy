@@ -10,7 +10,7 @@ const STEPS = Number(sceneParam({ key: 'step' }) ?? '0');
 const HAS_WORKSPACE = sceneParam({ key: 'ws' }) !== '0';
 const HAS_NO_PROVIDERS = sceneParam({ key: 'providers' }) === '0';
 
-const CTA_LABELS = ['Get started', 'Continue', 'Create workspace'];
+const CTA_LABELS = ['Get started', 'Continue', 'Skip for now'];
 
 const clickCta = (): void => {
   const buttons = Array.from(

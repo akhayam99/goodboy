@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import { useShallow } from 'zustand/react/shallow';
+import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { isWizardDone, OPEN_WIZARD_EVENT, type WizardMode } from '../../onboarding-store';
+import {
+  isWizardDone,
+  OPEN_WIZARD_EVENT,
+  type OpenWizardDetail,
+  type WizardMode,
+} from '../../onboarding-store';
+import type { WizardStepId } from '../wizardSteps';
 
 export type OnboardingWizardState = {
   readonly open: boolean;
   readonly mode: WizardMode;
+  readonly start: WizardStepId | null;
   readonly providersConnected: number;
   readonly hasWorkspace: boolean;
   readonly workspace: Workspace | null;
   readonly workspaceId: WorkspaceId | null;
   readonly projectCount: number;
+  readonly projects: ReadonlyArray<Project>;
 };
 
 export const useOnboardingWizard = (): OnboardingWizardState => {
@@ -22,26 +31,29 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
   const workspaceId = workspace?.id ?? null;
-  const projectCount = useAppStore(
-    (state) => state.projects.filter((project) => project.workspaceId === workspaceId).length,
+  const projects = useAppStore(
+    useShallow((state) => state.projects.filter((project) => project.workspaceId === workspaceId)),
   );
   const hasWorkspace = workspace !== null;
   const hydrated = useAppStore((s) => s.hydrated);
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<WizardMode>('full');
+  const [start, setStart] = useState<WizardStepId | null>(null);
   const decided = useRef(false);
   const openRef = useRef(false);
 
   useEffect(() => {
     const onOpen = (e: Event) => {
-      const requested = (e as CustomEvent<{ mode?: WizardMode }>).detail?.mode ?? 'full';
-      if (requested === 'setup' && openRef.current) {
+      const detail = (e as CustomEvent<Partial<OpenWizardDetail> | null>).detail;
+      const requested = detail?.mode ?? 'full';
+      if (requested !== 'full' && openRef.current) {
         return;
       }
       decided.current = true;
       openRef.current = true;
       setMode(requested);
+      setStart(detail?.step ?? null);
       setOpen(true);
     };
     const onProgress = () => {
@@ -73,10 +85,12 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   return {
     open,
     mode,
+    start,
     providersConnected,
     hasWorkspace,
     workspace,
     workspaceId,
-    projectCount,
+    projectCount: projects.length,
+    projects,
   };
 };

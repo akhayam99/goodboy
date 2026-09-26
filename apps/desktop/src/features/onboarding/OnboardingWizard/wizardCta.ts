@@ -1,12 +1,16 @@
-import type { WorkspaceShape } from './steps/ShapeStep';
 import type { WizardStepId } from './wizardSteps';
 
-export type WizardCtaAction = 'next' | 'commit-name' | 'commit-profile' | 'finish';
+export type WizardCtaAction = 'next' | 'commit-project' | 'finish';
 
 export type WizardCta = {
   readonly label: string;
   readonly action: WizardCtaAction;
   readonly disabled: boolean;
+};
+
+export type WizardFooter = {
+  readonly primary: WizardCta | null;
+  readonly skip: WizardCta | null;
   readonly hint: string | null;
 };
 
@@ -16,10 +20,12 @@ export const PROVIDER_GATE_HINT =
 type Params = {
   readonly step: WizardStepId;
   readonly providersConnected: number;
-  readonly shape: WorkspaceShape | null;
   readonly hasWorkspace: boolean;
   readonly workspaceName: string;
   readonly projectCount: number;
+  readonly codeHostConnected: boolean;
+  readonly taskSourceConnected: boolean;
+  readonly isLastStep: boolean;
   readonly busy: boolean;
 };
 
@@ -27,48 +33,79 @@ const cta = ({
   label,
   action,
   disabled = false,
-  hint = null,
 }: {
   readonly label: string;
   readonly action: WizardCtaAction;
   readonly disabled?: boolean;
-  readonly hint?: string | null;
-}): WizardCta => ({ label, action, disabled, hint });
+}): WizardCta => ({ label, action, disabled });
 
-export const wizardCta = ({
+const footer = ({
+  primary,
+  skip = null,
+  hint = null,
+}: {
+  readonly primary: WizardCta | null;
+  readonly skip?: WizardCta | null;
+  readonly hint?: string | null;
+}): WizardFooter => ({ primary, skip, hint });
+
+const optionalStep = ({
+  isConnected,
+  isLastStep,
+  busy,
+}: {
+  readonly isConnected: boolean;
+  readonly isLastStep: boolean;
+  readonly busy: boolean;
+}): WizardFooter => {
+  const action: WizardCtaAction = isLastStep ? 'finish' : 'next';
+  return footer({
+    primary: cta({
+      label: isLastStep ? 'Done' : 'Continue',
+      action,
+      disabled: busy || !isConnected,
+    }),
+    skip: isConnected ? null : cta({ label: 'Skip for now', action, disabled: busy }),
+  });
+};
+
+export const wizardFooter = ({
   step,
   providersConnected,
-  shape,
   hasWorkspace,
   workspaceName,
   projectCount,
+  codeHostConnected,
+  taskSourceConnected,
+  isLastStep,
   busy,
-}: Params): WizardCta | null => {
+}: Params): WizardFooter => {
   switch (step) {
     case 'welcome':
-      return cta({ label: 'Get started', action: 'next' });
+      return footer({ primary: cta({ label: 'Get started', action: 'next' }) });
     case 'providers':
-      return cta({
-        label: 'Continue',
-        action: 'next',
-        disabled: providersConnected === 0,
+      return footer({
+        primary: cta({ label: 'Continue', action: 'next', disabled: providersConnected === 0 }),
         hint: providersConnected === 0 ? PROVIDER_GATE_HINT : null,
       });
-    case 'shape':
-      if (shape === 'single' && !hasWorkspace) {
-        return null;
-      }
-      return cta({
-        label: hasWorkspace ? 'Continue' : 'Create workspace',
-        action: 'commit-name',
-        disabled: busy || shape === null || workspaceName.trim().length === 0,
+    case 'project':
+      return footer({
+        primary: cta({
+          label: 'Continue',
+          action: 'commit-project',
+          disabled:
+            busy || !hasWorkspace || projectCount === 0 || workspaceName.trim().length === 0,
+        }),
       });
-    case 'projects':
-      return cta({ label: 'Continue', action: 'next', disabled: projectCount === 0 });
-    case 'profile':
-      return cta({ label: 'Continue', action: 'commit-profile', disabled: busy });
-    case 'ready':
-      return cta({ label: 'Start building', action: 'finish' });
+    case 'code-host':
+      return optionalStep({ isConnected: codeHostConnected, isLastStep, busy });
+    case 'tasks':
+      return optionalStep({ isConnected: taskSourceConnected, isLastStep, busy });
+    case 'first-session':
+      return footer({
+        primary: null,
+        skip: cta({ label: 'Skip, open the board', action: 'finish', disabled: busy }),
+      });
     default: {
       const exhaustive: never = step;
       return exhaustive;

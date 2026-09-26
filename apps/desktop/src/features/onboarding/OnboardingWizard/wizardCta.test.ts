@@ -1,63 +1,96 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_GATE_HINT, wizardCta } from './wizardCta';
+import { PROVIDER_GATE_HINT, wizardFooter } from './wizardCta';
 import { WIZARD_STEPS, visibleWizardSteps } from './wizardSteps';
 
 const BASE = {
   providersConnected: 1,
-  shape: 'workspace',
   hasWorkspace: true,
-  workspaceName: 'Harborline',
+  workspaceName: 'Northwind',
   projectCount: 1,
+  codeHostConnected: false,
+  taskSourceConnected: false,
+  isLastStep: false,
   busy: false,
 } as const;
 
-describe('wizardCta', () => {
-  it('maps every step to its call to action', () => {
-    expect(WIZARD_STEPS.map((step) => wizardCta({ ...BASE, step })?.action)).toEqual([
+describe('wizardFooter', () => {
+  it('maps every step to its primary action', () => {
+    expect(WIZARD_STEPS.map((step) => wizardFooter({ ...BASE, step }).primary?.action)).toEqual([
       'next',
       'next',
-      'commit-name',
+      'commit-project',
       'next',
-      'commit-profile',
-      'finish',
+      'next',
+      undefined,
     ]);
-    expect(wizardCta({ ...BASE, step: 'welcome' })?.label).toBe('Get started');
-    expect(wizardCta({ ...BASE, step: 'ready' })?.label).toBe('Start building');
+    expect(wizardFooter({ ...BASE, step: 'welcome' }).primary?.label).toBe('Get started');
   });
 
   it('gates the providers step with a hint while nothing is connected', () => {
-    expect(wizardCta({ ...BASE, step: 'providers', providersConnected: 0 })).toEqual({
-      label: 'Continue',
-      action: 'next',
-      disabled: true,
-      hint: PROVIDER_GATE_HINT,
-    });
-    expect(wizardCta({ ...BASE, step: 'providers' })?.hint).toBeNull();
+    const gated = wizardFooter({ ...BASE, step: 'providers', providersConnected: 0 });
+    expect(gated.primary?.disabled).toBe(true);
+    expect(gated.hint).toBe(PROVIDER_GATE_HINT);
+    expect(wizardFooter({ ...BASE, step: 'providers' }).hint).toBeNull();
   });
 
-  it('returns no call to action while a single project is picked without a workspace', () => {
-    expect(wizardCta({ ...BASE, step: 'shape', shape: 'single', hasWorkspace: false })).toBeNull();
+  it('keeps the project step closed until a project and a workspace name exist', () => {
+    expect(wizardFooter({ ...BASE, step: 'project', projectCount: 0 }).primary?.disabled).toBe(
+      true,
+    );
+    expect(wizardFooter({ ...BASE, step: 'project', workspaceName: ' ' }).primary?.disabled).toBe(
+      true,
+    );
+    expect(wizardFooter({ ...BASE, step: 'project' }).primary?.disabled).toBe(false);
   });
 
-  it('offers Create workspace until a workspace exists and needs a shape and a name', () => {
-    const create = wizardCta({ ...BASE, step: 'shape', hasWorkspace: false, workspaceName: ' ' });
-    expect(create?.label).toBe('Create workspace');
-    expect(create?.disabled).toBe(true);
-    expect(wizardCta({ ...BASE, step: 'shape', shape: null })?.disabled).toBe(true);
+  it('offers Skip for now on code host and tasks until something is connected', () => {
+    const codeHost = wizardFooter({ ...BASE, step: 'code-host' });
+    expect(codeHost.skip?.label).toBe('Skip for now');
+    expect(codeHost.primary?.disabled).toBe(true);
+    const connected = wizardFooter({ ...BASE, step: 'code-host', codeHostConnected: true });
+    expect(connected.skip).toBeNull();
+    expect(connected.primary?.disabled).toBe(false);
+    expect(wizardFooter({ ...BASE, step: 'tasks' }).skip?.label).toBe('Skip for now');
   });
 
-  it('keeps the projects step closed until one project is linked', () => {
-    expect(wizardCta({ ...BASE, step: 'projects', projectCount: 0 })?.disabled).toBe(true);
+  it('closes with Done when a reopened step is the last one', () => {
+    const single = wizardFooter({ ...BASE, step: 'tasks', isLastStep: true });
+    expect(single.primary?.label).toBe('Done');
+    expect(single.primary?.action).toBe('finish');
+    expect(single.skip?.action).toBe('finish');
+  });
+
+  it('leaves the first session primary to the step, with Skip, open the board in the footer', () => {
+    const first = wizardFooter({ ...BASE, step: 'first-session' });
+    expect(first.primary).toBeNull();
+    expect(first.skip?.label).toBe('Skip, open the board');
   });
 });
 
 describe('visibleWizardSteps', () => {
-  it('drops the projects step for a single project', () => {
-    expect(visibleWizardSteps({ mode: 'full', shape: 'single' })).not.toContain('projects');
-    expect(visibleWizardSteps({ mode: 'full', shape: 'workspace' })).toEqual(WIZARD_STEPS);
+  it('runs the five numbered steps after Welcome', () => {
+    expect(visibleWizardSteps({ mode: 'full', start: null, skipsCodeHost: false })).toEqual(
+      WIZARD_STEPS,
+    );
   });
 
-  it('starts setup mode at the profile step', () => {
-    expect(visibleWizardSteps({ mode: 'setup', shape: 'workspace' })).toEqual(['profile', 'ready']);
+  it('skips Code host when no project is a git folder', () => {
+    expect(visibleWizardSteps({ mode: 'full', start: null, skipsCodeHost: true })).not.toContain(
+      'code-host',
+    );
+  });
+
+  it('starts setup mode at Code host and runs to the first session', () => {
+    expect(visibleWizardSteps({ mode: 'setup', start: null, skipsCodeHost: false })).toEqual([
+      'code-host',
+      'tasks',
+      'first-session',
+    ]);
+  });
+
+  it('opens a single step on its own', () => {
+    expect(visibleWizardSteps({ mode: 'single', start: 'tasks', skipsCodeHost: false })).toEqual([
+      'tasks',
+    ]);
   });
 });

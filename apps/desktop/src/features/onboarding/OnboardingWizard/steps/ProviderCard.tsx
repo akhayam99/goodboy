@@ -3,6 +3,7 @@ import { Button } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { type ProviderDisplayInfo } from '../../../providers/providers';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
+import { PROVIDER_PITCH } from '../../../providers/providerPitch';
 import { PROVIDER_BRAND, brandColor } from '../../../providers/components/provider-brand';
 import { StatusPill } from '../../../providers/components/ProviderConnect/StatusPill';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
@@ -14,7 +15,7 @@ type Props = {
   readonly onExpandedChange: (params: { readonly providerId: ProviderId | null }) => void;
 };
 
-export const providerRowAction = ({
+export const providerCardAction = ({
   info,
 }: {
   readonly info: ProviderDisplayInfo;
@@ -34,16 +35,17 @@ export const providerRowAction = ({
   return 'Connect';
 };
 
-export const ProviderRow = ({ info, isExpanded, onExpandedChange }: Props) => {
+export const ProviderCard = ({ info, isExpanded, onExpandedChange }: Props) => {
   const Icon = PROVIDER_BRAND[info.id].icon;
   const label = PROVIDER_LABEL[info.id];
-  const action = providerRowAction({ info });
+  const action = providerCardAction({ info });
+  const pitch = PROVIDER_PITCH[info.id];
   const isApi = isApiProvider({ id: info.id });
   const collapse = () => onExpandedChange({ providerId: null });
 
   return (
     <li className="flex flex-col rounded-lg border border-border-soft bg-subtle">
-      <div className="flex items-center gap-3 px-3.5 py-2.5">
+      <div className="flex items-start gap-3 px-3.5 py-3">
         <span
           className="flex size-8 shrink-0 items-center justify-center rounded-md bg-subtle"
           style={{ color: brandColor(info.id) }}
@@ -51,7 +53,9 @@ export const ProviderRow = ({ info, isExpanded, onExpandedChange }: Props) => {
           <Icon size={ICON_SIZE.hero} aria-hidden />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-row capitalize text-foreground">{label}</span>
+          <span className="text-row text-foreground">{label}</span>
+          <span className="text-secondary text-muted-foreground">{pitch.forWho}</span>
+          <span className="text-secondary text-faint-foreground">{pitch.needs}</span>
           <StatusPill connection={info.connection} />
         </div>
         {isExpanded && !isApi && (

@@ -1,11 +1,11 @@
 import { getSetting, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
-import { shortcutGlyphs } from '../../shared/keyboard/registry';
+import type { WizardStepId } from './OnboardingWizard/wizardSteps';
 
 export type OnboardingStepId =
-  'workspace' | 'codeHost' | 'tools' | 'session' | 'agent' | 'plan' | 'palette';
+  'provider' | 'project' | 'codeHost' | 'taskManager' | 'firstSession' | 'profile';
 
-export type OnboardingGroup = 'setup' | 'build';
+export type OnboardingGroup = 'setup' | 'next';
 
 export const ONBOARDING_STEPS: ReadonlyArray<{
   readonly id: OnboardingStepId;
@@ -14,46 +14,40 @@ export const ONBOARDING_STEPS: ReadonlyArray<{
   readonly group: OnboardingGroup;
 }> = [
   {
-    id: 'workspace',
-    title: 'Connect a workspace',
-    why: 'Group the projects, sessions, and shared context of one product or team.',
+    id: 'provider',
+    title: 'Connect an AI provider',
+    why: 'Every agent runs through a provider you already use.',
+    group: 'setup',
+  },
+  {
+    id: 'project',
+    title: 'Pick a project',
+    why: 'A folder with code, or any folder with documents.',
     group: 'setup',
   },
   {
     id: 'codeHost',
     title: 'Connect a code host',
-    why: 'Link GitHub or GitLab so agents can read PRs, branches, and reviews.',
+    why: 'Push branches and open pull requests on GitHub, GitLab or Bitbucket.',
     group: 'setup',
   },
   {
-    id: 'tools',
-    title: 'Connect your tools',
-    why: 'Wire a tracker or a conversation tool so agents can pull issue context and post where you work.',
+    id: 'taskManager',
+    title: 'Connect a task manager',
+    why: 'Start sessions from Linear or Jira issues.',
     group: 'setup',
   },
   {
-    id: 'session',
-    title: 'Create your first session',
-    why: 'A session focuses agents and shared context on one concrete goal.',
-    group: 'build',
+    id: 'firstSession',
+    title: 'Run your first session',
+    why: 'Ticks when your first agent finishes a turn.',
+    group: 'setup',
   },
   {
-    id: 'agent',
-    title: 'Create your first agent',
-    why: 'Sessions host agents (planner, scout, implementer…). Create the one that fits the work.',
-    group: 'build',
-  },
-  {
-    id: 'plan',
-    title: 'Make your first plan',
-    why: 'Start a planner. It writes a structured plan an implementer can pick up.',
-    group: 'build',
-  },
-  {
-    id: 'palette',
-    title: 'Open the command palette',
-    why: `${shortcutGlyphs('palette.open')}. Navigate workspaces, sessions, and agents, everything from one input.`,
-    group: 'build',
+    id: 'profile',
+    title: 'Tell agents about you',
+    why: 'Your role and how much to explain. Optional.',
+    group: 'next',
   },
 ];
 
@@ -64,7 +58,12 @@ const SETTING_WIZARD = 'onboarding.wizard';
 
 export const OPEN_WIZARD_EVENT = 'goodboy:open-onboarding-wizard';
 
-export type WizardMode = 'full' | 'setup';
+export type WizardMode = 'full' | 'setup' | 'single';
+
+export type OpenWizardDetail = {
+  readonly mode: WizardMode;
+  readonly step?: WizardStepId;
+};
 
 const STEP_IDS: ReadonlyArray<OnboardingStepId> = ONBOARDING_STEPS.map((s) => s.id);
 
@@ -82,6 +81,12 @@ const cache: OnboardingCache = {
   wizardDone: false,
 };
 
+const isStepId = (value: string): value is OnboardingStepId => STEP_IDS.some((id) => id === value);
+
+const LEGACY_STEP_IDS: Readonly<Record<string, OnboardingStepId>> = {
+  workspace: 'project',
+};
+
 function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
   if (!raw) {
     return [];
@@ -95,10 +100,14 @@ function parseCompleted(raw: string | null): ReadonlyArray<OnboardingStepId> {
     if (!Array.isArray(c)) {
       return [];
     }
-    return c.filter(
-      (x): x is OnboardingStepId =>
-        typeof x === 'string' && STEP_IDS.includes(x as OnboardingStepId),
-    );
+    const ids = c.flatMap((x): ReadonlyArray<OnboardingStepId> => {
+      if (typeof x !== 'string') {
+        return [];
+      }
+      const id = LEGACY_STEP_IDS[x] ?? x;
+      return isStepId(id) ? [id] : [];
+    });
+    return [...new Set(ids)];
   } catch {
     return [];
   }
@@ -170,18 +179,24 @@ export const isWizardDone = (): boolean => {
 };
 
 export const finishWizard = (): void => {
-  if (cache.wizardDone) {
-    return;
+  if (!cache.wizardDone) {
+    cache.wizardDone = true;
+    void setSetting(tauriDatabase, SETTING_WIZARD, 'done');
   }
-  cache.wizardDone = true;
-  void setSetting(tauriDatabase, SETTING_WIZARD, 'done');
   window.dispatchEvent(new CustomEvent('goodboy:onboarding-progress'));
 };
 
-export const reopenWizard = (mode: WizardMode = 'full'): void => {
+export const reopenWizard = (mode: WizardMode = 'full', step?: WizardStepId): void => {
   if (cache.wizardDone) {
     cache.wizardDone = false;
     void setSetting(tauriDatabase, SETTING_WIZARD, '');
   }
-  window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail: { mode } }));
+  const detail: OpenWizardDetail = step === undefined ? { mode } : { mode, step };
+  window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
+};
+
+export const openWizardStep = (step: WizardStepId): void => {
+  window.dispatchEvent(
+    new CustomEvent<OpenWizardDetail>(OPEN_WIZARD_EVENT, { detail: { mode: 'single', step } }),
+  );
 };
