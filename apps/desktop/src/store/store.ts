@@ -426,6 +426,10 @@ type AppActions = {
     mode: Exclude<GoodboyIgnoreMode, 'existing'>;
   }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
+  setWorkspacePermissionDefault(input: {
+    workspaceId: WorkspaceId;
+    mode: ClaudePermissionMode;
+  }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
     profile: WorkspaceProfile;

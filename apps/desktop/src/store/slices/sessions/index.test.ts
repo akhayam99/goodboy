@@ -984,6 +984,34 @@ describe('store contract', () => {
       expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
+    it('starts a session in the permission mode its workspace set as default', async () => {
+      const store = useAppStore;
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([]);
+      store.setState({
+        currentWorkspaceId: WS_ID,
+        projects: [],
+        workspaces: [buildWorkspace({ defaultPermissionMode: 'plan' })],
+      });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(session.permissionMode).toBe('plan');
+    });
+
+    it('starts a session with full access when the workspace set no default', async () => {
+      const store = useAppStore;
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([]);
+      store.setState({ currentWorkspaceId: WS_ID, projects: [], workspaces: [buildWorkspace()] });
+
+      const { session } = await store
+        .getState()
+        .createSession({ workspaceId: WS_ID, goal: 'Study plan' });
+
+      expect(session.permissionMode).toBe('bypassPermissions');
+    });
+
     it('creates a bare session in a workspace with no project', async () => {
       const store = useAppStore;
       const db = await import('@goodboy/db');

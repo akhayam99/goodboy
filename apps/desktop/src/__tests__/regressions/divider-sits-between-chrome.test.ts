@@ -70,10 +70,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/impact/components/ImpactStudio/RailGroupLabel.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
     count: 1,
     reason: 'chrome',

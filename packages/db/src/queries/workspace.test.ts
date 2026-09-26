@@ -9,6 +9,7 @@ import {
   listWorkspaces,
   reconnectWorkspace,
   renameWorkspace,
+  setWorkspacePermissionDefault,
   touchWorkspaceLastAccessed,
   upsertWorkspaceProfile,
 } from './workspace';
@@ -44,6 +45,7 @@ const makeWorkspace = ({ id = 'workspace-1', overrides = {} }: MakeWorkspacePara
   name: 'Demo Team',
   slug: id,
   overrides: EMPTY_OVERRIDES,
+  defaultPermissionMode: 'bypassPermissions',
   createdAt: at({ value: '2026-08-22T10:00:00Z' }),
   updatedAt: at({ value: '2026-08-22T10:05:00Z' }),
   ...overrides,
@@ -120,6 +122,16 @@ describe('workspace queries', () => {
     expect(stored?.disconnectedAt).toBeUndefined();
     expect(stored?.lastAccessedAt).toBe(at({ value: '2026-08-22T12:20:00Z' }));
     vi.useRealTimers();
+  });
+
+  it('lowers the permission default for new sessions and keeps it', async () => {
+    const db = await makeDb();
+    const workspace = makeWorkspace({});
+    await insertWorkspace({ db, workspace });
+
+    await setWorkspacePermissionDefault({ db, id: workspace.id, mode: 'plan' });
+
+    expect((await getWorkspaceById({ db, id: workspace.id }))?.defaultPermissionMode).toBe('plan');
   });
 
   it('upserts a profile independently', async () => {

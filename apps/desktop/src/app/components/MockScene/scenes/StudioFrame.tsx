@@ -43,6 +43,7 @@ export const StudioFrame = ({ target, main }: StudioFrameProps) => {
             onOpenIntegration={noop}
             onOpenInbox={noop}
             onOpenWorkflows={noop}
+            onOpenImpact={noop}
             onOpenSettings={noop}
             onOpenShortcuts={noop}
             onOpenChangelog={noop}

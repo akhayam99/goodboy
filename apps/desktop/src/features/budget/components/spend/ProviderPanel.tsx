@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
 import type { ProviderSpendEntry } from '../../../../store';
@@ -11,12 +11,15 @@ import { CostRing } from './CostRing';
 import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
 import { PaneShell } from '../../../../shared/components/PaneShell';
+import { SpendAnchorTitle } from './SpendAnchorTitle';
 import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
+  readonly header: ReactElement;
+  readonly onBack: () => void;
   readonly provider: ProviderName;
   readonly entry: ProviderSpendEntry | null;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -33,6 +36,8 @@ type Props = {
 };
 
 export const ProviderPanel = ({
+  header,
+  onBack,
   provider,
   entry,
   turns,
@@ -60,12 +65,13 @@ export const ProviderPanel = ({
   const coverage = useMemo(() => coverageTurnCounts(models), [models]);
 
   return (
-    <PaneShell
-      scroll="body"
-      glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
-      title={providerLabel({ provider })}
-      meta={`${formatUsd(spent)} total spend`}
-    >
+    <PaneShell scroll="body" header={header}>
+      <SpendAnchorTitle
+        glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
+        title={providerLabel({ provider })}
+        meta={`${formatUsd(spent)} total spend`}
+        onBack={onBack}
+      />
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip
         label="session telemetry"

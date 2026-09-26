@@ -357,6 +357,7 @@ pub fn run() {
             workflows::workspaces_with_unread,
             permissions::permission_rule_list,
             permissions::permission_rule_upsert,
+            permissions::permission_rule_delete,
             permissions::permission_audit_insert,
             permissions::permission_audit_retry_enqueue,
             permissions::permission_audit_retry_drain,

@@ -301,7 +301,7 @@ export type {
   PermissionRuleScope,
   PermissionScope,
 } from './permission';
-export { CLAUDE_PERMISSION_MODES } from './permission';
+export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
 export type {
   DiffComment,
   DiffCommentAnchor,

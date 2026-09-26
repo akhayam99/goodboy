@@ -451,3 +451,46 @@ pub async fn permission_audit_retry_delete(
     )?;
     Ok(())
 }
+
+fn delete_rule(conn: &rusqlite::Connection, id: &str) -> Result<usize, rusqlite::Error> {
+    conn.execute(
+        "DELETE FROM permission_rules WHERE id = ?1",
+        rusqlite::params![id],
+    )
+}
+
+#[tauri::command]
+pub async fn permission_rule_delete(
+    state: State<'_, Db>,
+    id: String,
+) -> Result<(), PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    delete_rule(&conn, &id)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::delete_rule;
+
+    #[test]
+    fn delete_rule_removes_only_the_named_rule() {
+        let conn = rusqlite::Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE permission_rules (id TEXT PRIMARY KEY);
+             INSERT INTO permission_rules (id) VALUES ('keep'), ('drop');",
+        )
+        .expect("seed");
+
+        assert_eq!(delete_rule(&conn, "drop").expect("delete"), 1);
+        assert_eq!(delete_rule(&conn, "missing").expect("delete"), 0);
+        let left: Vec<String> = conn
+            .prepare("SELECT id FROM permission_rules")
+            .expect("prepare")
+            .query_map([], |row| row.get(0))
+            .expect("query")
+            .collect::<Result<_, _>>()
+            .expect("rows");
+        assert_eq!(left, vec!["keep".to_string()]);
+    }
+}

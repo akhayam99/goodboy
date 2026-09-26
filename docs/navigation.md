@@ -37,7 +37,7 @@
   Forward, Board and Search, clustered in the centre. Destinations (studios)
   stay in the footer, and the bar never edits a record in place. The spend
   chip is the one exception: it is state that opens the studio that owns that
-  number, the impact overview. Board is not a destination like Inbox: it is
+  number, on Impact's Spend tab. Board is not a destination like Inbox: it is
   home, and home sits with the arrows.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
@@ -368,8 +368,8 @@ covered.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
-  session and opens that run's output in the right drawer. Spend opens Impact;
-  it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
+  session and opens that run's output in the right drawer. Spend opens Impact
+  on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and a bar of
   the provider's most used window; the number shows from 80%, `Out` with the
@@ -445,11 +445,13 @@ form, and its primary action opens the full form instead of sending. The
 popover opens by itself once, when the first project is added; the checklist
 has no floating card.
 
-Right: Inbox, Workflows and Settings. Settings opens on the current workspace
-when there is one. Providers & models is a Settings scope, reached from the
-Settings rail and the palette, so it has no footer launcher. Impact opens from
-the spend figure and the palette, Changelog from the Goodboy chip and the
-palette, so neither earns a footer entry.
+Right: Inbox, Workflows, Impact and Settings. Settings opens on the current
+workspace when there is one. Impact is a destination, so it has a launcher; the
+launcher opens its Overview tab, while the spend figure in the top bar and the
+`Impact: Spend` palette entry open its Spend tab. Providers & models is a
+Settings scope, reached from the Settings rail and the palette, so it has no
+footer launcher. Changelog opens from the Goodboy chip and the palette, so it
+earns no footer entry either.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -528,8 +530,8 @@ one is open at a time.
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Inbox, Notifications, Report an issue, Add workspace), `rail` (Settings,
-  Impact) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  (Inbox, Notifications, Report an issue, Add workspace, Impact), `rail`
+  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with

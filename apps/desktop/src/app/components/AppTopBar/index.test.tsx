@@ -97,7 +97,7 @@ const ATTENTION_SESSION = {
   goal: 'Review the failing checks',
 } as unknown as Session;
 
-const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open Impact';
+const SPEND_LABEL = 'Spent today in Harborline, counted by Goodboy. Open spend';
 
 type BarOverrides = {
   readonly onOpenSpend?: () => void;
@@ -192,7 +192,7 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: SPEND_LABEL })).toBeDefined();
   });
 
-  it('opens impact only from the spend figure, never from the now chip', () => {
+  it('opens spend only from the spend figure, never from the now chip', () => {
     hooks.groups = [
       { key: 'attention', sessions: [ATTENTION_SESSION] },
       { key: 'running', sessions: [ATTENTION_SESSION] },

@@ -329,7 +329,6 @@
     "apps/desktop/src/features/diff/components/DiffView/FileJumpPopover.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/LineGutter.tsx": 1,
     "apps/desktop/src/features/github/components/MissingGithubRemoteEmptyState.tsx": 1,
-    "apps/desktop/src/features/impact/components/ImpactStudio/OverviewPanel.tsx": 1,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxRow.tsx": 2,
     "apps/desktop/src/features/integrations/components/ConnectForm/index.tsx": 3,
     "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.tsx": 2,

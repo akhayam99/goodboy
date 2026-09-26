@@ -88,7 +88,9 @@ vi.mock('../../../features/inbox/components/InboxStudio', () => ({
   ),
 }));
 vi.mock('../../../features/impact/components/ImpactStudio', () => ({
-  ImpactStudio: () => <div data-testid="studio" data-kind="impact" />,
+  ImpactStudio: ({ initialScope }: { readonly initialScope?: { readonly kind: string } }) => (
+    <div data-testid="studio" data-kind="impact" data-scope={initialScope?.kind ?? ''} />
+  ),
 }));
 vi.mock('../../../features/changelog/components/ChangelogStudio', () => ({
   ChangelogStudio: () => <div data-testid="studio" data-kind="changelog" />,
@@ -288,6 +290,26 @@ describe('app overlay hook', () => {
 
     expect(await openStudios()).toEqual(['inbox']);
     expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('linear');
+  });
+
+  it('opens impact on spend from the spend figure and on overview from the footer', async () => {
+    renderHarness();
+
+    act(() => overlays().openSpend());
+    expect(await openStudios()).toEqual(['impact']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
+
+    act(() => overlays().openImpact());
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('');
+  });
+
+  it('lands an old efficiency scope from an event on spend', async () => {
+    renderHarness();
+
+    fire({ name: 'goodboy:open-impact-studio', detail: { scope: { kind: 'efficiency' } } });
+
+    expect(await openStudios()).toEqual(['impact']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
   });
 
   it('replaces the open studio when a footer opener runs', async () => {

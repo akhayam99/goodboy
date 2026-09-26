@@ -22,6 +22,7 @@ type Props = {
   readonly onOpenIntegration: (params: { readonly provider: IntegrationGlyphProvider }) => void;
   readonly onOpenInbox: () => void;
   readonly onOpenWorkflows: () => void;
+  readonly onOpenImpact: () => void;
   readonly onOpenSettings: () => void;
   readonly onOpenChangelog: () => void;
   readonly onOpenShortcuts: () => void;
@@ -34,6 +35,7 @@ export const AppFooter = ({
   onOpenIntegration,
   onOpenInbox,
   onOpenWorkflows,
+  onOpenImpact,
   onOpenSettings,
   onOpenChangelog,
   onOpenShortcuts,
@@ -103,6 +105,14 @@ export const AppFooter = ({
                 title="Open the workflow library for this workspace"
                 onClick={onOpenWorkflows}
                 active={target === 'workflows'}
+              />
+              <FooterButton
+                icon={<CONCEPT_ICONS.impact size={ICON_SIZE.control} aria-hidden />}
+                label="Impact"
+                tone={CONCEPT_TONE.impact}
+                title="Open Impact for this workspace"
+                onClick={onOpenImpact}
+                active={target === 'impact'}
               />
             </>
           )}

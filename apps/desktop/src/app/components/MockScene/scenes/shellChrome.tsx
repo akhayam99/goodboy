@@ -137,6 +137,7 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
             onOpenIntegration={noop}
             onOpenInbox={noop}
             onOpenWorkflows={noop}
+            onOpenImpact={noop}
             onOpenSettings={noop}
             onOpenShortcuts={noop}
             onOpenChangelog={noop}

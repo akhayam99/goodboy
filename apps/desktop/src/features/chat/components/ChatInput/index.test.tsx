@@ -104,6 +104,7 @@ const {
     discoveredScriptScans: {},
     sessionWorktrees: {},
     providerSpendBreakdown: [],
+    workspaces: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
     agentModelOverride: {},

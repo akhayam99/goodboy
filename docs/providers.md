@@ -455,8 +455,34 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
   `--disallowedTools`). The other CLIs have no equivalent flag
-- The composer's mode picker disables the rows the active provider can't honor
-  and says why
+- Settings, Workspace, Permissions shows this table in words, one column per
+  provider, and lists the workspace and global rules. Each rule names the
+  provider that follows it and the ones that ignore it, and a deny rule that a
+  provider running agents in the workspace ignores raises a warning. Remove
+  deletes the rule (`permission_rule_delete`)
+- The composer's mode picker offers four modes: Read only, Ask first, Edits
+  allowed and Full access. It disables the rows the active provider can't
+  honor and says why. `dontAsk` stays in the type for older sessions and reads
+  as Ask first; the picker never offers it
+- Every workspace starts on Full access (`workspaces.default_permission_mode`).
+  A new session takes its workspace's default, which Settings, Workspace,
+  Permissions can lower; a running session keeps its mode
+
+#### Why Ask first asks after the fact
+
+- Claude answers a permission prompt in `--print` only through a host. With
+  `--input-format stream-json` and `--permission-prompts host` (the default in
+  2.1.282) it writes a `control_request` whose `subtype` is `can_use_tool`
+  (tool name, input, tool use id, suggested rules) and waits for a
+  `control_response` with `behavior` `allow` or `deny`. That shape is read from
+  the 2.1.282 binary and `claude --help`; no real turn has exercised it
+- `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
+  exists: every call the mode doesn't allow is denied, the turn stops, and the
+  approval card takes it from there
+- Cursor's help describes `--mode plan` as read-only planning with no edits.
+  Goodboy passes it without `--force`. Whether read-only shell commands still
+  run in that mode has not been checked on a real turn, so the table keeps
+  Cursor's Read only at Partly
 
 ### API keys
 
