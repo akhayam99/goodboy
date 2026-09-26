@@ -1,6 +1,5 @@
-import { Fragment, useMemo } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { useMemo } from 'react';
+import { StatusDot, Tooltip, Trail, type TrailSegmentModel } from '@goodboy/ui';
 import type { Agent, AgentId, ResolveAttempt, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, agentPlace } from '../../../../store';
 import { describeSessionStage } from '../../session-stage';
@@ -14,14 +13,11 @@ import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
-import { PlainCrumb } from './PlainCrumb';
 import { AgentSwitcherCrumb } from './AgentSwitcherCrumb';
 import { LensSwitcherCrumb } from './LensSwitcherCrumb';
 import { switcherPeers } from './switcherPeers';
 import { CollapsedCrumbs } from './CollapsedCrumbs';
 import type { SwitcherEntry } from './switcherEntry';
-
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
@@ -145,96 +141,92 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
     index > destinationCrumbIndex && index < crumbs.length - 1;
   const collapsibleCrumbs = crumbs.filter((_, index) => isCollapsible(index));
 
-  return (
-    <nav
-      aria-label="Breadcrumb"
-      className="flex h-6 min-w-0 flex-1 items-center gap-1.5 overflow-hidden"
-    >
-      <Tooltip content={stateDescription({ presentation: stagePresentation })}>
-        <span className="inline-flex shrink-0 items-center">
-          <StatusDot
-            tone={stagePresentation.tone}
-            size="sm"
-            ariaLabel={stateDescription({ presentation: stagePresentation })}
-          />
-        </span>
-      </Tooltip>
-      {crumbs.map((crumb, index) => {
-        const isLast = index === crumbs.length - 1;
-        const accessory =
-          isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
-            <AgentStatusIcon status={selectedAgent.status} />
-          ) : (
-            crumb.accessory
-          );
-        const visibleCrumb = accessory === crumb.accessory ? crumb : { ...crumb, accessory };
+  const segments: ReadonlyArray<TrailSegmentModel> = crumbs.flatMap((crumb, index) => {
+    const isLast = index === crumbs.length - 1;
+    const accessory =
+      isLast && crumb.id === 'selected-child' && selectedAgent != null ? (
+        <AgentStatusIcon status={selectedAgent.status} />
+      ) : (
+        crumb.accessory
+      );
+    const collapsed: ReadonlyArray<TrailSegmentModel> =
+      index === destinationCrumbIndex + 1 && collapsibleCrumbs.length > 0
+        ? [
+            {
+              id: 'collapsed',
+              label: 'Hidden pages',
+              icon: null,
+              className: 'hidden @max-[720px]:flex',
+              render: <CollapsedCrumbs crumbs={collapsibleCrumbs} />,
+            },
+          ]
+        : [];
+    const render =
+      isLast && canSwitchAgent && selectedAgent != null ? (
+        <AgentSwitcherCrumb
+          label={crumb.label}
+          icon={crumb.icon}
+          accessory={accessory}
+          siblings={siblings}
+          selectedAgentId={selectedAgent.id}
+          onSelect={(id) => {
+            navigate({ to: agentPlace({ sessionId, agentId: id }) });
+          }}
+        />
+      ) : crumb.id === 'selected-parent' && parentAgent != null && parentSiblings.length > 1 ? (
+        <AgentSwitcherCrumb
+          label={crumb.label}
+          icon={crumb.icon}
+          accessory={accessory}
+          siblings={parentSiblings}
+          selectedAgentId={parentAgent.id}
+          onNavigate={crumb.onClick}
+          onSelect={(id) => {
+            navigate({ to: agentPlace({ sessionId, agentId: id }) });
+          }}
+        />
+      ) : index === destinationCrumbIndex ? (
+        <LensSwitcherCrumb
+          label={crumb.label}
+          icon={crumb.icon}
+          accessory={accessory}
+          sessionId={sessionId}
+          activeLens={activeLens}
+          isBranchless={isBranchless}
+          onNavigate={crumb.onClick}
+          onSelect={(lens) => {
+            setFocusedArtifactId(sessionId, null);
+            setFocusedWorkflowRun(sessionId, null);
+            openLens({ sessionId, lens });
+          }}
+        />
+      ) : undefined;
+    const segment: TrailSegmentModel = {
+      id: crumb.id,
+      label: crumb.label,
+      icon: crumb.icon ?? null,
+      accessory,
+      ...(crumb.onClick !== undefined && { onSelect: crumb.onClick }),
+      ...(render !== undefined && { render }),
+      ...(isCollapsible(index) && { className: '@max-[720px]:hidden' }),
+    };
+    return [...collapsed, segment];
+  });
 
-        return (
-          <Fragment key={crumb.id}>
-            {index === destinationCrumbIndex + 1 && collapsibleCrumbs.length > 0 ? (
-              <CollapsedCrumbs crumbs={collapsibleCrumbs} className="hidden @max-[720px]:flex" />
-            ) : null}
-            <span
-              className={cn(
-                'flex min-w-0 items-center gap-1.5',
-                isLast ? 'flex-1' : 'shrink',
-                isCollapsible(index) && '@max-[720px]:hidden',
-              )}
-            >
-              {index > 0 ? (
-                <ChevronRight
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className="shrink-0 text-faint-foreground"
-                />
-              ) : null}
-              {index === crumbs.length - 1 && canSwitchAgent && selectedAgent != null ? (
-                <AgentSwitcherCrumb
-                  label={visibleCrumb.label}
-                  icon={visibleCrumb.icon}
-                  accessory={visibleCrumb.accessory}
-                  siblings={siblings}
-                  selectedAgentId={selectedAgent.id}
-                  onSelect={(id) => {
-                    navigate({ to: agentPlace({ sessionId, agentId: id }) });
-                  }}
-                />
-              ) : crumb.id === 'selected-parent' &&
-                parentAgent != null &&
-                parentSiblings.length > 1 ? (
-                <AgentSwitcherCrumb
-                  label={visibleCrumb.label}
-                  icon={visibleCrumb.icon}
-                  accessory={visibleCrumb.accessory}
-                  siblings={parentSiblings}
-                  selectedAgentId={parentAgent.id}
-                  onNavigate={crumb.onClick}
-                  onSelect={(id) => {
-                    navigate({ to: agentPlace({ sessionId, agentId: id }) });
-                  }}
-                />
-              ) : index === destinationCrumbIndex ? (
-                <LensSwitcherCrumb
-                  label={visibleCrumb.label}
-                  icon={visibleCrumb.icon}
-                  accessory={visibleCrumb.accessory}
-                  sessionId={sessionId}
-                  activeLens={activeLens}
-                  isBranchless={isBranchless}
-                  onNavigate={crumb.onClick}
-                  onSelect={(lens) => {
-                    setFocusedArtifactId(sessionId, null);
-                    setFocusedWorkflowRun(sessionId, null);
-                    openLens({ sessionId, lens });
-                  }}
-                />
-              ) : (
-                <PlainCrumb crumb={visibleCrumb} isLast={isLast} />
-              )}
-            </span>
-          </Fragment>
-        );
-      })}
-    </nav>
+  return (
+    <Trail
+      segments={segments}
+      lead={
+        <Tooltip content={stateDescription({ presentation: stagePresentation })}>
+          <span className="inline-flex shrink-0 items-center">
+            <StatusDot
+              tone={stagePresentation.tone}
+              size="sm"
+              ariaLabel={stateDescription({ presentation: stagePresentation })}
+            />
+          </span>
+        </Tooltip>
+      }
+    />
   );
 };

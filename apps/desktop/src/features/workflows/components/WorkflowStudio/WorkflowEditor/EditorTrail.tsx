@@ -1,6 +1,11 @@
-import { Check, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
-import { OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Check, Copy, Trash2, Undo2 } from 'lucide-react';
+import { OverflowMenu, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
+import {
+  CONCEPT_ICONS,
+  CONCEPT_TONE,
+  ICON_SIZE,
+} from '../../../../../shared/components/conceptIcons';
+import { StudioTrail } from '../../../../../shared/components/StudioShell/StudioTrail';
 import type { SaveStatus } from '../../WorkflowsPanel/useWorkflowEditor';
 
 type Props = {
@@ -21,7 +26,7 @@ const STATUS_LABEL: Record<SaveStatus, string> = {
   unsaved: 'Not saved yet',
 };
 
-export const EditorCrumb = ({
+export const EditorTrail = ({
   name,
   saveStatus,
   isSavedWorkflow,
@@ -62,32 +67,39 @@ export const EditorCrumb = ({
   const items = candidates.filter((item): item is OverflowMenuItem => item !== null);
 
   return (
-    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
-      <button
-        type="button"
-        onClick={onBack}
-        className="shrink-0 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-      >
-        Workflows
-      </button>
-      <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      <span className="min-w-0 truncate text-foreground" aria-current="page">
-        {name.trim() === '' ? 'Untitled workflow' : name.trim()}
-      </span>
-      <span
-        role="status"
-        className="inline-flex shrink-0 items-center gap-1 text-2xs text-faint-foreground"
-      >
-        {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
-        {STATUS_LABEL[saveStatus]}
-      </span>
-      <OverflowMenu
-        label="Workflow actions"
-        disabled={disabled}
-        align="left"
-        trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
-        items={items}
-      />
-    </nav>
+    <StudioTrail
+      segments={[
+        {
+          id: 'workflows',
+          label: 'Workflows',
+          icon: CONCEPT_ICONS.workflows,
+          iconClassName: tintClasses(CONCEPT_TONE.workflows).icon,
+          onSelect: onBack,
+        },
+        {
+          id: 'workflow',
+          label: name.trim() === '' ? 'Untitled workflow' : name.trim(),
+          icon: CONCEPT_ICONS.workflows,
+        },
+      ]}
+      accessory={
+        <>
+          <span
+            role="status"
+            className="inline-flex shrink-0 items-center gap-1 text-2xs text-faint-foreground"
+          >
+            {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
+            {STATUS_LABEL[saveStatus]}
+          </span>
+          <OverflowMenu
+            label="Workflow actions"
+            disabled={disabled}
+            align="left"
+            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.control} aria-hidden />}
+            items={items}
+          />
+        </>
+      }
+    />
   );
 };

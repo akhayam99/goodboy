@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, tintClasses, type Tone } from '@goodboy/ui';
+import { cn, Divider, tintClasses, Trail, type Tone } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 
 type Props = {
@@ -11,18 +11,22 @@ type Props = {
   readonly subtitle?: string;
   readonly closeLabel: string;
   readonly accessory?: ReactNode;
+  readonly isTrailClaimed?: boolean;
+  readonly trailSlotRef?: (node: HTMLDivElement | null) => void;
   readonly onClose: () => void;
 };
 
 export const StudioBand = ({
   crumbKey,
-  icon: Icon,
+  icon,
   tone = 'primary',
   glyph,
   title,
   subtitle,
   closeLabel,
   accessory,
+  isTrailClaimed = false,
+  trailSlotRef,
   onClose,
 }: Props) => (
   <>
@@ -31,17 +35,33 @@ export const StudioBand = ({
       data-studio-band=""
       className="flex h-10 shrink-0 items-center gap-3 px-6"
     >
-      <span key={crumbKey} className="flex min-w-0 items-center gap-2 motion-safe:animate-fade-in">
-        {glyph ??
-          (Icon != null ? (
-            <Icon size={16} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
-          ) : null)}
-        <span className="shrink-0 text-sm font-semibold text-foreground">{title}</span>
-        {subtitle != null && subtitle !== '' ? (
-          <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
-        ) : null}
-      </span>
-      <div className="flex-1" />
+      <div
+        ref={trailSlotRef}
+        data-slot="studio-trail"
+        className="flex min-w-0 flex-1 items-center gap-2"
+      >
+        {isTrailClaimed ? null : (
+          <Trail
+            lead={glyph != null ? <span className="flex shrink-0">{glyph}</span> : undefined}
+            segments={[
+              {
+                id: crumbKey,
+                label: title,
+                icon: glyph != null ? null : (icon ?? null),
+                iconClassName: tintClasses(tone).icon,
+                ...(subtitle != null &&
+                  subtitle !== '' && {
+                    accessory: (
+                      <span className="truncate text-2xs font-normal text-muted-foreground">
+                        {subtitle}
+                      </span>
+                    ),
+                  }),
+              },
+            ]}
+          />
+        )}
+      </div>
       {accessory}
       <button
         type="button"

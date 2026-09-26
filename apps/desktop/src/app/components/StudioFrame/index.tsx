@@ -27,6 +27,12 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
   const isClosing = closingKind === kind;
 
   const requestClose = useCallback(() => setClosingKind(kindRef.current), []);
+  const [trailSlot, setTrailSlot] = useState<HTMLElement | null>(null);
+  const [trailClaims, setTrailClaims] = useState(0);
+  const claimTrail = useCallback(() => {
+    setTrailClaims((count) => count + 1);
+    return () => setTrailClaims((count) => count - 1);
+  }, []);
 
   useEffect(() => {
     if (!isClosing) {
@@ -38,7 +44,10 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
 
   useEscapeLayer(requestClose, !isClosing && (chrome?.isEscapeEnabled ?? true));
 
-  const handle = useMemo<StudioFrameHandle>(() => ({ setChrome, requestClose }), [requestClose]);
+  const handle = useMemo<StudioFrameHandle>(
+    () => ({ setChrome, requestClose, trailSlot, claimTrail }),
+    [requestClose, trailSlot, claimTrail],
+  );
   const meta = STUDIO_META[kind];
   const band = { ...meta, ...chrome };
 
@@ -62,6 +71,8 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
           {...(chrome?.subtitle !== undefined && { subtitle: chrome.subtitle })}
           closeLabel={band.closeLabel}
           accessory={chrome?.accessory}
+          isTrailClaimed={trailClaims > 0}
+          trailSlotRef={setTrailSlot}
           onClose={requestClose}
         />
         <div className="relative flex min-h-0 min-w-0 flex-1 bg-background">

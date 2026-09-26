@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { CRUMB_BUTTON_CLASS, CRUMB_LINK_CLASS } from './crumbClasses';
@@ -23,8 +22,7 @@ export const CollapsedCrumbs = ({ crumbs, className }: Props) => {
   }
 
   return (
-    <span className={cn('min-w-0 items-center gap-1.5', className)}>
-      <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+    <span className={cn('flex min-w-0 items-center', className)}>
       <AnchoredPopover
         dropdown={dropdown}
         role="menu"

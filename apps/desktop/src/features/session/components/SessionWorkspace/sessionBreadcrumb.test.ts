@@ -100,7 +100,7 @@ describe('buildSessionBreadcrumb', () => {
     );
 
     expect(labels(adHoc)).toEqual(['Overview', 'agents', 'scout one']);
-    expect(labels(resolver)).toEqual(['Overview', 'review', 'review one']);
+    expect(labels(resolver)).toEqual(['Overview', 'review', 'Agent']);
   });
 
   it('parents a step on its run no matter which lens the jump came from', () => {

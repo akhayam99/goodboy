@@ -11,6 +11,7 @@ import { ICON_SIZE } from '../../conceptIcons';
 import { RecordActions } from '../RecordActions';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
 import { RecordOverflowMenu } from './RecordOverflowMenu';
+import { useInheritedPaneActions } from '../../PaneShell/paneActionsContext';
 
 type ExternalRef = {
   readonly url: string;
@@ -44,6 +45,7 @@ export const RecordHeader = ({
   const { copy } = useCopyLink();
   const hostLabel = integrationLabel({ provider });
   const armed = verbs.secondary.find((verb) => verb.key === armedKey) ?? null;
+  const inheritedActions = useInheritedPaneActions();
 
   useEffect(() => {
     setArmedKey(null);
@@ -58,6 +60,7 @@ export const RecordHeader = ({
         </span>
         {state}
         <span className="min-w-0 flex-1" />
+        {inheritedActions}
         {externalRef != null ? (
           <IconButton
             icon={ArrowUpRight}

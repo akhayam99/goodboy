@@ -238,15 +238,22 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
 
 ## Breadcrumbs
 
-- **The trail belongs to the page, not to the chrome.** It sits in the content
-  column, directly above the title, never in the top bar and never as a
-  full-width strip. The top bar is workspace chrome, and a session trail is
-  page context. `SessionWorkspace` hands the trail down through
-  `PageCrumbContext`, and `PaneShell` draws it inside the same `PageColumn` as
-  the title and body, outside the mount animation, so it holds still while the
-  view under it changes. Whatever draws the trail clears the context for its
-  children, so a nested shell never draws a second one. Outside a session the
-  context is empty and the row does not exist.
+- **The trail belongs to the page, not to the chrome, and it is mounted
+  once.** `TrailBar` sits at the top of `SessionWorkspace`, above every layer
+  (lens, child page, session studio) and outside every animation, in a 40px
+  band (12 above, a 24px row, 4 below) on the same `PageColumn` as the title
+  and body. It is never in the top bar and never a full-width strip. Changing
+  lens, opening an agent or opening a session studio keeps the same DOM node;
+  only the segments change. The layers under it fade in over 150ms with no
+  scale. Panes under the band get one header grammar from `PaneShell`: title,
+  optional tabs, 16 below, no crumb row of their own. A session studio (builder,
+  merge request, Bitbucket) has no second title bar: its title is the crumb,
+  and Esc or the parent crumb is Up.
+- **Studios use the same `Trail`.** The `StudioFrame` band renders the studio
+  name through the `Trail` primitive from `@goodboy/ui`. A studio body that
+  goes deeper claims the band with `StudioTrail` (the workflow editor shows
+  `Workflows > Ship a fix` with its save state and actions), so the app has one
+  breadcrumb.
 - **Under 720px of pane width the middle collapses.** Crumbs between the
   destination switcher and the last crumb fold into a `…` menu that lists them,
   the way VS Code and GitHub fold long paths.

@@ -14,7 +14,8 @@ import {
 import type { Agent, AgentId, ProviderId, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots, useSessionSlotsLoad } from '../../../../store';
 import { selectSelectedMountId } from '../../../../store/slices/project-mounts/selectedMountId';
-import { FocusedPane } from '../../../../shared/components/PaneShell/FocusedPane';
+import { PaneShell } from '../../../../shared/components/PaneShell';
+import { LENS_ICON } from '../../../session/lens-labels';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { workflowAvailabilitySnapshot } from '../../../workflows/workflowAvailabilitySnapshot';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -241,9 +242,10 @@ export const ArtifactCreationPane = ({
   };
 
   return (
-    <FocusedPane
-      lens="Artifacts"
-      count={count}
+    <PaneShell
+      scroll="self"
+      title={adapter.crumbLabel}
+      icon={LENS_ICON.plans}
       actions={
         <Button variant="ghost" size="sm" onClick={onClose}>
           <ArrowLeft size={ICON_SIZE.row} aria-hidden />
@@ -354,6 +356,6 @@ export const ArtifactCreationPane = ({
           onGenerate={generate}
         />
       </div>
-    </FocusedPane>
+    </PaneShell>
   );
 };

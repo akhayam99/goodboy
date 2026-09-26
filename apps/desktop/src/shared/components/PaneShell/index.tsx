@@ -1,11 +1,11 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useContext, type ReactElement, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Divider, PageColumn, ScrollFade, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { PageCrumbRow } from './PageCrumbRow';
 import { PaneTitleRow } from './PaneTitleRow';
-import { PageCrumbContext } from './PageCrumbContext';
+import { UnderTrailContext } from './underTrailContext';
+import { PaneActionsContext, useInheritedPaneActions } from './paneActionsContext';
 
 type BaseProps = {
   readonly animationClassName?: string;
@@ -45,7 +45,20 @@ export const PaneShell = (props: Props) => {
     dock,
     children: content,
   } = props;
-  const children = <PageCrumbContext.Provider value={null}>{content}</PageCrumbContext.Provider>;
+  const isUnderTrail = useContext(UnderTrailContext);
+  const inheritedActions = useInheritedPaneActions();
+  const children = (
+    <PaneActionsContext.Provider value={null}>{content}</PaneActionsContext.Provider>
+  );
+  const titleActions =
+    inheritedActions == null ? (
+      props.actions
+    ) : (
+      <>
+        {props.actions}
+        {inheritedActions}
+      </>
+    );
 
   const iconNode =
     props.glyph != null ? (
@@ -61,8 +74,10 @@ export const PaneShell = (props: Props) => {
     ) : null;
 
   const header = (
-    <div data-slot="pane-header" className="flex min-w-0 shrink-0 flex-col gap-1 pb-4 pt-3">
-      <PageCrumbRow isFramed={false} />
+    <div
+      data-slot="pane-header"
+      className={cn('flex min-w-0 shrink-0 flex-col pb-4', !isUnderTrail && 'pt-3')}
+    >
       <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
         {props.header !== undefined ? (
           props.header
@@ -71,7 +86,7 @@ export const PaneShell = (props: Props) => {
             title={props.title}
             icon={iconNode}
             meta={props.meta}
-            actions={props.actions}
+            actions={titleActions}
           />
         )}
         {tabs != null ? <div className="flex min-w-0 items-center">{tabs}</div> : null}

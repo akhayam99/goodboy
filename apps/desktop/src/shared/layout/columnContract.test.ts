@@ -14,15 +14,15 @@ const FORBIDDEN_WIDTHS: ReadonlyArray<RegExp> = [
   /\bmax-w-(3xl|4xl|5xl|6xl|7xl)\b/,
 ];
 
-type RootKind = 'shell' | 'legacy' | 'dispatch' | 'helper';
+type RootKind = 'shell' | 'bare' | 'dispatch' | 'helper';
 
 type Root = {
   readonly kind: RootKind;
   readonly files: ReadonlyArray<string>;
 };
 
-const SHELL = /<PaneShell\b|<FocusedPane\b/;
-const LEGACY = /<PageCrumbRow\b/;
+const SHELL = /<PaneShell\b/;
+const CRUMB = /PageCrumb|SessionCrumbs/;
 
 const LENS_ROOTS: Readonly<Record<string, Root>> = {
   SessionOverviewPane: {
@@ -30,7 +30,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: ['features/session/components/SessionOverviewPane/index.tsx'],
   },
   SessionOverviewLoading: {
-    kind: 'legacy',
+    kind: 'bare',
     files: ['features/session/components/SessionWorkspace/parts/SessionOverviewLoading.tsx'],
   },
   QuestionsPane: {
@@ -96,10 +96,11 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     ],
   },
   SessionStudioLayer: {
-    kind: 'legacy',
+    kind: 'bare',
     files: ['features/session/components/SessionWorkspace/parts/SessionStudioLayer.tsx'],
   },
   PaneShell: { kind: 'helper', files: [] },
+  TrailBar: { kind: 'helper', files: [] },
   SessionCrumbs: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
   ScriptsPanel: {
@@ -145,18 +146,21 @@ describe('content column contract', () => {
     const source = read(WORKSPACE);
     const mounted = [...source.matchAll(/(?<![\w.])<([A-Z][A-Za-z]+)\b/g)]
       .map((match) => match[1] ?? '')
-      .filter((name) => name !== '' && name !== 'PageCrumbContext');
+      .filter((name) => name !== '' && name !== 'UnderTrailContext');
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);
 
     expect(unknown).toEqual([]);
   });
 
-  it('renders every lens root through PaneShell, or through a crumb-aware wrapper until it moves', () => {
+  it('renders every lens root through PaneShell, and no root draws a crumb of its own', () => {
     const drifted = Object.entries(LENS_ROOTS).flatMap(([name, root]) =>
       root.files.flatMap((file) => {
         const source = read(file);
-        if (root.kind === 'legacy') {
-          return LEGACY.test(source) || SHELL.test(source) ? [] : [`${name}: ${file}`];
+        if (CRUMB.test(source)) {
+          return [`${name}: ${file} draws a crumb`];
+        }
+        if (root.kind === 'bare') {
+          return [];
         }
         return SHELL.test(source) ? [] : [`${name}: ${file}`];
       }),

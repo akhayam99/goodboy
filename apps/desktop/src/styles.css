@@ -216,6 +216,28 @@
 
   --animate-drawer-swap: drawer-swap 120ms ease-out;
 
+  --animate-layer-in: layer-in 150ms cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-layer-out: layer-out 120ms ease-out forwards;
+
+  @keyframes layer-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes layer-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
   @keyframes studio-out {
     from {
       opacity: 1;

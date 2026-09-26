@@ -1,4 +1,4 @@
-import { cn, Divider, OverlayHeader } from '@goodboy/ui';
+import { cn, Divider, OverlayHeader, PageColumn } from '@goodboy/ui';
 import { useStudioOverlay } from '../../hooks/useStudioOverlay';
 import type { StudioShellProps } from './types';
 
@@ -26,23 +26,33 @@ export const DetachedStudio = ({
           : variant === 'viewport'
             ? 'fixed inset-0 z-studio flex flex-col bg-background'
             : 'relative flex h-full w-full min-h-0 flex-col bg-background',
-        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+        variant !== 'slot' &&
+          (closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in'),
       )}
     >
-      <OverlayHeader
-        {...(variant === 'slot' && { heightClassName: 'h-[var(--chat-header-h)]' })}
-        icon={Icon}
-        {...(tone != null && { tone })}
-        glyph={glyph}
-        title={title}
-        {...(subtitle !== undefined && { subtitle })}
-        onClose={requestClose}
-        closeLabel={closeLabel}
-        variant={variant === 'slot' ? 'compact' : 'fullscreen'}
-      >
-        {headerAccessory}
-      </OverlayHeader>
-      <Divider />
+      {variant === 'slot' ? (
+        headerAccessory != null ? (
+          <PageColumn className="flex shrink-0 items-center justify-end pb-2">
+            {headerAccessory}
+          </PageColumn>
+        ) : null
+      ) : (
+        <>
+          <OverlayHeader
+            icon={Icon}
+            {...(tone != null && { tone })}
+            glyph={glyph}
+            title={title}
+            {...(subtitle !== undefined && { subtitle })}
+            onClose={requestClose}
+            closeLabel={closeLabel}
+            variant="fullscreen"
+          >
+            {headerAccessory}
+          </OverlayHeader>
+          <Divider />
+        </>
+      )}
 
       <div className="flex min-h-0 flex-1">{children(requestClose)}</div>
     </div>

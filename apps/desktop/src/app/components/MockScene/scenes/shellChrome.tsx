@@ -14,8 +14,8 @@ import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
-import { SessionCrumbs } from '../../../../features/session/components/SessionCrumbBar/SessionCrumbs';
-import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
+import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
+import { UnderTrailContext } from '../../../../shared/components/PaneShell/underTrailContext';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
@@ -153,11 +153,12 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
           />
         }
         main={
-          <PageCrumbContext.Provider value={<SessionCrumbs session={session} />}>
-            <div className="flex h-full w-full min-w-0 flex-col">
+          <div className="@container flex h-full w-full min-w-0 flex-col">
+            <TrailBar session={session} />
+            <UnderTrailContext.Provider value>
               <div className="min-h-0 flex-1">{main}</div>
-            </div>
-          </PageCrumbContext.Provider>
+            </UnderTrailContext.Provider>
+          </div>
         }
       />
     </ToastProvider>
