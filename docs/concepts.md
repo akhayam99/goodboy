@@ -436,7 +436,9 @@ with a local commit and never pushes.
   commit becomes the sha on the branch. If it no longer applies, the pick is
   aborted and the branch stays as it was. When an approval was interrupted
   after the pick landed, approving again finds the same change on the branch
-  and records that commit instead of picking it twice
+  and records that commit instead of picking it twice. If recording the picked
+  sha fails, preparing the publication (or **Recheck fix**) records it again
+  before it checks the branch
 
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity

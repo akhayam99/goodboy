@@ -24,7 +24,10 @@ fn home() -> Result<PathBuf, ArtifactExportError> {
     dirs::home_dir().ok_or_else(|| destination("the home folder is unavailable"))
 }
 
-pub(crate) fn mirror_root(home: &Path, workspace_slug: &str) -> Result<PathBuf, ArtifactExportError> {
+pub(crate) fn mirror_root(
+    home: &Path,
+    workspace_slug: &str,
+) -> Result<PathBuf, ArtifactExportError> {
     let slug = crate::worktree::sanitize_slug(workspace_slug);
     if slug.is_empty() {
         return Err(destination("the workspace has no usable name"));
@@ -36,6 +39,44 @@ pub(crate) fn mirror_root(home: &Path, workspace_slug: &str) -> Result<PathBuf, 
         .join(MIRROR_DIR))
 }
 
+fn is_date_prefix(prefix: &str) -> bool {
+    prefix.len() == 11
+        && prefix.char_indices().all(|(index, character)| match index {
+            4 | 7 | 10 => character == '-',
+            _ => character.is_ascii_digit(),
+        })
+}
+
+fn renamed_twin(root: &Path, folder: &str) -> Option<String> {
+    let date = folder.get(..11).filter(|prefix| is_date_prefix(prefix))?;
+    let (head, suffix) = folder.rsplit_once('-')?;
+    if suffix.is_empty() || head.len() < 10 {
+        return None;
+    }
+    let ending = format!("-{suffix}");
+    let mut twins: Vec<String> = std::fs::read_dir(root)
+        .ok()?
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|name| {
+            name != folder
+                && name.len() >= date.len() + suffix.len()
+                && name.starts_with(date)
+                && name.ends_with(&ending)
+        })
+        .collect();
+    twins.sort();
+    twins.into_iter().next()
+}
+
+fn resolve_folder(root: &Path, folder: &str) -> String {
+    if root.join(folder).is_dir() {
+        return folder.to_string();
+    }
+    renamed_twin(root, folder).unwrap_or_else(|| folder.to_string())
+}
+
 fn mirror_folder(
     home: &Path,
     workspace_slug: &str,
@@ -44,7 +85,9 @@ fn mirror_folder(
     if !is_safe_segment(folder) {
         return Err(destination("the folder name is not a plain name"));
     }
-    Ok(mirror_root(home, workspace_slug)?.join(folder))
+    let root = mirror_root(home, workspace_slug)?;
+    let resolved = resolve_folder(&root, folder);
+    Ok(root.join(resolved))
 }
 
 fn prune_stale(root: &Path, files: &[FolderFile]) -> Result<(), ArtifactExportError> {
@@ -73,7 +116,11 @@ pub(crate) fn write_mirror(
 ) -> Result<PathBuf, ArtifactExportError> {
     let root = mirror_root(home, workspace_slug)?;
     std::fs::create_dir_all(&root)?;
-    let written = write_folder(&root, folder, files)?;
+    if !is_safe_segment(folder) {
+        return Err(destination("the folder name is not a plain name"));
+    }
+    let resolved = resolve_folder(&root, folder);
+    let written = write_folder(&root, &resolved, files)?;
     prune_stale(&written, files)?;
     Ok(written)
 }
@@ -390,12 +437,56 @@ mod tests {
     }
 
     #[test]
+    fn keeps_the_first_folder_when_the_title_changes() {
+        let home = scratch_home();
+        let first = write_mirror(
+            &home,
+            "harborline",
+            "2026-09-25-rounding-drift-3f9a1c",
+            &[file("meta.json", &meta(1, "2026-09-25T10:00:00.000Z"))],
+        )
+        .expect("first");
+        write_mirror(
+            &home,
+            "harborline",
+            "2026-09-25-other-report-aaaaaa",
+            &[file("meta.json", "{}")],
+        )
+        .expect("other");
+        let renamed = "2026-09-25-settlement-rounding-3f9a1c";
+        let second = write_mirror(
+            &home,
+            "harborline",
+            renamed,
+            &[file("meta.json", &meta(2, "2026-09-26T10:00:00.000Z"))],
+        )
+        .expect("second");
+        assert_eq!(second, first);
+        assert!(!first.with_file_name(renamed).exists());
+        let entry = MirrorEntry {
+            workspace_slug: "harborline".into(),
+            folder: renamed.into(),
+            revision: 2,
+            updated_at: "2026-09-26T10:00:00.000Z".into(),
+        };
+        assert!(pending_mirrors(&home, &[entry]).is_empty());
+        let located = locate_mirror(&home, "harborline", renamed).expect("locate");
+        assert_eq!(located.path, first.to_string_lossy());
+        assert!(remove_mirror(&home, "harborline", renamed).expect("remove"));
+        assert!(!first.exists());
+        assert!(first
+            .with_file_name("2026-09-25-other-report-aaaaaa")
+            .is_dir());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
     fn removes_only_the_named_mirror_folder() {
         let home = scratch_home();
-        let kept = write_mirror(&home, "harborline", "kept", &[file("meta.json", "{}")])
-            .expect("kept");
-        let gone = write_mirror(&home, "harborline", "gone", &[file("meta.json", "{}")])
-            .expect("gone");
+        let kept =
+            write_mirror(&home, "harborline", "kept", &[file("meta.json", "{}")]).expect("kept");
+        let gone =
+            write_mirror(&home, "harborline", "gone", &[file("meta.json", "{}")]).expect("gone");
         assert!(remove_mirror(&home, "harborline", "gone").expect("remove"));
         assert!(!gone.exists());
         assert!(kept.is_dir());

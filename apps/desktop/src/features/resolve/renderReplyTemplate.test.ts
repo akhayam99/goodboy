@@ -69,4 +69,18 @@ describe('replyTemplateProblems', () => {
       'Unknown variable {sha}',
     ]);
   });
+
+  it('names unknown variables with digits, dashes or capitals', () => {
+    expect(
+      replyTemplateProblems({ template: '{reason} {commit2} {unknown-name} {Reason}' }),
+    ).toEqual([
+      'Unknown variable {commit2}',
+      'Unknown variable {unknown-name}',
+      'Unknown variable {Reason}',
+    ]);
+  });
+
+  it('ignores braces that hold spaces or nothing', () => {
+    expect(replyTemplateProblems({ template: '{reason} {} { a: 1 }' })).toEqual([]);
+  });
 });

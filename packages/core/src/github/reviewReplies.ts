@@ -7,7 +7,9 @@ export type ReviewReply = {
 
 type RawUser = { readonly login?: string };
 
-type RawSearch = { readonly items?: ReadonlyArray<{ readonly number?: number }> };
+type RawSearchItem = { readonly number?: number; readonly updated_at?: string };
+
+type RawSearch = { readonly items?: ReadonlyArray<RawSearchItem> };
 
 type RawReviewComment = {
   readonly user?: RawUser | null;
@@ -20,17 +22,33 @@ type Params = {
   readonly runner: GhRunner;
   readonly repoSlugs: ReadonlyArray<string>;
   readonly limit?: number;
-  readonly pullsPerRepo?: number;
+  readonly pullsPerPage?: number;
+  readonly maxPages?: number;
   readonly opts?: GhRunOptions;
 };
 
 export const REVIEW_REPLY_SAMPLE_SIZE = 20;
 
+const newestCutoff = ({
+  replies,
+  limit,
+}: {
+  readonly replies: ReadonlyArray<ReviewReply>;
+  readonly limit: number;
+}): string | null => {
+  if (replies.length < limit) {
+    return null;
+  }
+  const newest = replies.map((reply) => reply.createdAt).sort((a, b) => b.localeCompare(a));
+  return newest[limit - 1] ?? null;
+};
+
 export const listMyReviewReplies = async ({
   runner,
   repoSlugs,
   limit = REVIEW_REPLY_SAMPLE_SIZE,
-  pullsPerRepo = 10,
+  pullsPerPage = 10,
+  maxPages = 5,
   opts = {},
 }: Params): Promise<ReadonlyArray<ReviewReply>> => {
   const user = await runJson<RawUser>({ runner, args: ['api', 'user'], opts, shape: 'object' });
@@ -39,40 +57,62 @@ export const listMyReviewReplies = async ({
     return [];
   }
   const replies: Array<ReviewReply> = [];
-  for (const slug of repoSlugs) {
-    const search = await runJson<RawSearch>({
+  const collect = async ({
+    slug,
+    number,
+  }: {
+    readonly slug: string;
+    readonly number: number;
+  }): Promise<void> => {
+    const comments = await runJson<ReadonlyArray<RawReviewComment>>({
       runner,
-      args: [
-        'api',
-        '-X',
-        'GET',
-        'search/issues',
-        '-f',
-        `q=repo:${slug} type:pr commenter:${login}`,
-        '-f',
-        'sort=updated',
-        '-f',
-        `per_page=${pullsPerRepo}`,
-      ],
+      args: ['api', `repos/${slug}/pulls/${number}/comments`, '--paginate'],
       opts,
-      shape: 'object',
+      shape: 'array',
     });
-    for (const item of search.items ?? []) {
-      if (item.number === undefined) {
+    for (const comment of comments) {
+      const body = comment.body?.trim() ?? '';
+      if (comment.user?.login !== login || comment.in_reply_to_id == null || body === '') {
         continue;
       }
-      const comments = await runJson<ReadonlyArray<RawReviewComment>>({
+      replies.push({ body, createdAt: comment.created_at ?? '' });
+    }
+  };
+  for (const slug of repoSlugs) {
+    for (let page = 1; page <= maxPages; page += 1) {
+      const search = await runJson<RawSearch>({
         runner,
-        args: ['api', `repos/${slug}/pulls/${item.number}/comments`, '--paginate'],
+        args: [
+          'api',
+          '-X',
+          'GET',
+          'search/issues',
+          '-f',
+          `q=repo:${slug} type:pr commenter:${login}`,
+          '-f',
+          'sort=updated',
+          '-f',
+          `per_page=${pullsPerPage}`,
+          '-f',
+          `page=${page}`,
+        ],
         opts,
-        shape: 'array',
+        shape: 'object',
       });
-      for (const comment of comments) {
-        const body = comment.body?.trim() ?? '';
-        if (comment.user?.login !== login || comment.in_reply_to_id == null || body === '') {
-          continue;
+      const items = search.items ?? [];
+      let isOlderThanSample = false;
+      for (const item of items) {
+        const cutoff = newestCutoff({ replies, limit });
+        if (cutoff !== null && (item.updated_at ?? '') < cutoff) {
+          isOlderThanSample = true;
+          break;
         }
-        replies.push({ body, createdAt: comment.created_at ?? '' });
+        if (item.number !== undefined) {
+          await collect({ slug, number: item.number });
+        }
+      }
+      if (isOlderThanSample || items.length < pullsPerPage) {
+        break;
       }
     }
   }

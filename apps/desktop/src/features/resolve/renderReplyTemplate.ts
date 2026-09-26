@@ -11,7 +11,7 @@ export type ReplyTemplateVariable = (typeof REPLY_TEMPLATE_VARIABLES)[number];
 
 export type ReplyTemplateVars = Readonly<Partial<Record<ReplyTemplateVariable, string>>>;
 
-const VARIABLE_PATTERN = /\{([a-z_]+)\}/g;
+const VARIABLE_PATTERN = /\{([^{}\s]+)\}/g;
 
 const KNOWN: ReadonlySet<string> = new Set(REPLY_TEMPLATE_VARIABLES);
 

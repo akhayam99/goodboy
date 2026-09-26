@@ -32,6 +32,7 @@ import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { isLocalNoteThread } from './isLocalNoteThread';
+import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
 import { selectPublishableThreads } from './selectPublishableThreads';
 import { sourceFingerprint } from './sourceFingerprint';
@@ -208,6 +209,7 @@ export const preparePublication = async ({
   const uncaptured = await recoverUncapturedResolveWork({ set, get, sessionId }).catch(() => null);
   const mount = selectActiveMount({ state: get(), sessionId });
   const repo = mount === null ? null : getSessionRepo({ get, sessionId, mountId: mount.mountId });
+  await reconcileIntegratedCommits({ sessionId }).catch(() => undefined);
   const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
   const scope = await approvedPublicationScope({ sessionId });
   const selection = selectPublishableThreads({
