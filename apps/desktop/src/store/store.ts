@@ -77,7 +77,6 @@ import type {
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
-import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -609,14 +608,6 @@ type AppActions = {
     args: { mountId: MountId; branch: string; createNew: boolean },
   ): Promise<void>;
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
-  amendSessionCommit(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
-  squashSessionCommits(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(
     sessionId: SessionId,

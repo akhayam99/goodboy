@@ -534,34 +534,6 @@ export const worktreeScratchRemove = async ({
   return invoke<void>('worktree_scratch_remove', { worktreePath, scratchPath });
 };
 
-export type RewrittenHead = {
-  readonly sha: string;
-  readonly shortSha: string;
-  readonly replaced: ReadonlyArray<string>;
-};
-
-export type RewriteCommitArgs = {
-  readonly worktreePath: string;
-  readonly sha: string;
-  readonly message: string;
-};
-
-export const amendLocalCommit = async ({
-  worktreePath,
-  sha,
-  message,
-}: RewriteCommitArgs): Promise<RewrittenHead> => {
-  return invoke<RewrittenHead>('worktree_amend_commit', { args: { worktreePath, sha, message } });
-};
-
-export const squashLocalCommits = async ({
-  worktreePath,
-  sha,
-  message,
-}: RewriteCommitArgs): Promise<RewrittenHead> => {
-  return invoke<RewrittenHead>('worktree_squash_commits', { args: { worktreePath, sha, message } });
-};
-
 export const worktreeDiffWorking = async (
   worktreePath: string,
   scope: WorktreeDiffScope,

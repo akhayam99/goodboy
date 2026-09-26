@@ -2525,117 +2525,6 @@ fn worktree_remote_head_blocking(
         .map(|sha| sha.to_string()))
 }
 
-#[derive(Debug, Deserialize)]
-pub struct RewriteArgs {
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    pub sha: String,
-    pub message: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct RewrittenHead {
-    pub sha: String,
-    #[serde(rename = "shortSha")]
-    pub short_sha: String,
-    pub replaced: Vec<String>,
-}
-
-#[tauri::command]
-pub async fn worktree_amend_commit(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_amend_commit_blocking(args))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
-}
-
-fn worktree_amend_commit_blocking(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
-    let p = Path::new(&args.worktree_path);
-    if !p.exists() {
-        return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
-    }
-    let message = require_message(&args.message)?;
-    let target = resolve_commit(p, &args.sha)?;
-    let head = resolve_commit(p, "HEAD")?;
-    if target != head {
-        return Err(WorktreeError::Git {
-            message: format!(
-                "only the newest local commit can be amended: {} is behind HEAD",
-                short_of(&target)
-            ),
-        });
-    }
-    ensure_unpushed(p, std::slice::from_ref(&target))?;
-    ensure_nothing_staged(p)?;
-    git(p, &["commit", "--amend", "-m", &message])?;
-    head_of(p, vec![target])
-}
-
-#[tauri::command]
-pub async fn worktree_squash_commits(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || worktree_squash_commits_blocking(args))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
-}
-
-fn worktree_squash_commits_blocking(args: RewriteArgs) -> Result<RewrittenHead, WorktreeError> {
-    let p = Path::new(&args.worktree_path);
-    if !p.exists() {
-        return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
-    }
-    let message = require_message(&args.message)?;
-    let oldest = resolve_commit(p, &args.sha)?;
-    let head = resolve_commit(p, "HEAD")?;
-    if oldest == head {
-        return Err(WorktreeError::Git {
-            message: "squash needs at least two commits: pick an older one".to_string(),
-        });
-    }
-    if git(p, &["merge-base", "--is-ancestor", &oldest, &head]).is_err() {
-        return Err(WorktreeError::Git {
-            message: format!("{} is not an ancestor of HEAD", short_of(&oldest)),
-        });
-    }
-    let mut range: Vec<String> = git(p, &["rev-list", &format!("{oldest}..{head}")])
-        .map(|out| {
-            out.lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty())
-                .collect()
-        })
-        .unwrap_or_default();
-    range.push(oldest.clone());
-    ensure_unpushed(p, &range)?;
-    ensure_nothing_staged(p)?;
-    let parent = git(
-        p,
-        &["rev-parse", "--verify", "--quiet", &format!("{oldest}^")],
-    )
-    .map(|out| out.trim().to_string())
-    .ok()
-    .filter(|s| !s.is_empty())
-    .ok_or_else(|| WorktreeError::Git {
-        message: "cannot squash the first commit of the repository".to_string(),
-    })?;
-    git(p, &["reset", "--soft", &parent])?;
-    match git(p, &["commit", "-m", &message]) {
-        Ok(_) => head_of(p, range),
-        Err(err) => {
-            git(p, &["reset", "--soft", &head])?;
-            Err(err)
-        }
-    }
-}
-
-fn require_message(message: &str) -> Result<String, WorktreeError> {
-    let trimmed = message.trim();
-    if trimmed.is_empty() {
-        return Err(WorktreeError::Git {
-            message: "commit message is empty".to_string(),
-        });
-    }
-    Ok(trimmed.to_string())
-}
-
 pub(crate) fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
     let trimmed = sha.trim();
     if trimmed.is_empty() {
@@ -2657,56 +2546,6 @@ pub(crate) fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeEr
     .filter(|s| !s.is_empty());
     resolved.ok_or_else(|| WorktreeError::Git {
         message: format!("unknown commit: {trimmed}"),
-    })
-}
-
-fn unpushed_shas(cwd: &Path) -> std::collections::HashSet<String> {
-    match resolve_upstream(cwd) {
-        Some(upstream) => rev_list_set(cwd, &format!("{upstream}..HEAD")),
-        None => rev_list_set(cwd, "HEAD"),
-    }
-}
-
-fn ensure_unpushed(cwd: &Path, shas: &[String]) -> Result<(), WorktreeError> {
-    let unpushed = unpushed_shas(cwd);
-    for sha in shas {
-        if !unpushed.contains(sha) {
-            return Err(WorktreeError::Git {
-                message: format!(
-                    "{} is already pushed: rewriting it would need a force push",
-                    short_of(sha)
-                ),
-            });
-        }
-    }
-    Ok(())
-}
-
-fn ensure_nothing_staged(cwd: &Path) -> Result<(), WorktreeError> {
-    let staged = match read_working_tree(cwd) {
-        GitWorkingTree::Known { staged, .. } => staged,
-        GitWorkingTree::Unknown { .. } => {
-            return Err(WorktreeError::Git {
-                message: "cannot verify staged changes because git status failed".to_string(),
-            });
-        }
-    };
-    if staged > 0 {
-        return Err(WorktreeError::Git {
-            message: format!(
-                "{staged} staged change(s): commit or unstage them before rewriting local history"
-            ),
-        });
-    }
-    Ok(())
-}
-
-fn head_of(cwd: &Path, replaced: Vec<String>) -> Result<RewrittenHead, WorktreeError> {
-    let sha = resolve_commit(cwd, "HEAD")?;
-    Ok(RewrittenHead {
-        short_sha: short_of(&sha),
-        sha,
-        replaced,
     })
 }
 
@@ -3654,10 +3493,10 @@ fn parse_registered_worktrees(stdout: &str) -> Vec<RegisteredWorktree> {
 #[cfg(test)]
 mod rewrite_tests {
     use super::{
-        remove_worktree_checked_with, worktree_amend_commit_blocking,
-        worktree_branch_holder_blocking, worktree_change_branch_blocking, worktree_create_blocking,
-        worktree_squash_commits_blocking, worktree_status_blocking, ChangeBranchArgs, CreateArgs,
-        GitDistance, GitUnknownReason, GitWorkingTree, RewriteArgs, WorktreeRemovalMode,
+        remove_worktree_checked_with, worktree_branch_holder_blocking,
+        worktree_change_branch_blocking, worktree_create_blocking, worktree_status_blocking,
+        ChangeBranchArgs, CreateArgs, GitDistance, GitUnknownReason, GitWorkingTree,
+        WorktreeRemovalMode,
     };
     use std::path::{Path, PathBuf};
 
@@ -3719,14 +3558,6 @@ mod rewrite_tests {
             super::normalize_branch_names(raw),
             vec!["main", "feature/search", "release", "upstream/release"]
         );
-    }
-
-    fn args(root: &Path, sha: &str, message: &str) -> RewriteArgs {
-        RewriteArgs {
-            worktree_path: root.to_string_lossy().into_owned(),
-            sha: sha.to_string(),
-            message: message.to_string(),
-        }
     }
 
     #[test]
@@ -4567,136 +4398,6 @@ mod rewrite_tests {
         assert!(matches!(unborn, super::WorktreeError::NoCommit(_)));
         assert!(!root.join(".gitignore").exists());
         std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn amend_rewords_the_newest_local_commit_without_upstream() {
-        let root = init_repo("amend-local");
-        commit(&root, "a.txt", "a", "first");
-        let head = commit(&root, "b.txt", "b", "second");
-
-        let result =
-            worktree_amend_commit_blocking(args(&root, &head, "second, reworded")).unwrap();
-
-        assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
-        assert_eq!(result.replaced, vec![head]);
-        assert_eq!(log_subjects(&root), vec!["second, reworded", "first"]);
-    }
-
-    #[test]
-    fn amend_refuses_a_pushed_commit() {
-        let root = init_repo("amend-pushed");
-        commit(&root, "a.txt", "a", "first");
-        push_to_new_remote(&root);
-        let head = git_ok(&root, &["rev-parse", "HEAD"]);
-
-        let err = worktree_amend_commit_blocking(args(&root, &head, "reworded")).unwrap_err();
-
-        assert!(err.to_string().contains("already pushed"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-    }
-
-    #[test]
-    fn amend_refuses_a_commit_behind_head() {
-        let root = init_repo("amend-behind");
-        let first = commit(&root, "a.txt", "a", "first");
-        let head = commit(&root, "b.txt", "b", "second");
-
-        let err = worktree_amend_commit_blocking(args(&root, &first, "reworded")).unwrap_err();
-
-        assert!(err.to_string().contains("newest local commit"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-    }
-
-    #[test]
-    fn squash_folds_the_selected_range_into_one_commit() {
-        let root = init_repo("squash-range");
-        commit(&root, "a.txt", "a", "first");
-        let second = commit(&root, "b.txt", "b", "second");
-        let third = commit(&root, "c.txt", "c", "third");
-
-        let result =
-            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap();
-
-        assert_eq!(result.sha, git_ok(&root, &["rev-parse", "HEAD"]));
-        assert_eq!(result.replaced, vec![third, second]);
-        assert_eq!(log_subjects(&root), vec!["second and third", "first"]);
-        assert_eq!(
-            git_ok(&root, &["show", "--name-only", "--format=", "HEAD"]),
-            "b.txt\nc.txt"
-        );
-    }
-
-    #[test]
-    fn squash_refuses_a_range_that_contains_a_pushed_commit() {
-        let root = init_repo("squash-pushed");
-        commit(&root, "a.txt", "a", "first");
-        let second = commit(&root, "b.txt", "b", "second");
-        push_to_new_remote(&root);
-        commit(&root, "c.txt", "c", "third");
-        let head = git_ok(&root, &["rev-parse", "HEAD"]);
-
-        let err =
-            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
-
-        assert!(err.to_string().contains("already pushed"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-    }
-
-    #[test]
-    fn squash_refuses_staged_changes() {
-        let root = init_repo("squash-staged");
-        commit(&root, "a.txt", "a", "first");
-        let second = commit(&root, "b.txt", "b", "second");
-        commit(&root, "c.txt", "c", "third");
-        std::fs::write(root.join("d.txt"), "d").unwrap();
-        git_ok(&root, &["add", "d.txt"]);
-        let head = git_ok(&root, &["rev-parse", "HEAD"]);
-
-        let err =
-            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
-
-        assert!(err.to_string().contains("staged change"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-    }
-
-    #[test]
-    fn squash_refuses_the_first_commit_of_the_repository() {
-        let root = init_repo("squash-root");
-        let first = commit(&root, "a.txt", "a", "first");
-        commit(&root, "b.txt", "b", "second");
-        let head = git_ok(&root, &["rev-parse", "HEAD"]);
-
-        let err = worktree_squash_commits_blocking(args(&root, &first, "everything")).unwrap_err();
-
-        assert!(err.to_string().contains("first commit"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-    }
-
-    #[test]
-    fn a_failed_squash_restores_head_and_leaves_no_rebase_in_progress() {
-        let root = init_repo("squash-failure");
-        commit(&root, "a.txt", "a", "first");
-        let second = commit(&root, "b.txt", "b", "second");
-        commit(&root, "c.txt", "c", "third");
-        let head = git_ok(&root, &["rev-parse", "HEAD"]);
-        let hook = root.join(".git").join("hooks").join("pre-commit");
-        std::fs::create_dir_all(hook.parent().unwrap()).unwrap();
-        std::fs::write(&hook, "#!/bin/sh\nexit 1\n").unwrap();
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
-        }
-
-        let err =
-            worktree_squash_commits_blocking(args(&root, &second, "second and third")).unwrap_err();
-
-        assert!(err.to_string().contains("git commit"), "{err}");
-        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), head);
-        assert_eq!(log_subjects(&root), vec!["third", "second", "first"]);
-        assert!(!root.join(".git").join("rebase-merge").exists());
-        assert!(!root.join(".git").join("rebase-apply").exists());
     }
 
     fn remove_checked(root: &Path, worktree_path: &str) {

@@ -65,7 +65,6 @@ export {
 } from './queries/security-finding';
 export {
   getDraftHistoryPlan,
-  getHistoryPlan,
   hasPushedHistoryPlan,
   markHistoryPlan,
   saveDraftHistoryPlan,

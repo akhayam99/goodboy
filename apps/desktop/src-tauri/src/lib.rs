@@ -264,8 +264,6 @@ pub fn run() {
             history::history_rewriter_prepare,
             history::history_rewriter_collect,
             history::history_copy_discard,
-            worktree::worktree_amend_commit,
-            worktree::worktree_squash_commits,
             worktree::worktree_diff_working,
             worktree::worktree_status,
             worktree::checkout_fast_forward,

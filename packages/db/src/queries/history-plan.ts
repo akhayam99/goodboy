@@ -117,22 +117,19 @@ export const saveDraftHistoryPlan = async ({
 }: SaveDraftParams): Promise<HistoryPlan> => {
   const existing = await getDraftHistoryPlan({ db, mountId });
   const itemsJson = JSON.stringify(items);
-  if (existing === null) {
-    const id = crypto.randomUUID();
-    await db.execute(
-      `INSERT INTO history_plans
-        (id, session_id, mount_id, branch, base_sha, head_sha, items_json, state, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`,
-      [id, sessionId, mountId, branch, baseSha, headSha, itemsJson, at, at],
-    );
-  } else {
-    await db.execute(
-      `UPDATE history_plans
-       SET branch = ?, base_sha = ?, head_sha = ?, items_json = ?, updated_at = ?
-       WHERE id = ?`,
-      [branch, baseSha, headSha, itemsJson, at, existing.id],
-    );
-  }
+  await (existing === null
+    ? db.execute(
+        `INSERT INTO history_plans
+          (id, session_id, mount_id, branch, base_sha, head_sha, items_json, state, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`,
+        [crypto.randomUUID(), sessionId, mountId, branch, baseSha, headSha, itemsJson, at, at],
+      )
+    : db.execute(
+        `UPDATE history_plans
+         SET branch = ?, base_sha = ?, head_sha = ?, items_json = ?, updated_at = ?
+         WHERE id = ?`,
+        [branch, baseSha, headSha, itemsJson, at, existing.id],
+      ));
   const saved = await getDraftHistoryPlan({ db, mountId });
   if (saved === null) {
     throw new Error('The history plan draft was not saved.');
@@ -186,15 +183,4 @@ export const hasPushedHistoryPlan = async ({
     [mountId, branch],
   );
   return rows.length > 0;
-};
-
-type IdParams = {
-  readonly db: Database;
-  readonly id: string;
-};
-
-export const getHistoryPlan = async ({ db, id }: IdParams): Promise<HistoryPlan | null> => {
-  const rows = await db.select<HistoryPlanRow>('SELECT * FROM history_plans WHERE id = ?', [id]);
-  const row = rows[0];
-  return row === undefined ? null : toDomain({ row });
 };
