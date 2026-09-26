@@ -200,5 +200,6 @@ export type MountCleanupProposal = Readonly<{
   branch: string;
   sizeBytes: number | null;
   request: MountPullRequestIdentity | null;
+  keptBecause?: string;
   createdAt: IsoDateTime;
 }>;

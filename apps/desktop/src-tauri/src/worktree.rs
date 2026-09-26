@@ -1443,6 +1443,7 @@ pub enum BranchMergeState {
     Protected,
     MergedViaMerge,
     MergedViaRebase,
+    MergedViaSquash,
     NoOwnCommits,
     NotMerged { ahead: u32 },
 }
@@ -1476,6 +1477,71 @@ fn is_rebase_merged(cwd: &Path, base_ref: &str, branch_ref: &str) -> bool {
     raw.lines().all(|line| !line.trim_start().starts_with('+'))
 }
 
+const SQUASH_SCAN_LIMIT: u32 = 2000;
+
+fn git_patch_ids(cwd: &Path, patch: &str) -> Vec<String> {
+    use std::io::Write;
+    let child = crate::path_env::command("git")
+        .args(["patch-id", "--stable"])
+        .current_dir(cwd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+    let Ok(mut child) = child else {
+        return Vec::new();
+    };
+    if let Some(mut stdin) = child.stdin.take() {
+        if stdin.write_all(patch.as_bytes()).is_err() {
+            return Vec::new();
+        }
+    }
+    let Ok(output) = child.wait_with_output() else {
+        return Vec::new();
+    };
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| line.split_whitespace().next().map(str::to_string))
+        .collect()
+}
+
+fn is_squash_merged(cwd: &Path, base_ref: &str, tip: &str) -> bool {
+    let Ok(merge_base_raw) = git(cwd, &["merge-base", base_ref, tip]) else {
+        return false;
+    };
+    let merge_base = merge_base_raw.trim();
+    let range = format!("{merge_base}..{base_ref}");
+    let Ok(count_raw) = git(cwd, &["rev-list", "--count", "--no-merges", &range]) else {
+        return false;
+    };
+    let within_limit = count_raw
+        .trim()
+        .parse::<u32>()
+        .map(|count| count > 0 && count <= SQUASH_SCAN_LIMIT)
+        .unwrap_or(false);
+    if !within_limit {
+        return false;
+    }
+    let Ok(branch_diff) = git(cwd, &["diff", "--full-index", merge_base, tip]) else {
+        return false;
+    };
+    if branch_diff.trim().is_empty() {
+        return false;
+    }
+    let Some(branch_id) = git_patch_ids(cwd, &branch_diff).into_iter().next() else {
+        return false;
+    };
+    let Ok(base_log) = git(
+        cwd,
+        &["log", "-p", "--full-index", "--no-merges", "--format=commit %H", &range],
+    ) else {
+        return false;
+    };
+    git_patch_ids(cwd, &base_log)
+        .into_iter()
+        .any(|id| id == branch_id)
+}
+
 pub(crate) fn branch_merge_state(
     cwd: &Path,
     branch: &str,
@@ -1500,6 +1566,9 @@ pub(crate) fn branch_merge_state(
     }
     if is_rebase_merged(cwd, &base_ref, branch) {
         return BranchMergeState::MergedViaRebase;
+    }
+    if is_squash_merged(cwd, &base_ref, &tip) {
+        return BranchMergeState::MergedViaSquash;
     }
     let Ok(raw) = git(
         cwd,
@@ -5195,6 +5264,24 @@ mod rewrite_tests {
         let state = super::branch_merge_state(&root, "goodboy/rebased", Some("main"));
 
         assert_eq!(state, super::BranchMergeState::MergedViaRebase);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_reports_merged_via_squash() {
+        let root = init_repo("merge-state-squashed");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["checkout", "-b", "goodboy/squashed"]);
+        commit(&root, "b.txt", "one", "first");
+        commit(&root, "c.txt", "two", "second");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "d.txt", "main moved on", "main work");
+        git_ok(&root, &["merge", "--squash", "goodboy/squashed"]);
+        git_ok(&root, &["commit", "-m", "squash feature"]);
+
+        let state = super::branch_merge_state(&root, "goodboy/squashed", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::MergedViaSquash);
         std::fs::remove_dir_all(root).unwrap();
     }
 

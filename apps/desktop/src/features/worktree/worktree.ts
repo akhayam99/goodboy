@@ -638,6 +638,7 @@ export type BranchMergeState =
   | { readonly kind: 'protected' }
   | { readonly kind: 'merged-via-merge' }
   | { readonly kind: 'merged-via-rebase' }
+  | { readonly kind: 'merged-via-squash' }
   | { readonly kind: 'no-own-commits' }
   | { readonly kind: 'not-merged'; readonly ahead: number };
 

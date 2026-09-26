@@ -13,6 +13,7 @@ import { consumeAdoptionSeed, materializationSeedFor } from '../sessions/materia
 import { mountPlan } from '../sessions/mountPlan';
 import { branchInUseError } from './mountErrors';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
+import { mountBranchOrigin } from './mountBranchOrigin';
 import { mountDirName } from './mountDirName';
 import { mountViewPatch } from './mountViewPatch';
 import { withRepositoryAndMountLock } from './mountLocks';
@@ -163,6 +164,11 @@ export const createProjectMount = async ({
         projectId,
         mountName: project.name,
         revision: 0,
+        branchOrigin: mountBranchOrigin({
+          isRepo: project.kind === 'repo',
+          adopted: adoptedBranch !== undefined,
+          reused: 'reused' in created && created.reused,
+        }),
         createdAt: Date.now(),
       };
       await insertSessionWorktree(tauriDatabase, record);

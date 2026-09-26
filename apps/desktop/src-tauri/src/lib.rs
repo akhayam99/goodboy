@@ -5,6 +5,7 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod branch_cleanup;
 mod bridge;
 mod budget;
 mod codex_app_server;
@@ -263,6 +264,10 @@ pub fn run() {
             worktree::worktree_list_branch_names,
             worktree::worktree_repo_default_base_branch,
             worktree::worktree_branch_merge_state,
+            branch_cleanup::branch_delete_checked,
+            branch_cleanup::branch_restore,
+            branch_cleanup::branch_forget_deleted,
+            branch_cleanup::branch_head_sha,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,

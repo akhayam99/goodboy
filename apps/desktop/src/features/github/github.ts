@@ -306,3 +306,30 @@ export const tauriGhRunner: GhRunner = {
     }
   },
 };
+
+type RepoDeletesMergedBranchesParams = {
+  readonly cwd: string;
+  readonly workspaceId?: string;
+};
+
+export const ghRepoDeletesMergedBranches = async ({
+  cwd,
+  workspaceId,
+}: RepoDeletesMergedBranchesParams): Promise<boolean | null> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    return null;
+  }
+  const res = await tauriGhRunner.run(['api', `repos/${slug}`, '--jq', '.delete_branch_on_merge'], {
+    cwd,
+    ...(workspaceId === undefined ? {} : { workspaceId }),
+  });
+  if (res.exitCode !== 0) {
+    return null;
+  }
+  const value = res.stdout.trim();
+  if (value === 'true') {
+    return true;
+  }
+  return value === 'false' ? false : null;
+};

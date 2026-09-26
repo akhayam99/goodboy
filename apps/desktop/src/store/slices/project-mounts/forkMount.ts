@@ -5,6 +5,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { nextAvailableSlug } from '../sessions/deriveBranchName';
 import { rememberWorktreeRoot } from '../storage/rememberWorktreeRoot';
+import { mountBranchOrigin } from './mountBranchOrigin';
 import { mountDirName } from './mountDirName';
 import { branchInUseError, mountError, worktreeErrorKind } from './mountErrors';
 import { withMountLock, withRepositoryAndMountLock } from './mountLocks';
@@ -131,6 +132,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
               ...(baseBranch !== undefined ? { baseBranch } : {}),
             };
             let created;
+            let usedExistingBranch = adopt;
             await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
             try {
               created = await createWorktree(
@@ -139,6 +141,7 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                 if (!adopt || worktreeErrorKind({ error }) !== 'branch_not_found') {
                   throw error;
                 }
+                usedExistingBranch = false;
                 return createWorktree(request);
               });
             } catch (error) {
@@ -195,6 +198,11 @@ export const forkMount = (set: SetFn, get: GetFn) => {
                     isAttached: true,
                     diskState: 'present',
                     revision: 0,
+                    branchOrigin: mountBranchOrigin({
+                      isRepo: true,
+                      adopted: usedExistingBranch,
+                      reused: created.reused,
+                    }),
                     createdAt: timestamp,
                     updatedAt: timestamp,
                   },

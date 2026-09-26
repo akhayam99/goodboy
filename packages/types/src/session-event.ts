@@ -4,6 +4,8 @@ export const SESSION_EVENT_KINDS = [
   'worktree_created',
   'branch_created',
   'branch_switched',
+  'branch_deleted',
+  'branch_restored',
   'issue_linked',
   'issue_unlinked',
   'pr_created',
@@ -65,6 +67,8 @@ export type SessionEventPayload = Readonly<{
   turnRunId?: string;
   deferralCause?: MaterializationDeferralCause;
   questionId?: string;
+  deletedBranchId?: string;
+  onOrigin?: boolean;
 }>;
 
 export type SessionEvent = Readonly<{

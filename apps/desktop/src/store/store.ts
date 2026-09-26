@@ -234,6 +234,7 @@ import { createSentryLinksSlice } from './slices/sentryLinks';
 import { sentryLinksInitialState } from './slices/sentryLinks/state';
 import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
+import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -1108,7 +1109,8 @@ export type AppStore = AppState &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
-  ReturnType<typeof createSecurityFindingsSlice>;
+  ReturnType<typeof createSecurityFindingsSlice> &
+  ReturnType<typeof createBranchCleanupSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1340,6 +1342,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSentryLinksSlice(set, get),
   ...createHandoffsSlice(set, get),
   ...createSecurityFindingsSlice(set, get),
+  ...createBranchCleanupSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
