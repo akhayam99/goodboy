@@ -48,6 +48,8 @@ export const unknownReasonLabel = ({ reason }: ReasonParams): string => {
       return 'git could not resolve a main branch to compare against';
     case 'status-read-failed':
       return 'git status could not be read';
+    case 'upstream-gone':
+      return 'the remote branch this tracked is gone';
     default: {
       const exhaustive: never = reason;
       return exhaustive;

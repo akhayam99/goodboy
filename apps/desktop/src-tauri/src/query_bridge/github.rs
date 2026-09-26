@@ -3,7 +3,7 @@ use tauri::AppHandle;
 
 use super::dispatch::Scope;
 use super::mount::MountRow;
-use crate::github::{read_token, run_gh, run_git_push, GhRunResult};
+use crate::github::{read_token, run_gh, run_git_authenticated, GhRunResult};
 
 const NOT_CONNECTED: &str =
     "github is not connected: paste a personal API key in Goodboy, or sign in with `gh auth login`";
@@ -617,7 +617,7 @@ pub(super) async fn push(
         let token =
             read_token(Some(&workspace), project.as_deref()).filter(|token| !token.is_empty());
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-        run_git_push(&refs, &cwd, token.as_deref()).map_err(|error| error.to_string())
+        run_git_authenticated(&refs, &cwd, token.as_deref()).map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| error.to_string())??;

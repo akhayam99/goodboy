@@ -47,6 +47,13 @@ type ObservationParams = {
   readonly mountId: MountId;
 };
 
+type AlsoOnBranchParams = {
+  readonly state: MountState;
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+  readonly branch: string;
+};
+
 const isOnDisk = (view: SessionMountView): boolean =>
   view.diskState !== 'missing' && view.diskState !== 'removed';
 
@@ -119,6 +126,23 @@ export const selectProjectMounts = ({
   projectId,
 }: ProjectParams): ReadonlyArray<SessionProjectMount> =>
   selectWritableMounts({ state, sessionId }).filter((mount) => mount.projectId === projectId);
+
+export const selectAlsoOnBranchSessionId = ({
+  state,
+  sessionId,
+  projectId,
+  branch,
+}: AlsoOnBranchParams): SessionId | null => {
+  const byOtherSession = Object.entries(
+    state.sessionProjectMounts ?? {},
+  ) as unknown as ReadonlyArray<[SessionId, ReadonlyArray<SessionProjectMount>]>;
+  const found = byOtherSession.find(
+    ([candidateSessionId, mounts]) =>
+      candidateSessionId !== sessionId &&
+      mounts.some((mount) => mount.projectId === projectId && mount.branch === branch),
+  );
+  return found?.[0] ?? null;
+};
 
 export const selectUnambiguousProjectMount = ({
   state,

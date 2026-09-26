@@ -138,6 +138,8 @@ export const NON_SESSION_STATE_KEYS = [
   'integrationCredentialUsage',
   'projectGitStatus',
   'projectCheckoutPulling',
+  'projectFetchedAt',
+  'projectCheckoutResult',
   'currentWorkspaceId',
   'windowPresence',
   'sessions',

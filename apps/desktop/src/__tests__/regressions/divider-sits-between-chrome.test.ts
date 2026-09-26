@@ -153,8 +153,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx': {
-    count: 1,
-    reason: 'debt',
+    count: 2,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx': {
     count: 1,

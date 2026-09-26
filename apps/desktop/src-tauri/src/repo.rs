@@ -262,6 +262,57 @@ fn project_git_status_blocking(project_path: String) -> WorkspaceGitStatus {
     }
 }
 
+#[tauri::command]
+pub async fn project_fetch(
+    project_path: String,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<(), crate::github::GithubError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        project_fetch_blocking(project_path, workspace_id, project_id)
+    })
+    .await
+    .unwrap_or(Ok(()))
+}
+
+fn project_fetch_blocking(
+    project_path: String,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<(), crate::github::GithubError> {
+    let root = Path::new(project_path.trim());
+    if !root.is_dir() || !is_repo_root(root) {
+        return Ok(());
+    }
+    let Some(remote) = default_remote_name(root) else {
+        return Ok(());
+    };
+    let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+    let result = crate::github::run_git_authenticated(
+        &["fetch", "--no-tags", "--prune", &remote],
+        &project_path,
+        token.as_deref(),
+    )?;
+    if result.exit_code != 0 {
+        return Err(crate::github::GithubError::Validation(
+            result.stderr.trim().to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn default_remote_name(root: &Path) -> Option<String> {
+    if let Some(upstream) = crate::worktree::resolve_upstream(root) {
+        if let Some((remote, _)) = upstream.split_once('/') {
+            return Some(remote.to_string());
+        }
+    }
+    run_git(root, &["remote"])
+        .ok()
+        .and_then(|out| out.lines().next().map(|line| line.trim().to_string()))
+        .filter(|remote| !remote.is_empty())
+}
+
 fn blank_status(state: &'static str) -> WorkspaceGitStatus {
     WorkspaceGitStatus {
         state,

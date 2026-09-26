@@ -2,7 +2,7 @@ import { AlertTriangle, GitBranch } from 'lucide-react';
 import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { ProjectGitDetail } from './ProjectGitDetail';
-import { projectGitPresentationOf } from './projectGitPresentationOf';
+import { projectGitPresentationOf } from '../../../../shared/lib/projectGitPresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

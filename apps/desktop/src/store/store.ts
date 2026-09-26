@@ -460,6 +460,10 @@ type AppActions = {
   }): Promise<void>;
   loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
   fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
+  fetchProjectCheckouts(input: { workspaceId: WorkspaceId }): Promise<void>;
+  fastForwardProjectCheckouts(input: {
+    workspaceId: WorkspaceId;
+  }): Promise<{ readonly updated: number; readonly failed: number }>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -1120,6 +1124,8 @@ export const initialState: AppState = {
   integrationCredentialUsage: {},
   projectGitStatus: {},
   projectCheckoutPulling: {},
+  projectFetchedAt: {},
+  projectCheckoutResult: {},
   sessionExternalTasks: {},
   sessionEvents: {},
   currentWorkspaceId: null,

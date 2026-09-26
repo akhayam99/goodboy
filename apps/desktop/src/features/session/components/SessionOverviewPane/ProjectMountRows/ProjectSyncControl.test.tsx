@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorktreeStatus } from '@goodboy/types';
 
-const { store, rebaseRun, pushRun, rebaseParams, pushParams } = vi.hoisted(() => ({
+const { store, rebaseRun, pushRun, rebaseParams, pushParams, rebaseIsRunning } = vi.hoisted(() => ({
   store: {
     setSessionActiveProject: vi.fn(async () => undefined),
     setSessionActiveMount: vi.fn(async () => undefined),
@@ -16,6 +16,7 @@ const { store, rebaseRun, pushRun, rebaseParams, pushParams } = vi.hoisted(() =>
   pushRun: vi.fn(async () => undefined),
   rebaseParams: [] as Array<Record<string, unknown>>,
   pushParams: [] as Array<Record<string, unknown>>,
+  rebaseIsRunning: { current: false },
 }));
 
 vi.mock('../../../../../store', () => ({
@@ -24,7 +25,7 @@ vi.mock('../../../../../store', () => ({
 vi.mock('../../../hooks/useRebaseAgent', () => ({
   useRebaseAgent: (params: Record<string, unknown>) => {
     rebaseParams.push(params);
-    return { canRebase: true, isRunning: false, error: null, run: rebaseRun };
+    return { canRebase: true, isRunning: rebaseIsRunning.current, error: null, run: rebaseRun };
   },
 }));
 vi.mock('../../../hooks/usePushBranch', () => ({
@@ -72,6 +73,7 @@ describe('ProjectSyncControl', () => {
     vi.clearAllMocks();
     rebaseParams.length = 0;
     pushParams.length = 0;
+    rebaseIsRunning.current = false;
     store.projects = [{ id: 'project-1', rootPath: '/repo', baseBranch: 'develop' }];
   });
   afterEach(cleanup);
@@ -98,22 +100,33 @@ describe('ProjectSyncControl', () => {
     expect(store.setSessionActiveProject).not.toHaveBeenCalled();
   });
 
-  it('shows the behind badge only when behind is greater than zero', async () => {
+  it('names the vs-main status on the trigger instead of a bare badge', () => {
     const behindStatus = makeStatus({ behind: 2 });
     const view = renderControl({ status: behindStatus });
-    expect(screen.getByTestId('project-behind-badge').textContent).toBe('2');
+    expect(screen.getByTestId('project-sync-trigger').textContent).toContain('Behind main by 2');
 
     view.unmount();
     renderControl({ status: makeStatus({ behind: 0 }) });
-    expect(screen.queryByTestId('project-behind-badge')).toBeNull();
+    expect(screen.getByTestId('project-sync-trigger').textContent).toContain('Up to date');
   });
 
-  it('shows placeholders and no badge before status is known', () => {
+  it('tells an agent rebasing on main apart from a rebase git left stopped', () => {
+    const stoppedStatus: WorktreeStatus = { ...makeStatus({ behind: 0 }), inProgress: 'rebase' };
+    const view = renderControl({ status: stoppedStatus });
+    expect(screen.getByTestId('project-sync-trigger').textContent).toContain('Rebase stopped');
+
+    view.unmount();
+    rebaseIsRunning.current = true;
+    renderControl({ status: stoppedStatus });
+    expect(screen.getByTestId('project-sync-trigger').textContent).toContain('Rebasing on main');
+  });
+
+  it('shows placeholders before status is known', () => {
     renderControl({ status: null });
 
-    expect(screen.queryByTestId('project-behind-badge')).toBeNull();
+    expect(screen.getByTestId('project-sync-trigger').textContent).toBe('--');
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
-    expect(screen.getAllByText('--')).toHaveLength(2);
+    expect(screen.getAllByText('--')).toHaveLength(3);
   });
 
   it('commits a trimmed base branch on Enter', async () => {

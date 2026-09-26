@@ -9,6 +9,12 @@ import { ArchivedGate } from '../ArchivedGate';
 import { ProjectMountGroup } from './ProjectMountGroup';
 import { useMountRows } from './useMountRows';
 import { useWorktreeStatusPending, useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
+import {
+  PROJECTS_EXPLAINER,
+  PROJECTS_HINT_DISMISSED_KEY,
+  shouldDismissProjectsHint,
+  shouldShowProjectsHint,
+} from './projectsHintSettings';
 
 type Props = {
   readonly session: Session;
@@ -22,6 +28,8 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   const loadSessionMounts = useAppStore((state) => state.loadSessionMounts);
   const loadPrSeries = useAppStore((state) => state.loadPrSeries);
   const diffStats = useMountDiffStats(session.id);
+  const settings = useAppStore((state) => state.settings);
+  const saveSetting = useAppStore((state) => state.saveSetting);
   const areMountsLoaded = useAppStore(
     (state) => state.sessionProjectMounts[session.id] !== undefined,
   );
@@ -38,17 +46,29 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   );
   const worktreeStatuses = useWorktreeStatuses({ targets: worktreeTargets });
   const pendingWorktrees = useWorktreeStatusPending({ targets: worktreeTargets });
+  const worktreeCount = worktreeTargets.length;
+  const showProjectsHint = shouldShowProjectsHint({ settings, worktreeCount });
 
   useEffect(() => {
     void loadSessionMounts({ sessionId: session.id }).catch(() => undefined);
     void loadPrSeries({ sessionId: session.id }).catch(() => undefined);
   }, [session.id]);
 
+  useEffect(() => {
+    if (shouldDismissProjectsHint({ settings, worktreeCount })) {
+      void saveSetting(PROJECTS_HINT_DISMISSED_KEY, 'true').catch(() => undefined);
+    }
+  }, [saveSetting, settings, worktreeCount]);
+
   return (
     <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">
       <SectionHeader
         label="Projects"
-        {...(areMountsLoaded && groups.length === 0 ? { hint: NO_PROJECT_HINT } : {})}
+        {...(areMountsLoaded && groups.length === 0
+          ? { hint: NO_PROJECT_HINT }
+          : showProjectsHint
+            ? { hint: PROJECTS_EXPLAINER }
+            : {})}
         action={
           <ArchivedGate isArchived={session.archivedAt != null}>
             <MountProjectAction

@@ -313,6 +313,7 @@ pub fn run() {
             codex_app_server::codex_consume_reset_credit,
             repo::validate_git_repo,
             repo::project_git_status,
+            repo::project_fetch,
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,

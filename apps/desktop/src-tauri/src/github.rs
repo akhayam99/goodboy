@@ -254,7 +254,7 @@ fn run_with_timeout(mut cmd: Command, timeout: Duration) -> Result<GhRunResult, 
     }
 }
 
-pub(crate) fn run_git_push(
+pub(crate) fn run_git_authenticated(
     args: &[&str],
     cwd: &str,
     token: Option<&str>,
@@ -462,7 +462,7 @@ pub async fn git_push(
             args.push("origin");
             args.push(b);
         }
-        run_git_push(&args, &cwd, token.as_deref())
+        run_git_authenticated(&args, &cwd, token.as_deref())
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?

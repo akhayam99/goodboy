@@ -5,6 +5,8 @@ import { checkGoodboyIgnore } from './checkGoodboyIgnore';
 import { convertProjectToRepo } from './convertProjectToRepo';
 import { describeProject } from './describeProject';
 import { fastForwardProjectCheckout } from './fastForwardProjectCheckout';
+import { fastForwardProjectCheckouts } from './fastForwardProjectCheckouts';
+import { fetchProjectCheckouts } from './fetchProjectCheckouts';
 import { loadProjectGitStatus } from './loadProjectGitStatus';
 import { previewProjectAdoption } from './previewProjectAdoption';
 import { removeProject } from './removeProject';
@@ -22,6 +24,8 @@ export const createProjectsSlice = (set: SetFn, get: GetFn) => ({
   convertProjectToRepo: convertProjectToRepo(set, get),
   loadProjectGitStatus: loadProjectGitStatus(set, get),
   fastForwardProjectCheckout: fastForwardProjectCheckout(set, get),
+  fetchProjectCheckouts: fetchProjectCheckouts(set, get),
+  fastForwardProjectCheckouts: fastForwardProjectCheckouts(set, get),
   updateProjectBaseBranch: updateProjectBaseBranch(set, get),
   setProjectStarred: setProjectStarred(set, get),
   describeProject: describeProject(set, get),

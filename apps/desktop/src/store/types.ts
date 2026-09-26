@@ -2,6 +2,7 @@ import type { CliRequirement } from '@goodboy/core';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
+import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
@@ -271,6 +272,8 @@ export type AppState = AppSliceState & {
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
   readonly projectGitStatus: Readonly<Record<ProjectId, WorkspaceGitStatus>>;
   readonly projectCheckoutPulling: Readonly<Record<ProjectId, boolean>>;
+  readonly projectFetchedAt: Readonly<Record<ProjectId, number>>;
+  readonly projectCheckoutResult: Readonly<Record<ProjectId, ProjectCheckoutUpdate>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly sessionEvents: Readonly<Record<SessionId, ReadonlyArray<SessionEvent> | undefined>>;
   readonly currentWorkspaceId: WorkspaceId | null;
