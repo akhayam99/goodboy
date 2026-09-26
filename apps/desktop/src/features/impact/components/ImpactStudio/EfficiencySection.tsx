@@ -4,12 +4,11 @@ import type {
   NudgeOutcomeCount,
   TurnBucket,
 } from '@goodboy/db';
-import { EmptyState, StatCard, formatTokens } from '@goodboy/ui';
+import { EmptyState, SectionHeader, StatCard, formatTokens } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { turnStats } from '../../utils/turnStats';
-import { PaneShell } from '../../../../shared/components/PaneShell';
 import { TurnHistogram } from './TurnHistogram';
 import { StudioWidget } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -25,7 +24,7 @@ type Props = {
   readonly onRetry: () => void;
 };
 
-export const EfficiencyPanel = ({
+export const EfficiencySection = ({
   cacheEfficiency,
   contextGrowth,
   turns,
@@ -44,7 +43,12 @@ export const EfficiencyPanel = ({
   const accepted = nudgeData?.find((entry) => entry.outcome === 'accepted')?.count ?? 0;
   const nudgeTotal = nudgeData?.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
   return (
-    <PaneShell scroll="body" title="Efficiency">
+    <section className="flex flex-col gap-4">
+      <SectionHeader
+        label="Efficiency"
+        hint="How well the spend is used: cache reuse, context, turns and model suggestions."
+        headingLevel={2}
+      />
       <ErrorStrip label="cache efficiency" error={cacheEfficiency.error} onRetry={onRetry} />
       <ErrorStrip label="context growth" error={contextGrowth.error} onRetry={onRetry} />
       <ErrorStrip label="turn distribution" error={turns.error} onRetry={onRetry} />
@@ -120,6 +124,6 @@ export const EfficiencyPanel = ({
           </div>
         </StudioWidget>
       </div>
-    </PaneShell>
+    </section>
   );
 };

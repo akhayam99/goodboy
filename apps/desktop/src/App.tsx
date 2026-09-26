@@ -95,6 +95,7 @@ export const App = () => {
     openSettings,
     openShortcutHelp,
     openSpend,
+    openImpact,
     openWorkflows,
     settingsProviderId,
     studio,
@@ -225,6 +226,7 @@ export const App = () => {
             onOpenIntegration={openIntegration}
             onOpenInbox={openInbox}
             onOpenWorkflows={openWorkflows}
+            onOpenImpact={openImpact}
             onOpenSettings={openSettings}
             onOpenChangelog={openChangelog}
             onOpenShortcuts={openShortcutHelp}

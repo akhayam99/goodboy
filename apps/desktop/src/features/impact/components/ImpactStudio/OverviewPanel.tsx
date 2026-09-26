@@ -1,55 +1,100 @@
-import type { ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import type { ImpactOverview, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
-import { EmptyState, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  ErrorStrip,
+  PanelLoading,
+  SectionHeader,
+  formatUsd,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { ErrorStrip } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
-import type { QueryResult } from '../../../../shared/types/queryResult';
-import { formatHours } from '../../utils/formatHours';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { SessionRows } from './SessionRows';
-import { TrendStatCard } from './TrendStatCard';
-import { StudioWidget } from '@goodboy/ui';
+import type { QueryResult } from '../../../../shared/types/queryResult';
+import type { ImpactTab, ImpactWindowId } from '../../lib';
+import { formatHours } from '../../utils/formatHours';
+import { impactDelta } from '../../utils/impactDelta';
+import { impactSummary } from '../../utils/impactSummary';
+import { shippedSessions } from '../../utils/shippedSessions';
+import { ImpactSummary } from './ImpactSummary';
+import { KpiTile } from './KpiTile';
+import { ShippedSessionRows } from './ShippedSessionRows';
 
 type Props = {
+  readonly header: ReactElement;
+  readonly windowId: ImpactWindowId;
+  readonly workspaceName: string | null;
   readonly overview: QueryResult<ImpactOverview>;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly isLoading: boolean;
-  readonly spendSection: ReactNode;
-  readonly hasSpend: boolean;
   readonly onRetryOverview: () => void;
   readonly onRetryShipped: () => void;
+  readonly onSelectTab: (tab: ImpactTab) => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
+  readonly onStartSession: () => void;
 };
 
+type ShareParams = {
+  readonly sessions: number | null;
+  readonly orchestrated: number | null;
+};
+
+const WORKFLOW_DEFINITION =
+  'Sessions where a workflow, a subagent or a resolver did part of the work.';
+
+const SHIPPED_LIMIT = 5;
+
+const shareOf = ({ sessions, orchestrated }: ShareParams): number | null =>
+  sessions === null || sessions === 0 ? null : (orchestrated ?? 0) / sessions;
+
 export const OverviewPanel = ({
+  header,
+  windowId,
+  workspaceName,
   overview,
   pullRequests,
   reviews,
   isLoading,
-  spendSection,
-  hasSpend,
   onRetryOverview,
   onRetryShipped,
+  onSelectTab,
   onOpenSession,
+  onStartSession,
 }: Props) => {
   const data = overview.data;
-  const pullRequestData = pullRequests.data;
+  const prs = pullRequests.data;
   const reviewData = reviews.data;
   const share =
-    data !== null && data.sessionCount > 0
-      ? (data.orchestratedSessions / data.sessionCount) * 100
-      : 0;
+    data === null
+      ? null
+      : shareOf({ sessions: data.sessionCount, orchestrated: data.orchestratedSessions });
   const previousShare =
-    data?.previousSessionCount !== null &&
-    data?.previousSessionCount !== undefined &&
-    data.previousSessionCount > 0
-      ? ((data.previousOrchestratedSessions ?? 0) / data.previousSessionCount) * 100
-      : null;
+    data === null
+      ? null
+      : shareOf({
+          sessions: data.previousSessionCount,
+          orchestrated: data.previousOrchestratedSessions,
+        });
+  const summary =
+    data === null
+      ? null
+      : impactSummary({
+          windowId,
+          workspaceName,
+          sessionCount: data.sessionCount,
+          mergedPullRequests: prs?.merged ?? null,
+          spendText: data.spendUsd === null ? null : formatUsd(data.spendUsd),
+          workflowShare: share,
+        });
+  const shipped =
+    prs === null || data === null
+      ? []
+      : shippedSessions({ entries: prs.entries, durations: data.sessions, limit: SHIPPED_LIMIT });
+
   return (
-    <PaneShell scroll="body" title="Overview">
+    <PaneShell scroll="body" header={header}>
       <ErrorStrip label="overview" error={overview.error} onRetry={onRetryOverview} />
       <ErrorStrip
         label="pull request outcomes"
@@ -58,111 +103,80 @@ export const OverviewPanel = ({
       />
       <ErrorStrip label="review outcomes" error={reviews.error} onRetry={onRetryShipped} />
       {isLoading && data === null ? <PanelLoading label="Loading impact metrics" /> : null}
-      {data !== null && data.sessionCount === 0 && data.spendUsd === null && !hasSpend ? (
+      {data !== null && data.sessionCount === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.impact}
           tone={CONCEPT_TONE.impact}
-          title="No activity in this window"
-          description="Run sessions to see shipped outcomes, flow time, and efficiency."
+          title="Impact fills in as sessions finish."
+          action={
+            <Button variant="secondary" size="sm" onClick={onStartSession}>
+              Start a session
+            </Button>
+          }
           bordered
           size="lg"
           headingLevel={2}
         />
       ) : null}
-      {data !== null && data.sessionCount > 0 ? (
+      {summary !== null && data !== null ? (
         <>
+          <ImpactSummary parts={summary} />
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <TrendStatCard
-              label="orchestrated"
-              value={`${Math.round(share)}%`}
-              current={share}
-              previous={previousShare}
-              onClick={
-                data.sessions[0] !== undefined
-                  ? () => onOpenSession(data.sessions[0]!.sessionId)
-                  : undefined
-              }
+            <KpiTile
+              label="Pull requests merged"
+              value={String(prs?.merged ?? 0)}
+              delta={impactDelta({
+                current: prs?.merged ?? 0,
+                previous: prs?.previousMerged ?? null,
+                unit: 'count',
+              })}
+              onSelect={() => onSelectTab('shipped')}
             />
-            <TrendStatCard
-              label="PRs open / merged"
-              value={`${pullRequestData?.open ?? 0} / ${pullRequestData?.merged ?? 0}`}
-              current={(pullRequestData?.open ?? 0) + (pullRequestData?.merged ?? 0)}
-              previous={
-                pullRequestData?.previousOpen === null ||
-                pullRequestData?.previousOpen === undefined ||
-                pullRequestData.previousMerged === null ||
-                pullRequestData.previousMerged === undefined
-                  ? null
-                  : pullRequestData.previousOpen + pullRequestData.previousMerged
-              }
-              onClick={
-                pullRequestData?.entries[0] !== undefined
-                  ? () => onOpenSession(pullRequestData.entries[0]!.sessionId)
-                  : undefined
-              }
-            />
-            <TrendStatCard
-              label="reviews resolved"
+            <KpiTile
+              label="Reviews resolved"
               value={String(reviewData?.commentsResolved ?? 0)}
-              current={reviewData?.commentsResolved ?? 0}
-              previous={reviewData?.previousCommentsResolved ?? null}
-              onClick={
-                reviewData?.sessions[0] !== undefined
-                  ? () => onOpenSession(reviewData.sessions[0]!.sessionId)
-                  : undefined
-              }
+              delta={impactDelta({
+                current: reviewData?.commentsResolved ?? 0,
+                previous: reviewData?.previousCommentsResolved ?? null,
+                unit: 'count',
+              })}
+              onSelect={() => onSelectTab('shipped')}
             />
-            <TrendStatCard
-              label="median wall-clock"
+            <KpiTile
+              label="Run by workflows"
+              value={`${Math.round((share ?? 0) * 100)}%`}
+              title={WORKFLOW_DEFINITION}
+              delta={impactDelta({
+                current: (share ?? 0) * 100,
+                previous: previousShare === null ? null : previousShare * 100,
+                unit: 'points',
+              })}
+              onSelect={() => onSelectTab('flow')}
+            />
+            <KpiTile
+              label="Median session"
               value={formatHours({ hours: data.medianSessionHours })}
-              current={data.medianSessionHours ?? 0}
-              previous={data.previousMedianSessionHours}
-              lowerIsBetter
-              onClick={
-                data.sessions[0] !== undefined
-                  ? () => onOpenSession(data.sessions[0]!.sessionId)
-                  : undefined
+              delta={
+                data.medianSessionHours === null
+                  ? null
+                  : impactDelta({
+                      current: data.medianSessionHours,
+                      previous: data.previousMedianSessionHours,
+                      unit: 'hours',
+                      isLowerBetter: true,
+                    })
               }
+              onSelect={() => onSelectTab('flow')}
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <StudioWidget
-              label="longest session wall-clock"
-              hint="open a session to inspect its run"
-            >
-              <SessionRows
-                sessions={data.sessions}
-                valueLabel=""
-                formatValue={(value) => formatHours({ hours: value })}
-                onOpenSession={onOpenSession}
-              />
-            </StudioWidget>
-            <StudioWidget label="spend this window" hint="highest-cost sessions">
-              {data.spendUsd === null ? (
-                <span className="text-label text-muted-foreground">
-                  No spend recorded in this window
-                </span>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <div
-                    title={formatUsdPrecise(data.spendUsd)}
-                    className="font-mono text-2xl tabular-nums text-foreground"
-                  >
-                    {formatUsd(data.spendUsd)}
-                  </div>
-                  <SessionRows
-                    sessions={data.spendSessions}
-                    valueLabel=""
-                    formatValue={(value) => formatUsd(value)}
-                    onOpenSession={onOpenSession}
-                  />
-                </div>
-              )}
-            </StudioWidget>
-          </div>
+          {shipped.length > 0 ? (
+            <section className="flex flex-col gap-2">
+              <SectionHeader label="Sessions that shipped the most" headingLevel={2} />
+              <ShippedSessionRows sessions={shipped} onOpenSession={onOpenSession} />
+            </section>
+          ) : null}
         </>
       ) : null}
-      {spendSection}
     </PaneShell>
   );
 };

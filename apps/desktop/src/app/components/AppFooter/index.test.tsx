@@ -88,6 +88,7 @@ const footerProps = ({ overrides = {} }: Params = {}): FooterProps => ({
   onOpenIntegration: vi.fn(),
   onOpenInbox: vi.fn(),
   onOpenWorkflows: vi.fn(),
+  onOpenImpact: vi.fn(),
   onOpenSettings: vi.fn(),
   onOpenChangelog: vi.fn(),
   onOpenShortcuts: vi.fn(),
@@ -100,19 +101,23 @@ const rightNames = () =>
   );
 
 describe('AppFooter', () => {
-  it('keeps inbox, workflows and settings one click away on the right, in that order', () => {
+  it('keeps inbox, workflows, impact and settings one click away on the right, in that order', () => {
     const onOpenInbox = vi.fn();
     const onOpenWorkflows = vi.fn();
+    const onOpenImpact = vi.fn();
     const onOpenSettings = vi.fn();
     render(
       <AppFooter
-        {...footerProps({ overrides: { onOpenInbox, onOpenWorkflows, onOpenSettings } })}
+        {...footerProps({
+          overrides: { onOpenInbox, onOpenWorkflows, onOpenImpact, onOpenSettings },
+        })}
       />,
     );
 
     expect(rightNames()).toEqual([
       'Open the inbox for this workspace',
       'Open the workflow library for this workspace',
+      'Open Impact for this workspace',
       SETTINGS_LABEL,
     ]);
 
@@ -120,10 +125,12 @@ describe('AppFooter', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Open the workflow library for this workspace' }),
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Open Impact for this workspace' }));
     fireEvent.click(screen.getByRole('button', { name: SETTINGS_LABEL }));
 
     expect(onOpenInbox).toHaveBeenCalledOnce();
     expect(onOpenWorkflows).toHaveBeenCalledOnce();
+    expect(onOpenImpact).toHaveBeenCalledOnce();
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
 

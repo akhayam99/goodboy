@@ -144,21 +144,31 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Impact studio spend scopes', () => {
-  it('groups providers and sessions in the one rail, under a single window control', () => {
-    renderStudio();
+  it('keeps providers and sessions in the spend tab, under one window control', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     expect(screen.getByRole('tablist', { name: 'Impact window' })).toBeDefined();
-    expect(screen.getByText('spend by provider')).toBeDefined();
-    expect(screen.getByText('spend by session')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
+    expect(screen.getByText('Sessions by spend')).toBeDefined();
+    expect(screen.queryByText('spend by provider')).toBeNull();
   });
 
-  it('switches to a provider scope from the rail and shows its spend breakdown', () => {
-    renderStudio();
+  it('anchors a provider inside spend and goes back to all spend', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     const [claudeRow] = screen.getAllByRole('button', { name: /claude/i });
     fireEvent.click(claudeRow!);
     expect(screen.getByText(/total spend/i)).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'All spend' }));
+    expect(screen.queryByText(/total spend/i)).toBeNull();
+  });
+
+  it('anchors a session inside spend from its row', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /build the feature/i }));
+    expect(screen.getByText(/session cost/i)).toBeDefined();
   });
 
   it('opens the provider panel when the studio is asked for a provider scope', () => {
@@ -281,7 +291,7 @@ describe('Impact studio spend scopes', () => {
 
   it('renders a failed spend load and retries it', async () => {
     state.loadBudgetAlerts.mockRejectedValueOnce(new Error('alerts unavailable'));
-    renderStudio();
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     expect((await screen.findByRole('alert')).textContent).toContain('alerts unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));

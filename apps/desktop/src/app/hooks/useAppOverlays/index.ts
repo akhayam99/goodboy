@@ -91,7 +91,7 @@ export const useAppOverlays = ({
   }, [hasWorkspace, open]);
 
   const openSpend = useCallback(
-    () => open({ overlay: { kind: 'impact', scope: { kind: 'overview' } } }),
+    () => open({ overlay: { kind: 'impact', scope: { kind: 'spend' } } }),
     [open],
   );
 

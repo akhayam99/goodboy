@@ -66,7 +66,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.impact,
     title: 'Impact',
     closeLabel: 'close impact',
-    skeleton: 'rail',
+    skeleton: 'list',
   },
   changelog: {
     icon: CONCEPT_ICONS.changelog,

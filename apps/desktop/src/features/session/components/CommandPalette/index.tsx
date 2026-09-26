@@ -262,6 +262,13 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           onSelect: () => openImpactStudio({}),
         },
         {
+          id: 'goto:impact-spend',
+          label: 'Impact: Spend',
+          group: 'goto',
+          icon: CONCEPT_ICONS.budget,
+          onSelect: () => openImpactStudio({ scope: { kind: 'spend' } }),
+        },
+        {
           id: 'goto:changelog',
           label: 'Changelog',
           group: 'goto',

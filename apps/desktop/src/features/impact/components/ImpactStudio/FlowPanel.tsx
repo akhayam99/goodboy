@@ -1,4 +1,5 @@
 import type { AgentDurations, FlowHealth } from '@goodboy/db';
+import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { EmptyState, StatCard } from '@goodboy/ui';
 import { ErrorStrip } from '@goodboy/ui';
@@ -19,6 +20,7 @@ const FLOW_TILE_LABELS = [
 ] as const;
 
 type Props = {
+  readonly header: ReactElement;
   readonly agentDurations: QueryResult<AgentDurations>;
   readonly flowHealth: QueryResult<FlowHealth>;
   readonly isLoading: boolean;
@@ -27,6 +29,7 @@ type Props = {
 };
 
 export const FlowPanel = ({
+  header,
   agentDurations,
   flowHealth,
   isLoading,
@@ -38,7 +41,7 @@ export const FlowPanel = ({
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
   return (
-    <PaneShell scroll="body" title="Flow">
+    <PaneShell scroll="body" header={header}>
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (

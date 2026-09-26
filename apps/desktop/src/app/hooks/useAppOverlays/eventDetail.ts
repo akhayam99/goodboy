@@ -1,5 +1,6 @@
 import {
   PROVIDER_IDS,
+  isProviderName,
   type PlanId,
   type ProviderId,
   type ProviderLifecycleAction,
@@ -53,21 +54,26 @@ const isInboxKind = (value: unknown): value is InboxKind =>
 const isSettingsScope = (value: unknown): value is SettingsStudioScope =>
   value === 'app' || value === 'workspace' || value === 'providers' || value === 'tools';
 
-const isImpactScope = (value: unknown): value is ImpactScope => {
+const readImpactScope = (value: unknown): ImpactScope | null => {
   if (typeof value !== 'object' || value === null) {
-    return false;
+    return null;
   }
   const kind: unknown = Reflect.get(value, 'kind');
-  if (kind === 'overview' || kind === 'shipped' || kind === 'flow' || kind === 'efficiency') {
-    return true;
+  if (kind === 'overview' || kind === 'shipped' || kind === 'flow' || kind === 'spend') {
+    return { kind };
   }
-  if (kind === 'provider') {
-    return typeof Reflect.get(value, 'provider') === 'string';
+  if (kind === 'efficiency') {
+    return { kind: 'spend' };
   }
-  if (kind === 'session') {
-    return isSessionId(Reflect.get(value, 'sessionId'));
+  const provider: unknown = Reflect.get(value, 'provider');
+  if (kind === 'provider' && isProviderName(provider)) {
+    return { kind: 'provider', provider };
   }
-  return false;
+  const sessionId: unknown = Reflect.get(value, 'sessionId');
+  if (kind === 'session' && isSessionId(sessionId)) {
+    return { kind: 'session', sessionId };
+  }
+  return null;
 };
 
 export const eventSessionId = (event: Event): SessionId | null => {
@@ -111,5 +117,5 @@ export const inboxOverlayFromEvent = (event: Event): StudioPlace => {
 
 export const impactOverlayFromEvent = (event: Event): StudioPlace => {
   const scope = eventValue({ event, key: 'scope' });
-  return { kind: 'impact', scope: isImpactScope(scope) ? scope : null };
+  return { kind: 'impact', scope: readImpactScope(scope) };
 };
