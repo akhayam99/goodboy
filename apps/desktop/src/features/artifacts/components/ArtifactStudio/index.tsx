@@ -253,6 +253,7 @@ export const ArtifactStudio = ({ sessionId }: Props) => {
       onOpen={openRow}
       onStop={stopGeneration}
       onRetry={retryGeneration}
+      onImported={(artifactId) => setFocusedArtifactId(sessionId, artifactId)}
     />
   );
 };

@@ -177,10 +177,14 @@ export {
   WIREFRAME_VIEWPORTS,
   parseWireframeSource,
   validateWireframeDocument,
+  walkWireframeNodes,
+  wireframeNodeChildren,
+  wireframeNodeItemIds,
   type WireframeAction,
   type WireframeAlignment,
   type WireframeButtonNode,
   type WireframeButtonVariant,
+  type WireframeDevice,
   type WireframeDirection,
   type WireframeDocument,
   type WireframeGridNode,
@@ -200,6 +204,7 @@ export {
   type WireframeNode,
   type WireframeNodeKind,
   type WireframeScreen,
+  type WireframeScreenState,
   type WireframeSpacing,
   type WireframeStackNode,
   type WireframeTableNode,
@@ -211,6 +216,7 @@ export {
   type WireframeThemeRadius,
   type WireframeTransition,
   type WireframeValidationResult,
+  type WireframeVariant,
   type WireframeViewport,
 } from './artifacts';
 
@@ -671,3 +677,12 @@ export {
   type WorkflowRoutingWireFields,
   type RunSummary,
 } from './orchestrator';
+export {
+  diffWireframeDocuments,
+  type WireframeDiff,
+  type WireframeDiffSummary,
+  type WireframeNodeChange,
+  type WireframeNodeChangeKind,
+  type WireframeScreenChange,
+  type WireframeScreenChangeKind,
+} from './artifacts';

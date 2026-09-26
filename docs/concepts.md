@@ -434,16 +434,64 @@ when the part is done.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
-colour) and the screens as a grid under it. A node or a tile opens
-**Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
-the clipboard, or only the open screen. **Export as a folder** writes, into a
+colour) and the screens as a grid of page previews under it. A node or a tile
+opens **Screens**: the screens on a rail, the real page of the open screen in
+the middle, inside the frame of its device, with a Fit or 100% zoom, and a
+**Notes** panel with the screen note, the numbered notes of its nodes (a click
+shows the node on the page) and where the screen goes. The pages are the same
+ones the saved copy holds, shown in an isolated frame
+([architecture.md](architecture.md#frames)); links inside them work, and the
+rail follows. **Open in browser** opens the screen you are looking at, or the
+index on the Flow, from the saved copy. Under `⋯`, **Copy spec** copies the
+JSON and **Save a copy to…** writes, into a
 folder you pick, `index.html` with the flow and the screens, one page per
 screen under `screens/` linked by plain links, one `wireframe.css`, the
 validated `wireframe.json`, its `wireframe.schema.json` (built from the code
 constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
 rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
 style. Goodboy never reads that folder back.
+
+The wireframe spec is version 2. It can define **patterns** once and reuse
+them (`{ "use": "posting-row", "with": { ... } }`), give a screen up to 4
+**states** (empty, loading, error or a name of its own, each a set of nodes to
+hide, show or retext), cut the same flow into release **variants** with
+`only`, set the **device** (desktop, tablet or phone), and use the kinds card,
+tabs, badge, toggle, sheet and chart. A note on a node becomes a numbered
+marker on the page. A version 1 spec is upgraded when it is read: its
+`mockState` toggles become states. Every revision is kept in
+`artifact_revisions` (who made it, what was asked, the nodes picked), and the
+saved copy holds one folder per version.
+
+You change a wireframe from the **Screens** view, not from a chat. Under the
+stage, **Ask for a change** takes a request; **Pick** outlines the element under
+the pointer and turns a click into a chip, and the scope is **This screen** or
+**All screens**. ⌘↵ sends the spec, the request, the picked node ids and the
+scope to the agent that drew it. While it works, the version pill reads
+`v4 · Drafting` and the stage stays on the current version. A version that
+lands takes the request as its label; a spec that fails the checks is **not
+kept**: a warning says why, the request stays, and **Ask again** resends it.
+The version pill opens every version (who, when, what was asked and what
+changed) with **View**, **Compare** and **Restore**. Viewing an older one says
+so above the stage, and Restore writes it back as a new version, `Restored vN`,
+so the history is never rewritten.
+
+**Compare** lays two versions side by side on the same screen. The diff is
+computed from the two specs by node id, never from the HTML: the rail marks
+each screen Added, Changed, Removed or Same with a glyph and the word, the
+newer page outlines added nodes with `+` and changed ones with a dashed `~`,
+the older one outlines removed nodes with `−`, and the **Changes** list says
+what moved in words. A click on a change shows the node in both pages. A node
+that kept its kind, text and place under a new id counts as changed. When a
+version lands, the notice offers `N changes · Compare` for 10 seconds; after
+that Compare stays in the versions popover.
+
+A spec made or edited outside comes back in. On the Artifacts page, **New ▾ >
+Import wireframe JSON…** picks a file (or drop a `.json` on the page); inside a
+wireframe, **Replace spec with JSON…** in the versions popover does the same
+for that wireframe. The validator answers inline, never in a dialog: what it
+adjusted, with **Import anyway** and **Cancel**, or why the file cannot be
+read. An import gets an idle Wireframe agent that owns it, the same agent you
+then ask for changes, and its version reads `Imported JSON`.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.

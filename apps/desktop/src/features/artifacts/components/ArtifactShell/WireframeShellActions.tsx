@@ -1,16 +1,16 @@
-import { useMemo, useState } from 'react';
-import { parseWireframeSource, type WireframeScreen } from '@goodboy/core';
+import { useState } from 'react';
 import { cn, formatError } from '@goodboy/ui';
 import type { SessionId, WireframeArtifact } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import type { ArtifactExport } from '../../hooks/useArtifactExport';
 import { useWireframeRespawn } from '../../../wireframes/useWireframeRespawn';
 import { useWireframeFolderExport } from '../../../wireframes/useWireframeFolderExport';
 import { folderExportNote } from '../../../wireframes/useWireframeFolderExport/folderExportNote';
+import { openWireframeInBrowser } from '../../../wireframes/openWireframeInBrowser';
 import {
   WIREFRAME_FIDELITY_VARIANT_LABEL,
   type WireframeFidelity,
 } from '../../../wireframes/wireframeFidelity';
-import { WireframeExportMenu } from '../../../wireframes/components/WireframeExportMenu';
 import type { ArtifactActionSet } from './artifactActions';
 import { ArtifactShellActions, type ArtifactActionHandles } from './ArtifactShellActions';
 
@@ -35,29 +35,24 @@ export const WireframeShellActions = ({
 }: Props) => {
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
   const folderExport = useWireframeFolderExport({ artifact });
+  const workspaceSlug = useAppStore((s) => {
+    const workspaceId = s.sessions.find((session) => session.id === sessionId)?.workspaceId;
+    return s.workspaces.find((workspace) => workspace.id === workspaceId)?.slug ?? null;
+  });
   const [note, setNote] = useState<Note | null>(null);
+  const [isOpening, setIsOpening] = useState(false);
   const other: WireframeFidelity = fidelity === 'low' ? 'high' : 'low';
-  const screen = useMemo((): WireframeScreen | null => {
-    if (screenId === null) {
-      return null;
-    }
-    const parsed = parseWireframeSource({ source: artifact.sourceText });
-    if (parsed.status !== 'valid') {
-      return null;
-    }
-    return parsed.document.screens.find((candidate) => candidate.id === screenId) ?? null;
-  }, [artifact.sourceText, screenId]);
+  const isBusy = exporter.status.kind === 'busy' || folderExport.status.kind === 'busy';
 
-  const copyScreen = (target: WireframeScreen) => {
-    const clipboard = globalThis.navigator?.clipboard ?? null;
-    if (clipboard === null) {
-      setNote({ text: 'This system has no clipboard available', isError: true });
+  const openInBrowser = () => {
+    if (workspaceSlug === null || isOpening) {
       return;
     }
-    clipboard
-      .writeText(JSON.stringify(target, null, 2))
-      .then(() => setNote({ text: `${target.title} copied as JSON`, isError: false }))
-      .catch((cause: unknown) => setNote({ text: formatError(cause), isError: true }));
+    setNote(null);
+    setIsOpening(true);
+    openWireframeInBrowser({ artifact, workspaceSlug, screenId })
+      .catch((cause: unknown) => setNote({ text: formatError(cause), isError: true }))
+      .finally(() => setIsOpening(false));
   };
 
   const folderNote = folderExportNote({ status: folderExport.status });
@@ -81,27 +76,34 @@ export const WireframeShellActions = ({
         set={set}
         handles={{
           ...handles,
+          openInBrowser: {
+            onClick: openInBrowser,
+            isBusy: isOpening,
+            isDisabled: workspaceSlug === null || isOpening,
+            hint:
+              screenId === null
+                ? 'Opens the saved folder in your browser'
+                : 'Opens this screen from the saved folder in your browser',
+          },
+          copySource: {
+            onClick: () => void exporter.copySource(),
+            label: 'Copy spec',
+            isDisabled: isBusy,
+          },
+          saveSource: {
+            onClick: () => {
+              setNote(null);
+              void folderExport.exportFolder();
+            },
+            label: 'Save a copy to…',
+            isDisabled: isBusy,
+          },
           newVariant: {
             onClick: () => respawn({ fidelity: other }),
             isDisabled: isRespawning,
             hint: `Runs the wireframe again as a separate ${WIREFRAME_FIDELITY_VARIANT_LABEL[other]}, leaving this one untouched`,
           },
         }}
-        renderSecondary={(id) =>
-          id === 'export' ? (
-            <WireframeExportMenu
-              screen={screen}
-              isBusy={exporter.status.kind === 'busy' || folderExport.status.kind === 'busy'}
-              onExportFolder={() => {
-                setNote(null);
-                void folderExport.exportFolder();
-              }}
-              onSaveCopy={() => void exporter.saveSource()}
-              onCopyJson={() => void exporter.copySource()}
-              onCopyScreen={copyScreen}
-            />
-          ) : null
-        }
       />
     </span>
   );

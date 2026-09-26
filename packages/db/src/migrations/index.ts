@@ -58,6 +58,7 @@ import { m196SessionContextSeen } from './m196-session-context-seen';
 import { m197SessionDecisions } from './m197-session-decisions';
 import { m198HistoryPlans } from './m198-history-plans';
 import { m199SessionEventHistoryKinds } from './m199-session-event-history-kinds';
+import { m200ArtifactRevisions } from './m200-artifact-revisions';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -403,4 +404,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 197, sql: m197SessionDecisions },
   { version: 198, sql: m198HistoryPlans },
   { version: 199, sql: m199SessionEventHistoryKinds },
+  { version: 200, sql: m200ArtifactRevisions },
 ];

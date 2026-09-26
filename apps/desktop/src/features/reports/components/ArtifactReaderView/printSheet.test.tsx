@@ -95,33 +95,6 @@ const reportWithCallout = {
   ].join('\n'),
 };
 
-const wideWireframe = {
-  ...report,
-  kind: 'wireframe',
-  title: 'Harborline console',
-  sourceFormat: 'json',
-  sourceText: JSON.stringify({
-    version: 1,
-    initialScreenId: 'console',
-    theme: { name: 'harborline', font: 'sans', radius: 'md' },
-    screens: [
-      {
-        id: 'console',
-        title: 'Console',
-        viewport: 'desktop',
-        root: {
-          id: 'console-root',
-          kind: 'stack',
-          direction: 'column',
-          children: [{ id: 'console-heading', kind: 'text', text: 'Ledger', variant: 'title' }],
-        },
-      },
-    ],
-    transitions: [],
-  }),
-  metadata: { fidelity: 'low', designProfile: {} },
-};
-
 const adoptSheet = ({ css }: { readonly css: string }): void => {
   const sheet = document.createElement('style');
   sheet.setAttribute('data-testid', 'bundled-stylesheet');
@@ -208,18 +181,6 @@ describe('print sheet styling', () => {
     expect(styleOf({ selector: '.print-meta' }).display).not.toBe('flex');
     expect(styleOf({ selector: '.print-contents-list' }).listStyle).not.toBe('none');
     expect(styleOf({ selector: '.print-contents' }).display).not.toBe('flex');
-  });
-
-  it('widens the sheet for a landscape wireframe from the same stylesheet', async () => {
-    adoptSheet({ css: SHEET_CSS });
-    listSpy.mockResolvedValueOnce([wideWireframe]);
-    render(<ArtifactReaderView request={request} />);
-    await waitFor(() => {
-      expect(screen.getByTestId('print-wireframe-sheet')).toBeDefined();
-    });
-
-    expect(screen.getByTestId('artifact-reader-view').getAttribute('data-page')).toBe('landscape');
-    expect(styleOf({ selector: '.print-sheet' }).maxWidth).toBe(A4_HEIGHT);
   });
 
   it('carries no style element of its own, which a stylesheet nonce would strip', async () => {

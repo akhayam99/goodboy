@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { Button, OverflowMenu, type OverflowMenuItem } from '@goodboy/ui';
 import type { ArtifactActionId, ArtifactActionSet } from './artifactActions';
@@ -20,7 +19,6 @@ export type ArtifactActionHandles = Readonly<
 type Props = {
   readonly set: ArtifactActionSet;
   readonly handles: ArtifactActionHandles;
-  readonly renderSecondary?: (id: ArtifactActionId) => ReactNode | null;
 };
 
 type ButtonParams = {
@@ -71,11 +69,9 @@ const overflowItem = ({
   };
 };
 
-export const ArtifactShellActions = ({ set, handles, renderSecondary }: Props) => {
+export const ArtifactShellActions = ({ set, handles }: Props) => {
   const secondary = set.secondary;
   const secondaryHandle = secondary === null ? undefined : handles[secondary];
-  const custom =
-    secondary === null || renderSecondary === undefined ? null : renderSecondary(secondary);
   const primaryHandle = set.primary === null ? undefined : handles[set.primary];
   const overflow = set.overflow.flatMap((id) => {
     const handle = handles[id];
@@ -84,8 +80,7 @@ export const ArtifactShellActions = ({ set, handles, renderSecondary }: Props) =
 
   return (
     <span data-testid="artifact-actions" className="flex min-w-0 shrink-0 items-center gap-1.5">
-      {custom}
-      {custom === null && secondary !== null && secondaryHandle !== undefined
+      {secondary !== null && secondaryHandle !== undefined
         ? actionButton({ id: secondary, handle: secondaryHandle, variant: 'secondary' })
         : null}
       {set.primary !== null && primaryHandle !== undefined

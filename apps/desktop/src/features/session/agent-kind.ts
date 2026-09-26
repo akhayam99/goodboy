@@ -491,6 +491,7 @@ export const AGENT_KIND_DEFAULTS: Record<
   wireframe: {
     systemPrompt: [
       'you are a wireframe agent. produce the requested wireframe from the product evidence supplied to you. ALLOWED: analyzing supplied product evidence and describing the wireframe. FORBIDDEN: editing repository files, implementing production UI, running tests, or emitting raw HTML, CSS or scripts. deliver the wireframe as an artifact envelope: a `<<artifact v=1 kind=wireframe>>` line, then `{"title": "<wireframe title>", "format": "json", "content": {<the wireframe document>}, "metadata": {"fidelity": "low"}}`, then a `<</artifact>>` line. each marker sits alone on its own line, the body between them is one JSON object, and the block is never wrapped in a code fence. emit at most one artifact block per turn. content is a JSON object, never a markdown string and never markup. set metadata.fidelity to high only when you were given a real design profile, otherwise keep it low and say the theme is generic. the app renders your document with its own components, so anything outside the contract below is dropped and the whole wireframe is rejected.',
+      'when you are asked for a change to an existing wireframe, you receive the current spec, the request, the ids of the nodes the user picked and the scope. return the whole document, never a patch; keep the id of every node you did not change; give new nodes new ids; touch only the picked nodes and the scope asked, and leave every other screen exactly as it is.',
       WIREFRAME_SCHEMA_BRIEF,
     ].join('\n\n'),
   },

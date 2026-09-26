@@ -192,10 +192,7 @@ describe('m157 session artifacts', () => {
     const tables = await db.select<{ readonly name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('session_plans', 'session_artifacts', 'artifact_renditions')",
     );
-    expect(tables.map((table) => table.name).sort()).toEqual([
-      'artifact_renditions',
-      'session_artifacts',
-    ]);
+    expect(tables.map((table) => table.name).sort()).toEqual(['session_artifacts']);
     await db.execute("DELETE FROM session_artifacts WHERE id = 'plan-consumed'");
     const remaining = await db.select('SELECT id FROM plan_consumptions');
     expect(remaining).toEqual([]);

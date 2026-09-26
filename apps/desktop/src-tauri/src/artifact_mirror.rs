@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::artifact_folder::{is_safe_segment, write_folder, FolderFile};
+use crate::artifact_folder::{is_safe_segment, write_folder, FolderFile, FolderLimits};
 use crate::artifacts::ArtifactExportError;
 
 const MIRROR_DIR: &str = if cfg!(debug_assertions) {
@@ -14,7 +14,13 @@ const MIRROR_DIR: &str = if cfg!(debug_assertions) {
 
 const META_FILE: &str = "meta.json";
 
-const PRUNED_DIRS: [&str; 1] = ["screens"];
+const MIRROR_LIMITS: FolderLimits = FolderLimits {
+    max_files: 512,
+    max_depth: 3,
+    max_bytes: 32 * 1024 * 1024,
+};
+
+const PRUNED_EXTENSIONS: [&str; 3] = [".html", ".css", ".json"];
 
 fn destination(message: &str) -> ArtifactExportError {
     ArtifactExportError::Destination(message.to_string())
@@ -90,20 +96,56 @@ fn mirror_folder(
     Ok(root.join(resolved))
 }
 
+fn prune_dir(
+    dir: &Path,
+    prefix: &str,
+    written: &HashSet<&str>,
+    extensions: &[&str],
+) -> Result<(), ArtifactExportError> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let relative = format!("{prefix}{name}");
+        let is_generated =
+            entry.path().is_file() && extensions.iter().any(|extension| name.ends_with(extension));
+        if is_generated && !written.contains(relative.as_str()) {
+            std::fs::remove_file(entry.path())?;
+        }
+    }
+    Ok(())
+}
+
+fn is_version_dir(name: &str) -> bool {
+    name.len() > 1 && name.starts_with('v') && name[1..].chars().all(|c| c.is_ascii_digit())
+}
+
 fn prune_stale(root: &Path, files: &[FolderFile]) -> Result<(), ArtifactExportError> {
     let written: HashSet<&str> = files.iter().map(|file| file.path.as_str()).collect();
-    for dir in PRUNED_DIRS {
-        let path = root.join(dir);
-        let Ok(entries) = std::fs::read_dir(&path) else {
+    prune_dir(root, "", &written, &PRUNED_EXTENSIONS)?;
+    prune_dir(&root.join("screens"), "screens/", &written, &[".html"])?;
+    let _ = std::fs::remove_dir(root.join("screens"));
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !is_version_dir(&name) || !entry.path().is_dir() {
             continue;
-        };
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
-            let is_page = name.ends_with(".html") && entry.path().is_file();
-            if is_page && !written.contains(format!("{dir}/{name}").as_str()) {
-                std::fs::remove_file(entry.path())?;
-            }
         }
+        let has_written = written
+            .iter()
+            .any(|path| path.starts_with(&format!("{name}/")));
+        if !has_written {
+            continue;
+        }
+        prune_dir(
+            &entry.path().join("screens"),
+            &format!("{name}/screens/"),
+            &written,
+            &[".html"],
+        )?;
     }
     Ok(())
 }
@@ -120,7 +162,7 @@ pub(crate) fn write_mirror(
         return Err(destination("the folder name is not a plain name"));
     }
     let resolved = resolve_folder(&root, folder);
-    let written = write_folder(&root, &resolved, files)?;
+    let written = write_folder(&root, &resolved, files, MIRROR_LIMITS)?;
     prune_stale(&written, files)?;
     Ok(written)
 }
@@ -275,6 +317,42 @@ pub async fn artifact_mirror_locate(
     folder: String,
 ) -> Result<MirrorLocation, ArtifactExportError> {
     locate_mirror(&home()?, &workspace_slug, &folder)
+}
+
+pub(crate) fn mirror_file(
+    home: &Path,
+    workspace_slug: &str,
+    folder: &str,
+    file: &str,
+) -> Result<PathBuf, ArtifactExportError> {
+    let segments: Vec<&str> = file.split('/').collect();
+    if segments.len() > 3 || !segments.iter().all(|segment| is_safe_segment(segment)) {
+        return Err(destination(
+            "the file is not a plain name inside the saved copy",
+        ));
+    }
+    if !file.ends_with(".html") {
+        return Err(destination("only pages open in the browser"));
+    }
+    let root = mirror_folder(home, workspace_slug, folder)?;
+    let path = segments
+        .iter()
+        .fold(root, |path, segment| path.join(segment));
+    if !path.is_file() {
+        return Err(destination("the saved copy is not on disk yet"));
+    }
+    Ok(path)
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_open(
+    workspace_slug: String,
+    folder: String,
+    file: String,
+) -> Result<(), ArtifactExportError> {
+    let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
+    crate::explore::spawn_open(&path, false)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -477,6 +555,69 @@ mod tests {
         assert!(first
             .with_file_name("2026-09-25-other-report-aaaaaa")
             .is_dir());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn keeps_every_version_folder_and_drops_the_flat_layout() {
+        let home = scratch_home();
+        let flat = [
+            file("index.html", "i"),
+            file("screens/a.html", "a"),
+            file("wireframe.css", "c"),
+            file("wireframe.json", "{}"),
+            file("meta.json", "{}"),
+        ];
+        let root = write_mirror(&home, "harborline", "flow", &flat).expect("flat");
+        let versioned = [
+            file("index.html", "versions"),
+            file("v1/index.html", "i1"),
+            file("v1/screens/a.html", "a1"),
+            file("v1/screens/a--empty.html", "a1e"),
+            file("v2/index.html", "i2"),
+            file("v2/screens/a.html", "a2"),
+            file("v2/wireframe.css", "c2"),
+            file("wireframe.schema.json", "{}"),
+            file("meta.json", "{}"),
+        ];
+        write_mirror(&home, "harborline", "flow", &versioned).expect("versioned");
+        assert!(!root.join("screens").exists());
+        assert!(!root.join("wireframe.css").exists());
+        assert!(!root.join("wireframe.json").exists());
+        assert!(root.join("v1").join("screens").join("a--empty.html").is_file());
+        let next = [
+            file("index.html", "versions"),
+            file("v2/index.html", "i2"),
+            file("v2/screens/b.html", "b2"),
+            file("meta.json", "{}"),
+        ];
+        write_mirror(&home, "harborline", "flow", &next).expect("next");
+        assert!(root.join("v1").join("screens").join("a.html").is_file());
+        assert!(!root.join("v2").join("screens").join("a.html").exists());
+        assert!(root.join("v2").join("screens").join("b.html").is_file());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn opens_only_pages_inside_the_saved_copy() {
+        let home = scratch_home();
+        write_mirror(
+            &home,
+            "harborline",
+            "flow",
+            &[
+                file("index.html", "i"),
+                file("screens/a.html", "a"),
+                file("meta.json", "{}"),
+            ],
+        )
+        .expect("write");
+        assert!(mirror_file(&home, "harborline", "flow", "screens/a.html").is_ok());
+        assert!(mirror_file(&home, "harborline", "flow", "index.html").is_ok());
+        assert!(mirror_file(&home, "harborline", "flow", "meta.json").is_err());
+        assert!(mirror_file(&home, "harborline", "flow", "../flow/index.html").is_err());
+        assert!(mirror_file(&home, "harborline", "flow", "screens/missing.html").is_err());
+        assert!(mirror_file(&home, "harborline", "..", "index.html").is_err());
         let _ = std::fs::remove_dir_all(home);
     }
 

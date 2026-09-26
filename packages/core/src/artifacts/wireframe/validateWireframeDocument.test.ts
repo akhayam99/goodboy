@@ -153,7 +153,7 @@ describe('validateWireframeDocument', () => {
   });
 
   it('rejects an unsupported version', () => {
-    expect(invalidOf({ ...validDocument(), version: 2 })).toContain('expected version 1');
+    expect(invalidOf({ ...validDocument(), version: 3 })).toContain('expected version 2');
   });
 
   it('drops an unknown property at every level and reports where it was', () => {
@@ -277,7 +277,7 @@ describe('validateWireframeDocument', () => {
 
     const toggle = validDocument();
     toggle.mockState = {} as never;
-    expect(invalidOf(toggle)).toContain('undeclared mock state "isDrawerOpen"');
+    expect(invalidOf(toggle)).toContain('undeclared state "isDrawerOpen"');
   });
 
   it('rejects a transition whose source node cannot be clicked', () => {
@@ -676,7 +676,8 @@ describe('WIREFRAME_SCHEMA_BRIEF', () => {
       `at most ${WIREFRAME_LIMITS.maxListItems} items`,
       `at most ${WIREFRAME_LIMITS.maxTableColumns} columns and ${WIREFRAME_LIMITS.maxTableRows} rows`,
       `at most ${WIREFRAME_LIMITS.maxTransitions} of them`,
-      'every key follows the same id rule as a node id',
+      `at most ${WIREFRAME_LIMITS.maxPatterns} named nodes`,
+      `at most ${WIREFRAME_LIMITS.maxStatesPerScreen} named states`,
       `is at most ${WIREFRAME_LIMITS.maxTextLength} characters`,
     ];
     for (const line of stated) {
@@ -689,8 +690,9 @@ describe('WIREFRAME_SCHEMA_BRIEF', () => {
     expect(WIREFRAME_SCHEMA_BRIEF).toContain(
       `columns is an integer from 1 to ${WIREFRAME_LIMITS.maxGridColumns}`,
     );
-    expect(WIREFRAME_SCHEMA_BRIEF).toContain('surface and isActive are true or false');
-    expect(WIREFRAME_SCHEMA_BRIEF).toContain('every mockState flag is true or false');
+    expect(WIREFRAME_SCHEMA_BRIEF).toContain(
+      'surface, isActive, isOn and hidden are true or false',
+    );
   });
 
   it('accepts a document that takes the numeric and boolean fields literally', () => {

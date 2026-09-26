@@ -3,7 +3,7 @@ import {
   ArchiveRestore,
   Bot,
   Copy,
-  Download,
+  ExternalLink,
   FileDown,
   FolderOpen,
   Pencil,
@@ -30,11 +30,15 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   edit: { label: 'Edit', icon: Pencil },
   stop: { label: 'Stop', icon: Square },
   newVariant: { label: 'New variant', icon: RotateCcw },
-  export: { label: 'Export', icon: Download },
   openWindow: {
     label: 'Open in window',
     icon: AppWindow,
     description: 'Reads it as a page in its own window',
+  },
+  openInBrowser: {
+    label: 'Open in browser',
+    icon: ExternalLink,
+    description: 'Opens the saved file. Print it from there as a PDF.',
   },
   print: {
     label: 'Print',

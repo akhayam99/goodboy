@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { parseWireframeSource } from '@goodboy/core';
 import type { WireframeArtifact } from '@goodboy/types';
-import { WireframeProvenanceRow } from '../../../wireframes/components/WireframeStudio/WireframeProvenanceRow';
+import { WireframeProvenanceRow } from '../../../wireframes/components/WireframeViewer/WireframeProvenanceRow';
 import { asWireframeFidelity } from '../../../wireframes/wireframeFidelity';
 
 type Props = {

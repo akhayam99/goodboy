@@ -16,6 +16,7 @@ mod editor;
 mod explore;
 mod external_terminal;
 mod file_versions;
+mod frame_protocol;
 mod github;
 mod history;
 mod gitlab;
@@ -138,6 +139,10 @@ pub fn run() {
                 drain_child_processes(app);
             }
         })
+        .register_asynchronous_uri_scheme_protocol(
+            frame_protocol::FRAME_SCHEME,
+            frame_protocol::handle,
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init());
 
@@ -161,6 +166,7 @@ pub fn run() {
         .manage(jira_token_cache)
         .manage(bitbucket_token_cache)
         .manage(slack_token_cache)
+        .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
             query_bridge::start(app.handle().clone());
@@ -218,8 +224,11 @@ pub fn run() {
             artifact_mirror::artifact_mirror_pending,
             artifact_mirror::artifact_mirror_locate,
             artifact_mirror::artifact_mirror_reveal,
+            artifact_mirror::artifact_mirror_open,
             artifact_mirror::artifact_mirror_measure,
             artifact_mirror::artifact_mirror_remove,
+            frame_protocol::frame_stage,
+            frame_protocol::frame_release,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,

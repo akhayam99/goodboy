@@ -1,8 +1,13 @@
+import { expandWireframePatterns } from './expandWireframePatterns';
+import { upgradeWireframeDocument } from './upgradeWireframeDocument';
 import {
   GENERIC_THEME_NAME,
   MAX_WIREFRAME_ADJUSTMENTS,
   WIREFRAME_ALIGNMENTS,
+  WIREFRAME_BADGE_TONES,
   WIREFRAME_BUTTON_VARIANTS,
+  WIREFRAME_CHART_TYPES,
+  WIREFRAME_DEVICES,
   WIREFRAME_DIRECTIONS,
   WIREFRAME_IMAGE_RATIOS,
   WIREFRAME_INPUT_TYPES,
@@ -11,6 +16,7 @@ import {
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
   WIREFRAME_SCHEMA_VERSION,
+  WIREFRAME_SHEET_PLACEMENTS,
   WIREFRAME_SPACINGS,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
@@ -22,15 +28,18 @@ import {
   type WireframeAdjustmentChange,
   type WireframeAlignment,
   type WireframeButtonVariant,
+  type WireframeDevice,
   type WireframeDirection,
   type WireframeDocument,
   type WireframeImageRatio,
   type WireframeInputType,
   type WireframeIssue,
   type WireframeJustification,
+  type WireframeNavigationItem,
   type WireframeNavigationVariant,
   type WireframeNode,
   type WireframeScreen,
+  type WireframeScreenState,
   type WireframeSpacing,
   type WireframeTextVariant,
   type WireframeTheme,
@@ -38,6 +47,7 @@ import {
   type WireframeThemeRadius,
   type WireframeTransition,
   type WireframeValidationResult,
+  type WireframeVariant,
   type WireframeViewport,
 } from './schema';
 
@@ -55,6 +65,8 @@ type Ctx = {
   readonly interactiveNodeIds: Set<string>;
   readonly inlineActions: Map<string, WireframeAction>;
   readonly actionRefs: { readonly screenIds: string[]; readonly stateKeys: string[] };
+  readonly variantRefs: Array<Readonly<{ path: string; id: string }>>;
+  screenNodeIds: Set<string>;
 };
 
 const describeAction = ({ action }: { readonly action: WireframeAction }): string =>
@@ -638,6 +650,36 @@ const optionalAction = ({
   readonly value: unknown;
 }): WireframeAction | null => (value === undefined ? null : parseAction({ ctx, path, value }));
 
+const COMMON_KEYS = ['id', 'kind', 'note', 'only', 'hidden', 'pattern'] as const;
+
+const parseOnly = ({
+  ctx,
+  path,
+  value,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+}): ReadonlyArray<string> => {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    fail({ ctx, path, message: 'expected an array of variant ids' });
+    return [];
+  }
+  const ids: string[] = [];
+  value.forEach((entry, index) => {
+    const id = identifier({ ctx, path: `${path}[${index}]`, value: entry });
+    if (id === null) {
+      return;
+    }
+    ctx.variantRefs.push({ path: `${path}[${index}]`, id });
+    ids.push(id);
+  });
+  return ids;
+};
+
 const parseChildren = ({
   ctx,
   path,
@@ -664,6 +706,77 @@ const parseChildren = ({
     }
   });
   return out;
+};
+
+const parseNavigationItems = ({
+  ctx,
+  path,
+  value,
+  max,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly max: number;
+}): ReadonlyArray<WireframeNavigationItem> | null => {
+  const rawItems = value;
+  if (!Array.isArray(rawItems)) {
+    return fail({ ctx, path: `${path}.items`, message: 'expected an array of navigation items' });
+  }
+  if (rawItems.length > max) {
+    return fail({
+      ctx,
+      path: `${path}.items`,
+      message: `more than the ${max} item limit`,
+    });
+  }
+  const items: Array<WireframeNavigationItem> = [];
+  rawItems.forEach((raw, index) => {
+    const itemPath = `${path}.items[${index}]`;
+    if (!isRecord(raw)) {
+      fail({ ctx, path: itemPath, message: 'expected a navigation item object' });
+      return;
+    }
+    dropUnknownKeys({
+      ctx,
+      path: itemPath,
+      value: raw,
+      allowed: ['id', 'label', 'isActive', 'action'],
+    });
+    const itemId = identifier({ ctx, path: `${itemPath}.id`, value: raw['id'] });
+    const label = requiredText({
+      ctx,
+      path: `${itemPath}.label`,
+      value: raw['label'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
+    const isActive = presentationFlag({
+      ctx,
+      path: `${itemPath}.isActive`,
+      value: raw['isActive'],
+    });
+    if (itemId === null || label === null) {
+      return;
+    }
+    if (ctx.nodeIds.has(itemId)) {
+      fail({ ctx, path: `${itemPath}.id`, message: `duplicate node id "${itemId}"` });
+      return;
+    }
+    ctx.nodeIds.add(itemId);
+    ctx.screenNodeIds.add(itemId);
+    ctx.interactiveNodeIds.add(itemId);
+    if (action !== null) {
+      ctx.inlineActions.set(itemId, action);
+    }
+    items.push({
+      id: itemId,
+      label,
+      isActive,
+      ...(action !== null && { action }),
+    });
+  });
+  return items;
 };
 
 const parseNode = ({
@@ -712,6 +825,7 @@ const parseNode = ({
     return fail({ ctx, path: `${path}.id`, message: `duplicate node id "${id}"` });
   }
   ctx.nodeIds.add(id);
+  ctx.screenNodeIds.add(id);
   const note =
     value['note'] === undefined
       ? null
@@ -721,7 +835,21 @@ const parseNode = ({
           value: value['note'],
           max: WIREFRAME_LIMITS.maxTextLength,
         });
-  const noteField = note === null ? {} : { note };
+  const only = parseOnly({ ctx, path: `${path}.only`, value: value['only'] });
+  const hidden =
+    value['hidden'] === undefined
+      ? false
+      : presentationFlag({ ctx, path: `${path}.hidden`, value: value['hidden'] });
+  const pattern =
+    typeof value['pattern'] === 'string' && ID_PATTERN.test(value['pattern'])
+      ? value['pattern']
+      : null;
+  const noteField = {
+    ...(note === null ? {} : { note }),
+    ...(only.length === 0 ? {} : { only }),
+    ...(hidden ? { hidden } : {}),
+    ...(pattern === null ? {} : { pattern }),
+  };
 
   if (kind === 'stack') {
     dropUnknownKeys({
@@ -729,9 +857,7 @@ const parseNode = ({
       path,
       value,
       allowed: [
-        'id',
-        'kind',
-        'note',
+        ...COMMON_KEYS,
         'direction',
         'gap',
         'padding',
@@ -802,7 +928,7 @@ const parseNode = ({
       ctx,
       path,
       value,
-      allowed: ['id', 'kind', 'note', 'columns', 'gap', 'padding', 'children'],
+      allowed: [...COMMON_KEYS, 'columns', 'gap', 'padding', 'children'],
     });
     const columns = gridColumns({ ctx, path: `${path}.columns`, value: value['columns'] });
     const gap = spacing({ ctx, path: `${path}.gap`, value: value['gap'], fallback: 'md' });
@@ -822,7 +948,7 @@ const parseNode = ({
   }
 
   if (kind === 'text') {
-    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'text', 'variant'] });
+    dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'text', 'variant'] });
     const text = requiredText({
       ctx,
       path: `${path}.text`,
@@ -848,7 +974,7 @@ const parseNode = ({
       ctx,
       path,
       value,
-      allowed: ['id', 'kind', 'note', 'label', 'variant', 'action'],
+      allowed: [...COMMON_KEYS, 'label', 'variant', 'action'],
     });
     const label = requiredText({
       ctx,
@@ -880,7 +1006,7 @@ const parseNode = ({
       ctx,
       path,
       value,
-      allowed: ['id', 'kind', 'note', 'inputType', 'label', 'placeholder', 'options'],
+      allowed: [...COMMON_KEYS, 'inputType', 'label', 'placeholder', 'options'],
     });
     const inputType = presentationEnum({
       ctx,
@@ -945,7 +1071,7 @@ const parseNode = ({
   }
 
   if (kind === 'list') {
-    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'items'] });
+    dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'items'] });
     const rawItems = value['items'];
     if (!Array.isArray(rawItems)) {
       return fail({ ctx, path: `${path}.items`, message: 'expected an array of list items' });
@@ -1000,6 +1126,7 @@ const parseNode = ({
         return;
       }
       ctx.nodeIds.add(itemId);
+      ctx.screenNodeIds.add(itemId);
       ctx.interactiveNodeIds.add(itemId);
       if (action !== null) {
         ctx.inlineActions.set(itemId, action);
@@ -1015,7 +1142,7 @@ const parseNode = ({
   }
 
   if (kind === 'table') {
-    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'columns', 'rows'] });
+    dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'columns', 'rows'] });
     const rawColumns = value['columns'];
     const rawRows = value['rows'];
     if (!Array.isArray(rawColumns) || rawColumns.length === 0) {
@@ -1086,7 +1213,7 @@ const parseNode = ({
   }
 
   if (kind === 'image') {
-    dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'alt', 'ratio'] });
+    dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'alt', 'ratio'] });
     const alt = requiredText({
       ctx,
       path: `${path}.alt`,
@@ -1107,7 +1234,106 @@ const parseNode = ({
     return { id, kind, ...noteField, alt, ratio };
   }
 
-  dropUnknownKeys({ ctx, path, value, allowed: ['id', 'kind', 'note', 'variant', 'items'] });
+  if (kind === 'card' || kind === 'sheet') {
+    dropUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: [...COMMON_KEYS, 'title', 'padding', 'placement', 'children'],
+    });
+    const title =
+      value['title'] === undefined
+        ? null
+        : safeText({
+            ctx,
+            path: `${path}.title`,
+            value: value['title'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    const children = parseChildren({
+      ctx,
+      path: `${path}.children`,
+      value: value['children'],
+      depth,
+    });
+    const titleField = title === null ? {} : { title };
+    if (kind === 'card') {
+      const padding = spacing({
+        ctx,
+        path: `${path}.padding`,
+        value: value['padding'],
+        fallback: 'md',
+      });
+      return { id, kind, ...noteField, ...titleField, padding, children };
+    }
+    const placement = presentationEnum({
+      ctx,
+      path: `${path}.placement`,
+      value: value['placement'],
+      options: WIREFRAME_SHEET_PLACEMENTS,
+      fallback: 'modal',
+      nearest: null,
+    });
+    return { id, kind, ...noteField, ...titleField, placement, children };
+  }
+
+  if (kind === 'badge' || kind === 'toggle' || kind === 'chart') {
+    dropUnknownKeys({
+      ctx,
+      path,
+      value,
+      allowed: [...COMMON_KEYS, 'label', 'tone', 'isOn', 'chartType'],
+    });
+    const label = requiredText({
+      ctx,
+      path: `${path}.label`,
+      value: value['label'],
+      max: WIREFRAME_LIMITS.maxTextLength,
+    });
+    if (label === null) {
+      return null;
+    }
+    if (kind === 'badge') {
+      const tone = presentationEnum({
+        ctx,
+        path: `${path}.tone`,
+        value: value['tone'],
+        options: WIREFRAME_BADGE_TONES,
+        fallback: 'neutral',
+        nearest: null,
+      });
+      return { id, kind, ...noteField, label, tone };
+    }
+    if (kind === 'toggle') {
+      const isOn = presentationFlag({ ctx, path: `${path}.isOn`, value: value['isOn'] });
+      return { id, kind, ...noteField, label, isOn };
+    }
+    const chartType = presentationEnum({
+      ctx,
+      path: `${path}.chartType`,
+      value: value['chartType'],
+      options: WIREFRAME_CHART_TYPES,
+      fallback: 'bar',
+      nearest: null,
+    });
+    return { id, kind, ...noteField, label, chartType };
+  }
+
+  if (kind === 'tabs') {
+    dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'items'] });
+    const items = parseNavigationItems({
+      ctx,
+      path,
+      value: value['items'],
+      max: WIREFRAME_LIMITS.maxTabs,
+    });
+    if (items === null) {
+      return null;
+    }
+    return { id, kind, ...noteField, items };
+  }
+
+  dropUnknownKeys({ ctx, path, value, allowed: [...COMMON_KEYS, 'variant', 'items'] });
   const variant = presentationEnum({
     ctx,
     path: `${path}.variant`,
@@ -1116,67 +1342,15 @@ const parseNode = ({
     fallback: 'top',
     nearest: nearestOf({ value: value['variant'], near: NAVIGATION_VARIANT_NEAR }),
   });
-  const rawItems = value['items'];
-  if (!Array.isArray(rawItems)) {
-    return fail({ ctx, path: `${path}.items`, message: 'expected an array of navigation items' });
-  }
-  if (rawItems.length > WIREFRAME_LIMITS.maxNavigationItems) {
-    return fail({
-      ctx,
-      path: `${path}.items`,
-      message: `more than the ${WIREFRAME_LIMITS.maxNavigationItems} item limit`,
-    });
-  }
-  const items: Array<{
-    readonly id: string;
-    readonly label: string;
-    readonly isActive?: boolean;
-    readonly action?: WireframeAction;
-  }> = [];
-  rawItems.forEach((raw, index) => {
-    const itemPath = `${path}.items[${index}]`;
-    if (!isRecord(raw)) {
-      fail({ ctx, path: itemPath, message: 'expected a navigation item object' });
-      return;
-    }
-    dropUnknownKeys({
-      ctx,
-      path: itemPath,
-      value: raw,
-      allowed: ['id', 'label', 'isActive', 'action'],
-    });
-    const itemId = identifier({ ctx, path: `${itemPath}.id`, value: raw['id'] });
-    const label = requiredText({
-      ctx,
-      path: `${itemPath}.label`,
-      value: raw['label'],
-      max: WIREFRAME_LIMITS.maxTextLength,
-    });
-    const action = optionalAction({ ctx, path: `${itemPath}.action`, value: raw['action'] });
-    const isActive = presentationFlag({
-      ctx,
-      path: `${itemPath}.isActive`,
-      value: raw['isActive'],
-    });
-    if (itemId === null || label === null) {
-      return;
-    }
-    if (ctx.nodeIds.has(itemId)) {
-      fail({ ctx, path: `${itemPath}.id`, message: `duplicate node id "${itemId}"` });
-      return;
-    }
-    ctx.nodeIds.add(itemId);
-    ctx.interactiveNodeIds.add(itemId);
-    if (action !== null) {
-      ctx.inlineActions.set(itemId, action);
-    }
-    items.push({
-      id: itemId,
-      label,
-      isActive,
-      ...(action !== null && { action }),
-    });
+  const items = parseNavigationItems({
+    ctx,
+    path,
+    value: value['items'],
+    max: WIREFRAME_LIMITS.maxNavigationItems,
   });
+  if (items === null) {
+    return null;
+  }
   return { id, kind, ...noteField, variant, items };
 };
 
@@ -1274,12 +1448,154 @@ const parseTheme = ({
   };
 };
 
+const DEVICE_VIEWPORT = {
+  desktop: 'desktop',
+  tablet: 'tablet',
+  phone: 'mobile',
+} as const satisfies Record<WireframeDevice, WireframeViewport>;
+
+const idList = ({
+  ctx,
+  path,
+  value,
+  known,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly known: ReadonlySet<string>;
+}): ReadonlyArray<string> => {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    fail({ ctx, path, message: 'expected an array of node ids' });
+    return [];
+  }
+  const ids: string[] = [];
+  value.forEach((entry, index) => {
+    const id = identifier({ ctx, path: `${path}[${index}]`, value: entry });
+    if (id === null) {
+      return;
+    }
+    if (!known.has(id)) {
+      fail({ ctx, path: `${path}[${index}]`, message: `no node with id "${id}" on this screen` });
+      return;
+    }
+    ids.push(id);
+  });
+  return ids;
+};
+
+const labelOfState = ({ id }: { readonly id: string }): string => {
+  const words = id.replace(/[-_]+/g, ' ').trim();
+  return words.length === 0 ? id : `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+};
+
+const parseStates = ({
+  ctx,
+  path,
+  value,
+  known,
+}: {
+  readonly ctx: Ctx;
+  readonly path: string;
+  readonly value: unknown;
+  readonly known: ReadonlySet<string>;
+}): Readonly<Record<string, WireframeScreenState>> => {
+  if (value === undefined) {
+    return {};
+  }
+  if (!isRecord(value)) {
+    fail({ ctx, path, message: 'expected an object of named states' });
+    return {};
+  }
+  const names = Object.keys(value);
+  if (names.length > WIREFRAME_LIMITS.maxStatesPerScreen) {
+    fail({
+      ctx,
+      path,
+      message: `more than the ${WIREFRAME_LIMITS.maxStatesPerScreen} state limit`,
+    });
+    return {};
+  }
+  const out: Record<string, WireframeScreenState> = {};
+  for (const name of names) {
+    const statePath = `${path}.${name}`;
+    if (identifier({ ctx, path: statePath, value: name }) === null) {
+      continue;
+    }
+    if (name === 'default') {
+      fail({ ctx, path: statePath, message: 'default is the screen itself, name the state' });
+      continue;
+    }
+    const raw = value[name];
+    if (!isRecord(raw)) {
+      fail({ ctx, path: statePath, message: 'expected a state object' });
+      continue;
+    }
+    dropUnknownKeys({
+      ctx,
+      path: statePath,
+      value: raw,
+      allowed: ['label', 'hide', 'show', 'text'],
+    });
+    const label =
+      raw['label'] === undefined
+        ? labelOfState({ id: name })
+        : requiredText({
+            ctx,
+            path: `${statePath}.label`,
+            value: raw['label'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    const text: Record<string, string> = {};
+    const rawText = raw['text'];
+    if (rawText !== undefined && !isRecord(rawText)) {
+      fail({ ctx, path: `${statePath}.text`, message: 'expected an object of node ids to text' });
+    }
+    if (isRecord(rawText)) {
+      for (const [nodeId, entry] of Object.entries(rawText)) {
+        if (!known.has(nodeId)) {
+          fail({
+            ctx,
+            path: `${statePath}.text.${nodeId}`,
+            message: `no node with id "${nodeId}" on this screen`,
+          });
+          continue;
+        }
+        const replaced = safeText({
+          ctx,
+          path: `${statePath}.text.${nodeId}`,
+          value: entry,
+          max: WIREFRAME_LIMITS.maxTextLength,
+        });
+        if (replaced !== null) {
+          text[nodeId] = replaced;
+        }
+      }
+    }
+    if (label === null) {
+      continue;
+    }
+    out[name] = {
+      label,
+      hide: idList({ ctx, path: `${statePath}.hide`, value: raw['hide'], known }),
+      show: idList({ ctx, path: `${statePath}.show`, value: raw['show'], known }),
+      text,
+    };
+  }
+  return out;
+};
+
 const parseScreens = ({
   ctx,
   value,
+  device,
 }: {
   readonly ctx: Ctx;
   readonly value: unknown;
+  readonly device: WireframeDevice | null;
 }): ReadonlyArray<WireframeScreen> => {
   if (!Array.isArray(value) || value.length === 0) {
     fail({ ctx, path: 'screens', message: 'expected at least one screen' });
@@ -1305,7 +1621,7 @@ const parseScreens = ({
       ctx,
       path,
       value: raw,
-      allowed: ['id', 'title', 'viewport', 'root', 'note'],
+      allowed: ['id', 'title', 'viewport', 'device', 'root', 'note', 'states'],
     });
     const id = identifier({ ctx, path: `${path}.id`, value: raw['id'] });
     const title = requiredText({
@@ -1314,14 +1630,28 @@ const parseScreens = ({
       value: raw['title'],
       max: WIREFRAME_LIMITS.maxTextLength,
     });
-    const viewport = presentationEnum({
-      ctx,
-      path: `${path}.viewport`,
-      value: raw['viewport'],
-      options: WIREFRAME_VIEWPORTS,
-      fallback: 'desktop',
-      nearest: nearestOf({ value: raw['viewport'], near: VIEWPORT_NEAR }),
-    });
+    const screenDevice =
+      raw['device'] === undefined
+        ? device
+        : presentationEnum({
+            ctx,
+            path: `${path}.device`,
+            value: raw['device'],
+            options: WIREFRAME_DEVICES,
+            fallback: device ?? 'desktop',
+            nearest: null,
+          });
+    const viewport =
+      raw['viewport'] === undefined && screenDevice !== null
+        ? DEVICE_VIEWPORT[screenDevice]
+        : presentationEnum({
+            ctx,
+            path: `${path}.viewport`,
+            value: raw['viewport'],
+            options: WIREFRAME_VIEWPORTS,
+            fallback: 'desktop',
+            nearest: nearestOf({ value: raw['viewport'], near: VIEWPORT_NEAR }),
+          });
     const note =
       raw['note'] === undefined
         ? null
@@ -1331,7 +1661,14 @@ const parseScreens = ({
             value: raw['note'],
             max: WIREFRAME_LIMITS.maxTextLength,
           });
+    ctx.screenNodeIds = new Set<string>();
     const root = parseNode({ ctx, path: `${path}.root`, value: raw['root'], depth: 1 });
+    const states = parseStates({
+      ctx,
+      path: `${path}.states`,
+      value: raw['states'],
+      known: ctx.screenNodeIds,
+    });
     if (id === null || title === null || root === null) {
       return;
     }
@@ -1340,7 +1677,14 @@ const parseScreens = ({
       return;
     }
     seen.add(id);
-    screens.push({ id, title, viewport, root, ...(note !== null && { note }) });
+    screens.push({
+      id,
+      title,
+      viewport,
+      root,
+      ...(note !== null && { note }),
+      ...(Object.keys(states).length > 0 && { states }),
+    });
   });
   return screens;
 };
@@ -1420,41 +1764,59 @@ const parseTransitions = ({
   return transitions;
 };
 
-const parseMockState = ({
+const parseVariants = ({
   ctx,
   value,
 }: {
   readonly ctx: Ctx;
   readonly value: unknown;
-}): Readonly<Record<string, boolean>> => {
+}): ReadonlyArray<WireframeVariant> => {
   if (value === undefined) {
-    return {};
+    return [];
   }
-  if (!isRecord(value)) {
-    fail({ ctx, path: 'mockState', message: 'expected an object of boolean flags' });
-    return {};
+  if (!Array.isArray(value)) {
+    fail({ ctx, path: 'variants', message: 'expected an array of variants' });
+    return [];
   }
-  const keys = Object.keys(value);
-  if (keys.length > WIREFRAME_LIMITS.maxMockStateKeys) {
+  if (value.length > WIREFRAME_LIMITS.maxVariants) {
     fail({
       ctx,
-      path: 'mockState',
-      message: `more than the ${WIREFRAME_LIMITS.maxMockStateKeys} mock state limit`,
+      path: 'variants',
+      message: `more than the ${WIREFRAME_LIMITS.maxVariants} variant limit`,
     });
-    return {};
+    return [];
   }
-  const out: Record<string, boolean> = {};
-  for (const key of keys) {
-    if (identifier({ ctx, path: `mockState.${key}`, value: key }) === null) {
-      continue;
+  const variants: WireframeVariant[] = [];
+  value.forEach((raw, index) => {
+    const path = `variants[${index}]`;
+    if (typeof raw === 'string') {
+      const id = identifier({ ctx, path, value: raw });
+      if (id !== null) {
+        variants.push({ id, label: labelOfState({ id }) });
+      }
+      return;
     }
-    if (typeof value[key] !== 'boolean') {
-      fail({ ctx, path: `mockState.${key}`, message: 'expected a boolean' });
-      continue;
+    if (!isRecord(raw)) {
+      fail({ ctx, path, message: 'expected a variant id or { id, label }' });
+      return;
     }
-    out[key] = value[key] === true;
-  }
-  return out;
+    dropUnknownKeys({ ctx, path, value: raw, allowed: ['id', 'label'] });
+    const id = identifier({ ctx, path: `${path}.id`, value: raw['id'] });
+    const label =
+      raw['label'] === undefined
+        ? null
+        : requiredText({
+            ctx,
+            path: `${path}.label`,
+            value: raw['label'],
+            max: WIREFRAME_LIMITS.maxTextLength,
+          });
+    if (id === null) {
+      return;
+    }
+    variants.push({ id, label: label ?? labelOfState({ id }) });
+  });
+  return variants;
 };
 
 const fieldOf = ({ path }: { readonly path: string }): string => {
@@ -1519,10 +1881,15 @@ const reportedAdjustments = ({
 };
 
 export const validateWireframeDocument = ({
-  value,
+  value: input,
 }: {
   readonly value: unknown;
 }): WireframeValidationResult => {
+  const expansion = expandWireframePatterns({ value: upgradeWireframeDocument({ value: input }) });
+  if (expansion.status === 'invalid') {
+    return { status: 'invalid', issues: expansion.issues };
+  }
+  const value = expansion.value;
   const ctx: Ctx = {
     issues: [],
     adjustments: [],
@@ -1531,6 +1898,8 @@ export const validateWireframeDocument = ({
     interactiveNodeIds: new Set<string>(),
     inlineActions: new Map<string, WireframeAction>(),
     actionRefs: { screenIds: [], stateKeys: [] },
+    variantRefs: [],
+    screenNodeIds: new Set<string>(),
   };
   if (!isRecord(value)) {
     return { status: 'invalid', issues: [{ path: '', message: 'expected a wireframe object' }] };
@@ -1539,7 +1908,16 @@ export const validateWireframeDocument = ({
     ctx,
     path: '',
     value,
-    allowed: ['version', 'initialScreenId', 'theme', 'screens', 'transitions', 'mockState'],
+    allowed: [
+      '$schema',
+      'version',
+      'initialScreenId',
+      'device',
+      'theme',
+      'screens',
+      'transitions',
+      'variants',
+    ],
   });
   const version = value['version'];
   if (version !== WIREFRAME_SCHEMA_VERSION) {
@@ -1548,11 +1926,15 @@ export const validateWireframeDocument = ({
       message: `expected version ${WIREFRAME_SCHEMA_VERSION}`,
     });
   }
+  const device =
+    value['device'] === undefined
+      ? null
+      : enumValue({ ctx, path: 'device', value: value['device'], options: WIREFRAME_DEVICES });
   const theme = parseTheme({ ctx, value: value['theme'] });
-  const screens = parseScreens({ ctx, value: value['screens'] });
+  const variants = parseVariants({ ctx, value: value['variants'] });
+  const screens = parseScreens({ ctx, value: value['screens'], device });
   const screenIds = new Set(screens.map((screen) => screen.id));
   const transitions = parseTransitions({ ctx, value: value['transitions'], screenIds });
-  const mockState = parseMockState({ ctx, value: value['mockState'] });
   const initialScreenId = identifier({
     ctx,
     path: 'initialScreenId',
@@ -1572,12 +1954,19 @@ export const validateWireframeDocument = ({
       });
     }
   }
+  const stateIds = new Set(screens.flatMap((screen) => Object.keys(screen.states ?? {})));
   for (const key of ctx.actionRefs.stateKeys) {
-    if (!Object.prototype.hasOwnProperty.call(mockState, key)) {
+    if (!stateIds.has(key)) {
       ctx.issues.push({
-        path: 'mockState',
-        message: `an action toggles the undeclared mock state "${key}"`,
+        path: 'screens',
+        message: `an action toggles the undeclared state "${key}"`,
       });
+    }
+  }
+  const variantIds = new Set(variants.map((variant) => variant.id));
+  for (const ref of ctx.variantRefs) {
+    if (!variantIds.has(ref.id)) {
+      ctx.issues.push({ path: ref.path, message: `no variant with id "${ref.id}"` });
     }
   }
   if (ctx.issues.length > 0 || initialScreenId === null) {
@@ -1588,10 +1977,11 @@ export const validateWireframeDocument = ({
     document: {
       version: WIREFRAME_SCHEMA_VERSION,
       initialScreenId,
+      ...(device !== null && { device }),
       theme,
       screens,
       transitions,
-      ...(Object.keys(mockState).length > 0 && { mockState }),
+      ...(variants.length > 0 && { variants }),
     },
     adjustments: reportedAdjustments({ adjustments: ctx.adjustments }),
   };
