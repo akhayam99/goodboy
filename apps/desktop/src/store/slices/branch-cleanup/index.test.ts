@@ -17,6 +17,8 @@ const h = vi.hoisted(() => ({
   listDeletedBranches: vi.fn(async () => [] as ReadonlyArray<unknown>),
   listExpiredDeletedBranches: vi.fn(async () => [] as ReadonlyArray<unknown>),
   forgetDeletedBranch: vi.fn(),
+  listGoodboyBranches: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  listProjectBranches: vi.fn(),
   loadMountViews: vi.fn(),
   branchMergeState: vi.fn(),
   branchHeadSha: vi.fn(async () => 'sha-tip' as string | null),
@@ -34,6 +36,7 @@ vi.mock('@goodboy/db', () => ({
   listDeletedBranches: h.listDeletedBranches,
   listExpiredDeletedBranches: h.listExpiredDeletedBranches,
   forgetDeletedBranch: h.forgetDeletedBranch,
+  listGoodboyBranches: h.listGoodboyBranches,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFetch: h.projectFetch }));
@@ -50,9 +53,12 @@ vi.mock('../../../features/worktree/branchCleanup', async (importOriginal) => {
     deleteBranchChecked: h.deleteBranchChecked,
     restoreDeletedBranch: h.restoreDeletedBranch,
     forgetDeletedBranchRef: h.forgetDeletedBranchRef,
+    listProjectBranches: h.listProjectBranches,
   };
 });
 
+import { deleteBranches } from './deleteBranches';
+import { loadProjectBranches } from './loadProjectBranches';
 import { forgetRepoAutoDeleteCache } from './repoDeletesMergedBranches';
 import { resolveAfterMergeRule } from './resolveAfterMergeRule';
 import { restoreDeletedBranch } from './restoreDeletedBranch';
@@ -98,6 +104,7 @@ const makeStore = ({
           id: PROJECT_ID,
           workspaceId: WORKSPACE_ID,
           name: 'ledger-core',
+          rootPath: '/repos/ledger-core',
           kind: 'repo',
           baseBranch: null,
           overrides: overrides(projectRule),
@@ -283,5 +290,76 @@ describe('restoreDeletedBranch', () => {
     h.getDeletedBranch.mockResolvedValueOnce({ ...entry, restoredAt: '2026-09-21T10:00:00.000Z' });
     await restoreDeletedBranch(context.set, context.get)({ id: 'deleted-1' });
     expect(h.restoreDeletedBranch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('loadProjectBranches', () => {
+  it('scans each repo project with its base and marks a failed scan', async () => {
+    h.listProjectBranches.mockResolvedValueOnce({ userEmail: null, branches: [] });
+    const context = makeStore();
+
+    await loadProjectBranches(context.set, context.get)({ projectIds: [PROJECT_ID] });
+
+    expect(h.listProjectBranches).toHaveBeenCalledWith({
+      repoRoot: '/repos/ledger-core',
+      base: null,
+    });
+    expect(context.store.state.branchScans[PROJECT_ID]?.status).toBe('ready');
+
+    h.listProjectBranches.mockRejectedValueOnce(new Error('not a repository'));
+    await loadProjectBranches(context.set, context.get)({ projectIds: [PROJECT_ID] });
+    expect(context.store.state.branchScans[PROJECT_ID]).toEqual({
+      status: 'failed',
+      message: 'not a repository',
+    });
+  });
+});
+
+describe('deleteBranches', () => {
+  it('deletes each branch by sha, logs the restorable ones, and reports what it kept', async () => {
+    h.deleteBranchChecked
+      .mockResolvedValueOnce({
+        keepRef: 'refs/goodboy/deleted/goodboy/payout-report',
+        deletedOnOrigin: true,
+        originError: null,
+      })
+      .mockRejectedValueOnce({ kind: 'held-by-worktree', path: '/worktrees/x' });
+    h.listProjectBranches.mockResolvedValue({ userEmail: null, branches: [] });
+    const context = makeStore();
+    context.store.state = {
+      ...context.store.state,
+      loadProjectBranches: loadProjectBranches(context.set, context.get),
+    } as unknown as AppStore;
+
+    const outcome = await deleteBranches(
+      context.set,
+      context.get,
+    )({
+      targets: [
+        {
+          projectId: PROJECT_ID,
+          branch: 'goodboy/payout-report',
+          sha: 'sha-1',
+          sessionId: SESSION_ID,
+          alsoOrigin: true,
+        },
+        {
+          projectId: PROJECT_ID,
+          branch: 'goodboy/held',
+          sha: 'sha-2',
+          sessionId: null,
+          alsoOrigin: false,
+        },
+      ],
+    });
+
+    expect(outcome.deleted).toHaveLength(1);
+    expect(outcome.deleted[0]?.onOrigin).toBe(true);
+    expect(outcome.kept).toEqual(['Kept goodboy/held: another folder has it checked out.']);
+    expect(context.store.state.deletedBranches[WORKSPACE_ID]).toHaveLength(1);
+    expect(context.store.state.recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'branch_deleted' }),
+    );
+    expect(h.listProjectBranches).toHaveBeenCalled();
   });
 });

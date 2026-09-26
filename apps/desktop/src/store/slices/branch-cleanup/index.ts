@@ -1,10 +1,13 @@
+import { deleteBranches, restoreDeletedBranches } from './deleteBranches';
 import { loadDeletedBranches } from './loadDeletedBranches';
+import { loadProjectBranches } from './loadProjectBranches';
 import { restoreDeletedBranch } from './restoreDeletedBranch';
 import { runAfterMergeCleanup } from './runAfterMergeCleanup';
 import { branchCleanupInitialState } from './state';
 import type { BranchCleanupSlice, GetFn, SetFn } from './types';
 
-export type { AfterMergeOutcome } from './types';
+export type { AfterMergeOutcome, DeleteBranchTarget } from './types';
+export type { BranchScanEntry } from './state';
 export { resolveAfterMergeRule, DEFAULT_AFTER_MERGE_RULE } from './resolveAfterMergeRule';
 
 export const createBranchCleanupSlice = (set: SetFn, get: GetFn): BranchCleanupSlice => ({
@@ -12,4 +15,7 @@ export const createBranchCleanupSlice = (set: SetFn, get: GetFn): BranchCleanupS
   runAfterMergeCleanup: runAfterMergeCleanup(set, get),
   restoreDeletedBranch: restoreDeletedBranch(set, get),
   loadDeletedBranches: loadDeletedBranches(set),
+  loadProjectBranches: loadProjectBranches(set, get),
+  deleteBranches: deleteBranches(set, get),
+  restoreDeletedBranches: restoreDeletedBranches(set, get),
 });
