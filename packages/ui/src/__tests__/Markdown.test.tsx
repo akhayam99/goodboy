@@ -180,6 +180,75 @@ describe('Markdown lists', () => {
     expect(container.querySelectorAll('li')).toHaveLength(3);
   });
 
+  it('keeps an indented second line inside its item across a loose list', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '1. Should the residual go to the largest allocation? The',
+          '   invoice convention was never confirmed.',
+          '2. Does the relay need to replay what it',
+          '   suppressed?',
+          '',
+          '3. Is the backfill safe?',
+        ].join('\n')}
+      />,
+    );
+    expect(container.querySelectorAll('ol')).toHaveLength(1);
+    expect(container.querySelectorAll('p')).toHaveLength(0);
+    const items = [...container.querySelectorAll('li')].map((item) => item.textContent);
+    expect(items).toEqual([
+      'Should the residual go to the largest allocation? The invoice convention was never confirmed.',
+      'Does the relay need to replay what it suppressed?',
+      'Is the backfill safe?',
+    ]);
+  });
+
+  it('numbers an ordered list from the source number of its first item', () => {
+    const { container } = render(
+      <Markdown text={['3. three', '', '4. four', '', '9. nine'].join('\n')} />,
+    );
+    expect(container.querySelectorAll('ol')).toHaveLength(1);
+    expect(container.querySelector('ol')?.getAttribute('start')).toBe('3');
+    expect(container.querySelectorAll('li')).toHaveLength(3);
+  });
+
+  it('numbers a nested ordered list from its own first item', () => {
+    const { container } = render(
+      <Markdown text={['1. parent', '   5. child', '   6. sibling'].join('\n')} />,
+    );
+    expect(container.querySelector('ol ol')?.getAttribute('start')).toBe('5');
+  });
+
+  it('keeps a lazy continuation line inside the item it follows', () => {
+    const { container } = render(
+      <Markdown
+        text={['1. first line', 'lazy tail', '2. second', '- bullet', 'more'].join('\n')}
+      />,
+    );
+    expect(container.querySelectorAll('p')).toHaveLength(0);
+    expect(container.querySelector('ol')?.children).toHaveLength(2);
+    expect(container.querySelector('ol li')?.textContent).toBe('first line lazy tail');
+    expect(container.querySelector('ul li')?.textContent).toBe('bullet more');
+  });
+
+  it('ends a lazy continuation at a line that opens another block', () => {
+    const { container } = render(
+      <Markdown text={['1. item', '## Heading', '- bullet', '> quote'].join('\n')} />,
+    );
+    expect(container.querySelector('ol li')?.textContent).toBe('item');
+    expect(container.querySelector('h2')?.textContent).toBe('Heading');
+    expect(container.querySelector('ul li')?.textContent).toBe('bullet');
+    expect(container.querySelector('blockquote')?.textContent).toBe('quote');
+  });
+
+  it('keeps a hard break inside a list item', () => {
+    const { container } = render(<Markdown text={['- [x] first  ', '  second'].join('\n')} />);
+    const item = container.querySelector('li');
+    expect(item?.getAttribute('data-task')).toBe('done');
+    expect(item?.querySelectorAll('br')).toHaveLength(1);
+    expect(item?.textContent).toBe('firstsecond');
+  });
+
   it('stops the list at a paragraph that follows a blank line', () => {
     const { container } = render(
       <Markdown text={['- one', '', 'a paragraph', '', '- two'].join('\n')} />,

@@ -151,6 +151,20 @@ const renderInlineNodes = ({ nodes, keyPrefix, variant }: InlineRenderParams): R
 const renderInline = (input: string, keyPrefix: string, variant: MarkdownVariant): ReactNode =>
   renderInlineNodes({ nodes: parseInline({ text: input }), keyPrefix, variant });
 
+type InlineLinesParams = {
+  readonly input: string;
+  readonly keyPrefix: string;
+  readonly variant: MarkdownVariant;
+};
+
+const renderInlineLines = ({ input, keyPrefix, variant }: InlineLinesParams): ReactNode =>
+  input.split('\n').map((line, lineIndex, lines) => (
+    <Fragment key={`${keyPrefix}-${lineIndex}`}>
+      {renderInline(line, `${keyPrefix}-${lineIndex}`, variant)}
+      {lineIndex < lines.length - 1 && <br />}
+    </Fragment>
+  ));
+
 const HEADING_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
   1: 'text-lg font-semibold leading-snug text-foreground',
   2: 'text-base font-semibold leading-snug text-foreground',
@@ -288,6 +302,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       return (
         <Tag
           key={key}
+          start={block.ordered && block.start !== 1 ? block.start : undefined}
           className={cn(block.ordered ? 'list-decimal' : 'list-disc', listClass(variant, depth))}
         >
           {block.items.map((item, j) => (
@@ -301,10 +316,12 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             >
               {item.task !== null && renderTaskMark({ task: item.task })}
               {item.children.length === 0 ? (
-                renderInline(item.content, `${key}-${j}`, variant)
+                renderInlineLines({ input: item.content, keyPrefix: `${key}-${j}`, variant })
               ) : (
                 <div className="flex flex-col gap-1">
-                  <div>{renderInline(item.content, `${key}-${j}`, variant)}</div>
+                  <div>
+                    {renderInlineLines({ input: item.content, keyPrefix: `${key}-${j}`, variant })}
+                  </div>
                   {item.children.map((child, ci) =>
                     renderBlock({
                       block: child,
@@ -552,12 +569,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
         >
           {block.isTree
             ? renderInline(block.content, key, variant)
-            : block.content.split('\n').map((line, lineIndex, lines) => (
-                <Fragment key={`${key}-${lineIndex}`}>
-                  {renderInline(line, `${key}-${lineIndex}`, variant)}
-                  {lineIndex < lines.length - 1 && <br />}
-                </Fragment>
-              ))}
+            : renderInlineLines({ input: block.content, keyPrefix: key, variant })}
         </p>
       );
     }

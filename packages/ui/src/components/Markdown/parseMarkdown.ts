@@ -4,7 +4,7 @@ export type Block =
   | { kind: 'code'; lang: string | null; content: string }
   | { kind: 'heading'; level: 1 | 2 | 3 | 4 | 5 | 6; content: string }
   | { kind: 'hr' }
-  | { kind: 'list'; ordered: boolean; items: ReadonlyArray<ListItem> }
+  | { kind: 'list'; ordered: boolean; start: number; items: ReadonlyArray<ListItem> }
   | { kind: 'quote'; lines: ReadonlyArray<string> }
   | {
       kind: 'table';
@@ -37,7 +37,7 @@ const FENCE_RE = /^```([^\s`]*)\s*$/;
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 const HR_RE = /^[-*_]{3,}\s*$/;
 const ULIST_RE = /^(\s*)[-*+]\s+(.*)$/;
-const OLIST_RE = /^(\s*)\d+\.\s+(.*)$/;
+const OLIST_RE = /^(\s*)(\d+)\.\s+(.*)$/;
 const QUOTE_RE = /^>\s?(.*)$/;
 const TABLE_ROW_RE = /^\s*\|.*\|\s*$/;
 const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
@@ -118,7 +118,7 @@ const calloutBlock = ({ tag, content }: CalloutParams): Block => {
   return { kind: 'callout', tag, content, blocks: parseBlocks(content) };
 };
 
-const TASK_RE = /^\[([ xX~-])\](?:\s+(.*))?$/;
+const TASK_RE = /^\[([ xX~-])\](?:\s+([\s\S]*))?$/;
 const LABEL_LINE_RE = /^\*\*[^*\n]{1,60}?(?::\*\*|\*\*:)/;
 
 const TASK_STATES: Readonly<Record<string, TaskState>> = {
@@ -195,20 +195,41 @@ function parseAlign(divider: string): ReadonlyArray<CellAlign> {
 type RawListItem = {
   readonly indent: number;
   readonly ordered: boolean;
-  readonly content: string;
+  readonly start: number;
+  readonly lines: ReadonlyArray<string>;
 };
 
 const matchListLine = (line: string): RawListItem | null => {
   const ulist = line.match(ULIST_RE);
   if (ulist) {
-    return { indent: (ulist[1] ?? '').length, ordered: false, content: (ulist[2] ?? '').trim() };
+    return { indent: (ulist[1] ?? '').length, ordered: false, start: 1, lines: [ulist[2] ?? ''] };
   }
   const olist = line.match(OLIST_RE);
   if (olist) {
-    return { indent: (olist[1] ?? '').length, ordered: true, content: (olist[2] ?? '').trim() };
+    return {
+      indent: (olist[1] ?? '').length,
+      ordered: true,
+      start: Number(olist[2]),
+      lines: [olist[3] ?? ''],
+    };
   }
   return null;
 };
+
+type BlockStartParams = {
+  readonly line: string;
+  readonly nextLine: string;
+};
+
+const startsBlock = ({ line, nextLine }: BlockStartParams): boolean =>
+  FENCE_RE.test(line) ||
+  HEADING_RE.test(line) ||
+  HR_RE.test(line) ||
+  ULIST_RE.test(line) ||
+  OLIST_RE.test(line) ||
+  QUOTE_RE.test(line) ||
+  CALLOUT_OPEN_RE.test(line) ||
+  (TABLE_ROW_RE.test(line) && TABLE_DIVIDER_RE.test(nextLine));
 
 type CollectParams = {
   readonly raws: ReadonlyArray<RawListItem>;
@@ -240,14 +261,18 @@ const collectListItems = ({ raws, cursor, indent, ordered }: CollectParams): Lis
       items[items.length - 1] = {
         content: last.content,
         task: last.task,
-        children: [...last.children, { kind: 'list', ordered: raw.ordered, items: nested }],
+        children: [
+          ...last.children,
+          { kind: 'list', ordered: raw.ordered, start: raw.start, items: nested },
+        ],
       };
       continue;
     }
     if (raw.ordered !== ordered) {
       break;
     }
-    items.push({ ...splitTask({ content: raw.content }), children: [] });
+    const content = joinParagraphLines({ lines: raw.lines }).trim();
+    items.push({ ...splitTask({ content }), children: [] });
     cursor.index++;
   }
 
@@ -462,8 +487,14 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
             i = ahead;
             continue;
           }
+          break;
         }
-        break;
+        const last = raws[raws.length - 1];
+        if (last === undefined || startsBlock({ line: current, nextLine: lines[i + 1] ?? '' })) {
+          break;
+        }
+        raws[raws.length - 1] = { ...last, lines: [...last.lines, current.trimStart()] };
+        i++;
       }
 
       const cursor = { index: 0 };
@@ -475,7 +506,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
           indent: head.indent,
           ordered: head.ordered,
         });
-        blocks.push({ kind: 'list', ordered: head.ordered, items });
+        blocks.push({ kind: 'list', ordered: head.ordered, start: head.start, items });
       }
       continue;
     }
@@ -484,19 +515,7 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
     i++;
     while (i < lines.length) {
       const next = lines[i] ?? '';
-      const nextNext = lines[i + 1] ?? '';
-      const tableStart = TABLE_ROW_RE.test(next) && TABLE_DIVIDER_RE.test(nextNext);
-      if (
-        next.trim().length === 0 ||
-        FENCE_RE.test(next) ||
-        HEADING_RE.test(next) ||
-        HR_RE.test(next) ||
-        ULIST_RE.test(next) ||
-        OLIST_RE.test(next) ||
-        QUOTE_RE.test(next) ||
-        CALLOUT_OPEN_RE.test(next) ||
-        tableStart
-      ) {
+      if (next.trim().length === 0 || startsBlock({ line: next, nextLine: lines[i + 1] ?? '' })) {
         break;
       }
       paraBuf.push(next);
