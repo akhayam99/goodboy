@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { insertNudgeEvent, listNudgeEvents, type NudgeOutcome } from '@goodboy/db';
-import { EMPTY_ARRAY } from '../../../store';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { NextStepOutcome } from '../nextStepGates';
 import {
@@ -23,8 +22,10 @@ export type NextStepGateState = {
   readonly dismissedFingerprints: ReadonlySet<string>;
 };
 
+const EMPTY_OUTCOMES: ReadonlyArray<NextStepOutcome> = [];
+
 const EMPTY_GATE_STATE: NextStepGateState = {
-  outcomes: EMPTY_ARRAY as ReadonlyArray<NextStepOutcome>,
+  outcomes: EMPTY_OUTCOMES,
   dismissedFingerprints: new Set<string>(),
 };
 

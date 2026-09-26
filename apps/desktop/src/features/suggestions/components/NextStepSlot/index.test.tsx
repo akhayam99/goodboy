@@ -17,7 +17,7 @@ const { suggestionState, recordNextStepOutcome } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ sessionPhaseRuns: {}, setActiveLens: vi.fn() }),
+    selector({ sessionPhaseRuns: {} }),
 }));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
@@ -66,20 +66,20 @@ const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggesti
 
 describe('NextStepSlot', () => {
   it('renders nothing when there is nothing to suggest', () => {
-    const { container } = render(<NextStepSlot session={SESSION} />);
+    const { container } = render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('shows the top suggestion with its title and why', () => {
     suggestionState.list = [suggestion()];
-    render(<NextStepSlot session={SESSION} />);
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(screen.getByText('Answer open questions')).toBeTruthy();
     expect(screen.getByText('2 questions blocking progress')).toBeTruthy();
   });
 
   it('fires the primary action from the shared resolver', () => {
     suggestionState.list = [suggestion()];
-    render(<NextStepSlot session={SESSION} />);
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Act on answer-questions:session-1' }));
     expect(suggestionState.onAct).toHaveBeenCalledWith('answer-questions:session-1');
     expect(recordNextStepOutcome).toHaveBeenCalledWith({
@@ -96,7 +96,7 @@ describe('NextStepSlot', () => {
       suggestion({ id: 'b', title: 'Rebase web' }),
       suggestion({ id: 'c', title: 'Fix review conversations' }),
     ];
-    render(<NextStepSlot session={SESSION} />);
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     expect(screen.queryByText('Rebase web')).toBeNull();
     fireEvent.click(screen.getByText('2 more'));
     expect(screen.getByText('Rebase web')).toBeTruthy();
@@ -107,7 +107,7 @@ describe('NextStepSlot', () => {
     suggestionState.list = [
       suggestion({ id: 'mount-project:1', kind: 'mount-project', title: 'Add web' }),
     ];
-    render(<NextStepSlot session={SESSION} />);
+    render(<NextStepSlot session={SESSION} onSelectLens={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /More actions/ }));
     fireEvent.click(screen.getByText('Not now'));
     expect(suggestionState.onDismiss).toHaveBeenCalledWith('mount-project:1');

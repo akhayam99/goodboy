@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { useSessionSuggestions } from '../../useSessionSuggestions';
 import { useSuggestionActions, type SuggestionActions } from '../../useSuggestionActions';
 import { recordNextStepOutcome } from '../../useNextStepOutcomes';
@@ -9,17 +9,17 @@ import { NextStepRow } from './NextStepRow';
 
 type Props = {
   readonly session: Session;
+  readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const NextStepSlot = ({ session }: Props) => {
+export const NextStepSlot = ({ session, onSelectLens }: Props) => {
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const suggestions = useSessionSuggestions({ session, agents });
   const actionsFor = useSuggestionActions({
     session,
     agents,
-    onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
+    onSelectQuestions: () => onSelectLens('questions'),
   });
   const [expanded, setExpanded] = useState(false);
   const [notNowIds, setNotNowIds] = useState<ReadonlySet<string>>(new Set());
