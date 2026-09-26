@@ -192,6 +192,17 @@ It includes:
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
+- History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
+  `history_pushed`, `history_stopped` and `history_restored`
+
+History rows are the only event rows with verbs, one primary and the rest in
+the row menu, and only while no later outcome of the same branch settled
+them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
+a note` when History rewriter needs you) with `Rewrite with an agent`,
+`Change the plan` and `Discard plan` behind it, a push `Restore previous
+history`. A stopped rewrite never hides behind the filter. Every notification
+of the engine points at the row with `Open in Activity`, so closing it loses
+nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.

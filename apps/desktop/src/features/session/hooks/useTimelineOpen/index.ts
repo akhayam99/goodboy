@@ -40,6 +40,10 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   write_destination_changed: { lens: 'files', label: 'Open files' },
   question_dismissed: { lens: 'questions', label: 'Open questions' },
   question_restored: { lens: 'questions', label: 'Open questions' },
+  history_rewritten: { lens: 'files', label: 'Open' },
+  history_pushed: { lens: 'files', label: 'Open' },
+  history_stopped: { lens: 'files', label: 'Open' },
+  history_restored: { lens: 'files', label: 'Open' },
 };
 
 const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget | null =>
@@ -132,6 +136,15 @@ export const useTimelineOpen = ({
         const target = eventOpenTarget({ kind: entry.event.kind });
         if (target == null) {
           return null;
+        }
+        const historyPath = entry.event.kind.startsWith('history_')
+          ? (entry.event.payload?.worktreePath ?? null)
+          : null;
+        if (historyPath !== null) {
+          return {
+            label: target.label,
+            open: () => store.openRewriteHistory(sessionId, historyPath),
+          };
         }
         return {
           label: target.label,

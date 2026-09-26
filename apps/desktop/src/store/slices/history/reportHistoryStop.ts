@@ -1,3 +1,4 @@
+import { recordHistoryEvent } from './recordHistoryEvent';
 import type { GetFn, HistoryRunOrigin, HistoryStop, HistoryTarget, SetFn } from './types';
 
 type Params = {
@@ -17,15 +18,32 @@ export const historyStopTitle = ({
   readonly branch: string;
 }): string => (origin === 'rebase' ? `Couldn't rebase ${branch}` : `Rewrite of ${branch} stopped`);
 
-export const reportHistoryStop = async ({ get, target, origin, stop }: Params): Promise<void> => {
+export const reportHistoryStop = async ({
+  get,
+  target,
+  origin,
+  stop,
+  planId,
+}: Params): Promise<void> => {
   const agentId = get().historyRuns[target.mountId]?.agentId ?? null;
+  await recordHistoryEvent({
+    get,
+    kind: 'history_stopped',
+    target,
+    origin,
+    planId,
+    extra: {
+      reason: stop.reason,
+      title: stop.message,
+      files: stop.files,
+      ...(agentId !== null && { agentId }),
+    },
+  });
   await get().reportError({
     title: historyStopTitle({ origin, branch: target.branch }),
     error: stop.message,
     severity: 'warning',
     sessionId: target.sessionId,
-    ...(agentId !== null && {
-      action: { kind: 'open-agent' as const, sessionId: target.sessionId, agentId },
-    }),
+    action: { kind: 'open-activity', sessionId: target.sessionId },
   });
 };

@@ -17,6 +17,7 @@ export const notificationActionIcon = ({ kind }: ActionIconParams): LucideIcon =
     case 'open-orphan-worktrees':
     case 'open-storage':
     case 'open-lens':
+    case 'open-activity':
     case 'update-provider-cli':
       return ChevronRight;
     default: {

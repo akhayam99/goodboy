@@ -75,6 +75,15 @@ export const mapNotificationAction = (
       },
     };
   }
+  if (action.kind === 'open-activity') {
+    const { sessionId } = action;
+    return {
+      label: 'Open in Activity',
+      onClick: () => {
+        store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
+      },
+    };
+  }
   if (action.kind === 'open-agent') {
     const { sessionId, agentId } = action;
     return {

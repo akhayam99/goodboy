@@ -6,6 +6,7 @@ import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/w
 import { historyTargetOf } from './historyTargetOf';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
+import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import type {
   ApplyHistoryRewriteInput,
@@ -93,6 +94,18 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
       await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      await recordHistoryEvent({
+        get,
+        kind: 'history_rewritten',
+        target,
+        origin,
+        planId,
+        extra: {
+          backupRef: outcome.backupRef,
+          ...(input.summary !== undefined && { summary: input.summary }),
+          ...(input.isTreeEqual !== undefined && { isTreeEqual: input.isTreeEqual }),
+        },
+      });
       if (planId !== null) {
         await markHistoryPlan({
           db: tauriDatabase,
@@ -168,6 +181,15 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
           at: Date.now(),
         }).catch(() => undefined);
       }
+      const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
+      await recordHistoryEvent({
+        get,
+        kind: 'history_pushed',
+        target,
+        origin,
+        planId,
+        extra: prNumber === null ? {} : { prNumber },
+      });
       void get()
         .refreshPrDescription({ sessionId, mountId })
         .catch(() => false);

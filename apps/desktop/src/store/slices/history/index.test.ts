@@ -92,6 +92,7 @@ const harness = () => {
       ],
     },
     sessionResolveThreads: {},
+    mountGithub: {},
     workspaceOverrides: {},
     providerLimits: {},
     recordSessionEvent: vi.fn(async () => undefined),
@@ -307,6 +308,21 @@ describe('rebase on main', () => {
     ).resolves.toBe('stopped');
 
     expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('origin-moved');
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'history_rewritten',
+        payload: expect.objectContaining({ planId: 'plan-1', origin: 'plan' }),
+      }),
+    );
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'history_stopped',
+        payload: expect.objectContaining({ reason: 'origin-moved', planId: 'plan-1' }),
+      }),
+    );
+    expect(read().reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ action: { kind: 'open-activity', sessionId: SESSION_ID } }),
+    );
   });
 });
 

@@ -100,6 +100,8 @@ export type ApplyHistoryRewriteInput = HistoryMountInput & {
   readonly map: ReadonlyArray<HistoryShaMove>;
   readonly shouldPush: boolean;
   readonly byAgent: boolean;
+  readonly summary?: string;
+  readonly isTreeEqual?: boolean;
 };
 
 export type ApplyHistoryRewriteOutcome = 'applied' | 'pushed' | 'stopped' | 'busy';

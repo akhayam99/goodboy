@@ -1,6 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import type { HistoryPlanArgs } from '@goodboy/types';
 import { tryHistoryPlan } from '../../../features/history/historyEngine';
+import { planSummary, summaryLine } from '../../../features/history/historyPlan';
 import { historyTargetOf } from './historyTargetOf';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -74,6 +75,16 @@ export const applyHistoryDraft = (set: SetFn, get: GetFn) => {
         sha: trial.stop?.sha ?? null,
       });
     }
+    const draft = get().historyDrafts[mountId];
+    const summary =
+      draft === undefined
+        ? undefined
+        : summaryLine({
+            summary: planSummary({
+              items: draft.items,
+              original: [...draft.commits].reverse().map((commit) => commit.sha),
+            }),
+          });
     const outcome = await get().applyHistoryRewrite({
       sessionId,
       mountId,
@@ -84,6 +95,8 @@ export const applyHistoryDraft = (set: SetFn, get: GetFn) => {
       map: trial.map,
       shouldPush,
       byAgent: false,
+      isTreeEqual: trial.isTreeEqual,
+      ...(summary !== undefined && { summary }),
     });
     await get().loadHistoryDraft({ sessionId, mountId });
     return outcome;

@@ -4,6 +4,7 @@ import { pushWithLease, restoreHistoryBackup } from '../../../features/history/h
 import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { historyTargetOf } from './historyTargetOf';
+import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
 import type { GetFn, HistoryMountInput, HistoryStop, SetFn } from './types';
@@ -80,6 +81,14 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       mountId,
       origin,
       patch: { phase: 'restored', backupRef: moved.backupRef, result: null },
+    });
+    await recordHistoryEvent({
+      get,
+      kind: 'history_restored',
+      target,
+      origin,
+      planId: null,
+      extra: { backupRef },
     });
     await get().loadHistoryDraft({ sessionId, mountId });
     if (!shouldPush || status.upstream === null) {
