@@ -10,6 +10,8 @@ import {
   selectStorageAttention,
   selectStorageAttentionTone,
 } from '../../../../store/slices/storage/selectStorageAttention';
+import { useToolConnections } from '../../../integrations/useToolConnections';
+import { connectedInventory } from '../../../integrations/connectedInventory';
 
 export type NestedScope = 'providers' | 'tools';
 
@@ -78,6 +80,8 @@ export const SettingsRail = ({
   const securityFindingsAttention = useAppStore((state) =>
     selectSecurityFindingsAttention({ state, workspaceId }),
   );
+  const { connected } = useToolConnections({ workspaceId });
+  const integrationsInventory = connectedInventory({ connected });
 
   return (
     <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
@@ -145,7 +149,9 @@ export const SettingsRail = ({
                 subtitle={
                   item.scope === 'workspace'
                     ? (workspaceName ?? undefined)
-                    : (attention ?? undefined)
+                    : item.scope === 'tools'
+                      ? integrationsInventory
+                      : (attention ?? undefined)
                 }
                 tone={attention === null ? undefined : 'warning'}
                 selected={isActive && nested === null}

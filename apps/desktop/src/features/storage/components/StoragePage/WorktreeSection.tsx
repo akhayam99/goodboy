@@ -121,6 +121,7 @@ export const WorktreeSection = () => {
         <BulkRemoveBar
           suggested={suggested}
           suggestAfterDays={suggestAfterDays}
+          workspaceName={workspaceName}
           selected={selected}
           onStart={() => setSelected(new Set(suggested.map((folder) => folder.path)))}
           onCancel={() => setSelected(null)}

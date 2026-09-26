@@ -644,7 +644,10 @@ one is open at a time.
   and the `open-orphan-worktrees` notification action opens Storage too
   (`openStorage`). The only bulk action removes clean folders idle past "Suggest
   cleanup after"; a folder with changes, an operation in progress, a writer
-  lease or no git registration never joins it and says why on its row.
+  lease or no git registration never joins it and says why on its row. Every
+  bulk button and its confirm name their scope, "in Harborline" while the
+  list is filtered on a workspace and "in all workspaces" otherwise
+  (`storageScopeLabel`).
   Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
   sends a `storage-reclaimable` notification (action `open-storage`) when that
   amount passes 10 GB, then stays quiet for 14 days and speaks again only after
@@ -676,7 +679,9 @@ one is open at a time.
   folders pass 10 GB (warning when the disk has under 10 GB free and at least
   1 GB can go, `selectStorageAttention`), warning on Security findings with
   "N open" once the current workspace has an undismissed finding
-  (`selectSecurityFindingsAttention`). Danger zone reads in `text-danger`. Panel sections sit on
+  (`selectSecurityFindingsAttention`). Integrations carries a faint inventory
+  subtitle with no dot, "N of M connected" over the whole integration catalog
+  (`connectedInventory`). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,

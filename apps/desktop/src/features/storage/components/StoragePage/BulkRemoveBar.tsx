@@ -6,10 +6,12 @@ import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { storageScopeLabel } from '../../storageScopeLabel';
 
 type Props = {
   readonly suggested: ReadonlyArray<StorageFolder>;
   readonly suggestAfterDays: number;
+  readonly workspaceName: string | null;
   readonly selected: ReadonlySet<string> | null;
   readonly onStart: () => void;
   readonly onCancel: () => void;
@@ -26,11 +28,13 @@ const bytesOf = ({ folders }: TallyParams): number =>
 export const BulkRemoveBar = ({
   suggested,
   suggestAfterDays,
+  workspaceName,
   selected,
   onStart,
   onCancel,
   onDone,
 }: Props) => {
+  const scope = storageScopeLabel({ workspaceName });
   const folders = useAppStore((state) => state.storageFolders);
   const removeStorageFolders = useAppStore((state) => state.removeStorageFolders);
   const reportError = useAppStore((state) => state.reportError);
@@ -48,7 +52,7 @@ export const BulkRemoveBar = ({
       <div className="flex flex-wrap items-center gap-3 px-2 py-1.5">
         <Button variant="secondary" size="sm" onClick={onStart}>
           <Trash2 size={ICON_SIZE.row} aria-hidden />
-          Remove {suggested.length} safe {suggested.length === 1 ? 'folder' : 'folders'} ·{' '}
+          Remove {suggested.length} safe {suggested.length === 1 ? 'folder' : 'folders'} {scope} ·{' '}
           {formatBytes({ bytes: bytesOf({ folders: suggested }) })}
         </Button>
         <span className="text-secondary text-faint-foreground">
@@ -80,7 +84,7 @@ export const BulkRemoveBar = ({
     <InlineConfirm
       role="danger"
       icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-      title={`Remove ${pluralize(chosen.length, 'folder')} (${formatBytes({ bytes: bytesOf({ folders: chosen }) })})?`}
+      title={`Remove ${pluralize(chosen.length, 'folder')} ${scope} (${formatBytes({ bytes: bytesOf({ folders: chosen }) })})?`}
       description={`Branches stay${commitsClause}. Folders with changes are skipped.`}
       confirmLabel="Remove"
       isConfirmDisabled={chosen.length === 0}
