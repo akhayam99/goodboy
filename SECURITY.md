@@ -20,6 +20,7 @@ Goodboy runs only on your machine. There is no server in the middle. No build se
 - API keys live in your system's password store, never in a file. On macOS that is Keychain. On Linux it is the freedesktop Secret Service (GNOME Keyring or KWallet), and it has to be running for a key to save
 - Personal keys for your tools stay on your machine. That covers GitHub, GitLab, Jira, Bitbucket, Linear and Sentry keys, and a Slack user token. Each one goes only to the service it belongs to
 - Your conversations and code go only to the providers you connect, through their own CLIs or APIs
+- **Settings › App › Security findings** scans the text Goodboy keeps for you (saved scripts, workflow prompts, your profile, reply templates, permission rules) for anything shaped like a key or a token, on your Mac only; it never sends that text anywhere
 
 ### Local storage
 

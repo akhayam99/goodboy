@@ -36,6 +36,8 @@ export type WorkspaceProfile = Readonly<{
   explainMore: ReadonlyArray<string>;
 }>;
 
+export type GoodboyIgnoreMode = 'existing' | 'this-mac' | 'project' | 'global';
+
 export type Project = Readonly<{
   id: ProjectId;
   workspaceId: WorkspaceId;
@@ -50,6 +52,9 @@ export type Project = Readonly<{
   updatedAt: IsoDateTime;
   disconnectedAt?: IsoDateTime;
   lastAccessedAt?: IsoDateTime;
+  goodboyIgnore?: GoodboyIgnoreMode;
+  goodboyIgnoreSource?: string;
+  goodboyIgnoreCheckedAt?: IsoDateTime;
 }>;
 
 export type Workspace = Readonly<{

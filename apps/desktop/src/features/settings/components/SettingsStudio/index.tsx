@@ -129,6 +129,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
     return (
       <AppScopePanel
         section={appSectionOf({ section: focus.section })}
+        workspaceId={currentWorkspace?.id ?? null}
         requestClose={requestClose}
       />
     );
@@ -160,6 +161,7 @@ export const SettingsStudio = ({ currentWorkspace, focus, onScopeChange, onClose
                 <SettingsRail
                   scope={availableScope}
                   appSection={appSectionOf({ section: focus.section })}
+                  workspaceId={currentWorkspace?.id ?? null}
                   workspaceName={currentWorkspace?.name ?? null}
                   hasWorkspace={hasWorkspace}
                   nestedSlot={slotRefs.rail}

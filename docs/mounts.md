@@ -22,6 +22,23 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - A folder mount is a plain directory at `<project-root>/sessions/<name>`.
   Folder projects always keep their directory; no Goodboy action deletes it.
 
+## Hiding .goodboy from git
+
+`goodboy_ignore_status` (`apps/desktop/src-tauri/src/goodboy_ignore.rs`) checks
+whether git already ignores `.goodboy` before anything writes to it: it runs
+`git check-ignore -v --no-index .goodboy/worktrees/probe`, never a bare
+`.goodboy` probe, since a trailing-slash rule (`.goodboy/`) only matches a
+probe path that is clearly inside the folder. The check classifies the hit as
+the project's `.gitignore`, `.git/info/exclude`, or the user's global ignore
+file, and the result is stored on `projects.goodboy_ignore` so a re-check on
+every render is never needed. When nothing already ignores it,
+`goodboy_ignore_apply` writes `/.goodboy/` to one of those three places, never
+more than one at a time, and removes the `.git/info/exclude` entry when the
+project switches to the project or global choice. Adopting a repository that
+already has commits never touches its `.gitignore` (`repo.rs::adopt_repo`);
+only a still-commit-less repo gets the bootstrap write, matching
+`create_repo`.
+
 ## Rows and disk
 
 `session_worktrees` is the mount table. The row id is the mount identity; a
