@@ -114,7 +114,13 @@ be used inside ToastProvider`.** `App` returns `MockScene` under the
   `clock.iso({ at })` and
   `clock.ms({ at })` shift it so the anchor lands on the moment the scene
   loaded, and the gaps between events stay exact. Files that share seed data
-  use the same anchor.
+  use the same anchor. The anchor must be at or after the latest instant its
+  clock shifts, including instants computed from a seeded one, or events land
+  in the future. A grep for ISO literals misses dates assembled at runtime, so
+  also search the scene for template literals such as
+  `${DAY_TWO}T10:05:00.000Z`, date-only constants such as `'2026-09-17'`,
+  `Date.UTC`, `new Date(` with numbers, and arithmetic that adds minutes to a
+  seeded NOW. A scene built on `Date.now()` needs no clock.
 
 - **A studio can reach `invoke()` through a hook you never render.** The rule
   above says the render must never depend on the Tauri runtime, and

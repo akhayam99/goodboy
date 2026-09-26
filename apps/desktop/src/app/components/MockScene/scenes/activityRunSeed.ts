@@ -34,6 +34,9 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
 const WORKSPACE_ID = 'mock-run-workspace-cascadia' as WorkspaceId;
 export const SESSION_ID = 'mock-run-session-webhooks' as SessionId;
@@ -86,8 +89,8 @@ const QUESTION_BANNER_ID = 'mock-run-question-banner-threshold' as OpenQuestionI
 
 const DAY_ONE = '2026-09-17';
 const DAY_TWO = '2026-09-18';
-export const NOW = `${DAY_TWO}T10:05:00.000Z` as IsoDateTime;
-const EARLIER = `${DAY_ONE}T09:12:00.000Z` as IsoDateTime;
+export const NOW = clock.iso({ at: `${DAY_TWO}T10:05:00.000Z` });
+const EARLIER = clock.iso({ at: `${DAY_ONE}T09:12:00.000Z` });
 
 const OVERRIDES = {
   defaultProviderId: null,
@@ -218,7 +221,7 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
 ];
 
 const at = ({ day, time }: { readonly day: string; readonly time: string }): IsoDateTime =>
-  `${day}T${time}.000Z` as IsoDateTime;
+  clock.iso({ at: `${day}T${time}.000Z` });
 
 const WORKFLOW_STEPS: ReadonlyArray<Step> = [
   {
@@ -329,7 +332,7 @@ export const SESSION: Session = {
   state: {
     kind: 'running',
     runId: CONSOLE_PROVIDER_RUN_ID,
-    startedAt: `${DAY_TWO}T09:59:00.000Z` as IsoDateTime,
+    startedAt: clock.iso({ at: `${DAY_TWO}T09:59:00.000Z` }),
   },
   contextSlots: CONTEXT_SLOTS,
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -1103,7 +1106,9 @@ export const seedActivityRunScene = () => {
         projectId: mount.projectId,
         mountName: mount.mountName,
         repoSlug: `cascadia/${mount.mountName}`,
-        createdAt: Date.parse(index === 0 ? EARLIER : `${DAY_ONE}T09:13:00.000Z`),
+        createdAt: clock.ms({
+          at: index === 0 ? `${DAY_ONE}T09:12:00.000Z` : `${DAY_ONE}T09:13:00.000Z`,
+        }),
       })),
     },
     sessionSlots: { [SESSION_ID]: CONTEXT_SLOTS },
