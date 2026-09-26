@@ -41,7 +41,7 @@ const CANT_ASK: ModeSupport = {
 const CANT_SCOPE_EDITS: ModeSupport = {
   support: 'fallback',
   runsAs: 'plan',
-  reason: "it can't allow edits without allowing commands",
+  reason: "it can't allow edits and block commands",
 };
 
 const OPENCODE_TABLE: ModeSupportTable = {

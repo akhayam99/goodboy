@@ -1,10 +1,10 @@
 import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, Chip, cn, StatusDot, type Tone, useDropdown, Eyebrow } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
+import { modeSupportFor } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
-
-const MODE_UNENFORCED_PROVIDERS: ReadonlyArray<ProviderId> = ['cursor', 'gemini'];
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 
 type ModeMeta = {
   readonly value: ClaudePermissionMode;
@@ -78,7 +78,19 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const { open, close, toggle } = dropdown;
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
   const current = permissionModeMeta(session.permissionMode);
-  const unenforced = MODE_UNENFORCED_PROVIDERS.includes(activeProvider);
+  const unavailableReason = (mode: ClaudePermissionMode): string | null => {
+    const support = modeSupportFor({ provider: activeProvider, mode });
+    if (support.support !== 'fallback' || support.reason === null) {
+      return null;
+    }
+    return `Not available on ${PROVIDER_LABEL[activeProvider]}: ${support.reason}`;
+  };
+  const currentUnavailable = unavailableReason(session.permissionMode);
+  const runsAs = modeSupportFor({ provider: activeProvider, mode: session.permissionMode }).runsAs;
+  const triggerLabel =
+    currentUnavailable === null
+      ? current.description
+      : `${currentUnavailable}. Runs as ${permissionModeMeta(runsAs).label}`;
 
   const onPick = (mode: ClaudePermissionMode) => {
     void setSessionPermissionMode(session.id, mode);
@@ -99,7 +111,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           as="button"
           onClick={toggle}
           title={withShortcutHint({
-            label: unenforced ? 'Not enforced for cursor and gemini' : current.description,
+            label: triggerLabel,
             shortcut: 'session.permissions',
           })}
           hasPopup="dialog"
@@ -116,17 +128,40 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       </div>
       {PERMISSION_MODES.map((m) => {
         const active = session.permissionMode === m.value;
+        const reason = unavailableReason(m.value);
+        const isUnavailable = reason !== null;
         return (
           <button
             key={m.value}
             type="button"
+            disabled={isUnavailable}
             onClick={() => onPick(m.value)}
-            className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-hover"
+            className={cn(
+              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors',
+              isUnavailable ? 'cursor-not-allowed' : 'hover:bg-hover',
+            )}
           >
-            <StatusDot tone={m.tone} size="sm" className="mt-1" />
+            <StatusDot tone={isUnavailable ? 'neutral' : m.tone} size="sm" className="mt-1" />
             <span className="min-w-0 flex-1">
-              <span className={cn('block font-medium', m.text)}>{m.label}</span>
-              <span className="block text-2xs text-muted-foreground">{m.description}</span>
+              <span
+                className={cn(
+                  'block font-medium',
+                  isUnavailable ? 'text-disabled-foreground' : m.text,
+                )}
+              >
+                {m.label}
+              </span>
+              <span
+                className={cn(
+                  'block text-2xs',
+                  isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
+                )}
+              >
+                {m.description}
+              </span>
+              {isUnavailable ? (
+                <span className="block text-2xs text-muted-foreground">{reason}</span>
+              ) : null}
             </span>
             {active ? (
               <span aria-hidden className="mt-0.5 text-2xs text-primary">
@@ -136,11 +171,6 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           </button>
         );
       })}
-      {unenforced ? (
-        <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground">
-          Not enforced for cursor and gemini.
-        </p>
-      ) : null}
     </AnchoredPopover>
   );
 };
