@@ -3,6 +3,7 @@ import type { Project } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
+import { commitBaseBranch } from '../../../worktree/commitBaseBranch';
 
 type Props = {
   readonly project: Project;
@@ -17,14 +18,14 @@ export const ProjectBaseBranchInput = ({ project }: Props) => {
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
 
   const commit = async ({ candidate }: CommitParams) => {
-    const trimmed = candidate?.trim() ?? '';
-    const baseBranch = trimmed === '' ? null : trimmed;
-    if (baseBranch === (project.baseBranch ?? null)) {
-      return;
-    }
     setError(null);
     try {
-      await updateProjectBaseBranch({ projectId: project.id, baseBranch });
+      await commitBaseBranch({
+        projectId: project.id,
+        currentBaseBranch: project.baseBranch ?? null,
+        candidate,
+        updateProjectBaseBranch,
+      });
     } catch (failure) {
       setError(formatError(failure));
     }

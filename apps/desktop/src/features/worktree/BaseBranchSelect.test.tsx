@@ -3,9 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { listBranchNames } = vi.hoisted(() => ({ listBranchNames: vi.fn() }));
+const { listBranchNames, repoDefaultBaseBranch } = vi.hoisted(() => ({
+  listBranchNames: vi.fn(),
+  repoDefaultBaseBranch: vi.fn(),
+}));
 
-vi.mock('./worktree', () => ({ listBranchNames }));
+vi.mock('./worktree', () => ({ listBranchNames, repoDefaultBaseBranch }));
 
 import { BaseBranchSelect } from './BaseBranchSelect';
 
@@ -16,17 +19,30 @@ describe('BaseBranchSelect', () => {
   beforeEach(() => {
     listBranchNames.mockReset();
     listBranchNames.mockResolvedValue(['main', 'develop', 'release']);
+    repoDefaultBaseBranch.mockReset();
+    repoDefaultBaseBranch.mockResolvedValue(null);
   });
   afterEach(cleanup);
 
   it('fetches branches only after the popover opens', async () => {
     render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
 
-    expect(trigger().textContent).toBe('main');
+    expect(trigger().textContent).toBe('Auto');
     expect(listBranchNames).not.toHaveBeenCalled();
     fireEvent.click(trigger());
 
     await waitFor(() => expect(listBranchNames).toHaveBeenCalledWith({ repoPath: '/repo' }));
+  });
+
+  it('shows the detected default next to Auto', async () => {
+    repoDefaultBaseBranch.mockResolvedValue('develop');
+    render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
+
+    await waitFor(() => expect(trigger().textContent).toBe('Auto · develop'));
+    fireEvent.click(trigger());
+
+    const auto = await screen.findByRole('option', { name: /^Auto/ });
+    expect(auto.textContent).toContain('Detected from origin/HEAD: develop');
   });
 
   it('filters the fetched branch list', async () => {
@@ -52,12 +68,12 @@ describe('BaseBranchSelect', () => {
     expect(onCommit).toHaveBeenCalledWith('topic/new');
   });
 
-  it('clears an explicit branch to null', () => {
+  it('clears an explicit branch to null by picking Auto', async () => {
     const onCommit = vi.fn();
     render(<BaseBranchSelect repoPath="/repo" value="develop" onCommit={onCommit} />);
     fireEvent.click(trigger());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Auto/ }));
 
     expect(onCommit).toHaveBeenCalledWith(null);
   });

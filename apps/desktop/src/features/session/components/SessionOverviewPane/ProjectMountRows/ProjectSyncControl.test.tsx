@@ -35,6 +35,7 @@ vi.mock('../../../hooks/usePushBranch', () => ({
 }));
 vi.mock('../../../../worktree/worktree', () => ({
   listBranchNames: vi.fn(async () => ['main', 'develop', 'release']),
+  repoDefaultBaseBranch: vi.fn(async () => null),
 }));
 
 import { ProjectSyncControl } from './ProjectSyncControl';
@@ -132,11 +133,11 @@ describe('ProjectSyncControl', () => {
     );
   });
 
-  it('clears the base branch to null with Use default', async () => {
+  it('clears the base branch to null by picking Auto', async () => {
     renderControl({ status: null });
     fireEvent.click(screen.getByRole('button', { name: 'Branch sync actions' }));
     fireEvent.click(screen.getByRole('combobox', { name: 'Base branch' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Auto/ }));
 
     await waitFor(() =>
       expect(store.updateProjectBaseBranch).toHaveBeenCalledWith({

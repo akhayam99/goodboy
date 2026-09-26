@@ -770,6 +770,23 @@ pub async fn worktree_list_branch_names(repo_path: String) -> Result<Vec<String>
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[tauri::command]
+pub async fn worktree_repo_default_base_branch(
+    repo_path: String,
+) -> Result<Option<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || repo_default_base_branch_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn repo_default_base_branch_blocking(repo_path: String) -> Result<Option<String>, WorktreeError> {
+    let p = Path::new(&repo_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    Ok(resolve_origin_head(p))
+}
+
 fn list_branch_names_blocking(repo_path: String) -> Result<Vec<String>, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
@@ -4817,6 +4834,47 @@ mod rewrite_tests {
             1
         );
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_reads_origin_head() {
+        let root = init_repo("default-base-branch");
+        commit(&root, "a.txt", "hello", "init");
+        push_to_new_remote(&root);
+        git_ok(
+            &root,
+            &[
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/main",
+            ],
+        );
+
+        let resolved = super::repo_default_base_branch_blocking(root.to_str().unwrap().to_string());
+
+        assert_eq!(resolved.unwrap(), Some("main".to_string()));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_is_none_without_an_origin_head() {
+        let root = init_repo("default-base-branch-none");
+        commit(&root, "a.txt", "hello", "init");
+
+        let resolved = super::repo_default_base_branch_blocking(root.to_str().unwrap().to_string());
+
+        assert_eq!(resolved.unwrap(), None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_refuses_a_missing_repo() {
+        let missing = std::env::temp_dir().join("goodboy-missing-repo-for-default-base");
+
+        let resolved =
+            super::repo_default_base_branch_blocking(missing.to_str().unwrap().to_string());
+
+        assert!(resolved.is_err());
     }
 }
 

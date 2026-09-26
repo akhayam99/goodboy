@@ -100,9 +100,11 @@ describe('ProjectGitPill', () => {
   });
 
   it('renders an editor launch error as an alert', async () => {
-    h.invoke.mockRejectedValueOnce(new Error('editor unavailable'));
     renderPill({ status: statusOf({}) });
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    await waitFor(() => expect(h.invoke).toHaveBeenCalled());
+
+    h.invoke.mockRejectedValueOnce(new Error('editor unavailable'));
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('editor unavailable'),

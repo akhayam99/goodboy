@@ -615,6 +615,16 @@ export const listBranchNames = async ({
   return invoke<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
 };
 
+type RepoDefaultBaseBranchParams = {
+  readonly repoPath: string;
+};
+
+export const repoDefaultBaseBranch = async ({
+  repoPath,
+}: RepoDefaultBaseBranchParams): Promise<string | null> => {
+  return invoke<string | null>('worktree_repo_default_base_branch', { repoPath });
+};
+
 export type ChangeBranchArgs = {
   readonly repoPath: string;
   readonly worktreePath: string;

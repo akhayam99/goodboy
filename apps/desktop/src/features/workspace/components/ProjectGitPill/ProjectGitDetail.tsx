@@ -13,6 +13,7 @@ import type { GitUnknownReason, Project, WorkspaceGitStatus } from '@goodboy/typ
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
+import { commitBaseBranch as commitProjectBaseBranch } from '../../../worktree/commitBaseBranch';
 import {
   changedCount,
   distanceAhead,
@@ -177,14 +178,14 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
     }
   };
   const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
-    const trimmedBaseBranch = candidate?.trim() ?? '';
-    const nextBaseBranch = trimmedBaseBranch === '' ? null : trimmedBaseBranch;
-    if (nextBaseBranch === (project.baseBranch ?? null)) {
-      return;
-    }
     setBaseBranchError(null);
     try {
-      await updateProjectBaseBranch({ projectId: project.id, baseBranch: nextBaseBranch });
+      await commitProjectBaseBranch({
+        projectId: project.id,
+        currentBaseBranch: project.baseBranch ?? null,
+        candidate,
+        updateProjectBaseBranch,
+      });
     } catch (error) {
       setBaseBranchError(formatError(error));
     }
