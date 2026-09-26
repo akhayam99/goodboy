@@ -766,7 +766,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Seven animations, one meaning each. Transition keyframes (`fade-in`,
+Eight animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
 states and sit outside the registry.
 
@@ -796,6 +796,10 @@ never mounts and unmounts its panel by hand.
   the digit roll.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
+- `update-sweep`: a new version arrived. One 1.2s light sweep across the
+  update pill, on arrival and again when the window regains focus at least
+  an hour after the last sweep, capped at six a day. Never loops, never
+  wraps the pill in a ring.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`

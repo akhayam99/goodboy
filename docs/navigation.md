@@ -56,7 +56,9 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and so is the footer's Goodboy chip.
+  neutral at rest, and so is the footer's Goodboy chip, with one exception: a
+  downloaded update tints the chip into a pill until you act on it. A ready
+  update is an event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.

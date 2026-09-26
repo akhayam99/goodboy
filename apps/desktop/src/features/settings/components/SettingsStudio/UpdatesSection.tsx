@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Button, FieldRow, SectionSurface } from '@goodboy/ui';
+import { Button, FieldRow, SectionSurface, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
 import type { UpdateFailure } from '../../../../store/slices/updater/state';
 
 const TICK_MS = 30_000;
@@ -46,12 +47,26 @@ export const UpdatesSection = () => {
   const failure = useAppStore((state) => state.updateFailure);
   const checkedAt = useAppStore((state) => state.updateCheckedAt);
   const checkForUpdates = useAppStore((state) => state.checkForUpdates);
+  const loadSetting = useAppStore((state) => state.loadSetting);
+  const saveSetting = useAppStore((state) => state.saveSetting);
   const installedVersion = useInstalledVersion();
   const now = useNow();
   const isChecking = status === 'checking';
   const isAvailable = status === 'available';
   const isDownloading = status === 'downloading';
   const target = version ?? 'the new version';
+  const [autoDownload, setAutoDownload] = useState(true);
+
+  useEffect(() => {
+    void loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD).then((value) =>
+      setAutoDownload(value !== 'false'),
+    );
+  }, [loadSetting]);
+
+  const onToggleAutoDownload = (next: boolean): void => {
+    setAutoDownload(next);
+    void saveSetting(SETTING_UPDATER_AUTO_DOWNLOAD, next ? 'true' : 'false');
+  };
 
   return (
     <SectionSurface
@@ -95,6 +110,16 @@ export const UpdatesSection = () => {
             {failureLine({ failure, target })}
           </p>
         )}
+        <FieldRow
+          label="Download updates in the background"
+          help="Restart to use it once it lands."
+        >
+          <Switch
+            label={autoDownload ? 'On' : 'Off'}
+            checked={autoDownload}
+            onChange={onToggleAutoDownload}
+          />
+        </FieldRow>
       </div>
     </SectionSurface>
   );

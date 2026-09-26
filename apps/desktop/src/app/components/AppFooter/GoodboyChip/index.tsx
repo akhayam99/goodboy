@@ -8,6 +8,7 @@ import { useInstalledVersion } from '../../../../features/changelog/hooks/useIns
 import { ReportIssueForm } from '../../../../features/settings/components/ReportIssueForm';
 import { useHasBugReportDraft } from '../../../../features/settings/hooks/useHasBugReportDraft';
 import { UpdateArrivalCard } from '../../../../features/updater/components/UpdateArrivalCard';
+import { useRestartWhenIdle } from '../../../../features/updater/hooks/useRestartWhenIdle';
 import { openUrl } from '../../../../shared/lib/editor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
@@ -33,6 +34,7 @@ const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
 };
 
 export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
+  useRestartWhenIdle();
   const progress = useOnboardingProgress();
   const updaterStatus = useAppStore((s) => s.updaterStatus);
   const version = useInstalledVersion();

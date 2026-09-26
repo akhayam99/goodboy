@@ -13,6 +13,8 @@ import { UpdatesSection, checkedLine } from './UpdatesSection';
 
 const checkForUpdates = vi.fn(async () => undefined);
 const applyUpdate = vi.fn(async () => undefined);
+const loadSetting = vi.fn(async () => null as string | null);
+const saveSetting = vi.fn(async () => undefined);
 
 type Seed = {
   readonly status: 'idle' | 'checking' | 'available' | 'uptodate' | 'error';
@@ -29,6 +31,8 @@ const seed = ({ status, failure = null, checkedAt = null }: Seed) => {
     agentTurnState: {},
     checkForUpdates,
     applyUpdate,
+    loadSetting,
+    saveSetting,
   } as never);
 };
 
@@ -82,5 +86,14 @@ describe('UpdatesSection', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Update to 0.3.14' }));
     await userEvent.click(screen.getByRole('button', { name: 'Download and restart' }));
     expect(applyUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles background downloads and saves the setting', async () => {
+    seed({ status: 'idle' });
+    render(<UpdatesSection />);
+    const toggle = await screen.findByRole('switch');
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    await userEvent.click(toggle);
+    expect(saveSetting).toHaveBeenCalledWith('updater.autoDownload', 'false');
   });
 });
