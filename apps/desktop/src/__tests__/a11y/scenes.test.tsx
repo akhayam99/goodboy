@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { afterEach, beforeAll, beforeEach, describe, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render } from '@testing-library/react';
 import { ToastProvider } from '../../app/components/Toast';
 import { MOCK_SCENES } from '../../app/components/MockScene';
@@ -19,14 +19,26 @@ beforeAll(async () => {
   await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+let renderLoops: Array<string> = [];
+
 beforeEach(async () => {
   await resetStoryStore();
+  renderLoops = [];
+  const logError = console.error;
+  vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
+    const line = args.map(String).join(' ');
+    if (line.includes('Maximum update depth')) {
+      renderLoops.push(line);
+    }
+    logError(...args);
+  });
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
 });
 
 afterEach(() => {
   vi.useRealTimers();
   cleanup();
+  vi.restoreAllMocks();
 });
 
 describe('a11y, every mock scene', () => {
@@ -40,6 +52,8 @@ describe('a11y, every mock scene', () => {
       await vi.advanceTimersByTimeAsync(SCENE_SETTLE_MS);
     });
     vi.useRealTimers();
+    expect(document.body.textContent?.trim() ?? '').not.toBe('');
+    expect(renderLoops).toEqual([]);
     await expectBaseline({ name: `scene ${key}`, container });
   });
 });

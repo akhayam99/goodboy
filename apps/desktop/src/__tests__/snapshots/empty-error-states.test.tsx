@@ -131,7 +131,7 @@ vi.mock('../../shared/lib/editor', () => ({
 }));
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AppStore } from '../../store/store';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
@@ -210,6 +210,8 @@ describe('snapshot, empty states', () => {
         <SkillsPanel workspaceId={WS_ID} />
       </ToastProvider>,
     );
+    expect(screen.getByText('No skills yet')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New skill' })).toBeDefined();
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -222,11 +224,15 @@ describe('snapshot, empty states', () => {
         onDismiss={vi.fn()}
       />,
     );
+    expect(screen.getByText('no skills. create one in settings')).toBeDefined();
+    expect(screen.queryAllByRole('option')).toEqual([]);
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('NotificationCenter: no notifications', () => {
+  it('NotificationCenter: no notifications', async () => {
     const { container } = render(<NotificationCenter />);
+    fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+    expect(await screen.findByText('No notifications')).toBeDefined();
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -254,21 +260,27 @@ describe('snapshot, empty states', () => {
 describe('snapshot, error states', () => {
   it('App init error, BootSplash with error message', () => {
     const { container } = render(<BootSplash phase="error" error="database migration failed" />);
+    expect(screen.getByRole('alert').textContent).toContain('database migration failed');
     expect(container.firstChild).toMatchSnapshot();
   });
 
-  it('DeleteSessionConfirm: error state', () => {
-    mockStore({
-      deleteTask: vi.fn().mockRejectedValue(new Error('session not found')),
-    });
+  it('DeleteSessionConfirm: error state', async () => {
+    const deleteTask = vi.fn().mockRejectedValue(new Error('session not found'));
+    const onClose = vi.fn();
+    mockStore({ deleteTask });
     const { container } = render(
-      <DeleteSessionConfirm session={makeSession()} onClose={vi.fn()} />,
+      <DeleteSessionConfirm session={makeSession()} onClose={onClose} />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(await screen.findByText(/session not found/)).toBeDefined();
+    expect(deleteTask).toHaveBeenCalledWith('sess-1');
+    expect(onClose).not.toHaveBeenCalled();
     expect(container.firstChild).toMatchSnapshot();
   });
 
   it('BootSplash: boot-error phase', () => {
     const { container } = render(<BootSplash phase="error" error="detecting-cli failed" />);
+    expect(screen.getByRole('alert').textContent).toContain('detecting-cli failed');
     expect(container.firstChild).toMatchSnapshot();
   });
 
@@ -277,18 +289,24 @@ describe('snapshot, error states', () => {
     const { container } = render(
       <SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />,
     );
+    expect(screen.getByRole('status', { name: 'Loading session overview' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(container.firstChild).toMatchSnapshot();
     vi.useRealTimers();
   });
 
   it('SessionOverviewLoading: retryable failure after the settle window', () => {
     vi.useFakeTimers();
+    const onRetry = vi.fn();
     const { container } = render(
-      <SessionOverviewLoading isFreshLayout={false} onRetry={vi.fn()} />,
+      <SessionOverviewLoading isFreshLayout={false} onRetry={onRetry} />,
     );
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
+    expect(screen.getByText('This session did not load')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledOnce();
     expect(container.firstChild).toMatchSnapshot();
     vi.useRealTimers();
   });
@@ -303,6 +321,8 @@ describe('snapshot, error states', () => {
         }}
       />,
     );
+    expect(screen.getByText('provider failed to respond')).toBeDefined();
+    expect(screen.getByTestId('transcript-error-icon')).toBeDefined();
     expect(container.firstChild).toMatchSnapshot();
   });
 });

@@ -165,7 +165,7 @@ exports[`snapshot, empty states > NotificationCenter: no notifications 1`] = `
   >
     <button
       aria-label="Notifications"
-      class="relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors text-muted-foreground hover:text-foreground hover:bg-hover"
+      class="relative flex items-center justify-center rounded-sm p-1.5 motion-safe:transition-colors bg-muted text-foreground"
       type="button"
     >
       <svg
@@ -528,6 +528,11 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     class="font-medium text-danger"
   >
     This cannot be undone. To keep the history, archive instead.
+  </p>
+  <p
+    class="font-medium text-danger"
+  >
+    session not found
   </p>
   <div
     class="flex min-w-0 flex-wrap items-center gap-2 justify-between"
