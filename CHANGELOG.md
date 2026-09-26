@@ -7,6 +7,37 @@ version in the same PR that bumps the version numbers (see
 `docs/release-command.md`), before the tag is pushed: the release build fails
 if it can't find a matching `## Goodboy vX.Y.Z` heading.
 
+## Goodboy v0.7.0
+
+Goodboy now keeps a copy of your plans, reports and wireframes on disk, fixes to review comments land even when the branch has moved on, and replies to reviewers follow a template in the voice your workspace picks.
+
+This release updates the database, and the change is one way: to go back to 0.6.x you need to restore the backup of your data, and the older version tells you so if you open it.
+
+### [#1886] Three built-in workflows
+
+Goodboy comes with three ready workflows: Refactor (scout, plan, implement, test), Plan and ship (scout, plan, implement, review) and Fix a bug (investigate, implement, test). Workspaces you already have get the new ones at the next launch, unless one of your own workflows already uses that name, and a built-in you deleted stays deleted. Restore built-in workflows now lists only the built-ins you edited or removed in that workspace and puts back their name and steps. When nothing changed, it is off and says so.
+
+### [#1886] A copy of each artifact on disk
+
+Each plan, report and wireframe is saved as a folder inside its workspace folder: a page you can open in a browser, with its stylesheet and source, or the folder a wireframe export writes. The copy is updated at each new revision, and artifacts made before this version are copied after launch. The Details panel shows where the copy lives, and Show in Finder opens it.
+
+### [#1886] Fixes that land on a moved branch
+
+When you approve a fix and the branch has moved on since the agent started, Goodboy applies the fix on top of the latest commit instead of giving up, so a second round on the same pull request still lands. If the fix no longer applies, the branch stays as it was and Goodboy tells you. If Goodboy quits in the middle of an approval, approving again finds the fix already on the branch instead of failing. Goodboy reads what each commit is from git: a commit that fixes up an earlier one shows "fixup of" that commit, and a fix that rewrote an earlier one shows "replaces". With the fixup commit style, the agent adds its fix to the commit that introduced the commented line.
+
+### [#1886] Replies in your voice
+
+Replies to reviewers are built from two templates, When fixed and When not changing, and the agent writes only the reason. In Settings, Workspace, Review replies you pick the voice (Terse, Friendly, Formal or Like my replies), edit the templates with a live preview, choose whether replies are signed, whether the thread is resolved after replying, and which commit style fixes use. Learn from my replies reads your last 20 review replies in the workspace's repositories and writes a short style note that you can edit.
+
+### [#1886] Artifacts from deleted sessions
+
+The Storage page lists plans, reports and wireframes whose session was deleted, with the size of their saved copy, when the session went and when you last used them. Open one in the reader, keep it for 30 days or for good, or delete it along with its copy. Artifacts you have not used for a long time are suggested for one bulk delete.
+
+### Fixes
+
+- Learning your reply style skips a provider at its usage limit, like other tasks on Auto. [#1886]
+- Built-in workflow names keep their capital letters in run titles and in the path at the top. [#1886]
+
 ## Goodboy v0.6.0
 
 Resolving review comments now reads as one list with eight clear states, you can stop an agent and pick it up again, and Goodboy shows how close each provider is to its usage limit.
