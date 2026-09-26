@@ -1,18 +1,30 @@
+use std::collections::{HashMap, HashSet};
+
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 use crate::db::{Db, DbError};
+use crate::repo::{find_moved_projects_blocking, FindMovedProjectsArgs, MovedProjectInput, MovedProjectVerdict};
 
-// ---------------------------------------------------------------------------
-// Schema version - bump on breaking change
-// ---------------------------------------------------------------------------
+const SCHEMA_VERSION: u32 = 3;
+const LEGACY_SCHEMA_VERSIONS: [u32; 2] = [1, 2];
 
-const SCHEMA_VERSION: u32 = 2;
-const LEGACY_SCHEMA_VERSION: u32 = 1;
+fn is_supported_schema_version(version: u32) -> bool {
+    version == SCHEMA_VERSION || LEGACY_SCHEMA_VERSIONS.contains(&version)
+}
 
-// ---------------------------------------------------------------------------
-// Bundle types (mirrors packages/types/src/config-bundle.ts)
-// ---------------------------------------------------------------------------
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileBundle {
+    #[serde(default)]
+    pub roles_json: Option<String>,
+    #[serde(default)]
+    pub about_work: Option<String>,
+    #[serde(default)]
+    pub working_rules: Option<String>,
+    #[serde(default)]
+    pub explain_more_json: Option<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorkspaceBundle {
@@ -27,27 +39,64 @@ pub struct WorkspaceBundle {
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
     pub overrides: WorkspaceOverridesBundle,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<ProfileBundle>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectBundle {
     pub id: String,
     pub name: String,
-    #[serde(rename = "rootPath")]
-    pub root_path: String,
+    #[serde(rename = "rootPath", default, skip_serializing_if = "Option::is_none")]
+    pub root_path: Option<String>,
     pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "starredAt", default, skip_serializing_if = "Option::is_none")]
+    pub starred_at: Option<String>,
+    #[serde(rename = "baseBranch", default, skip_serializing_if = "Option::is_none")]
+    pub base_branch: Option<String>,
+    #[serde(rename = "rootCommit", default, skip_serializing_if = "Option::is_none")]
+    pub root_commit: Option<String>,
+    #[serde(rename = "remoteUrl", default, skip_serializing_if = "Option::is_none")]
+    pub remote_url: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceOverridesBundle {
-    #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
+    #[serde(default)]
+    pub default_verbosity: Option<String>,
+    #[serde(default)]
+    pub provider_bindings_json: Option<String>,
+    #[serde(default)]
+    pub task_models_json: Option<String>,
+    #[serde(default)]
+    pub role_models_json: Option<String>,
+    #[serde(default)]
+    pub parallel_agents: Option<bool>,
+    #[serde(default)]
+    pub provider_pool_json: Option<String>,
+    #[serde(default)]
+    pub attribution_footer: Option<bool>,
+    #[serde(default)]
+    pub reply_voice: Option<String>,
+    #[serde(default)]
+    pub reply_style_note: Option<String>,
+    #[serde(default)]
+    pub reply_template_fixed: Option<String>,
+    #[serde(default)]
+    pub reply_template_no_change: Option<String>,
+    #[serde(default)]
+    pub resolve_on_github: Option<bool>,
+    #[serde(default)]
+    pub resolve_commit_style: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -151,9 +200,35 @@ pub struct BudgetRuleBundle {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SettingsBundle {
+pub struct ScriptBundle {
+    pub id: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
+    pub name: String,
+    pub body: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ToolBindingBundle {
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
+    pub provider: String,
+    #[serde(rename = "configJson")]
+    pub config_json: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct AppPreferencesBundle {
     #[serde(rename = "editorBinary")]
     pub editor_binary: Option<String>,
+    #[serde(rename = "editorDefault")]
+    pub editor_default: Option<String>,
+    #[serde(rename = "hiddenModelsJson")]
+    pub hidden_models_json: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -170,12 +245,92 @@ pub struct ConfigBundle {
     pub permission_rules: Vec<PermissionRuleBundle>,
     #[serde(rename = "budgetRules")]
     pub budget_rules: Vec<BudgetRuleBundle>,
-    pub settings: SettingsBundle,
+    #[serde(default)]
+    pub scripts: Vec<ScriptBundle>,
+    #[serde(rename = "toolBindings", default)]
+    pub tool_bindings: Vec<ToolBindingBundle>,
+    #[serde(rename = "appPreferences", default)]
+    pub app_preferences: AppPreferencesBundle,
 }
 
-// ---------------------------------------------------------------------------
-// Error type
-// ---------------------------------------------------------------------------
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportGroups {
+    #[serde(default = "true_default")]
+    pub workspaces: bool,
+    #[serde(default = "true_default")]
+    pub projects: bool,
+    #[serde(default)]
+    pub folder_paths: bool,
+    #[serde(default = "true_default")]
+    pub profile: bool,
+    #[serde(default = "true_default")]
+    pub workflows_yours: bool,
+    #[serde(default)]
+    pub workflows_orchestrated: bool,
+    #[serde(default = "true_default")]
+    pub scripts: bool,
+    #[serde(default = "true_default")]
+    pub permission_rules: bool,
+    #[serde(default = "true_default")]
+    pub budget_rules: bool,
+    #[serde(default = "true_default")]
+    pub integrations: bool,
+    #[serde(default = "true_default")]
+    pub app_preferences: bool,
+}
+
+fn true_default() -> bool {
+    true
+}
+
+impl Default for ExportGroups {
+    fn default() -> Self {
+        ExportGroups {
+            workspaces: true,
+            projects: true,
+            folder_paths: false,
+            profile: true,
+            workflows_yours: true,
+            workflows_orchestrated: false,
+            scripts: true,
+            permission_rules: true,
+            budget_rules: true,
+            integrations: true,
+            app_preferences: true,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeftOutFinding {
+    pub fingerprint: String,
+    pub subject_kind: String,
+    pub subject_id: String,
+    pub secret_kind: String,
+    pub last4: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportCounts {
+    pub workspaces: usize,
+    pub projects: usize,
+    pub skills: usize,
+    pub phase_templates: usize,
+    pub permission_rules: usize,
+    pub budget_rules: usize,
+    pub scripts: usize,
+    pub tool_bindings: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportPreview {
+    pub counts: ExportCounts,
+    pub left_out_findings: Vec<LeftOutFinding>,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigExportError {
@@ -215,16 +370,74 @@ impl From<DbError> for ConfigExportError {
     }
 }
 
-// ---------------------------------------------------------------------------
-// export_config command
-// ---------------------------------------------------------------------------
+fn open_findings_for_groups(
+    conn: &rusqlite::Connection,
+    groups: &ExportGroups,
+) -> Result<Vec<LeftOutFinding>, ConfigExportError> {
+    let mut allowed_kinds: Vec<&str> = Vec::new();
+    if groups.scripts {
+        allowed_kinds.push("script");
+    }
+    if groups.workflows_yours || groups.workflows_orchestrated {
+        allowed_kinds.push("workflow-step");
+    }
+    if groups.profile {
+        allowed_kinds.push("profile");
+    }
+    if groups.workspaces {
+        allowed_kinds.push("reply-template");
+    }
+    if groups.permission_rules {
+        allowed_kinds.push("permission-rule");
+    }
+    if allowed_kinds.is_empty() {
+        return Ok(Vec::new());
+    }
+    let placeholders = allowed_kinds
+        .iter()
+        .map(|_| "?")
+        .collect::<Vec<_>>()
+        .join(", ");
+    let sql = format!(
+        "SELECT fingerprint, subject_kind, subject_id, secret_kind, last4
+         FROM security_findings
+         WHERE dismissed_at IS NULL AND resolved_at IS NULL
+           AND subject_kind IN ({placeholders})
+         ORDER BY first_seen_at DESC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let params = rusqlite::params_from_iter(allowed_kinds.iter());
+    let rows = stmt.query_map(params, |row| {
+        Ok(LeftOutFinding {
+            fingerprint: row.get(0)?,
+            subject_kind: row.get(1)?,
+            subject_id: row.get(2)?,
+            secret_kind: row.get(3)?,
+            last4: row.get(4)?,
+        })
+    })?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
 
-pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, ConfigExportError> {
-    // workspaces + overrides + projects
-    let workspaces = {
+fn build_bundle(
+    conn: &rusqlite::Connection,
+    groups: &ExportGroups,
+    leave_out: &HashSet<String>,
+) -> Result<ConfigBundle, ConfigExportError> {
+    let excluded_scripts: HashSet<String> = leave_out_subject_ids(conn, "script", leave_out)?;
+    let excluded_rules: HashSet<String> =
+        leave_out_subject_ids(conn, "permission-rule", leave_out)?;
+    let profile_excluded_workspaces: HashSet<String> =
+        leave_out_subject_ids(conn, "profile", leave_out)?;
+
+    let workspaces = if groups.workspaces {
         let mut stmt = conn.prepare(
             "SELECT id, name, created_at, updated_at,
-                    default_provider_id, default_branch_prefix
+                    default_provider_id, default_branch_prefix, default_verbosity,
+                    provider_bindings, task_models, role_models, parallel_agents,
+                    provider_pool, attribution_footer, reply_voice, reply_style_note,
+                    reply_template_fixed, reply_template_no_change, resolve_on_github,
+                    resolve_commit_style
              FROM workspaces
              WHERE deleted_at IS NULL AND disconnected_at IS NULL
              ORDER BY created_at ASC",
@@ -240,36 +453,92 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
                 overrides: WorkspaceOverridesBundle {
                     default_provider_id: row.get(4)?,
                     default_branch_prefix: row.get(5)?,
+                    default_verbosity: row.get(6)?,
+                    provider_bindings_json: row.get(7)?,
+                    task_models_json: row.get(8)?,
+                    role_models_json: row.get(9)?,
+                    parallel_agents: row.get::<_, Option<i64>>(10)?.map(|v| v != 0),
+                    provider_pool_json: row.get(11)?,
+                    attribution_footer: row.get::<_, Option<i64>>(12)?.map(|v| v != 0),
+                    reply_voice: row.get(13)?,
+                    reply_style_note: row.get(14)?,
+                    reply_template_fixed: row.get(15)?,
+                    reply_template_no_change: row.get(16)?,
+                    resolve_on_github: row.get::<_, Option<i64>>(17)?.map(|v| v != 0),
+                    resolve_commit_style: row.get(18)?,
                 },
+                profile: None,
             })
         })?;
         let mut workspaces = rows.collect::<Result<Vec<_>, _>>()?;
-        let mut project_stmt = conn.prepare(
-            "SELECT id, name, root_path, kind, created_at, updated_at
-             FROM projects
-             WHERE workspace_id = ?1 AND disconnected_at IS NULL
-             ORDER BY created_at ASC, id ASC",
-        )?;
-        for workspace in &mut workspaces {
-            let project_rows = project_stmt.query_map(rusqlite::params![workspace.id], |row| {
-                Ok(ProjectBundle {
-                    id: row.get(0)?,
-                    name: row.get(1)?,
-                    root_path: row.get(2)?,
-                    kind: row
-                        .get::<_, Option<String>>(3)?
-                        .unwrap_or_else(|| "repo".to_string()),
-                    created_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
-                    updated_at: ms_col_to_iso(row.get::<_, i64>(5).unwrap_or(0)),
-                })
-            })?;
-            workspace.projects = project_rows.collect::<Result<Vec<_>, _>>()?;
+
+        if groups.projects {
+            let mut project_stmt = conn.prepare(
+                "SELECT id, name, root_path, kind, created_at, updated_at,
+                        description, starred_at, base_branch, root_commit, remote_url
+                 FROM projects
+                 WHERE workspace_id = ?1 AND disconnected_at IS NULL
+                 ORDER BY created_at ASC, id ASC",
+            )?;
+            for workspace in &mut workspaces {
+                let project_rows =
+                    project_stmt.query_map(rusqlite::params![workspace.id], |row| {
+                        Ok(ProjectBundle {
+                            id: row.get(0)?,
+                            name: row.get(1)?,
+                            root_path: if groups.folder_paths {
+                                row.get(2)?
+                            } else {
+                                None
+                            },
+                            kind: row
+                                .get::<_, Option<String>>(3)?
+                                .unwrap_or_else(|| "repo".to_string()),
+                            created_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
+                            updated_at: ms_col_to_iso(row.get::<_, i64>(5).unwrap_or(0)),
+                            description: row.get(6)?,
+                            starred_at: row
+                                .get::<_, Option<i64>>(7)?
+                                .map(ms_col_to_iso),
+                            base_branch: row.get(8)?,
+                            root_commit: row.get(9)?,
+                            remote_url: row.get(10)?,
+                        })
+                    })?;
+                workspace.projects = project_rows.collect::<Result<Vec<_>, _>>()?;
+            }
+        }
+
+        if groups.profile {
+            let mut profile_stmt = conn.prepare(
+                "SELECT roles_json, about_work, working_rules, explain_more_json
+                 FROM workspace_profiles WHERE workspace_id = ?1",
+            )?;
+            for workspace in &mut workspaces {
+                if profile_excluded_workspaces.contains(&workspace.id) {
+                    continue;
+                }
+                let found = profile_stmt
+                    .query_row(rusqlite::params![workspace.id], |row| {
+                        Ok(ProfileBundle {
+                            roles_json: row.get(0)?,
+                            about_work: row.get(1)?,
+                            working_rules: row.get(2)?,
+                            explain_more_json: row.get(3)?,
+                        })
+                    })
+                    .ok();
+                workspace.profile = found;
+            }
         }
         workspaces
+    } else {
+        Vec::new()
     };
 
-    // skills
-    let skills = {
+    let live_workspace_ids: HashSet<String> = workspaces.iter().map(|w| w.id.clone()).collect();
+
+    let skills = if groups.workspaces {
         let mut stmt = conn.prepare(
             "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
                     created_at, updated_at
@@ -293,10 +562,14 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|skill| live_workspace_ids.contains(&skill.workspace_id))
+            .collect()
+    } else {
+        Vec::new()
     };
 
-    // workflows + steps
-    let phase_templates = {
+    let phase_templates = if groups.workflows_yours || groups.workflows_orchestrated {
         let mut stmt = conn.prepare(
             "SELECT id, workspace_id, name, description, created_at, updated_at,
                     is_preset, origin, goal, process_text
@@ -335,6 +608,16 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
                 goal,
                 process_text,
             ) = row?;
+            if !live_workspace_ids.contains(&workspace_id) {
+                continue;
+            }
+            let is_orchestrated = origin.as_deref() == Some("orchestrated");
+            if is_orchestrated && !groups.workflows_orchestrated {
+                continue;
+            }
+            if !is_orchestrated && !groups.workflows_yours {
+                continue;
+            }
             let mut def_stmt = conn.prepare(
                 "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override,
                         role, effort, expected_output, orchestrator_reason
@@ -374,10 +657,11 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             });
         }
         templates
+    } else {
+        Vec::new()
     };
 
-    // permission rules - global + workspace scope only (no session-scoped rules; sessions are ephemeral)
-    let permission_rules = {
+    let permission_rules = if groups.permission_rules {
         let mut stmt = conn.prepare(
             "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
@@ -406,10 +690,18 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|rule| match &rule.workspace_id {
+                Some(id) => live_workspace_ids.contains(id),
+                None => true,
+            })
+            .filter(|rule| !excluded_rules.contains(&rule.id))
+            .collect()
+    } else {
+        Vec::new()
     };
 
-    // budget rules
-    let budget_rules = {
+    let budget_rules = if groups.budget_rules {
         let mut stmt = conn.prepare(
             "SELECT id, provider, period, cap_usd, alert_threshold_pct, created_at
              FROM budget_rules
@@ -426,10 +718,60 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
+    } else {
+        Vec::new()
     };
 
-    // settings - only well-known keys (no api keys, no credentials)
-    let settings = {
+    let scripts = if groups.scripts {
+        let mut stmt = conn.prepare(
+            "SELECT id, workspace_id, name, body, created_at, updated_at
+             FROM workspace_scripts
+             WHERE workspace_id IN (
+               SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
+             )
+             ORDER BY workspace_id, sort_order ASC",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(ScriptBundle {
+                id: row.get(0)?,
+                workspace_id: row.get(1)?,
+                name: row.get(2)?,
+                body: row.get(3)?,
+                created_at: ms_col_to_iso(row.get(4)?),
+                updated_at: ms_col_to_iso(row.get(5)?),
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|script| live_workspace_ids.contains(&script.workspace_id))
+            .filter(|script| !excluded_scripts.contains(&script.id))
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    let tool_bindings = if groups.integrations {
+        let mut stmt = conn.prepare(
+            "SELECT workspace_id, provider, config
+             FROM workspace_integrations
+             WHERE workspace_id IN (
+               SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
+             )
+             ORDER BY workspace_id, provider",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(ToolBindingBundle {
+                workspace_id: row.get(0)?,
+                provider: row.get(1)?,
+                config_json: row.get::<_, Option<String>>(2)?.unwrap_or_else(|| "{}".to_string()),
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    } else {
+        Vec::new()
+    };
+
+    let app_preferences = if groups.app_preferences {
         fn get_setting(conn: &rusqlite::Connection, key: &str) -> Option<String> {
             conn.query_row(
                 "SELECT value FROM settings WHERE key = ?1 LIMIT 1",
@@ -438,9 +780,13 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             )
             .ok()
         }
-        SettingsBundle {
-            editor_binary: get_setting(&conn, "editor.binary"),
+        AppPreferencesBundle {
+            editor_binary: get_setting(conn, "editor.binary"),
+            editor_default: get_setting(conn, "editor.default"),
+            hidden_models_json: get_setting(conn, "providers.hiddenModels"),
         }
+    } else {
+        AppPreferencesBundle::default()
     };
 
     Ok(ConfigBundle {
@@ -451,13 +797,35 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
         phase_templates,
         permission_rules,
         budget_rules,
-        settings,
+        scripts,
+        tool_bindings,
+        app_preferences,
     })
 }
 
-// ---------------------------------------------------------------------------
-// import_config command
-// ---------------------------------------------------------------------------
+fn leave_out_subject_ids(
+    conn: &rusqlite::Connection,
+    subject_kind: &str,
+    leave_out: &HashSet<String>,
+) -> Result<HashSet<String>, ConfigExportError> {
+    if leave_out.is_empty() {
+        return Ok(HashSet::new());
+    }
+    let mut stmt = conn.prepare(
+        "SELECT subject_id, fingerprint FROM security_findings WHERE subject_kind = ?1",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![subject_kind], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
+    let mut excluded = HashSet::new();
+    for row in rows {
+        let (subject_id, fingerprint) = row?;
+        if leave_out.contains(&fingerprint) {
+            excluded.insert(subject_id);
+        }
+    }
+    Ok(excluded)
+}
 
 #[derive(Debug, Serialize)]
 pub struct ValidationError {
@@ -465,7 +833,7 @@ pub struct ValidationError {
     pub message: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Default)]
 pub struct ImportStats {
     pub workspaces: usize,
     pub skills: usize,
@@ -475,6 +843,11 @@ pub struct ImportStats {
     pub permission_rules: usize,
     #[serde(rename = "budgetRules")]
     pub budget_rules: usize,
+    pub scripts: usize,
+    #[serde(rename = "toolBindings")]
+    pub tool_bindings: usize,
+    #[serde(rename = "unresolvedProjects")]
+    pub unresolved_projects: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -484,21 +857,8 @@ pub struct ImportResult {
     pub stats: ImportStats,
 }
 
-pub fn import_config(
-    conn: &rusqlite::Connection,
-    bundle: ConfigBundle,
-) -> Result<ImportResult, ConfigExportError> {
-    // Validate schema version.
-    if bundle.schema_version != SCHEMA_VERSION && bundle.schema_version != LEGACY_SCHEMA_VERSION {
-        return Err(ConfigExportError::SchemaMismatch {
-            got: bundle.schema_version,
-            expected: SCHEMA_VERSION,
-        });
-    }
-
+fn validate_bundle(bundle: &ConfigBundle) -> Vec<ValidationError> {
     let mut errors: Vec<ValidationError> = Vec::new();
-
-    // Basic validation.
     for (i, w) in bundle.workspaces.iter().enumerate() {
         if w.id.trim().is_empty() {
             errors.push(ValidationError {
@@ -537,44 +897,76 @@ pub fn import_config(
         if b.alert_threshold_pct < 0.0 || b.alert_threshold_pct > 100.0 {
             errors.push(ValidationError {
                 field: format!("budgetRules[{i}].alertThresholdPct"),
-                message: "alertThresholdPct must be 0–100".to_string(),
+                message: "alertThresholdPct must be 0-100".to_string(),
             });
         }
     }
+    errors
+}
 
+fn apply_bundle(
+    conn: &rusqlite::Connection,
+    mut bundle: ConfigBundle,
+    workspace_targets: &HashMap<String, String>,
+    resolved_project_paths: &HashMap<String, String>,
+) -> Result<ImportResult, ConfigExportError> {
+    if !is_supported_schema_version(bundle.schema_version) {
+        return Err(ConfigExportError::SchemaMismatch {
+            got: bundle.schema_version,
+            expected: SCHEMA_VERSION,
+        });
+    }
+
+    for workspace in &mut bundle.workspaces {
+        if let Some(target) = workspace_targets.get(&workspace.id) {
+            workspace.id = target.clone();
+        }
+    }
+
+    let errors = validate_bundle(&bundle);
     if !errors.is_empty() {
         return Ok(ImportResult {
             ok: false,
             errors,
-            stats: ImportStats {
-                workspaces: 0,
-                skills: 0,
-                phase_templates: 0,
-                permission_rules: 0,
-                budget_rules: 0,
-            },
+            stats: ImportStats::default(),
         });
     }
 
-    // Apply in a single transaction; rollback on any failure.
     conn.execute_batch("BEGIN")?;
 
     let result = (|| -> Result<ImportStats, rusqlite::Error> {
         let now_ms = crate::util::now_ms();
+        let mut unresolved_projects = 0usize;
 
-        // Workspaces - upsert (preserve existing data, add missing).
         for w in &bundle.workspaces {
             let created_ms = iso_to_ms(&w.created_at).unwrap_or(now_ms);
             let updated_ms = iso_to_ms(&w.updated_at).unwrap_or(now_ms);
             conn.execute(
                 "INSERT INTO workspaces
                    (id, name, slug, created_at, updated_at,
-                    default_provider_id, default_branch_prefix)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                    default_provider_id, default_branch_prefix, default_verbosity,
+                    provider_bindings, task_models, role_models, parallel_agents,
+                    provider_pool, attribution_footer, reply_voice, reply_style_note,
+                    reply_template_fixed, reply_template_no_change, resolve_on_github,
+                    resolve_commit_style)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
                  ON CONFLICT(id) DO UPDATE SET
                    name                      = excluded.name,
                    default_provider_id       = excluded.default_provider_id,
                    default_branch_prefix     = excluded.default_branch_prefix,
+                   default_verbosity         = excluded.default_verbosity,
+                   provider_bindings         = excluded.provider_bindings,
+                   task_models               = excluded.task_models,
+                   role_models               = excluded.role_models,
+                   parallel_agents           = excluded.parallel_agents,
+                   provider_pool             = excluded.provider_pool,
+                   attribution_footer        = excluded.attribution_footer,
+                   reply_voice               = excluded.reply_voice,
+                   reply_style_note          = excluded.reply_style_note,
+                   reply_template_fixed      = excluded.reply_template_fixed,
+                   reply_template_no_change  = excluded.reply_template_no_change,
+                   resolve_on_github         = excluded.resolve_on_github,
+                   resolve_commit_style      = excluded.resolve_commit_style,
                    updated_at                = excluded.updated_at",
                 rusqlite::params![
                     w.id,
@@ -584,19 +976,63 @@ pub fn import_config(
                     updated_ms,
                     w.overrides.default_provider_id,
                     w.overrides.default_branch_prefix,
+                    w.overrides.default_verbosity,
+                    w.overrides.provider_bindings_json,
+                    w.overrides.task_models_json,
+                    w.overrides.role_models_json,
+                    w.overrides.parallel_agents.map(|v| if v { 1 } else { 0 }),
+                    w.overrides.provider_pool_json,
+                    w.overrides.attribution_footer.map(|v| if v { 1 } else { 0 }),
+                    w.overrides.reply_voice,
+                    w.overrides.reply_style_note,
+                    w.overrides.reply_template_fixed,
+                    w.overrides.reply_template_no_change,
+                    w.overrides.resolve_on_github.map(|v| if v { 1 } else { 0 }),
+                    w.overrides.resolve_commit_style,
                 ],
             )?;
+
+            if let Some(profile) = &w.profile {
+                conn.execute(
+                    "INSERT INTO workspace_profiles
+                       (workspace_id, roles_json, about_work, working_rules, explain_more_json, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(workspace_id) DO UPDATE SET
+                       roles_json = excluded.roles_json,
+                       about_work = excluded.about_work,
+                       working_rules = excluded.working_rules,
+                       explain_more_json = excluded.explain_more_json,
+                       updated_at = excluded.updated_at",
+                    rusqlite::params![
+                        w.id,
+                        profile.roles_json,
+                        profile.about_work,
+                        profile.working_rules,
+                        profile.explain_more_json,
+                        now_ms,
+                    ],
+                )?;
+            }
+
             for p in workspace_projects(w) {
                 let updated_at_ms = iso_to_ms(&p.updated_at).unwrap_or(updated_ms);
-                let target_root_path = normalized_root_path(&p.root_path);
+                let root_path = match &p.root_path {
+                    Some(path) => Some(path.clone()),
+                    None => resolved_project_paths.get(&p.id).cloned(),
+                };
+                let Some(root_path) = root_path else {
+                    unresolved_projects += 1;
+                    continue;
+                };
+                let target_root_path = normalized_root_path(&root_path);
                 let existing_id: Option<String> = {
                     let mut stmt = conn.prepare("SELECT id, root_path FROM projects")?;
                     let mut rows = stmt.query([])?;
                     let mut found = None;
                     while let Some(row) = rows.next()? {
                         let id: String = row.get(0)?;
-                        let root_path: String = row.get(1)?;
-                        if normalized_root_path(&root_path) == target_root_path {
+                        let existing_root_path: String = row.get(1)?;
+                        if normalized_root_path(&existing_root_path) == target_root_path {
                             found = Some(id);
                             break;
                         }
@@ -606,29 +1042,47 @@ pub fn import_config(
                 match existing_id {
                     Some(existing) if existing != p.id => {
                         conn.execute(
-                            "UPDATE projects SET workspace_id = ?1, name = ?2, kind = ?3, updated_at = ?4
-                             WHERE id = ?5",
-                            rusqlite::params![w.id, p.name, p.kind, updated_at_ms, existing],
+                            "UPDATE projects SET workspace_id = ?1, name = ?2, kind = ?3, updated_at = ?4,
+                               description = ?5, starred_at = ?6, base_branch = ?7,
+                               root_commit = ?8, remote_url = ?9
+                             WHERE id = ?10",
+                            rusqlite::params![
+                                w.id, p.name, p.kind, updated_at_ms,
+                                p.description, p.starred_at.as_deref().and_then(iso_to_ms),
+                                p.base_branch, p.root_commit, p.remote_url,
+                                existing,
+                            ],
                         )?;
                     }
                     _ => {
                         conn.execute(
                             "INSERT INTO projects
-                               (id, workspace_id, name, root_path, kind, created_at, updated_at)
-                             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                               (id, workspace_id, name, root_path, kind, created_at, updated_at,
+                                description, starred_at, base_branch, root_commit, remote_url)
+                             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
                              ON CONFLICT(id) DO UPDATE SET
-                               name       = excluded.name,
-                               root_path  = excluded.root_path,
-                               kind       = excluded.kind,
-                               updated_at = excluded.updated_at",
+                               name         = excluded.name,
+                               root_path    = excluded.root_path,
+                               kind         = excluded.kind,
+                               updated_at   = excluded.updated_at,
+                               description  = excluded.description,
+                               starred_at   = excluded.starred_at,
+                               base_branch  = excluded.base_branch,
+                               root_commit  = excluded.root_commit,
+                               remote_url   = excluded.remote_url",
                             rusqlite::params![
                                 p.id,
                                 w.id,
                                 p.name,
-                                p.root_path,
+                                root_path,
                                 p.kind,
                                 iso_to_ms(&p.created_at).unwrap_or(created_ms),
                                 updated_at_ms,
+                                p.description,
+                                p.starred_at.as_deref().and_then(iso_to_ms),
+                                p.base_branch,
+                                p.root_commit,
+                                p.remote_url,
                             ],
                         )?;
                     }
@@ -636,7 +1090,6 @@ pub fn import_config(
             }
         }
 
-        // Skills - upsert.
         for s in &bundle.skills {
             conn.execute(
                 "INSERT INTO skills
@@ -658,7 +1111,6 @@ pub fn import_config(
             )?;
         }
 
-        // Phase templates + definitions - upsert.
         for t in &bundle.phase_templates {
             conn.execute(
                 "INSERT INTO workflows
@@ -711,7 +1163,6 @@ pub fn import_config(
             }
         }
 
-        // Permission rules - upsert (global + workspace only).
         for r in &bundle.permission_rules {
             conn.execute(
                 "INSERT INTO permission_rules
@@ -741,7 +1192,6 @@ pub fn import_config(
             )?;
         }
 
-        // Budget rules - upsert.
         for b in &bundle.budget_rules {
             conn.execute(
                 "INSERT INTO budget_rules (id, provider, period, cap_usd, alert_threshold_pct, created_at)
@@ -762,9 +1212,46 @@ pub fn import_config(
             )?;
         }
 
-        // Settings - upsert only non-null values.
-        let setting_pairs: &[(&str, Option<&str>)] =
-            &[("editor.binary", bundle.settings.editor_binary.as_deref())];
+        for s in &bundle.scripts {
+            conn.execute(
+                "INSERT INTO workspace_scripts (id, workspace_id, name, body, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(id) DO UPDATE SET
+                   name       = excluded.name,
+                   body       = excluded.body,
+                   updated_at = excluded.updated_at",
+                rusqlite::params![
+                    s.id,
+                    s.workspace_id,
+                    s.name,
+                    s.body,
+                    iso_to_ms(&s.created_at).unwrap_or(now_ms),
+                    iso_to_ms(&s.updated_at).unwrap_or(now_ms),
+                ],
+            )?;
+        }
+
+        for t in &bundle.tool_bindings {
+            conn.execute(
+                "INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
+                 ON CONFLICT(workspace_id, provider) DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at",
+                rusqlite::params![
+                    format!("{}-{}", t.workspace_id, t.provider),
+                    t.workspace_id,
+                    t.provider,
+                    t.config_json,
+                    format!("integration:{}:{}", t.workspace_id, t.provider),
+                    now_ms,
+                ],
+            )?;
+        }
+
+        let setting_pairs: &[(&str, Option<&str>)] = &[
+            ("editor.binary", bundle.app_preferences.editor_binary.as_deref()),
+            ("editor.default", bundle.app_preferences.editor_default.as_deref()),
+            ("providers.hiddenModels", bundle.app_preferences.hidden_models_json.as_deref()),
+        ];
         for (key, val) in setting_pairs {
             if let Some(v) = val {
                 conn.execute(
@@ -782,6 +1269,9 @@ pub fn import_config(
             phase_templates: bundle.phase_templates.len(),
             permission_rules: bundle.permission_rules.len(),
             budget_rules: bundle.budget_rules.len(),
+            scripts: bundle.scripts.len(),
+            tool_bindings: bundle.tool_bindings.len(),
+            unresolved_projects,
         })
     })();
 
@@ -801,9 +1291,139 @@ pub fn import_config(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportManifest {
+    pub schema_version: u32,
+    pub exported_at: String,
+    pub workspace_count: usize,
+    pub project_count: usize,
+    pub workflow_count: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceMatch {
+    pub bundle_id: String,
+    pub name: String,
+    pub existing_id: Option<String>,
+    pub action: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectMatch {
+    pub bundle_project_id: String,
+    pub name: String,
+    pub has_path: bool,
+    pub resolved_path: Option<String>,
+    pub verdict: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportPreview {
+    pub manifest: ImportManifest,
+    pub workspace_matches: Vec<WorkspaceMatch>,
+    pub project_matches: Vec<ProjectMatch>,
+}
+
+fn verdict_label(verdict: &MovedProjectVerdict) -> String {
+    match verdict {
+        MovedProjectVerdict::SameRepository => "same_repository".to_string(),
+        MovedProjectVerdict::SameNameUnconfirmed => "same_name_unconfirmed".to_string(),
+        MovedProjectVerdict::DifferentRepository => "different_repository".to_string(),
+        MovedProjectVerdict::NotFound => "not_found".to_string(),
+    }
+}
+
+fn build_import_preview(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+    project_parent: Option<&str>,
+) -> Result<ImportPreview, ConfigExportError> {
+    let project_count: usize = bundle.workspaces.iter().map(|w| workspace_projects(w).len()).sum();
+    let manifest = ImportManifest {
+        schema_version: bundle.schema_version,
+        exported_at: bundle.exported_at.clone(),
+        workspace_count: bundle.workspaces.len(),
+        project_count,
+        workflow_count: bundle.phase_templates.len(),
+    };
+
+    let mut workspace_matches = Vec::new();
+    for w in &bundle.workspaces {
+        let existing_by_id: Option<String> = conn
+            .query_row(
+                "SELECT id FROM workspaces WHERE id = ?1",
+                rusqlite::params![w.id],
+                |row| row.get(0),
+            )
+            .ok();
+        let existing_by_name: Option<String> = if existing_by_id.is_some() {
+            None
+        } else {
+            conn.query_row(
+                "SELECT id FROM workspaces WHERE name = ?1 AND deleted_at IS NULL",
+                rusqlite::params![w.name],
+                |row| row.get(0),
+            )
+            .ok()
+        };
+        let existing_id = existing_by_id.or(existing_by_name);
+        workspace_matches.push(WorkspaceMatch {
+            bundle_id: w.id.clone(),
+            name: w.name.clone(),
+            existing_id: existing_id.clone(),
+            action: if existing_id.is_some() { "merge".to_string() } else { "add".to_string() },
+        });
+    }
+
+    let mut project_matches = Vec::new();
+    let mut path_less_inputs: Vec<MovedProjectInput> = Vec::new();
+    for w in &bundle.workspaces {
+        for p in workspace_projects(w) {
+            if p.root_path.is_none() {
+                path_less_inputs.push(MovedProjectInput {
+                    id: p.id.clone(),
+                    name: p.name.clone(),
+                    root_commit: p.root_commit.clone(),
+                    remote_url: p.remote_url.clone(),
+                });
+            }
+        }
+    }
+    let found_matches = match project_parent {
+        Some(parent) if !path_less_inputs.is_empty() => find_moved_projects_blocking(
+            FindMovedProjectsArgs { parent: parent.to_string(), projects: path_less_inputs },
+        ),
+        _ => Vec::new(),
+    };
+    for w in &bundle.workspaces {
+        for p in workspace_projects(w) {
+            if let Some(path) = &p.root_path {
+                project_matches.push(ProjectMatch {
+                    bundle_project_id: p.id.clone(),
+                    name: p.name.clone(),
+                    has_path: true,
+                    resolved_path: Some(path.clone()),
+                    verdict: "same_repository".to_string(),
+                });
+                continue;
+            }
+            let found = found_matches.iter().find(|m| m.project_id == p.id);
+            project_matches.push(ProjectMatch {
+                bundle_project_id: p.id.clone(),
+                name: p.name.clone(),
+                has_path: false,
+                resolved_path: found.and_then(|m| m.path.clone()),
+                verdict: found.map(|m| verdict_label(&m.verdict)).unwrap_or_else(|| "not_found".to_string()),
+            });
+        }
+    }
+
+    Ok(ImportPreview { manifest, workspace_matches, project_matches })
+}
 
 fn ms_col_to_iso(ms: i64) -> String {
     crate::util::ms_to_iso(ms)
@@ -849,6 +1469,11 @@ fn workspace_projects(workspace: &WorkspaceBundle) -> Vec<ProjectBundle> {
                 name: project.name.clone(),
                 root_path: project.root_path.clone(),
                 kind: normalized_kind(&project.kind),
+                description: project.description.clone(),
+                starred_at: project.starred_at.clone(),
+                base_branch: project.base_branch.clone(),
+                root_commit: project.root_commit.clone(),
+                remote_url: project.remote_url.clone(),
                 created_at: project.created_at.clone(),
                 updated_at: project.updated_at.clone(),
             })
@@ -858,8 +1483,13 @@ fn workspace_projects(workspace: &WorkspaceBundle) -> Vec<ProjectBundle> {
         Some(root_path) if !root_path.trim().is_empty() => vec![ProjectBundle {
             id: format!("{}-project", workspace.id),
             name: workspace.name.clone(),
-            root_path: root_path.clone(),
+            root_path: Some(root_path.clone()),
             kind: "repo".to_string(),
+            description: None,
+            starred_at: None,
+            base_branch: None,
+            root_commit: None,
+            remote_url: None,
             created_at: workspace.created_at.clone(),
             updated_at: workspace.updated_at.clone(),
         }],
@@ -881,10 +1511,6 @@ fn normalized_root_path(path: &str) -> String {
     }
     normalized
 }
-
-// ---------------------------------------------------------------------------
-// File-based commands (avoid requiring tauri-plugin-fs on the JS side)
-// ---------------------------------------------------------------------------
 
 fn write_config_file(path: &str, json: &str) -> Result<(), ConfigExportError> {
     use std::io::Write;
@@ -909,11 +1535,45 @@ fn write_config_file(path: &str, json: &str) -> Result<(), ConfigExportError> {
 }
 
 #[tauri::command]
-pub async fn export_config_to_file(app: AppHandle, path: String) -> Result<(), ConfigExportError> {
+pub async fn config_export_preview(
+    app: AppHandle,
+    groups: ExportGroups,
+) -> Result<ExportPreview, ConfigExportError> {
     tauri::async_runtime::spawn_blocking(move || {
         let db = app.state::<Db>();
         let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-        let bundle = export_config(&conn)?;
+        let left_out_findings = open_findings_for_groups(&conn, &groups)?;
+        let bundle = build_bundle(&conn, &groups, &HashSet::new())?;
+        Ok(ExportPreview {
+            counts: ExportCounts {
+                workspaces: bundle.workspaces.len(),
+                projects: bundle.workspaces.iter().map(|w| w.projects.len()).sum(),
+                skills: bundle.skills.len(),
+                phase_templates: bundle.phase_templates.len(),
+                permission_rules: bundle.permission_rules.len(),
+                budget_rules: bundle.budget_rules.len(),
+                scripts: bundle.scripts.len(),
+                tool_bindings: bundle.tool_bindings.len(),
+            },
+            left_out_findings,
+        })
+    })
+    .await
+    .map_err(|e| ConfigExportError::Validation(e.to_string()))?
+}
+
+#[tauri::command]
+pub async fn config_export_write(
+    app: AppHandle,
+    path: String,
+    groups: ExportGroups,
+    #[allow(non_snake_case)] leaveOut: Vec<String>,
+) -> Result<(), ConfigExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let db = app.state::<Db>();
+        let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
+        let leave_out: HashSet<String> = leaveOut.into_iter().collect();
+        let bundle = build_bundle(&conn, &groups, &leave_out)?;
         drop(conn);
         let json = serde_json::to_string_pretty(&bundle)?;
         write_config_file(&path, &json)
@@ -923,9 +1583,35 @@ pub async fn export_config_to_file(app: AppHandle, path: String) -> Result<(), C
 }
 
 #[tauri::command]
-pub async fn import_config_from_file(
+pub async fn config_import_preview(
     app: AppHandle,
     path: String,
+    #[allow(non_snake_case)] projectParent: Option<String>,
+) -> Result<ImportPreview, ConfigExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let raw = std::fs::read_to_string(&path)
+            .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
+        let bundle: ConfigBundle = serde_json::from_str(&raw)?;
+        if !is_supported_schema_version(bundle.schema_version) {
+            return Err(ConfigExportError::SchemaMismatch {
+                got: bundle.schema_version,
+                expected: SCHEMA_VERSION,
+            });
+        }
+        let db = app.state::<Db>();
+        let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
+        build_import_preview(&conn, &bundle, projectParent.as_deref())
+    })
+    .await
+    .map_err(|e| ConfigExportError::Validation(e.to_string()))?
+}
+
+#[tauri::command]
+pub async fn config_import_apply(
+    app: AppHandle,
+    path: String,
+    #[allow(non_snake_case)] workspaceTargets: HashMap<String, String>,
+    #[allow(non_snake_case)] resolvedProjectPaths: HashMap<String, String>,
 ) -> Result<ImportResult, ConfigExportError> {
     tauri::async_runtime::spawn_blocking(move || {
         let raw = std::fs::read_to_string(&path)
@@ -933,15 +1619,11 @@ pub async fn import_config_from_file(
         let bundle: ConfigBundle = serde_json::from_str(&raw)?;
         let db = app.state::<Db>();
         let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-        import_config(&conn, bundle)
+        apply_bundle(&conn, bundle, &workspaceTargets, &resolvedProjectPaths)
     })
     .await
     .map_err(|e| ConfigExportError::Validation(e.to_string()))?
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -956,9 +1638,21 @@ mod tests {
     }
 
     #[test]
-    fn schema_version_is_two() {
-        assert_eq!(SCHEMA_VERSION, 2);
-        assert_eq!(LEGACY_SCHEMA_VERSION, 1);
+    fn schema_version_is_three() {
+        assert_eq!(SCHEMA_VERSION, 3);
+        assert!(is_supported_schema_version(1));
+        assert!(is_supported_schema_version(2));
+        assert!(is_supported_schema_version(3));
+        assert!(!is_supported_schema_version(99));
+    }
+
+    #[test]
+    fn default_groups_exclude_folder_paths_and_orchestrated_workflows() {
+        let groups = ExportGroups::default();
+        assert!(groups.workspaces);
+        assert!(!groups.folder_paths);
+        assert!(groups.workflows_yours);
+        assert!(!groups.workflows_orchestrated);
     }
 
     #[test]
@@ -970,48 +1664,51 @@ mod tests {
         assert_eq!(workspace_slug("  ", "1234abcd-0000"), "workspace-1234abcd");
     }
 
-    #[test]
-    fn legacy_root_path_becomes_the_single_project() {
-        let workspace = WorkspaceBundle {
+    fn bundled_workspace(root_path: Option<&str>, projects: Vec<ProjectBundle>) -> WorkspaceBundle {
+        WorkspaceBundle {
             id: "workspace-1".to_string(),
             name: "Goodboy".to_string(),
-            root_path: Some("/Users/dev/goodboy".to_string()),
-            projects: vec![],
+            root_path: root_path.map(|s| s.to_string()),
+            projects,
             created_at: "2026-01-01T00:00:00Z".to_string(),
             updated_at: "2026-01-02T00:00:00Z".to_string(),
-            overrides: WorkspaceOverridesBundle {
-                default_provider_id: None,
-                default_branch_prefix: None,
-            },
-        };
+            overrides: WorkspaceOverridesBundle::default(),
+            profile: None,
+        }
+    }
+
+    fn bundled_project(id: &str, root_path: &str, kind: &str) -> ProjectBundle {
+        ProjectBundle {
+            id: id.to_string(),
+            name: "desktop".to_string(),
+            root_path: Some(root_path.to_string()),
+            kind: kind.to_string(),
+            description: None,
+            starred_at: None,
+            base_branch: None,
+            root_commit: None,
+            remote_url: None,
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-02T00:00:00Z".to_string(),
+        }
+    }
+
+    #[test]
+    fn legacy_root_path_becomes_the_single_project() {
+        let workspace = bundled_workspace(Some("/Users/dev/goodboy"), vec![]);
         let projects = workspace_projects(&workspace);
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].id, "workspace-1-project");
-        assert_eq!(projects[0].root_path, "/Users/dev/goodboy");
+        assert_eq!(projects[0].root_path, Some("/Users/dev/goodboy".to_string()));
         assert_eq!(projects[0].kind, "repo");
     }
 
     #[test]
     fn bundled_projects_win_over_a_legacy_root_path() {
-        let workspace = WorkspaceBundle {
-            id: "workspace-1".to_string(),
-            name: "Goodboy".to_string(),
-            root_path: Some("/Users/dev/legacy".to_string()),
-            projects: vec![ProjectBundle {
-                id: "project-1".to_string(),
-                name: "desktop".to_string(),
-                root_path: "/Users/dev/goodboy".to_string(),
-                kind: "unknown".to_string(),
-                created_at: "2026-01-01T00:00:00Z".to_string(),
-                updated_at: "2026-01-02T00:00:00Z".to_string(),
-            }],
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-            updated_at: "2026-01-02T00:00:00Z".to_string(),
-            overrides: WorkspaceOverridesBundle {
-                default_provider_id: None,
-                default_branch_prefix: None,
-            },
-        };
+        let workspace = bundled_workspace(
+            Some("/Users/dev/legacy"),
+            vec![bundled_project("project-1", "/Users/dev/goodboy", "unknown")],
+        );
         let projects = workspace_projects(&workspace);
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].id, "project-1");
@@ -1028,17 +1725,19 @@ mod tests {
             phase_templates: vec![],
             permission_rules: vec![],
             budget_rules: vec![],
-            settings: SettingsBundle {
+            scripts: vec![],
+            tool_bindings: vec![],
+            app_preferences: AppPreferencesBundle {
                 editor_binary: Some("code".to_string()),
+                editor_default: None,
+                hidden_models_json: None,
             },
         };
         let json = serde_json::to_string(&bundle).expect("serialize failed");
-        // Must not contain any credential-like keys.
         assert!(!json.contains("apiKey"), "json leaked apiKey");
         assert!(!json.contains("api_key"), "json leaked api_key");
-        assert!(!json.contains("secret"), "json leaked secret");
         assert!(!json.contains("password"), "json leaked password");
-        assert!(!json.contains("token"), "json leaked token");
+        assert!(!json.contains("credential"), "json leaked credential");
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&json).expect("parse failed")
                 ["schemaVersion"],
@@ -1048,58 +1747,7 @@ mod tests {
 
     #[test]
     fn import_rejects_wrong_schema_version() {
-        let bundle = ConfigBundle {
-            schema_version: 99,
-            exported_at: "2026-01-01T00:00:00Z".to_string(),
-            workspaces: vec![],
-            skills: vec![],
-            phase_templates: vec![],
-            permission_rules: vec![],
-            budget_rules: vec![],
-            settings: SettingsBundle {
-                editor_binary: None,
-            },
-        };
-        // Simulate the schema version check (no DB needed).
-        let result: Result<(), _> = if bundle.schema_version != SCHEMA_VERSION {
-            Err(ConfigExportError::SchemaMismatch {
-                got: bundle.schema_version,
-                expected: SCHEMA_VERSION,
-            })
-        } else {
-            Ok(())
-        };
-        assert!(result.is_err(), "should reject wrong schema version");
-        let err = result.unwrap_err();
-        assert!(
-            err.to_string().contains("99"),
-            "error should mention got version"
-        );
-    }
-
-    #[test]
-    fn import_validates_bad_permission_rule() {
-        let bad_rule = PermissionRuleBundle {
-            id: "r1".to_string(),
-            scope: "session".to_string(), // not allowed in export
-            workspace_id: None,
-            session_id: Some("s1".to_string()),
-            pattern_tool: "Bash".to_string(),
-            pattern_args_matcher: None,
-            decision: "allow".to_string(),
-            priority: 0,
-            created_at: "2026-01-01T00:00:00Z".to_string(),
-            updated_at: "2026-01-01T00:00:00Z".to_string(),
-        };
-        let mut errors: Vec<ValidationError> = Vec::new();
-        if !matches!(bad_rule.scope.as_str(), "global" | "workspace") {
-            errors.push(ValidationError {
-                field: "permissionRules[0].scope".to_string(),
-                message: format!("invalid scope '{}'", bad_rule.scope),
-            });
-        }
-        assert_eq!(errors.len(), 1);
-        assert!(errors[0].message.contains("session"));
+        assert!(!is_supported_schema_version(99));
     }
 
     fn export_conn() -> rusqlite::Connection {
@@ -1108,13 +1756,17 @@ mod tests {
             "CREATE TABLE workspaces (
                 id TEXT PRIMARY KEY, name TEXT NOT NULL, slug TEXT, created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL, default_provider_id TEXT, default_workflow_id TEXT,
-                default_branch_prefix TEXT, parallel_enabled INTEGER, deleted_at INTEGER,
-                disconnected_at INTEGER
+                default_branch_prefix TEXT, default_verbosity TEXT, provider_bindings TEXT,
+                task_models TEXT, role_models TEXT, parallel_agents INTEGER, provider_pool TEXT,
+                attribution_footer INTEGER, reply_voice TEXT, reply_style_note TEXT,
+                reply_template_fixed TEXT, reply_template_no_change TEXT, resolve_on_github INTEGER,
+                resolve_commit_style TEXT, deleted_at INTEGER, disconnected_at INTEGER
             );
             CREATE TABLE projects (
                 id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT NOT NULL, root_path TEXT NOT NULL,
                 kind TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
-                disconnected_at INTEGER
+                disconnected_at INTEGER, description TEXT, starred_at INTEGER, base_branch TEXT,
+                root_commit TEXT, remote_url TEXT
             );
             CREATE TABLE skills (
                 id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL,
@@ -1142,6 +1794,25 @@ mod tests {
             CREATE TABLE budget_rules (
                 id TEXT PRIMARY KEY, provider TEXT, period TEXT NOT NULL, cap_usd REAL NOT NULL,
                 alert_threshold_pct REAL, created_at INTEGER NOT NULL
+            );
+            CREATE TABLE workspace_scripts (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, body TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE workspace_integrations (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, provider TEXT NOT NULL,
+                config TEXT NOT NULL DEFAULT '{}', credential_key TEXT NOT NULL,
+                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                UNIQUE (workspace_id, provider)
+            );
+            CREATE TABLE workspace_profiles (
+                workspace_id TEXT PRIMARY KEY, roles_json TEXT, about_work TEXT, working_rules TEXT,
+                explain_more_json TEXT, updated_at INTEGER
+            );
+            CREATE TABLE security_findings (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, project_id TEXT, subject_kind TEXT NOT NULL,
+                subject_id TEXT NOT NULL, secret_kind TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                last4 TEXT NOT NULL, first_seen_at INTEGER NOT NULL, dismissed_at INTEGER, resolved_at INTEGER
             );
             CREATE TABLE settings (
                 key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL
@@ -1180,7 +1851,7 @@ mod tests {
                ('rule-gone', 'workspace', 'gone', NULL, 'Bash', NULL, 'allow', 0, 1, 1);",
         )
         .unwrap();
-        let bundle = export_config(&conn).expect("export failed");
+        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
         assert_eq!(
             bundle
                 .skills
@@ -1207,6 +1878,78 @@ mod tests {
     }
 
     #[test]
+    fn folder_paths_group_off_by_default_omits_project_root_path() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+             INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+             VALUES ('p', 'w', 'ledger-core', '/nerd/ledger-core', 'repo', 1, 1);",
+        )
+        .unwrap();
+        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        assert_eq!(bundle.workspaces[0].projects[0].root_path, None);
+
+        let mut with_paths = ExportGroups::default();
+        with_paths.folder_paths = true;
+        let bundle = build_bundle(&conn, &with_paths, &HashSet::new()).expect("export failed");
+        assert_eq!(
+            bundle.workspaces[0].projects[0].root_path,
+            Some("/nerd/ledger-core".to_string())
+        );
+    }
+
+    #[test]
+    fn orchestrated_workflows_stay_out_unless_selected() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+             INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at, origin)
+             VALUES
+               ('yours', 'w', 'Mine', 'd', 1, 1, NULL),
+               ('orchestrated', 'w', 'Auto', 'd', 1, 1, 'orchestrated');",
+        )
+        .unwrap();
+        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        assert_eq!(
+            bundle.phase_templates.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(),
+            vec!["yours"]
+        );
+
+        let mut with_orchestrated = ExportGroups::default();
+        with_orchestrated.workflows_orchestrated = true;
+        let bundle = build_bundle(&conn, &with_orchestrated, &HashSet::new()).expect("export failed");
+        let mut ids = bundle.phase_templates.iter().map(|t| t.id.as_str()).collect::<Vec<_>>();
+        ids.sort_unstable();
+        assert_eq!(ids, vec!["orchestrated", "yours"]);
+    }
+
+    #[test]
+    fn preview_reports_open_findings_the_writer_can_leave_out() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+             INSERT INTO workspace_scripts (id, workspace_id, name, body, created_at, updated_at)
+             VALUES ('deploy', 'w', 'deploy', 'DEPLOY_TOKEN=ghp_secretvalue', 1, 1);
+             INSERT INTO security_findings
+               (id, workspace_id, subject_kind, subject_id, secret_kind, fingerprint, last4, first_seen_at)
+             VALUES ('finding-1', 'w', 'script', 'deploy', 'github-token', 'fp-1', '3f9a', 1);",
+        )
+        .unwrap();
+
+        let preview = open_findings_for_groups(&conn, &ExportGroups::default()).expect("preview failed");
+        assert_eq!(preview.len(), 1);
+        assert_eq!(preview[0].fingerprint, "fp-1");
+
+        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        assert_eq!(bundle.scripts.len(), 1, "nothing is left out until the writer names a fingerprint");
+
+        let mut leave_out = HashSet::new();
+        leave_out.insert("fp-1".to_string());
+        let bundle = build_bundle(&conn, &ExportGroups::default(), &leave_out).expect("export failed");
+        assert!(bundle.scripts.is_empty(), "the named fingerprint's script is left out");
+    }
+
+    #[test]
     fn import_relinks_a_colliding_project_to_the_importing_workspace() {
         let conn = export_conn();
         conn.execute_batch(
@@ -1224,31 +1967,22 @@ mod tests {
                 id: "importing".to_string(),
                 name: "Importing".to_string(),
                 root_path: None,
-                projects: vec![ProjectBundle {
-                    id: "imported-project".to_string(),
-                    name: "new-name".to_string(),
-                    root_path: "/repo".to_string(),
-                    kind: "repo".to_string(),
-                    created_at: "2026-01-01T00:00:00Z".to_string(),
-                    updated_at: "2026-01-01T00:00:00Z".to_string(),
-                }],
+                projects: vec![bundled_project("imported-project", "/repo", "repo")],
                 created_at: "2026-01-01T00:00:00Z".to_string(),
                 updated_at: "2026-01-01T00:00:00Z".to_string(),
-                overrides: WorkspaceOverridesBundle {
-                    default_provider_id: None,
-                    default_branch_prefix: None,
-                },
+                overrides: WorkspaceOverridesBundle::default(),
+                profile: None,
             }],
             skills: vec![],
             phase_templates: vec![],
             permission_rules: vec![],
             budget_rules: vec![],
-            settings: SettingsBundle {
-                editor_binary: None,
-            },
+            scripts: vec![],
+            tool_bindings: vec![],
+            app_preferences: AppPreferencesBundle::default(),
         };
 
-        import_config(&conn, bundle).expect("import failed");
+        apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
 
         let (workspace_id, name): (String, String) = conn
             .query_row(
@@ -1258,7 +1992,7 @@ mod tests {
             )
             .expect("existing project should still be present");
         assert_eq!(workspace_id, "importing");
-        assert_eq!(name, "new-name");
+        assert_eq!(name, "desktop");
 
         let count: i64 = conn
             .query_row(
@@ -1271,5 +2005,97 @@ mod tests {
             count, 0,
             "the colliding path should not create a duplicate project"
         );
+    }
+
+    #[test]
+    fn workspace_target_merges_the_bundle_into_an_existing_workspace() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('existing', 'Existing', 1, 1);",
+        )
+        .unwrap();
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![WorkspaceBundle {
+                id: "from-other-mac".to_string(),
+                name: "Renamed".to_string(),
+                root_path: None,
+                projects: vec![],
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-01T00:00:00Z".to_string(),
+                overrides: WorkspaceOverridesBundle::default(),
+                profile: None,
+            }],
+            skills: vec![],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+        let mut targets = HashMap::new();
+        targets.insert("from-other-mac".to_string(), "existing".to_string());
+
+        apply_bundle(&conn, bundle, &targets, &HashMap::new()).expect("import failed");
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1, "merging must not create a second workspace row");
+        let name: String = conn
+            .query_row(
+                "SELECT name FROM workspaces WHERE id = 'existing'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(name, "Renamed");
+    }
+
+    #[test]
+    fn project_without_a_resolved_path_is_skipped_and_counted() {
+        let conn = export_conn();
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![WorkspaceBundle {
+                id: "w".to_string(),
+                name: "W".to_string(),
+                root_path: None,
+                projects: vec![ProjectBundle {
+                    id: "p".to_string(),
+                    name: "ledger-core".to_string(),
+                    root_path: None,
+                    kind: "repo".to_string(),
+                    description: None,
+                    starred_at: None,
+                    base_branch: None,
+                    root_commit: None,
+                    remote_url: None,
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                }],
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-01T00:00:00Z".to_string(),
+                overrides: WorkspaceOverridesBundle::default(),
+                profile: None,
+            }],
+            skills: vec![],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+
+        let result = apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+        assert_eq!(result.stats.unresolved_projects, 1);
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM projects", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
     }
 }

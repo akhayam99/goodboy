@@ -104,6 +104,15 @@ fails silently at runtime.
   `useShallow`, or read `useAppStore.getState()` inside the handler that needs
   it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
   the main surfaces on the real store to catch this.
+- Every path stored for a project or a session (`projects.root_path`,
+  `session_worktrees.worktree_path`, `retained_worktree_paths`,
+  `worktree_roots`, `resolve_*`, `skills.file_path`) is absolute. Never
+  compare two of them without normalizing (trailing slash, symlink) first,
+  and never assume a folder that no longer resolves means the data is gone:
+  see [architecture.md](architecture.md#moving-a-projects-folder). A
+  `project_relocate` touches every one of those tables by prefix in one
+  transaction; missing one of them from that list reintroduces the exact bug
+  it fixes.
 
 ## Traps in the toolchain
 

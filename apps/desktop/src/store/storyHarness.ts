@@ -634,6 +634,8 @@ export const worktreeModuleMock = () => ({
 
 export const repoModuleMock = () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
+  repoIdentity: vi.fn(async () => null),
+  findMovedProjects: vi.fn(async () => []),
 });
 
 export const editorModuleMock = () => ({ detectEditors: vi.fn(async () => []) });
@@ -717,8 +719,47 @@ export const openQuestionsModuleMock = () => ({
 });
 
 export const configExportModuleMock = () => ({
-  exportConfigToFile: vi.fn(async () => '/tmp/export.json'),
-  importConfigFromFile: vi.fn(async () => null),
+  chooseExportFile: vi.fn(async () => '/tmp/export.json'),
+  chooseImportFile: vi.fn(async () => null),
+  configExportPreview: vi.fn(async () => ({
+    counts: {
+      workspaces: 0,
+      projects: 0,
+      skills: 0,
+      phaseTemplates: 0,
+      permissionRules: 0,
+      budgetRules: 0,
+      scripts: 0,
+      toolBindings: 0,
+    },
+    leftOutFindings: [],
+  })),
+  configExportWrite: vi.fn(async () => undefined),
+  configImportPreview: vi.fn(async () => ({
+    manifest: {
+      schemaVersion: 3,
+      exportedAt: '2026-01-01T00:00:00.000Z',
+      workspaceCount: 0,
+      projectCount: 0,
+      workflowCount: 0,
+    },
+    workspaceMatches: [],
+    projectMatches: [],
+  })),
+  configImportApply: vi.fn(async () => ({
+    ok: true,
+    errors: [],
+    stats: {
+      workspaces: 0,
+      skills: 0,
+      phaseTemplates: 0,
+      permissionRules: 0,
+      budgetRules: 0,
+      scripts: 0,
+      toolBindings: 0,
+      unresolvedProjects: 0,
+    },
+  })),
 });
 
 export const emptyOverrides: OverrideSettings = {

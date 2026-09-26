@@ -314,18 +314,33 @@ export type {
 } from './worktree';
 export type {
   ConfigBundle,
+  ConfigBundleAppPreferences,
   ConfigBundleBudgetRule,
   ConfigBundleImportResult,
+  ConfigBundleImportStats,
   ConfigBundlePermissionRule,
+  ConfigBundleProfile,
   ConfigBundleProject,
-  ConfigBundleSettings,
+  ConfigBundleScript,
   ConfigBundleSkill,
   ConfigBundleStep,
+  ConfigBundleToolBinding,
   ConfigBundleValidationError,
   ConfigBundleWorkflow,
   ConfigBundleWorkspace,
+  ConfigBundleWorkspaceOverrides,
+  ExportCounts,
+  ExportGroups,
+  ExportPreview,
+  ImportManifest,
+  ImportPreview,
+  LeftOutFinding,
+  ProjectMatch,
+  ProjectMatchVerdict,
+  WorkspaceMatch,
+  WorkspaceMatchAction,
 } from './config-bundle';
-export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
+export { CONFIG_BUNDLE_SCHEMA_VERSION, DEFAULT_EXPORT_GROUPS } from './config-bundle';
 export type {
   ClaudePermissionMode,
   PermissionAuditEntry,

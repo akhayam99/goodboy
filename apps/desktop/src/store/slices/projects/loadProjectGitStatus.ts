@@ -1,5 +1,8 @@
 import type { ProjectId, WorkspaceGitStatus } from '@goodboy/types';
-import { projectGitStatus } from '../../../shared/lib/repo';
+import { updateProjectIdentity } from '@goodboy/db';
+import type { IsoDateTime } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { projectGitStatus, repoIdentity } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
 
 type Input = {
@@ -26,5 +29,34 @@ export const loadProjectGitStatus = (set: SetFn, get: GetFn) => {
       () => UNREACHABLE,
     );
     set((state) => ({ projectGitStatus: { ...state.projectGitStatus, [projectId]: status } }));
+    if (status.state !== 'ready' || project.identityCheckedAt !== undefined) {
+      return;
+    }
+    const identity = await repoIdentity({ path: project.rootPath }).catch(() => null);
+    if (identity === null) {
+      return;
+    }
+    const checkedAt = new Date().toISOString() as IsoDateTime;
+    const rootCommit = identity.rootCommits[0] ?? null;
+    await updateProjectIdentity({
+      db: tauriDatabase,
+      projectId,
+      rootCommit,
+      remoteUrl: identity.remoteUrl,
+      checkedAt,
+    });
+    set((state) => ({
+      projects: state.projects.map((entry) =>
+        entry.id === projectId
+          ? {
+              ...entry,
+              ...(rootCommit === null ? {} : { rootCommit }),
+              ...(identity.remoteUrl === null ? {} : { remoteUrl: identity.remoteUrl }),
+              identityCheckedAt: checkedAt,
+              updatedAt: checkedAt,
+            }
+          : entry,
+      ),
+    }));
   };
 };

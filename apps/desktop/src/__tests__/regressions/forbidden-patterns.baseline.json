@@ -800,7 +800,7 @@
     "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 1,
     "apps/desktop/src/features/review/components/ReviewPane/WriteReview/DraftCard.tsx": 1,
     "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx": 1,
-    "apps/desktop/src/features/settings/components/ImportConfigDialog/index.tsx": 1,
+    "apps/desktop/src/features/session/components/sessionCardShell.ts": 1,
     "apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx": 1
   }

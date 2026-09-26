@@ -209,6 +209,8 @@ import type {
 } from './slices/workflows/addStepToWorkflowRun';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
+import { createBackupSlice } from './slices/backup';
+import { backupInitialState } from './slices/backup/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import type { BulkSessionResult } from './slices/sessions/types';
@@ -220,6 +222,8 @@ import type { AddProjectsResult } from './slices/projects/addProjects';
 import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
+import { createProjectRelocationSlice } from './slices/project-relocation';
+import { projectRelocationInitialState } from './slices/project-relocation/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
 import { createHistorySlice, historyInitialState } from './slices/history';
 import { createScribeSlice, scribeInitialState } from './slices/scribe';
@@ -440,6 +444,9 @@ type AppActions = {
   hydrateCliRequirements(): Promise<void>;
   learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  checkReconnectCandidate(input: {
+    rootPath: string;
+  }): Promise<import('./slices/workspaces/checkReconnectCandidate').ReconnectCandidate | null>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
     workspaceId: WorkspaceId;
@@ -884,8 +891,6 @@ type AppActions = {
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   refreshUnreadWorkspaces(): Promise<void>;
   setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
-  exportConfig(): Promise<string | null>;
-  importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -1148,6 +1153,8 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createProjectRelocationSlice> &
+  ReturnType<typeof createBackupSlice> &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
@@ -1163,6 +1170,8 @@ export const initialState: AppState = {
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
+  ...projectRelocationInitialState,
+  ...backupInitialState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -1370,12 +1379,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
-  ...createSettingsSlice(set, get),
+  ...createSettingsSlice(set),
+  ...createBackupSlice(set, get),
   ...createTranscriptsSlice(set, get),
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
   ...createProjectsSlice(set, get),
+  ...createProjectRelocationSlice(set, get),
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
   ...createHistorySlice(set, get),

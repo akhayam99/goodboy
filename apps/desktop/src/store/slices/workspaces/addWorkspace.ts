@@ -15,9 +15,10 @@ import {
   insertWorkspace,
   listAllProjectsForWorkspace,
   reconnectWorkspaceAndProjects,
+  updateProjectIdentity,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { validateGitRepo } from '../../../shared/lib/repo';
+import { repoIdentity, validateGitRepo } from '../../../shared/lib/repo';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import { invokeSkillRescan } from '../../../features/skills/skills';
 import { workspaceSlug } from './slug';
@@ -54,6 +55,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
     if (resolvedRoot == null || resolvedRoot === '') {
       throw new Error(check.error ?? 'folder not found');
     }
+    const identity = isRepo ? await repoIdentity({ path: resolvedRoot }).catch(() => null) : null;
 
     const existingProject = await findProjectByRootPath({
       db: tauriDatabase,
@@ -83,6 +85,15 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
         projectIds: siblingProjects.map((project) => project.id),
         at: now,
       });
+      if (identity !== null) {
+        await updateProjectIdentity({
+          db: tauriDatabase,
+          projectId: existingProject.id,
+          rootCommit: identity.rootCommits[0] ?? null,
+          remoteUrl: identity.remoteUrl,
+          checkedAt: now,
+        });
+      }
       const workspace: Workspace = {
         ...owningWorkspace,
         disconnectedAt: undefined,
@@ -91,6 +102,15 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       };
       const reconnectedProjects: ReadonlyArray<Project> = siblingProjects.map((project) => ({
         ...project,
+        ...(project.id !== existingProject.id || identity?.rootCommits[0] === undefined
+          ? {}
+          : { rootCommit: identity.rootCommits[0] }),
+        ...(project.id !== existingProject.id || identity?.remoteUrl === null || identity === null
+          ? {}
+          : { remoteUrl: identity.remoteUrl }),
+        ...(project.id !== existingProject.id || identity === null
+          ? {}
+          : { identityCheckedAt: now }),
         disconnectedAt: undefined,
         updatedAt: now,
         lastAccessedAt: now,
@@ -135,6 +155,11 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,
+      ...(identity?.rootCommits[0] === undefined ? {} : { rootCommit: identity.rootCommits[0] }),
+      ...(identity?.remoteUrl === null || identity?.remoteUrl === undefined
+        ? {}
+        : { remoteUrl: identity.remoteUrl }),
+      ...(identity === null ? {} : { identityCheckedAt: now }),
     };
     try {
       await insertWorkspace({ db: tauriDatabase, workspace });

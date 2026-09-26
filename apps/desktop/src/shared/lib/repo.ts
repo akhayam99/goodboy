@@ -69,6 +69,50 @@ export const scanChildRepos = async ({
   return invoke<ReadonlyArray<ChildRepo>>('scan_child_repos', { path });
 };
 
+export type RepoIdentity = {
+  readonly rootCommits: ReadonlyArray<string>;
+  readonly remoteUrl: string | null;
+};
+
+type RepoIdentityParams = {
+  readonly path: string;
+};
+
+export const repoIdentity = async ({ path }: RepoIdentityParams): Promise<RepoIdentity> => {
+  return invoke<RepoIdentity>('repo_identity', { path });
+};
+
+export type MovedProjectVerdict =
+  'same_repository' | 'same_name_unconfirmed' | 'different_repository' | 'not_found';
+
+export type MovedProjectInput = {
+  readonly id: string;
+  readonly name: string;
+  readonly rootCommit?: string;
+  readonly remoteUrl?: string;
+};
+
+export type MovedProjectMatch = {
+  readonly projectId: string;
+  readonly path: string | null;
+  readonly verdict: MovedProjectVerdict;
+  readonly identity: RepoIdentity | null;
+};
+
+type FindMovedProjectsParams = {
+  readonly parent: string;
+  readonly projects: ReadonlyArray<MovedProjectInput>;
+};
+
+export const findMovedProjects = async ({
+  parent,
+  projects,
+}: FindMovedProjectsParams): Promise<ReadonlyArray<MovedProjectMatch>> => {
+  return invoke<ReadonlyArray<MovedProjectMatch>>('find_moved_projects', {
+    args: { parent, projects },
+  });
+};
+
 export type InitializedRepo = {
   readonly rootPath: string;
   readonly remoteUrl: string;

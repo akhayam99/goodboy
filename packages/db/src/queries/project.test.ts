@@ -20,6 +20,7 @@ import {
   updateProjectDescription,
   updateProjectGoodboyIgnore,
   updateProjectStar,
+  updateProjectIdentity,
 } from './project';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
@@ -219,6 +220,26 @@ describe('project queries', () => {
       ...project,
       lastAccessedAt: project.updatedAt,
     });
+  });
+
+  it('stores the repository identity and the time it was checked', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+    const checkedAt = at({ value: '2026-09-26T09:00:00Z' });
+
+    await updateProjectIdentity({
+      db,
+      projectId: project.id,
+      rootCommit: 'abc123',
+      remoteUrl: 'github.com/acme/ledger-core',
+      checkedAt,
+    });
+
+    const stored = await getProjectById({ db, id: project.id });
+    expect(stored?.rootCommit).toBe('abc123');
+    expect(stored?.remoteUrl).toBe('github.com/acme/ledger-core');
+    expect(stored?.identityCheckedAt).toBe(checkedAt);
   });
 
   it('disconnects and reconnects a project', async () => {

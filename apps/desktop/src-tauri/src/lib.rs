@@ -31,6 +31,7 @@ mod path_env;
 mod permissions;
 mod planner;
 mod process_group;
+mod project_relocation;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
@@ -342,6 +343,10 @@ pub fn run() {
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,
+            repo::repo_identity,
+            repo::find_moved_projects,
+            project_relocation::project_relocate,
+            project_relocation::project_relocation_undo,
             budget::budget_rule_upsert,
             budget::budget_rule_list,
             budget::budget_rule_delete,
@@ -398,8 +403,10 @@ pub fn run() {
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
             scroller_style::system_scroller_style,
-            config_export::export_config_to_file,
-            config_export::import_config_from_file,
+            config_export::config_export_preview,
+            config_export::config_export_write,
+            config_export::config_import_preview,
+            config_export::config_import_apply,
             github::gh_status,
             github::gh_set_token,
             github::gh_clear_token,

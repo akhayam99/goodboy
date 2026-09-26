@@ -7,11 +7,13 @@ import type {
   WorkspaceId,
   WorkspaceProfile,
 } from '@goodboy/types';
+import type { ProjectAdoptionInfo } from '@goodboy/db';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
   validateGitRepo: vi.fn(),
+  repoIdentity: vi.fn(async () => null),
   findProjectByRootPath: vi.fn(),
   getWorkspaceById: vi.fn(),
   insertProject: vi.fn(async () => undefined),
@@ -24,10 +26,11 @@ const h = vi.hoisted(() => ({
   disconnectWorkspace: vi.fn(async () => undefined),
   disconnectWorkspaceAndProjects: vi.fn(async () => undefined),
   upsertWorkspaceProfile: vi.fn(async () => undefined),
-  describeProjectAdoption: vi.fn(async () => null),
+  describeProjectAdoption: vi.fn(async (): Promise<ProjectAdoptionInfo | null> => null),
   seedWorkflowLibrary: vi.fn(async () => undefined),
   invokeWorkflowList: vi.fn(async () => []),
   invokeSkillRescan: vi.fn(async () => []),
+  updateProjectIdentity: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
@@ -44,11 +47,15 @@ vi.mock('@goodboy/db', () => ({
   disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
   upsertWorkspaceProfile: h.upsertWorkspaceProfile,
   describeProjectAdoption: h.describeProjectAdoption,
+  updateProjectIdentity: h.updateProjectIdentity,
 }));
 
 vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('../../../shared/lib/repo', () => ({ validateGitRepo: h.validateGitRepo }));
+vi.mock('../../../shared/lib/repo', () => ({
+  validateGitRepo: h.validateGitRepo,
+  repoIdentity: h.repoIdentity,
+}));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: h.invokeWorkflowList,
 }));
@@ -59,6 +66,7 @@ vi.mock('../../../features/terminal/terminal', () => ({
 }));
 
 import { addWorkspace } from './addWorkspace';
+import { checkReconnectCandidate } from './checkReconnectCandidate';
 import { disconnectWorkspace } from './disconnectWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { addProject } from '../projects/addProject';
@@ -237,6 +245,47 @@ describe('workspace and project slices', () => {
       ['project-1', 'project-2'].sort(),
     );
     expect(store.state.projects.every((entry) => entry.disconnectedAt === undefined)).toBe(true);
+  });
+
+  it('finds a reconnect candidate for a disconnected workspace at that path', async () => {
+    const disconnectedWorkspace: Workspace = { ...workspace(), disconnectedAt: NOW };
+    const disconnectedProject = project({ disconnectedAt: NOW });
+    h.findProjectByRootPath.mockResolvedValueOnce(disconnectedProject);
+    h.getWorkspaceById.mockResolvedValueOnce(disconnectedWorkspace);
+    h.describeProjectAdoption.mockResolvedValueOnce({
+      sourceWorkspaceId: WORKSPACE_ID,
+      isShell: true,
+      sessionCount: 48,
+    });
+    const store = harness({});
+
+    const result = await checkReconnectCandidate(store.get)({ rootPath: '/repos/api' });
+
+    expect(result).toEqual({
+      workspaceId: WORKSPACE_ID,
+      workspaceName: 'Demo Team',
+      disconnectedAt: NOW,
+      sessionCount: 48,
+    });
+  });
+
+  it('finds no reconnect candidate when the path is unclaimed', async () => {
+    const store = harness({});
+
+    const result = await checkReconnectCandidate(store.get)({ rootPath: '/repos/api' });
+
+    expect(result).toBeNull();
+  });
+
+  it('finds no reconnect candidate when the owning workspace is not disconnected', async () => {
+    const owner = workspace();
+    const owned = project({ workspaceId: owner.id });
+    h.findProjectByRootPath.mockResolvedValueOnce(owned);
+    const store = harness({ workspaces: [owner] });
+
+    const result = await checkReconnectCandidate(store.get)({ rootPath: '/repos/api' });
+
+    expect(result).toBeNull();
   });
 
   it('still refuses a path linked to a workspace that is not disconnected', async () => {

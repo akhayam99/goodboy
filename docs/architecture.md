@@ -255,3 +255,65 @@ in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 The mount table, the operation log, recovery and cleanup are described in
 [mounts.md](mounts.md).
+
+### Moving a project's folder
+
+`projects.root_path`, `session_worktrees.worktree_path` and
+`last_worktree_path`, `retained_worktree_paths`, `worktree_roots`,
+`resolve_candidates`/`resolve_attempts`/`resolve_publications`,
+`skills.file_path` and `mount_operations` all store absolute paths. Moving a
+project's folder on disk (a new drive, `~/nerd` to `~/github`) does not touch
+the database: every saved path still points at the old location, so the
+project reads as `missing` and its sessions read as `unavailable`, the same
+non-destructive state as a disconnected disk (see
+[mounts.md](mounts.md)). Nothing is lost; git's own worktree links inside the
+repo point at the old absolute path too, until `git worktree repair` runs
+again from the new root.
+
+`projects.root_commit` and `projects.remote_url` hold the repository's
+identity (`repo_identity`: the root commit(s) from
+`git rev-list --max-parents=0 HEAD`, and `origin`'s URL normalized without
+credentials or a trailing `.git`), written when a project is linked, when it
+is reconnected, and once in the background the first time its git status
+comes back `ready` after boot. It never leaves the local database.
+
+Relocating a project (`project_relocate` in
+`apps/desktop/src-tauri/src/project_relocation.rs`) rewrites every table
+above by path prefix inside one transaction, checks the `UNIQUE` constraints
+on `projects.root_path` and `session_worktrees.worktree_path` first, and
+calls `git worktree repair` from the new root once the commit lands. Finding
+candidate folders (`find_moved_projects`) reads one level under a chosen
+parent, computes `repo_identity` for each, and matches saved projects by
+identity first and by folder name second; the desktop UI is
+`features/workspace/components/LocateMovedProjects/`, backed by the
+`project-relocation` store slice. `Undo move` reverses the same rewrite
+through `project_relocation_undo`.
+
+### Backup and setup export
+
+Settings › App › Backup reads and writes a JSON bundle, schema version 3
+(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+`packages/types/src/config-bundle.ts`). What goes in is chosen per group
+(`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
+made, workflows the orchestrator wrote, saved scripts, permission rules,
+budget rules, linked integrations and app preferences. Folder paths and
+orchestrator-written workflows are off by default; every other group is on.
+Never included, in any bundle: API keys and tokens, sign-ins, sessions and
+transcripts, artifacts, worktree folders, usage history, notifications.
+
+Before a write, `config_export_preview` reports which open security findings
+(`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the
+selected groups; `config_export_write` takes an explicit `leaveOut` list of
+fingerprints and skips that finding's subject (a script, a permission rule,
+a workspace's profile) entirely. The file is written with `0600` permissions.
+
+Import is a read-only preview followed by an explicit apply, never one step:
+`config_import_preview` matches each bundle workspace to an existing one by
+id then by name, and matches each project without a folder path against
+candidate folders under a chosen parent, reusing `find_moved_projects` from
+project relocation (one matching engine, two call sites). The caller then
+picks, per workspace, `merge into <existing>` or `add as a new workspace`,
+and resolves a folder for projects the engine could not place, before calling
+`config_import_apply`. Import only inserts and updates; it never deletes a
+row, and a project it cannot resolve a folder for is skipped and counted,
+not dropped from the file.

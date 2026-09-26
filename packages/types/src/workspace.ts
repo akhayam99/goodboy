@@ -43,6 +43,9 @@ export type Project = Readonly<{
   workspaceId: WorkspaceId;
   name: string;
   rootPath: string;
+  rootCommit?: string;
+  remoteUrl?: string;
+  identityCheckedAt?: IsoDateTime;
   kind: 'repo' | 'folder';
   baseBranch?: string | null;
   description?: string | null;

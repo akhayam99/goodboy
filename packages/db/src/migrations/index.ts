@@ -63,6 +63,8 @@ import { m201ArtifactRevisions } from './m201-artifact-revisions';
 import { m202SlackBindingSettings } from './m202-slack-binding-settings';
 import { m203IntegrationDrafts } from './m203-integration-drafts';
 import { m204ResolveThreadsWithoutPr } from './m204-resolve-threads-without-pr';
+import { m205ProjectIdentity } from './m205-project-identity';
+import { m206ProjectRelocations } from './m206-project-relocations';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -413,4 +415,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 202, sql: m202SlackBindingSettings },
   { version: 203, sql: m203IntegrationDrafts },
   { version: 204, sql: m204ResolveThreadsWithoutPr },
+  { version: 205, sql: m205ProjectIdentity },
+  { version: 206, sql: m206ProjectRelocations },
 ];
