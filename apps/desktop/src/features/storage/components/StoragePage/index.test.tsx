@@ -62,6 +62,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+vi.mock('../BranchesSection', () => ({ BranchesSection: () => null }));
 
 import { StoragePage } from './index';
 

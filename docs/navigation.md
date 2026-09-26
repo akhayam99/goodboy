@@ -668,7 +668,26 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  Below the worktrees, "Artifacts from deleted sessions" lists plans, reports
+  Below the worktrees, `Branches` (`BranchesSection`) lists local branches
+  only, in the same scope, grouped by project. It scans only when it opens:
+  one `git for-each-ref` per project (`project_branches`), with the merge
+  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  branch names from `session_worktrees` and `retained_worktree_paths`),
+  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
+  shown `By you`) or `All local`; protected branches never show. Tabs split
+  `Safe to delete` (merged by merge commit, rebase or squash, or never
+  used), `Needs a look` (unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and `All`. Each row has
+  the session chip (`SessionChip`: stage dot, title, stage word, opens the
+  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
+  the last commit's age. Delete goes through an InlineConfirm in the bulk
+  bar that counts the commits an unmerged branch takes with it and offers
+  `Also delete N on origin` only for Goodboy's own pushed branches in repos
+  where GitHub does not already delete merged branches. Deletes use the
+  same compare-and-delete and 14-day restore as the after-merge rule; a
+  success Notice carries `Undo` for the batch. A branch another worktree
+  holds reads Protected, so its folder goes first from Worktrees.
+  Below that, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
