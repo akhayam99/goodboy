@@ -56,6 +56,7 @@ beforeEach(() => {
   h.state = {
     sessions: [],
     sessionExternalTasks: {},
+    workspaceIntegrations: {},
     slackChannels: {
       [WORKSPACE_ID]: {
         channels: [
@@ -122,5 +123,26 @@ describe('useSlackThreads', () => {
     );
 
     expect(result.current.groups[0]?.rows[0]?.sessionId).toBe('session-1');
+  });
+
+  it('loads only the channels chosen for Slack', async () => {
+    h.state.workspaceIntegrations = {
+      [WORKSPACE_ID]: [
+        {
+          provider: 'slack',
+          config: {
+            followedChannels: [{ id: 'C2', name: 'product' }],
+            hasSelectedChannels: true,
+          },
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useSlackThreads({ workspaceId: WORKSPACE_ID, isEnabled: true }),
+    );
+
+    await waitFor(() => expect(h.calls.heads).toEqual(['C2']));
+    expect(result.current.groups.map((group) => group.label)).toEqual(['#product']);
   });
 });

@@ -811,5 +811,31 @@ describe('store contract', () => {
       expect(rows[0]?.createdAt).toBe('2026-01-01T00:00:00.000Z');
       expect((rows[0]?.config as { teamName: string }).teamName).toBe('Acme');
     });
+
+    it('updateSlackConfig persists settings and refreshes the cached binding', async () => {
+      const store = useAppStore;
+      const existing: IntegrationBinding = {
+        id: 'sl-settings' as IntegrationBindingId,
+        workspaceId: WS_ID,
+        projectId: null,
+        provider: 'slack',
+        config: slackConfig({ teamId: 'T01', teamName: 'Acme', userId: 'U09' }),
+        credentialId: CRED_ID,
+        createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+        updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+      };
+      const config = {
+        ...existing.config,
+        followedChannels: [{ id: 'C1', name: 'payments' }],
+      };
+      store.setState({ workspaceIntegrations: { [WS_ID]: [existing] } });
+
+      await store.getState().updateSlackConfig({ workspaceId: WS_ID, config });
+
+      expect(storySpies.upsertIntegrationBinding).toHaveBeenCalledWith(
+        expect.objectContaining({ binding: expect.objectContaining({ config }) }),
+      );
+      expect(store.getState().workspaceIntegrations[WS_ID]?.[0]?.config).toEqual(config);
+    });
   });
 });
