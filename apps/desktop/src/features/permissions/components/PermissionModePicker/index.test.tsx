@@ -47,19 +47,31 @@ describe('PermissionModePicker', () => {
     expect(setModeMock).toHaveBeenCalledWith('sess-1', 'acceptEdits');
   });
 
-  it.each(['cursor', 'gemini'] as const)(
-    'flags that the mode is not enforced for %s',
-    (provider) => {
-      render(<PermissionModePicker session={makeSession()} activeProvider={provider} />);
-      fireEvent.click(screen.getByRole('button', { name: /default/i }));
-      expect(screen.getByText(/not enforced for cursor and gemini/i)).toBeDefined();
-    },
-  );
-
-  it.each(['anthropic', 'codex'] as const)('does not flag enforcement for %s', (provider) => {
-    render(<PermissionModePicker session={makeSession()} activeProvider={provider} />);
+  it('disables the modes cursor cannot honor and says why', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="cursor" />);
     fireEvent.click(screen.getByRole('button', { name: /default/i }));
-    expect(screen.queryByText(/not enforced for cursor and gemini/i)).toBeNull();
+    const edits = screen.getByText('Edits').closest('button');
+    expect(edits?.hasAttribute('disabled')).toBe(true);
+    expect(
+      screen.getByText("Not available on Cursor: it can't allow edits and block commands"),
+    ).toBeDefined();
+    expect(screen.getByText('Bypass').closest('button')?.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(screen.getByText('Edits'));
+    expect(setModeMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps edits allowed open on codex but not ask first', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="codex" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    expect(screen.getByText('Edits').closest('button')?.hasAttribute('disabled')).toBe(false);
+    expect(screen.getAllByText("Not available on Codex: it can't stop to ask you").length).toBe(2);
+  });
+
+  it('disables nothing on claude', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    fireEvent.click(screen.getByRole('button', { name: /default/i }));
+    expect(screen.queryByText(/not available on/i)).toBeNull();
+    expect(screen.queryByText(/not enforced/i)).toBeNull();
   });
 
   it('closes on Escape', () => {

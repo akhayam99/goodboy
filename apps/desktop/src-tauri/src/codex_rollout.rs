@@ -101,6 +101,14 @@ fn rate_limits_from_line(line: &str) -> Option<CodexRateLimitsReading> {
     if !rate_limits.is_object() {
         return None;
     }
+    let has_window = ["primary", "secondary"].iter().any(|key| {
+        rate_limits
+            .get(key)
+            .is_some_and(|window| window.is_object())
+    });
+    if !has_window {
+        return None;
+    }
     Some(CodexRateLimitsReading {
         observed_at: value
             .get("timestamp")
@@ -288,6 +296,23 @@ mod tests {
         );
         assert_eq!(
             last_rate_limits(Cursor::new(TOKEN_COUNT_LATE.to_string())),
+            None
+        );
+    }
+
+    const TOKEN_COUNT_PREMIUM_EMPTY: &str = r#"{"timestamp":"2026-09-25T10:59:21.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"limit_id":"premium","primary":null,"secondary":null,"plan_type":"plus"}}}"#;
+
+    #[test]
+    fn skips_a_trailing_bucket_with_no_windows() {
+        let rollout = [TOKEN_COUNT_WITH_LIMITS, TOKEN_COUNT_PREMIUM_EMPTY].join("\n");
+        let reading = last_rate_limits(Cursor::new(rollout)).unwrap();
+        assert_eq!(reading.rate_limits["limit_id"].as_str(), Some("codex"));
+        assert_eq!(
+            reading.rate_limits["primary"]["window_minutes"].as_i64(),
+            Some(300)
+        );
+        assert_eq!(
+            last_rate_limits(Cursor::new(TOKEN_COUNT_PREMIUM_EMPTY.to_string())),
             None
         );
     }

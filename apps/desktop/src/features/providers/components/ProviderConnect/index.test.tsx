@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
 import type { ProviderConnectState } from '../../../../store/slices/providers/types';
 
@@ -80,13 +80,26 @@ describe('ProviderConnect', () => {
     expect(state.cancelProviderConnect).toHaveBeenCalledWith('anthropic');
   });
 
-  it('hands off to the browser and can reopen the link', () => {
-    setConnect({ phase: 'handoff', step: 'login', authUrl: 'https://claude.ai/cli' });
-    renderConnect();
+  it('hands off to the browser and offers the sign-in page again only after 4 seconds', () => {
+    vi.useFakeTimers();
+    try {
+      setConnect({ phase: 'handoff', step: 'login', authUrl: 'https://claude.ai/cli' });
+      renderConnect();
 
-    expect(screen.getByText('Finish signing in from your browser.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open the link again' }));
-    expect(openUrl).toHaveBeenCalledWith('https://claude.ai/cli');
+      expect(screen.getByText('Finish signing in from your browser.')).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'Open the sign-in page again' })).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(3_999);
+      });
+      expect(screen.queryByRole('button', { name: 'Open the sign-in page again' })).toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Open the sign-in page again' }));
+      expect(openUrl).toHaveBeenCalledWith('https://claude.ai/cli');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('offers the terminal fallback only once the wait is long enough', () => {

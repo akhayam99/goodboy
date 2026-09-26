@@ -21,16 +21,3 @@ export const limitWindowLabel = ({ window, siblings }: Params): string => {
     }
   }
 };
-
-const KIND_ORDER: Readonly<Record<ProviderLimitWindow['kind'], number>> = {
-  fiveHour: 0,
-  weekly: 1,
-  weeklyModel: 2,
-};
-
-type SortParams = {
-  readonly windows: ReadonlyArray<ProviderLimitWindow>;
-};
-
-export const sortLimitWindows = ({ windows }: SortParams): ReadonlyArray<ProviderLimitWindow> =>
-  [...windows].sort((left, right) => KIND_ORDER[left.kind] - KIND_ORDER[right.kind]);

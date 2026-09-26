@@ -1,13 +1,10 @@
-import type { LimitsChip } from '@goodboy/core';
+import { sortLimitWindows, type LimitsChip } from '@goodboy/core';
 import { cn } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
 import { limitsChipHeadline } from '../../../../features/providers/limits/limitsChipHeadline';
-import {
-  limitWindowLabel,
-  sortLimitWindows,
-} from '../../../../features/providers/limits/limitWindowLabel';
+import { limitWindowLabel } from '../../../../features/providers/limits/limitWindowLabel';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { WINDOW_TONE_TEXT, windowTone } from '../../../../features/providers/limits/windowTone';
 

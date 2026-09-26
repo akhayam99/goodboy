@@ -516,7 +516,9 @@ A **permission rule** matches a tool and says **allow**, **deny** or **ask**.
 You can set it globally, or on a workspace, project or session. The most
 specific rule that fits wins.
 
-- How the rule is enforced depends on what the provider supports
+- Rules reach Claude only. The session's permission mode reaches every
+  provider, and a mode a provider can't honor runs as a stricter one
+  ([providers.md](providers.md#permission-modes-per-cli))
 - When a call is denied in a run with no one watching, the turn stops
 - You approve on purpose, and you can retry after approving
 

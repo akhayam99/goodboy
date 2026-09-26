@@ -360,7 +360,9 @@ const runLogin = async ({ set, get, providerId, run, capability }: LoginParams):
     }
     const isUpgrade = run.authScore > 0;
     run.authScore = match.score;
-    void openUrl(match.url);
+    if (capability.browserOwner === 'goodboy' && !isUpgrade) {
+      void openUrl(match.url);
+    }
     if (isUpgrade) {
       patchConnect({ set, providerId, patch: { authUrl: match.url } });
       return;

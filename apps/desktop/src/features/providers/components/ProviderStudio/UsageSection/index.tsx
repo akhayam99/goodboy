@@ -1,10 +1,9 @@
-import { PROVIDERS_REPORTING_LIMITS } from '@goodboy/core';
+import { PROVIDERS_REPORTING_LIMITS, sortLimitWindows } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
 import { Notice, SectionHeader } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useAutoDetour } from '../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../hooks/useProviderLimitsChip';
-import { sortLimitWindows } from '../../../limits/limitWindowLabel';
 import { usageNotice } from '../../../limits/usageNotice';
 import { PROVIDER_LABEL } from '../../../providerLabel';
 import { SpendInGoodboy } from './SpendInGoodboy';
@@ -70,11 +69,7 @@ export const UsageSection = ({ providerId, billing }: Props) => {
               />
             )}
             {reports ? (
-              <p className="text-2xs text-faint-foreground">
-                {providerId === 'anthropic' && windows.length === 1
-                  ? `${SOURCE_LINE[providerId] ?? ''} Claude reports only the window that limits you right now.`
-                  : SOURCE_LINE[providerId]}
-              </p>
+              <p className="text-2xs text-faint-foreground">{SOURCE_LINE[providerId]}</p>
             ) : null}
           </>
         )}

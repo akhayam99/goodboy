@@ -72,9 +72,10 @@ machine, and you can sign back in any time.
 
 1. Click **Connect**
 2. If `codex` is missing, Goodboy installs it first
-3. If Codex asks how you want to sign in, a terminal appears on the card. Click it
-   and pick ChatGPT or API key with the arrow keys
-4. If you pick ChatGPT, your browser opens. Sign in and approve
+3. Codex opens your browser on its own. Sign in with ChatGPT and approve
+
+**Sign in again** on a connected Codex asks first: Codex signs you out before it
+signs you back in, so cancelling halfway leaves you signed out.
 
 Codex saves your sign-in in `~/.codex/auth.json`. You can also set `OPENAI_API_KEY`
 in your shell, or add a key under **API keys**. Either way, Codex shows as connected.
@@ -216,12 +217,14 @@ pays for every turn.
 - **Provider not detected**: Goodboy looks for CLIs on your `PATH`. Find where the
   CLI is (`which claude`, `npm root -g`), add that folder to your shell profile, open
   a new shell and restart Goodboy
-- **Browser sign-in stuck**: click **Show details**, then **Open the link again**.
+- **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
-- **How close am I to a limit?** The Limits chips in the top bar show a bar per
-  provider. Hover one for every window and its reset, click it for the provider
-  page. Claude updates its numbers only while a Claude agent runs
+- **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
+  the 5-hour window above, the week below. From 80% it adds the worse window's
+  number with its short name (`5h 86%`, `wk 94%`). Hover one for every window and
+  its reset, click it for the provider page. Claude updates its numbers only while
+  a Claude agent runs
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
@@ -244,8 +247,15 @@ This part is for contributors and agents who change how providers work.
 **Connect** installs the CLI if it is missing, then runs its login. Both run in a
 hidden terminal (a PTY).
 
-- Goodboy opens the browser itself. It uses the first sign-in URL it finds in the CLI output
+- One owner per sign-in tab: `browserOwner` in the capability table. Claude and
+  Codex (`cli`) open the browser themselves, so Goodboy never does. Cursor and
+  the opencode family (`goodboy`) get their tab from Goodboy, once, on the first
+  sign-in URL in the CLI output
 - Goodboy starts Cursor with `NO_OPEN_BROWSER=1`, so Cursor does not open a second tab
+- The best sign-in URL seen stays on the card. **Open the sign-in page again**
+  shows after 4 seconds of waiting, not at once, so it never invites a second tab
+- `reauthSignsOut` marks a CLI whose login signs you out first (Codex). **Sign in
+  again** on it goes through an inline confirm
 - Goodboy checks that you are signed in by asking the CLI directly. It does not trust
   the exit code, because some CLIs keep running while they wait for the browser
 - The store keeps each connect attempt, one per provider. Closing the card does not stop it
@@ -273,7 +283,7 @@ Each provider's connect options live in one table, not in UI code. The table is
 - `assisted`: `opencode auth login` shows a menu. When it goes quiet, the terminal
   appears so you can pick. Goodboy still checks the sign-in at the end
 - `manual`: the card shows `manualReason` and a docs link. It has no **Connect** and
-  no **Re-authenticate** button
+  no **Sign in again** button
 - `isApiProvider` reads `PROVIDER_KIND` in `packages/types/src/provider-catalog.ts`.
   It marks openrouter and moonshot as `api`. Their card is `ApiProviderDetail`, which
   checks the runtime and lists keys, instead of the CLI connect card
@@ -364,10 +374,11 @@ and side jobs (`aux_spawn.rs`). All four live under `apps/desktop/src-tauri/src/
 Goodboy runs codex with no prompts:
 
 ```
-codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
+codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- <PROMPT>
 ```
 
-- In `bypassPermissions` mode, `-s workspace-write` becomes
+- The sandbox follows the mode, as in [Permission modes per CLI](#permission-modes-per-cli).
+  Full access keeps `workspace-write`: Goodboy never passes
   `--dangerously-bypass-approvals-and-sandbox`
 - `--skip-git-repo-check` is required. Without it, codex refuses folders it does not trust
 - codex CLI v0.130 writes the `codex login status` output to stderr when no terminal
@@ -396,10 +407,10 @@ help, install, models, plugin, plugins, update`. `agy login` does not exist
 Each turn starts like this:
 
 ```
-agy -p <PROMPT> --model <MODEL> --sandbox
+agy -p <PROMPT> --model <MODEL> --mode <plan|accept-edits> --sandbox
 ```
 
-- In bypass permission mode, `--sandbox` becomes `--dangerously-skip-permissions`
+- In Full access, `--mode` and `--sandbox` become `--dangerously-skip-permissions`
 - `agy` has no stable JSON output. So the parser treats each stdout line as one
   `assistant_text` delta (a chunk of reply text)
 - In headless mode `agy` reports no token usage per turn. Goodboy estimates the cost
@@ -423,6 +434,29 @@ opencode looks up providers live on models.dev, so the model id names the provid
 - OpenRouter models are saved with the full slug (`openrouter/anthropic/claude-sonnet-4.5`)
 - Moonshot models point at Moonshot directly (`moonshotai/kimi-k3`)
 - Both already contain a `/`, so `opencodeModelArg` adds no `OPENCODE_ROUTING` prefix
+
+### Permission modes per CLI
+
+Every turn sends the session's mode to its CLI, not only to Claude.
+`modeSupportFor` in `packages/core/src/permissions/modeSupport.ts` owns the
+table; `sendTurn` sends its `runsAs` value and `turn.rs` turns it into flags. A
+mode a CLI can't honor runs as the next stricter one it has, never a looser one.
+
+| Mode                              | Claude              | Codex                                                       | Antigravity                      | Cursor                      | opencode family                            |
+| --------------------------------- | ------------------- | ----------------------------------------------------------- | -------------------------------- | --------------------------- | ------------------------------------------ |
+| Read only (`plan`)                | `plan`              | `-s read-only`                                              | `--mode plan --sandbox`          | `--mode plan`, no `--force` | `--agent plan`: no edits, shell still runs |
+| Don't ask (`dontAsk`)             | `dontAsk`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
+| Ask first (`default`)             | `default`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
+| Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
+| Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
+
+- Claude 2.1.282 lists `manual` in place of `default` but still accepts `default`
+  as a hidden alias, so Goodboy keeps sending `default` for Ask first: `manual`
+  is not in older CLIs and would break them
+- Allow and deny rules still reach Claude only (`--allowedTools`,
+  `--disallowedTools`). The other CLIs have no equivalent flag
+- The composer's mode picker disables the rows the active provider can't honor
+  and says why
 
 ### API keys
 
@@ -548,17 +582,22 @@ network call for them and never reads a sign-in token or the keychain.
 
 - **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
   stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
-  of the transcript. Each event names one window (`five_hour`, `seven_day`,
-  `seven_day_opus`, `seven_day_sonnet`) and a status (`allowed`,
-  `allowed_warning`, `rejected`). Only `allowed_warning` carries `utilization`, so a
-  plain `allowed` window has no percentage. Claude reports only the window that
-  limits you right now, so `mergeProviderLimits` keeps the other windows it saw
-  until their reset. The numbers change only while a Claude agent runs
+  of the transcript. Every event carries `rate_limit_info.unifiedWindows` with
+  `five_hour` and `seven_day` (`utilization` 0 to 1, `resetsAt` in epoch seconds),
+  so both windows arrive together, 5-hour first. The top-level `rateLimitType`
+  names the window that limits you (`five_hour`, `seven_day`, `seven_day_opus`,
+  `seven_day_sonnet`) and its `status` (`allowed`, `allowed_warning`, `rejected`).
+  The status goes to that window, and a per-model type adds its own window. An
+  unknown type drops only its window, never the event. `mergeProviderLimits`
+  keeps windows it saw until their reset. The numbers change only while a Claude
+  agent runs
 - **Codex**: the `token_count` lines of the rollout files under
   `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
   `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
   `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
-  also sees Codex use outside Goodboy. The desktop asks for it at boot and after
+  also sees Codex use outside Goodboy. A reading with neither window is skipped:
+  Codex writes an empty `premium` bucket after the real `codex` one, and taking
+  it left the boot read with no data. The desktop asks for it at boot and after
   every Codex usage event
 - **Antigravity and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the

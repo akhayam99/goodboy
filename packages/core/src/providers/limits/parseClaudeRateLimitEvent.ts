@@ -1,10 +1,12 @@
 import type {
   IsoDateTime,
   ProviderLimitStatus,
+  ProviderLimitWindow,
   ProviderLimitWindowKind,
   ProviderLimits,
 } from '@goodboy/types';
 import { epochSecondsToIso } from './epochSecondsToIso';
+import { sortLimitWindows } from './sortLimitWindows';
 
 type ClaudeWindow = {
   readonly kind: ProviderLimitWindowKind;
@@ -36,6 +38,45 @@ const usedFractionOf = ({ value, status }: FractionParams): number | null => {
   return status === 'reached' ? 1 : null;
 };
 
+const UNIFIED_WINDOW_KEYS = ['five_hour', 'seven_day'] as const;
+
+type UnifiedParams = {
+  readonly info: object;
+  readonly rawType: unknown;
+  readonly status: ProviderLimitStatus;
+};
+
+const unifiedWindowsOf = ({
+  info,
+  rawType,
+  status,
+}: UnifiedParams): ReadonlyArray<ProviderLimitWindow> => {
+  const unified: unknown = Reflect.get(info, 'unifiedWindows');
+  if (typeof unified !== 'object' || unified === null) {
+    return [];
+  }
+  return UNIFIED_WINDOW_KEYS.flatMap((key) => {
+    const entry: unknown = Reflect.get(unified, key);
+    const window = CLAUDE_WINDOWS[key];
+    if (typeof entry !== 'object' || entry === null || window === undefined) {
+      return [];
+    }
+    const windowStatus: ProviderLimitStatus = key === rawType ? status : 'ok';
+    return [
+      {
+        kind: window.kind,
+        model: window.model,
+        status: windowStatus,
+        usedFraction: usedFractionOf({
+          value: Reflect.get(entry, 'utilization'),
+          status: windowStatus,
+        }),
+        resetsAt: epochSecondsToIso({ value: Reflect.get(entry, 'resetsAt') }),
+      },
+    ];
+  });
+};
+
 type Params = {
   readonly value: unknown;
   readonly observedAt: IsoDateTime;
@@ -56,24 +97,30 @@ export const parseClaudeRateLimitEvent = ({ value, observedAt }: Params): Provid
   const rawType: unknown = Reflect.get(info, 'rateLimitType');
   const status = typeof rawStatus === 'string' ? CLAUDE_STATUS[rawStatus] : undefined;
   const window = typeof rawType === 'string' ? CLAUDE_WINDOWS[rawType] : undefined;
-  if (status === undefined || window === undefined) {
+  if (status === undefined) {
     return null;
   }
-  return {
-    providerId: 'anthropic',
-    plan: null,
-    status,
-    windows: [
-      {
-        kind: window.kind,
-        model: window.model,
-        status,
-        usedFraction: usedFractionOf({ value: Reflect.get(info, 'utilization'), status }),
-        resetsAt: epochSecondsToIso({ value: Reflect.get(info, 'resetsAt') }),
-      },
-    ],
-    observedAt,
-  };
+  const unified = unifiedWindowsOf({ info, rawType, status });
+  const isCoveredByUnified =
+    window !== undefined &&
+    unified.some((entry) => entry.kind === window.kind && entry.model === window.model);
+  const topLevel: ReadonlyArray<ProviderLimitWindow> =
+    window === undefined || isCoveredByUnified
+      ? []
+      : [
+          {
+            kind: window.kind,
+            model: window.model,
+            status,
+            usedFraction: usedFractionOf({ value: Reflect.get(info, 'utilization'), status }),
+            resetsAt: epochSecondsToIso({ value: Reflect.get(info, 'resetsAt') }),
+          },
+        ];
+  const windows = sortLimitWindows({ windows: [...unified, ...topLevel] });
+  if (windows.length === 0) {
+    return null;
+  }
+  return { providerId: 'anthropic', plan: null, status, windows, observedAt };
 };
 
 type LineParams = {

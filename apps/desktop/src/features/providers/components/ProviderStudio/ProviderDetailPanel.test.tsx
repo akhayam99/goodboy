@@ -6,13 +6,19 @@ import type { ProviderDisplayInfo } from '../../../../features/providers/provide
 
 const { state } = vi.hoisted(() => ({
   state: {
-    providerConnect: { anthropic: { phase: 'idle' } } as Record<string, { phase: string }>,
+    providerConnect: { anthropic: { phase: 'idle' }, codex: { phase: 'idle' } } as Record<
+      string,
+      { phase: string }
+    >,
     connectProvider: vi.fn(async () => undefined),
     logoutProvider: vi.fn(async () => undefined),
     refreshProviders: vi.fn(async () => undefined),
     providers: [] as ReadonlyArray<unknown>,
     cliRequirements: [] as ReadonlyArray<unknown>,
-    providerLifecycle: { anthropic: { phase: 'idle', action: null, runId: null, errorTail: null } },
+    providerLifecycle: {
+      anthropic: { phase: 'idle', action: null, runId: null, errorTail: null },
+      codex: { phase: 'idle', action: null, runId: null, errorTail: null },
+    },
     agentTurnState: {},
     runRouting: {},
     updateProviderCli: vi.fn(async () => undefined),
@@ -40,6 +46,7 @@ import { ProviderDetailPanel } from './ProviderDetailPanel';
 afterEach(() => {
   cleanup();
   state.logoutProvider.mockClear();
+  state.connectProvider.mockClear();
 });
 
 const info = {
@@ -92,6 +99,27 @@ describe('ProviderDetailPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(state.logoutProvider).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Re-authenticate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Sign in again' })).toBeDefined();
+  });
+
+  it('signs claude in again straight away', () => {
+    render(<ProviderDetailPanel info={info} autoConnect={false} autoUpdate={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
+
+    expect(state.connectProvider).toHaveBeenCalledWith('anthropic');
+  });
+
+  it('asks before signing codex in again, since codex signs out first', () => {
+    const codex = { ...info, id: 'codex', label: 'Codex', binary: 'codex' } as ProviderDisplayInfo;
+    render(<ProviderDetailPanel info={codex} autoConnect={false} autoUpdate={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
+    expect(state.connectProvider).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: 'Sign in to Codex again?' });
+    expect(screen.getByText('Signing in again signs you out of Codex first.')).toBeDefined();
+
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Sign in again' }));
+    expect(state.connectProvider).toHaveBeenCalledWith('codex');
   });
 });
