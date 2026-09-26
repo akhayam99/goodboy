@@ -41,6 +41,8 @@ import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDe
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
+import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
+import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
 
 const LINKED_PR_URL = 'https://example.invalid/cascade/pull/231';
@@ -347,6 +349,31 @@ describe('primary surfaces mount on real store selectors', () => {
     expect(screen.getAllByText('Diff').length).toBeGreaterThan(0);
     expectNoRenderLoop();
   });
+
+  it('opens the new session draft', async () => {
+    seedBoardScene();
+
+    await mountSurface({ ui: <SessionDraftPane workspaceId={WORKSPACE_ID} /> });
+
+    expect(screen.getAllByText('New session').length).toBeGreaterThan(0);
+    expectNoRenderLoop();
+  });
+
+  it.each(['goal', 'decisions', 'summary'] as const)(
+    'opens the %s tab of the context drawer',
+    async (tab) => {
+      const sessionId = seedSessionWithMounts();
+
+      await mountSurface({
+        ui: (
+          <ContextDrawer sessionId={sessionId} tab={tab} view="current" onClose={() => undefined} />
+        ),
+      });
+
+      expect(screen.getAllByText('Summary').length).toBeGreaterThan(0);
+      expectNoRenderLoop();
+    },
+  );
 
   it('opens the board', async () => {
     seedBoardScene();
