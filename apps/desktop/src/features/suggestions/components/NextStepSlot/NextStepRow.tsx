@@ -33,9 +33,9 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
     >
       <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', tintClasses(tone).icon)} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium text-foreground">{suggestion.title}</span>
+        <span className="truncate text-row text-foreground">{suggestion.title}</span>
         {!compact && suggestion.detail != null && (
-          <span className="truncate text-xs text-muted-foreground">{suggestion.detail}</span>
+          <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
         )}
       </span>
       {actions.primary != null && (
@@ -70,7 +70,7 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
             onNotNow();
             actions.onDismiss?.();
           }}
-          className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-hover"
+          className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-body text-foreground transition-colors hover:bg-hover"
         >
           Not now
         </button>

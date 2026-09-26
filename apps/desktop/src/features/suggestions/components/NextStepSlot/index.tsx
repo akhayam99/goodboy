@@ -44,7 +44,7 @@ export const NextStepSlot = ({ session }: Props) => {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="self-start px-2 text-xs text-faint-foreground transition-colors hover:text-foreground"
+          className="self-start px-2 text-label text-faint-foreground transition-colors hover:text-foreground"
         >
           {rest.length} more
         </button>
