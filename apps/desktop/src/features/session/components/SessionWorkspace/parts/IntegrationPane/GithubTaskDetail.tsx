@@ -1,7 +1,7 @@
-import { Skeleton } from '@goodboy/ui';
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
 import { PaneShell } from '../../../../../../shared/components/PaneShell';
+import { RecordDetailSkeleton } from '../../../../../../shared/components/StudioDetail/RecordDetailSkeleton';
 import { GithubIssueDetail } from '../../../../../github/GithubIssueDetail';
 import { useGithubIssue } from '../../../../../github/useGithubIssue';
 
@@ -14,7 +14,7 @@ type Props = {
 
 export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: Props) => {
   const resolvedIssueNumber = issueNumber ?? Number(task?.externalId);
-  const { issue, isLoading, error, refetch } = useGithubIssue({
+  const { issue, error, refetch } = useGithubIssue({
     workspaceId,
     rootPath,
     issueNumber: resolvedIssueNumber,
@@ -29,22 +29,24 @@ export const GithubTaskDetail = ({ workspaceId, rootPath, task, issueNumber }: P
     );
   }
 
-  return (
-    <PaneShell
-      scroll="body"
-      title={task?.title ?? `#${resolvedIssueNumber}`}
-      meta={<span className="font-mono">{task?.identifier ?? `#${resolvedIssueNumber}`}</span>}
-    >
-      {isLoading ? (
-        <div role="status" aria-label="Loading GitHub issue" className="flex flex-col gap-3">
-          <Skeleton className="h-4 w-2/3 rounded-sm" />
-          <Skeleton className="h-3 w-full rounded-sm" />
-          <Skeleton className="h-3 w-3/4 rounded-sm" />
-        </div>
-      ) : null}
-      {error != null ? (
+  if (error != null) {
+    return (
+      <PaneShell
+        scroll="body"
+        title={task?.title ?? `#${resolvedIssueNumber}`}
+        meta={<span className="font-mono">{task?.identifier ?? `#${resolvedIssueNumber}`}</span>}
+      >
         <ErrorStrip label="the GitHub issue" error={new Error(error)} onRetry={refetch} />
-      ) : null}
-    </PaneShell>
+      </PaneShell>
+    );
+  }
+
+  return (
+    <RecordDetailSkeleton
+      provider="github"
+      identifier={task?.identifier ?? `#${resolvedIssueNumber}`}
+      title={task?.title ?? `#${resolvedIssueNumber}`}
+      loadingLabel="Loading GitHub issue"
+    />
   );
 };
