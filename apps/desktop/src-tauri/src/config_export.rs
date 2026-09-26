@@ -281,6 +281,9 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
             "SELECT id, workspace_id, name, description, file_path, body, frontmatter_json,
                     created_at, updated_at
              FROM skills
+             WHERE workspace_id IN (
+               SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
+             )
              ORDER BY workspace_id, created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -306,6 +309,9 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
                     is_preset, origin, goal, process_text
              FROM workflows
              WHERE deleted_at IS NULL
+               AND workspace_id IN (
+                 SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
+               )
              ORDER BY workspace_id, created_at ASC",
         )?;
         let template_rows = stmt.query_map([], |row| {
@@ -384,6 +390,12 @@ pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, Config
                     decision, priority, created_at, updated_at
              FROM permission_rules
              WHERE scope IN ('global', 'workspace') AND deleted_at IS NULL
+               AND (
+                 workspace_id IS NULL
+                 OR workspace_id IN (
+                   SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
+                 )
+               )
              ORDER BY scope, priority DESC, created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -586,19 +598,27 @@ pub fn import_config(
             )?;
             for p in workspace_projects(w) {
                 let updated_at_ms = iso_to_ms(&p.updated_at).unwrap_or(updated_ms);
-                let existing_id: Option<String> = conn
-                    .query_row(
-                        "SELECT id FROM projects WHERE root_path = ?1",
-                        rusqlite::params![p.root_path],
-                        |row| row.get(0),
-                    )
-                    .ok();
+                let target_root_path = normalized_root_path(&p.root_path);
+                let existing_id: Option<String> = {
+                    let mut stmt = conn.prepare("SELECT id, root_path FROM projects")?;
+                    let mut rows = stmt.query([])?;
+                    let mut found = None;
+                    while let Some(row) = rows.next()? {
+                        let id: String = row.get(0)?;
+                        let root_path: String = row.get(1)?;
+                        if normalized_root_path(&root_path) == target_root_path {
+                            found = Some(id);
+                            break;
+                        }
+                    }
+                    found
+                };
                 match existing_id {
                     Some(existing) if existing != p.id => {
                         conn.execute(
-                            "UPDATE projects SET name = ?1, kind = ?2, updated_at = ?3
-                             WHERE id = ?4",
-                            rusqlite::params![p.name, p.kind, updated_at_ms, existing],
+                            "UPDATE projects SET workspace_id = ?1, name = ?2, kind = ?3, updated_at = ?4
+                             WHERE id = ?5",
+                            rusqlite::params![w.id, p.name, p.kind, updated_at_ms, existing],
                         )?;
                     }
                     _ => {
@@ -859,6 +879,14 @@ fn normalized_kind(kind: &str) -> String {
     }
 }
 
+fn normalized_root_path(path: &str) -> String {
+    let mut normalized = path.to_string();
+    while normalized.len() > 1 && normalized.ends_with('/') {
+        normalized.pop();
+    }
+    normalized
+}
+
 // ---------------------------------------------------------------------------
 // File-based commands (avoid requiring tauri-plugin-fs on the JS side)
 // ---------------------------------------------------------------------------
@@ -1085,7 +1113,7 @@ mod tests {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE workspaces (
-                id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL,
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, slug TEXT, created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL, default_provider_id TEXT, default_workflow_id TEXT,
                 default_branch_prefix TEXT, parallel_enabled INTEGER, deleted_at INTEGER,
                 disconnected_at INTEGER
@@ -1145,5 +1173,118 @@ mod tests {
         let bundle = export_config(&conn).expect("export failed");
         assert_eq!(bundle.permission_rules.len(), 1);
         assert_eq!(bundle.permission_rules[0].id, "live");
+    }
+
+    #[test]
+    fn export_excludes_workspace_owned_rows_from_a_disconnected_workspace() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces
+               (id, name, created_at, updated_at, disconnected_at)
+             VALUES
+               ('active', 'Active', 1, 1, NULL),
+               ('gone', 'Gone', 1, 1, 1);
+             INSERT INTO skills
+               (id, workspace_id, name, description, file_path, body, frontmatter_json,
+                created_at, updated_at)
+             VALUES
+               ('skill-active', 'active', 'a', 'd', 'f', 'b', '{}', 1, 1),
+               ('skill-gone', 'gone', 'a', 'd', 'f', 'b', '{}', 1, 1);
+             INSERT INTO workflows
+               (id, workspace_id, name, description, created_at, updated_at)
+             VALUES
+               ('workflow-active', 'active', 'w', 'd', 1, 1),
+               ('workflow-gone', 'gone', 'w', 'd', 1, 1);
+             INSERT INTO permission_rules
+               (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
+                decision, priority, created_at, updated_at)
+             VALUES
+               ('rule-global', 'global', NULL, NULL, 'Bash', NULL, 'allow', 0, 1, 1),
+               ('rule-active', 'workspace', 'active', NULL, 'Bash', NULL, 'allow', 0, 1, 1),
+               ('rule-gone', 'workspace', 'gone', NULL, 'Bash', NULL, 'allow', 0, 1, 1);",
+        )
+        .unwrap();
+        let bundle = export_config(&conn).expect("export failed");
+        assert_eq!(
+            bundle.skills.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+            vec!["skill-active"]
+        );
+        assert_eq!(
+            bundle
+                .phase_templates
+                .iter()
+                .map(|t| t.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["workflow-active"]
+        );
+        let mut rule_ids = bundle
+            .permission_rules
+            .iter()
+            .map(|r| r.id.as_str())
+            .collect::<Vec<_>>();
+        rule_ids.sort_unstable();
+        assert_eq!(rule_ids, vec!["rule-active", "rule-global"]);
+    }
+
+    #[test]
+    fn import_relinks_a_colliding_project_to_the_importing_workspace() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at)
+             VALUES ('other', 'Other', 1, 1);
+             INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+             VALUES ('existing-project', 'other', 'old-name', '/repo/', 'repo', 1, 1);",
+        )
+        .unwrap();
+
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![WorkspaceBundle {
+                id: "importing".to_string(),
+                name: "Importing".to_string(),
+                root_path: None,
+                projects: vec![ProjectBundle {
+                    id: "imported-project".to_string(),
+                    name: "new-name".to_string(),
+                    root_path: "/repo".to_string(),
+                    kind: "repo".to_string(),
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                }],
+                created_at: "2026-01-01T00:00:00Z".to_string(),
+                updated_at: "2026-01-01T00:00:00Z".to_string(),
+                overrides: WorkspaceOverridesBundle {
+                    default_provider_id: None,
+                    default_workflow_id: None,
+                    default_branch_prefix: None,
+                    parallel_enabled: None,
+                },
+            }],
+            skills: vec![],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            settings: SettingsBundle { editor_binary: None },
+        };
+
+        import_config(&conn, bundle).expect("import failed");
+
+        let (workspace_id, name): (String, String) = conn
+            .query_row(
+                "SELECT workspace_id, name FROM projects WHERE id = 'existing-project'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("existing project should still be present");
+        assert_eq!(workspace_id, "importing");
+        assert_eq!(name, "new-name");
+
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM projects WHERE id = 'imported-project'", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(count, 0, "the colliding path should not create a duplicate project");
     }
 }

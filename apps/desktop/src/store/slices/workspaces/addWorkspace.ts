@@ -14,8 +14,7 @@ import {
   insertProject,
   insertWorkspace,
   listAllProjectsForWorkspace,
-  reconnectProject,
-  reconnectWorkspace,
+  reconnectWorkspaceAndProjects,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { validateGitRepo } from '../../../shared/lib/repo';
@@ -76,16 +75,16 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
         );
       }
       const now = new Date().toISOString() as IsoDateTime;
-      await reconnectWorkspace({ db: tauriDatabase, id: owningWorkspace.id, at: now });
       const siblingProjects = await listAllProjectsForWorkspace({
         db: tauriDatabase,
         workspaceId: owningWorkspace.id,
       });
-      await Promise.all(
-        siblingProjects.map((project) =>
-          reconnectProject({ db: tauriDatabase, id: project.id, at: now }),
-        ),
-      );
+      await reconnectWorkspaceAndProjects({
+        db: tauriDatabase,
+        id: owningWorkspace.id,
+        projectIds: siblingProjects.map((project) => project.id),
+        at: now,
+      });
       const workspace: Workspace = {
         ...owningWorkspace,
         disconnectedAt: undefined,

@@ -97,7 +97,7 @@ export type ConfigBundle = Readonly<{
   exportedAt: string;
   workspaces: ReadonlyArray<ConfigBundleWorkspace>;
   skills: ReadonlyArray<ConfigBundleSkill>;
-  workflows: ReadonlyArray<ConfigBundleWorkflow>;
+  phaseTemplates: ReadonlyArray<ConfigBundleWorkflow>;
   permissionRules: ReadonlyArray<ConfigBundlePermissionRule>;
   budgetRules: ReadonlyArray<ConfigBundleBudgetRule>;
   settings: ConfigBundleSettings;

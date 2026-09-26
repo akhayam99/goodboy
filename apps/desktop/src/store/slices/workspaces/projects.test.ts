@@ -19,8 +19,10 @@ const h = vi.hoisted(() => ({
   listAllProjectsForWorkspace: vi.fn(async (): Promise<Project[]> => []),
   reconnectProject: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
+  reconnectWorkspaceAndProjects: vi.fn(async () => undefined),
   disconnectProject: vi.fn(async () => undefined),
   disconnectWorkspace: vi.fn(async () => undefined),
+  disconnectWorkspaceAndProjects: vi.fn(async () => undefined),
   upsertWorkspaceProfile: vi.fn(async () => undefined),
   describeProjectAdoption: vi.fn(async () => null),
   seedWorkflowLibrary: vi.fn(async () => undefined),
@@ -36,8 +38,10 @@ vi.mock('@goodboy/db', () => ({
   listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
   reconnectProject: h.reconnectProject,
   reconnectWorkspace: h.reconnectWorkspace,
+  reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
   disconnectProject: h.disconnectProject,
   disconnectWorkspace: h.disconnectWorkspace,
+  disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
   upsertWorkspaceProfile: h.upsertWorkspaceProfile,
   describeProjectAdoption: h.describeProjectAdoption,
 }));
@@ -201,10 +205,9 @@ describe('workspace and project slices', () => {
 
     const result = await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
 
-    expect(h.reconnectWorkspace).toHaveBeenCalledWith(
-      expect.objectContaining({ id: WORKSPACE_ID }),
+    expect(h.reconnectWorkspaceAndProjects).toHaveBeenCalledWith(
+      expect.objectContaining({ id: WORKSPACE_ID, projectIds: [PROJECT_ID] }),
     );
-    expect(h.reconnectProject).toHaveBeenCalledWith(expect.objectContaining({ id: PROJECT_ID }));
     expect(h.insertWorkspace).not.toHaveBeenCalled();
     expect(result.disconnectedAt).toBeUndefined();
     expect(store.state.workspaces).toEqual([result]);
@@ -227,7 +230,9 @@ describe('workspace and project slices', () => {
 
     await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
 
-    expect(h.reconnectProject).toHaveBeenCalledTimes(2);
+    expect(h.reconnectWorkspaceAndProjects).toHaveBeenCalledWith(
+      expect.objectContaining({ projectIds: ['project-1', 'project-2'] }),
+    );
     expect(store.state.projects.map((entry) => entry.id).sort()).toEqual(
       ['project-1', 'project-2'].sort(),
     );
@@ -245,7 +250,7 @@ describe('workspace and project slices', () => {
       'api is already linked in Other',
     );
 
-    expect(h.reconnectWorkspace).not.toHaveBeenCalled();
+    expect(h.reconnectWorkspaceAndProjects).not.toHaveBeenCalled();
   });
 
   it('returns a typed conflict when the path already belongs to another workspace', async () => {
@@ -467,10 +472,29 @@ describe('workspace and project slices', () => {
 
     await disconnectWorkspace(store.set, store.get)(WORKSPACE_ID);
 
-    expect(h.disconnectWorkspace).toHaveBeenCalledOnce();
-    expect(h.disconnectProject).toHaveBeenCalledWith(expect.objectContaining({ id: PROJECT_ID }));
+    expect(h.disconnectWorkspaceAndProjects).toHaveBeenCalledWith(
+      expect.objectContaining({ id: WORKSPACE_ID, projectIds: [PROJECT_ID] }),
+    );
     expect(store.state.workspaces).toEqual([]);
     expect(store.state.projects).toEqual([]);
     expect(store.state.workspaceIntegrations[WORKSPACE_ID]).toBeUndefined();
+  });
+
+  it('restores cached projects alongside the workspace when the disconnect write fails', async () => {
+    h.disconnectWorkspaceAndProjects.mockRejectedValueOnce(new Error('db unavailable'));
+    const store = harness({
+      workspaces: [workspace()],
+      projects: [project()],
+      workspaceIntegrations: { [WORKSPACE_ID]: [] },
+      projectScripts: { [WORKSPACE_ID]: [] },
+      workspaceOverrides: { [WORKSPACE_ID]: overrides },
+    });
+
+    await expect(disconnectWorkspace(store.set, store.get)(WORKSPACE_ID)).rejects.toThrow(
+      'db unavailable',
+    );
+
+    expect(store.state.workspaces).toEqual([workspace()]);
+    expect(store.state.projects).toEqual([project()]);
   });
 });
