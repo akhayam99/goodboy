@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use rusqlite::OptionalExtension;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
@@ -93,6 +93,143 @@ fn config_field(provider: &str, scope: &Scope<'_>, key: &str) -> Result<String, 
         .filter(|value| !value.is_empty())
         .map(str::to_string)
         .ok_or_else(|| format!("the {} connection stores no {}", provider, key))
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SlackChannelSetting {
+    id: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SlackAgentPolicy {
+    read_followed: Option<String>,
+    read_others: Option<String>,
+    reply: Option<String>,
+    react: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct SlackSignature {
+    agents: Option<bool>,
+    text: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SlackBridgeSettings {
+    followed_channels: Vec<SlackChannelSetting>,
+    has_selected_channels: Option<bool>,
+    agent_policy: SlackAgentPolicy,
+    signature: SlackSignature,
+}
+
+fn slack_settings(scope: &Scope<'_>) -> Result<SlackBridgeSettings, String> {
+    let raw = crate::integration_credentials::config_for_binding(
+        "slack",
+        scope.workspace,
+        scope.project_id(),
+    )
+    .map_err(|error| error.to_string())?
+    .ok_or_else(|| "slack is not connected in this workspace".to_string())?;
+    serde_json::from_str(&raw).map_err(|error| error.to_string())
+}
+
+fn slack_channel_allowed(settings: &SlackBridgeSettings, channel: &str) -> bool {
+    if settings.has_selected_channels != Some(true) {
+        return true;
+    }
+    let is_followed = settings
+        .followed_channels
+        .iter()
+        .any(|candidate| candidate.id == channel);
+    if is_followed {
+        return settings.agent_policy.read_followed.as_deref() == Some("allow");
+    }
+    settings.agent_policy.read_others.as_deref() == Some("allow")
+}
+
+fn ensure_slack_channel(settings: &SlackBridgeSettings, channel: &str) -> Result<(), String> {
+    if slack_channel_allowed(settings, channel) {
+        return Ok(());
+    }
+    Err(format!(
+        "this channel has not been shared with Goodboy: {}",
+        channel
+    ))
+}
+
+fn slack_signature(settings: &SlackBridgeSettings) -> Option<String> {
+    if settings.signature.agents != Some(true) {
+        return None;
+    }
+    settings
+        .signature
+        .text
+        .clone()
+        .filter(|value| !value.trim().is_empty())
+}
+
+fn filter_slack_channels(
+    settings: &SlackBridgeSettings,
+    channels: Vec<crate::slack::SlackChannel>,
+) -> Vec<crate::slack::SlackChannel> {
+    if settings.has_selected_channels != Some(true) {
+        return channels.into_iter().take(12).collect();
+    }
+    channels
+        .into_iter()
+        .filter(|channel| slack_channel_allowed(settings, &channel.id))
+        .collect()
+}
+
+struct IntegrationDraftParams<'a> {
+    workspace_id: &'a str,
+    session_id: &'a str,
+    verb: &'a str,
+    target: Value,
+    body: &'a str,
+}
+
+fn save_integration_draft(
+    app: &AppHandle,
+    params: IntegrationDraftParams<'_>,
+) -> Result<Value, String> {
+    let state = app.state::<Db>();
+    let conn = state
+        .0
+        .lock()
+        .map_err(|_| "db mutex poisoned".to_string())?;
+    insert_integration_draft(&conn, params)
+}
+
+fn insert_integration_draft(
+    conn: &rusqlite::Connection,
+    params: IntegrationDraftParams<'_>,
+) -> Result<Value, String> {
+    let id = crate::util::uuid_v4();
+    let now = crate::util::now_ms();
+    conn.execute(
+        "INSERT INTO integration_drafts
+         (id, workspace_id, session_id, provider, verb, target_json, body, status, created_at, updated_at)
+         VALUES (?1, ?2, ?3, 'slack', ?4, ?5, ?6, 'pending', ?7, ?7)",
+        rusqlite::params![
+            id,
+            params.workspace_id,
+            params.session_id,
+            params.verb,
+            params.target.to_string(),
+            params.body,
+            now
+        ],
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(serde_json::json!({
+        "status": "queued",
+        "draftId": id,
+        "message": "Saved as a draft for approval. Do not send it again."
+    }))
 }
 
 fn ensure_connected(app: &AppHandle, workspace_id: &str, provider: &str) -> Result<(), String> {
@@ -516,47 +653,61 @@ async fn run_read(
             .await
             .map_err(|error| error.to_string())?,
         ),
-        ("slack", "channels") => encode(
-            crate::slack::slack_list_channels(
+        ("slack", "channels") => {
+            let settings = slack_settings(scope)?;
+            let channels = crate::slack::slack_list_channels(
                 scope.workspace.to_string(),
                 scope.project.clone(),
                 app.state(),
             )
             .await
-            .map_err(|error| error.to_string())?,
-        ),
-        ("slack", "thread-heads") => encode(
-            crate::slack::slack_list_thread_heads(
-                scope.workspace.to_string(),
-                scope.project.clone(),
-                text(args, "channel")?,
-                app.state(),
+            .map_err(|error| error.to_string())?;
+            encode(filter_slack_channels(&settings, channels))
+        }
+        ("slack", "thread-heads") => {
+            let channel = text(args, "channel")?;
+            ensure_slack_channel(&slack_settings(scope)?, &channel)?;
+            encode(
+                crate::slack::slack_list_thread_heads(
+                    scope.workspace.to_string(),
+                    scope.project.clone(),
+                    channel,
+                    app.state(),
+                )
+                .await
+                .map_err(|error| error.to_string())?,
             )
-            .await
-            .map_err(|error| error.to_string())?,
-        ),
-        ("slack", "thread") => encode(
-            crate::slack::slack_get_thread(
-                scope.workspace.to_string(),
-                scope.project.clone(),
-                text(args, "channel")?,
-                text(args, "ts")?,
-                app.state(),
+        }
+        ("slack", "thread") => {
+            let channel = text(args, "channel")?;
+            ensure_slack_channel(&slack_settings(scope)?, &channel)?;
+            encode(
+                crate::slack::slack_get_thread(
+                    scope.workspace.to_string(),
+                    scope.project.clone(),
+                    channel,
+                    text(args, "ts")?,
+                    app.state(),
+                )
+                .await
+                .map_err(|error| error.to_string())?,
             )
-            .await
-            .map_err(|error| error.to_string())?,
-        ),
-        ("slack", "permalink") => encode(
-            crate::slack::slack_get_permalink(
-                scope.workspace.to_string(),
-                scope.project.clone(),
-                text(args, "channel")?,
-                text(args, "ts")?,
-                app.state(),
+        }
+        ("slack", "permalink") => {
+            let channel = text(args, "channel")?;
+            ensure_slack_channel(&slack_settings(scope)?, &channel)?;
+            encode(
+                crate::slack::slack_get_permalink(
+                    scope.workspace.to_string(),
+                    scope.project.clone(),
+                    channel,
+                    text(args, "ts")?,
+                    app.state(),
+                )
+                .await
+                .map_err(|error| error.to_string())?,
             )
-            .await
-            .map_err(|error| error.to_string())?,
-        ),
+        }
         ("slack", "users") => encode(
             crate::slack::slack_list_users(
                 scope.workspace.to_string(),
@@ -912,30 +1063,79 @@ async fn run_write(
             .await
             .map_err(|error| error.to_string())?,
         ),
-        ("slack", "reply") => encode(
-            crate::slack::slack_post_reply(
-                scope.workspace.to_string(),
-                scope.project.clone(),
-                text(args, "channel")?,
-                text(args, "ts")?,
-                text(args, "text")?,
-                app.state(),
-            )
-            .await
-            .map_err(|error| error.to_string())?,
-        ),
-        ("slack", "reaction-add") => encode(
-            crate::slack::slack_add_reaction(
-                scope.workspace.to_string(),
-                scope.project.clone(),
-                text(args, "channel")?,
-                text(args, "ts")?,
-                text(args, "name")?,
-                app.state(),
-            )
-            .await
-            .map_err(|error| error.to_string())?,
-        ),
+        ("slack", "reply") => {
+            let settings = slack_settings(scope)?;
+            let channel = text(args, "channel")?;
+            let thread_ts = text(args, "ts")?;
+            let body = text(args, "text")?;
+            ensure_slack_channel(&settings, &channel)?;
+            match settings.agent_policy.reply.as_deref().unwrap_or("ask") {
+                "ask" => save_integration_draft(
+                    app,
+                    IntegrationDraftParams {
+                        workspace_id: scope.workspace,
+                        session_id: scope.session,
+                        verb: "reply",
+                        target: serde_json::json!({
+                            "channelId": channel,
+                            "threadTs": thread_ts
+                        }),
+                        body: &body,
+                    },
+                ),
+                "never" => Err("Slack replies are disabled for agents".to_string()),
+                "allow" => encode(
+                    crate::slack::slack_post_reply(
+                        scope.workspace.to_string(),
+                        scope.project.clone(),
+                        channel,
+                        thread_ts,
+                        body,
+                        slack_signature(&settings),
+                        app.state(),
+                    )
+                    .await
+                    .map_err(|error| error.to_string())?,
+                ),
+                value => Err(format!("unknown Slack reply policy: {}", value)),
+            }
+        }
+        ("slack", "reaction-add") => {
+            let settings = slack_settings(scope)?;
+            let channel = text(args, "channel")?;
+            let message_ts = text(args, "ts")?;
+            let name = text(args, "name")?;
+            ensure_slack_channel(&settings, &channel)?;
+            match settings.agent_policy.react.as_deref().unwrap_or("allow") {
+                "ask" => save_integration_draft(
+                    app,
+                    IntegrationDraftParams {
+                        workspace_id: scope.workspace,
+                        session_id: scope.session,
+                        verb: "reaction-add",
+                        target: serde_json::json!({
+                            "channelId": channel,
+                            "messageTs": message_ts
+                        }),
+                        body: &name,
+                    },
+                ),
+                "never" => Err("Slack reactions are disabled for agents".to_string()),
+                "allow" => encode(
+                    crate::slack::slack_add_reaction(
+                        scope.workspace.to_string(),
+                        scope.project.clone(),
+                        channel,
+                        message_ts,
+                        name,
+                        app.state(),
+                    )
+                    .await
+                    .map_err(|error| error.to_string())?,
+                ),
+                value => Err(format!("unknown Slack reaction policy: {}", value)),
+            }
+        }
         _ => Err(format!("unhandled write command: {} {}", provider, verb)),
     }
 }
@@ -990,6 +1190,71 @@ mod tests {
     fn an_absent_flag_reads_as_false() {
         assert!(!flag(&args(&[]), "all"));
         assert!(flag(&args(&[("all", Value::from(true))]), "all"));
+    }
+
+    #[test]
+    fn slack_channel_access_follows_the_saved_policy() {
+        let settings: SlackBridgeSettings = serde_json::from_value(serde_json::json!({
+            "followedChannels": [{"id": "C1"}],
+            "hasSelectedChannels": true,
+            "agentPolicy": {
+                "readFollowed": "allow",
+                "readOthers": "off",
+                "reply": "ask",
+                "react": "allow"
+            },
+            "signature": {"agents": true, "text": "Written with Goodboy"}
+        }))
+        .expect("settings");
+
+        assert!(slack_channel_allowed(&settings, "C1"));
+        assert!(!slack_channel_allowed(&settings, "C2"));
+        assert_eq!(
+            slack_signature(&settings).as_deref(),
+            Some("Written with Goodboy")
+        );
+    }
+
+    #[test]
+    fn an_approval_draft_is_inserted_without_posting() {
+        let conn = rusqlite::Connection::open_in_memory().expect("database");
+        conn.execute_batch(
+            "CREATE TABLE integration_drafts (
+               id TEXT PRIMARY KEY,
+               workspace_id TEXT NOT NULL,
+               session_id TEXT NOT NULL,
+               provider TEXT NOT NULL,
+               verb TEXT NOT NULL,
+               target_json TEXT NOT NULL,
+               body TEXT NOT NULL,
+               status TEXT NOT NULL,
+               created_at INTEGER NOT NULL,
+               updated_at INTEGER NOT NULL
+             );",
+        )
+        .expect("schema");
+
+        let outcome = insert_integration_draft(
+            &conn,
+            IntegrationDraftParams {
+                workspace_id: "workspace",
+                session_id: "session",
+                verb: "reply",
+                target: serde_json::json!({"channelId": "C1", "threadTs": "1.0"}),
+                body: "Ready",
+            },
+        )
+        .expect("draft");
+        let row: (String, String, String) = conn
+            .query_row(
+                "SELECT provider, verb, status FROM integration_drafts",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .expect("row");
+
+        assert_eq!(outcome["status"], "queued");
+        assert_eq!(row, ("slack".into(), "reply".into(), "pending".into()));
     }
 
     #[test]

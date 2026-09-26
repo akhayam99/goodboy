@@ -112,6 +112,7 @@ enum SlackCallSpec<'a> {
         channel: &'a str,
         thread_ts: &'a str,
         text: &'a str,
+        signature: Option<&'a str>,
     },
     AddReaction {
         channel: &'a str,
@@ -190,14 +191,11 @@ fn slack_call(base: &str, spec: &SlackCallSpec<'_>) -> SlackCall {
             channel,
             thread_ts,
             text,
+            signature,
         } => SlackCall {
             method: reqwest::Method::POST,
             url: format!("{base}/chat.postMessage"),
-            body: Some(serde_json::json!({
-                "channel": channel,
-                "thread_ts": thread_ts,
-                "text": text
-            })),
+            body: Some(post_reply_body(channel, thread_ts, text, *signature)),
         },
         SlackCallSpec::AddReaction {
             channel,
@@ -248,10 +246,12 @@ fn with_cursor_spec<'a>(spec: &SlackCallSpec<'a>, cursor: Option<&'a str>) -> Sl
             channel,
             thread_ts,
             text,
+            signature,
         } => SlackCallSpec::PostReply {
             channel,
             thread_ts,
             text,
+            signature: *signature,
         },
         SlackCallSpec::AddReaction {
             channel,
@@ -263,6 +263,22 @@ fn with_cursor_spec<'a>(spec: &SlackCallSpec<'a>, cursor: Option<&'a str>) -> Sl
             name,
         },
     }
+}
+
+fn post_reply_body(channel: &str, thread_ts: &str, text: &str, signature: Option<&str>) -> Value {
+    let mut body = serde_json::json!({
+        "channel": channel,
+        "thread_ts": thread_ts,
+        "text": text
+    });
+    let Some(signature) = signature.filter(|value| !value.trim().is_empty()) else {
+        return body;
+    };
+    body["blocks"] = serde_json::json!([
+        {"type": "section", "text": {"type": "mrkdwn", "text": text}},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": signature}]}
+    ]);
+    body
 }
 
 fn error_for_status(status: u16, retry_after: Option<&str>, body: &str) -> Option<SlackError> {
@@ -807,6 +823,7 @@ async fn post_reply(
     channel: &str,
     thread_ts: &str,
     text: &str,
+    signature: Option<&str>,
 ) -> Result<SlackMessage, SlackError> {
     let envelope = send_call(
         token,
@@ -816,6 +833,7 @@ async fn post_reply(
                 channel,
                 thread_ts,
                 text,
+                signature,
             },
         ),
     )
@@ -931,10 +949,19 @@ pub async fn slack_post_reply(
     channel_id: String,
     thread_ts: String,
     text: String,
+    signature: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackMessage, SlackError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
-    post_reply(API_BASE, &token, &channel_id, &thread_ts, &text).await
+    post_reply(
+        API_BASE,
+        &token,
+        &channel_id,
+        &thread_ts,
+        &text,
+        signature.as_deref(),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1262,6 +1289,7 @@ mod tests {
                 channel: "C0EN",
                 thread_ts: "1723456789.123456",
                 text: "on it",
+                signature: None,
             },
         );
         assert_eq!(call.method, reqwest::Method::POST);
@@ -1270,6 +1298,22 @@ mod tests {
         assert_eq!(body["channel"], "C0EN");
         assert_eq!(body["thread_ts"], "1723456789.123456");
         assert_eq!(body["text"], "on it");
+    }
+
+    #[test]
+    fn an_agent_signature_is_a_context_block_under_the_reply() {
+        let body = post_reply_body(
+            "C0EN",
+            "1723456789.123456",
+            "on it",
+            Some("Written with Goodboy"),
+        );
+
+        assert_eq!(body["blocks"][0]["text"]["text"], "on it");
+        assert_eq!(
+            body["blocks"][1]["elements"][0]["text"],
+            "Written with Goodboy"
+        );
     }
 
     #[test]
@@ -1582,6 +1626,7 @@ mod tests {
             "C0EN",
             "1723456789.123456",
             "on it",
+            None,
         )
         .await
         .unwrap();

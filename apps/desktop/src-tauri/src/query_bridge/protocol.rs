@@ -812,7 +812,7 @@ pub const CATALOG: &[VerbSpec] = &[
         verb: "channels",
         params: &[],
         access: Access::Read,
-        summary: "channels your Slack token can read",
+        summary: "channels you follow in Slack",
     },
     VerbSpec {
         provider: "slack",
