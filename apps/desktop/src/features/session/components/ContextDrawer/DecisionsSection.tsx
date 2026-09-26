@@ -8,6 +8,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { AddDecisionRow } from './AddDecisionRow';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
+import { EnteringRow } from './EnteringRow';
 import { RawDocumentEditor } from './RawDocumentEditor';
 import {
   activeDecisionByline,
@@ -17,10 +18,13 @@ import {
 } from './decisionByline';
 
 const HIGHLIGHT_MS = 1200;
+const OPENED_HIGHLIGHT_MS = 2400;
 const EMPTY_LEDGER: ReadonlyArray<SessionDecision> = [];
+const NO_NUMBERS: ReadonlySet<number> = new Set();
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly highlight: ReadonlyArray<number>;
   readonly isLocked: boolean;
   readonly isRawEditing: boolean;
   readonly sourceValue: string;
@@ -30,6 +34,7 @@ type Props = {
 
 export const DecisionsSection = ({
   sessionId,
+  highlight,
   isLocked,
   isRawEditing,
   sourceValue,
@@ -42,20 +47,45 @@ export const DecisionsSection = ({
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
   const [isClosedOpen, setIsClosedOpen] = useState(false);
-  const [highlighted, setHighlighted] = useState<number | null>(null);
+  const [highlighted, setHighlighted] = useState<ReadonlySet<number>>(NO_NUMBERS);
+  const [highlightMs, setHighlightMs] = useState(HIGHLIGHT_MS);
   const rows = useRef(new Map<number, HTMLDivElement>());
+  const firstNumbers = useRef<ReadonlySet<number> | null>(null);
 
   useEffect(() => {
     void loadSessionDecisions(sessionId);
   }, [loadSessionDecisions, sessionId]);
 
   useEffect(() => {
-    if (highlighted === null) {
+    if (highlighted.size === 0) {
       return;
     }
-    const timer = window.setTimeout(() => setHighlighted(null), HIGHLIGHT_MS);
+    const timer = window.setTimeout(() => setHighlighted(NO_NUMBERS), highlightMs);
     return () => window.clearTimeout(timer);
-  }, [highlighted]);
+  }, [highlighted, highlightMs]);
+
+  const hasLedger = ledger !== undefined;
+  useEffect(() => {
+    if (highlight.length === 0 || !hasLedger) {
+      return;
+    }
+    const wanted = new Set(highlight);
+    const hasClosed = (ledger ?? EMPTY_LEDGER).some(
+      (row) => wanted.has(row.number) && row.status !== 'active',
+    );
+    if (hasClosed) {
+      setIsClosedOpen(true);
+    }
+    setHighlightMs(OPENED_HIGHLIGHT_MS);
+    setHighlighted(wanted);
+    const frame = window.requestAnimationFrame(() => {
+      const first = [...wanted]
+        .map((number) => rows.current.get(number))
+        .find((element) => element !== undefined);
+      first?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlight, hasLedger]);
 
   const decisions = ledger ?? EMPTY_LEDGER;
   const agentNames = useMemo(
@@ -95,6 +125,10 @@ export const DecisionsSection = ({
     return <SkeletonText lines={2} />;
   }
 
+  if (firstNumbers.current === null) {
+    firstNumbers.current = new Set(ledger.map((row) => row.number));
+  }
+  const seenAtFirst = firstNumbers.current;
   const nowMs = Date.now();
   const write = (op: DecisionOp) => {
     void applySessionDecisionOps({
@@ -105,7 +139,15 @@ export const DecisionsSection = ({
   };
   const jumpTo = (number: number) => {
     rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    setHighlighted(number);
+    setHighlightMs(HIGHLIGHT_MS);
+    setHighlighted(new Set([number]));
+  };
+  const refFor = (number: number) => (element: HTMLDivElement | null) => {
+    if (element === null) {
+      rows.current.delete(number);
+      return;
+    }
+    rows.current.set(number, element);
   };
 
   return (
@@ -117,41 +159,36 @@ export const DecisionsSection = ({
       ) : (
         <div className="flex flex-col gap-0.5">
           {active.map((row) => (
-            <DecisionRowItem
-              key={row.id}
-              number={row.number}
-              text={row.text}
-              byline={activeDecisionByline({
-                decision: row,
-                agentNames,
-                replaces: replacedBy.get(row.number) ?? null,
-                nowMs,
-              })}
-              isNew={row.author !== 'user' && isAfterBaseline({ iso: row.createdAt, baseline })}
-              reworded={
-                row.previousText !== null &&
-                row.rewordedAt !== null &&
-                (baseline === null ||
-                  baseline === undefined ||
-                  isAfterBaseline({ iso: row.rewordedAt, baseline }))
-                  ? {
-                      age: decisionAge({ iso: row.rewordedAt, nowMs }),
-                      previousText: row.previousText,
-                    }
-                  : null
-              }
-              isLocked={isLocked}
-              isHighlighted={highlighted === row.number}
-              rowRef={(element) => {
-                if (element === null) {
-                  rows.current.delete(row.number);
-                  return;
+            <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
+              <DecisionRowItem
+                number={row.number}
+                text={row.text}
+                byline={activeDecisionByline({
+                  decision: row,
+                  agentNames,
+                  replaces: replacedBy.get(row.number) ?? null,
+                  nowMs,
+                })}
+                isNew={row.author !== 'user' && isAfterBaseline({ iso: row.createdAt, baseline })}
+                reworded={
+                  row.previousText !== null &&
+                  row.rewordedAt !== null &&
+                  (baseline === null ||
+                    baseline === undefined ||
+                    isAfterBaseline({ iso: row.rewordedAt, baseline }))
+                    ? {
+                        age: decisionAge({ iso: row.rewordedAt, nowMs }),
+                        previousText: row.previousText,
+                      }
+                    : null
                 }
-                rows.current.set(row.number, element);
-              }}
-              onReword={(text) => write({ kind: 'reword', number: row.number, text })}
-              onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
-            />
+                isLocked={isLocked}
+                isHighlighted={highlighted.has(row.number)}
+                rowRef={refFor(row.number)}
+                onReword={(text) => write({ kind: 'reword', number: row.number, text })}
+                onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
+              />
+            </EnteringRow>
           ))}
         </div>
       )}
@@ -176,6 +213,8 @@ export const DecisionsSection = ({
                 <ClosedDecisionRow
                   key={row.id}
                   number={row.number}
+                  isHighlighted={highlighted.has(row.number)}
+                  rowRef={refFor(row.number)}
                   text={row.text}
                   reason={row.reason}
                   byline={closedDecisionByline({ decision: row, agentNames })}

@@ -101,7 +101,11 @@ const renderDrawer = (
   tab: 'goal' | 'decisions' | 'summary',
   view: 'current' | 'versions' = 'current',
   onClose = vi.fn(),
-) => render(<ContextDrawer sessionId={SID} tab={tab} view={view} onClose={onClose} />);
+  highlight: ReadonlyArray<number> = [],
+) =>
+  render(
+    <ContextDrawer sessionId={SID} tab={tab} view={view} highlight={highlight} onClose={onClose} />,
+  );
 
 describe('ContextDrawer', () => {
   it('orders its tabs Goal, Decisions, Summary and moves with the tab strip', () => {
@@ -257,6 +261,42 @@ describe('ContextDrawer', () => {
     fireEvent.click(screen.getByRole('button', { name: /Replaced and withdrawn/ }));
     expect(screen.getByText(/^You · replaced by/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Go to decision 9' })).toBeDefined();
+  });
+
+  it('highlights the rows Activity opened it on, opening the closed group when needed', () => {
+    store.sessionDecisions = {
+      [SID]: [
+        decision({ number: 1 }),
+        decision({ number: 2, text: 'Old retry rule', status: 'withdrawn', reason: 'stale' }),
+        decision({ number: 3, text: 'Third retry' }),
+      ],
+    };
+    const { container } = renderDrawer('decisions', 'current', vi.fn(), [2, 3]);
+
+    const highlighted = [...container.querySelectorAll('[data-decision].bg-selected')].map((node) =>
+      node.getAttribute('data-decision'),
+    );
+    expect(highlighted.sort()).toEqual(['2', '3']);
+    expect(screen.getByText('Old retry rule')).toBeDefined();
+  });
+
+  it('fades in a reworded text and reveals a decision that arrives while open', async () => {
+    store.sessionDecisions = { [SID]: [decision({ number: 1, text: 'Key on the event id' })] };
+    const { container, rerender } = renderDrawer('decisions');
+    expect(container.querySelector('[data-swapped]')).toBeNull();
+
+    store.sessionDecisions = {
+      [SID]: [
+        decision({ number: 1, text: 'Key idempotency on the event id' }),
+        decision({ number: 2, text: 'Keep processed ids for 30 days' }),
+      ],
+    };
+    rerender(<ContextDrawer sessionId={SID} tab="decisions" view="current" onClose={vi.fn()} />);
+
+    expect(container.querySelector('[data-swapped="true"]')?.className).toContain(
+      'motion-safe:animate-text-swap',
+    );
+    expect(await screen.findByText('Keep processed ids for 30 days')).toBeDefined();
   });
 
   it('keeps the decisions readable but not editable while the context updates', () => {

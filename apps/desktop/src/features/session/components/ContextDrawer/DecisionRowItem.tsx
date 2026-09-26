@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Minus, Pencil } from 'lucide-react';
 import { CardAction, CardActionSlot, Chip, Markdown, cn } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
@@ -38,6 +38,8 @@ export const DecisionRowItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isPreviousShown, setIsPreviousShown] = useState(false);
   const [draft, setDraft] = useState(text);
+  const firstText = useRef(text);
+  const isSwapped = text !== firstText.current;
   const label = `Decision ${number}`;
 
   const commit = () => {
@@ -75,7 +77,14 @@ export const DecisionRowItem = ({
     >
       <DecisionNumber number={number} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="line-clamp-2 [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
+        <div
+          key={text}
+          data-swapped={isSwapped ? 'true' : undefined}
+          className={cn(
+            'line-clamp-2 [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
+            isSwapped && 'motion-safe:animate-text-swap',
+          )}
+        >
           <Markdown text={text} className="text-label" />
         </div>
         <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">

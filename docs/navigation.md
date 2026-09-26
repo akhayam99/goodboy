@@ -863,7 +863,18 @@ Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
 offers Restore; its rows are struck through, point at the decision that
 replaced them (`→ 7` scrolls there and highlights it), and quote the reason.
 The dock adds a decision of yours on Enter. While the summarizer writes, rows
-stay readable and every edit waits.
+stay readable and every edit waits. A row that arrives while the drawer is open
+comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
+`animate-text-swap`); both are `motion-safe`, so reduced motion swaps at once.
+
+In Activity, a `decisions_changed` row that carries `decisionChanges` is a
+disclosure: the row toggles (`Show changes` / `Hide changes`, `aria-expanded`)
+a diff under it, `+ D12`, `D3 → D12` with the reason, `− D5` with the
+withdrawal reason, at most six lines, and **Open in Context**, which opens the
+drawer on Decisions with those numbers in `payload.highlight` (highlighted for
+2.4s, the closed group opened when one of them is there). The expanded row
+adds the diff's fixed height (`decisionChangeDetail`) to its item before
+`layoutTimelineRail`, so the rail and lanes run through it.
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;

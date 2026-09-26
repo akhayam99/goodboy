@@ -77,6 +77,14 @@ describe('context drawer slice', () => {
     expect(h.getState()['drawer']).toMatchObject({ payload: { tab: 'goal' } });
   });
 
+  it('carries the rows to highlight when Activity opens it', () => {
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions', highlight: [5, 7] });
+
+    expect(h.getState()['drawer']).toMatchObject({
+      payload: { tab: 'decisions', view: 'current', highlight: [5, 7] },
+    });
+  });
+
   it('switches tab instead of closing when another tab is asked for', () => {
     h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'summary' });
     h.slice.toggleContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });

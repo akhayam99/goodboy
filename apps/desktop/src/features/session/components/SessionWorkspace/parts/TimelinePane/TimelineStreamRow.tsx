@@ -38,6 +38,9 @@ type Props = {
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
   readonly isRevealed?: boolean;
+  readonly detail?: ReactNode;
+  readonly detailHeight?: number;
+  readonly expansion?: { readonly isExpanded: boolean; readonly controlsId: string } | null;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -59,6 +62,9 @@ export const TimelineStreamRow = ({
   lanes = null,
   runLane = null,
   isRevealed = false,
+  detail = null,
+  detailHeight = 0,
+  expansion = null,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -116,7 +122,10 @@ export const TimelineStreamRow = ({
       onMouseEnter={hover.onMouseEnter}
       onMouseLeave={hover.onMouseLeave}
     >
-      <span className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}>
+      <span
+        className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}
+        style={{ paddingBottom: detailHeight }}
+      >
         <span
           className="flex items-center justify-end pr-2 text-meta text-faint-foreground"
           style={{ height: boxHeight }}
@@ -138,49 +147,56 @@ export const TimelineStreamRow = ({
           </span>
         )}
       </span>
-      <div
-        className={cn(
-          WORK_ROW.container,
-          'flex min-w-0 flex-1 items-end gap-1',
-          item.grade !== 'entry' && 'pr-1',
-        )}
-      >
-        {openTarget == null ? (
-          <div className={contentClassName} style={{ height: boxHeight }}>
-            {content}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={openTarget.open}
-            onKeyDown={onKeyDown}
-            aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
-            className={contentClassName}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div
+          className={cn(
+            WORK_ROW.container,
+            'flex min-w-0 flex-1 items-end gap-1',
+            item.grade !== 'entry' && 'pr-1',
+          )}
+        >
+          {openTarget == null ? (
+            <div className={contentClassName} style={{ height: boxHeight }}>
+              {content}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={openTarget.open}
+              onKeyDown={onKeyDown}
+              aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
+              aria-expanded={expansion === null ? undefined : expansion.isExpanded}
+              aria-controls={
+                expansion === null || !expansion.isExpanded ? undefined : expansion.controlsId
+              }
+              className={contentClassName}
+              style={{ height: boxHeight }}
+            >
+              {content}
+            </button>
+          )}
+          <span
+            data-testid={action == null ? undefined : 'timeline-row-action'}
+            className={WORK_META_COLUMN.action}
             style={{ height: boxHeight }}
           >
-            {content}
-          </button>
-        )}
-        <span
-          data-testid={action == null ? undefined : 'timeline-row-action'}
-          className={WORK_META_COLUMN.action}
-          style={{ height: boxHeight }}
-        >
-          {action == null ? null : (
-            <Button
-              variant={action.asksUser === true ? 'warning' : 'ghost'}
-              emphasis={action.asksUser === true ? 'outline' : 'solid'}
-              size="sm"
-              className="h-6"
-              onClick={action.onAct}
-            >
-              {action.label}
-            </Button>
-          )}
-        </span>
-        <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
-          {menu}
-        </span>
+            {action == null ? null : (
+              <Button
+                variant={action.asksUser === true ? 'warning' : 'ghost'}
+                emphasis={action.asksUser === true ? 'outline' : 'solid'}
+                size="sm"
+                className="h-6"
+                onClick={action.onAct}
+              >
+                {action.label}
+              </Button>
+            )}
+          </span>
+          <span className={WORK_META_COLUMN.menu} style={{ height: boxHeight }}>
+            {menu}
+          </span>
+        </div>
+        {detail}
       </div>
     </div>
   );

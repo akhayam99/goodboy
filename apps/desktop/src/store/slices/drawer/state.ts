@@ -12,7 +12,11 @@ export type ContextDrawerView = 'current' | 'versions';
 export type DrawerContent =
   | {
       readonly kind: 'context';
-      readonly payload: { readonly tab: ContextDrawerTab; readonly view: ContextDrawerView };
+      readonly payload: {
+        readonly tab: ContextDrawerTab;
+        readonly view: ContextDrawerView;
+        readonly highlight?: ReadonlyArray<number>;
+      };
     }
   | {
       readonly kind: 'explore-file';

@@ -37,6 +37,8 @@ type SlotValueParams = {
   readonly key: string;
 };
 
+const NO_HIGHLIGHT: ReadonlyArray<number> = [];
+
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
 
@@ -44,10 +46,17 @@ type Props = {
   readonly sessionId: SessionId;
   readonly tab: ContextDrawerTab;
   readonly view: ContextDrawerView;
+  readonly highlight?: ReadonlyArray<number>;
   readonly onClose: () => void;
 };
 
-export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
+export const ContextDrawer = ({
+  sessionId,
+  tab,
+  view,
+  highlight = NO_HIGHLIGHT,
+  onClose,
+}: Props) => {
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
   const slotsLoad = useSessionSlotsLoad(sessionId);
@@ -162,6 +171,7 @@ export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
       return (
         <DecisionsSection
           sessionId={sessionId}
+          highlight={highlight}
           isLocked={isLocked}
           isRawEditing={isRawEditing}
           sourceValue={value}
