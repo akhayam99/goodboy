@@ -36,6 +36,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Failed';
     case 'blocked':
       return 'Blocked, tell the agent what to do next';
+    case 'needsApproval':
+      return 'Needs approval, answer the request in the transcript';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
     case 'stepBlocked':
@@ -103,6 +105,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Write to start';
     case 'blocked':
       return 'Blocked';
+    case 'needsApproval':
+      return 'Needs approval';
     case 'stepBlocked':
       return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
     case 'failed':
@@ -196,6 +200,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
     return { state: node, label: 'Blocked' };
+  }
+  if (state.reason?.kind === 'needsApproval') {
+    return { state: node, label: 'Needs approval' };
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
     return { state: node, label: 'Stopped when Goodboy quit' };

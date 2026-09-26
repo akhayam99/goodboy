@@ -8,6 +8,7 @@ import type {
   Session,
   SessionId,
   StepId,
+  WorkflowId,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -23,6 +24,7 @@ const h = vi.hoisted(() => ({
   invokeAgentList: vi.fn(async () => [] as ReadonlyArray<Agent>),
   invokeAgentUpdateStatus: vi.fn(async () => undefined),
   summarizeStepOutput: vi.fn(async () => 'the model summary'),
+  updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
@@ -43,6 +45,7 @@ vi.mock('@goodboy/db', async () => {
   return {
     ...queries,
     listOpenQuestionsForSession: vi.fn(async () => []),
+    updateWorkflowRunOrchestrationStop: h.updateWorkflowRunOrchestrationStop,
   };
 });
 
@@ -91,10 +94,27 @@ const plannerStepAgent: Agent = {
   workflowRunId: 'run-1' as WorkflowRunId,
 };
 
+const sessionWithWorkflowRun: Session = {
+  ...session,
+  workflowRuns: [
+    {
+      id: 'run-1' as WorkflowRunId,
+      workflowId: 'workflow-1' as WorkflowId,
+      ordinal: 0,
+      currentStep: 0,
+      autoRun: false,
+      triggerMode: 'immediate',
+      executionMode: 'static',
+    },
+  ],
+};
+
 type Harness = {
   readonly state: {
     sessionPhaseRuns: Record<SessionId, ReadonlyArray<Agent>>;
     agentKindOverride: Record<AgentId, never>;
+    agentTurnState: Record<AgentId, { kind: string }>;
+    sessions: ReadonlyArray<Session>;
     sessionResolveThreads: Record<SessionId, ReadonlyArray<ResolveThread>>;
     refreshUnreadWorkspaces: ReturnType<typeof vi.fn>;
     emitNotification: ReturnType<typeof vi.fn>;
@@ -104,9 +124,9 @@ type Harness = {
   readonly actions: ReturnType<typeof createResolveSlice>;
 };
 
-type HarnessParams = Record<string, never>;
+type HarnessParams = { readonly sessionOverride?: Session };
 
-const createHarness = ({}: HarnessParams): Harness => {
+const createHarness = ({ sessionOverride }: HarnessParams = {}): Harness => {
   const state = {
     ...resolveInitialState,
     sessionActiveProject: {},
@@ -114,9 +134,10 @@ const createHarness = ({}: HarnessParams): Harness => {
     sessionGithub: {},
     sessionPhaseRuns: { [SESSION_ID]: [agent] },
     agentKindOverride: {},
+    agentTurnState: {},
     stepSummaryDegraded: {},
     degradedStepOutputs: {},
-    sessions: [session],
+    sessions: [sessionOverride ?? session],
     projects: [],
     providers: [
       {
@@ -593,5 +614,47 @@ describe('completeResolvedAgent', () => {
       now: () => NOW,
     });
     expect(rowFor({ state, threadId: 'PRRT_OTHER' })).toBeUndefined();
+  });
+
+  it('pauses a workflow step run with needs-approval instead of finalizing it', async () => {
+    const { state, set, get } = createHarness({ sessionOverride: sessionWithWorkflowRun });
+    state.sessionPhaseRuns[SESSION_ID] = [plannerStepAgent];
+    state.agentTurnState[AGENT_ID] = { kind: 'blocked' };
+
+    const shouldAutoAdvance = await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'the model tried to run a command and was blocked',
+      now: () => NOW,
+    });
+
+    expect(shouldAutoAdvance).toBe(false);
+    expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    expect(h.updateWorkflowRunOrchestrationStop).toHaveBeenCalledWith(
+      expect.anything(),
+      'run-1',
+      expect.objectContaining({ kind: 'needs-approval' }),
+    );
+    const run = state.sessions[0]?.workflowRuns[0];
+    expect(run?.orchestrationStop?.kind).toBe('needs-approval');
+  });
+
+  it('leaves a plain blocked agent alone instead of marking it completed', async () => {
+    const { state, set, get } = createHarness({});
+    state.agentTurnState[AGENT_ID] = { kind: 'blocked' };
+
+    const shouldAutoAdvance = await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'the model tried to run a command and was blocked',
+      now: () => NOW,
+    });
+
+    expect(shouldAutoAdvance).toBeNull();
+    expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalled();
   });
 });
