@@ -2,6 +2,7 @@ import type {
   AgentId,
   ArtifactId,
   ArtifactKind,
+  ArtifactRevisionAuthor,
   ArtifactSourceFormat,
   ArtifactStatus,
   ImplementationCluster,
@@ -55,6 +56,8 @@ export type UpdateArtifactSourceInput = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly author: ArtifactRevisionAuthor;
+  readonly ask?: string | null;
 };
 
 type DatabaseParams = {
@@ -177,7 +180,7 @@ const metadataForRead = ({ kind, value }: MetadataParams): SessionArtifact['meta
   return wireframeMetadata(value);
 };
 
-const parseMetadata = ({
+export const parseArtifactMetadata = ({
   kind,
   value,
 }: {
@@ -193,7 +196,7 @@ const parseMetadata = ({
   return metadataForRead({ kind, value: parsed });
 };
 
-const artifactKind = (value: string): ArtifactKind => {
+export const artifactKind = (value: string): ArtifactKind => {
   if (value === 'plan' || value === 'report' || value === 'wireframe') {
     return value;
   }
@@ -236,7 +239,7 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
       ...common,
       kind,
       sourceFormat: row.source_format,
-      metadata: parseMetadata({ kind, value: row.metadata_json }) as PlanArtifactMetadata,
+      metadata: parseArtifactMetadata({ kind, value: row.metadata_json }) as PlanArtifactMetadata,
     };
   }
   if (kind === 'report') {
@@ -247,7 +250,7 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
       ...common,
       kind,
       sourceFormat: row.source_format,
-      metadata: parseMetadata({ kind, value: row.metadata_json }) as ReportArtifactMetadata,
+      metadata: parseArtifactMetadata({ kind, value: row.metadata_json }) as ReportArtifactMetadata,
     };
   }
   if (row.source_format !== 'json') {
@@ -257,7 +260,10 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
     ...common,
     kind,
     sourceFormat: row.source_format,
-    metadata: parseMetadata({ kind, value: row.metadata_json }) as WireframeArtifactMetadata,
+    metadata: parseArtifactMetadata({
+      kind,
+      value: row.metadata_json,
+    }) as WireframeArtifactMetadata,
   };
 };
 
@@ -298,6 +304,12 @@ export const insertArtifact = async ({
       now,
       now,
     ],
+  );
+  await db.execute(
+    `INSERT INTO artifact_revisions
+     (artifact_id, revision, title, source_text, metadata_json, author, created_at)
+     VALUES (?, 1, ?, ?, ?, 'agent', ?)`,
+    [input.id, input.title, input.sourceText, JSON.stringify(metadata), now],
   );
   const artifact = await selectArtifact({ db, artifactId: input.id });
   if (artifact === null) {
@@ -400,6 +412,8 @@ export const updateArtifactSource = async ({
   }
   const metadata = metadataForWrite({ kind: existing.kind, value: input.metadata });
   const now = Date.now();
+  const nextRevision = existing.revision + 1;
+  const ask = input.ask ?? null;
   const outcome = await db.transaction({
     statements: [
       {
@@ -418,7 +432,21 @@ export const updateArtifactSource = async ({
         abortWhen: 'noChanges',
         abortCode: ARTIFACT_GONE,
       },
-      { sql: 'DELETE FROM artifact_renditions WHERE artifact_id = ?', params: [input.id] },
+      {
+        sql: `INSERT INTO artifact_revisions
+         (artifact_id, revision, title, source_text, metadata_json, author, ask, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          input.id,
+          nextRevision,
+          input.title,
+          input.sourceText,
+          JSON.stringify(metadata),
+          input.author,
+          ask,
+          now,
+        ],
+      },
     ],
   });
   if (outcome.status === 'aborted') {

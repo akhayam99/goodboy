@@ -2,6 +2,7 @@ import type {
   AgentId,
   ArtifactId,
   ArtifactKind,
+  ArtifactRevisionAuthor,
   ArtifactSourceFormat,
   ArtifactStatus,
   SessionArtifact,
@@ -70,6 +71,7 @@ export type UpdateArtifactSourceArgs = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly author: ArtifactRevisionAuthor;
 };
 
 export const listArtifactsForSession = async (
@@ -88,6 +90,7 @@ export const updateArtifactSource = async (
       sourceFormat: args.sourceFormat,
       sourceText: args.sourceText,
       metadata: args.metadata,
+      author: args.author,
     },
   });
 

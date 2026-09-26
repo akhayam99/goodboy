@@ -393,6 +393,11 @@ export {
   type UpdateArtifactSourceInput,
 } from './queries/artifact';
 export {
+  listArtifactRevisions,
+  loadArtifactRevision,
+  restoreArtifactRevision,
+} from './queries/artifactRevisions';
+export {
   putArtifactProvenance,
   getArtifactProvenance,
   updateArtifactRun,

@@ -99,11 +99,15 @@ export type ArtifactProvenance = Readonly<{
   createdAt: IsoDateTime;
 }>;
 
-export type ArtifactRendition = Readonly<{
+export type ArtifactRevisionAuthor = 'agent' | 'user' | 'import' | 'restore';
+
+export type ArtifactRevision = Readonly<{
   artifactId: ArtifactId;
   revision: number;
-  format: string;
-  rendererVersion: string;
-  bytes: Uint8Array;
+  title: string;
+  sourceText: string;
+  metadata: SessionArtifact['metadata'];
+  author: ArtifactRevisionAuthor;
+  ask: string | null;
   createdAt: IsoDateTime;
 }>;

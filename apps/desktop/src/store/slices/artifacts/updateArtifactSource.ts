@@ -20,6 +20,7 @@ export const updateArtifactSource = (set: SetFn) => {
       sourceFormat: params.sourceFormat,
       sourceText: params.sourceText,
       metadata: params.metadata,
+      author: 'user',
     });
     await refreshSessionArtifacts(set, params.sessionId);
   };
