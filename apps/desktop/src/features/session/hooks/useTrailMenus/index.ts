@@ -19,6 +19,8 @@ import {
 } from '../../../../store';
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
+import { useShallow } from 'zustand/react/shallow';
 import { useWorktreeStatuses } from '../useWorktreeStatuses';
 import { branchMenu } from '../../trail/menus/branchMenu';
 import { conversationMenu } from '../../trail/menus/conversationMenu';
@@ -120,6 +122,13 @@ export const useTrailMenus = ({
       requestedPath: s.diffMountPath?.[sessionId] ?? null,
       fallbackPath: resolveSessionRepo({ state: s, sessionId })?.worktreePath ?? null,
     }),
+  );
+  const mergedMountIds = useAppStore(
+    useShallow((s) =>
+      (s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY).flatMap((mount) =>
+        isMountRequestMerged({ state: s, mountId: mount.mountId }) ? [mount.mountId] : [],
+      ),
+    ),
   );
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const diffStats = useMountDiffStats(sessionId);
@@ -430,6 +439,7 @@ export const useTrailMenus = ({
             currentPath: diffPath,
             statOf: (mount) => diffStats.get(mount.worktreePath) ?? null,
             statusOf: (mount) => branchStatuses.get(mount.worktreePath) ?? null,
+            isRequestMergedOf: (mount) => mergedMountIds.includes(mount.mountId),
             actions: [
               {
                 id: 'all-branches',
@@ -547,6 +557,7 @@ export const useTrailMenus = ({
     diffPath,
     diffStats,
     branchStatuses,
+    mergedMountIds,
     openMountDiff,
     queueRows,
     resolveAgain,

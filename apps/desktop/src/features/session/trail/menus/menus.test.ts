@@ -296,6 +296,7 @@ describe('branchMenu', () => {
           ? { additions: 0, deletions: 0 }
           : { additions: 187, deletions: 42 },
       statusOf: (candidate) => statuses.get(candidate.worktreePath) ?? null,
+      isRequestMergedOf: () => false,
       actions: [],
       onSelect: vi.fn(),
     });
@@ -328,6 +329,7 @@ describe('branchMenu', () => {
       currentPath: null,
       statOf: () => null,
       statusOf: (candidate) => statuses.get(candidate.worktreePath) ?? null,
+      isRequestMergedOf: () => false,
       actions: [],
       onSelect: vi.fn(),
     });
@@ -338,12 +340,28 @@ describe('branchMenu', () => {
     ]);
   });
 
+  it('reads a squash-merged branch as Merged from its pull request', () => {
+    const squashed = mount('ledger-core', 'fix/ledger-backfill', '/w/squashed');
+    const menu = branchMenu({
+      mounts: [squashed, mount('ledger-core', 'fix/ledger-rounding', '/w/open')],
+      currentPath: null,
+      statOf: () => null,
+      statusOf: () => status('origin/fix/ledger-backfill', 0, 3),
+      isRequestMergedOf: (candidate) => candidate.worktreePath === '/w/squashed',
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(rowsOf(menu).map((row) => row.state?.word)).toEqual(['Merged', 'On origin']);
+  });
+
   it('keeps the menu with a single branch', () => {
     const menu = branchMenu({
       mounts: [mount('notify-relay', 'fix/notify-backoff', '/w/c')],
       currentPath: '/w/c',
       statOf: () => null,
       statusOf: () => null,
+      isRequestMergedOf: () => false,
       actions: [],
       onSelect: vi.fn(),
     });

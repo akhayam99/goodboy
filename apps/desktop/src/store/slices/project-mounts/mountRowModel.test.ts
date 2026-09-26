@@ -10,7 +10,12 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { MountGithubState } from '../../types';
-import { buildMountRows, isMountCompleted, type MountRowState } from './mountRowModel';
+import {
+  buildMountRows,
+  isMountCompleted,
+  isMountRequestMerged,
+  type MountRowState,
+} from './mountRowModel';
 
 const SESSION_ID = 'session-1' as SessionId;
 const PROJECT_ID = 'project-1' as ProjectId;
@@ -188,6 +193,9 @@ describe('buildMountRows', () => {
       { mountId: SECOND, predicate: true, row: true },
       { mountId: THIRD, predicate: false, row: false },
     ]);
+    expect(
+      [FIRST, SECOND, THIRD].map((mountId) => isMountRequestMerged({ state, mountId })),
+    ).toEqual([true, false, false]);
   });
 
   it('names the mount that already holds the observed branch', () => {

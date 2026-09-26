@@ -338,7 +338,10 @@ activity yet show the plain overview with its actions.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
   that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It never
+N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  branch whose pull request merged reads `Merged` even with no git ancestry
+  (a squash merge), in the menu and in the Diff header alike
+  (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **The resolver's page reads Review, the comment, Agent.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
