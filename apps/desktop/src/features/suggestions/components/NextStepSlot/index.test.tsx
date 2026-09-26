@@ -13,10 +13,11 @@ const { suggestionState } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ sessionPhaseRuns: {}, setActiveLens: vi.fn() }),
+    selector({ sessionPhaseRuns: {}, navigate: vi.fn() }),
 }));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
