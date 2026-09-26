@@ -29,7 +29,12 @@ const SCOPE_ITEMS = [
     icon: CONCEPT_ICONS.providers,
     needsWorkspace: false,
   },
-  { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations, needsWorkspace: true },
+  {
+    scope: 'tools',
+    label: 'Integrations',
+    icon: CONCEPT_ICONS.integrations,
+    needsWorkspace: true,
+  },
 ] as const satisfies ReadonlyArray<{
   scope: Exclude<SettingsStudioScope, 'app'>;
   label: string;

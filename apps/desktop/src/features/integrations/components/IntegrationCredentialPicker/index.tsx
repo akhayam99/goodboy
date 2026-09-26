@@ -53,8 +53,8 @@ export const IntegrationCredentialPicker = ({
     <div className="flex flex-col gap-2">
       <span className="text-xs font-semibold text-foreground">Saved personal API keys</span>
       <p className="text-2xs leading-relaxed text-muted-foreground">
-        A key you entered once is offered to every project. Pick one to link this project without
-        typing it again.
+        A key you entered once is offered to every workspace. Pick one to link this workspace
+        without typing it again.
       </p>
       {credentials.map((credential) => (
         <CredentialRow

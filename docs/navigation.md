@@ -446,7 +446,7 @@ one is open at a time.
   Backup, Storage, Help, Danger zone) always sit under the App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The panel shows one item at a time. Providers & models nests
-  Defaults and one row per provider, and Tools nests one row per tool. Those
+  Defaults and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
   detail into slots it owns, and keeps a closing scope mounted until its list

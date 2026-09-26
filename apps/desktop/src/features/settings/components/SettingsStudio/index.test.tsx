@@ -155,13 +155,13 @@ describe('SettingsStudio', () => {
     );
     expect((await screen.findByLabelText('Personal API key')).id).toBe('linear-pat');
     expect(screen.getAllByRole('navigation')).toHaveLength(1);
-    const tools = screen.getByRole('list', { name: 'Tools settings' });
+    const tools = screen.getByRole('list', { name: 'Integrations settings' });
     expect(
       within(tools)
         .getByRole('button', { name: /^Linear/ })
         .getAttribute('aria-current'),
     ).toBe('true');
-    expect(screen.getByRole('button', { name: 'Tools' }).getAttribute('aria-current')).toBe(
+    expect(screen.getByRole('button', { name: 'Integrations' }).getAttribute('aria-current')).toBe(
       'false',
     );
   });
@@ -219,7 +219,7 @@ describe('SettingsStudio', () => {
 
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
     expect(within(rail).queryByRole('button', { name: /^Workspace/ })).toBeNull();
-    expect(within(rail).queryByRole('button', { name: 'Tools' })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: 'Integrations' })).toBeNull();
     expect(within(rail).getByRole('button', { name: 'App' })).toBeDefined();
     expect(within(rail).getByRole('button', { name: 'Providers & models' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
@@ -342,7 +342,7 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
-  it('leaves GitHub to Tools settings', () => {
+  it('leaves GitHub to Integrations settings', () => {
     renderApp();
 
     expect(screen.queryByText('GitHub')).toBeNull();

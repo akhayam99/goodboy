@@ -73,7 +73,7 @@ export const BitbucketStudio = ({ sessionId, onClose }: Props) => {
         isConnected && workspaceId != null ? (
           <IntegrationDisconnect
             label="Bitbucket"
-            description="Unlinks this project from the Bitbucket personal API key. The key stays saved for your other projects."
+            description="Unlinks this workspace from the Bitbucket personal API key. The key stays saved for your other workspaces."
             onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
           />
         ) : null

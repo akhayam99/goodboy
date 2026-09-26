@@ -152,7 +152,7 @@ describe('ToolSettingsScope', () => {
     await act(async () => {
       render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
     });
-    const rail = screen.getByRole('list', { name: 'Tools settings' });
+    const rail = screen.getByRole('list', { name: 'Integrations settings' });
     expect(
       within(rail)
         .getAllByRole('button')
@@ -336,7 +336,7 @@ describe('ToolSettingsScope', () => {
       expect(screen.queryByRole('heading')).toBeNull();
       expect(screen.queryByLabelText('Personal API key')).toBeNull();
       expect(
-        within(screen.getByRole('list', { name: 'Tools settings' }))
+        within(screen.getByRole('list', { name: 'Integrations settings' }))
           .getAllByRole('button')
           .every((button) => button.getAttribute('aria-current') !== 'true'),
       ).toBe(true);

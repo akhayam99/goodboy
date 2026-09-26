@@ -24,7 +24,10 @@ export const ToolsRail = ({
   connected,
   githubIdentity,
 }: Props) => (
-  <ul aria-label="Tools settings" className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}>
+  <ul
+    aria-label="Integrations settings"
+    className={cn('flex flex-col gap-0.5', PANE_RHYTHM.navRail.nest)}
+  >
     {FOOTER_INTEGRATIONS.map(({ provider }) => {
       const subtitle = !connected[provider]
         ? 'not connected'
