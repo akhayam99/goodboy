@@ -1,4 +1,5 @@
 mod artifact_folder;
+mod artifact_mirror;
 mod artifacts;
 mod attachment;
 mod aux_spawn;
@@ -202,6 +203,12 @@ pub fn run() {
             bridge::bridge_revoke,
             bridge::bridge_stop,
             artifact_folder::export_artifact_folder,
+            artifact_mirror::artifact_mirror_write,
+            artifact_mirror::artifact_mirror_pending,
+            artifact_mirror::artifact_mirror_locate,
+            artifact_mirror::artifact_mirror_reveal,
+            artifact_mirror::artifact_mirror_measure,
+            artifact_mirror::artifact_mirror_remove,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
@@ -227,6 +234,8 @@ pub fn run() {
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
+            worktree::worktree_commit_range,
+            worktree::worktree_blame_line,
             worktree::worktree_remote_head,
             worktree::worktree_diff_commit,
             worktree::worktree_diff_range,

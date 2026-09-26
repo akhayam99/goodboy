@@ -174,6 +174,8 @@ export const NON_SESSION_STATE_KEYS = [
   'storageRemovingPaths',
   'storageOutcome',
   'storageFocus',
+  'storageArtifacts',
+  'storageDeletingArtifacts',
   'budgetRules',
   'providerSpendBreakdown',
   'budgetAlerts',

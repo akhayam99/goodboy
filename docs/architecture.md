@@ -153,6 +153,26 @@ Everything the app saves for itself lives in `~/.goodboy`.
 
 - `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
+- `workspaces/<slug>/artifacts/<date>-<title>-<id>/`: a copy of each plan,
+  report and wireframe of that workspace (`artifacts-dev/` for debug builds).
+  A plan or a report gets `index.html`, `document.css`, `source.md` and
+  `meta.json`; a wireframe gets the folder its export writes. The folder is
+  keyed by the last 6 characters of the artifact id and keeps its name when
+  the title changes; `meta.json` holds the id, kind, title, status, revision,
+  session, workspace and dates. It is a mirror: the database is the truth, the
+  app never reads these files back except `meta.json` to skip a copy that is
+  already current, and deleting a folder breaks nothing. The copy is written
+  when an artifact reaches the store and again at each new revision, and
+  after boot the main window walks every artifact in pages of 25 to write the
+  ones missing on disk. Artifacts of deleted sessions keep their row and their
+  copy. The Storage page finds them through `sessions.deleted_at`, sizes their
+  copy with `artifact_mirror_measure`, and its Delete removes the folder with
+  `artifact_mirror_remove` (confined to the mirror root) before it deletes the
+  row. If the row survives a failed delete, the next backfill writes its copy
+  again. `session_artifacts`
+  also stores `opened_at` (written when the artifact shell or the reader
+  window opens it, at most once per artifact every 10 minutes), `kept_at` and
+  `kept_until` for the Storage Keep action.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.

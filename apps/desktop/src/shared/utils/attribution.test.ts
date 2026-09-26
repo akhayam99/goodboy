@@ -14,6 +14,12 @@ const overridesWith = (attributionFooter: boolean | null): OverrideSettings => (
   parallelAgents: null,
   providerPool: null,
   attributionFooter,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 });
 
 describe('isAttributionEnabled', () => {

@@ -1,7 +1,5 @@
 import type { PrComment } from '@goodboy/types';
 
-export const RESOLVE_ON_GITHUB_DEFAULT = true;
-
 export type ResolveStepPlan = 'resolve' | 'leave_open';
 
 type Params = {

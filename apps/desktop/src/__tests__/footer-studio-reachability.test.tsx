@@ -240,6 +240,7 @@ vi.mock('../store', () => {
 });
 vi.mock('../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
 vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
+vi.mock('../features/artifacts/hooks/useArtifactMirror', () => ({ useArtifactMirror: vi.fn() }));
 
 import { App } from '../App';
 import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudioEvent';

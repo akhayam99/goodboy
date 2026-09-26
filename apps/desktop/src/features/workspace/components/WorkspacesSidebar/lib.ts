@@ -7,5 +7,5 @@ export const workflowKindName = (workflow: Workflow): string => {
     return 'custom';
   }
   const match = WORKFLOW_LIBRARY.find((entry) => entry.name.toLowerCase() === raw.toLowerCase());
-  return match ? match.name.toLowerCase() : raw;
+  return match ? match.name : raw;
 };

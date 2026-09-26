@@ -28,6 +28,12 @@ export const SETTINGS_OVERRIDES: OverrideSettings = {
   parallelAgents: true,
   providerPool: null,
   attributionFooter: true,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 export const SETTINGS_WORKSPACE: Workspace = {

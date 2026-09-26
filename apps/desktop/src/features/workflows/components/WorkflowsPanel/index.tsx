@@ -8,6 +8,7 @@ import { ImportPopover } from '../WorkflowStudio/ImportPopover';
 import { SavedStepsList } from '../WorkflowStudio/SavedStepsList';
 import { StudioHomeTabs, type StudioHomeView } from '../WorkflowStudio/StudioHomeTabs';
 import { WorkflowList } from '../WorkflowStudio/WorkflowList';
+import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
@@ -49,16 +50,17 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   );
   const workspaceName = workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null;
   const editor = useWorkflowEditor({ workspaceId, presets, workingDir });
+  const removedBuiltinIds = useRemovedBuiltins({ workspaceId, workflows: templates });
 
   useEffect(() => {
     void loadPhaseTemplates(workspaceId);
     void loadStepLibrary(workspaceId);
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
-  const restore = async () => {
+  const restore = async (slugs: ReadonlyArray<string>) => {
     setIsRestoring(true);
     try {
-      await resetWorkflows(workspaceId);
+      await resetWorkflows(workspaceId, slugs);
     } finally {
       setIsRestoring(false);
     }
@@ -85,6 +87,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         ) : (
           <WorkflowList
             workflows={presets}
+            removedBuiltinIds={removedBuiltinIds}
             workspaceName={workspaceName}
             isRestoring={isRestoring}
             tabs={tabs}

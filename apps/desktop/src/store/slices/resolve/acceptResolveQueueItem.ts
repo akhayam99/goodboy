@@ -13,6 +13,7 @@ import { withCandidateLock } from './candidateLock';
 import { hashResolveReply } from './hashResolveReply';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
+import { remapIntegratedCommits } from './remapIntegratedCommits';
 import { withSavedReplyDraft } from './saveResolveReplyDraft';
 import {
   UNCAPTURED_WORK_ON_BRANCH,
@@ -150,6 +151,14 @@ const acceptDecidedItem = async ({
     integratedSha,
     approvals,
   });
+  await remapIntegratedCommits({
+    sessionId,
+    worktreePath: candidate.worktreePath,
+    baseSha: candidate.baseSha,
+    candidateSha: candidate.candidateSha,
+    integratedSha,
+    threads: covered.flatMap(({ entry }) => (entry === undefined ? [] : [entry.thread])),
+  }).catch(() => undefined);
   await advanceResolveStage({
     set,
     sessionId,

@@ -17,6 +17,8 @@ const thread = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   disposition: null,
   replyDraft: null,
   commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
   question: null,
   replyPostedAt: null,
   replyId: null,

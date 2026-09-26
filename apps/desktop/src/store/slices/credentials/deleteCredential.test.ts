@@ -50,6 +50,12 @@ const boundOverride: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 const makeHarness = ({ boundBy }: { readonly boundBy: ReadonlyArray<WorkspaceId> }) => {

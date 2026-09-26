@@ -2,8 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
-import type { StorageFolder } from '../../../../store/slices/storage/types';
+import type { ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { StorageArtifact, StorageFolder } from '../../../../store/slices/storage/types';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.now();
@@ -87,8 +87,44 @@ const recent = folder('charge-reconcile', {
   }),
 });
 
+const orphanArtifact = (id: string, overrides: Partial<StorageArtifact> = {}): StorageArtifact => ({
+  id: id as ArtifactId,
+  kind: 'report',
+  title: 'Settlement batch sizing',
+  sessionGoal: 'Settle batch retry',
+  deletedAt: NOW - 52 * DAY,
+  updatedAt: NOW - 61 * DAY,
+  openedAt: null,
+  keptAt: null,
+  keptUntil: null,
+  sessionId: 'session-gone' as SessionId,
+  workspaceId: 'harborline' as WorkspaceId,
+  workspaceName: 'Harborline',
+  workspaceSlug: 'harborline',
+  folder: `2026-07-01-settlement-batch-sizing-${id}`,
+  sizeBytes: 96 * 1024,
+  ...overrides,
+});
+
+const unusedReport = orphanArtifact('unused');
+const openedReport = orphanArtifact('opened', {
+  title: 'Payments API latency review',
+  openedAt: NOW - 2 * DAY,
+});
+const freshPlan = orphanArtifact('fresh', {
+  kind: 'plan',
+  title: 'Close the ledger month',
+  deletedAt: NOW - 3 * DAY,
+  updatedAt: NOW - 3 * DAY,
+});
+
 beforeEach(() => {
   Object.assign(state, {
+    storageArtifacts: [unusedReport, openedReport, freshPlan],
+    storageDeletingArtifacts: {},
+    openStorageArtifact: vi.fn(async () => undefined),
+    keepStorageArtifact: vi.fn(async () => undefined),
+    deleteStorageArtifacts: vi.fn(async () => ({ deleted: 1, failed: [] })),
     storageStats: {
       databaseBytes: 187 * 1024 ** 2,
       archivedSessionCount: 41,
@@ -196,5 +232,48 @@ describe('StoragePage', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Keep for 30 days' }));
 
     expect(state.keepStorageFolder).toHaveBeenCalledWith({ path: untracked.path, days: 30 });
+  });
+
+  it('lists artifacts of deleted sessions and says why a row is not suggested', () => {
+    render(<StoragePage />);
+
+    const section = screen.getByRole('region', { name: 'Artifacts from deleted sessions' });
+    expect(within(section).getAllByTestId('storage-artifact-row')).toHaveLength(3);
+    expect(within(section).getByText(/used recently, not suggested/)).toBeDefined();
+    expect(within(section).getByText(/deleted under 30 days ago/)).toBeDefined();
+    expect(screen.getByText('Artifact copies')).toBeDefined();
+  });
+
+  it('bulk deletes only unused artifacts after a confirm', () => {
+    render(<StoragePage />);
+    const section = screen.getByRole('region', { name: 'Artifacts from deleted sessions' });
+
+    fireEvent.click(within(section).getByRole('button', { name: /Delete 1 unused/ }));
+    const confirm = within(section).getByRole('group', { name: /Delete 1 artifact/ });
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+
+    expect(state.deleteStorageArtifacts).toHaveBeenCalledWith({ ids: [unusedReport.id] });
+  });
+
+  it('keeps an artifact for thirty days from its keep menu', () => {
+    render(<StoragePage />);
+    const row = screen.getAllByTestId('storage-artifact-row')[1];
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'Keep' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'For 30 days' }));
+
+    expect(state.keepStorageArtifact).toHaveBeenCalledWith({ id: openedReport.id, days: 30 });
+  });
+
+  it('asks before deleting one artifact with its copy and its record', () => {
+    render(<StoragePage />);
+    const row = screen.getAllByTestId('storage-artifact-row')[2];
+
+    fireEvent.click(within(row!).getByRole('button', { name: 'Delete' }));
+    const confirm = screen.getByRole('group', { name: /Delete this plan/ });
+    expect(within(confirm).getByText(/copy on disk and its record in Goodboy/)).toBeDefined();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+
+    expect(state.deleteStorageArtifacts).toHaveBeenCalledWith({ ids: [freshPlan.id] });
   });
 });

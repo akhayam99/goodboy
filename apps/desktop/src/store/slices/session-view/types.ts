@@ -79,10 +79,7 @@ export type FocusedExternalTask = {
   readonly projectId: ProjectId | null;
 };
 
-export type ResolveQueueFilter = 'needs_review' | 'everything' | 'retryable';
-
 export type ResolveQueueView = {
-  readonly filter: ResolveQueueFilter;
   readonly expandedThreadId: string | null;
   readonly order: ReadonlyArray<string>;
   readonly scrollTop: number;
@@ -113,7 +110,6 @@ export type ResolveDiffReturn = {
 };
 
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
-  filter: 'needs_review',
   expandedThreadId: null,
   order: [],
   scrollTop: 0,

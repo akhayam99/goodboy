@@ -10,6 +10,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { useToast } from '../../../../app/components/Toast';
 import { acceptedPublishCounts, previewPublishCounts } from '../../publishCounts';
 import { isPublishIntentGuarded, publishIntent } from '../../publishIntent';
@@ -56,6 +57,9 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const { showToast } = useToast();
   const reportError = useAppStore((s) => s.reportError);
   const preview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
+  const resolveOnGithub = useAppStore(
+    (s) => sessionReplySettings({ state: s, sessionId }).resolveOnGithub,
+  );
   const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_QUEUE_ITEMS);
   const publications = useAppStore(
     (s) => s.sessionResolvePublications[sessionId] ?? EMPTY_PUBLICATIONS,
@@ -247,7 +251,9 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2">
-      {preview !== null && <PublishLines preview={preview} comments={comments} />}
+      {preview !== null && (
+        <PublishLines preview={preview} comments={comments} resolveOnGithub={resolveOnGithub} />
+      )}
       {(blocker !== null || drift !== null) && (
         <div className="flex items-center gap-2">
           <span className="text-2xs text-warning">{blocker?.sentence ?? drift}</span>

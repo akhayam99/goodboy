@@ -124,6 +124,9 @@ export const loadStorage = (set: SetFn, get: GetFn) => {
       void get()
         .measureStorageSizes({ isForced })
         .catch(() => undefined);
+      void get()
+        .loadStorageArtifacts()
+        .catch(() => undefined);
     } catch (err) {
       set({ storageStatsLoading: false });
       throw err;

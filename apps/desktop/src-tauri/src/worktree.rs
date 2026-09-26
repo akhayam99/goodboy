@@ -322,21 +322,33 @@ fn worktree_integrate_candidate_blocking(
     }
     let expected = resolve_commit(path, &args.expected_head)?;
     let candidate = resolve_commit(path, &args.candidate_sha)?;
-    let actual = resolve_commit(path, "HEAD")?;
     let journal = journal_path(path, &args.candidate_id)?;
+    let picking = journal.with_extension("picking");
+    if picking.exists() {
+        let _ = git(path, &["cherry-pick", "--abort"]);
+        std::fs::remove_file(&picking)?;
+    }
+    let actual = resolve_commit(path, "HEAD")?;
     if journal.exists() {
         let recorded = std::fs::read_to_string(&journal)?;
-        if recorded.trim() != candidate {
+        let mut lines = recorded.lines().map(str::trim);
+        if lines.next() != Some(candidate.as_str()) {
             return Err(WorktreeError::Git {
                 message: "the integration journal holds a different commit for this candidate"
                     .to_string(),
             });
         }
-        if is_ancestor(path, &candidate, &actual) {
-            return Ok(IntegratedCandidate { sha: candidate });
+        let integrated = lines.next().unwrap_or(candidate.as_str()).to_string();
+        if is_ancestor(path, &integrated, &actual) {
+            return Ok(IntegratedCandidate { sha: integrated });
         }
     }
-    if actual != expected {
+    if !is_ancestor(path, &expected, &candidate) {
+        return Err(WorktreeError::Git {
+            message: "the candidate is not based on the expected branch head".to_string(),
+        });
+    }
+    if !is_ancestor(path, &expected, &actual) {
         return Err(WorktreeError::Git {
             message: format!(
                 "the branch moved: expected head {}, found {}",
@@ -345,22 +357,66 @@ fn worktree_integrate_candidate_blocking(
             ),
         });
     }
-    if !is_ancestor(path, &expected, &candidate) {
-        return Err(WorktreeError::Git {
-            message: "the candidate is not based on the expected branch head".to_string(),
-        });
-    }
     ensure_integrable_tree(path)?;
     let journal_dir = journal.parent().ok_or_else(|| WorktreeError::Git {
         message: "the integration journal has no parent directory".to_string(),
     })?;
     std::fs::create_dir_all(journal_dir)?;
+    if actual == expected {
+        write_journal(&journal, &[&candidate])?;
+        git(path, &["update-ref", "HEAD", &candidate, &expected])?;
+        git(path, &["reset", "--hard", "--quiet", &candidate])?;
+        return Ok(IntegratedCandidate { sha: candidate });
+    }
+    if let Some(integrated) = landed_equivalent(path, &expected, &candidate, &actual)? {
+        write_journal(&journal, &[&candidate, &integrated])?;
+        return Ok(IntegratedCandidate { sha: integrated });
+    }
+    std::fs::write(&picking, format!("{candidate}\n"))?;
+    let range = format!("{expected}..{candidate}");
+    if git(path, &["cherry-pick", "--allow-empty", &range]).is_err() {
+        let _ = git(path, &["cherry-pick", "--abort"]);
+        let _ = git(path, &["reset", "--hard", "--quiet", &actual]);
+        std::fs::remove_file(&picking)?;
+        return Err(WorktreeError::Git {
+            message: "the fix no longer applies on the branch".to_string(),
+        });
+    }
+    let integrated = resolve_commit(path, "HEAD")?;
+    write_journal(&journal, &[&candidate, &integrated])?;
+    std::fs::remove_file(&picking)?;
+    Ok(IntegratedCandidate { sha: integrated })
+}
+
+fn landed_equivalent(
+    cwd: &Path,
+    expected: &str,
+    candidate: &str,
+    actual: &str,
+) -> Result<Option<String>, WorktreeError> {
+    let pending = git(cwd, &["cherry", actual, candidate, expected])?;
+    let marks: Vec<&str> = pending
+        .lines()
+        .filter_map(|line| line.split_whitespace().next())
+        .collect();
+    if marks.is_empty() || marks.iter().any(|mark| *mark != "-") {
+        return Ok(None);
+    }
+    let landed = git(cwd, &["cherry", candidate, actual, expected])?;
+    Ok(landed
+        .lines()
+        .filter_map(|line| line.strip_prefix("- "))
+        .map(str::trim)
+        .last()
+        .map(str::to_string))
+}
+
+fn write_journal(journal: &Path, lines: &[&str]) -> Result<(), WorktreeError> {
     let pending = journal.with_extension("pending");
-    std::fs::write(&pending, format!("{candidate}\n"))?;
-    std::fs::rename(&pending, &journal)?;
-    git(path, &["update-ref", "HEAD", &candidate, &expected])?;
-    git(path, &["reset", "--hard", "--quiet", &candidate])?;
-    Ok(IntegratedCandidate { sha: candidate })
+    let body: String = lines.iter().map(|line| format!("{line}\n")).collect();
+    std::fs::write(&pending, body)?;
+    std::fs::rename(&pending, journal)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -1540,7 +1596,7 @@ fn canonical_key(path: &Path) -> String {
         .into_owned()
 }
 
-fn directory_size(path: &Path) -> (Option<u64>, bool) {
+pub(crate) fn directory_size(path: &Path) -> (Option<u64>, bool) {
     let entries = match std::fs::read_dir(path) {
         Ok(found) => found,
         Err(_) => return (None, true),
@@ -2354,6 +2410,85 @@ fn worktree_is_ancestor_blocking(
         .env("GIT_TERMINAL_PROMPT", "0")
         .output()?;
     Ok(output.status.success())
+}
+
+#[derive(Debug, Serialize, PartialEq)]
+pub struct RangeCommit {
+    pub sha: String,
+    pub subject: String,
+}
+
+#[tauri::command]
+pub async fn worktree_commit_range(
+    worktree_path: String,
+    base: String,
+    head: String,
+) -> Result<Vec<RangeCommit>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_commit_range_blocking(worktree_path, base, head)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_commit_range_blocking(
+    worktree_path: String,
+    base: String,
+    head: String,
+) -> Result<Vec<RangeCommit>, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    let range = format!("{base}..{head}");
+    let raw = git(p, &["log", "--reverse", "--format=%H%x1f%s", &range])?;
+    Ok(raw
+        .lines()
+        .filter_map(|line| {
+            let (sha, subject) = line.split_once('\u{1f}')?;
+            Some(RangeCommit {
+                sha: sha.to_string(),
+                subject: subject.to_string(),
+            })
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn worktree_blame_line(
+    worktree_path: String,
+    path: String,
+    line: u32,
+) -> Result<Option<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_blame_line_blocking(worktree_path, path, line)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_blame_line_blocking(
+    worktree_path: String,
+    path: String,
+    line: u32,
+) -> Result<Option<String>, WorktreeError> {
+    let p = Path::new(&worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path));
+    }
+    if line == 0 {
+        return Ok(None);
+    }
+    let span = format!("{line},{line}");
+    let Ok(raw) = git(p, &["blame", "--porcelain", "-L", &span, "HEAD", "--", &path]) else {
+        return Ok(None);
+    };
+    let sha = raw
+        .split_whitespace()
+        .next()
+        .filter(|sha| sha.len() >= 40 && sha.chars().any(|c| c != '0'))
+        .map(str::to_string);
+    Ok(sha)
 }
 
 #[tauri::command]
@@ -6292,21 +6427,128 @@ mod candidate_tests {
     }
 
     #[test]
-    fn integration_refuses_when_the_head_moved_under_the_candidate() {
+    fn integration_cherry_picks_the_candidate_when_the_head_moved_forward() {
         let root = init_repo("candidate-head-moved");
         let base = commit(&root, "base.txt", "base", "base");
         commit(&root, "fix.txt", "fix", "fix");
         let candidate = quarantine(&root, "cand-1", &base).unwrap();
         let moved = commit(&root, "other.txt", "other", "external");
 
+        let integrated = integrate(&root, "cand-1", &candidate, &base).unwrap();
+
+        assert_ne!(integrated, candidate, "the candidate was not replayed");
+        assert_eq!(head(&root), integrated);
+        assert_eq!(
+            git_ok(&root, &["rev-parse", "HEAD~1"]),
+            moved,
+            "the commit that moved the branch was lost"
+        );
+        assert!(root.join("fix.txt").exists(), "the fix is not in the tree");
+        assert!(root.join("other.txt").exists(), "the external work is gone");
+        assert_eq!(git_ok(&root, &["log", "-1", "--format=%s"]), "fix");
+    }
+
+    #[test]
+    fn a_replayed_cherry_pick_reports_the_integrated_commit() {
+        let root = init_repo("candidate-pick-replay");
+        let base = commit(&root, "base.txt", "base", "base");
+        commit(&root, "fix.txt", "fix", "fix");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        commit(&root, "other.txt", "other", "external");
+        let first = integrate(&root, "cand-1", &candidate, &base).unwrap();
+
+        let replayed = integrate(&root, "cand-1", &candidate, &base).unwrap();
+
+        assert_eq!(replayed, first);
+        assert_eq!(head(&root), first, "the replay picked the fix twice");
+    }
+
+    #[test]
+    fn integration_aborts_when_the_fix_no_longer_applies() {
+        let root = init_repo("candidate-conflict");
+        let base = commit(&root, "shared.txt", "base\n", "base");
+        commit(&root, "shared.txt", "fix\n", "fix");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        let moved = commit(&root, "shared.txt", "external\n", "external");
+
+        let outcome = integrate(&root, "cand-1", &candidate, &base);
+
+        let message = format!("{outcome:?}");
+        assert!(message.contains("no longer applies"), "{message}");
+        assert_eq!(head(&root), moved, "the branch was moved anyway");
+        assert_eq!(
+            git_ok(&root, &["status", "--porcelain=v1"]),
+            "",
+            "the aborted pick left the worktree dirty"
+        );
+        assert_eq!(
+            std::fs::read_to_string(root.join("shared.txt")).unwrap(),
+            "external\n"
+        );
+    }
+
+    #[test]
+    fn integration_refuses_when_the_branch_was_rewritten_under_the_candidate() {
+        let root = init_repo("candidate-rewritten");
+        let base = commit(&root, "base.txt", "base", "base");
+        commit(&root, "fix.txt", "fix", "fix");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        git_ok(&root, &["commit", "--amend", "--no-verify", "-m", "rewritten"]);
+        let rewritten = head(&root);
+
         let outcome = integrate(&root, "cand-1", &candidate, &base);
 
         assert!(outcome.is_err(), "{outcome:?}");
-        assert_eq!(head(&root), moved, "the branch was moved anyway");
-        assert!(
-            super::git(&root, &["merge-base", "--is-ancestor", &candidate, &moved]).is_err(),
-            "the candidate leaked into the branch tip"
+        assert_eq!(head(&root), rewritten, "the branch was moved anyway");
+    }
+
+    #[test]
+    fn the_commit_range_lists_subjects_oldest_first() {
+        let root = init_repo("commit-range");
+        let base = commit(&root, "base.txt", "base", "base");
+        let first = commit(&root, "a.txt", "a", "Add retry policy");
+        let second = commit(&root, "b.txt", "b", "fixup! Add retry policy");
+
+        let range = super::worktree_commit_range_blocking(
+            root.to_string_lossy().into_owned(),
+            base,
+            second.clone(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            range,
+            vec![
+                super::RangeCommit {
+                    sha: first,
+                    subject: "Add retry policy".to_string()
+                },
+                super::RangeCommit {
+                    sha: second,
+                    subject: "fixup! Add retry policy".to_string()
+                },
+            ]
         );
+    }
+
+    #[test]
+    fn blame_names_the_commit_that_introduced_a_line() {
+        let root = init_repo("blame-line");
+        commit(&root, "retry.ts", "one\n", "base");
+        let introduced = commit(&root, "retry.ts", "one\ntwo\n", "Add retry policy");
+
+        let blamed = |line: u32| {
+            super::worktree_blame_line_blocking(
+                root.to_string_lossy().into_owned(),
+                "retry.ts".to_string(),
+                line,
+            )
+            .unwrap()
+        };
+
+        assert_eq!(blamed(2), Some(introduced));
+        assert_eq!(blamed(0), None);
+        assert_eq!(blamed(9), None);
     }
 
     #[test]
@@ -6328,6 +6570,63 @@ mod candidate_tests {
             git_ok(&root, &["rev-list", "--count", &format!("{base}..HEAD")]),
             "2",
             "the candidate was integrated twice"
+        );
+    }
+
+    fn forget_integration(root: &Path, id: &str, candidate: &str) {
+        let dir = root.join(".git").join("goodboy-candidate-integrations");
+        std::fs::remove_file(dir.join(format!("{id}.journal"))).unwrap();
+        std::fs::write(dir.join(format!("{id}.picking")), format!("{candidate}\n")).unwrap();
+    }
+
+    #[test]
+    fn a_retry_after_a_crash_past_the_cherry_pick_records_it_without_picking_again() {
+        let root = init_repo("candidate-pick-crash");
+        let base = commit(&root, "base.txt", "base", "base");
+        commit(&root, "fix.txt", "fix", "fix");
+        commit(&root, "test.txt", "test", "test");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        commit(&root, "other.txt", "other", "external");
+        let picked = integrate(&root, "cand-1", &candidate, &base).unwrap();
+        forget_integration(&root, "cand-1", &candidate);
+        let later = commit(&root, "later.txt", "later", "later");
+
+        let retried = integrate(&root, "cand-1", &candidate, &base).unwrap();
+
+        assert_eq!(retried, picked, "the retry reported another commit");
+        assert_eq!(head(&root), later, "the retry moved the branch");
+        assert_eq!(
+            git_ok(&root, &["rev-list", "--count", &format!("{base}..HEAD")]),
+            "4",
+            "the fix was picked twice"
+        );
+        assert_eq!(
+            integrate(&root, "cand-1", &candidate, &base).unwrap(),
+            picked,
+            "the retry did not record the integration"
+        );
+    }
+
+    #[test]
+    fn a_retry_after_a_crash_still_refuses_a_fix_that_no_longer_applies() {
+        let root = init_repo("candidate-pick-crash-conflict");
+        let base = commit(&root, "shared.txt", "base\n", "base");
+        commit(&root, "shared.txt", "fix\n", "fix");
+        let candidate = quarantine(&root, "cand-1", &base).unwrap();
+        let moved = commit(&root, "shared.txt", "external\n", "external");
+        let dir = root.join(".git").join("goodboy-candidate-integrations");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("cand-1.picking"), format!("{candidate}\n")).unwrap();
+
+        let outcome = integrate(&root, "cand-1", &candidate, &base);
+
+        let message = format!("{outcome:?}");
+        assert!(message.contains("no longer applies"), "{message}");
+        assert_eq!(head(&root), moved, "the branch was moved anyway");
+        assert_eq!(git_ok(&root, &["status", "--porcelain=v1"]), "");
+        assert!(
+            !dir.join("cand-1.journal").exists(),
+            "a refused fix was recorded"
         );
     }
 

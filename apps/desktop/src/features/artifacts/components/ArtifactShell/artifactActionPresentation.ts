@@ -5,6 +5,7 @@ import {
   Copy,
   Download,
   FileDown,
+  FolderOpen,
   Pencil,
   Play,
   Printer,
@@ -42,6 +43,11 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   },
   copySource: { label: 'Copy', icon: Copy },
   saveSource: { label: 'Save a copy', icon: FileDown },
+  showInFinder: {
+    label: 'Show in Finder',
+    icon: FolderOpen,
+    description: 'The copy Goodboy keeps on disk for this artifact',
+  },
   regenerate: {
     label: 'Regenerate',
     icon: RotateCcw,

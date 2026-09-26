@@ -16,4 +16,10 @@ export const overridesWithAttribution = ({ attributionFooter }: Params): Overrid
   parallelAgents: null,
   providerPool: null,
   attributionFooter,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 });

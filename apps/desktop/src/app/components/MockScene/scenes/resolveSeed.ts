@@ -51,6 +51,12 @@ const OVERRIDES = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 const WORKSPACE: Workspace = {
@@ -148,6 +154,8 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   disposition: seed.disposition,
   replyDraft: seed.replyDraft,
   commitShas: null,
+  fixupOfSha: null,
+  replacesSha: null,
   question: seed.question,
   replyPostedAt: null,
   replyId: null,

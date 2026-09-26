@@ -20,7 +20,15 @@ export {
   isBuiltinStepId,
   type BuiltinStep,
 } from './builtinSteps';
-export { seedWorkflowLibrary, type SeedResult, type SeedWorkflowLibraryDeps } from './seeder';
+export {
+  restoreWorkflowLibrary,
+  seedMissingBuiltinWorkflows,
+  seedWorkflowLibrary,
+  type SeedMissingResult,
+  type RestoreWorkflowLibraryParams,
+  type SeedResult,
+  type SeedWorkflowLibraryDeps,
+} from './seeder';
 export {
   formatWorkflowFromNL,
   buildWorkflowFormatUserPrompt,

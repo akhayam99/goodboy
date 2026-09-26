@@ -40,6 +40,12 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 export const addWorkspace = (set: SetFn, get: GetFn) => {

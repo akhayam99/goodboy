@@ -700,7 +700,7 @@ type AppActions = {
   loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
   saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<StepDef>;
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
-  resetWorkflows(workspaceId: WorkspaceId): Promise<void>;
+  resetWorkflows(workspaceId: WorkspaceId, slugs: ReadonlyArray<string>): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
   selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
   deselectAgent(sessionId: SessionId): void;
@@ -1142,6 +1142,8 @@ export const initialState: AppState = {
   storageRemovingPaths: {},
   storageOutcome: null,
   storageFocus: null,
+  storageArtifacts: [],
+  storageDeletingArtifacts: {},
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],

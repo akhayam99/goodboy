@@ -1,28 +1,42 @@
+import { renderReplyTemplate } from '../../../features/resolve/renderReplyTemplate';
+import {
+  REPLY_SETTINGS_DEFAULT,
+  type ReplySettings,
+} from '../../../features/resolve/replySettings';
 import { appendAttribution } from '../../../shared/utils/attribution';
 
 type Closure = { commitSha?: string; reason?: string; reply?: string };
 
-const VERDICT_FIXED = '**Valid.**';
-const VERDICT_CLOSED = '**Not applying.**';
+export type ReplyContext = {
+  readonly reviewer?: string | null;
+  readonly file?: string | null;
+  readonly line?: number | null;
+  readonly fixupOfSha?: string | null;
+};
 
-const commitLine = (sha: string, prUrl: string | null): string => {
-  const short = sha.slice(0, 7);
-  const commitUrl = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
-  return commitUrl && commitUrl !== prUrl
-    ? `**Resolution.** Fixed in [\`${short}\`](${commitUrl}).`
-    : `**Resolution.** Fixed in \`${short}\`.`;
+const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
+  const url = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
+  return url !== null && url !== prUrl ? url : null;
+};
+
+const commitLink = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
+  const short = `\`${sha.slice(0, 7)}\``;
+  const url = commitUrlOf({ sha, prUrl });
+  return url === null ? short : `[${short}](${url})`;
 };
 
 type Params = {
   readonly closure: Closure | undefined;
   readonly prUrl: string | null;
-  readonly isAttributed: boolean;
+  readonly settings?: ReplySettings;
+  readonly context?: ReplyContext;
 };
 
 export const buildResolutionReplyBody = ({
   closure,
   prUrl,
-  isAttributed,
+  settings = REPLY_SETTINGS_DEFAULT,
+  context = {},
 }: Params): string | null => {
   if (!closure) {
     return null;
@@ -30,20 +44,29 @@ export const buildResolutionReplyBody = ({
   const reply = closure.reply?.trim() ?? '';
   const sha = closure.commitSha?.trim() ?? '';
   const reason = closure.reason?.trim() ?? '';
-
+  const vars = {
+    reviewer: context.reviewer ? `@${context.reviewer}` : '',
+    file: context.file ?? '',
+    line: context.line == null ? '' : String(context.line),
+    fixup_of: context.fixupOfSha ? commitLink({ sha: context.fixupOfSha, prUrl }) : '',
+  };
   const body = (() => {
     if (sha.length > 0) {
-      const verdict = reply.length > 0 ? `${VERDICT_FIXED} ${reply}` : VERDICT_FIXED;
-      return [verdict, commitLine(sha, prUrl)].join('\n\n');
+      return renderReplyTemplate({
+        template: settings.templateFixed,
+        vars: { ...vars, reason: reply, commit: commitLink({ sha, prUrl }) },
+      });
     }
     if (reason.length > 0) {
-      const verdict = reply.length > 0 ? `${VERDICT_CLOSED} ${reply}` : VERDICT_CLOSED;
-      return [verdict, `**Resolution.** Closed without a change: ${reason}`].join('\n\n');
+      return renderReplyTemplate({
+        template: settings.templateNoChange,
+        vars: { ...vars, reason: reply.length > 0 ? reply : reason },
+      });
     }
     return reply.length > 0 ? reply : null;
   })();
 
-  return body === null
+  return body === null || body === ''
     ? null
-    : appendAttribution({ body, isEnabled: isAttributed, syntax: 'markdown' });
+    : appendAttribution({ body, isEnabled: settings.isSigned, syntax: 'markdown' });
 };

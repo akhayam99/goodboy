@@ -10,8 +10,8 @@ const HEAD_URL = 'https://github.com/acme/web/pull/248#discussion_r1';
 
 const commentOf = (patch: Partial<PrComment> = {}): PrComment => ({
   id: 'comment-1',
-  author: 'dhh',
-  authorAvatarUrl: 'https://avatars.example/dhh.png',
+  author: 'harbor-reviewer',
+  authorAvatarUrl: 'https://avatars.example/harbor-reviewer.png',
   body: 'This retries forever on a 500.',
   createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
   url: HEAD_URL,
@@ -40,9 +40,9 @@ describe('the review thread content', () => {
   it('keeps the author, the avatar, the age, the location and the body of the head comment', () => {
     render(<ReviewThreadContent thread={threadOf()} onOpenUrl={vi.fn()} />);
 
-    expect(screen.getByText('dhh')).toBeDefined();
-    expect(screen.getByRole('img', { name: 'dhh' }).getAttribute('src')).toBe(
-      'https://avatars.example/dhh.png',
+    expect(screen.getByText('harbor-reviewer')).toBeDefined();
+    expect(screen.getByRole('img', { name: 'harbor-reviewer' }).getAttribute('src')).toBe(
+      'https://avatars.example/harbor-reviewer.png',
     );
     expect(screen.getAllByText('3h ago').length).toBeGreaterThan(0);
     expect(screen.getByText('src/retry.ts:84')).toBeDefined();

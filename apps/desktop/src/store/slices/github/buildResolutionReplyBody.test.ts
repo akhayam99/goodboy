@@ -1,98 +1,103 @@
 import { describe, expect, it } from 'vitest';
+import { REPLY_SETTINGS_DEFAULT } from '../../../features/resolve/replySettings';
 import { buildResolutionReplyBody } from './buildResolutionReplyBody';
 
 const PR_URL = 'https://github.com/o/r/pull/9';
+const UNSIGNED = { ...REPLY_SETTINGS_DEFAULT, isSigned: false };
 
 describe('buildResolutionReplyBody', () => {
   it('returns null without a closure', () => {
     expect(
-      buildResolutionReplyBody({ closure: undefined, prUrl: PR_URL, isAttributed: false }),
+      buildResolutionReplyBody({ closure: undefined, prUrl: PR_URL, settings: UNSIGNED }),
     ).toBeNull();
   });
 
-  it('labels a fix and puts the resolution below the reason', () => {
+  it('fills the fixed template with the reason and a link to the commit', () => {
     const body = buildResolutionReplyBody({
-      closure: { commitSha: 'abc1234def', reply: 'the guard ran after the early return' },
+      closure: { commitSha: 'abc1234def', reply: 'The guard ran after the early return.' },
       prUrl: PR_URL,
-      isAttributed: false,
+      settings: UNSIGNED,
     });
     expect(body).toBe(
-      '**Valid.** the guard ran after the early return\n\n**Resolution.** Fixed in [`abc1234`](https://github.com/o/r/commit/abc1234def).',
+      'The guard ran after the early return.\n\nFixed in [`abc1234`](https://github.com/o/r/commit/abc1234def).',
     );
   });
 
-  it('keeps the plain commit line when the pr url is unknown', () => {
+  it('keeps the plain commit when the pr url is unknown', () => {
     expect(
       buildResolutionReplyBody({
         closure: { commitSha: 'abc1234def' },
         prUrl: null,
-        isAttributed: false,
+        settings: UNSIGNED,
       }),
-    ).toBe('**Valid.**\n\n**Resolution.** Fixed in `abc1234`.');
+    ).toBe('Fixed in `abc1234`.');
   });
 
-  it('labels a close and names the closing reason', () => {
+  it('fills the not changing template, with the closing reason when there is no reply', () => {
     expect(
       buildResolutionReplyBody({
-        closure: {
-          reason: 'covered elsewhere',
-          reply: 'the sibling routes share this convention',
-        },
+        closure: { reason: 'covered elsewhere', reply: 'The sibling routes share this name.' },
         prUrl: PR_URL,
-        isAttributed: false,
+        settings: UNSIGNED,
       }),
-    ).toBe(
-      '**Not applying.** the sibling routes share this convention\n\n**Resolution.** Closed without a change: covered elsewhere',
-    );
-  });
-
-  it('stands on the verdict alone when the agent wrote no reason', () => {
+    ).toBe('The sibling routes share this name.\n\nLeaving this as is.');
     expect(
       buildResolutionReplyBody({
         closure: { reason: 'covered elsewhere' },
         prUrl: PR_URL,
-        isAttributed: false,
+        settings: UNSIGNED,
       }),
-    ).toBe('**Not applying.**\n\n**Resolution.** Closed without a change: covered elsewhere');
+    ).toBe('covered elsewhere\n\nLeaving this as is.');
   });
 
-  it('posts the reply unlabelled when there is no sha and no reason', () => {
+  it('renders the workspace template with the reviewer, file, line and fixup target', () => {
+    expect(
+      buildResolutionReplyBody({
+        closure: { commitSha: '9e8d7c6aaa', reply: 'capped at 6' },
+        prUrl: PR_URL,
+        settings: {
+          ...UNSIGNED,
+          templateFixed:
+            '{reviewer} {reason}, done in {commit} (fixup of {fixup_of}) {file}:{line}',
+        },
+        context: {
+          reviewer: 'cascadia-lead',
+          file: 'src/retryPolicy.ts',
+          line: 42,
+          fixupOfSha: '3a1f9c2bbb',
+        },
+      }),
+    ).toBe(
+      '@cascadia-lead capped at 6, done in [`9e8d7c6`](https://github.com/o/r/commit/9e8d7c6aaa) (fixup of [`3a1f9c2`](https://github.com/o/r/commit/3a1f9c2bbb)) src/retryPolicy.ts:42',
+    );
+  });
+
+  it('posts the reply as written when there is no sha and no reason', () => {
     expect(
       buildResolutionReplyBody({
         closure: { reply: 'answered inline' },
         prUrl: PR_URL,
-        isAttributed: false,
+        settings: UNSIGNED,
       }),
     ).toBe('answered inline');
   });
 
-  it('returns null when every field is blank', () => {
+  it('returns null when every field is blank, signed or not', () => {
     expect(
       buildResolutionReplyBody({
         closure: { reply: '   ', reason: '' },
         prUrl: PR_URL,
-        isAttributed: false,
+        settings: UNSIGNED,
       }),
+    ).toBeNull();
+    expect(
+      buildResolutionReplyBody({ closure: { reply: '   ', reason: '' }, prUrl: PR_URL }),
     ).toBeNull();
   });
 
-  it('signs the reply when attribution is enabled', () => {
-    expect(
-      buildResolutionReplyBody({
-        closure: { reply: 'answered inline' },
-        prUrl: PR_URL,
-        isAttributed: true,
-      }),
-    ).toBe(`answered inline\n\n*Written by Goodboy*`);
-  });
-
-  it('leaves a blank closure unsigned when attribution is enabled', () => {
-    expect(
-      buildResolutionReplyBody({
-        closure: { reply: '   ', reason: '' },
-        prUrl: PR_URL,
-        isAttributed: true,
-      }),
-    ).toBeNull();
+  it('signs the reply by default', () => {
+    expect(buildResolutionReplyBody({ closure: { reply: 'answered inline' }, prUrl: PR_URL })).toBe(
+      `answered inline\n\n*Written by Goodboy*`,
+    );
   });
 });

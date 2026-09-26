@@ -14,6 +14,7 @@ import type {
 import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { createResolveSlice } from '../resolve';
 import { resolveInitialState } from '../resolve/state';
+import { REPLY_SETTINGS_DEFAULT } from '../../../features/resolve/replySettings';
 import { buildResolutionReplyBody } from '../github/buildResolutionReplyBody';
 import { threadOutcome } from '../resolve/threadOutcome';
 import type { GetFn, SetFn } from './types';
@@ -200,7 +201,11 @@ describe('completeResolvedAgent', () => {
     const outcome = outcomeFor({ state, threadId: 'PRRT_1' });
     expect(outcome).toEqual({ kind: 'analyzed', reply: summary, verdict: 'wontfix' });
     expect(
-      buildResolutionReplyBody({ closure: outcome ?? undefined, prUrl: null, isAttributed: false }),
+      buildResolutionReplyBody({
+        closure: outcome ?? undefined,
+        prUrl: null,
+        settings: { ...REPLY_SETTINGS_DEFAULT, isSigned: false },
+      }),
     ).toBe(summary);
   });
 

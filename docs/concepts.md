@@ -158,6 +158,14 @@ days. A clean folder idle longer than "Suggest cleanup after" (30 days by
 default) can go in one bulk step. Its branch stays, even with commits that were
 never pushed.
 
+Storage also lists **artifacts from deleted sessions**: the plans, reports and
+wireframes whose session is gone, with their saved copy on disk. Each row says
+when its session was deleted and when you last used it, which is the later of
+its last edit and the last time you opened it. You can open one, keep it for 30
+days or always, or delete it. Deleting removes both the copy and the record. An
+artifact whose session was deleted longer ago than "Suggest cleanup after" and
+that you have not used for twice that long is suggested for one bulk delete.
+
 The **Overview** groups mounts of the same project together. Each row has its
 own terminal, diff and pull request links.
 
@@ -334,7 +342,11 @@ with at most one main action, the document at reading size, and a right panel
 for its details and for a chat with the agent that wrote it. **Open in
 window**, under `⋯`, shows the same document as a light page in its own
 window, with Print and Copy; **Print** opens that page straight in the print
-dialog, where the system saves the PDF.
+dialog, where the system saves the PDF. Goodboy also keeps a copy of every
+artifact on disk, under the workspace folder described in
+[architecture.md](architecture.md#on-disk-data-layout): the Details panel
+shows its path under **Saved copy**, and **Show in Finder**, under `⋯` or
+next to the path, opens its folder.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its
@@ -412,6 +424,22 @@ opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
 
+- Goodboy reads what the commit is from git, not from the agent. A commit whose
+  subject is `fixup! <subject>` of a commit on the branch shows as
+  `Fixed in 9e8d7c6 · fixup of 3a1f9c2`. A revision that rewrote an earlier fix
+  shows `Fixed in 7c1e0aa · replaces 4f21c8b`
+- With the fixup commit style, Goodboy blames the commented line and asks the
+  agent for `git commit --fixup=<sha>` of the commit that introduced it. The
+  default is a new commit for every fix. Goodboy never squashes or force-pushes
+- Approving a fix fast-forwards the branch to it. When the branch moved on
+  since the fix started, the fix is cherry-picked onto the new head and that
+  commit becomes the sha on the branch. If it no longer applies, the pick is
+  aborted and the branch stays as it was. When an approval was interrupted
+  after the pick landed, approving again finds the same change on the branch
+  and records that commit instead of picking it twice. If recording the picked
+  sha fails, preparing the publication (or **Recheck fix**) records it again
+  before it checks the branch
+
 - Every start goes through one path (`startResolve`): `Resolve N new` in the
   Conversations header, a selection with `Resolve N`, or the Activity
   suggestion. Each carries the thread ids and the marker contract. The click
@@ -429,6 +457,24 @@ Nothing reaches GitHub until a **publication** runs. A publication:
 2. Pushes the branch once, if there is code to send
 3. Posts each reply, then resolves each thread on GitHub when you are allowed
    to resolve it there. Otherwise the thread stays open for the reviewer.
+
+How a reply reads is set in Settings, Workspace, **Review replies**:
+
+- **Voice**: Terse (the default), Friendly, Formal, or Like my replies, which
+  follows a style note you can edit. **Learn from my replies** reads your last
+  20 review replies in the workspace's repositories and writes that note. The
+  voice goes into the agent's prompt
+- **Templates**: When fixed and When not changing. Goodboy fills them in code,
+  the agent writes only `{reason}`. The other variables are `{commit}`,
+  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
+  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+- **Sign replies** is the attribution line switch, so one value signs
+  everything Goodboy posts
+- **Resolve the thread after replying** (on by default) and **Commits** (new
+  commit, or fixup of the commit that added the line)
+
+The drawer shows these under the reply in one line, with a link to the
+section.
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

@@ -14,7 +14,7 @@ const threadOn = ({
 }): CommentThread => ({
   head: {
     id,
-    author: 'dhh',
+    author: 'harbor-reviewer',
     authorAvatarUrl: null,
     body,
     createdAt: '2026-01-01T00:00:00Z',

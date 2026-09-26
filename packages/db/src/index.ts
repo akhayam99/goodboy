@@ -179,7 +179,17 @@ export {
   type ListBudgetAlertsOptions,
 } from './queries/budget';
 export { listSkillsForWorkspace, upsertSkill, deleteSkill } from './queries/skill';
-export { listWorkflows, getWorkflow, upsertWorkflow, deleteWorkflow } from './queries/workflow';
+export {
+  listWorkflows,
+  getWorkflow,
+  upsertWorkflow,
+  deleteWorkflow,
+  restoreSeededWorkflow,
+  readBuiltinSeedState,
+  listRemovedSeededWorkflowIds,
+  takenNameKey,
+  type BuiltinSeedState,
+} from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -261,6 +271,13 @@ export {
   type StorageMountRow,
   type StorageSessionRef,
 } from './queries/storage-folders';
+export {
+  listOrphanArtifacts,
+  markArtifactOpened,
+  setArtifactKeep,
+  purgeOrphanArtifact,
+  type OrphanArtifactRow,
+} from './queries/artifact-orphan';
 export {
   listWorktreeRoots,
   markWorktreeRootScanned,
@@ -350,6 +367,10 @@ export {
   getArtifact,
   getArtifactBySourceTurn,
   listArtifactsForSession,
+  listArtifactMirrorPage,
+  type ArtifactMirrorCursor,
+  type ArtifactMirrorPage,
+  type ArtifactMirrorRow,
   updateArtifactSource,
   setArtifactStatus,
   deleteArtifact,
@@ -401,6 +422,8 @@ export {
   listResolveThreads,
   setResolveThreadReplyDraft,
   setResolveThreadStage,
+  setResolveThreadCommitLinks,
+  setResolveThreadCommitShas,
   setResolveThreadState,
   upsertResolveThread,
 } from './queries/resolve-thread';

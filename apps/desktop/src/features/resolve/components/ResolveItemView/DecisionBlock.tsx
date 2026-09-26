@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import type { ResolveProposalKind } from '../../../../store/slices/resolve/resolveProposalKind';
@@ -19,6 +20,7 @@ type Props = {
   readonly onChangeReply: (value: string) => void;
   readonly onChangeInstruction: (value: string) => void;
   readonly onEditReply: () => void;
+  readonly settingsLine?: ReactNode;
 };
 
 const sectionLabel = ({
@@ -91,6 +93,7 @@ export const DecisionBlock = ({
   onChangeReply,
   onChangeInstruction,
   onEditReply,
+  settingsLine,
 }: Props) => (
   <div className="flex min-w-0 flex-col gap-2">
     <SectionHeader
@@ -137,5 +140,6 @@ export const DecisionBlock = ({
         </Button>
       </div>
     )}
+    {!isDelivered && mode !== 'fix' && settingsLine}
   </div>
 );

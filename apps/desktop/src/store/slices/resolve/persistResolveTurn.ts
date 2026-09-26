@@ -94,7 +94,7 @@ export const persistResolveTurn = async ({
     const patch: Partial<ResolveThread> =
       outcome === undefined
         ? retained !== null && (hasOwnedMarkers || question !== null)
-          ? outcomePatch({ outcome: retained, verdict })
+          ? outcomePatch({ outcome: retained, verdict, previous })
           : {
               state: question === null ? 'failed' : 'needs_answer',
               stateReason:
@@ -103,7 +103,7 @@ export const persistResolveTurn = async ({
                   : 'question',
               question,
             }
-        : outcomePatch({ outcome, verdict });
+        : outcomePatch({ outcome, verdict, previous });
     const next = {
       ...row,
       ...patch,

@@ -10,6 +10,7 @@ import {
   buildCommentAgentArgs,
   buildCommentAgentTitle,
   buildResolverAgentArgs,
+  type ResolverStyle,
 } from './spawn-from-comment';
 
 const PR: PullRequestState = {
@@ -252,5 +253,40 @@ describe('spawn-from-comment', () => {
       'Judge all 2 threads above on the merits in one pass. When a thread asks for the right change, implement it and commit locally as you go. When the change it asks for is wrong or not worth making, leave the code unchanged and give the reason in its outcome marker. Never default to either outcome: read the code first, then decide per thread.',
     );
     expect(prompt).not.toContain('Operator notes');
+  });
+});
+
+describe('the reply voice in the resolver prompt', () => {
+  const promptWith = (style?: ResolverStyle) =>
+    buildResolverAgentArgs({
+      threads: threadsOf(1),
+      pr: PR,
+      ...(style !== undefined && { style }),
+    }).initialPrompt;
+
+  it('keeps the structure rules for every voice and writes only the reason', () => {
+    for (const voice of ['terse', 'friendly', 'formal'] as const) {
+      const prompt = promptWith({ voice });
+      expect(prompt).toContain("Goodboy places your block into the workspace's reply template");
+      expect(prompt).toContain(`Voice: ${voice}.`);
+    }
+  });
+
+  it('is terse by default, with the two to four sentence rule', () => {
+    const prompt = promptWith();
+    expect(prompt).toContain('Voice: terse.');
+    expect(prompt).toContain('No praise openers, no apologies');
+  });
+
+  it('allows one thanks when friendly and forbids contractions when formal', () => {
+    expect(promptWith({ voice: 'friendly' })).toContain('One short thanks');
+    expect(promptWith({ voice: 'formal' })).toContain('no contractions');
+  });
+
+  it('follows the style note in place of the preset for like my replies', () => {
+    const prompt = promptWith({ voice: 'mine', styleNote: 'Short. Starts lowercase.' });
+    expect(prompt).toContain('Short. Starts lowercase.');
+    expect(prompt).not.toContain('Voice: terse.');
+    expect(promptWith({ voice: 'mine', styleNote: '  ' })).toContain('Voice: terse.');
   });
 });

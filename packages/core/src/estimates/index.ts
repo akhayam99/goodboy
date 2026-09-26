@@ -8,7 +8,6 @@ export {
   type CostRange,
   type DurationEstimate,
   type DurationSample,
-  type DurationSamples,
   type DurationUnit,
   type EstimateKey,
   type EstimateProgress,

@@ -470,6 +470,10 @@ one is open at a time.
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
+  Below the worktrees, "Artifacts from deleted sessions" lists plans, reports
+  and wireframes whose session is gone, under To review and Kept, with Open,
+  Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
+  action deletes the unused ones. Artifacts never trigger a nudge on their own.
 - **Settings rail tone is state, never decoration.** Each row carries its
   concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
   doing: warning on Providers & models when a connected CLI is too old for a

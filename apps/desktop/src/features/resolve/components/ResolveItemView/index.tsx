@@ -19,6 +19,7 @@ import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
 import type { ResolveDecisionMode } from '../../resolveItemDraft';
 import { DecisionBlock } from './DecisionBlock';
+import { ReplySettingsLine } from './ReplySettingsLine';
 import { SharedCandidateNote } from './SharedCandidateNote';
 import type { SharedCandidateMember } from '../../sharedCandidateThreadIds';
 import { ResolveCommitLine } from './ResolveCommitLine';
@@ -214,6 +215,7 @@ export const ResolveItemView = ({
               onChangeReply={onChangeReply}
               onChangeInstruction={onChangeInstruction}
               onEditReply={onEditReply}
+              settingsLine={<ReplySettingsLine sessionId={sessionId} />}
             />
             {note !== null && <p className="text-2xs text-warning">{note}</p>}
             {error !== null && <p className="text-2xs text-danger">{error}</p>}
