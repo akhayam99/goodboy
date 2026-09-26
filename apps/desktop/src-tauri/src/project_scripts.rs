@@ -416,7 +416,7 @@ mod tests {
         let dir = TestDir::new("same-name");
         dir.write(
             "package.json",
-            r#"{"name":"northwind","workspaces":["apps/*"],"scripts":{"dev":"turbo dev"}}"#,
+            r#"{"name":"northwind","workspaces":["apps/web","apps/api"],"scripts":{"dev":"turbo dev"}}"#,
         );
         dir.write("yarn.lock", "");
         dir.write(
