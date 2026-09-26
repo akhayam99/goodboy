@@ -163,7 +163,9 @@ const COLOR_KEYWORDS = new Set([
 
 const definedColorNames = (): ReadonlySet<string> => {
   const css = readFileSync(STYLES, 'utf8');
-  const tokens = [...css.matchAll(/--color-([a-z0-9-]+):/g)].map((match) => String(match[1]));
+  const tokens = [...css.matchAll(/--(?:color|text)-([a-z0-9]+(?:-[a-z0-9]+)*):/g)].map((match) =>
+    String(match[1]),
+  );
   const utilities = [...css.matchAll(/(?:@utility\s+|^\.)[a-z]+-([a-z0-9-]+)\s*\{/gm)].map(
     (match) => String(match[1]),
   );

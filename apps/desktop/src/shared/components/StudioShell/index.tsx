@@ -46,7 +46,7 @@ export const StudioShell = ({
       )}
     >
       <OverlayHeader
-        {...(variant === 'slot' && { heightClassName: 'h-[var(--chat-header-h)]' })}
+        {...(variant === 'slot' && { heightClassName: 'h-7.5' })}
         icon={Icon}
         {...(tone != null && { tone })}
         glyph={glyph}

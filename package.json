@@ -29,6 +29,7 @@
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "check:doc-refs": "node scripts/check-doc-refs.mjs",
     "release:kind": "node scripts/release-kind.mjs",
+    "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {

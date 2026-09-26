@@ -1,4 +1,5 @@
 export { cn } from './cn';
+export { TYPE_ROLES } from './typeRoles';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';

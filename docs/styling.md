@@ -79,6 +79,11 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
+Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta` and the
+rest), never a size, a weight, a leading and a tracking written one by one. The
+roles and the ratchet that counts the raw classes are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
+
 Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.

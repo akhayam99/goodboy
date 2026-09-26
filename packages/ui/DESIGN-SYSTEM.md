@@ -85,60 +85,96 @@ step.
 
 ## Type scale
 
-`text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
-`lg` 17px, `xl` 20px, and one display grade, `2xl` 24px/32px, kept for the
-onboarding titles, the `EmptyState` hero and the Impact headline. Arbitrary
-sizes are covered by [docs/styling.md](../../docs/styling.md).
+Features name a **type role**, never a size, a leading, a weight and a
+tracking one by one. Each role is a `--text-*` token in `styles.css`, or an
+`@utility` when it also sets case or family, and fixes size, a whole-pixel line
+box, weight and tracking together. `cn` reads every role as a font size, so a
+later role or grade replaces an earlier one and a text colour never drops it.
+The list is `TYPE_ROLES` in `typeRoles.ts`.
 
-**Every size a repeated row uses declares its own line-height.** Without that
-pair, the box height follows whatever `line-height` the size inherits. For
-example, `3xs` and `2xs` inherited the body's 1.55 and came out at 15.5px and
-17.05px. That put the lens rail's group labels and count chips on a fractional
-pixel, and a row with a count ended up taller than a row without one. `3xs`,
-`2xs`, `sm` and `2xl` have a fixed line height in the tokens. `xs` does not, so
-a repeated row that uses it writes `leading-4` where it is used.
+| role             | measure                       | used for                                                   |
+| ---------------- | ----------------------------- | ---------------------------------------------------------- |
+| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title |
+| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                       |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question  |
+| `text-row`       | 14/20, 500                    | a top-level row label, a card title                        |
+| `text-body`      | 14/20                         | running text; text with no class inherits it from the body |
+| `text-prose`     | 14/22                         | messages, markdown, artifacts                              |
+| `text-label`     | 12/16                         | controls, a nested row, a status label                     |
+| `text-secondary` | 11/16                         | a secondary line, a chip, an option description            |
+| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                    |
+| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                 |
+| `text-code`      | mono 12/18                    | branch, path, command, inline code                         |
 
-### One grade per role
+A role with no weight inherits one: `text-label font-medium` is a control label
+at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
+600 belongs to display, title, heading and eyebrow. Tracking lives only inside
+the roles. A leading utility still composes with a role
+(`text-secondary leading-none` for a one-line badge), because the role reads
+the leading before its own line box.
 
-The grade follows what a thing **is**, not which file draws it. A row label is a
-row label in the activity feed and in a brief, so it is the same size in both.
-The session Overview is the reference surface. Its density was tuned on
+The raw grades stay defined, each on a whole-pixel line box: `3xs` 10/14, `2xs`
+11/16, `xs` 12/16, `sm` 14/20, `base` 15/24, `lg` 17/24, `xl` 20/28, `2xl`
+24/32. New code does not reach for them. `forbidden-patterns.test.ts` counts
+raw sizes, weights, leadings and tracking per file, and the count only goes
+down. `scripts/codemods/type-roles.mjs` (`pnpm codemod:type-roles`) rewrites
+the combinations that map one to one (`text-sm font-medium` to `text-row`,
+`text-3xs` to `text-meta`, `text-sm leading-relaxed` to `text-prose`); the rest
+moves by hand, area by area. Arbitrary sizes are covered by
+[docs/styling.md](../../docs/styling.md).
+
+The `html` root stays 15px while any `rem` remains. `body` and `#root` are
+14/20, so text with no class lands on the body role instead of 15/23.25.
+
+### One role per job
+
+The role follows what a thing **is**, not which file draws it. A row label is a
+row label in the activity feed and in a brief, so it takes the same role in
+both. The session Overview is the reference surface. Its density was tuned on
 purpose. Window zoom scales every surface at once. So if another surface uses a
-larger grade for the same role, the user has to choose between a comfortable
+larger role for the same thing, the user has to choose between a comfortable
 Overview and a comfortable everything else.
-
-| role                                             | grade               | resolves to |
-| ------------------------------------------------ | ------------------- | ----------- |
-| pane title                                       | `text-lg`           | 17px / 24px |
-| section label, and its `hint`                    | `text-2xs`          | 11px / 16px |
-| top-level row label                              | `text-sm leading-5` | 14px / 20px |
-| nested row label, a child of the row above it    | `text-xs leading-4` | 12px / 16px |
-| secondary label beside a row label               | `text-2xs`          | 11px / 16px |
-| chip                                             | `text-2xs`          | 11px / 16px |
-| metadata inside a row: time, ordinal, cost, hint | `text-3xs`          | 10px / 14px |
-| status label                                     | `text-xs`           | 12px        |
 
 **Prose is the one exception. It is a reading grade, not drift.** Human and
 assistant transcript messages, a markdown body and any artifact the reader came
-for stay on the comfortable grade (`text-sm`). Making those smaller makes the
-app worse. The chrome around prose still takes the grade its role asks for. A
+for stay on `text-prose` or `text-body`. Making those smaller makes the app
+worse. The chrome around prose still takes the role its job asks for. A
 document pane's section label is an eyebrow even when the body under it is
-`text-sm`, because `DESIGN.md` compresses chrome without limit and never the
+prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
 
 ## Radius scale
 
-One radius family, one step away from square. There is no `rounded-xl` token:
-larger radii look bubbly at this scale. `no-token-bypass.test.ts` rejects bare
-`rounded` and arbitrary `rounded-[Npx]`. Bare `rounded` comes out at 3.75px on
-the 15px root, so it is always written `rounded-sm`.
+One concentric family: an inner radius is the outer radius minus the padding
+between them, so a popover at 8 with 4 of padding holds rows at 4.
+`no-token-bypass.test.ts` rejects bare `rounded` and arbitrary `rounded-[Npx]`.
+Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
+`rounded-sm`.
 
-| token          | value | used for                                                      |
-| -------------- | ----- | ------------------------------------------------------------- |
-| `rounded-lg`   | 8px   | framed surfaces: cards, banners, panels                       |
-| `rounded-md`   | 6px   | controls and popovers: buttons, inputs, selects, icon buttons |
-| `rounded-sm`   | 4px   | inline tokens: kbd, code, small badges, checkboxes            |
-| `rounded-full` | n/a   | pills, avatars, circular icon buttons                         |
+| token           | value | used for                                                        |
+| --------------- | ----- | --------------------------------------------------------------- |
+| `rounded-frame` | 10px  | only the content sheet and the floating drawer                  |
+| `rounded-lg`    | 8px   | surfaces: cards, popovers, menus, bands, notices, toasts        |
+| `rounded-md`    | 6px   | controls: buttons, inputs, triggers, icon buttons, sidebar rows |
+| `rounded-sm`    | 4px   | role pill, kbd, inline code, checkbox, rows inside a popover    |
+| `rounded-full`  | n/a   | avatars, nodes, status bars, thumbs                             |
+
+## Elevation
+
+Five levels plus the tooltip. A level sets surface, shadow, border and radius
+together, and there is no arbitrary shadow.
+
+| level      | surface                          | shadow      | border                        | radius                     | holds                                 |
+| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | ------------------------------------- |
+| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, sidebar, footer, studio rail |
+| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail                |
+| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes          |
+| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`               |
+| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs      |
+| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                              |
+
+A drawer in overlay adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
+only to a dragged card.
 
 ## Spacing scale
 
@@ -163,16 +199,6 @@ One limited scale where each step has a meaning. Never an arbitrary value.
 | `gap-4` | controls, or related blocks    |
 | `gap-6` | sections                       |
 | `gap-8` | a header zone from a body zone |
-
-## Density grades
-
-Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
-
-- **Compact**: the sidebar.
-- **Cozy**: the strips inside a pane, the composer, tool/system transcript rows.
-- **Comfortable**: human and assistant prose. Built for reading.
-- **Scan**: the stage board and other card grids. Tuned for sweeping down a
-  column of cards, not reading one.
 
 ## Color and tone resolution
 
