@@ -429,9 +429,18 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. Workspace settings is the popover's
-  last row for the current workspace, so the bar holds no second settings
-  control.
+  lists workspaces as rows of its own. `Find a workspace or project` filters by
+  workspace name and by project name. The current workspace sits in its own
+  `This window` row (a check mark and `Current`, plus the only gear icon into
+  Workspace settings); every other workspace shows one verb, `Open`, that
+  replaces the workspace in this window (`⌘Enter` always opens a new window
+  instead, and a row already open elsewhere says `In another window`). Open
+  replacing a window with agents running here asks first, inline under the
+  row, never in a modal: the primary keeps them going in a new window, the
+  ghost alternative stops them and opens here. A closed `Disconnected` group
+  lists workspaces removed from disk, each with a small `Reconnect`. Settings
+  opens on App > General; only Workspace settings lives behind this popover,
+  so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
@@ -496,13 +505,14 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows, Impact and Settings. Settings opens on the current
-workspace when there is one. Impact is a destination, so it has a launcher; the
-launcher opens its Overview tab, while the spend figure in the top bar and the
-`Impact: Spend` palette entry open its Spend tab. Providers & models is a
-Settings scope, reached from the Settings rail and the palette, so it has no
-footer launcher. Changelog opens from the Goodboy chip and the palette, so it
-earns no footer entry either.
+Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
+General, with or without a workspace; Workspace settings opens only from the
+gear on the current-workspace row of the workspace popover. Impact is a
+destination, so it has a launcher; the launcher opens its Overview tab, while
+the spend figure in the top bar and the `Impact: Spend` palette entry open its
+Spend tab. Providers & models is a Settings scope, reached from the Settings
+rail and the palette, so it has no footer launcher. Changelog opens from the
+Goodboy chip and the palette, so it earns no footer entry either.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -632,15 +642,25 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Storage is the one place for disk space.** App > Storage lists every
-  worktree folder Goodboy made, grouped by repository, disconnected projects
-  and removed workspaces included, under three filters: To review, In use and
-  Kept. It is app scope because the disk belongs to the machine. The workspace
-  page only shows a Notice that points to Storage filtered on that workspace,
-  and the `open-orphan-worktrees` notification action opens Storage too
-  (`openStorage`). The only bulk action removes clean folders idle past "Suggest
-  cleanup after"; a folder with changes, an operation in progress, a writer
-  lease or no git registration never joins it and says why on its row.
+- **Storage is the one place for disk space, scoped by a picker.** App >
+  Storage lists every worktree folder Goodboy made, grouped by repository,
+  under three filters: To review, In use and Kept. A scope picker
+  (`StorageScopePicker`, `Listbox`) sits above the summary: the current
+  window's workspace, every other workspace with its own weight, `Removed
+workspaces` (folders whose owning workspace is gone or was never linked),
+  and `All workspaces` with the machine total. The scope drives the summary
+  numbers, the worktree list and the artifact list together
+  (`storageScope`, `resolveStorageScope`); it defaults to the current
+  window's workspace, or to all workspaces without one. A scope other than
+  all drops App data out of the bar into its own line (`state.storageScope`
+  never splits app data by workspace) and keeps a faint, clickable `All
+workspaces: <total>, <can go> can go` line under the numbers. The
+  workspace page's own Notice, and the `open-orphan-worktrees` notification
+  action, both open Storage already scoped to that workspace
+  (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
+  scoped to all. The only bulk action removes clean folders idle past
+  "Suggest cleanup after"; a folder with changes, an operation in progress, a
+  writer lease or no git registration never joins it and says why on its row.
   Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
   sends a `storage-reclaimable` notification (action `open-storage`) when that
   amount passes 10 GB, then stays quiet for 14 days and speaks again only after
@@ -664,21 +684,30 @@ one is open at a time.
   value is scanned again, until "Flag again" clears it. The page needs a
   workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
-  concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
-  doing: warning on Providers & models when a connected CLI is too old for a
-  model it serves or no provider is connected (`selectProviderAttention`, with
-  the reason as the row subtitle), info on General while an app update is
-  ready, info on Storage with "N GB can go" as its subtitle once clean idle
-  folders pass 10 GB (warning when the disk has under 10 GB free and at least
-  1 GB can go, `selectStorageAttention`), warning on Security findings with
-  "N open" once the current workspace has an undismissed finding
-  (`selectSecurityFindingsAttention`). Danger zone reads in `text-danger`. Panel sections sit on
+  concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
+workspaceId })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`, and a regression test
+  spies on `invoke` to keep it invoke-free at render). A dot appears only
+  when something needs doing: warning on Providers & models when a connected
+  CLI is too old for a model it serves or no provider is connected
+  (`selectProviderAttention`, with the reason as the row subtitle), info on
+  General while an app update is ready, info on Storage with "N GB can go" as
+  its subtitle once clean idle folders pass 10 GB (warning when the disk has
+  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  warning on Security findings with "N open" once the current workspace has
+  an undismissed finding (`selectSecurityFindingsAttention`), and warning on
+  Workspace with "N folders not found" once one of its projects reads
+  `missing` in `projectGitStatus` (otherwise the row just names the
+  workspace). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)
-  with the path in the name's tooltip, open, copy and unlink under `⋯`, and
-  adding behind one `Add project` popover. New session defaults sit in a
+  renamed in place. Projects group Starred ahead of All (never in both), each
+  a 32px grid row (star, kind, name, description, a base-branch chip only
+  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
+  and Unlink in a reserved column, dim at rest; clicking the name opens an
+  inline editor below the row for the rest (description, base branch,
+  folder, facts, footer actions). New session defaults sit in a
   two-column grid with each help behind an info mark, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.

@@ -7,6 +7,7 @@ import type { WorkspaceId } from '@goodboy/types';
 const { state, repoMocks } = vi.hoisted(() => ({
   state: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
+    projectGitStatus: {} as Record<string, unknown>,
     addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
       kind: 'linked',
       project: { id: 'proj-1', name: 'api', rootPath: '/repos/api' },
@@ -21,6 +22,8 @@ const { state, repoMocks } = vi.hoisted(() => ({
     removeProject: vi.fn(async () => undefined),
     setProjectStarred: vi.fn(async () => undefined),
     describeProject: vi.fn(async () => undefined),
+    updateProjectBaseBranch: vi.fn(async () => undefined),
+    loadProjectGitStatus: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
     projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
@@ -46,11 +49,6 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
 vi.mock('./GoodboyIgnoreField', () => ({
   GoodboyIgnoreField: () => null,
 }));
-vi.mock('./ProjectBaseBranchInput', () => ({
-  ProjectBaseBranchInput: ({ project }: { project: { name: string } }) => (
-    <span data-testid="base-branch">{project.name}</span>
-  ),
-}));
 
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 
@@ -73,6 +71,7 @@ beforeEach(() => {
   state.projects = [];
   state.workspaceIntegrations = {};
   state.projectSentryLinks = {};
+  state.projectGitStatus = {};
 });
 afterEach(cleanup);
 
@@ -83,10 +82,8 @@ const addPath = async (path: string) => {
   await waitFor(() => expect(state.addProject).toHaveBeenCalled());
 };
 
-const armUnlink = (name: string) => {
-  fireEvent.click(screen.getByRole('button', { name: `Actions for ${name}` }));
-  fireEvent.click(screen.getByRole('menuitem', { name: /unlink/i }));
-};
+const openEditor = (name: string) =>
+  fireEvent.click(screen.getByRole('button', { name: `Edit ${name}` }));
 
 describe('WorkspaceProjectsSection', () => {
   it('shows an inline conflict row when the path belongs to another workspace', async () => {
@@ -162,7 +159,7 @@ describe('WorkspaceProjectsSection', () => {
       'Projects1',
     );
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
-    expect(screen.queryByText('Repository')).toBeNull();
+    expect(screen.getByText('All projects')).toBeDefined();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
     expect(screen.queryByLabelText('Project path')).toBeNull();
     expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
@@ -175,7 +172,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(within(popover).getByRole('button', { name: 'Link a plain folder' })).toBeDefined();
   });
 
-  it('shows the base branch field only on repository rows', () => {
+  it('shows the base branch picker in the editor, repo rows only', () => {
     state.projects = [
       {
         id: 'proj-docs',
@@ -194,12 +191,14 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getAllByTestId('base-branch').map((node) => node.textContent)).toEqual([
-      'ledger-core',
-    ]);
+    openEditor('notify-relay');
+    expect(screen.queryByRole('combobox', { name: 'Base branch' })).toBeNull();
+
+    openEditor('ledger-core');
+    expect(screen.getByRole('combobox', { name: 'Base branch' })).toBeDefined();
   });
 
-  it('unlinks a project from its menu only after the inline confirm', async () => {
+  it('unlinks a project from its row only after the inline confirm', async () => {
     state.projects = [
       {
         id: 'proj-docs',
@@ -211,7 +210,7 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    armUnlink('notify-relay');
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
     expect(state.removeProject).not.toHaveBeenCalled();
 
     const confirm = screen.getByRole('group', { name: 'Unlink notify-relay?' });
@@ -234,7 +233,7 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    armUnlink('notify-relay');
+    fireEvent.click(screen.getByRole('button', { name: 'Unlink notify-relay' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     await waitFor(() =>
@@ -268,7 +267,7 @@ describe('WorkspaceProjectsSection', () => {
     expect(screen.getByText(/Starred projects come first for agents/)).toBeDefined();
   });
 
-  it('shows a starred project as pressed and unstars it', async () => {
+  it('shows a starred project as pressed, grouped under Starred, and unstars it', async () => {
     state.projects = [
       {
         id: 'proj-ledger',
@@ -281,6 +280,7 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
+    expect(screen.getByText('Starred')).toBeDefined();
     const star = screen.getByRole('button', { name: 'Starred: ledger-core' });
     expect(star.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(star);
@@ -293,7 +293,7 @@ describe('WorkspaceProjectsSection', () => {
     );
   });
 
-  it('writes a one-line description in place and saves it on Enter', async () => {
+  it('edits and saves a one-line description from the row editor on Enter', async () => {
     state.projects = [
       {
         id: 'proj-ledger',
@@ -305,7 +305,7 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add a description of ledger-core' }));
+    openEditor('ledger-core');
     const field = screen.getByLabelText('Description of ledger-core');
     fireEvent.change(field, { target: { value: 'Settles payments and writes the ledger' } });
     fireEvent.keyDown(field, { key: 'Enter' });
@@ -331,14 +331,15 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit the description of ledger-core' }));
-    const field = screen.getByLabelText('Description of ledger-core');
+    openEditor('ledger-core');
+    const field = screen.getByLabelText('Description of ledger-core') as HTMLInputElement;
     fireEvent.change(field, { target: { value: 'Something else' } });
     fireEvent.keyDown(field, { key: 'Escape' });
 
-    expect(screen.getByText('Settles payments')).toBeDefined();
+    expect(field.value).toBe('Settles payments');
     expect(state.describeProject).not.toHaveBeenCalled();
   });
+
   it('marks a project with the Sentry projects it reads', async () => {
     state.workspaceIntegrations = { [WORKSPACE_ID]: [{ provider: 'sentry' }] };
     state.projects = [
@@ -369,5 +370,36 @@ describe('WorkspaceProjectsSection', () => {
     await waitFor(() =>
       expect(state.loadProjectSentryLinks).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID }),
     );
+  });
+
+  it('flags a repo row whose folder is missing', () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    state.projectGitStatus = { 'proj-ledger': { state: 'missing' } };
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByText('Folder not found')).toBeDefined();
+  });
+
+  it('shows the first 8 of All projects and reveals the rest on Show more', () => {
+    state.projects = Array.from({ length: 9 }, (_, index) => ({
+      id: `proj-${index}`,
+      name: `project-${index}`,
+      rootPath: `/repos/project-${index}`,
+      kind: 'folder',
+      workspaceId: WORKSPACE_ID,
+    }));
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }));
+    expect(screen.getAllByRole('img', { name: 'Folder' })).toHaveLength(9);
   });
 });

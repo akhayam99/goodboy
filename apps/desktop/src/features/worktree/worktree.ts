@@ -623,6 +623,38 @@ export const listBranchNames = async ({
   return invoke<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
 };
 
+type RepoDefaultBaseBranchParams = {
+  readonly repoPath: string;
+};
+
+export const repoDefaultBaseBranch = async ({
+  repoPath,
+}: RepoDefaultBaseBranchParams): Promise<string | null> => {
+  return invoke<string | null>('worktree_repo_default_base_branch', { repoPath });
+};
+
+export type BranchMergeState =
+  | { readonly kind: 'unknown' }
+  | { readonly kind: 'protected' }
+  | { readonly kind: 'merged-via-merge' }
+  | { readonly kind: 'merged-via-rebase' }
+  | { readonly kind: 'no-own-commits' }
+  | { readonly kind: 'not-merged'; readonly ahead: number };
+
+type BranchMergeStateParams = {
+  readonly repoPath: string;
+  readonly branch: string;
+  readonly base?: string | null;
+};
+
+export const branchMergeState = async ({
+  repoPath,
+  branch,
+  base = null,
+}: BranchMergeStateParams): Promise<BranchMergeState> => {
+  return invoke<BranchMergeState>('worktree_branch_merge_state', { repoPath, branch, base });
+};
+
 export type ChangeBranchArgs = {
   readonly repoPath: string;
   readonly worktreePath: string;

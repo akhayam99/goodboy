@@ -15,7 +15,10 @@ vi.mock('../../../store', async () => {
     readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
     readonly setCurrentWorkspace: (id: string) => Promise<void>;
-    readonly openWorkspace: (id: string, title: string) => Promise<void>;
+    readonly openWorkspace: (params: {
+      readonly id: string;
+      readonly title: string;
+    }) => Promise<{ readonly kind: 'opened' }>;
     readonly workspaces: ReadonlyArray<{ readonly id: string; readonly name: string }>;
     readonly openStudio: (params: { readonly studio: Studio }) => void;
     readonly amendStudio: (params: { readonly studio: Studio }) => void;
@@ -29,7 +32,10 @@ vi.mock('../../../store', async () => {
     setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
     setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id, appStudio: null }),
-    openWorkspace: async (id) => set({ currentWorkspaceId: id }),
+    openWorkspace: async ({ id }) => {
+      set({ currentWorkspaceId: id });
+      return { kind: 'opened' };
+    },
     openStudio: ({ studio }) => set({ appStudio: studio }),
     amendStudio: ({ studio }) =>
       set((state) => (state.appStudio?.kind === studio.kind ? { appStudio: studio } : state)),
@@ -221,6 +227,24 @@ describe('app overlay hook, navigation', () => {
     expect(frame?.getAttribute('data-studio')).toBe('workflow');
   });
 
+  it('footer Settings opens App > General with a workspace', async () => {
+    renderHarness();
+    act(() => overlays().openSettings());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
+  });
+
+  it('footer Settings opens App > General without a workspace', async () => {
+    render(<Harness connectedGithub={false} isLauncher />);
+    act(() => overlays().openSettings());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
+  });
+
   it('changes the settings scope in place', async () => {
     renderHarness();
     act(() => overlays().openSettings());
@@ -244,7 +268,7 @@ describe('app overlay hook, navigation', () => {
   });
 
   it('does not open the inbox here when the other workspace opens in its own window', async () => {
-    useAppStore.setState({ openWorkspace: async () => undefined });
+    useAppStore.setState({ openWorkspace: async () => ({ kind: 'opened' }) });
     renderHarness();
     act(() => overlays().openSettings());
 

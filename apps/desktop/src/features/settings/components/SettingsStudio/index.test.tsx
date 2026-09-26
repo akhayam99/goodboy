@@ -54,6 +54,8 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     cliRequirements: [] as ReadonlyArray<unknown>,
     agentTurnState: {},
     openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
+    projectGitStatus: {} as Record<string, unknown>,
   },
   toastMock: vi.fn(),
 }));
@@ -66,6 +68,8 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useSessions: () => [],
+  useWorkspaces: () => [],
+  useCurrentWorkspace: () => null,
 }));
 
 vi.mock('../../../providers/components/ProviderStudio', () => ({

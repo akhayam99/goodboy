@@ -83,6 +83,15 @@ one-line **description**. Both live on the project row in workspace settings.
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
+**One workspace per window.** Switching a window to another workspace cancels
+every turn running in the one it had, so opening a workspace only switches
+this window in place when nothing is running here. When agents are running,
+the workspace popover asks first and offers a new window, which keeps them
+going; a side door that used to switch silently (a notification, an inbox
+item, Add workspace) now opens that workspace's own window instead of
+touching this one. `⌘Enter` on a workspace row always opens a new window,
+no question asked.
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes
@@ -156,7 +165,10 @@ touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
 days. A clean folder idle longer than "Suggest cleanup after" (30 days by
 default) can go in one bulk step. Its branch stays, even with commits that were
-never pushed.
+never pushed. A scope picker filters all of this to one workspace, to
+**Removed workspaces** (folders whose owning workspace is gone or never had
+one), or to **All workspaces** (the machine total); it defaults to the
+current window's workspace.
 
 Storage also lists **artifacts from deleted sessions**: the plans, reports and
 wireframes whose session is gone, with their saved copy on disk. Each row says

@@ -4,7 +4,7 @@ import { useAppStore } from '../../../../store';
 import { storageFolderBucket } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { openInEditor } from '../../../../shared/lib/editor';
-import { revealInFileManager } from '../../storage';
+import { revealInFileManager } from '../../../../shared/lib/reveal';
 import type { RemoveIntent } from './FolderRemoveConfirm';
 import { RowPrimaryAction } from './RowPrimaryAction';
 import { STORAGE_COLUMN } from './storageColumns';
@@ -31,7 +31,10 @@ export const WorktreeRowActions = ({ folder, status, isBusy, onRemove }: Props) 
     void action().catch((error: unknown) => reportError({ title, error }));
 
   const onEditor = () =>
-    attempt({ title: "Couldn't open the editor", action: () => openInEditor(folder.path) });
+    attempt({
+      title: "Couldn't open the editor",
+      action: () => openInEditor({ path: folder.path }),
+    });
 
   const items = worktreeRowMenu({
     folder,

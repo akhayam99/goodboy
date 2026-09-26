@@ -90,7 +90,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly rootPaths: ReadonlyArray<string>;
   }) => {
     const workspace = await createWorkspace({ name });
-    await openWorkspace(workspace.id, workspace.name);
+    await openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
     const result = await addProjects({ workspaceId: workspace.id, rootPaths });
     adoption.noteConflicts(result.conflicts);
     return workspace;
@@ -109,7 +109,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => {
-    await openWorkspace(workspace.id, workspace.name);
+    await openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
     onComplete({ mode, workspace });
   };
 
@@ -248,7 +248,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const onCreateWorkspace = () =>
     run(async () => {
       const workspace = await createWorkspace({ name: workspaceName.trim() });
-      await openWorkspace(workspace.id, workspace.name);
+      await openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
       setCreated(workspace);
     });
 

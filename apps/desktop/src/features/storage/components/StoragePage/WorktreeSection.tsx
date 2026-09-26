@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isStorageFolderSuggested } from '../../../../store/slices/storage/classifyStorageFolder';
-import type { StorageFilter } from '../../../../store/slices/storage/types';
+import type { StorageFilter, StorageScope } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { groupStorageFolders } from '../../groupStorageFolders';
 import { useStorageSummary } from '../../useStorageSummary';
 import { BulkRemoveBar } from './BulkRemoveBar';
 import { StorageOutcomeNotice } from './StorageOutcomeNotice';
-import { WorkspaceFilterChip } from './WorkspaceFilterChip';
 import { WorktreeColumns } from './WorktreeColumns';
 import { WorktreeGroup } from './WorktreeGroup';
 import type { ToggleFolderParams } from './types';
@@ -23,14 +21,17 @@ const EMPTY_COPY = {
 
 const FolderIcon = CONCEPT_ICONS.worktree;
 
-export const WorktreeSection = () => {
+type Props = {
+  readonly scope: StorageScope;
+};
+
+export const WorktreeSection = ({ scope }: Props) => {
   const folders = useAppStore((state) => state.storageFolders);
   const roots = useAppStore((state) => state.storageRoots);
   const focus = useAppStore((state) => state.storageFocus);
   const focusStorage = useAppStore((state) => state.focusStorage);
-  const { summary, suggestAfterDays, now } = useStorageSummary();
+  const { summary, suggestAfterDays, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageFilter>(focus?.filter ?? 'review');
-  const [workspaceId, setWorkspaceId] = useState<WorkspaceId | null>(focus?.workspaceId ?? null);
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
 
   useEffect(() => {
@@ -38,13 +39,12 @@ export const WorktreeSection = () => {
       return;
     }
     setFilter(focus.filter);
-    setWorkspaceId(focus.workspaceId);
     focusStorage(null);
   }, [focus, focusStorage]);
 
   const groups = useMemo(
-    () => groupStorageFolders({ folders, roots, filter, workspaceId, now }),
-    [folders, roots, filter, workspaceId, now],
+    () => groupStorageFolders({ folders, roots, filter, scope, now }),
+    [folders, roots, filter, scope, now],
   );
   const shownBytes = groups.reduce((sum, group) => sum + group.bytes, 0);
   const options: ReadonlyArray<SegmentedTabOption<StorageFilter>> = [
@@ -55,10 +55,6 @@ export const WorktreeSection = () => {
   const suggested = groups
     .flatMap((group) => group.folders)
     .filter((folder) => isStorageFolderSuggested({ folder, now, suggestAfterDays }));
-  const workspaceName =
-    workspaceId === null
-      ? null
-      : (roots.find((root) => root.workspaceId === workspaceId)?.workspaceName ?? 'this workspace');
 
   const onFilter = (next: StorageFilter) => {
     setSelected(null);
@@ -96,9 +92,6 @@ export const WorktreeSection = () => {
         Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the
         repository.
       </p>
-      {workspaceName === null ? null : (
-        <WorkspaceFilterChip name={workspaceName} onClear={() => setWorkspaceId(null)} />
-      )}
       <StorageOutcomeNotice />
       {groups.length === 0 ? (
         <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
