@@ -1,20 +1,59 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, GitBranch, RefreshCw, Upload } from 'lucide-react';
 import {
-  AnchoredPopover,
-  IconButton,
-  cn,
-  formatError,
-  tintClasses,
-  useDropdown,
-} from '@goodboy/ui';
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  GitBranch,
+  RefreshCw,
+  Upload,
+} from 'lucide-react';
+import { AnchoredPopover, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { distanceAhead } from '../../../../../shared/lib/gitStatus';
+import { mainPresenceOf, type MainPresence } from '../../../../../shared/lib/branchPresence';
 import { BaseBranchSelect } from '../../../../worktree/BaseBranchSelect';
 import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
 import { usePushBranch } from '../../../hooks/usePushBranch';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
+type MainPresenceGlyphParams = {
+  readonly kind: MainPresence['kind'];
+};
+
+const MainPresenceGlyph = ({ kind }: MainPresenceGlyphParams) => {
+  switch (kind) {
+    case 'behind-main':
+      return <ArrowDown size={11} aria-hidden className="text-info" />;
+    case 'rebasing-on-main':
+      return <RefreshCw size={11} aria-hidden className="text-info animate-spin" />;
+    case 'rebase-stopped':
+      return <AlertTriangle size={11} aria-hidden className="text-warning" />;
+    case 'up-to-date':
+      return null;
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
+};
+
+const mainPresenceToneClass = (kind: MainPresence['kind']): string => {
+  switch (kind) {
+    case 'behind-main':
+    case 'rebasing-on-main':
+      return 'text-info';
+    case 'rebase-stopped':
+      return 'text-warning';
+    case 'up-to-date':
+      return 'text-faint-foreground';
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
+};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -60,6 +99,8 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   });
 
   const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;
+  const main =
+    status == null ? null : mainPresenceOf({ status, isRebasingAgent: rebase.isRunning });
   const upstreamAhead =
     status == null ? null : distanceAhead({ distance: status.upstreamDistance });
   const canPush = upstreamAhead != null && upstreamAhead > 0;
@@ -85,29 +126,28 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
       ariaLabel="Branch sync actions"
       anchorClassName="shrink-0"
       trigger={
-        <span className="relative inline-flex shrink-0">
-          <IconButton
-            variant="ghost"
-            icon={RefreshCw}
-            iconSize={ICON_SIZE.row}
-            label="Branch sync actions"
-            aria-haspopup="menu"
-            aria-expanded={dropdown.open}
-            onClick={dropdown.toggle}
-            className="size-7"
-          />
-          {distance != null && distance.behind > 0 ? (
-            <span
-              data-testid="project-behind-badge"
-              className={cn(
-                'pointer-events-none absolute -right-1 -top-1 flex min-w-3.5 items-center justify-center rounded-full px-1 text-3xs font-semibold leading-3.5',
-                tintClasses('warning').solid,
-              )}
-            >
-              {distance.behind}
-            </span>
-          ) : null}
-        </span>
+        <button
+          type="button"
+          aria-label="Branch sync actions"
+          aria-haspopup="menu"
+          aria-expanded={dropdown.open}
+          onClick={dropdown.toggle}
+          data-testid="project-sync-trigger"
+          className={cn(
+            'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-label transition-colors hover:bg-hover',
+            main == null ? 'text-muted-foreground' : mainPresenceToneClass(main.kind),
+          )}
+        >
+          {main == null ? (
+            '--'
+          ) : (
+            <>
+              <MainPresenceGlyph kind={main.kind} />
+              <span className="whitespace-nowrap">{main.label}</span>
+              <ChevronDown size={10} aria-hidden className="text-faint-foreground" />
+            </>
+          )}
+        </button>
       }
     >
       <div className="flex flex-col py-1">
