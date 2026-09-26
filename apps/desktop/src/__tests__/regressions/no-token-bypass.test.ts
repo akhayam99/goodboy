@@ -180,6 +180,8 @@ const COLOR_KEYWORDS = new Set([
   'dotted',
   'solid',
   'collapse',
+  'separate',
+  'spacing-0',
   'box',
   'inset',
 ]);

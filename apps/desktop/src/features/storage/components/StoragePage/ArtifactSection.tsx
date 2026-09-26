@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Button, Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import {
+  Button,
+  Eyebrow,
+  STRIPED_BLOCK_LIST,
+  STRIPED_MIN_ROWS,
+  SegmentedTabs,
+  cn,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   isStorageArtifactSuggested,
@@ -106,18 +114,25 @@ export const ArtifactSection = () => {
       ) : (
         <div className="@container flex flex-col">
           <ArtifactColumns isSelecting={selected !== null} />
-          {visible.map((artifact) => (
-            <ArtifactRow
-              key={artifact.id}
-              artifact={artifact}
-              now={now}
-              suggestAfterDays={suggestAfterDays}
-              isSelecting={selected !== null}
-              isSelected={selected?.has(artifact.id) ?? false}
-              isSuggested={suggestedIds.has(artifact.id)}
-              onToggle={onToggle}
-            />
-          ))}
+          <div
+            className={cn(
+              'flex flex-col',
+              visible.length >= STRIPED_MIN_ROWS && STRIPED_BLOCK_LIST,
+            )}
+          >
+            {visible.map((artifact) => (
+              <ArtifactRow
+                key={artifact.id}
+                artifact={artifact}
+                now={now}
+                suggestAfterDays={suggestAfterDays}
+                isSelecting={selected !== null}
+                isSelected={selected?.has(artifact.id) ?? false}
+                isSuggested={suggestedIds.has(artifact.id)}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
           {hidden > 0 ? (
             <Button
               variant="ghost"

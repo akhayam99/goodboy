@@ -47,8 +47,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/budget/components/spend/ModelTable.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/budget/components/spend/TurnsTable.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatInput/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {

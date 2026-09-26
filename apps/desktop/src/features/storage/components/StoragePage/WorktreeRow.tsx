@@ -64,7 +64,7 @@ export const WorktreeRow = ({
         data-testid="storage-folder-row"
         data-status={status}
         className={cn(
-          'group flex h-10 items-center gap-2.5 rounded-md px-2 text-body hover:bg-hover',
+          'group flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
         )}
       >

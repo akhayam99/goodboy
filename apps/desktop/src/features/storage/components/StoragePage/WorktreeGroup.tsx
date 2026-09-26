@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { STRIPED_BLOCK_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
 import { ChevronRight, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -46,19 +47,23 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
           {pluralize(group.folders.length, 'folder')} · {formatBytes({ bytes: group.bytes })}
         </span>
       </div>
-      {visible.map((folder) => (
-        <WorktreeRow
-          key={folder.path}
-          folder={folder}
-          now={now}
-          suggestAfterDays={suggestAfterDays}
-          isSelecting={selected !== null}
-          isSelected={selected?.has(folder.path) ?? false}
-          isRemoving={removing[folder.path] === true}
-          isMeasuring={measuringPath === folder.path}
-          onToggle={onToggle}
-        />
-      ))}
+      <div
+        className={cn('flex flex-col', visible.length >= STRIPED_MIN_ROWS && STRIPED_BLOCK_LIST)}
+      >
+        {visible.map((folder) => (
+          <WorktreeRow
+            key={folder.path}
+            folder={folder}
+            now={now}
+            suggestAfterDays={suggestAfterDays}
+            isSelecting={selected !== null}
+            isSelected={selected?.has(folder.path) ?? false}
+            isRemoving={removing[folder.path] === true}
+            isMeasuring={measuringPath === folder.path}
+            onToggle={onToggle}
+          />
+        ))}
+      </div>
       {hidden > 0 ? (
         <button
           type="button"

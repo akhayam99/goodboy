@@ -1,6 +1,6 @@
 import { PROVIDERS_REPORTING_LIMITS } from '@goodboy/core';
 import type { ProviderId } from '@goodboy/types';
-import { Notice, SectionHeader } from '@goodboy/ui';
+import { Notice, STRIPED_LIST, STRIPED_MIN_ROWS, SectionHeader, cn } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
 import { useAutoDetour } from '../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../hooks/useProviderLimitsChip';
@@ -50,7 +50,10 @@ export const UsageSection = ({ providerId, billing }: Props) => {
         ) : (
           <>
             {windows.length > 0 ? (
-              <ul aria-label={`${label} usage windows`} className="flex flex-col">
+              <ul
+                aria-label={`${label} usage windows`}
+                className={cn('flex flex-col', windows.length >= STRIPED_MIN_ROWS && STRIPED_LIST)}
+              >
                 {windows.map((window) => (
                   <UsageWindowRow
                     key={`${window.kind}:${window.model ?? ''}`}

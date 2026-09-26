@@ -164,9 +164,11 @@ export {
   BandRow,
   BandStack,
   BAND_ROW_CLASS,
-  STRIPED_BLOCK_ROW,
+  STRIPED_BLOCK_LIST,
+  STRIPED_LIST,
   STRIPED_MIN_ROWS,
   STRIPED_ROW,
+  STRIPED_TABLE,
 } from './components/Band';
 export type { BandProps } from './components/Band';
 export { SelectableRow } from './components/SelectableRow';

@@ -707,9 +707,15 @@ list (sidebar, inbox, facet rail, popover, palette: there the background means
 hover and selection), never in a creation flow, never in a card or in another
 band (`Band` throws when nested), never together with a border or a divider.
 
-**A table read across columns stripes its rows.** From five rows up, even rows
-take `bg-fill` (`STRIPED_ROW` on a `<tr>`, `STRIPED_BLOCK_ROW` on a row of
-blocks) with `rounded-sm` at the ends, under an eyebrow header with no line.
+**A table read across columns stripes its rows.** From five rows up
+(`STRIPED_MIN_ROWS`), even rows take `bg-fill` with `rounded-sm` at the ends,
+under an eyebrow header with no line and no divider between rows. A `<table>`
+takes `STRIPED_TABLE` (separate borders, so cells can round) and each `<tr>`
+takes `STRIPED_ROW`, which paints the cells; row hover goes on the cells too
+(`hover:[&>*]:bg-hover`). A list of row elements takes `STRIPED_LIST` on the
+container; a list whose items wrap a row and an inline confirm takes
+`STRIPED_BLOCK_LIST`, which paints only the row. Spend tables, Storage, Impact,
+usage windows and Models in the picker stripe this way.
 
 A metadata line is not a section and does not get a band.
 

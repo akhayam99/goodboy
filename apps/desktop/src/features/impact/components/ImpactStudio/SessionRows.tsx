@@ -1,7 +1,7 @@
 import type { ImpactSession } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
-import { FilledEmptyState, InlineMarkdown } from '@goodboy/ui';
+import { FilledEmptyState, InlineMarkdown, STRIPED_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -22,13 +22,15 @@ export const SessionRows = ({ sessions, valueLabel, formatValue, onOpenSession }
     );
   }
   return (
-    <div className="flex flex-col gap-1">
+    <div
+      className={cn('flex flex-col', sessions.length >= STRIPED_MIN_ROWS ? STRIPED_LIST : 'gap-1')}
+    >
       {sessions.map((session) => (
         <button
           key={session.sessionId}
           type="button"
           onClick={() => onOpenSession(session.sessionId)}
-          className="flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-label transition-colors hover:bg-hover"
+          className="flex items-center gap-3 rounded-sm px-2 py-1.5 text-left text-label transition-colors hover:bg-hover"
         >
           <InlineMarkdown text={session.goal} className="min-w-0 flex-1 truncate text-foreground" />
           <span className="shrink-0 font-mono tabular-nums text-muted-foreground">

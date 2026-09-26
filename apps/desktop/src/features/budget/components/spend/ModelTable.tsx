@@ -1,4 +1,13 @@
-import { EmptyState, formatTokens, formatUsd, formatUsdPrecise } from '@goodboy/ui';
+import {
+  EmptyState,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+  STRIPED_TABLE,
+  cn,
+  formatTokens,
+  formatUsd,
+  formatUsdPrecise,
+} from '@goodboy/ui';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { CoverageChip } from './CoverageChip';
 import type { ModelBreakdownEntry } from './lib';
@@ -28,21 +37,23 @@ export const ModelTable = ({
     );
   }
 
+  const isStriped = entries.length >= STRIPED_MIN_ROWS;
+
   return (
-    <table className="w-full text-left text-label">
-      <thead className="text-muted-foreground">
+    <table className={cn('w-full text-left text-label', STRIPED_TABLE)}>
+      <thead className="text-eyebrow text-faint-foreground">
         <tr>
-          <th className="px-3 py-2 font-medium">model</th>
-          <th className="px-3 py-2 text-right font-medium">in</th>
-          <th className="px-3 py-2 text-right font-medium">out</th>
-          <th className="px-3 py-2 text-right font-medium">cost</th>
+          <th className="px-3 py-2">model</th>
+          <th className="px-3 py-2 text-right">in</th>
+          <th className="px-3 py-2 text-right">out</th>
+          <th className="px-3 py-2 text-right">cost</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-border-soft">
+      <tbody>
         {entries.map((entry) => (
           <tr
             key={`${entry.provider}//${entry.model}`}
-            className="transition-colors hover:bg-hover"
+            className={cn('hover:[&>*]:bg-hover', isStriped && STRIPED_ROW)}
           >
             <td className="px-3 py-2">
               <span className="flex min-w-0 items-center gap-1.5">

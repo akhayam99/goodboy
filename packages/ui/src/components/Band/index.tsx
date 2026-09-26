@@ -5,7 +5,13 @@ import { BandDepthContext, useBandDepthGuard } from './bandDepth';
 
 export { BandRow, BAND_ROW_CLASS } from './BandRow';
 export { BandStack } from './BandStack';
-export { STRIPED_BLOCK_ROW, STRIPED_MIN_ROWS, STRIPED_ROW } from './stripedRow';
+export {
+  STRIPED_BLOCK_LIST,
+  STRIPED_LIST,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+  STRIPED_TABLE,
+} from './stripedRow';
 
 const INSET_CLASS = {
   rows: 'p-1',

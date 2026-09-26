@@ -7,7 +7,15 @@ import {
   type HiddenModels,
 } from '@goodboy/core';
 import type { CatalogModel, ProviderId } from '@goodboy/types';
-import { Button, SectionHeader, Switch, Tooltip } from '@goodboy/ui';
+import {
+  Button,
+  STRIPED_LIST,
+  STRIPED_MIN_ROWS,
+  SectionHeader,
+  Switch,
+  Tooltip,
+  cn,
+} from '@goodboy/ui';
 import { PickerChip } from '../../../../../shared/components/RoutingPicker/PickerChip';
 import { useHiddenModels, useSaveHiddenModels } from '../../../hooks/useHiddenModels';
 
@@ -87,7 +95,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
         label="Models in the picker"
         hint="Only changes what you see in the model picker. Auto and pinned models are not affected."
       />
-      <div className="flex flex-col">
+      <div className={cn('flex flex-col', families.length >= STRIPED_MIN_ROWS && STRIPED_LIST)}>
         {families.map((family) => {
           const keys = family.models.map((model) => model.key);
           const visibleKeys = keys.filter(
@@ -96,7 +104,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
           const isFamilyOn = visibleKeys.length > 0;
           const isOnlyVisibleFamily = isFamilyOn && shown === visibleKeys.length;
           return (
-            <div key={family.label} className="flex min-h-9 items-center gap-3 py-0.5">
+            <div key={family.label} className="flex min-h-9 items-center gap-3 px-2 py-0.5">
               <Tooltip content={isOnlyVisibleFamily ? LAST_VISIBLE_COPY : `Show ${family.label}`}>
                 <Switch
                   label={<span className="w-24 truncate text-left text-body">{family.label}</span>}

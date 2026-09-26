@@ -2,7 +2,15 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { Band, BandRow, BandStack, STRIPED_ROW } from './index';
+import {
+  Band,
+  BandRow,
+  BandStack,
+  STRIPED_BLOCK_LIST,
+  STRIPED_LIST,
+  STRIPED_ROW,
+  STRIPED_TABLE,
+} from './index';
 
 afterEach(cleanup);
 
@@ -115,8 +123,15 @@ describe('Band', () => {
   });
 
   it('stripes even rows on fill and rounds the ends of a striped row', () => {
-    expect(STRIPED_ROW).toContain('even:bg-fill');
-    expect(STRIPED_ROW).toContain('rounded-l-sm');
-    expect(STRIPED_ROW).toContain('rounded-r-sm');
+    expect(STRIPED_ROW).toContain('even:[&>*]:bg-fill');
+    expect(STRIPED_ROW).toContain('[&>*:first-child]:rounded-l-sm');
+    expect(STRIPED_ROW).toContain('[&>*:last-child]:rounded-r-sm');
+    expect(STRIPED_TABLE).toContain('border-separate');
+  });
+
+  it('stripes even children of a list, or the visible row of each even block', () => {
+    expect(STRIPED_LIST).toContain('[&>*:nth-child(even)]:bg-fill');
+    expect(STRIPED_LIST).toContain('[&>*]:rounded-sm');
+    expect(STRIPED_BLOCK_LIST).toContain('[&>*:nth-child(even)>:first-child]:bg-fill');
   });
 });
