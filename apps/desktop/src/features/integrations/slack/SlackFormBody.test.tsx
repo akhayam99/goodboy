@@ -34,8 +34,18 @@ const slackIntegration: SlackIntegrationBinding = {
   config: {
     teamId: 'T01',
     teamName: 'Acme',
-    botUserId: 'U09',
-    botUserName: 'goodboy',
+    userId: 'U09',
+    userName: 'goodboy',
+    followedChannels: [],
+    hasSelectedChannels: true,
+    includePrivate: false,
+    agentPolicy: {
+      readFollowed: 'allow',
+      readOthers: 'off',
+      reply: 'ask',
+      react: 'allow',
+    },
+    signature: { agents: true, own: false, text: 'Written with Goodboy' },
   },
   createdAt: '2026-01-01T00:00:00.000Z' as never,
   updatedAt: '2026-01-01T00:00:00.000Z' as never,
@@ -90,7 +100,7 @@ describe('SlackFormBody', () => {
     await waitFor(() =>
       expect(state.connectSlack).toHaveBeenCalledWith({
         workspaceId: WS_ID,
-        botToken: 'xoxp-secret',
+        userToken: 'xoxp-secret',
         credentialId: null,
       }),
     );

@@ -31,8 +31,8 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
         provider="slack"
         credentialId={slack?.credentialId ?? null}
         primary={`Connected to ${slack.config.teamName}`}
-        secondary={`as ${slack.config.botUserName ?? slack.config.botUserId}`}
-        disconnectDescription="Unlinks this workspace from the Slack token. The token stays saved for your other workspaces."
+        secondary={`as ${slack.config.userName ?? slack.config.userId}`}
+        disconnectDescription="Unlinks this project from the Slack token. The token stays saved for your other projects."
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
       />
     );
@@ -76,7 +76,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
             'This is a bot token. Goodboy needs your user token, the one that starts with xoxp-.',
           );
         }
-        await connectSlack({ workspaceId, botToken: token, credentialId });
+        await connectSlack({ workspaceId, userToken: token, credentialId });
         onConnected?.();
       }}
     />

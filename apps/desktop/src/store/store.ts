@@ -506,7 +506,7 @@ type AppActions = {
   }): Promise<BitbucketConnection>;
   connectSlack(params: {
     workspaceId: WorkspaceId;
-    botToken: string | null;
+    userToken: string | null;
     credentialId: IntegrationCredentialId | null;
   }): Promise<SlackConnection>;
   createSession(input: {

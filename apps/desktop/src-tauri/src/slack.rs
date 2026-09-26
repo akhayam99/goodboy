@@ -467,18 +467,18 @@ struct SlackAuthTestRaw {
 pub struct SlackConnection {
     pub team_id: String,
     pub team_name: String,
-    pub bot_user_id: String,
-    pub bot_user_name: String,
+    pub user_id: String,
+    pub user_name: String,
 }
 
 fn map_connection(raw: SlackAuthTestRaw) -> SlackConnection {
     let team_id = raw.team_id.unwrap_or_default();
-    let bot_user_id = raw.user_id.unwrap_or_default();
+    let user_id = raw.user_id.unwrap_or_default();
     SlackConnection {
         team_name: raw.team.clone().unwrap_or_else(|| team_id.clone()),
         team_id,
-        bot_user_name: raw.user.unwrap_or_else(|| bot_user_id.clone()),
-        bot_user_id,
+        user_name: raw.user.unwrap_or_else(|| user_id.clone()),
+        user_id,
     }
 }
 
@@ -848,24 +848,24 @@ async fn add_reaction(
 #[tauri::command]
 pub async fn slack_validate_connection(
     credential_id: String,
-    bot_token: Option<String>,
+    user_token: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackConnection, SlackError> {
-    let bot_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
-    reject_bot_token(&bot_token)?;
-    validate_connection(API_BASE, &bot_token).await
+    let user_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
+    reject_bot_token(&user_token)?;
+    validate_connection(API_BASE, &user_token).await
 }
 
 #[tauri::command]
 pub async fn slack_connect(
     credential_id: String,
-    bot_token: Option<String>,
+    user_token: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<(), SlackError> {
-    let bot_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &bot_token, &cache.0)?;
+    let user_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &user_token, &cache.0)?;
     Ok(())
 }
 
@@ -1403,7 +1403,7 @@ mod tests {
         assert_eq!(request.authorization.as_deref(), Some("Bearer xoxp-secret"));
         assert_eq!(connection.team_id, "T01");
         assert_eq!(connection.team_name, "Acme");
-        assert_eq!(connection.bot_user_id, "U09");
+        assert_eq!(connection.user_id, "U09");
     }
 
     #[tokio::test]

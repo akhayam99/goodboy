@@ -63,7 +63,22 @@ const BINDINGS = [
   {
     ...LINEAR,
     provider: 'slack',
-    config: { teamName: 'Acme', teamId: 'acme', botUserId: 'ada', botUserName: 'Ada' },
+    config: {
+      teamName: 'Acme',
+      teamId: 'acme',
+      userId: 'ada',
+      userName: 'Ada',
+      followedChannels: [],
+      hasSelectedChannels: true,
+      includePrivate: false,
+      agentPolicy: {
+        readFollowed: 'allow',
+        readOthers: 'off',
+        reply: 'ask',
+        react: 'allow',
+      },
+      signature: { agents: true, own: false, text: 'Written with Goodboy' },
+    },
   },
 ] satisfies ReadonlyArray<IntegrationBinding>;
 
