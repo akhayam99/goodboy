@@ -11,10 +11,10 @@ CREATE TABLE IF NOT EXISTS security_findings (
   first_seen_at INTEGER NOT NULL,
   dismissed_at INTEGER NULL,
   resolved_at INTEGER NULL,
-  UNIQUE (subject_kind, subject_id, fingerprint),
   FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_security_findings_identity ON security_findings (workspace_id, COALESCE(project_id, ''), subject_kind, subject_id, fingerprint);
 CREATE INDEX IF NOT EXISTS idx_security_findings_dismissed_resolved ON security_findings (dismissed_at, resolved_at);
 CREATE INDEX IF NOT EXISTS idx_security_findings_workspace ON security_findings (workspace_id);
 `;
