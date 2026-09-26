@@ -19,6 +19,7 @@ import type { PrWritesState } from './slices/pr-writes/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
+import type { SentryLinksState } from './slices/sentryLinks/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
@@ -247,6 +248,7 @@ type AppSliceState = ArtifactsState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
+  SentryLinksState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &

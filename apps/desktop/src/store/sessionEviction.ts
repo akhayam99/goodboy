@@ -159,6 +159,7 @@ export const NON_SESSION_STATE_KEYS = [
   'providerLimitsProbe',
   'codexResetCredits',
   'codexPendingReset',
+  'projectSentryLinks',
   'hydrated',
   'bootPhase',
   'bootFailedPhase',
