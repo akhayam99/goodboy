@@ -412,6 +412,46 @@ mod tests {
     }
 
     #[test]
+    fn keeps_same_named_scripts_apart_per_package() {
+        let dir = TestDir::new("same-name");
+        dir.write(
+            "package.json",
+            r#"{"name":"northwind","workspaces":["apps/*"],"scripts":{"dev":"turbo dev"}}"#,
+        );
+        dir.write("yarn.lock", "");
+        dir.write(
+            "apps/api/package.json",
+            r#"{"name":"@northwind/api","scripts":{"dev":"tsx watch src/server.ts"}}"#,
+        );
+        dir.write(
+            "apps/web/package.json",
+            r#"{"name":"@northwind/web","scripts":{"dev":"vite"}}"#,
+        );
+
+        let groups = scan(&dir.0).unwrap();
+
+        let summary = groups
+            .iter()
+            .map(|group| {
+                (
+                    group.package_name.as_str(),
+                    group.rel_dir.as_str(),
+                    group.scripts[0].name.as_str(),
+                    group.scripts[0].command.as_str(),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            summary,
+            vec![
+                ("northwind", "", "dev", "yarn run dev"),
+                ("@northwind/api", "apps/api", "dev", "yarn run dev"),
+                ("@northwind/web", "apps/web", "dev", "yarn run dev"),
+            ]
+        );
+    }
+
+    #[test]
     fn scans_package_workspaces_array_and_explicit_paths() {
         let dir = TestDir::new("workspaces");
         dir.write(
