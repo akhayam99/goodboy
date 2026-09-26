@@ -291,29 +291,36 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
   the siblings of what that segment names, plus at most two actions that belong
   to that thing. The page segment (depth one, or `Overview` when it is alone)
-  lists the session's pages with a count that names what it counts (`3 need
-you`, `2 running`), grouped as pages, Tools and Linked; `Overview` has no menu
-  once it has children. A run lists the session's runs (Running, Finished, a
-  chained run indented under its own with `after ...`); a step lists every step
-  of its run in order, the ones not started switched off; an agent lists the
-  agents of the same home grouped Needs you, Running, Done, newest first; an
-  artifact lists the session's artifacts by kind. The Diff ends on the branch
-  it shows (`Overview > Diff > ledger-core fix/... +187 -42`), and that segment
+  lists the session's pages with a count that names what it counts
+  (`3 need you`, `2 running`), grouped as pages, Tools and Linked; `Overview`
+  has no menu once it has children. A run lists the session's runs (Running,
+  Finished, a chained run indented under its own with `after ...`); a step
+  lists every step of its run in order, the ones not started switched off; an
+  agent lists the agents of the same home grouped Needs you, Running, Done,
+  newest first; an artifact lists the session's artifacts by kind.
+- **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each (`Local only`,
-  `Behind main by N`, `On origin`) and `All branches in Overview`; it never
-  turns into an icon. The resolver's page reads `Overview > Review > {file:line}
-  > Agent`: the comment segment lists the open conversations by file (resolved
-ones apart) with `Open on GitHub`and`Copy link`, and `Agent`lists the
-attempts on that comment. Every row has five slots:
-lead, label with a faint second part, meta, a state that is always a word
-(from`agentStateWord`, the same reading `isAgentFinished`makes), and a
-check on the current row, which is there even when it is the only row. The
-last segment opens its menu from the whole segment and always shows the
-chevron; an ancestor goes up by its name and shows its chevron on hover.
-Widths are 300 (pages), 380 (runs, steps, agents, artifacts) and 460
-(branches); a filter appears from nine rows up. An action that breaks
-something (Stop this step) confirms inside the menu's action band with`InlineConfirm`; Escape cancels the confirm first, then closes. Shortcuts live
-  > in the segment tooltip and the palette, never in the rows.
+  `Behind main by N`, `On origin`) and `All branches in Overview`. It never
+  turns into an icon. A Diff opened without a branch lands on the active mount.
+- **The resolver's page reads Review, the comment, Agent.** The comment segment
+  (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
+  apart, with `Open on GitHub` and `Copy link`; `Agent` lists the attempts on
+  that comment.
+- **Settings claims its studio band** with Settings, the scope and the App
+  section. The scope segment lists App, the workspace, Providers & models and
+  Tools; the section segment lists the App sections. The first segment of a
+  studio has no menu: studios change from the footer.
+- **Every menu row has five slots**: lead, label with a faint second part,
+  meta, a state that is always a word (from `agentStateWord`, the same reading
+  `isAgentFinished` makes), and a check on the current row, which is there even
+  when it is the only row. The last segment opens its menu from the whole
+  segment and always shows the chevron; an ancestor goes up by its name and
+  shows its chevron on hover. Widths are 300 (pages, scopes, sections), 380
+  (runs, steps, agents, artifacts, conversations, attempts) and 460 (branches);
+  a filter appears from nine rows up. An action that breaks something (Stop
+  this step) confirms inside the menu's action band with `InlineConfirm`;
+  Escape cancels the confirm first, then closes. Shortcuts live in the segment
+  tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
   `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
