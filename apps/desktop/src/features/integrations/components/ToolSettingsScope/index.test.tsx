@@ -115,9 +115,15 @@ const store = create(() => ({
   forgetIntegrationCredential: vi.fn(),
   disconnectIntegration: vi.fn(async () => undefined),
   connectLinear: vi.fn(async () => undefined),
+  projects: [],
+  projectSentryLinks: {},
+  loadProjectSentryLinks: vi.fn(async () => undefined),
+  linkSentryProject: vi.fn(async () => undefined),
+  unlinkSentryProject: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: Object.assign(
     <T,>(selector: (state: ReturnType<typeof store.getState>) => T) => store(selector),
     {

@@ -13,8 +13,14 @@ const { state, client, openUrl } = vi.hoisted(() => ({
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
     integrationCredentialUsage: {} as Record<string, number>,
+    projects: [] as ReadonlyArray<unknown>,
+    projectSentryLinks: {} as Record<string, ReadonlyArray<unknown>>,
+    loadProjectSentryLinks: vi.fn(async () => undefined),
+    linkSentryProject: vi.fn(async () => undefined),
+    unlinkSentryProject: vi.fn(async () => undefined),
   },
   client: {
+    sentryListCodeMappings: vi.fn(async () => []),
     sentryListOrganizations: vi.fn(async (_params: unknown) => [
       { slug: 'northwind', name: 'Northwind' },
     ]),
@@ -27,6 +33,7 @@ const { state, client, openUrl } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
