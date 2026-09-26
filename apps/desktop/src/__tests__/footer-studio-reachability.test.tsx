@@ -418,15 +418,13 @@ describe('Footer to settings and Goodboy chip reachability', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 
-  it('lands the top bar spend chip on the impact studio overview', async () => {
+  it('lands the top bar spend chip on the impact spend tab', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('impact-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
 
-    expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe(
-      'overview',
-    );
+    expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe('spend');
   });
 
   it('opens changelog from the Goodboy chip', async () => {
