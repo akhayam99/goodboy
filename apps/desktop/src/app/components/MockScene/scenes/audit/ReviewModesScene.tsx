@@ -23,9 +23,7 @@ const PROJECT: Project = {
   baseBranch: 'main',
   overrides: {
     defaultProviderId: null,
-    defaultWorkflowId: null,
     defaultBranchPrefix: null,
-    parallelEnabled: null,
     defaultVerbosity: null,
     providerBindings: null,
     taskModels: null,

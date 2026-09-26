@@ -42,9 +42,7 @@ describe.skipIf(!shouldSeed)('qa seed', () => {
       slug: 'qa-sandbox',
       overrides: {
         defaultProviderId: null,
-        defaultWorkflowId: null,
         defaultBranchPrefix: null,
-        parallelEnabled: null,
         defaultVerbosity: null,
         providerBindings: null,
         taskModels: null,

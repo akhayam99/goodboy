@@ -113,9 +113,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     slug: 'ws',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -146,9 +144,7 @@ function buildProject(overrides: Partial<Project> = {}): Project {
     kind: 'repo',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,

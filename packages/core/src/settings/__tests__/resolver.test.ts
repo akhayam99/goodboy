@@ -14,9 +14,7 @@ const GLOBAL: GlobalSettings = {
 
 const NULL_OVERRIDE: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -44,9 +42,7 @@ describe('resolveSettings', () => {
   it('null/value/null → workspace wins', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultWorkflowId: 'tpl-1' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
-      parallelEnabled: true,
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
@@ -63,18 +59,14 @@ describe('resolveSettings', () => {
     };
     const result = resolveSettings({ global: GLOBAL, workspaceOverride: wsOverride });
     expect(result.defaultProviderId).toBe('cursor');
-    expect(result.defaultWorkflowId).toBe('tpl-1');
     expect(result.defaultBranchPrefix).toBe('ws-prefix');
-    expect(result.parallelEnabled).toBe(true);
     expect(result.defaultVerbosity).toBe('verbose');
   });
 
-  it('null/null/value (session) → session wins for provider/workflow/prefix/parallel; session.defaultVerbosity always null in production', () => {
+  it('null/null/value (session) → session wins for provider/prefix; session.defaultVerbosity always null in production', () => {
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
-      defaultWorkflowId: 'tpl-2' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
-      parallelEnabled: true,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -91,18 +83,14 @@ describe('resolveSettings', () => {
     };
     const result = resolveSettings({ global: GLOBAL, sessionOverride: sessOverride });
     expect(result.defaultProviderId).toBe('codex');
-    expect(result.defaultWorkflowId).toBe('tpl-2');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
-    expect(result.parallelEnabled).toBe(true);
     expect(result.defaultVerbosity).toBe('normal');
   });
 
   it('session overrides win over workspace for non-verbosity fields', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultWorkflowId: 'tpl-ws' as WorkflowId,
       defaultBranchPrefix: 'ws-prefix',
-      parallelEnabled: false,
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
@@ -119,9 +107,7 @@ describe('resolveSettings', () => {
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: 'codex' as ProviderId,
-      defaultWorkflowId: 'tpl-sess' as WorkflowId,
       defaultBranchPrefix: 'sess-prefix',
-      parallelEnabled: true,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -142,9 +128,7 @@ describe('resolveSettings', () => {
       sessionOverride: sessOverride,
     });
     expect(result.defaultProviderId).toBe('codex');
-    expect(result.defaultWorkflowId).toBe('tpl-sess');
     expect(result.defaultBranchPrefix).toBe('sess-prefix');
-    expect(result.parallelEnabled).toBe(true);
     expect(result.defaultVerbosity).toBe('verbose');
   });
 
@@ -168,9 +152,7 @@ describe('resolveSettings', () => {
   it('null-fields session falls back to workspace', () => {
     const wsOverride: OverrideSettings = {
       defaultProviderId: 'cursor' as ProviderId,
-      defaultWorkflowId: null,
       defaultBranchPrefix: 'ws-prefix',
-      parallelEnabled: true,
       defaultVerbosity: 'verbose',
       providerBindings: null,
       taskModels: null,
@@ -187,9 +169,7 @@ describe('resolveSettings', () => {
     };
     const sessOverride: OverrideSettings = {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -211,7 +191,6 @@ describe('resolveSettings', () => {
     });
     expect(result.defaultProviderId).toBe('cursor');
     expect(result.defaultBranchPrefix).toBe('ws-prefix');
-    expect(result.parallelEnabled).toBe(true);
     expect(result.defaultVerbosity).toBe('verbose');
   });
 

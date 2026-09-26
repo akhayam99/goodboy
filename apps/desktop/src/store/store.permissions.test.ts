@@ -270,9 +270,7 @@ describe('sendTurn, permission proxy integration', () => {
           slug: 'ws',
           overrides: {
             defaultProviderId: null,
-            defaultWorkflowId: null,
             defaultBranchPrefix: null,
-            parallelEnabled: null,
             defaultVerbosity: null,
             providerBindings: null,
             taskModels: null,

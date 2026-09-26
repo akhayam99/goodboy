@@ -713,9 +713,7 @@ export const configExportModuleMock = () => ({
 
 export const emptyOverrides: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

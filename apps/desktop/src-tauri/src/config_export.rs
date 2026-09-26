@@ -46,12 +46,8 @@ pub struct ProjectBundle {
 pub struct WorkspaceOverridesBundle {
     #[serde(rename = "defaultProviderId")]
     pub default_provider_id: Option<String>,
-    #[serde(rename = "defaultWorkflowId")]
-    pub default_workflow_id: Option<String>,
     #[serde(rename = "defaultBranchPrefix")]
     pub default_branch_prefix: Option<String>,
-    #[serde(rename = "parallelEnabled")]
-    pub parallel_enabled: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -216,13 +212,12 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     let workspaces = {
         let mut stmt = conn.prepare(
             "SELECT id, name, created_at, updated_at,
-                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
+                    default_provider_id, default_branch_prefix
              FROM workspaces
              WHERE deleted_at IS NULL
              ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
-            let parallel_raw: Option<i64> = row.get(7)?;
             Ok(WorkspaceBundle {
                 id: row.get(0)?,
                 name: row.get(1)?,
@@ -232,9 +227,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 updated_at: ms_col_to_iso(row.get::<_, i64>(3).unwrap_or(0)),
                 overrides: WorkspaceOverridesBundle {
                     default_provider_id: row.get(4)?,
-                    default_workflow_id: row.get(5)?,
-                    default_branch_prefix: row.get(6)?,
-                    parallel_enabled: parallel_raw.map(|v| v != 0),
+                    default_branch_prefix: row.get(5)?,
                 },
             })
         })?;
@@ -526,29 +519,26 @@ pub fn import_config(
 
         // Workspaces - upsert (preserve existing data, add missing).
         for w in &bundle.workspaces {
-            let parallel_val: Option<i64> =
-                w.overrides.parallel_enabled.map(|v| if v { 1 } else { 0 });
             let created_ms = iso_to_ms(&w.created_at).unwrap_or(now_ms);
             let updated_ms = iso_to_ms(&w.updated_at).unwrap_or(now_ms);
             conn.execute(
                 "INSERT INTO workspaces
                    (id, name, slug, created_at, updated_at,
-                    default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                    default_provider_id, default_branch_prefix)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                  ON CONFLICT(id) DO UPDATE SET
                    name                      = excluded.name,
                    default_provider_id       = excluded.default_provider_id,
-                   default_workflow_id = excluded.default_workflow_id,
                    default_branch_prefix     = excluded.default_branch_prefix,
-                   parallel_enabled          = excluded.parallel_enabled,
                    updated_at                = excluded.updated_at",
                 rusqlite::params![
-                    w.id, w.name, workspace_slug(&w.name, &w.id),
-                    created_ms, updated_ms,
+                    w.id,
+                    w.name,
+                    workspace_slug(&w.name, &w.id),
+                    created_ms,
+                    updated_ms,
                     w.overrides.default_provider_id,
-                    w.overrides.default_workflow_id,
                     w.overrides.default_branch_prefix,
-                    parallel_val,
                 ],
             )?;
             for p in workspace_projects(w) {
@@ -878,9 +868,7 @@ mod tests {
             updated_at: "2026-01-02T00:00:00Z".to_string(),
             overrides: WorkspaceOverridesBundle {
                 default_provider_id: None,
-                default_workflow_id: None,
                 default_branch_prefix: None,
-                parallel_enabled: None,
             },
         };
         let projects = workspace_projects(&workspace);
@@ -908,9 +896,7 @@ mod tests {
             updated_at: "2026-01-02T00:00:00Z".to_string(),
             overrides: WorkspaceOverridesBundle {
                 default_provider_id: None,
-                default_workflow_id: None,
                 default_branch_prefix: None,
-                parallel_enabled: None,
             },
         };
         let projects = workspace_projects(&workspace);

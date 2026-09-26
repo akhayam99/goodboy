@@ -37,9 +37,7 @@ const TASK_BY_ID = new Map(TASKS.map((task) => [task.id, task]));
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
