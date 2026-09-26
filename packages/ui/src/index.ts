@@ -171,6 +171,22 @@ export {
   STRIPED_TABLE,
 } from './components/Band';
 export type { BandProps } from './components/Band';
+export { Listbox, LISTBOX_SEARCH_THRESHOLD } from './components/Listbox';
+export type {
+  ListboxCreate,
+  ListboxOption,
+  ListboxProps,
+  ListboxSize,
+  ListboxTriggerVariant,
+  ListboxValue,
+} from './components/Listbox';
+export { ListboxList, listboxOptionId } from './components/Listbox/ListboxList';
+export type { ListboxListProps } from './components/Listbox/ListboxList';
+export { ListboxOptionRow } from './components/Listbox/ListboxOptionRow';
+export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRow';
+export { filterOptions } from './components/Listbox/filterOptions';
+export type { FilteredOption } from './components/Listbox/filterOptions';
+export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
 export { Select } from './components/Select';
