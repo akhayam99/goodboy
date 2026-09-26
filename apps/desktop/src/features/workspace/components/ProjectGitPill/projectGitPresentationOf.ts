@@ -20,7 +20,7 @@ type StatusParams = {
   readonly status: WorkspaceGitStatus;
 };
 
-const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
+export const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
   switch (reason) {
     case 'no-upstream':
     case 'detached-head':
@@ -28,6 +28,7 @@ const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
     case 'rev-list-failed':
     case 'main-ref-unresolved':
     case 'status-read-failed':
+    case 'upstream-gone':
       return true;
     default: {
       const exhaustive: never = reason;
@@ -36,7 +37,7 @@ const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
   }
 };
 
-const hasReadFailure = ({ status }: StatusParams): boolean =>
+export const hasReadFailure = ({ status }: StatusParams): boolean =>
   (status.upstreamDistance.kind === 'unknown' &&
     isReadFailureReason({ reason: status.upstreamDistance.reason })) ||
   (status.workingTree.kind === 'unknown' &&

@@ -2272,6 +2272,7 @@ pub enum GitUnknownReason {
     RevListFailed,
     MainRefUnresolved,
     StatusReadFailed,
+    UpstreamGone,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -2911,7 +2912,7 @@ fn worktree_status_blocking(
         Some(found) => match found.upstream_ab {
             Some((ahead, behind)) => GitDistance::Known { ahead, behind },
             None => GitDistance::Unknown {
-                reason: GitUnknownReason::RevListFailed,
+                reason: GitUnknownReason::UpstreamGone,
             },
         },
     };
@@ -3258,6 +3259,19 @@ pub(crate) fn distance_between(cwd: &Path, left: &str, right: &str) -> GitDistan
     }
 }
 
+pub(crate) fn upstream_ref_exists(cwd: &Path, upstream: &str) -> bool {
+    git(
+        cwd,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("refs/remotes/{upstream}"),
+        ],
+    )
+    .is_ok()
+}
+
 pub(crate) fn distance_from_upstream(
     cwd: &Path,
     branch: Option<&String>,
@@ -3273,6 +3287,11 @@ pub(crate) fn distance_from_upstream(
             reason: GitUnknownReason::NoUpstream,
         };
     };
+    if !upstream_ref_exists(cwd, reference) {
+        return GitDistance::Unknown {
+            reason: GitUnknownReason::UpstreamGone,
+        };
+    }
     distance_between(cwd, reference, "HEAD")
 }
 
@@ -3881,6 +3900,60 @@ mod rewrite_tests {
             detached.upstream_distance,
             GitDistance::Unknown {
                 reason: GitUnknownReason::DetachedHead
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_pruned_upstream_is_reported_as_gone_not_a_read_failure() {
+        let root = init_repo("status-upstream-gone");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+
+        git_ok(&root, &["update-ref", "-d", "refs/remotes/origin/main"]);
+        let status = worktree_status_blocking(root.to_string_lossy().into_owned(), None).unwrap();
+
+        assert_eq!(status.upstream.as_deref(), Some("origin/main"));
+        assert_eq!(
+            status.upstream_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::UpstreamGone
+            }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn distance_from_upstream_reports_gone_once_the_tracking_ref_is_pruned() {
+        let root = init_repo("distance-upstream-gone");
+        commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        let branch = super::current_branch_name(&root);
+        let upstream = super::resolve_upstream(&root);
+
+        assert!(super::upstream_ref_exists(
+            &root,
+            upstream.as_deref().unwrap()
+        ));
+        assert_eq!(
+            super::distance_from_upstream(&root, branch.as_ref(), upstream.as_ref()),
+            GitDistance::Known {
+                ahead: 0,
+                behind: 0
+            }
+        );
+
+        git_ok(&root, &["update-ref", "-d", "refs/remotes/origin/main"]);
+
+        assert!(!super::upstream_ref_exists(
+            &root,
+            upstream.as_deref().unwrap()
+        ));
+        assert_eq!(
+            super::distance_from_upstream(&root, branch.as_ref(), upstream.as_ref()),
+            GitDistance::Unknown {
+                reason: GitUnknownReason::UpstreamGone
             }
         );
         std::fs::remove_dir_all(root).unwrap();

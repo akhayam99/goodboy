@@ -9,7 +9,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { Button, formatError } from '@goodboy/ui';
-import type { GitUnknownReason, Project, WorkspaceGitStatus } from '@goodboy/types';
+import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
@@ -23,6 +23,7 @@ import {
   unmergedCount,
 } from '../../../../shared/lib/gitStatus';
 import { InitGuide } from './InitGuide';
+import { hasReadFailure } from './projectGitPresentationOf';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -36,10 +37,6 @@ type Detail = {
   readonly icon: typeof ArrowDown;
 };
 
-type ReasonParams = {
-  readonly reason: GitUnknownReason;
-};
-
 type StatusParams = {
   readonly status: WorkspaceGitStatus;
 };
@@ -51,28 +48,6 @@ type CapitalizeParams = {
 type CommitBaseBranchParams = {
   readonly candidate: string | null;
 };
-
-const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
-  switch (reason) {
-    case 'no-upstream':
-    case 'detached-head':
-      return false;
-    case 'rev-list-failed':
-    case 'main-ref-unresolved':
-    case 'status-read-failed':
-      return true;
-    default: {
-      const exhaustive: never = reason;
-      return exhaustive;
-    }
-  }
-};
-
-const hasReadFailure = ({ status }: StatusParams): boolean =>
-  (status.upstreamDistance.kind === 'unknown' &&
-    isReadFailureReason({ reason: status.upstreamDistance.reason })) ||
-  (status.workingTree.kind === 'unknown' &&
-    isReadFailureReason({ reason: status.workingTree.reason }));
 
 const unknownNotesOf = ({ status }: StatusParams): ReadonlyArray<string> => {
   const notes: Array<string> = [];
