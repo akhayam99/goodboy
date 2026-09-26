@@ -25,7 +25,7 @@ vi.mock('../../../providers/components/ProviderInlineConnect', () => ({
   ),
 }));
 
-import { ProviderRow } from './ProviderRow';
+import { ProviderCard } from './ProviderCard';
 
 const CAPABILITIES = {
   models: [],
@@ -56,7 +56,7 @@ const Harness = ({ info }: { readonly info: ProviderDisplayInfo }) => {
   const [expanded, setExpanded] = useState<ProviderId | null>(null);
   return (
     <ul>
-      <ProviderRow
+      <ProviderCard
         info={info}
         isExpanded={expanded === info.id}
         onExpandedChange={({ providerId }) => setExpanded(providerId)}
@@ -67,11 +67,17 @@ const Harness = ({ info }: { readonly info: ProviderDisplayInfo }) => {
 
 afterEach(cleanup);
 
-describe('ProviderRow', () => {
+describe('ProviderCard', () => {
   it('shows one connected status and no action once connected', () => {
     render(<Harness info={provider({ id: 'anthropic', connection: 'connected' })} />);
     expect(screen.getAllByText('Connected')).toHaveLength(1);
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('says who the provider is for and what it needs before any click', () => {
+    render(<Harness info={provider({ id: 'anthropic', connection: 'missing' })} />);
+    expect(screen.getByText('Best all-round coding agent.')).toBeDefined();
+    expect(screen.getByText('Needs a Claude Pro, Max or Team plan, or an API key.')).toBeDefined();
   });
 
   it('offers Install when the CLI is missing', () => {

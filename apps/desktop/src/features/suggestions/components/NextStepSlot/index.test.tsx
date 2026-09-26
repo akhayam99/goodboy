@@ -14,7 +14,8 @@ const { suggestionState, transcriptState } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
   sessionPlace: vi.fn(),
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>

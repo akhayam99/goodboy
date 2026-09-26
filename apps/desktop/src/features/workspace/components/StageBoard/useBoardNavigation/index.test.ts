@@ -10,27 +10,24 @@ type StoreState = {
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
 };
 
-const { navigateMock, openReviewTargetMock, openInEditorMock, markStepMock, store } = vi.hoisted(
-  () => {
-    const navigateMock = vi.fn();
-    const openReviewTargetMock = vi.fn(async () => ({ kind: 'opened' as const }));
-    const store: { state: StoreState } = {
-      state: {
-        navigate: navigateMock,
-        openReviewTarget: openReviewTargetMock,
-        sessionPhaseRuns: {},
-        sessionWorktrees: {},
-      },
-    };
-    return {
-      navigateMock,
-      openReviewTargetMock,
-      openInEditorMock: vi.fn(),
-      markStepMock: vi.fn(),
-      store,
-    };
-  },
-);
+const { navigateMock, openReviewTargetMock, openInEditorMock, store } = vi.hoisted(() => {
+  const navigateMock = vi.fn();
+  const openReviewTargetMock = vi.fn(async () => ({ kind: 'opened' as const }));
+  const store: { state: StoreState } = {
+    state: {
+      navigate: navigateMock,
+      openReviewTarget: openReviewTargetMock,
+      sessionPhaseRuns: {},
+      sessionWorktrees: {},
+    },
+  };
+  return {
+    navigateMock,
+    openReviewTargetMock,
+    openInEditorMock: vi.fn(),
+    store,
+  };
+});
 
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
@@ -41,10 +38,6 @@ vi.mock('../../../../../store', async () => ({
 
 vi.mock('../../../../../shared/lib/editor', () => ({
   openInEditor: openInEditorMock,
-}));
-
-vi.mock('../../../../onboarding/onboarding-store', () => ({
-  markStepComplete: markStepMock,
 }));
 
 import { useBoardNavigation } from './index';
@@ -62,7 +55,6 @@ const reset = () => {
   navigateMock.mockClear();
   openReviewTargetMock.mockClear();
   openInEditorMock.mockClear();
-  markStepMock.mockClear();
 };
 
 describe('useBoardNavigation', () => {
@@ -74,7 +66,6 @@ describe('useBoardNavigation', () => {
     result.current.selectCard(session);
     expect(navigateMock).toHaveBeenCalledTimes(1);
     expect(navigateMock).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
-    expect(markStepMock).toHaveBeenCalledWith('session');
   });
 
   it('openAgent opens the first agent then reveals chat', () => {

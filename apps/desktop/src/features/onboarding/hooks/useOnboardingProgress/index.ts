@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { useAppStore, useCurrentSession, useWorkspaces } from '../../../../store';
+import { useAppStore, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../github/github';
+import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import {
   ONBOARDING_STEPS,
   getCompleted,
   isCollapsed,
   isFinished,
+  isWizardDone,
   markStepComplete,
   type OnboardingStepId,
 } from '../../onboarding-store';
@@ -16,6 +18,7 @@ export type OnboardingProgress = {
   readonly completed: ReadonlySet<OnboardingStepId>;
   readonly collapsed: boolean;
   readonly finished: boolean;
+  readonly wizardDone: boolean;
   readonly isDone: boolean;
   readonly hasProjects: boolean;
 };
@@ -31,64 +34,55 @@ export const useOnboardingProgress = (): OnboardingProgress => {
   const persistedCompleted = useMemo(() => new Set(getCompleted()), [tick]);
   const collapsed = useMemo(() => isCollapsed(), [tick]);
   const finished = useMemo(() => isFinished(), [tick]);
+  const wizardDone = useMemo(() => isWizardDone(), [tick]);
 
   const workspaces = useWorkspaces();
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const workspace =
     workspaces.find((candidate) => candidate.id === currentWorkspaceId) ?? workspaces[0] ?? null;
-  const sessionCount = useAppStore((s) => s.sessions.length);
-  const needsAgentDetect = !persistedCompleted.has('agent');
-  const needsPlanDetect = !persistedCompleted.has('plan');
-  const anyAgent = useAppStore((s) => {
-    if (!needsAgentDetect) {
-      return false;
-    }
-    for (const runs of Object.values(s.sessionPhaseRuns)) {
-      if (runs.length > 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-  const anyPlan = useAppStore((s) => {
-    if (!needsPlanDetect) {
-      return false;
-    }
-    for (const plans of Object.values(s.sessionPlans)) {
-      if (plans.length > 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-  const currentSession = useCurrentSession();
-
   const workspaceId = workspace?.id ?? null;
+
+  const hasProvider = useAppStore((s) => s.providers.some((p) => p.connection === 'connected'));
   const hasProjects = useAppStore((s) =>
     workspaceId ? s.projects.some((project) => project.workspaceId === workspaceId) : false,
   );
+  const needsFirstSessionDetect = !persistedCompleted.has('firstSession');
+  const anyAgentFinished = useAppStore((s) => {
+    if (!needsFirstSessionDetect) {
+      return false;
+    }
+    for (const runs of Object.values(s.sessionPhaseRuns)) {
+      if (runs.some((agent) => agent.status === 'completed')) {
+        return true;
+      }
+    }
+    return Object.values(s.agentTurnState).some(
+      (turn) => turn.kind === 'idle' || turn.kind === 'ended',
+    );
+  });
+  const profile = normalizeWorkspaceProfile({ profile: workspace?.profile });
+  const hasProfile =
+    profile.roles.length > 0 ||
+    profile.explainMore.length > 0 ||
+    profile.aboutWork !== null ||
+    profile.workingRules !== null;
+
   const needsCodeHostDetect = !persistedCompleted.has('codeHost');
-  const gitlabConnected = useAppStore((s) =>
+  const integrationProviders = useAppStore((s) =>
     workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'gitlab')
-      : false,
+      ? (s.workspaceIntegrations[workspaceId] ?? []).map((i) => i.provider).join(',')
+      : '',
   );
-  const bitbucketConnected = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some((i) => i.provider === 'bitbucket')
-      : false,
+  const globalGithubConnected = useAppStore(
+    (s) => s.githubStatus !== null && s.githubStatus.mode !== 'absent',
   );
-  const hasTools = useAppStore((s) =>
-    workspaceId
-      ? (s.workspaceIntegrations[workspaceId] ?? []).some(
-          (i) =>
-            i.provider === 'linear' ||
-            i.provider === 'jira' ||
-            i.provider === 'sentry' ||
-            i.provider === 'slack',
-        )
-      : false,
+  const connectedIntegrations = useMemo(
+    () => new Set(integrationProviders.split(',').filter((entry) => entry.length > 0)),
+    [integrationProviders],
   );
+  const hostIntegration =
+    connectedIntegrations.has('gitlab') || connectedIntegrations.has('bitbucket');
+  const hasTaskManager = connectedIntegrations.has('linear') || connectedIntegrations.has('jira');
 
   const [githubScoped, setGithubScoped] = useState(false);
   const refreshGithubStatus = useCallback(() => {
@@ -103,73 +97,39 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     refreshGithubStatus();
   }, [refreshGithubStatus]);
 
-  useEffect(() => {
-    if (workspaces.length > 0 && !persistedCompleted.has('workspace')) {
-      markStepComplete('workspace');
-    }
-    if (
-      (gitlabConnected || bitbucketConnected || githubScoped) &&
-      !persistedCompleted.has('codeHost')
-    ) {
-      markStepComplete('codeHost');
-    }
-    if (hasTools && !persistedCompleted.has('tools')) {
-      markStepComplete('tools');
-    }
-    if (sessionCount > 0 && !persistedCompleted.has('session')) {
-      markStepComplete('session');
-    }
-    if (anyAgent && !persistedCompleted.has('agent')) {
-      markStepComplete('agent');
-    }
-    if (anyPlan && !persistedCompleted.has('plan')) {
-      markStepComplete('plan');
-    }
+  const live = useMemo(() => {
+    const entries: ReadonlyArray<readonly [OnboardingStepId, boolean]> = [
+      ['provider', hasProvider],
+      ['project', hasProjects],
+      ['codeHost', hostIntegration || githubScoped || globalGithubConnected],
+      ['taskManager', hasTaskManager],
+      ['firstSession', anyAgentFinished],
+      ['profile', hasProfile],
+    ];
+    return entries.filter(([, isDone]) => isDone).map(([id]) => id);
   }, [
-    workspaces.length,
-    sessionCount,
-    anyAgent,
-    anyPlan,
-    gitlabConnected,
-    bitbucketConnected,
+    hasProvider,
+    hasProjects,
+    hostIntegration,
     githubScoped,
-    hasTools,
-    persistedCompleted,
-    currentSession,
+    globalGithubConnected,
+    hasTaskManager,
+    anyAgentFinished,
+    hasProfile,
   ]);
 
-  const completed = useMemo(() => {
-    const liveCompleted = new Set(persistedCompleted);
-    if (workspaces.length > 0) {
-      liveCompleted.add('workspace');
+  useEffect(() => {
+    for (const id of live) {
+      if (!persistedCompleted.has(id)) {
+        markStepComplete(id);
+      }
     }
-    if (gitlabConnected || bitbucketConnected || githubScoped) {
-      liveCompleted.add('codeHost');
-    }
-    if (hasTools) {
-      liveCompleted.add('tools');
-    }
-    if (sessionCount > 0) {
-      liveCompleted.add('session');
-    }
-    if (anyAgent) {
-      liveCompleted.add('agent');
-    }
-    if (anyPlan) {
-      liveCompleted.add('plan');
-    }
-    return liveCompleted;
-  }, [
-    persistedCompleted,
-    workspaces.length,
-    gitlabConnected,
-    bitbucketConnected,
-    githubScoped,
-    hasTools,
-    sessionCount,
-    anyAgent,
-    anyPlan,
-  ]);
+  }, [live, persistedCompleted]);
+
+  const completed = useMemo(
+    () => new Set<OnboardingStepId>([...persistedCompleted, ...live]),
+    [persistedCompleted, live],
+  );
   const totalCount = ONBOARDING_STEPS.length;
   const completedCount = ONBOARDING_STEPS.filter((step) => completed.has(step.id)).length;
 
@@ -179,6 +139,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
     completed,
     collapsed,
     finished,
+    wizardDone,
     isDone: completedCount >= totalCount,
     hasProjects,
   };

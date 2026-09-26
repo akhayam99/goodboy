@@ -14,10 +14,11 @@ const { mocks } = vi.hoisted(() => ({
     },
     progress: {
       completedCount: 3,
-      totalCount: 7,
-      completed: new Set<OnboardingStepId>(['workspace', 'codeHost', 'tools']),
+      totalCount: 6,
+      completed: new Set<OnboardingStepId>(['provider', 'project', 'codeHost']),
       collapsed: true,
       finished: false,
+      wizardDone: true,
       isDone: false,
       hasProjects: true,
     },
@@ -80,6 +81,8 @@ beforeEach(() => {
   mocks.progress.finished = false;
   mocks.progress.isDone = false;
   mocks.progress.hasProjects = true;
+  mocks.progress.wizardDone = true;
+  mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'codeHost']);
   mocks.hasDraft = false;
 });
 
@@ -113,7 +116,7 @@ describe('GoodboyChip', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
-    expect(chip.textContent).toBe('Setup3 of 7');
+    expect(chip.textContent).toBe('Setup3 of 6');
   });
 
   it('puts a ready update ahead of setup', () => {
@@ -184,8 +187,9 @@ describe('GoodboyChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
-  it('opens itself once when the first project arrives, then remembers it did', async () => {
+  it('opens itself once after the first agent finishes, then remembers it did', async () => {
     mocks.progress.collapsed = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
     await act(async () => {
       renderChip();
     });
@@ -194,9 +198,20 @@ describe('GoodboyChip', () => {
     expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
   });
 
-  it('never opens itself before a project exists or after setup is done with', async () => {
+  it('never opens itself before the first agent finishes', async () => {
     mocks.progress.collapsed = false;
-    mocks.progress.hasProjects = false;
+    await act(async () => {
+      renderChip();
+    });
+
+    expect(mocks.collapse).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+
+  it('never opens itself over the setup wizard', async () => {
+    mocks.progress.collapsed = false;
+    mocks.progress.wizardDone = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
     await act(async () => {
       renderChip();
     });

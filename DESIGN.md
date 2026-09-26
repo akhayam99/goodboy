@@ -323,7 +323,10 @@ second home for them.
 - **One creation grammar, one card action grammar.** There is only one of
   each. A second shape for either is a defect, not a variant. A stepper is
   only for information that truly does not fit one screen. Only the workflow
-  builder, the first-run wizard and the question answer flow have one.
+  builder, the first-run wizard and the question answer flow have one. The
+  first-run wizard's shell never moves: the labelled stepper is there from
+  Welcome, the body starts at the same line on every step, the footer is
+  pinned, and steps crossfade in one grid cell instead of re-centering.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
   Never a dead end, never a "start chatting" prompt. An empty Activity shows

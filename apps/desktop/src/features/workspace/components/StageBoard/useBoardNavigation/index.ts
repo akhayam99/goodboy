@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
 import { openInEditor } from '../../../../../shared/lib/editor';
-import { markStepComplete } from '../../../../onboarding/onboarding-store';
 import { openReview } from '../../../../review/openReview';
 
 export type BoardNavigation = {
@@ -30,7 +29,6 @@ export const useBoardNavigation = (): BoardNavigation => {
 
     const selectCard = (session: Session): void => {
       openLens({ session, lens: null });
-      markStepComplete('session');
     };
 
     const openAgent = (session: Session): void => {

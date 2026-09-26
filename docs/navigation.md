@@ -442,8 +442,28 @@ order: an update is ready, setup is unfinished (with its progress), or
 the setup checklist, Report a bug (the draft survives closing), What's new,
 keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
 form, and its primary action opens the full form instead of sending. The
-popover opens by itself once, when the first project is added; the checklist
-has no floating card.
+popover opens by itself once, when the first agent finishes a turn, and never
+while the setup wizard is open; the checklist has no floating card.
+
+First-run setup is a full-screen wizard in one shell that never moves: a top
+bar with a labelled stepper (Provider, Project, Code host, Tasks, First
+session) and Skip setup, a body that starts at the same line on every step,
+and a footer pinned at the bottom (Back left, Skip for now and the primary
+right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
+motion); the footer is disabled while they do. Welcome says what the five
+steps take. Provider needs one usable route (a CLI login, a saved key or
+OpenCode's free models). Project picks one folder, with or without version
+control, names the workspace after its parent folder and finds the
+repositories inside one. Code host is skipped by itself when no project is a
+repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
+live in Settings › Integrations. There is no permissions question: every
+workspace starts on Full access. The last step offers the same three ways as
+a new session, with Ask an agent picked and three starters: Start Scout
+creates the session with that goal and Scout running. With no issue source at
+all, Pick up a task says so and leads back to Code host. The checklist has six
+items (provider, project, code host, task manager, first session, profile); a
+skipped code host or task manager reopens its own step, and the first session
+ticks when an agent finishes a turn, not when a session row exists.
 
 Right: Inbox, Workflows, Impact and Settings. Settings opens on the current
 workspace when there is one. Impact is a destination, so it has a launcher; the

@@ -2,99 +2,101 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { IsoDateTime, Workspace, WorkspaceId, WorkspaceProfile } from '@goodboy/types';
+import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
+import type { FolderPick } from './steps/ProjectStep';
 
-const { hookState, finishWizard, requestNewSession, storeActions, repoLib } = vi.hoisted(() => ({
+const { hookState, finishWizard, storeActions, repoLib, tools, firstSession } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   finishWizard: vi.fn(),
-  requestNewSession: vi.fn(),
   storeActions: {
     createWorkspace: vi.fn(),
     renameWorkspace: vi.fn(),
     setCurrentWorkspace: vi.fn(),
-    updateWorkspaceProfile: vi.fn(),
+    addProject: vi.fn(),
     addProjects: vi.fn(),
+    removeProject: vi.fn(),
     adoptProject: vi.fn(),
     previewProjectAdoption: vi.fn(),
   },
   repoLib: {
-    initRepo: vi.fn(),
     validateGitRepo: vi.fn(),
     scanChildRepos: vi.fn(),
+  },
+  tools: {
+    connected: {
+      github: false,
+      gitlab: false,
+      bitbucket: false,
+      linear: false,
+      jira: false,
+      sentry: false,
+      slack: false,
+    },
+  },
+  firstSession: {
+    startFirstScout: vi.fn(),
+    handOffFirstSession: vi.fn(),
   },
 }));
 
 vi.mock('../../../store', () => ({
   useAppStore: (selector: (state: typeof storeActions) => unknown) => selector(storeActions),
 }));
-
 vi.mock('../../../shared/lib/repo', () => repoLib);
-
+vi.mock('../../../shared/hooks/useProjectAdoption', () => ({
+  useProjectAdoption: () => ({ knownRepos: {}, knownConflicts: {} }),
+}));
+vi.mock('../../integrations/useToolConnections', () => ({
+  useToolConnections: () => ({ connected: tools.connected, githubIdentity: null }),
+}));
 vi.mock('./useOnboardingWizard', () => ({
   useOnboardingWizard: () => hookState,
 }));
-
-vi.mock('../onboarding-store', () => ({
-  finishWizard,
+vi.mock('./useProjectRemote', () => ({ useProjectRemote: () => null }));
+vi.mock('./startFirstSession', () => firstSession);
+vi.mock('./useStepTransition', () => ({
+  useStepTransition: ({ step }: { step: string }) => ({
+    current: step,
+    outgoing: null,
+    direction: 'forward',
+    generation: 0,
+    isTransitioning: false,
+    removeOutgoing: () => undefined,
+  }),
 }));
-
-vi.mock('../../session/requestNewSession', () => ({
-  requestNewSession,
-}));
-
+vi.mock('../onboarding-store', () => ({ finishWizard }));
 vi.mock('./Stepper', () => ({
   Stepper: ({ current, steps }: { current: string; steps: ReadonlyArray<string> }) => (
     <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
   ),
 }));
-
 vi.mock('./steps/WelcomeStep', () => ({ WelcomeStep: () => <div data-testid="WelcomeStep" /> }));
 vi.mock('./steps/ProvidersStep', () => ({
   ProvidersStep: () => <div data-testid="ProvidersStep" />,
 }));
-vi.mock('./steps/ShapeStep', () => ({
-  ShapeStep: ({
-    workspace,
-    shape,
-    onShapeChange,
+vi.mock('./steps/ProjectStep', () => ({
+  ProjectStep: ({
     name,
     onNameChange,
-    onSingleProject,
+    onPickFolder,
     detection,
     onConfirmDetection,
-    onDismissDetection,
   }: {
-    workspace: Workspace | null;
-    shape: 'workspace' | 'single' | null;
-    onShapeChange: (shape: 'workspace' | 'single') => void;
     name: string;
     onNameChange: (name: string) => void;
-    onSingleProject: (pick: { path: string; initialize: boolean }) => void;
-    detection: { parentPath: string; repos: ReadonlyArray<{ name: string; path: string }> } | null;
+    onPickFolder: (pick: FolderPick) => void;
+    detection: { parentPath: string; repos: ReadonlyArray<{ path: string }> } | null;
     onConfirmDetection: (params: { paths: ReadonlyArray<string> }) => void;
-    onDismissDetection: () => void;
   }) => (
-    <div data-testid="ShapeStep">
-      <span data-testid="existing-name">{workspace?.name}</span>
-      <span data-testid="shape">{shape ?? 'none'}</span>
-      <button type="button" onClick={() => onShapeChange('workspace')}>
-        pick workspace shape
-      </button>
-      <button type="button" onClick={() => onShapeChange('single')}>
-        pick single shape
-      </button>
+    <div data-testid="ProjectStep">
       <button
         type="button"
-        onClick={() => onSingleProject({ path: '/tmp/solo', initialize: false })}
+        onClick={() =>
+          onPickFolder({ path: '/Users/me/code/northwind/ledger-core', replaces: null })
+        }
       >
-        pick single folder
-      </button>
-      <button
-        type="button"
-        onClick={() => onSingleProject({ path: '/tmp/fresh', initialize: true })}
-      >
-        create single folder
+        pick folder
       </button>
       <input
         aria-label="Workspace name"
@@ -112,138 +114,167 @@ vi.mock('./steps/ShapeStep', () => ({
       >
         confirm detected
       </button>
-      <button type="button" onClick={onDismissDetection}>
-        dismiss detected
-      </button>
     </div>
   ),
 }));
-vi.mock('./steps/ProjectsStep', () => ({
-  ProjectsStep: () => <div data-testid="ProjectsStep" />,
+vi.mock('./steps/CodeHostStep', () => ({
+  CodeHostStep: () => <div data-testid="CodeHostStep" />,
 }));
-vi.mock('./steps/ProfileStep', () => ({
-  ProfileStep: ({
-    profile,
-    onProfileChange,
+vi.mock('./steps/TasksStep', () => ({
+  TasksStep: ({ onBackToCodeHost }: { onBackToCodeHost: (() => void) | null }) => (
+    <div data-testid="TasksStep">
+      {onBackToCodeHost !== null && (
+        <button type="button" onClick={onBackToCodeHost}>
+          tasks back to code host
+        </button>
+      )}
+    </div>
+  ),
+}));
+vi.mock('./steps/FirstSessionStep', () => ({
+  FirstSessionStep: ({
+    hasIssueSource,
+    onStartScout,
+    onHandOff,
+    onBackToCodeHost,
   }: {
-    profile: WorkspaceProfile;
-    onProfileChange: (profile: WorkspaceProfile) => void;
+    hasIssueSource: boolean;
+    onStartScout: (prompt: string) => void;
+    onHandOff: (choice: 'task' | 'workflow') => void;
+    onBackToCodeHost: (() => void) | null;
   }) => (
-    <div data-testid="ProfileStep">
-      <input
-        aria-label="About your work"
-        value={profile.aboutWork ?? ''}
-        onChange={(event) => onProfileChange({ ...profile, aboutWork: event.target.value })}
-      />
-      <button
-        type="button"
-        onClick={() => onProfileChange({ ...profile, roles: [...profile.roles, 'Tech Lead'] })}
-      >
-        Add Tech Lead
+    <div data-testid="FirstSessionStep">
+      <span data-testid="issue-source">{hasIssueSource ? 'yes' : 'no'}</span>
+      <button type="button" onClick={() => onStartScout('Explain how ledger-core is organized')}>
+        start scout
       </button>
+      <button type="button" onClick={() => onHandOff('workflow')}>
+        hand off workflow
+      </button>
+      {onBackToCodeHost !== null && (
+        <button type="button" onClick={onBackToCodeHost}>
+          back to code host
+        </button>
+      )}
     </div>
   ),
 }));
-vi.mock('./steps/ReadyStep', () => ({ ReadyStep: () => <div data-testid="ReadyStep" /> }));
+
+const OVERRIDES = {
+  defaultProviderId: null,
+  defaultBranchPrefix: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
+} as const;
+
+const STAMP = '2026-09-20T08:00:00.000Z' as IsoDateTime;
+
+const WORKSPACE = {
+  id: 'workspace-1' as WorkspaceId,
+  name: 'Northwind',
+  slug: 'northwind',
+  overrides: OVERRIDES,
+  createdAt: STAMP,
+  updatedAt: STAMP,
+} satisfies Workspace;
+
+const project = ({ kind }: { readonly kind: Project['kind'] }): Project => ({
+  id: 'project-1' as ProjectId,
+  workspaceId: WORKSPACE.id,
+  name: 'ledger-core',
+  rootPath: '/Users/me/code/northwind/ledger-core',
+  kind,
+  overrides: OVERRIDES,
+  createdAt: STAMP,
+  updatedAt: STAMP,
+});
 
 const baseState: OnboardingWizardState = {
   open: true,
   mode: 'full',
+  start: null,
   providersConnected: 0,
   hasWorkspace: false,
   workspace: null,
   workspaceId: null,
   projectCount: 0,
+  projects: [],
 };
 
-const WORKSPACE = {
-  id: 'workspace-1' as WorkspaceId,
-  name: 'Goodboy desktop',
-  slug: 'goodboy-desktop',
-  overrides: {
-    defaultProviderId: null,
-    defaultBranchPrefix: null,
-    defaultVerbosity: null,
-    providerBindings: null,
-    taskModels: null,
-    roleModels: null,
-    parallelAgents: null,
-    providerPool: null,
-    attributionFooter: null,
-    replyVoice: null,
-    replyStyleNote: null,
-    replyTemplateFixed: null,
-    replyTemplateNoChange: null,
-    resolveOnGithub: null,
-    resolveCommitStyle: null,
-  },
-  createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
-  updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
-} satisfies Workspace;
+const readyState = ({
+  kind,
+}: {
+  readonly kind: Project['kind'];
+}): Partial<OnboardingWizardState> => ({
+  providersConnected: 1,
+  hasWorkspace: true,
+  workspace: WORKSPACE,
+  workspaceId: WORKSPACE.id,
+  projectCount: 1,
+  projects: [project({ kind })],
+});
 
 const setHook = (partial: Partial<OnboardingWizardState>) =>
   Object.assign(hookState, baseState, partial);
 
 beforeEach(() => {
   finishWizard.mockClear();
-  requestNewSession.mockClear();
+  firstSession.startFirstScout.mockReset().mockResolvedValue(undefined);
+  firstSession.handOffFirstSession.mockReset();
   Object.assign(hookState, baseState);
-  storeActions.createWorkspace.mockReset().mockResolvedValue(WORKSPACE);
+  Object.assign(tools.connected, {
+    github: false,
+    gitlab: false,
+    bitbucket: false,
+    linear: false,
+    jira: false,
+  });
+  storeActions.createWorkspace
+    .mockReset()
+    .mockImplementation(async ({ name }: { name: string }) => ({ ...WORKSPACE, name }));
   storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
-  storeActions.updateWorkspaceProfile.mockReset().mockResolvedValue(WORKSPACE);
+  storeActions.addProject
+    .mockReset()
+    .mockResolvedValue({ kind: 'linked', project: project({ kind: 'repo' }) });
   storeActions.addProjects
     .mockReset()
     .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) => ({
       linked: rootPaths.map((rootPath) => ({ rootPath })),
       conflicts: [],
     }));
-  storeActions.adoptProject.mockReset().mockResolvedValue({
-    movedSessionCount: 0,
-    ambiguousSessionCount: 0,
-    mergedWorkspace: true,
-  });
+  storeActions.removeProject.mockReset().mockResolvedValue(undefined);
+  storeActions.adoptProject.mockReset().mockResolvedValue(undefined);
   storeActions.previewProjectAdoption.mockReset().mockResolvedValue(null);
-  repoLib.initRepo
-    .mockReset()
-    .mockResolvedValue({ rootPath: '/tmp/fresh', remoteUrl: '', branch: 'main' });
   repoLib.scanChildRepos.mockReset().mockResolvedValue([]);
   repoLib.validateGitRepo.mockReset().mockResolvedValue({
     isRepo: true,
-    rootPath: '/tmp/solo',
-    resolvedPath: '/tmp/solo',
+    rootPath: '/Users/me/code/northwind/ledger-core',
+    resolvedPath: '/Users/me/code/northwind/ledger-core',
     error: null,
   });
 });
-afterEach(cleanup);
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 import { OnboardingWizard } from './index';
+import { workspaceNameFor } from './folderNames';
 
-const advance = (label: RegExp, times: number) => {
-  for (let i = 0; i < times; i += 1) {
-    fireEvent.click(screen.getByRole('button', { name: label }));
-  }
-};
-
-const connectedWorkspaceState: Partial<OnboardingWizardState> = {
-  providersConnected: 1,
-  hasWorkspace: true,
-  workspace: WORKSPACE,
-  workspaceId: WORKSPACE.id,
-  projectCount: 1,
-};
-
-const continueTo = async (testId: string) => {
-  fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
-  await waitFor(() => expect(screen.getByTestId(testId)).toBeDefined());
-};
-
-const reachProfileStep = async () => {
-  advance(/get started/i, 1);
-  await continueTo('ShapeStep');
-  await continueTo('ProjectsStep');
-  await continueTo('ProfileStep');
-};
+const click = (name: RegExp) => fireEvent.click(screen.getByRole('button', { name }));
 
 describe('OnboardingWizard', () => {
   it('renders nothing when closed', () => {
@@ -252,334 +283,238 @@ describe('OnboardingWizard', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('opens on the welcome step with no stepper, back, or skip', () => {
-    setHook({ hasWorkspace: false });
+  it('opens on Welcome with the stepper already there and a way out', () => {
     render(<OnboardingWizard />);
     expect(screen.getByTestId('WelcomeStep')).toBeDefined();
-    expect(screen.getByRole('button', { name: /get started/i })).toBeDefined();
-    expect(screen.queryByTestId('stepper')).toBeNull();
+    expect(screen.getByTestId('stepper').textContent).toBe(
+      'welcome/welcome,providers,project,code-host,tasks,first-session',
+    );
     expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /^skip setup$/i })).toBeDefined();
   });
 
-  describe('mandatory gates', () => {
-    it('keeps Continue disabled on the providers step until one is connected', () => {
-      setHook({ providersConnected: 0, hasWorkspace: true });
+  it('lets a returning user skip setup before a workspace exists', async () => {
+    vi.useFakeTimers();
+    render(<OnboardingWizard />);
+    click(/i've used goodboy before/i);
+    vi.advanceTimersByTime(250);
+    expect(finishWizard).toHaveBeenCalledOnce();
+  });
+
+  it('closes on Escape even before a workspace exists', () => {
+    vi.useFakeTimers();
+    render(<OnboardingWizard />);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    vi.advanceTimersByTime(250);
+    expect(finishWizard).toHaveBeenCalledOnce();
+  });
+
+  it('keeps Continue disabled on the provider step until one is connected', () => {
+    render(<OnboardingWizard />);
+    click(/get started/i);
+    const next = screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement;
+    expect(next.disabled).toBe(true);
+    expect(screen.getByText(/connect one provider to continue/i)).toBeDefined();
+  });
+
+  describe('project step', () => {
+    const reachProject = () => {
+      setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
-      expect(screen.getByTestId('ProvidersStep')).toBeDefined();
-      expect(
-        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-    });
+      click(/get started/i);
+      click(/^continue$/i);
+      expect(screen.getByTestId('ProjectStep')).toBeDefined();
+    };
 
-    it('explains the provider gate under the disabled Continue', () => {
-      setHook({ providersConnected: 0, hasWorkspace: true });
-      render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
-      expect(
-        screen.getByText(
-          'Connect one provider to continue. Install sets up a missing CLI, then signs you in.',
-        ),
-      ).toBeDefined();
-    });
-
-    it('drops the provider gate hint once a provider is connected', () => {
-      setHook({ providersConnected: 1, hasWorkspace: true });
-      render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /get started/i }));
-      expect(screen.queryByText(/Connect one provider to continue/)).toBeNull();
-    });
-
-    it('keeps Create workspace disabled until a shape is chosen and a name is typed', () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      expect(screen.getByTestId('ShapeStep')).toBeDefined();
-      const cta = screen.getByRole('button', { name: /create workspace/i }) as HTMLButtonElement;
-      expect(cta.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Demo Team' } });
-      expect(cta.disabled).toBe(true);
-      fireEvent.click(screen.getByRole('button', { name: /pick workspace shape/i }));
-      expect(cta.disabled).toBe(false);
-    });
-
-    it('creates the workspace from the typed name and advances to projects', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      storeActions.createWorkspace.mockImplementation(async () => {
-        setHook({ ...connectedWorkspaceState, projectCount: 0 });
-        return WORKSPACE;
-      });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick workspace shape/i }));
-      fireEvent.change(screen.getByLabelText('Workspace name'), { target: { value: 'Demo Team' } });
-      fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Demo Team' });
-      expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
-    });
-
-    it('renders no dead Continue while a single project is being picked', () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
-      expect(screen.queryByRole('button', { name: /create workspace/i })).toBeNull();
-      expect(screen.getByRole('button', { name: /^back$/i })).toBeDefined();
-    });
-
-    it('creates the container implicitly from a picked git folder and skips the projects step', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
-        setHook(connectedWorkspaceState);
-        return { ...WORKSPACE, name };
-      });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
-      expect(screen.queryByTestId('ProjectsStep')).toBeNull();
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'solo' });
-      expect(storeActions.addProjects).toHaveBeenCalledWith({
+    it('creates the workspace from the parent folder and links the picked repository', async () => {
+      reachProject();
+      click(/pick folder/i);
+      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Northwind' });
+      expect(storeActions.addProject).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        rootPaths: ['/tmp/solo'],
+        rootPath: '/Users/me/code/northwind/ledger-core',
+        requireRepo: false,
       });
+      expect(screen.getByTestId('ProjectStep')).toBeDefined();
     });
 
-    it('refuses a picked folder without a git repository and stays on the shape step', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
+    it('links a folder without git as a plain folder project', async () => {
       repoLib.validateGitRepo.mockResolvedValue({
         isRepo: false,
         rootPath: null,
-        resolvedPath: '/tmp/solo',
-        error: 'not a git repository',
+        resolvedPath: '/Users/me/notes/research-notes',
+        error: null,
       });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
-
-      await waitFor(() => expect(screen.getByRole('alert')).toBeDefined());
-      expect(screen.getByRole('alert').textContent).toMatch(
-        /^No git repository at .*initialize one\.$/,
-      );
-      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
-      expect(screen.getByTestId('ShapeStep')).toBeDefined();
-    });
-
-    it('initializes a fresh repository for New project and links it', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
-        setHook(connectedWorkspaceState);
-        return { ...WORKSPACE, name };
-      });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      fireEvent.click(screen.getByRole('button', { name: /create single folder/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ProfileStep')).toBeDefined());
-      expect(repoLib.initRepo).toHaveBeenCalledWith({ path: '/tmp/fresh' });
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'fresh' });
-      expect(storeActions.addProjects).toHaveBeenCalledWith({
+      reachProject();
+      click(/pick folder/i);
+      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
+      expect(storeActions.addProject).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        rootPaths: ['/tmp/fresh'],
+        rootPath: '/Users/me/notes/research-notes',
+        requireRepo: false,
       });
     });
 
-    it('offers detected child repositories and links the selection into a workspace named after the parent', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
+    it('offers the git folders found inside and links the ones picked', async () => {
       repoLib.validateGitRepo.mockResolvedValue({
         isRepo: false,
         rootPath: null,
-        resolvedPath: '/tmp/parent',
-        error: 'not a git repository',
+        resolvedPath: '/Users/me/code/northwind',
+        error: null,
       });
       repoLib.scanChildRepos.mockResolvedValue([
-        { name: 'api', path: '/tmp/parent/api' },
-        { name: 'web', path: '/tmp/parent/web' },
+        { name: 'ledger-core', path: '/Users/me/code/northwind/ledger-core' },
+        { name: 'payments-api', path: '/Users/me/code/northwind/payments-api' },
       ]);
-      storeActions.createWorkspace.mockImplementation(async ({ name }: { name: string }) => {
-        setHook({ ...connectedWorkspaceState, projectCount: 2 });
-        return { ...WORKSPACE, name };
-      });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
-
+      reachProject();
+      click(/pick folder/i);
       await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('2'));
-      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
-      expect(screen.queryByRole('alert')).toBeNull();
+      expect(storeActions.addProject).not.toHaveBeenCalled();
 
-      fireEvent.click(screen.getByRole('button', { name: /confirm detected/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'parent' });
+      click(/confirm detected/i);
+      await waitFor(() => expect(storeActions.addProjects).toHaveBeenCalled());
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Northwind' });
       expect(storeActions.addProjects).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        rootPaths: ['/tmp/parent/api', '/tmp/parent/web'],
+        rootPaths: [
+          '/Users/me/code/northwind/ledger-core',
+          '/Users/me/code/northwind/payments-api',
+        ],
       });
     });
 
-    it('clears an offered detection when the user dismisses it', async () => {
-      setHook({ providersConnected: 1, hasWorkspace: false });
-      repoLib.validateGitRepo.mockResolvedValue({
-        isRepo: false,
-        rootPath: null,
-        resolvedPath: '/tmp/parent',
-        error: 'not a git repository',
+    it('renames the workspace on Continue only when the name changed, then goes to Code host', async () => {
+      setHook(readyState({ kind: 'repo' }));
+      render(<OnboardingWizard />);
+      click(/get started/i);
+      click(/^continue$/i);
+      fireEvent.change(screen.getByRole('textbox', { name: 'Workspace name' }), {
+        target: { value: 'Northwind Labs' },
       });
-      repoLib.scanChildRepos.mockResolvedValue([{ name: 'api', path: '/tmp/parent/api' }]);
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      fireEvent.click(screen.getByRole('button', { name: /pick single shape/i }));
-      fireEvent.click(screen.getByRole('button', { name: /pick single folder/i }));
-
-      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('1'));
-
-      fireEvent.click(screen.getByRole('button', { name: /dismiss detected/i }));
-
-      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('none'));
-      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
-    });
-
-    it('prefills the existing workspace name and renames only on change', async () => {
-      setHook(connectedWorkspaceState);
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 1);
-      expect(screen.getByTestId('shape').textContent).toBe('workspace');
-      const input = screen.getByLabelText('Workspace name') as HTMLInputElement;
-      expect(input.value).toBe('Goodboy desktop');
-      fireEvent.click(screen.getByRole('button', { name: /^continue$/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
-      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
-      expect(storeActions.renameWorkspace).not.toHaveBeenCalled();
-    });
-
-    it('keeps Continue disabled on the projects step until one project is linked', async () => {
-      setHook({ ...connectedWorkspaceState, projectCount: 0 });
-      render(<OnboardingWizard />);
-      advance(/get started/i, 1);
-      advance(/continue/i, 2);
-      await waitFor(() => expect(screen.getByTestId('ProjectsStep')).toBeDefined());
-      expect(
-        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-    });
-  });
-
-  describe('profile step', () => {
-    it('continues past an empty profile without spending a profile write', async () => {
-      setHook(connectedWorkspaceState);
-      render(<OnboardingWizard />);
-      await reachProfileStep();
-      expect(
-        (screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled,
-      ).toBe(false);
-
-      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ReadyStep')).toBeDefined());
-      expect(storeActions.updateWorkspaceProfile).not.toHaveBeenCalled();
-    });
-
-    it('persists the typed fields as the whole profile', async () => {
-      setHook(connectedWorkspaceState);
-      render(<OnboardingWizard />);
-      await reachProfileStep();
-
-      fireEvent.change(screen.getByLabelText('About your work'), {
-        target: { value: '  I lead design for the checkout team.  ' },
-      });
-      fireEvent.click(screen.getByRole('button', { name: 'Add Tech Lead' }));
-      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-
-      await waitFor(() => expect(screen.getByTestId('ReadyStep')).toBeDefined());
-      expect(storeActions.updateWorkspaceProfile).toHaveBeenCalledWith({
+      click(/^continue$/i);
+      await waitFor(() => expect(screen.getByTestId('CodeHostStep')).toBeDefined());
+      expect(storeActions.renameWorkspace).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        profile: {
-          roles: ['Tech Lead'],
-          aboutWork: 'I lead design for the checkout team.',
-          workingRules: null,
-          explainMore: [],
-        },
+        name: 'Northwind Labs',
       });
     });
   });
 
-  describe('setup mode', () => {
-    it('starts at the profile step with no back button', () => {
-      setHook({ ...connectedWorkspaceState, mode: 'setup' });
+  describe('code host and tasks', () => {
+    const reachCodeHost = async ({ kind }: { readonly kind: Project['kind'] }) => {
+      setHook(readyState({ kind }));
       render(<OnboardingWizard />);
-      expect(screen.getByTestId('ProfileStep')).toBeDefined();
-      expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
-      expect(screen.queryByTestId('stepper')).toBeNull();
+      click(/get started/i);
+      click(/^continue$/i);
+      click(/^continue$/i);
+      await waitFor(() => expect(screen.queryByTestId('ProjectStep')).toBeNull());
+    };
+
+    it('skips Code host by itself when the project is not a git folder', async () => {
+      await reachCodeHost({ kind: 'folder' });
+      expect(screen.getByTestId('TasksStep')).toBeDefined();
+      expect(screen.getByTestId('stepper').textContent).not.toContain('code-host');
+      expect(screen.queryByRole('button', { name: /tasks back to code host/i })).toBeNull();
     });
 
-    it('passes the current step and filtered steps to the stepper', async () => {
-      setHook({ ...connectedWorkspaceState, mode: 'setup' });
-      render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-      await waitFor(() =>
-        expect(screen.getByTestId('stepper').textContent).toBe('ready/profile,ready'),
-      );
+    it('lets Code host and Tasks be skipped, then lands on the first session', async () => {
+      await reachCodeHost({ kind: 'repo' });
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+      expect(
+        (screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement).disabled,
+      ).toBe(true);
+      click(/skip for now/i);
+      expect(screen.getByTestId('TasksStep')).toBeDefined();
+      click(/skip for now/i);
+      expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
+      expect(screen.getByTestId('issue-source').textContent).toBe('no');
+    });
+
+    it('continues without Skip once a code host is connected', async () => {
+      tools.connected.github = true;
+      await reachCodeHost({ kind: 'repo' });
+      expect(screen.queryByRole('button', { name: /skip for now/i })).toBeNull();
+      click(/^continue$/i);
+      expect(screen.getByTestId('TasksStep')).toBeDefined();
+    });
+
+    it('goes back to Code host from the tasks step', async () => {
+      await reachCodeHost({ kind: 'repo' });
+      click(/skip for now/i);
+      click(/tasks back to code host/i);
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
     });
   });
 
-  describe('exit', () => {
-    it('shows Skip setup once a workspace exists and finishes the wizard', async () => {
-      setHook({ hasWorkspace: true });
+  describe('first session', () => {
+    const reachFirstSession = async () => {
+      setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
-      fireEvent.click(screen.getByRole('button', { name: /skip setup/i }));
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
-      expect(requestNewSession).not.toHaveBeenCalled();
+      click(/get started/i);
+      click(/^continue$/i);
+      click(/^continue$/i);
+      await waitFor(() => expect(screen.getByTestId('CodeHostStep')).toBeDefined());
+      click(/skip for now/i);
+      click(/skip for now/i);
+      expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
+    };
+
+    it('starts Scout with the prompt in a real session, then closes the wizard', async () => {
+      await reachFirstSession();
+      click(/start scout/i);
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+      expect(firstSession.startFirstScout).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        projectId: 'project-1',
+        prompt: 'Explain how ledger-core is organized',
+      });
     });
 
-    it('finishes the wizard on Escape wherever Skip setup is offered', async () => {
-      setHook({ hasWorkspace: true });
-      render(<OnboardingWizard />);
-      expect(screen.getByRole('button', { name: /skip setup/i })).toBeDefined();
-      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
+    it('hands a workflow start to the new session after the wizard closes', async () => {
+      await reachFirstSession();
+      click(/hand off workflow/i);
+      await waitFor(() => expect(firstSession.handOffFirstSession).toHaveBeenCalled(), {
+        timeout: 1000,
+      });
+      expect(finishWizard).toHaveBeenCalledOnce();
+      expect(firstSession.handOffFirstSession).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE.id,
+        choice: 'workflow',
+      });
     });
 
-    it('ignores Escape before a workspace exists, so no dead end behind the wizard', async () => {
-      setHook({ hasWorkspace: false });
-      render(<OnboardingWizard />);
-      expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
-      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      expect(finishWizard).not.toHaveBeenCalled();
+    it('takes the empty task source back to Code host', async () => {
+      await reachFirstSession();
+      click(/^back to code host$/i);
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
     });
 
-    it('finishes the wizard and opens a new session from the ready step', async () => {
-      setHook(connectedWorkspaceState);
-      render(<OnboardingWizard />);
-      await reachProfileStep();
-      await continueTo('ReadyStep');
-      expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull();
-      fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      expect(finishWizard).not.toHaveBeenCalled();
-      fireEvent.click(screen.getByRole('button', { name: /start building/i }));
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce());
-      expect(requestNewSession).toHaveBeenCalledOnce();
+    it('offers Skip, open the board instead of a footer primary', async () => {
+      await reachFirstSession();
+      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
+      click(/skip, open the board/i);
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
     });
+  });
+
+  describe('single step', () => {
+    it('opens one step with no stepper and closes with Done', async () => {
+      tools.connected.linear = true;
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tasks' });
+      render(<OnboardingWizard />);
+      expect(screen.getByTestId('TasksStep')).toBeDefined();
+      expect(screen.queryByTestId('stepper')).toBeNull();
+      click(/^done$/i);
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+    });
+  });
+});
+
+describe('workspaceNameFor', () => {
+  it('names the workspace after the parent folder', () => {
+    expect(workspaceNameFor({ rootPath: '/Users/me/code/northwind/ledger-core' })).toBe(
+      'Northwind',
+    );
   });
 });

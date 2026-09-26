@@ -1,48 +1,40 @@
 import type { ComponentProps } from 'react';
-import type { Workspace, WorkspaceProfile } from '@goodboy/types';
-import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { WelcomeStep } from './steps/WelcomeStep';
 import { ProvidersStep } from './steps/ProvidersStep';
-import { ShapeStep } from './steps/ShapeStep';
-import { ProjectsStep } from './steps/ProjectsStep';
-import { ProfileStep } from './steps/ProfileStep';
-import { ReadyStep } from './steps/ReadyStep';
+import { ProjectStep } from './steps/ProjectStep';
+import { CodeHostStep } from './steps/CodeHostStep';
+import { TasksStep } from './steps/TasksStep';
+import { FirstSessionStep } from './steps/FirstSessionStep';
 import type { WizardStepId } from './wizardSteps';
 
 type Props = {
   readonly step: WizardStepId;
-  readonly shapeStep: ComponentProps<typeof ShapeStep>;
-  readonly workspace: Workspace | null;
-  readonly pendingConflicts: ReadonlyArray<ProjectAttachConflict>;
-  readonly profile: WorkspaceProfile;
-  readonly onProfileChange: (profile: WorkspaceProfile) => void;
+  readonly projectStep: ComponentProps<typeof ProjectStep>;
+  readonly codeHostStep: ComponentProps<typeof CodeHostStep> | null;
+  readonly tasksStep: ComponentProps<typeof TasksStep> | null;
+  readonly firstSessionStep: ComponentProps<typeof FirstSessionStep>;
 };
 
 export const WizardStepBody = ({
   step,
-  shapeStep,
-  workspace,
-  pendingConflicts,
-  profile,
-  onProfileChange,
+  projectStep,
+  codeHostStep,
+  tasksStep,
+  firstSessionStep,
 }: Props) => {
   switch (step) {
     case 'welcome':
       return <WelcomeStep />;
     case 'providers':
       return <ProvidersStep />;
-    case 'shape':
-      return <ShapeStep {...shapeStep} />;
-    case 'projects':
-      return (
-        workspace !== null && (
-          <ProjectsStep workspace={workspace} initialConflicts={pendingConflicts} />
-        )
-      );
-    case 'profile':
-      return <ProfileStep profile={profile} onProfileChange={onProfileChange} />;
-    case 'ready':
-      return <ReadyStep />;
+    case 'project':
+      return <ProjectStep {...projectStep} />;
+    case 'code-host':
+      return codeHostStep === null ? null : <CodeHostStep {...codeHostStep} />;
+    case 'tasks':
+      return tasksStep === null ? null : <TasksStep {...tasksStep} />;
+    case 'first-session':
+      return <FirstSessionStep {...firstSessionStep} />;
     default: {
       const exhaustive: never = step;
       return exhaustive;

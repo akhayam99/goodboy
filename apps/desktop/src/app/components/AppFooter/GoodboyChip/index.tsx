@@ -56,7 +56,11 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
-  const shouldAutoOpen = !progress.finished && progress.hasProjects && !progress.collapsed;
+  const shouldAutoOpen =
+    !progress.finished &&
+    progress.wizardDone &&
+    progress.completed.has('firstSession') &&
+    !progress.collapsed;
 
   useEffect(() => {
     if (!shouldAutoOpen) {

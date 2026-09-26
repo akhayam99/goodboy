@@ -44,7 +44,6 @@ vi.mock('../../../store/slices/worktrees/resolveSessionRepo', () => ({
 vi.mock('../../../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: () => undefined }),
 }));
-vi.mock('../../../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
 vi.mock('../../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));

@@ -202,7 +202,8 @@ groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
 with plans, reports and wireframes, pull requests, issues) and Session log
 (branches and worktrees, decisions, session events). Each row shows how many
 of its kind the session holds, and how many of those rows the filter is
-hiding when the toggle is off. Presets set the whole filter in one click: **Everything**, **Work**, and **Needs you**, which shows
+hiding when the toggle is off. Presets set the whole
+filter in one click: **Everything**, **Work**, and **Needs you**, which shows
 only what waits on you whatever the filter hides and lasts until you leave
 it. A saved filter that matches the old Work preset migrates onto the new
 one, resolvers included. The trigger counts hidden rows, not hidden kinds
@@ -576,7 +577,8 @@ specific rule that fits wins.
 ## Workspace profile
 
 Each workspace can have one profile, edited under "About you" on the workspace
-page and in onboarding. It has four fields:
+page. Onboarding does not ask for it: "Tell agents about you" in the setup
+checklist opens it. It has four fields:
 
 - **Your roles**: chips from a library of about 30 roles, or your own
 - **About your work**: what you do and for whom
