@@ -11,6 +11,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- `check-ignore -v --no-index` on a bare `.goodboy` answers "not ignored"
+  for a directory-only rule (`.goodboy/`) whenever the folder does not exist
+  yet on disk, because git cannot tell the probe is meant to be a directory.
+  The probe that answers correctly either way is a path clearly inside the
+  folder, `.goodboy/worktrees/probe`. `repo.rs::IGNORE_PROBE_PATHS` and
+  `goodboy_ignore.rs` both use only that form, on purpose; adding the bare
+  name back reintroduces false "not ignored" results.
 - Claude and Cursor report a turn's total billing usage on the final
   `result`. The live context size comes from the last `assistant` message
   instead. A turn with many tool calls sends several assistant messages. Using

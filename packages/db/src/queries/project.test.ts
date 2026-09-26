@@ -17,6 +17,7 @@ import {
   updateProjectKind,
   updateProjectBaseBranch,
   updateProjectDescription,
+  updateProjectGoodboyIgnore,
   updateProjectStar,
 } from './project';
 
@@ -160,6 +161,36 @@ describe('project queries', () => {
     const cleared = await getProjectById({ db, id: project.id });
     expect(cleared?.starredAt).toBeUndefined();
     expect(cleared?.description).toBeNull();
+  });
+
+  it('records the goodboy ignore mode, source, and check time, then clears them', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+    const checkedAt = at({ value: '2026-09-25T09:00:00Z' });
+
+    await updateProjectGoodboyIgnore({
+      db,
+      projectId: project.id,
+      goodboyIgnore: 'this-mac',
+      goodboyIgnoreSource: '.git/info/exclude',
+      goodboyIgnoreCheckedAt: checkedAt,
+    });
+    const checked = await getProjectById({ db, id: project.id });
+    expect(checked?.goodboyIgnore).toBe('this-mac');
+    expect(checked?.goodboyIgnoreSource).toBe('.git/info/exclude');
+    expect(checked?.goodboyIgnoreCheckedAt).toBe(checkedAt);
+
+    await updateProjectGoodboyIgnore({
+      db,
+      projectId: project.id,
+      goodboyIgnore: null,
+      goodboyIgnoreSource: null,
+      goodboyIgnoreCheckedAt: checkedAt,
+    });
+    const cleared = await getProjectById({ db, id: project.id });
+    expect(cleared?.goodboyIgnore).toBeUndefined();
+    expect(cleared?.goodboyIgnoreSource).toBeUndefined();
   });
 
   it('keeps the star and description a project is inserted with', async () => {

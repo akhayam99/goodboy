@@ -88,6 +88,7 @@ export type {
   OrchestratorRouting,
   Session,
   Project,
+  GoodboyIgnoreMode,
   ProjectScript,
   SentryIntegrationConfig,
   SessionExternalTask,

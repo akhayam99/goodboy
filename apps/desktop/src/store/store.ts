@@ -35,6 +35,7 @@ import type {
   WorkflowSpendLimitMode,
   ProviderId,
   Project,
+  GoodboyIgnoreMode,
   ProjectId,
   ProviderCredential,
   CredentialId,
@@ -401,6 +402,11 @@ type AppActions = {
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
+  checkGoodboyIgnore(input: { projectId: ProjectId }): Promise<void>;
+  saveGoodboyIgnore(input: {
+    projectId: ProjectId;
+    mode: Exclude<GoodboyIgnoreMode, 'existing'>;
+  }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;

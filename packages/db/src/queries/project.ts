@@ -1,4 +1,5 @@
 import type {
+  GoodboyIgnoreMode,
   IsoDateTime,
   OverrideSettings,
   Project,
@@ -26,6 +27,9 @@ type ProjectRow = OverrideRow & {
   readonly updated_at: number;
   readonly disconnected_at: number | null;
   readonly last_accessed_at: number | null;
+  readonly goodboy_ignore: GoodboyIgnoreMode | null;
+  readonly goodboy_ignore_source: string | null;
+  readonly goodboy_ignore_checked_at: number | null;
 };
 
 type ToDomainParams = {
@@ -52,6 +56,15 @@ const toDomain = ({ row }: ToDomainParams): Project => ({
   ...(row.starred_at === null
     ? {}
     : { starredAt: new Date(row.starred_at).toISOString() as IsoDateTime }),
+  ...(row.goodboy_ignore === null ? {} : { goodboyIgnore: row.goodboy_ignore }),
+  ...(row.goodboy_ignore_source === null ? {} : { goodboyIgnoreSource: row.goodboy_ignore_source }),
+  ...(row.goodboy_ignore_checked_at === null
+    ? {}
+    : {
+        goodboyIgnoreCheckedAt: new Date(
+          row.goodboy_ignore_checked_at,
+        ).toISOString() as IsoDateTime,
+      }),
 });
 
 const serializeObject = ({ value }: { readonly value: object | null }): string | null =>
@@ -274,4 +287,27 @@ export const updateProjectDescription = async ({
     Date.now(),
     projectId,
   ]);
+};
+
+type UpdateProjectGoodboyIgnoreParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly goodboyIgnore: GoodboyIgnoreMode | null;
+  readonly goodboyIgnoreSource: string | null;
+  readonly goodboyIgnoreCheckedAt: IsoDateTime;
+};
+
+export const updateProjectGoodboyIgnore = async ({
+  db,
+  projectId,
+  goodboyIgnore,
+  goodboyIgnoreSource,
+  goodboyIgnoreCheckedAt,
+}: UpdateProjectGoodboyIgnoreParams): Promise<void> => {
+  await db.execute(
+    `UPDATE projects
+     SET goodboy_ignore = ?, goodboy_ignore_source = ?, goodboy_ignore_checked_at = ?, updated_at = ?
+     WHERE id = ?`,
+    [goodboyIgnore, goodboyIgnoreSource, Date.parse(goodboyIgnoreCheckedAt), Date.now(), projectId],
+  );
 };

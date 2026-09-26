@@ -3,6 +3,8 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
+import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
+import { GoodboyIgnoreField } from './GoodboyIgnoreField';
 import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
 import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
@@ -16,6 +18,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   );
   return (
     <section aria-labelledby="workspace-projects" className="flex flex-col gap-2">
+      <GoodboyIgnoreCard workspaceId={workspaceId} />
       <ProjectLinkList
         workspaceId={workspaceId}
         density="compact"
@@ -24,7 +27,12 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         )}
         emptyHint="No projects linked yet. Add a repository or a folder."
         rowAccessory={({ project }) =>
-          project.kind === 'repo' && <ProjectBaseBranchInput project={project} />
+          project.kind === 'repo' && (
+            <span className="flex items-center gap-2">
+              <ProjectBaseBranchInput project={project} />
+              <GoodboyIgnoreField project={project} />
+            </span>
+          )
         }
       />
       {hasProjects && (
