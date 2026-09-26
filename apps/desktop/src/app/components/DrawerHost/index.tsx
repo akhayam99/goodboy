@@ -11,6 +11,8 @@ import { ReviewDraftsDrawer } from '../../../features/review/components/ReviewDr
 import { ConversationDrawerSlot } from '../../../features/resolve/components/ConversationDrawerSlot';
 import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
+const NO_HIGHLIGHT: ReadonlyArray<number> = [];
+
 export const DrawerHost = () => {
   const drawer = useAppStore(selectOpenDrawer);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
@@ -26,6 +28,7 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           tab={drawer.payload.tab}
           view={drawer.payload.view}
+          highlight={drawer.payload.highlight ?? NO_HIGHLIGHT}
           onClose={closeDrawer}
         />
       );

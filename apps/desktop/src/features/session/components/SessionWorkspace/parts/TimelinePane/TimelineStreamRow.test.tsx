@@ -129,6 +129,30 @@ const renderRow = ({ onOpen = vi.fn(), action = null }: RenderParams = {}) =>
 afterEach(cleanup);
 
 describe('TimelineStreamRow', () => {
+  it('grows by its detail and says it is expanded, keeping the box on top', () => {
+    const base = itemOf();
+    const { container } = render(
+      <TimelineStreamRow
+        item={{ ...base, height: base.height + 48 }}
+        rail={{ ...railOf(), height: base.height + 48 }}
+        railWidth={32}
+        sessionId={SESSION_ID}
+        openTarget={{ label: 'Hide changes', open: vi.fn() }}
+        action={null}
+        expansion={{ isExpanded: true, controlsId: 'row-detail' }}
+        detailHeight={48}
+        detail={<div id="row-detail">+ D12 Key on the event id</div>}
+      />,
+    );
+
+    const row = screen.getByRole('button', { name: /Implement the parser/ });
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    expect(row.getAttribute('aria-controls')).toBe('row-detail');
+    expect(screen.getByText('+ D12 Key on the event id')).toBeDefined();
+    const outer = container.querySelector<HTMLElement>('[data-row-id]');
+    expect(outer?.style.height).toBe(`${base.height + 48}px`);
+  });
+
   it('opens the thing the row is about when the row is clicked', () => {
     const onOpen = vi.fn();
     renderRow({ onOpen });

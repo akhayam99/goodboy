@@ -1009,6 +1009,34 @@ const SESSION_EVENTS = [
     },
     createdAt: at({ day: DAY_TWO, time: '09:25:00' }),
   },
+  {
+    id: 'mock-run-event-decisions' as SessionEventId,
+    sessionId: SESSION_ID,
+    kind: 'decisions_changed',
+    payload: {
+      added: 0,
+      replaced: 1,
+      withdrawn: 1,
+      merged: 0,
+      restored: 0,
+      decisionChanges: [
+        {
+          kind: 'replaced',
+          number: 5,
+          by: 7,
+          text: 'Show the stuck-delivery banner after the third failed retry, not the first',
+          reason: 'You answered: three retries, one is normal provider noise',
+        },
+        {
+          kind: 'withdrawn',
+          number: 8,
+          text: 'Add a retry counter column to invoices',
+          reason: 'The ledger already keeps retry state; a second copy would drift',
+        },
+      ],
+    },
+    createdAt: at({ day: DAY_TWO, time: '09:40:00' }),
+  },
 ] as unknown as ReadonlyArray<SessionEvent>;
 
 const PR = ({

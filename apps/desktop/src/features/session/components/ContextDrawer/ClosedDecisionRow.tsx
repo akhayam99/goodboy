@@ -1,11 +1,13 @@
 import { ArrowRight, Undo2 } from 'lucide-react';
-import { Button, Markdown } from '@goodboy/ui';
+import { Button, Markdown, cn } from '@goodboy/ui';
 import { DecisionNumber } from './DecisionNumber';
 import type { ClosedDecisionByline } from './decisionByline';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly number: number;
+  readonly isHighlighted: boolean;
+  readonly rowRef: (element: HTMLDivElement | null) => void;
   readonly text: string;
   readonly reason: string | null;
   readonly byline: ClosedDecisionByline;
@@ -16,6 +18,8 @@ type Props = {
 
 export const ClosedDecisionRow = ({
   number,
+  isHighlighted,
+  rowRef,
   text,
   reason,
   byline,
@@ -23,7 +27,14 @@ export const ClosedDecisionRow = ({
   onJump,
   onRestore,
 }: Props) => (
-  <div className="flex items-start gap-2.5 rounded-lg px-2 py-2">
+  <div
+    ref={rowRef}
+    data-decision={number}
+    className={cn(
+      'flex items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors',
+      isHighlighted && 'bg-selected',
+    )}
+  >
     <DecisionNumber number={number} isClosed />
     <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div className="line-clamp-2 text-faint-foreground line-through [overflow-wrap:anywhere]">

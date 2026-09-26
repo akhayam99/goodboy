@@ -68,8 +68,15 @@ import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
+import { DecisionChangesDetail } from './DecisionChangesDetail';
+import {
+  decisionChangeDetail,
+  type DecisionChangeDetail,
+} from '../../../../timeline/decisionChangeLines';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
+
+const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
 const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
 
@@ -106,6 +113,8 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const workflows = useAttachedWorkflowRuns({ session });
   const openTargetFor = useTimelineOpen({ sessionId });
   const historyRowFor = useHistoryRowActions({ sessionId });
+  const openContextDrawer = useAppStore((s) => s.openContextDrawer);
+  const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
@@ -307,9 +316,47 @@ export const TimelinePane = ({ session, actions }: Props) => {
     });
   };
 
+  const decisionDetails = useMemo(() => {
+    const details = new Map<string, DecisionChangeDetail>();
+    for (const item of stream.items) {
+      if (item.kind !== 'row' || item.entry.kind !== 'event') {
+        continue;
+      }
+      if (item.entry.event.kind !== 'decisions_changed') {
+        continue;
+      }
+      const detail = decisionChangeDetail({ payload: item.entry.event.payload });
+      if (detail !== null) {
+        details.set(item.id, detail);
+      }
+    }
+    return details;
+  }, [stream.items]);
+
+  const laidOutItems = useMemo(
+    () =>
+      stream.items.map((item) => {
+        const detail = expandedRows.has(item.id) ? decisionDetails.get(item.id) : undefined;
+        return detail === undefined ? item : { ...item, height: item.height + detail.height };
+      }),
+    [decisionDetails, expandedRows, stream.items],
+  );
+
+  const toggleExpanded = useCallback((rowId: string) => {
+    setExpandedRows((current) => {
+      const next = new Set(current);
+      if (next.has(rowId)) {
+        next.delete(rowId);
+        return next;
+      }
+      next.add(rowId);
+      return next;
+    });
+  }, []);
+
   const rail = useMemo(
-    () => layoutTimelineRail({ rows: stream.items, groups: stream.groups }),
-    [stream.groups, stream.items],
+    () => layoutTimelineRail({ rows: laidOutItems, groups: stream.groups }),
+    [stream.groups, laidOutItems],
   );
 
   const [hoveredLaneId, setHoveredLaneId] = useState<string | null>(null);
@@ -562,7 +609,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
         <div className="flex flex-col gap-1">
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
             <div ref={listRef} className="@container flex flex-col">
-              {stream.items.map((item, index) => {
+              {laidOutItems.map((item, index) => {
                 const railRow = rail.rows[index];
                 if (railRow === undefined) {
                   return null;
@@ -642,6 +689,9 @@ export const TimelinePane = ({ session, actions }: Props) => {
                     />
                   );
                 }
+                const decisionDetail = decisionDetails.get(item.id);
+                const isExpanded = expandedRows.has(item.id);
+                const detailId = `${item.id}-decision-changes`;
                 return (
                   <TimelineStreamRow
                     key={item.id}
@@ -649,7 +699,35 @@ export const TimelinePane = ({ session, actions }: Props) => {
                     rail={railRow}
                     railWidth={rail.width}
                     sessionId={sessionId}
-                    openTarget={target}
+                    openTarget={
+                      decisionDetail === undefined
+                        ? target
+                        : {
+                            label: isExpanded ? 'Hide changes' : 'Show changes',
+                            open: () => toggleExpanded(item.id),
+                          }
+                    }
+                    expansion={
+                      decisionDetail === undefined ? null : { isExpanded, controlsId: detailId }
+                    }
+                    detailHeight={
+                      decisionDetail !== undefined && isExpanded ? decisionDetail.height : 0
+                    }
+                    detail={
+                      decisionDetail !== undefined && isExpanded ? (
+                        <DecisionChangesDetail
+                          id={detailId}
+                          detail={decisionDetail}
+                          onOpenInContext={() =>
+                            openContextDrawer({
+                              sessionId,
+                              tab: 'decisions',
+                              highlight: decisionDetail.numbers,
+                            })
+                          }
+                        />
+                      ) : null
+                    }
                     action={actionFor({ item })}
                     diffStat={diffStatFor({ item })}
                     isRevealed={revealedRows.has(entry.id)}

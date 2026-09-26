@@ -186,6 +186,7 @@
      the fade-in keyframes themselves are only defined under
      prefers-reduced-motion: no-preference (see below). */
   --animate-fade-in: fade-in 120ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-text-swap: fade-in 180ms ease-out;
 
   /* Sidebar stepper swap: the incoming pane slides against the direction of
      travel so list -> detail reads as a step forward and back reads as a step
