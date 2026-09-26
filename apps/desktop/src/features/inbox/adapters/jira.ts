@@ -1,3 +1,4 @@
+import { jiraStateCategory } from '../../../shared/detail-fields/jiraIssueFields';
 import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import type { InboxRecord } from '../types';
 type Params = { readonly groups: ReadonlyArray<JiraIssueGroup> };
@@ -9,12 +10,7 @@ export const adaptJiraIssues = ({ groups }: Params): InboxRecord[] =>
       kind: 'issue',
       identifier: issue.key,
       title: issue.summary,
-      state:
-        issue.statusCategory === 'done'
-          ? 'done'
-          : issue.statusCategory === 'indeterminate'
-            ? 'active'
-            : 'open',
+      state: jiraStateCategory({ statusCategory: issue.statusCategory }),
       stateLabel: issue.status,
       updatedAt: issue.updated,
       url: issue.url,

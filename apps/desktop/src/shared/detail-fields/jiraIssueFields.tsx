@@ -1,7 +1,14 @@
 import { Flag, Shapes, Tag, UserRound } from 'lucide-react';
-import type { JiraIssue } from '../../features/integrations/jira/client';
+import type { JiraIssue, JiraStatusCategoryKey } from '../../features/integrations/jira/client';
+import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';
-import { timeFact } from './timeFact';
+
+type StateCategoryParams = {
+  readonly statusCategory: JiraStatusCategoryKey;
+};
+
+export const jiraStateCategory = ({ statusCategory }: StateCategoryParams): InboxState =>
+  statusCategory === 'done' ? 'done' : statusCategory === 'indeterminate' ? 'active' : 'open';
 
 export const jiraIssueFields: FactRegistry<JiraIssue> = {
   person: ({ entity }) =>
@@ -32,5 +39,4 @@ export const jiraIssueFields: FactRegistry<JiraIssue> = {
       icon: Tag,
       node: label,
     })),
-  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updated }),
 };

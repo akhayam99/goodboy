@@ -8,7 +8,7 @@ import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
-import { jiraIssueFields, resolveFacts } from '../../../../shared/detail-fields';
+import { jiraIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
 import type { JiraIssue } from '../client';
 import { statusCategoryTone } from '../statusCategoryTone';
 import { useJiraConfig } from '../useJiraConfig';
@@ -67,10 +67,28 @@ export const JiraIssueDetail = ({
   const tone = statusCategoryTone({ statusCategory: live.statusCategory });
   const assign = actions.assign;
   const facts = resolveFacts({ registry: jiraIssueFields, entity: live });
+  const stateFact = {
+    slot: 'state' as const,
+    key: 'state',
+    label: 'Status',
+    icon: null,
+    node:
+      actions.transition != null ? (
+        <TransitionMenu
+          issueKey={live.key}
+          workspaceId={workspaceId}
+          onTransition={actions.transition}
+          state={{ label: live.status, tone }}
+        />
+      ) : (
+        <StateBadge tone={tone}>{live.status}</StateBadge>
+      ),
+  };
   const withPicker =
     assign == null
-      ? facts
+      ? [stateFact, ...facts]
       : [
+          stateFact,
           {
             slot: 'person' as const,
             key: 'assignee',
@@ -97,18 +115,11 @@ export const JiraIssueDetail = ({
           provider="jira"
           identifier={live.key}
           title={live.summary}
-          state={
-            actions.transition != null ? (
-              <TransitionMenu
-                issueKey={live.key}
-                workspaceId={workspaceId}
-                onTransition={actions.transition}
-                state={{ label: live.status, tone }}
-              />
-            ) : (
-              <StateBadge tone={tone}>{live.status}</StateBadge>
-            )
-          }
+          byline={recordByline({
+            lead: live.reporter == null ? null : `Reported by ${live.reporter.displayName}`,
+            verb: 'created',
+            iso: live.created,
+          })}
           facts={<RecordProperties facts={withPicker} />}
           externalRef={{ url: live.url, label: 'issue' }}
           frame={frame}
