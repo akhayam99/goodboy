@@ -9,6 +9,7 @@ import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
 import { ArtifactWireframeProvenance } from '../ArtifactStudio/ArtifactWireframeProvenance';
 import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
 import { ArtifactPlanRuns } from './ArtifactPlanRuns';
+import { ArtifactRevisionsSection } from './ArtifactRevisionsSection';
 import { ArtifactSavedCopy } from './ArtifactSavedCopy';
 
 type Props = {
@@ -77,6 +78,11 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
         />
       </section>
       <ArtifactBuiltFrom artifact={artifact} />
+      <ArtifactRevisionsSection
+        sessionId={sessionId}
+        artifact={artifact}
+        creatorName={creator?.name ?? null}
+      />
       <ArtifactSavedCopy savedCopy={savedCopy} />
     </div>
   );

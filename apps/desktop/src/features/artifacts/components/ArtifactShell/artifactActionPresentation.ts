@@ -2,7 +2,6 @@ import {
   ArchiveRestore,
   Bot,
   Copy,
-  Download,
   ExternalLink,
   FileDown,
   FolderOpen,
@@ -29,7 +28,6 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   edit: { label: 'Edit', icon: Pencil },
   stop: { label: 'Stop', icon: Square },
   newVariant: { label: 'New variant', icon: RotateCcw },
-  export: { label: 'Export', icon: Download },
   openInBrowser: {
     label: 'Open in browser',
     icon: ExternalLink,

@@ -5,7 +5,7 @@ import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { exportArtifactFolder } from '../../artifacts/artifactFile';
-import { buildWireframeExport } from '../wireframeExport/buildWireframeExport';
+import { buildWireframeExport } from '../wireframePages/buildWireframeExport';
 
 export type WireframeFolderExportStatus =
   | Readonly<{ kind: 'idle' }>

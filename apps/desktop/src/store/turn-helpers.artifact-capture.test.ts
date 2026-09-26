@@ -483,7 +483,7 @@ describe('captureArtifactsFromTurn revisions', () => {
       sourceFormat: 'markdown',
       sourceText: '## Outcome, now with the answer',
       metadata: { reportType: 'session-summary' },
-      author: 'agent',
+      note: { author: 'agent' },
     });
     expect(createArtifact).not.toHaveBeenCalled();
     expect(result.artifact).toMatchObject({ id: 'artifact-0', revision: 2 });

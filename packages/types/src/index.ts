@@ -316,8 +316,6 @@ export type {
   ArtifactId,
   ArtifactKind,
   ArtifactProvenance,
-  ArtifactRevision,
-  ArtifactRevisionAuthor,
   ArtifactRunPhase,
   ArtifactRunTarget,
   ArtifactScoutPlanEntry,

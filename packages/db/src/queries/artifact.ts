@@ -2,7 +2,6 @@ import type {
   AgentId,
   ArtifactId,
   ArtifactKind,
-  ArtifactRevisionAuthor,
   ArtifactSourceFormat,
   ArtifactStatus,
   ImplementationCluster,
@@ -15,6 +14,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { artifactRevisionInsert, type ArtifactRevisionNote } from './artifactRevision';
 import { isWorkflowRoutingProposal } from './workflowRoutingCodec';
 
 type ArtifactRow = {
@@ -48,6 +48,7 @@ export type InsertArtifactInput = {
   readonly metadata: SessionArtifact['metadata'];
   readonly status?: ArtifactStatus;
   readonly sourceTurnId?: string | null;
+  readonly note?: ArtifactRevisionNote;
 };
 
 export type UpdateArtifactSourceInput = {
@@ -56,8 +57,7 @@ export type UpdateArtifactSourceInput = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
-  readonly author: ArtifactRevisionAuthor;
-  readonly ask?: string | null;
+  readonly note?: ArtifactRevisionNote;
 };
 
 type DatabaseParams = {
@@ -180,7 +180,7 @@ const metadataForRead = ({ kind, value }: MetadataParams): SessionArtifact['meta
   return wireframeMetadata(value);
 };
 
-export const parseArtifactMetadata = ({
+const parseMetadata = ({
   kind,
   value,
 }: {
@@ -196,7 +196,7 @@ export const parseArtifactMetadata = ({
   return metadataForRead({ kind, value: parsed });
 };
 
-export const artifactKind = (value: string): ArtifactKind => {
+const artifactKind = (value: string): ArtifactKind => {
   if (value === 'plan' || value === 'report' || value === 'wireframe') {
     return value;
   }
@@ -239,7 +239,7 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
       ...common,
       kind,
       sourceFormat: row.source_format,
-      metadata: parseArtifactMetadata({ kind, value: row.metadata_json }) as PlanArtifactMetadata,
+      metadata: parseMetadata({ kind, value: row.metadata_json }) as PlanArtifactMetadata,
     };
   }
   if (kind === 'report') {
@@ -250,7 +250,7 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
       ...common,
       kind,
       sourceFormat: row.source_format,
-      metadata: parseArtifactMetadata({ kind, value: row.metadata_json }) as ReportArtifactMetadata,
+      metadata: parseMetadata({ kind, value: row.metadata_json }) as ReportArtifactMetadata,
     };
   }
   if (row.source_format !== 'json') {
@@ -260,10 +260,7 @@ const toDomain = (row: ArtifactRow): SessionArtifact => {
     ...common,
     kind,
     sourceFormat: row.source_format,
-    metadata: parseArtifactMetadata({
-      kind,
-      value: row.metadata_json,
-    }) as WireframeArtifactMetadata,
+    metadata: parseMetadata({ kind, value: row.metadata_json }) as WireframeArtifactMetadata,
   };
 };
 
@@ -281,36 +278,43 @@ export const insertArtifact = async ({
   input,
 }: DatabaseParams & { readonly input: InsertArtifactInput }): Promise<SessionArtifact> => {
   const metadata = metadataForWrite({ kind: input.kind, value: input.metadata });
+  const metadataJson = JSON.stringify(metadata);
   const now = Date.now();
-  await db.execute(
-    `INSERT INTO session_artifacts (
+  await db.transaction({
+    statements: [
+      {
+        sql: `INSERT INTO session_artifacts (
        id, session_id, agent_id, workflow_run_id, kind, schema_version, title,
        source_format, source_text, metadata_json, status, revision, source_turn_id,
        created_at, updated_at
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
-    [
-      input.id,
-      input.sessionId,
-      input.agentId,
-      input.workflowRunId ?? null,
-      input.kind,
-      input.schemaVersion,
-      input.title,
-      input.sourceFormat,
-      input.sourceText,
-      JSON.stringify(metadata),
-      input.status ?? 'active',
-      input.sourceTurnId ?? null,
-      now,
-      now,
+        params: [
+          input.id,
+          input.sessionId,
+          input.agentId,
+          input.workflowRunId ?? null,
+          input.kind,
+          input.schemaVersion,
+          input.title,
+          input.sourceFormat,
+          input.sourceText,
+          metadataJson,
+          input.status ?? 'active',
+          input.sourceTurnId ?? null,
+          now,
+          now,
+        ],
+      },
+      artifactRevisionInsert({
+        artifactId: input.id,
+        title: input.title,
+        sourceText: input.sourceText,
+        metadataJson,
+        note: input.note ?? { author: 'agent' },
+        createdAt: now,
+      }),
     ],
-  );
-  await db.execute(
-    `INSERT INTO artifact_revisions
-     (artifact_id, revision, title, source_text, metadata_json, author, created_at)
-     VALUES (?, 1, ?, ?, ?, 'agent', ?)`,
-    [input.id, input.title, input.sourceText, JSON.stringify(metadata), now],
-  );
+  });
   const artifact = await selectArtifact({ db, artifactId: input.id });
   if (artifact === null) {
     throw new Error(`Artifact insert failed: ${input.id}`);
@@ -411,9 +415,8 @@ export const updateArtifactSource = async ({
     throw new Error(`Artifact not found: ${input.id}`);
   }
   const metadata = metadataForWrite({ kind: existing.kind, value: input.metadata });
+  const metadataJson = JSON.stringify(metadata);
   const now = Date.now();
-  const nextRevision = existing.revision + 1;
-  const ask = input.ask ?? null;
   const outcome = await db.transaction({
     statements: [
       {
@@ -421,32 +424,18 @@ export const updateArtifactSource = async ({
          SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
              revision = revision + 1, updated_at = ?
          WHERE id = ?`,
-        params: [
-          input.title,
-          input.sourceFormat,
-          input.sourceText,
-          JSON.stringify(metadata),
-          now,
-          input.id,
-        ],
+        params: [input.title, input.sourceFormat, input.sourceText, metadataJson, now, input.id],
         abortWhen: 'noChanges',
         abortCode: ARTIFACT_GONE,
       },
-      {
-        sql: `INSERT INTO artifact_revisions
-         (artifact_id, revision, title, source_text, metadata_json, author, ask, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        params: [
-          input.id,
-          nextRevision,
-          input.title,
-          input.sourceText,
-          JSON.stringify(metadata),
-          input.author,
-          ask,
-          now,
-        ],
-      },
+      artifactRevisionInsert({
+        artifactId: input.id,
+        title: input.title,
+        sourceText: input.sourceText,
+        metadataJson,
+        note: input.note ?? { author: 'user' },
+        createdAt: now,
+      }),
     ],
   });
   if (outcome.status === 'aborted') {

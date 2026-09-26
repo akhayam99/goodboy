@@ -1,6 +1,9 @@
 import {
   WIREFRAME_ALIGNMENTS,
+  WIREFRAME_BADGE_TONES,
   WIREFRAME_BUTTON_VARIANTS,
+  WIREFRAME_CHART_TYPES,
+  WIREFRAME_DEVICES,
   WIREFRAME_DIRECTIONS,
   WIREFRAME_IMAGE_RATIOS,
   WIREFRAME_INPUT_TYPES,
@@ -9,6 +12,7 @@ import {
   WIREFRAME_NAVIGATION_VARIANTS,
   WIREFRAME_NODE_KINDS,
   WIREFRAME_SCHEMA_VERSION,
+  WIREFRAME_SHEET_PLACEMENTS,
   WIREFRAME_SPACINGS,
   WIREFRAME_TEXT_VARIANTS,
   WIREFRAME_THEME_COLOR_TOKENS,
@@ -18,7 +22,7 @@ import {
   type WireframeNodeKind,
 } from './schema';
 
-export const WIREFRAME_JSON_SCHEMA_ID = 'urn:goodboy:wireframe:v1';
+export const WIREFRAME_JSON_SCHEMA_ID = 'urn:goodboy:wireframe:v2';
 
 type JsonSchema = Readonly<Record<string, unknown>>;
 
@@ -56,6 +60,8 @@ const nodeSchema = ({ kind, required, properties }: NodeSchemaParams): JsonSchem
     id: ID,
     kind: { const: kind },
     note: TEXT,
+    only: { type: 'array', items: ID, maxItems: WIREFRAME_LIMITS.maxVariants },
+    hidden: { type: 'boolean' },
     ...properties,
   },
 });
@@ -63,6 +69,13 @@ const nodeSchema = ({ kind, required, properties }: NodeSchemaParams): JsonSchem
 const CHILDREN = {
   type: 'array',
   items: REF_NODE,
+} as const satisfies JsonSchema;
+
+const NAVIGATION_ITEM = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['id', 'label'],
+  properties: { id: ID, label: TEXT, isActive: { type: 'boolean' }, action: REF_ACTION },
 } as const satisfies JsonSchema;
 
 const NODE_SCHEMAS = {
@@ -159,16 +172,74 @@ const NODE_SCHEMAS = {
       items: {
         type: 'array',
         maxItems: WIREFRAME_LIMITS.maxNavigationItems,
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['id', 'label'],
-          properties: { id: ID, label: TEXT, isActive: { type: 'boolean' }, action: REF_ACTION },
-        },
+        items: NAVIGATION_ITEM,
       },
     },
   }),
+  card: nodeSchema({
+    kind: 'card',
+    required: ['children'],
+    properties: { title: TEXT, padding: enumOf(WIREFRAME_SPACINGS), children: CHILDREN },
+  }),
+  tabs: nodeSchema({
+    kind: 'tabs',
+    required: ['items'],
+    properties: {
+      items: { type: 'array', maxItems: WIREFRAME_LIMITS.maxTabs, items: NAVIGATION_ITEM },
+    },
+  }),
+  badge: nodeSchema({
+    kind: 'badge',
+    required: ['label'],
+    properties: { label: TEXT, tone: enumOf(WIREFRAME_BADGE_TONES) },
+  }),
+  toggle: nodeSchema({
+    kind: 'toggle',
+    required: ['label'],
+    properties: { label: TEXT, isOn: { type: 'boolean' } },
+  }),
+  sheet: nodeSchema({
+    kind: 'sheet',
+    required: ['children'],
+    properties: {
+      title: TEXT,
+      placement: enumOf(WIREFRAME_SHEET_PLACEMENTS),
+      children: CHILDREN,
+    },
+  }),
+  chart: nodeSchema({
+    kind: 'chart',
+    required: ['label'],
+    properties: { label: TEXT, chartType: enumOf(WIREFRAME_CHART_TYPES) },
+  }),
 } as const satisfies Record<WireframeNodeKind, JsonSchema>;
+
+const USE_NODE = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['use'],
+  properties: {
+    use: ID,
+    id: ID,
+    with: { type: 'object', additionalProperties: { type: ['string', 'number'] } },
+    note: TEXT,
+    only: { type: 'array', items: ID, maxItems: WIREFRAME_LIMITS.maxVariants },
+    hidden: { type: 'boolean' },
+  },
+} as const satisfies JsonSchema;
+
+const ID_LIST = { type: 'array', items: ID } as const satisfies JsonSchema;
+
+const STATE = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    label: TEXT,
+    hide: ID_LIST,
+    show: ID_LIST,
+    text: { type: 'object', additionalProperties: TEXT },
+  },
+} as const satisfies JsonSchema;
 
 const nodeDefs = (): JsonSchema =>
   Object.fromEntries(WIREFRAME_NODE_KINDS.map((kind) => [`${kind}Node`, NODE_SCHEMAS[kind]]));
@@ -177,7 +248,7 @@ export const buildWireframeJsonSchema = (): JsonSchema => ({
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   $id: WIREFRAME_JSON_SCHEMA_ID,
   title: 'Goodboy wireframe',
-  description: `A wireframe document, version ${WIREFRAME_SCHEMA_VERSION}. Beyond what this schema checks, a document holds at most ${WIREFRAME_LIMITS.maxNodes} nodes, nests at most ${WIREFRAME_LIMITS.maxDepth} levels deep, uses each id once, and every navigate action and transition points to a screen of the document.`,
+  description: `A wireframe document, version ${WIREFRAME_SCHEMA_VERSION}. Beyond what this schema checks, a document holds at most ${WIREFRAME_LIMITS.maxNodes} nodes once its patterns are expanded, nests at most ${WIREFRAME_LIMITS.maxDepth} levels deep, uses each id once, every navigate action and transition points to a screen of the document, every toggle names a state of a screen, a pattern never uses itself, and the ids inside a pattern use become <use id>-<id inside the pattern>. A version 1 document is upgraded on read: its mockState toggles become states of the screens that use them.`,
   type: 'object',
   additionalProperties: false,
   required: ['version', 'initialScreenId', 'theme', 'screens', 'transitions'],
@@ -185,6 +256,27 @@ export const buildWireframeJsonSchema = (): JsonSchema => ({
     $schema: { type: 'string' },
     version: { const: WIREFRAME_SCHEMA_VERSION },
     initialScreenId: ID,
+    device: enumOf(WIREFRAME_DEVICES),
+    variants: {
+      type: 'array',
+      maxItems: WIREFRAME_LIMITS.maxVariants,
+      items: {
+        oneOf: [
+          ID,
+          {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id'],
+            properties: { id: ID, label: TEXT },
+          },
+        ],
+      },
+    },
+    patterns: {
+      type: 'object',
+      maxProperties: WIREFRAME_LIMITS.maxPatterns,
+      additionalProperties: REF_NODE,
+    },
     theme: {
       type: 'object',
       additionalProperties: false,
@@ -213,13 +305,19 @@ export const buildWireframeJsonSchema = (): JsonSchema => ({
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['id', 'title', 'viewport', 'root'],
+        required: ['id', 'title', 'root'],
         properties: {
           id: ID,
           title: TEXT,
+          device: enumOf(WIREFRAME_DEVICES),
           viewport: enumOf(WIREFRAME_VIEWPORTS),
           root: REF_NODE,
           note: TEXT,
+          states: {
+            type: 'object',
+            maxProperties: WIREFRAME_LIMITS.maxStatesPerScreen,
+            additionalProperties: STATE,
+          },
         },
       },
     },
@@ -232,11 +330,6 @@ export const buildWireframeJsonSchema = (): JsonSchema => ({
         required: ['fromNodeId', 'toScreenId', 'label'],
         properties: { fromNodeId: ID, toScreenId: ID, label: TEXT },
       },
-    },
-    mockState: {
-      type: 'object',
-      maxProperties: WIREFRAME_LIMITS.maxMockStateKeys,
-      additionalProperties: { type: 'boolean' },
     },
   },
   $defs: {
@@ -257,8 +350,12 @@ export const buildWireframeJsonSchema = (): JsonSchema => ({
       ],
     },
     node: {
-      oneOf: WIREFRAME_NODE_KINDS.map((kind) => ({ $ref: `#/$defs/${kind}Node` })),
+      oneOf: [
+        ...WIREFRAME_NODE_KINDS.map((kind) => ({ $ref: `#/$defs/${kind}Node` })),
+        { $ref: '#/$defs/useNode' },
+      ],
     },
+    useNode: USE_NODE,
     ...nodeDefs(),
   },
 });

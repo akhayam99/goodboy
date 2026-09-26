@@ -102,7 +102,6 @@ describe('artifacts slice', () => {
       sourceFormat: 'markdown',
       sourceText: 'next',
       metadata: { reportType: 'session-summary' },
-      author: 'user',
     });
     expect(state.sessionArtifacts[SESSION_ID]?.[0]?.title).toBe('Report v2');
   });

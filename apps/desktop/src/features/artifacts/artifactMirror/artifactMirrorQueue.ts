@@ -1,5 +1,8 @@
 import { getVersion } from '@tauri-apps/api/app';
+import { listArtifactRevisions } from '@goodboy/db';
 import type { SessionArtifact } from '@goodboy/types';
+import { tauriDatabase } from '../../../shared/lib/db';
+import type { WireframeVersion } from '../../wireframes/wireframeVersion';
 import { artifactMirrorFiles } from './artifactMirrorFiles';
 import { ARTIFACT_RENDERER_VERSION } from './artifactMirrorMeta';
 import { artifactFolderName } from '../artifactFolderName';
@@ -32,6 +35,30 @@ export const markArtifactMirrored = ({
   written.set(artifact.id, artifactMirrorKey({ artifact }));
 };
 
+const versionsOf = async ({
+  artifact,
+}: {
+  readonly artifact: SessionArtifact;
+}): Promise<ReadonlyArray<WireframeVersion>> => {
+  if (artifact.kind !== 'wireframe') {
+    return [];
+  }
+  try {
+    const revisions = await listArtifactRevisions({ db: tauriDatabase, artifactId: artifact.id });
+    return revisions.map((revision) => ({
+      revision: revision.revision,
+      title: revision.title,
+      sourceText: revision.sourceText,
+      author: revision.author,
+      ask: revision.ask,
+      createdAt: revision.createdAt,
+      summary: revision.summary,
+    }));
+  } catch {
+    return [];
+  }
+};
+
 const writeOne = async ({ artifact, workspaceSlug }: ArtifactMirrorItem): Promise<void> => {
   const key = artifactMirrorKey({ artifact });
   if (written.get(artifact.id) === key) {
@@ -41,6 +68,7 @@ const writeOne = async ({ artifact, workspaceSlug }: ArtifactMirrorItem): Promis
     artifact,
     workspaceSlug,
     appVersion: await appVersion(),
+    versions: await versionsOf({ artifact }),
   });
   try {
     await writeArtifactMirror({ workspaceSlug, folder, files });

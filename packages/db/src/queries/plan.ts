@@ -177,7 +177,7 @@ export const upsertPlan = async (db: Database, input: UpsertPlanInput): Promise<
         sourceFormat: 'markdown',
         sourceText: input.bodyMd,
         metadata,
-        author: 'agent',
+        note: { author: 'agent' },
       },
     });
     if (!isPlanArtifact(updated)) {
@@ -242,7 +242,7 @@ export const updatePlanBody = async (
       sourceFormat: 'markdown',
       sourceText: bodyMd,
       metadata: existing.metadata,
-      author: 'user',
+      note: { author: 'user' },
     },
   });
 };

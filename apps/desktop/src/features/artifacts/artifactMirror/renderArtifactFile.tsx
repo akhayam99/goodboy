@@ -3,7 +3,7 @@ import type { SessionArtifact } from '@goodboy/types';
 import { ArtifactDocument } from '../components/ArtifactDocument';
 import documentSheet from '../components/ArtifactDocument/artifactDocument.css?raw';
 import appStyles from '../../../styles.css?raw';
-import { escapeHtml } from '../../wireframes/wireframeExport/escapeHtml';
+import { escapeHtml } from '../../wireframes/wireframePages/escapeHtml';
 import { documentTokens } from './documentTokens';
 import { INTER_FONT_DATA_URI } from './interFontDataUri';
 

@@ -20,7 +20,7 @@ import { useArtifactSavedCopy } from '../../hooks/useArtifactSavedCopy';
 import { useRecordArtifactOpened } from '../../hooks/useRecordArtifactOpened';
 import { useReportRegenerate } from '../../../reports/useReportRegenerate';
 import { ReportStudio } from '../../../reports/components/ReportStudio';
-import { WireframeStudio } from '../../../wireframes/components/WireframeStudio';
+import { WireframeViewer } from '../../../wireframes/components/WireframeViewer';
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
 import { WireframeShellActions } from './WireframeShellActions';
 import { ArtifactPlanBody } from './ArtifactPlanBody';
@@ -351,7 +351,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           <ReportStudio sessionId={sessionId} artifact={subject.artifact} />
         ) : null}
         {subject.kind === 'wireframe' ? (
-          <WireframeStudio
+          <WireframeViewer
             sessionId={sessionId}
             artifact={subject.artifact}
             onScreenChange={setWireframeScreenId}

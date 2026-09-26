@@ -58,11 +58,11 @@ describe('artifactActions', () => {
     });
   });
 
-  it('gives a wireframe Export as its secondary and the variant under More', () => {
+  it('gives a wireframe Open in browser as its secondary and the copies under More', () => {
     expect(actionsOf({ kind: 'wireframe', status: 'active' })).toEqual({
       primary: null,
-      secondary: 'export',
-      overflow: ['newVariant', 'openInBrowser', 'showInFinder'],
+      secondary: 'openInBrowser',
+      overflow: ['copySource', 'saveSource', 'showInFinder', 'newVariant'],
     });
   });
 

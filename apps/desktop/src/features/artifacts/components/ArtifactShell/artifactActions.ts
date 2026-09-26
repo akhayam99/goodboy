@@ -7,7 +7,6 @@ export type ArtifactActionId =
   | 'edit'
   | 'stop'
   | 'newVariant'
-  | 'export'
   | 'openInBrowser'
   | 'copySource'
   | 'saveSource'
@@ -78,8 +77,8 @@ export const artifactActions = ({
     case 'wireframe':
       return {
         primary: null,
-        secondary: 'export',
-        overflow: ['newVariant', 'openInBrowser', 'showInFinder'],
+        secondary: 'openInBrowser',
+        overflow: ['copySource', 'saveSource', 'showInFinder', 'newVariant'],
       };
     case 'generation':
       return {
