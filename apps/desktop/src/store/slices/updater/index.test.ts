@@ -1,13 +1,15 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { checkMock, relaunchMock } = vi.hoisted(() => ({
+const { checkMock, relaunchMock, invokeMock } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   relaunchMock: vi.fn(async () => undefined),
+  invokeMock: vi.fn(async () => null),
 }));
 
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: checkMock }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: relaunchMock }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
 import { createUpdaterSlice } from './index';
 import { initialUpdaterState, type UpdaterState } from './state';
@@ -122,6 +124,37 @@ describe('updater slice', () => {
     await slice.downloadUpdate();
     expect(getState().updaterStatus).toBe('available');
     expect(getState().updateFailure).toEqual({ phase: 'download', message: 'connection reset' });
+  });
+
+  it('downloadUpdate prefetches the after picture of a New entry with an image', async () => {
+    const download = vi.fn(async () => undefined);
+    const body = [
+      'A short opening sentence.',
+      '',
+      '### New',
+      '',
+      '#### A picture worth a look',
+      '<!-- gb area=app image=scroll-fade pr=1 -->',
+      '',
+      'It looks different now.',
+    ].join('\n');
+    checkMock.mockResolvedValue({ version: '0.2.0', download, body });
+    const { slice } = harness({ autoDownload: 'false' });
+    await slice.checkForUpdates();
+    await slice.downloadUpdate();
+
+    expect(invokeMock).toHaveBeenCalledWith('changelog_image', {
+      version: '0.2.0',
+      file: 'scroll-fade-after-dark.webp',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('changelog_image', {
+      version: '0.2.0',
+      file: 'scroll-fade-after-light.webp',
+    });
+    expect(invokeMock).not.toHaveBeenCalledWith('changelog_image', {
+      version: '0.2.0',
+      file: 'scroll-fade-before-dark.webp',
+    });
   });
 
   it('applyUpdate installs only, without downloading again, once the update is ready', async () => {
