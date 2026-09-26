@@ -48,6 +48,7 @@ pub enum AuthStateKind {
 pub struct AuthState {
     pub state: AuthStateKind,
     pub identity: Option<String>,
+    pub plan: Option<String>,
 }
 
 pub fn detect_claude() -> ProviderStatus {
@@ -322,6 +323,7 @@ fn check_claude_auth() -> AuthState {
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -333,6 +335,7 @@ fn parse_claude_auth_output(output: &str) -> AuthState {
             return AuthState {
                 state: AuthStateKind::Unknown,
                 identity: None,
+                plan: None,
             };
         }
     };
@@ -341,15 +344,23 @@ fn parse_claude_auth_output(output: &str) -> AuthState {
         return AuthState {
             state: AuthStateKind::Disconnected,
             identity: None,
+            plan: None,
         };
     }
 
     let identity = ["email", "username", "accountName"]
         .iter()
         .find_map(|k| value.get(k).and_then(|v| v.as_str()).map(|s| s.to_string()));
+    let plan = value
+        .get("subscriptionType")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
     AuthState {
         state: AuthStateKind::Connected,
         identity,
+        plan,
     }
 }
 
@@ -361,6 +372,7 @@ fn check_cursor_auth() -> AuthState {
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -372,6 +384,7 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
         return AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         };
     }
     let lower = text.to_lowercase();
@@ -384,6 +397,7 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
         return AuthState {
             state: AuthStateKind::Disconnected,
             identity: None,
+            plan: None,
         };
     }
     let identity = extract_email(text)
@@ -401,11 +415,13 @@ fn parse_cursor_auth_output(output: &str) -> AuthState {
         AuthState {
             state: AuthStateKind::Connected,
             identity,
+            plan: None,
         }
     } else {
         AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         }
     }
 }
@@ -437,6 +453,7 @@ fn check_codex_auth() -> AuthState {
     AuthState {
         state: AuthStateKind::Unknown,
         identity: None,
+        plan: None,
     }
 }
 
@@ -482,17 +499,20 @@ fn check_gemini_auth() -> AuthState {
         return AuthState {
             state: AuthStateKind::Connected,
             identity: Some(identity),
+            plan: None,
         };
     }
     if gemini_creds_present() {
         return AuthState {
             state: AuthStateKind::Connected,
             identity: None,
+            plan: None,
         };
     }
     AuthState {
         state: AuthStateKind::Disconnected,
         identity: None,
+        plan: None,
     }
 }
 
@@ -537,16 +557,19 @@ fn check_opencode_auth() -> AuthState {
                 return AuthState {
                     state: AuthStateKind::Disconnected,
                     identity: None,
+                    plan: None,
                 };
             }
             AuthState {
                 state: AuthStateKind::Connected,
                 identity: Some(names.join(", ")),
+                plan: None,
             }
         }
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -571,16 +594,19 @@ fn check_openrouter_auth() -> AuthState {
                 Some(name) => AuthState {
                     state: AuthStateKind::Connected,
                     identity: Some(name.clone()),
+                    plan: None,
                 },
                 None => AuthState {
                     state: AuthStateKind::Disconnected,
                     identity: None,
+                    plan: None,
                 },
             }
         }
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -593,16 +619,19 @@ fn check_moonshot_auth() -> AuthState {
                 Some(name) => AuthState {
                     state: AuthStateKind::Connected,
                     identity: Some(name.clone()),
+                    plan: None,
                 },
                 None => AuthState {
                     state: AuthStateKind::Disconnected,
                     identity: None,
+                    plan: None,
                 },
             }
         }
         Err(_) => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -627,6 +656,7 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         return AuthState {
             state: AuthStateKind::Disconnected,
             identity: None,
+            plan: None,
         };
     }
     if lower.starts_with("logged in")
@@ -642,12 +672,14 @@ fn parse_codex_auth_output(output: &str) -> AuthState {
         return AuthState {
             state: AuthStateKind::Connected,
             identity,
+            plan: None,
         };
     }
 
     AuthState {
         state: AuthStateKind::Unknown,
         identity: None,
+        plan: None,
     }
 }
 
@@ -713,6 +745,7 @@ pub(crate) fn check_provider_auth_blocking(provider_id: &str) -> AuthState {
         _ => AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         },
     }
 }
@@ -728,6 +761,7 @@ pub async fn check_provider_auth(provider_id: String) -> AuthState {
         .unwrap_or(AuthState {
             state: AuthStateKind::Unknown,
             identity: None,
+            plan: None,
         })
 }
 
@@ -754,6 +788,14 @@ mod tests {
         let s = parse_claude_auth_output(json);
         assert_eq!(s.state, AuthStateKind::Connected);
         assert_eq!(s.identity.as_deref(), Some("a@b.com"));
+        assert_eq!(s.plan, None);
+    }
+
+    #[test]
+    fn claude_reads_the_plan_from_subscription_type() {
+        let json = r#"{"loggedIn":true,"authMethod":"claude.ai","email":"a@b.com","subscriptionType":"team"}"#;
+        let s = parse_claude_auth_output(json);
+        assert_eq!(s.plan.as_deref(), Some("team"));
     }
 
     #[test]

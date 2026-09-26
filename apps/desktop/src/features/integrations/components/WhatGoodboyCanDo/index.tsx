@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Lock } from 'lucide-react';
+import { Eyebrow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type WhatGoodboyCanDoLine = {
@@ -18,7 +19,7 @@ export const WhatGoodboyCanDo = ({ title, lines, footnote }: Props) => (
     aria-label={title}
     className="flex min-w-0 flex-col gap-2 rounded-md border border-border-soft bg-subtle p-3"
   >
-    <span className="text-eyebrow text-muted-foreground">{title}</span>
+    <Eyebrow label={title} />
     <ul className="flex min-w-0 flex-col gap-1.5">
       {lines.map((line) => (
         <li

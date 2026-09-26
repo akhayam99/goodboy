@@ -54,11 +54,11 @@ export const usageNotice = ({ chip, nowMs, detour }: Params): UsageNotice | null
     case 'waiting':
       return {
         tone: 'info',
-        title: `${label} shares its limits during a turn.`,
-        body: `Start a ${label} agent to see them.`,
+        title: `No ${label} usage yet.`,
+        body: 'Goodboy checks at start and every 15 minutes.',
       };
     case 'none':
-      return { tone: 'info', title: `${label} doesn't report its limits to Goodboy.`, body: null };
+      return { tone: 'info', title: `${label} doesn't share usage with other apps.`, body: null };
     case 'reset':
       return {
         tone: 'info',

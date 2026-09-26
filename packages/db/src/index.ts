@@ -486,3 +486,8 @@ export {
   upsertResolvePublicationThread,
   listResolvePublicationThreads,
 } from './queries/resolve-publication';
+export {
+  addProjectSentryLink,
+  listProjectSentryLinks,
+  removeProjectSentryLink,
+} from './queries/project-sentry-link';

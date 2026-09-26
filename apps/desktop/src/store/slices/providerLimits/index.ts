@@ -1,3 +1,4 @@
+import { consumeCodexResetCredit } from './consumeCodexResetCredit';
 import { loadProviderLimits } from './loadProviderLimits';
 import { probeProviderLimits } from './probeProviderLimits';
 import { recordProviderLimits } from './recordProviderLimits';
@@ -10,7 +11,8 @@ export const createProviderLimitsSlice = (set: SetFn, get: GetFn): ProviderLimit
   ...providerLimitsInitialState,
   loadProviderLimits: loadProviderLimits(set),
   recordProviderLimits: recordProviderLimits(set, get),
-  refreshCodexLimits: refreshCodexLimits(get),
-  refreshClaudeUsage: refreshClaudeUsage(get),
+  refreshCodexLimits: refreshCodexLimits(set, get),
+  refreshClaudeUsage: refreshClaudeUsage(set, get),
   probeProviderLimits: probeProviderLimits(get),
+  consumeCodexResetCredit: consumeCodexResetCredit(set, get),
 });

@@ -20,3 +20,10 @@ export type ProviderLimits = Readonly<{
   windows: ReadonlyArray<ProviderLimitWindow>;
   observedAt: IsoDateTime;
 }>;
+
+export type CodexResetCredits = Readonly<{
+  availableCount: number;
+  creditId: string | null;
+  expiresAt: IsoDateTime | null;
+  observedAt: IsoDateTime;
+}>;

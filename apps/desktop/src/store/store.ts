@@ -229,6 +229,8 @@ import { createDurationEstimatesSlice } from './slices/durationEstimates';
 import { durationEstimatesInitialState } from './slices/durationEstimates/state';
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
+import { createSentryLinksSlice } from './slices/sentryLinks';
+import { sentryLinksInitialState } from './slices/sentryLinks/state';
 import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { handoffsInitialState } from './slices/handoffs/state';
@@ -1075,6 +1077,7 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
   ReturnType<typeof createSecurityFindingsSlice>;
@@ -1142,6 +1145,7 @@ export const initialState: AppState = {
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
+  ...sentryLinksInitialState,
   ...handoffsInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
@@ -1300,6 +1304,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
+  ...createSentryLinksSlice(set, get),
   ...createHandoffsSlice(set, get),
   ...createSecurityFindingsSlice(set, get),
   ...createPresenceSlice(set, get),

@@ -223,6 +223,7 @@ export type {
   ProviderLimitWindow,
   ProviderLimitWindowKind,
   ProviderLimits,
+  CodexResetCredits,
 } from './provider-limits';
 export type {
   Agent,
@@ -411,3 +412,4 @@ export type {
   PublicationBlocker,
 } from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
+export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';

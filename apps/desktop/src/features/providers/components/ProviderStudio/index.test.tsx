@@ -24,8 +24,8 @@ vi.mock('./DefaultsPanel', () => ({
   DefaultsPanel: () => <h1>Defaults</h1>,
 }));
 
-vi.mock('./ProviderDetailPanel', () => ({
-  ProviderDetailPanel: ({ info }: { info: { id: string } | null }) => (
+vi.mock('./ProviderPage', () => ({
+  ProviderPage: ({ info }: { info: { id: string } | null }) => (
     <h1>{`detail ${info?.id ?? 'none'}`}</h1>
   ),
 }));

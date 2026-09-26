@@ -205,12 +205,12 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
         )}
       </div>
       {commandText !== null ? (
-        <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 font-mono text-secondary text-foreground">
+        <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 text-code text-foreground">
           {commandText}
         </code>
       ) : (
         inputPreview !== null && (
-          <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 font-mono text-secondary text-muted-foreground">
+          <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 text-code text-muted-foreground">
             {inputPreview}
           </code>
         )

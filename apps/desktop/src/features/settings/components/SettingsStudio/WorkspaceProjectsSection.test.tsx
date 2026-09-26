@@ -22,6 +22,9 @@ const { state, repoMocks } = vi.hoisted(() => ({
     setProjectStarred: vi.fn(async () => undefined),
     describeProject: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
+    workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
+    projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    loadProjectSentryLinks: vi.fn(async () => undefined),
   },
   repoMocks: {
     validateGitRepo: vi.fn(async () => ({
@@ -68,6 +71,8 @@ const conflict = {
 beforeEach(() => {
   vi.clearAllMocks();
   state.projects = [];
+  state.workspaceIntegrations = {};
+  state.projectSentryLinks = {};
 });
 afterEach(cleanup);
 
@@ -333,5 +338,36 @@ describe('WorkspaceProjectsSection', () => {
 
     expect(screen.getByText('Settles payments')).toBeDefined();
     expect(state.describeProject).not.toHaveBeenCalled();
+  });
+  it('marks a project with the Sentry projects it reads', async () => {
+    state.workspaceIntegrations = { [WORKSPACE_ID]: [{ provider: 'sentry' }] };
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        workspaceId: WORKSPACE_ID,
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+      },
+    ];
+    state.projectSentryLinks = {
+      [WORKSPACE_ID]: [
+        { projectId: 'proj-ledger', sentryProject: 'payments-api', sentryProjectName: null },
+        {
+          projectId: 'proj-ledger',
+          sentryProject: 'payments-worker',
+          sentryProjectName: 'Payments worker',
+        },
+      ],
+    };
+
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(
+      screen.getByRole('img', { name: 'Sentry: payments-api, Payments worker' }),
+    ).toBeDefined();
+    await waitFor(() =>
+      expect(state.loadProjectSentryLinks).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID }),
+    );
   });
 });

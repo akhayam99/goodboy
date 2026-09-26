@@ -665,6 +665,14 @@ Merge and pull requests launch with their text as it is.
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
 
+Linear, Jira and Sentry connect in numbered steps (`ConnectSteps`): a button
+opens the page where the key is made, the pasted key is checked on its own with
+no Connect button, and the last step picks from a list instead of free text
+(Jira projects from `jira_list_projects`, Sentry organizations and projects
+from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
+the tool's own name for the secret: API key on Linear, API token on Jira, auth
+token on Sentry. A key saved for another workspace can be picked instead.
+
 ## Inbox
 
 The inbox is the workspace's queue of incoming work from every connected
@@ -678,6 +686,17 @@ in one notice above the list. The state column uses the tool's own word, the
 same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
 to it.
+
+With two or more projects in the workspace, the rail also filters by project.
+Code host records belong to the project at the workspace root. A Sentry error
+belongs to every project linked to its Sentry project in Settings, Integrations,
+Sentry, where each project can read several Sentry projects and one Sentry
+project can serve several projects (`project_sentry_links`, m191). Links can be
+suggested from Sentry code mappings and wait for your Link. The inbox reads the
+first page of every linked Sentry project besides the connected one. A record
+no project claims, such as a Linear or Jira issue, stays visible under every
+project filter. In Settings, Workspace, a project that reads Sentry shows the
+Sentry glyph, and its tooltip names the Sentry projects.
 
 ## Providers and routing
 

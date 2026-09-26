@@ -45,10 +45,24 @@ const h = vi.hoisted(() => ({
   enabled: {} as Record<string, boolean>,
 }));
 
+const loadProjectSentryLinks = vi.fn(async () => undefined);
+
 vi.mock('../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T>(selector: (state: { workspaceIntegrations: typeof h.integrations }) => T) =>
-    selector({ workspaceIntegrations: h.integrations }),
+  useAppStore: <T>(
+    selector: (state: {
+      workspaceIntegrations: typeof h.integrations;
+      projects: ReadonlyArray<never>;
+      projectSentryLinks: Record<string, never>;
+      loadProjectSentryLinks: typeof loadProjectSentryLinks;
+    }) => T,
+  ) =>
+    selector({
+      workspaceIntegrations: h.integrations,
+      projects: [],
+      projectSentryLinks: {},
+      loadProjectSentryLinks,
+    }),
 }));
 
 vi.mock('../../github/components/PullRequest/useGithubIssues', () => ({

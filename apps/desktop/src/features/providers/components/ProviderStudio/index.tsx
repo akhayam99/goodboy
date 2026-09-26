@@ -5,11 +5,11 @@ import { useAppStore } from '../../../../store';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
 import { ProvidersRail } from './ProvidersRail';
-import { ProviderDetailPanel } from './ProviderDetailPanel';
+import { ProviderPage } from './ProviderPage';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
-import { MODELS_SECTION } from './ModelVisibilitySection/constants';
-import { USAGE_SECTION } from './UsageSection/usageSectionId';
+import { MODELS_SECTION } from './ProviderPage/ModelsGroup/constants';
+import { USAGE_SECTION } from './ProviderPage/UsageGroup/usageSectionId';
 
 type Props = {
   readonly workspaceId: WorkspaceId | null;
@@ -86,7 +86,7 @@ export const ProviderSettingsScope = ({
       focused === 'defaults' && workspaceId !== null ? (
         <DefaultsPanel workspaceId={workspaceId} />
       ) : (
-        <ProviderDetailPanel
+        <ProviderPage
           info={selected}
           autoConnect={autoConnect && selected?.id === initialFocus}
           autoUpdate={autoUpdate && selected?.id === initialFocus}

@@ -7,6 +7,7 @@ mod bitbucket;
 mod boot_breadcrumb;
 mod bridge;
 mod budget;
+mod codex_app_server;
 mod codex_rollout;
 mod config_export;
 mod cursor_config;
@@ -308,6 +309,8 @@ pub fn run() {
             codex_rollout::codex_rollout_context,
             codex_rollout::codex_rate_limits_latest,
             usage_probe::claude_usage_probe,
+            codex_app_server::codex_rate_limits_probe,
+            codex_app_server::codex_consume_reset_credit,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,
@@ -387,6 +390,9 @@ pub fn run() {
             linear::linear_update_issue,
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
+            sentry::sentry_list_organizations,
+            sentry::sentry_list_projects,
+            sentry::sentry_list_code_mappings,
             sentry::sentry_fetch_issues,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
@@ -414,6 +420,7 @@ pub fn run() {
             gitlab::gitlab_update_mr_state,
             jira::jira_validate_connection,
             jira::jira_connect,
+            jira::jira_list_projects,
             jira::jira_list_issues,
             jira::jira_get_issue,
             jira::jira_list_comments,

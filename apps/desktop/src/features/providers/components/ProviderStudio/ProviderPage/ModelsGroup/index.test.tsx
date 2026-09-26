@@ -3,8 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MODEL_CATALOGS } from '@goodboy/core';
-import { SETTING_HIDDEN_MODELS } from '../../../../settings/settings';
-import { ModelVisibilitySection } from './index';
+import { SETTING_HIDDEN_MODELS } from '../../../../../settings/settings';
+import { ModelsGroup } from './index';
 
 type SaveSetting = (key: string, value: string) => Promise<void>;
 
@@ -15,7 +15,7 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../../store', () => ({
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
 }));
 
@@ -31,21 +31,19 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ModelVisibilitySection', () => {
+describe('ModelsGroup', () => {
   it('hides the legacy versions by default and counts what shows', () => {
-    render(<ModelVisibilitySection providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
 
     const total = MODEL_CATALOGS.anthropic.length;
-    expect(
-      screen.getByText(`Showing ${total - 3} of ${total} models. Pinned models keep working.`),
-    ).toBeDefined();
+    expect(screen.getByText(`Showing ${total - 3} of ${total}`)).toBeDefined();
     const opus = within(screen.getByRole('group', { name: 'Opus versions' }));
     expect(opus.getByRole('button', { name: '4.6' }).getAttribute('aria-pressed')).toBe('false');
     expect(opus.getByRole('button', { name: '5.5' }).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('shows every version with Show all and saves the choice for the app', () => {
-    render(<ModelVisibilitySection providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
 
@@ -55,7 +53,7 @@ describe('ModelVisibilitySection', () => {
 
   it('turns a whole family off with its switch', () => {
     state.settings = { [SETTING_HIDDEN_MODELS]: '{}' };
-    render(<ModelVisibilitySection providerId="anthropic" isFocused={false} />);
+    render(<ModelsGroup providerId="anthropic" isFocused={false} />);
 
     fireEvent.click(screen.getByRole('switch', { name: 'Haiku' }));
 
@@ -65,7 +63,7 @@ describe('ModelVisibilitySection', () => {
   it('never lets the last visible model go', () => {
     const keys = MODEL_CATALOGS.gemini.map((model) => model.key);
     state.settings = { [SETTING_HIDDEN_MODELS]: JSON.stringify({ gemini: keys.slice(1) }) };
-    render(<ModelVisibilitySection providerId="gemini" isFocused={false} />);
+    render(<ModelsGroup providerId="gemini" isFocused={false} />);
 
     const last = screen.getAllByRole('button', { pressed: true });
     expect(last).toHaveLength(1);

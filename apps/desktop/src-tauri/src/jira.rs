@@ -839,6 +839,75 @@ pub async fn jira_validate_connection(
     get_json(&credentials, &format!("{base}/myself")).await
 }
 
+const PROJECT_PAGE_SIZE: i64 = 50;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct JiraProject {
+    pub id: String,
+    pub key: String,
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct JiraProjectPage {
+    #[serde(default)]
+    values: Vec<JiraProject>,
+    #[serde(rename = "startAt", default)]
+    start_at: i64,
+    #[serde(rename = "maxResults", default)]
+    max_results: i64,
+    #[serde(rename = "isLast", default)]
+    is_last: Option<bool>,
+}
+
+fn project_search_url(base: &str, start_at: i64) -> String {
+    format!("{base}/project/search?orderBy=name&startAt={start_at}&maxResults={PROJECT_PAGE_SIZE}")
+}
+
+fn next_project_offset(page: &JiraProjectPage) -> Option<i64> {
+    if page.is_last != Some(false) || page.values.is_empty() {
+        return None;
+    }
+    let step = if page.max_results > 0 {
+        page.max_results
+    } else {
+        page.values.len() as i64
+    };
+    Some(page.start_at + step)
+}
+
+#[tauri::command]
+pub async fn jira_list_projects(
+    credential_id: String,
+    site_url: String,
+    email: String,
+    api_token: Option<String>,
+    cache: State<'_, JiraTokenCache>,
+) -> Result<Vec<JiraProject>, JiraError> {
+    let api_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, api_token, &cache.0)?;
+    let root = site_root(&site_url)?;
+    let base = api_base(&site_url)?;
+    let credentials = Credentials {
+        root: &root,
+        email: &email,
+        token: &api_token,
+    };
+    let mut projects: Vec<JiraProject> = Vec::new();
+    let mut start_at: i64 = 0;
+    for _ in 0..MAX_PAGES {
+        let page: JiraProjectPage =
+            get_json(&credentials, &project_search_url(&base, start_at)).await?;
+        let next = next_project_offset(&page);
+        projects.extend(page.values);
+        match next {
+            Some(offset) if offset > start_at => start_at = offset,
+            _ => break,
+        }
+    }
+    Ok(projects)
+}
+
 #[tauri::command]
 pub async fn jira_connect(
     credential_id: String,
@@ -1080,6 +1149,48 @@ pub async fn jira_transition_issue(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const PROJECT_PAGE_FIRST: &str = r#"{"self":"https://acme.atlassian.net/rest/api/3/project/search?startAt=0&maxResults=2","nextPage":"https://acme.atlassian.net/rest/api/3/project/search?startAt=2&maxResults=2","maxResults":2,"startAt":0,"total":3,"isLast":false,"values":[{"expand":"description","self":"https://acme.atlassian.net/rest/api/3/project/10000","id":"10000","key":"ENG","name":"Engineering","projectTypeKey":"software","simplified":false,"style":"classic","isPrivate":false},{"id":"10001","key":"OPS","name":"Operations","projectTypeKey":"business"}]}"#;
+    const PROJECT_PAGE_LAST: &str = r#"{"maxResults":2,"startAt":2,"total":3,"isLast":true,"values":[{"id":"10002","key":"WEB","name":"Storefront web"}]}"#;
+
+    #[test]
+    fn project_page_reads_key_name_and_the_next_offset() {
+        let page: JiraProjectPage = serde_json::from_str(PROJECT_PAGE_FIRST).expect("parses");
+        assert_eq!(
+            page.values
+                .iter()
+                .map(|p| p.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["ENG", "OPS"]
+        );
+        assert_eq!(page.values[0].name, "Engineering");
+        assert_eq!(next_project_offset(&page), Some(2));
+    }
+
+    #[test]
+    fn project_page_stops_on_the_last_page() {
+        let page: JiraProjectPage = serde_json::from_str(PROJECT_PAGE_LAST).expect("parses");
+        assert_eq!(next_project_offset(&page), None);
+    }
+
+    #[test]
+    fn project_page_stops_when_the_flag_is_missing_or_empty() {
+        let page: JiraProjectPage =
+            serde_json::from_str(r#"{"values":[],"isLast":false}"#).expect("parses");
+        assert_eq!(next_project_offset(&page), None);
+        let page: JiraProjectPage =
+            serde_json::from_str(r#"{"values":[{"id":"1","key":"A","name":"A"}]}"#)
+                .expect("parses");
+        assert_eq!(next_project_offset(&page), None);
+    }
+
+    #[test]
+    fn project_search_url_orders_by_name_and_pages() {
+        assert_eq!(
+            project_search_url("https://acme.atlassian.net/rest/api/3", 50),
+            "https://acme.atlassian.net/rest/api/3/project/search?orderBy=name&startAt=50&maxResults=50"
+        );
+    }
 
     fn doc(content: Value) -> Value {
         serde_json::json!({ "type": "doc", "version": 1, "content": content })

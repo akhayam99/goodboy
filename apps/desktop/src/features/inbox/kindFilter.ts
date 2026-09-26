@@ -1,3 +1,4 @@
+import type { ProjectId } from '@goodboy/types';
 import { recordSessionId } from './recordSessionId';
 import type { InboxKind, InboxProvider, InboxRecord } from './types';
 
@@ -40,9 +41,27 @@ export type InboxFilters = {
   readonly view: InboxView;
   readonly kind: InboxKindFilter;
   readonly source: InboxProvider | null;
+  readonly project: ProjectId | null;
 };
 
-export const NO_INBOX_FILTERS: InboxFilters = { view: 'all', kind: 'all', source: null };
+export const NO_INBOX_FILTERS: InboxFilters = {
+  view: 'all',
+  kind: 'all',
+  source: null,
+  project: null,
+};
+
+type MatchesProjectParams = {
+  readonly record: InboxRecord;
+  readonly project: ProjectId | null;
+};
+
+export const matchesProject = ({ record, project }: MatchesProjectParams): boolean => {
+  if (project == null || record.projectIds == null || record.projectIds.length === 0) {
+    return true;
+  }
+  return record.projectIds.includes(project);
+};
 
 type VisibleTypeFacetsParams = {
   readonly connected: ReadonlyArray<InboxProvider>;
@@ -126,7 +145,8 @@ type MatchesFiltersParams = {
 const matchesFilters = ({ record, filters }: MatchesFiltersParams): boolean =>
   matchesView({ record, view: filters.view }) &&
   matchesKindFilter({ kind: record.kind, filter: filters.kind }) &&
-  (filters.source == null || record.provider === filters.source);
+  (filters.source == null || record.provider === filters.source) &&
+  matchesProject({ record, project: filters.project });
 
 type FilterRecordsParams = {
   readonly records: ReadonlyArray<InboxRecord>;
@@ -147,6 +167,7 @@ export type InboxFacetCounts = {
   readonly view: Readonly<Record<InboxView, number>>;
   readonly kind: Readonly<Record<InboxTypeFacet, number>>;
   readonly source: Readonly<Record<InboxProvider, number>>;
+  readonly project: (project: ProjectId) => number;
 };
 
 type FacetCountsParams = {
@@ -190,6 +211,9 @@ export const inboxFacetCounts = ({
   const forSource = searched.filter((record) =>
     matchesFilters({ record, filters: { ...filters, source: null } }),
   );
+  const forProject = searched.filter((record) =>
+    matchesFilters({ record, filters: { ...filters, project: null } }),
+  );
   const viewCount = (view: InboxView): number =>
     forView.filter((record) => matchesView({ record, view })).length;
   const kindCount = (filter: InboxTypeFacet): number =>
@@ -208,6 +232,8 @@ export const inboxFacetCounts = ({
       error: kindCount('error'),
     },
     source: sourceCounts({ records: forSource }),
+    project: (project: ProjectId): number =>
+      forProject.filter((record) => matchesProject({ record, project })).length,
   };
 };
 
@@ -218,4 +244,5 @@ type ActiveCountParams = {
 export const activeFilterCount = ({ filters }: ActiveCountParams): number =>
   (filters.view === 'all' ? 0 : 1) +
   (filters.kind === 'all' ? 0 : 1) +
-  (filters.source == null ? 0 : 1);
+  (filters.source == null ? 0 : 1) +
+  (filters.project == null ? 0 : 1);
