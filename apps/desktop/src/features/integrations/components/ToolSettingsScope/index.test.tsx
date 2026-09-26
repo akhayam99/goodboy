@@ -169,7 +169,7 @@ describe('ToolSettingsScope', () => {
   });
 
   it.each([
-    { tool: 'linear', label: 'Linear', field: 'Personal API key', id: 'linear-pat' },
+    { tool: 'linear', label: 'Linear', field: 'API key', id: 'linear-api-key' },
     { tool: 'jira', label: 'Jira', field: 'Personal API key', id: 'jira-token' },
     { tool: 'gitlab', label: 'GitLab', field: 'Personal API key', id: 'gitlab-pat' },
     { tool: 'bitbucket', label: 'Bitbucket', field: 'Personal API key', id: 'bitbucket-token' },
@@ -225,10 +225,11 @@ describe('ToolSettingsScope', () => {
         <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
       );
     });
-    fireEvent.change(screen.getByLabelText('Personal API key'), { target: { value: 'test-key' } });
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Connect' })));
-    expect(screen.getByText('Connected as Ada')).toBeDefined();
-    expect(screen.queryByLabelText('Personal API key')).toBeNull();
+    fireEvent.change(screen.getByLabelText('API key'), { target: { value: 'test-key' } });
+    await waitFor(() => expect(screen.getByText('Connected as Ada')).toBeDefined(), {
+      timeout: 2000,
+    });
+    expect(screen.queryByLabelText('API key')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open in inbox' })).toBeDefined();
   });
 
@@ -335,16 +336,19 @@ describe('ToolSettingsScope', () => {
       );
       expect(screen.queryByRole('heading')).toBeNull();
       expect(screen.queryByLabelText('Personal API key')).toBeNull();
+      expect(screen.queryByLabelText('API key')).toBeNull();
       expect(
         within(screen.getByRole('list', { name: 'Integrations settings' }))
           .getAllByRole('button')
           .every((button) => button.getAttribute('aria-current') !== 'true'),
       ).toBe(true);
       await act(async () => resolveStatus({ mode: 'gh-cli', user: 'Ada', scoped: false }));
-      expect(screen.getByLabelText('Personal API key').id).toBe(
-        initialFocus === 'linear' ? 'linear-pat' : 'gitlab-pat',
-      );
-      expect(screen.getByLabelText('Personal API key')).toBe(document.activeElement);
+      const field =
+        initialFocus === 'linear'
+          ? screen.getByLabelText('API key')
+          : screen.getByLabelText('Personal API key');
+      expect(field.id).toBe(initialFocus === 'linear' ? 'linear-api-key' : 'gitlab-pat');
+      expect(field).toBe(document.activeElement);
     },
   );
 

@@ -37,7 +37,7 @@ import { ConnectIntegrationEmptyState } from './ConnectIntegrationEmptyState';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROVIDERS = [
-  ['linear', 'Linear', 'Personal API key'],
+  ['linear', 'Linear', 'API key'],
   ['sentry', 'Sentry', 'Personal API key'],
   ['gitlab', 'GitLab', 'Personal API key'],
   ['jira', 'Jira', 'Personal API key'],
@@ -66,11 +66,11 @@ describe('ConnectIntegrationEmptyState', () => {
   const PERSONAL_KEY_PROVIDERS = PROVIDERS.filter(([provider]) => provider !== 'slack');
 
   it.each(PERSONAL_KEY_PROVIDERS)(
-    'labels the %s credential field a personal API key, never a token',
-    (provider) => {
+    'labels the %s credential field an API key, never a token',
+    (provider, _name, fieldLabel) => {
       render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
 
-      expect(screen.getByLabelText('Personal API key')).toBeDefined();
+      expect(screen.getByLabelText(fieldLabel)).toBeDefined();
       expect(screen.queryByLabelText(/access token|auth token|api token/i)).toBeNull();
     },
   );

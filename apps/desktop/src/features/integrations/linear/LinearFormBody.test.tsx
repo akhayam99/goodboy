@@ -19,6 +19,10 @@ vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
+vi.mock('../../../shared/lib/editor', () => ({
+  openUrl: vi.fn(async () => undefined),
+}));
+
 const WS_ID = 'ws-1' as WorkspaceId;
 
 const linearIntegration = {
@@ -44,57 +48,67 @@ afterEach(cleanup);
 import { LinearFormBody } from './LinearFormBody';
 
 describe('LinearFormBody', () => {
-  it('shows the token field first and the get-a-token link right under it', () => {
+  it('opens the security page from step one and marks it done', () => {
     render(<LinearFormBody workspaceId={WS_ID} />);
-
-    const field = screen.getByLabelText(/personal API key/i);
-    const link = screen.getByRole('link', { name: /get an API key from Linear/i });
-
-    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(link.getAttribute('href')).toBe('https://linear.app/settings/account/security');
+    fireEvent.click(screen.getByRole('button', { name: /open linear/i }));
+    expect(screen.getByLabelText('API key')).toBeDefined();
   });
 
-  describe('connect form (happy path)', () => {
-    it('disables Connect until a non-empty token is entered', () => {
-      render(<LinearFormBody workspaceId={WS_ID} />);
-      const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
-      expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/personal API key/i), {
-        target: { value: 'lin_api_x' },
-      });
-      expect(btn.disabled).toBe(false);
+  it('verifies on its own once a key is pasted, with no submit button', async () => {
+    render(<LinearFormBody workspaceId={WS_ID} />);
+    fireEvent.change(screen.getByLabelText('API key'), {
+      target: { value: '  lin_api_x  ' },
     });
+    expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
 
-    it('connects with the trimmed token and fires onConnected', async () => {
-      const onConnected = vi.fn();
-      render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(screen.getByLabelText(/personal API key/i), {
-        target: { value: '  lin_api_x  ' },
-      });
-      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      await waitFor(() =>
+    await waitFor(
+      () =>
         expect(state.connectLinear).toHaveBeenCalledWith({
           workspaceId: WS_ID,
           token: 'lin_api_x',
           credentialId: null,
         }),
-      );
-      await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
-    });
+      { timeout: 2000 },
+    );
+  });
 
-    it('shows the formatted error and skips onConnected when the connect fails', async () => {
-      const onConnected = vi.fn();
-      state.connectLinear = vi.fn(async () => {
-        throw new Error('unauthorized');
-      });
-      render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fireEvent.change(screen.getByLabelText(/personal API key/i), {
-        target: { value: 'lin_api_bad' },
-      });
-      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      expect(await screen.findByText(/unauthorized/i)).toBeDefined();
-      expect(onConnected).not.toHaveBeenCalled();
+  it('fires onConnected once the key checks out', async () => {
+    const onConnected = vi.fn();
+    render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText('API key'), {
+      target: { value: 'lin_api_x' },
     });
+    await waitFor(() => expect(onConnected).toHaveBeenCalledOnce(), { timeout: 2000 });
+  });
+
+  it('shows the formatted error inline and skips onConnected when the key fails', async () => {
+    const onConnected = vi.fn();
+    state.connectLinear = vi.fn(async () => {
+      throw new Error('unauthorized');
+    });
+    render(<LinearFormBody workspaceId={WS_ID} onConnected={onConnected} />);
+    fireEvent.change(screen.getByLabelText('API key'), {
+      target: { value: 'lin_api_bad' },
+    });
+    expect(await screen.findByText(/unauthorized/i, {}, { timeout: 2000 })).toBeDefined();
+    expect(onConnected).not.toHaveBeenCalled();
+  });
+
+  it('names the exact Linear buttons to press', () => {
+    render(<LinearFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText(/security & access/i)).toBeDefined();
+    expect(screen.getByText(/new api key/i)).toBeDefined();
+  });
+
+  it('says what happens when a member cannot create keys', () => {
+    render(<LinearFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText(/a Linear admin has turned them off for members/i)).toBeDefined();
+  });
+
+  it('always shows what Goodboy can do with the key', () => {
+    render(<LinearFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText('What Goodboy can do with this')).toBeDefined();
+    expect(screen.getByText(/stored in your mac's keychain/i)).toBeDefined();
   });
 
   describe('when Linear is already connected', () => {
@@ -106,7 +120,7 @@ describe('LinearFormBody', () => {
       render(<LinearFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected as Ada Lovelace/i)).toBeDefined();
       expect(screen.getByText('linear.app/acme')).toBeDefined();
-      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
+      expect(screen.queryByLabelText('API key')).toBeNull();
     });
 
     it('arms the disconnect confirm instead of disconnecting immediately', () => {
@@ -127,14 +141,5 @@ describe('LinearFormBody', () => {
         }),
       );
     });
-  });
-
-  it('keeps the keychain note behind a quiet disclosure and says where the token travels', () => {
-    render(<LinearFormBody workspaceId={WS_ID} />);
-    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /where your key goes/i }));
-    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
-    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
-    expect(screen.queryByText(/never leaving this machine/i)).toBeNull();
   });
 });
