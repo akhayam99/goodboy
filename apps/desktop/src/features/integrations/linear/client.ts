@@ -23,6 +23,16 @@ export type LinearWorkflowState = {
   position: number;
 };
 
+export type LinearTeamMember = {
+  id: string;
+  name: string;
+  active: boolean;
+};
+
+export type LinearIssuePerson = {
+  name: string;
+};
+
 export type LinearIssueLabel = {
   name: string;
   color: string;
@@ -222,6 +232,36 @@ export const linearUpdateIssueState = async ({
     workspaceId,
     issueId,
     stateId,
+    ...(projectId != null ? { projectId } : {}),
+  });
+};
+
+export const linearFetchTeamMembers = async ({
+  workspaceId,
+  issueId,
+  projectId,
+}: Params): Promise<ReadonlyArray<LinearTeamMember>> => {
+  return invoke<ReadonlyArray<LinearTeamMember>>('linear_fetch_team_members', {
+    workspaceId,
+    issueId,
+    ...(projectId != null ? { projectId } : {}),
+  });
+};
+
+type UpdateAssigneeParams = Params & {
+  readonly assigneeId: string | null;
+};
+
+export const linearUpdateIssueAssignee = async ({
+  workspaceId,
+  issueId,
+  assigneeId,
+  projectId,
+}: UpdateAssigneeParams): Promise<LinearIssuePerson | null> => {
+  return invoke<LinearIssuePerson | null>('linear_update_issue_assignee', {
+    workspaceId,
+    issueId,
+    assigneeId,
     ...(projectId != null ? { projectId } : {}),
   });
 };

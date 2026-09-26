@@ -394,6 +394,8 @@ pub fn run() {
             linear::linear_update_issue,
             linear::linear_fetch_team_states,
             linear::linear_update_issue_state,
+            linear::linear_fetch_team_members,
+            linear::linear_update_issue_assignee,
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
             sentry::sentry_list_organizations,

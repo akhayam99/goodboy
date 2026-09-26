@@ -4,7 +4,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import {
+  linearFetchTeamMembers,
   linearFetchTeamStates,
+  linearUpdateIssueAssignee,
   linearUpdateIssueDescription,
   linearUpdateIssueState,
   type LinearIssue,
@@ -15,6 +17,8 @@ vi.mock('../client', async (importOriginal) => ({
   linearUpdateIssueDescription: vi.fn(),
   linearFetchTeamStates: vi.fn(),
   linearUpdateIssueState: vi.fn(),
+  linearFetchTeamMembers: vi.fn(),
+  linearUpdateIssueAssignee: vi.fn(),
 }));
 
 const postComment = vi.hoisted(() => vi.fn(async () => {}));
@@ -201,6 +205,48 @@ describe('LinearIssueDetail', () => {
     );
     const trigger = screen.getByRole('button', { name: 'Change status' });
     await waitFor(() => expect(within(trigger).getByText('Done')).toBeDefined());
+  });
+
+  it('assigns the issue to a team member from the assignee row', async () => {
+    vi.mocked(linearFetchTeamMembers).mockResolvedValue([
+      { id: 'user-mara', name: 'Mara Lin', active: true },
+      { id: 'user-robin', name: 'Robin Vale', active: true },
+    ]);
+    vi.mocked(linearUpdateIssueAssignee).mockResolvedValue({ name: 'Robin Vale' });
+    render(
+      <LinearIssueDetail
+        issue={{ ...ISSUE, assignee: { name: 'Mara Lin' } }}
+        workspaceId={'workspace-1' as WorkspaceId}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change assignee' }));
+    const current = await screen.findByRole('menuitem', { name: 'Mara Lin' });
+    expect(current.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Robin Vale' }));
+
+    await waitFor(() =>
+      expect(linearUpdateIssueAssignee).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        issueId: 'issue-1',
+        assigneeId: 'user-robin',
+        projectId: undefined,
+      }),
+    );
+    const trigger = screen.getByRole('button', { name: 'Change assignee' });
+    await waitFor(() => expect(within(trigger).getByText('Robin Vale')).toBeDefined());
+  });
+
+  it('offers the assignee row on an unassigned issue', () => {
+    render(
+      <LinearIssueDetail
+        issue={{ ...ISSUE, assignee: null }}
+        workspaceId={'workspace-1' as WorkspaceId}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Change assignee' });
+    expect(within(trigger).getByText('Unassigned')).toBeDefined();
   });
 
   it('names who opened the issue in the byline', () => {

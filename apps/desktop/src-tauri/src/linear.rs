@@ -385,6 +385,51 @@ fn issue_state_update_variables(issue_id: &str, state_id: &str) -> serde_json::V
     })
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearTeamMember {
+    pub id: String,
+    pub name: String,
+    #[serde(default = "default_active")]
+    pub active: bool,
+}
+
+fn default_active() -> bool {
+    true
+}
+
+const TEAM_MEMBERS_QUERY: &str = r#"
+query IssueTeamMembers($issueId: String!) {
+  issue(id: $issueId) {
+    team {
+      members(first: 250) { nodes { id name active } }
+    }
+  }
+}
+"#;
+
+const ISSUE_ASSIGNEE_UPDATE_MUTATION: &str = r#"
+mutation IssueAssigneeUpdate($issueId: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $issueId, input: $input) {
+    success
+    issue { assignee { name } }
+  }
+}
+"#;
+
+fn active_members_by_name(members: Vec<LinearTeamMember>) -> Vec<LinearTeamMember> {
+    let mut active: Vec<LinearTeamMember> =
+        members.into_iter().filter(|member| member.active).collect();
+    active.sort_by_key(|member| member.name.to_lowercase());
+    active
+}
+
+fn issue_assignee_update_variables(issue_id: &str, assignee_id: Option<&str>) -> serde_json::Value {
+    serde_json::json!({
+        "issueId": issue_id,
+        "input": { "assigneeId": assignee_id }
+    })
+}
+
 /// Verifies the key a credential holds through the /viewer query and writes
 /// nothing. A key already stored is verified without the webview ever seeing
 /// it.
@@ -594,6 +639,88 @@ pub async fn linear_update_issue_state(
         .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))
 }
 
+#[tauri::command]
+pub async fn linear_fetch_team_members(
+    workspace_id: String,
+    project_id: Option<String>,
+    issue_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Vec<LinearTeamMember>, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: TeamMembersResponse = graphql(
+        &token,
+        TEAM_MEMBERS_QUERY,
+        Some(serde_json::json!({ "issueId": issue_id })),
+    )
+    .await?;
+    let issue = resp
+        .issue
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?;
+    Ok(active_members_by_name(issue.team.members.nodes))
+}
+
+#[tauri::command]
+pub async fn linear_update_issue_assignee(
+    workspace_id: String,
+    project_id: Option<String>,
+    issue_id: String,
+    assignee_id: Option<String>,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Option<LinearIssuePerson>, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: IssueAssigneeUpdateResponse = graphql(
+        &token,
+        ISSUE_ASSIGNEE_UPDATE_MUTATION,
+        Some(issue_assignee_update_variables(
+            &issue_id,
+            assignee_id.as_deref(),
+        )),
+    )
+    .await?;
+    if !resp.issue_update.success {
+        return Err(LinearError::GraphQl(format!(
+            "issueUpdate rejected for {}",
+            issue_id
+        )));
+    }
+    resp.issue_update
+        .issue
+        .map(|issue| issue.assignee)
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))
+}
+
+#[derive(Deserialize)]
+struct TeamMembers {
+    members: Nodes<LinearTeamMember>,
+}
+
+#[derive(Deserialize)]
+struct IssueTeamMembers {
+    team: TeamMembers,
+}
+
+#[derive(Deserialize)]
+struct TeamMembersResponse {
+    issue: Option<IssueTeamMembers>,
+}
+
+#[derive(Deserialize)]
+struct IssueWithAssignee {
+    assignee: Option<LinearIssuePerson>,
+}
+
+#[derive(Deserialize)]
+struct IssueAssigneeUpdatePayload {
+    success: bool,
+    issue: Option<IssueWithAssignee>,
+}
+
+#[derive(Deserialize)]
+struct IssueAssigneeUpdateResponse {
+    #[serde(rename = "issueUpdate")]
+    issue_update: IssueAssigneeUpdatePayload,
+}
+
 #[derive(Deserialize)]
 struct TeamStates {
     states: Nodes<LinearWorkflowState>,
@@ -787,6 +914,36 @@ mod tests {
         assert_eq!(variables["input"]["stateId"], "state-7");
         assert!(variables["input"].get("description").is_none());
         assert!(ISSUE_STATE_UPDATE_MUTATION.contains("issue { state { name type } }"));
+    }
+
+    #[test]
+    fn issue_assignee_update_sends_the_assignee_or_null_under_input() {
+        let assigned = issue_assignee_update_variables("issue-42", Some("user-7"));
+        let cleared = issue_assignee_update_variables("issue-42", None);
+
+        assert_eq!(assigned["issueId"], "issue-42");
+        assert_eq!(assigned["input"]["assigneeId"], "user-7");
+        assert!(cleared["input"]["assigneeId"].is_null());
+        assert!(ISSUE_ASSIGNEE_UPDATE_MUTATION.contains("issue { assignee { name } }"));
+    }
+
+    #[test]
+    fn team_members_keep_only_active_people_sorted_by_name() {
+        let member = |id: &str, name: &str, active: bool| LinearTeamMember {
+            id: id.into(),
+            name: name.into(),
+            active,
+        };
+        let members = active_members_by_name(vec![
+            member("u1", "zoe", true),
+            member("u2", "Ada", true),
+            member("u3", "Mia", false),
+        ]);
+
+        assert_eq!(
+            members.iter().map(|m| m.id.as_str()).collect::<Vec<_>>(),
+            vec!["u2", "u1"]
+        );
     }
 
     #[test]
