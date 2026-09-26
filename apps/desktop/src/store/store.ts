@@ -944,13 +944,9 @@ type AppActions = {
     filePath: string,
     body: string,
     anchor?: import('@goodboy/types').DiffCommentAnchor,
+    author?: import('@goodboy/db').DiffCommentAuthor,
   ): Promise<void>;
   resolveDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  consumeDiffComments(
-    sessionId: SessionId,
-    commentIds: ReadonlyArray<string>,
-    agentId: AgentId,
-  ): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   loadSessionEvents(params: { sessionId: SessionId; force?: boolean }): Promise<void>;

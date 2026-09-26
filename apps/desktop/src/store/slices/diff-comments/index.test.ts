@@ -207,7 +207,7 @@ describe('store contract', () => {
 
     it('addDiffComment writes through then refreshes', async () => {
       const store = useAppStore;
-      storySpies.listDiffCommentsForSession.mockResolvedValueOnce([{ id: 'fresh' } as DiffComment]);
+      storySpies.listDiffCommentsForSession.mockResolvedValue([{ id: 'fresh' } as DiffComment]);
       await store.getState().addDiffComment(SESSION_ID, 'file.ts', 'lgtm');
       expect(storySpies.insertDiffComment).toHaveBeenCalled();
       expect(store.getState().diffComments[SESSION_ID]?.[0]?.id).toBe('fresh');
@@ -218,12 +218,6 @@ describe('store contract', () => {
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
       await store.getState().resolveDiffComment(SESSION_ID, 'd1');
       expect(storySpies.resolveDiffComment).toHaveBeenCalled();
-    });
-
-    it('consumeDiffComments is a no-op when commentIds is empty', async () => {
-      const store = useAppStore;
-      await store.getState().consumeDiffComments(SESSION_ID, [], AGENT_ID);
-      expect(storySpies.consumeDiffComments).not.toHaveBeenCalled();
     });
 
     it('deleteDiffComment writes through then refreshes', async () => {

@@ -147,4 +147,6 @@ export type ResolveActions = {
     params: EnsureReviewThreadParams,
   ) => Promise<EnsureReviewThreadResult>;
   readonly materializeReviewThreads: (params: MaterializeParams) => Promise<number>;
+  readonly syncNoteThreads: (params: SessionParams) => Promise<number>;
+  readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
 };

@@ -313,7 +313,6 @@ export {
   insertDiffComment,
   listDiffCommentsForSession,
   resolveDiffComment,
-  consumeDiffComments,
   reopenDiffComment,
   deleteDiffComment,
   type DiffCommentAuthor,

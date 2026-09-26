@@ -338,7 +338,7 @@ export const SessionDiffPane = ({
       scroll="self"
       dock={
         openNotes.length > 0 && !isEmpty ? (
-          <DiffNotesDock sessionId={sessionId} mountId={mountId} openNotes={openNotes} />
+          <DiffNotesDock sessionId={sessionId} openNotes={openNotes} />
         ) : null
       }
     >

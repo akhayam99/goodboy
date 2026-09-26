@@ -18,6 +18,7 @@ const noteOf = ({
   readonly path: string;
   readonly line: number;
 }): ResolveQueueReviewerNote => ({
+  source: 'github',
   body,
   author: 'harbor-reviewer',
   createdAtMs: 1,

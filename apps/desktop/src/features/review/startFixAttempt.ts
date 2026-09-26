@@ -39,7 +39,7 @@ export type SetAgentConfigFn = (
 type Params = {
   readonly sessionId: SessionId;
   readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly choice?: ResolveModelChoice;
   readonly instructions?: string | null;
   readonly mode: FixMode;
@@ -59,7 +59,7 @@ export const fixAttemptChunks = ({
 }: {
   readonly threads: ReadonlyArray<CommentThread>;
   readonly mode: FixMode;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly hint: string;
   readonly contextWindow: number | null;
 }): ReadonlyArray<ReadonlyArray<CommentThread>> => {

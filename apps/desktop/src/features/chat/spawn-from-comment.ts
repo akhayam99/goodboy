@@ -267,7 +267,7 @@ export type ResolverStyle = {
 
 type KickoffParams = {
   readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly hint: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolverStyle;
@@ -283,7 +283,9 @@ export const buildResolverKickoff = ({
   const { commitStyle = 'new', fixupTargets = [], voice = 'terse', styleNote = null } = style;
   const noun = threads.length === 1 ? 'thread' : 'threads';
   const lines: Array<string> = [
-    `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
+    pr === null
+      ? `Resolve ${threads.length} ${noun} left as notes on this branch. There is no pull request: never push, and never open one.`
+      : `Resolve ${threads.length} ${noun} on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
   ];
   for (const [index, thread] of threads.entries()) {
     lines.push('', ...threadBlock({ thread, position: index + 1, total: threads.length }));
@@ -332,7 +334,7 @@ export type CommentAgentArgs = {
 
 type ResolverAgentArgsParams = {
   readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly hint?: string;
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolverStyle;

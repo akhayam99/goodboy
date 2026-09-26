@@ -15,6 +15,7 @@ import type {
 const h = vi.hoisted(() => {
   const state = {
     sessionGithub: {} as Record<string, unknown>,
+    diffComments: {},
     sessionResolveQueueItems: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,

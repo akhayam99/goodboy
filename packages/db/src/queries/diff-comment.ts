@@ -116,23 +116,6 @@ export const resolveDiffComment = async (db: Database, id: string): Promise<void
   ]);
 };
 
-export const consumeDiffComments = async (
-  db: Database,
-  ids: ReadonlyArray<string>,
-  agentId: AgentId,
-): Promise<void> => {
-  if (ids.length === 0) {
-    return;
-  }
-  const placeholders = ids.map(() => '?').join(', ');
-  await db.execute(
-    `UPDATE diff_comments
-     SET status = 'consumed', consumed_at = ?, consumed_by_agent_id = ?
-     WHERE status = 'open' AND id IN (${placeholders})`,
-    [Date.now(), agentId, ...ids],
-  );
-};
-
 export const reopenDiffComment = async (db: Database, id: string): Promise<void> => {
   await db.execute(
     `UPDATE diff_comments

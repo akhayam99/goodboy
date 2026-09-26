@@ -103,7 +103,7 @@ SELECT
   'open', 'new', 0, note.created_at, note.created_at
 FROM diff_comments note
 JOIN sessions ON sessions.id = note.session_id
-WHERE note.status = 'open';
+WHERE note.status IN ('open', 'consumed');
 
 INSERT OR IGNORE INTO resolve_queue_items (
   id, session_id, thread_id, generation, candidate_revision, approval_state, created_at, updated_at
@@ -113,7 +113,7 @@ SELECT
   note.created_at, note.created_at
 FROM diff_comments note
 JOIN sessions ON sessions.id = note.session_id
-WHERE note.status = 'open'
+WHERE note.status IN ('open', 'consumed')
   AND NOT EXISTS (
     SELECT 1 FROM resolve_queue_items existing
     WHERE existing.session_id = note.session_id
