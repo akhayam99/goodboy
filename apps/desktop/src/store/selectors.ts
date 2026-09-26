@@ -5,6 +5,7 @@ import { readMockMountDiffStat } from './mock-data';
 import { selectNonResolverStandaloneAgents, type AgentKind } from '../features/session/agent-kind';
 import type {
   Agent,
+  AgentId,
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
@@ -20,6 +21,7 @@ import type {
   SessionStageInfo,
   SessionViewPrefs,
   TelemetryRecord,
+  TurnState,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -207,6 +209,22 @@ const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
 const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
+function blockedAgentTurnStateOf(
+  sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>,
+  agentTurnState: Readonly<Record<AgentId, TurnState>>,
+): Readonly<Record<AgentId, TurnState>> {
+  const entries: Record<AgentId, TurnState> = {};
+  for (const runs of Object.values(sessionPhaseRuns)) {
+    for (const run of runs) {
+      const turnState = agentTurnState[run.id];
+      if (turnState?.kind === 'blocked') {
+        entries[run.id] = turnState;
+      }
+    }
+  }
+  return entries;
+}
+
 type StageInfoState = Pick<
   AppState,
   | 'sessions'
@@ -338,8 +356,12 @@ export const useSortedGroupedSessions = (
   const sessionPhaseRuns = useAppStore((s) =>
     needsStage ? s.sessionPhaseRuns : (EMPTY_GITHUB_STATE as typeof s.sessionPhaseRuns),
   );
-  const agentTurnState = useAppStore((s) =>
-    needsStage ? s.agentTurnState : (EMPTY_GITHUB_STATE as typeof s.agentTurnState),
+  const agentTurnState = useAppStore(
+    useShallow((s) =>
+      needsStage
+        ? blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)
+        : (EMPTY_GITHUB_STATE as Readonly<Record<AgentId, TurnState>>),
+    ),
   );
   const orchestratingWorkflowRuns = useAppStore((s) =>
     needsStage
@@ -477,7 +499,9 @@ export const useStageGroupedSessions = (
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
-  const agentTurnState = useAppStore((s) => s.agentTurnState);
+  const agentTurnState = useAppStore(
+    useShallow((s) => blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)),
+  );
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
