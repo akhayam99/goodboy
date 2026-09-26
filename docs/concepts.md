@@ -576,7 +576,8 @@ specific rule that fits wins.
   edit) and need a manual retry
 - Settings › Workspace › Permissions lists the rules and adds one inline
   (`Add rule`: Allow or Deny, a command prefix, this workspace or all of
-  them)
+  them), then the last 50 decisions of the workspace's sessions from the
+  audit log (`permission_audit_list`)
 - A workflow step that was denied pauses the run instead of finishing the
   step with whatever text the model produced meanwhile
 

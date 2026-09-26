@@ -8,11 +8,14 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   remove: vi.fn(async () => undefined),
   upsert: vi.fn(),
+  audit: vi.fn(),
   setDefault: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   state: {
     workspaces: [] as ReadonlyArray<{ id: string; name: string; defaultPermissionMode?: string }>,
     sessions: [] as ReadonlyArray<{
+      id?: string;
+      goal?: string;
       workspaceId: string;
       providerPreference: { defaultProvider: string; enabledProviders?: ReadonlyArray<string> };
     }>,
@@ -23,6 +26,7 @@ vi.mock('../../permissions', () => ({
   invokePermissionRuleList: mocks.list,
   invokePermissionRuleDelete: mocks.remove,
   invokePermissionRuleUpsert: mocks.upsert,
+  invokePermissionAuditList: mocks.audit,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -61,9 +65,20 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.workspaces = [{ id: WORKSPACE_ID, name: 'Harborline' }];
   mocks.state.sessions = [
-    { workspaceId: WORKSPACE_ID, providerPreference: { defaultProvider: 'anthropic' } },
-    { workspaceId: WORKSPACE_ID, providerPreference: { defaultProvider: 'codex' } },
+    {
+      id: 'session-1',
+      goal: 'Fix ledger rounding',
+      workspaceId: WORKSPACE_ID,
+      providerPreference: { defaultProvider: 'anthropic' },
+    },
+    {
+      id: 'session-2',
+      goal: 'Retry the webhook',
+      workspaceId: WORKSPACE_ID,
+      providerPreference: { defaultProvider: 'codex' },
+    },
   ];
+  mocks.audit.mockResolvedValue([]);
   mocks.list.mockImplementation(async ({ scope }: { readonly scope: string }) =>
     scope === 'workspace' ? [rule({})] : [denyPush],
   );
@@ -164,5 +179,25 @@ describe('PermissionsSettings', () => {
     );
     expect(await screen.findByText('Commands starting with "git push --force"')).toBeDefined();
     expect(screen.queryByRole('form', { name: 'Add rule' })).toBeNull();
+  });
+
+  it('lists the recent decisions with the command, the session and when', async () => {
+    mocks.audit.mockResolvedValue([
+      {
+        id: 'audit-1',
+        sessionId: 'session-1',
+        toolName: 'Bash',
+        input: { command: 'pnpm test --filter ledger-core' },
+        decision: 'allow',
+        decidedAt: new Date(Date.now() - 120_000).toISOString(),
+      },
+    ]);
+    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+
+    const list = await screen.findByRole('list', { name: 'Recent decisions' });
+    expect(within(list).getByText('Allowed')).toBeDefined();
+    expect(within(list).getByText('pnpm test')).toBeDefined();
+    expect(within(list).getByText(/session "Fix ledger rounding"/)).toBeDefined();
+    expect(mocks.audit).toHaveBeenCalledWith({ sessionIds: ['session-1', 'session-2'] });
   });
 });

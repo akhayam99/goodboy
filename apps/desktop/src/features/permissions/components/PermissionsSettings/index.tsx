@@ -12,6 +12,7 @@ import { IgnoredDenyNotice } from './IgnoredDenyNotice';
 import { ProviderSupportTable } from './ProviderSupportTable';
 import { RuleRow } from './RuleRow';
 import { AddRuleForm } from './AddRuleForm';
+import { RecentDecisions } from './RecentDecisions';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -123,6 +124,11 @@ export const PermissionsSettings = ({ workspaceId }: Props) => {
         {workspaceName !== null && hasIgnoredDeny({ rules: rules.rules, activeProviders }) ? (
           <IgnoredDenyNotice workspaceName={workspaceName} activeProviders={activeProviders} />
         ) : null}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h3 className="text-label text-foreground">Recent decisions</h3>
+        <RecentDecisions workspaceId={workspaceId} />
       </div>
     </section>
   );
