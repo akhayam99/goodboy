@@ -23,4 +23,5 @@ export const createInitialSessionViewState = ({}: Params) => ({
   resolvePublicationReturn: {},
   resolveItemDrafts: {},
   sessionCreations: {},
+  revealedActivityRows: {},
 });

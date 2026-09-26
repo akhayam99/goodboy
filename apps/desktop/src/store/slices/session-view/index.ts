@@ -31,6 +31,7 @@ import {
 } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
+import { revealActivityRow } from './revealActivityRow';
 import type { GetFn, SessionViewSlice, SetFn } from './types';
 
 export { sortAndGroupSessions } from './sortAndGroupSessions';
@@ -91,5 +92,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     openExternalTaskLens: openExternalTaskLens(set, get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
+    revealActivityRow: revealActivityRow(set),
   };
 };

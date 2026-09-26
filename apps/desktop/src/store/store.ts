@@ -1038,6 +1038,7 @@ type AppActions = {
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
+  revealActivityRow(sessionId: SessionId, rowId: string): void;
   openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
   closeTerminal(sessionId: SessionId): Promise<void>;
   addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;

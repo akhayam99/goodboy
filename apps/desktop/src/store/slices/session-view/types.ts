@@ -211,6 +211,7 @@ type SessionViewSliceState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
+  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
 };
 
 type SessionViewSliceActions = {
@@ -282,6 +283,7 @@ type SessionViewSliceActions = {
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
+  revealActivityRow(sessionId: SessionId, rowId: string): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

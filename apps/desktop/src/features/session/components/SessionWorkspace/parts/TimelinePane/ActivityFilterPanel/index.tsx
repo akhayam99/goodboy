@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
@@ -41,6 +42,7 @@ const CUSTOM_OPTION: SegmentedTabOption<PresetOption> = { value: 'custom', label
 type Props = {
   readonly filter: ActivityFilter;
   readonly hidden: ReadonlyArray<ActivityToggle>;
+  readonly hiddenRows: number;
   readonly preset: ActivityPreset | null;
   readonly counts: ActivityCounts;
   readonly visibleCount: number;
@@ -71,16 +73,33 @@ const summaryOf = ({ hidden, preset }: SummaryParams): string => {
   return `${names} ${hidden.length === 1 ? 'is' : 'are'} hidden`;
 };
 
-const triggerDetailOf = ({ hidden, preset }: SummaryParams): string | null => {
+type TriggerDetail =
+  | { readonly kind: 'label'; readonly text: string }
+  | { readonly kind: 'count'; readonly presetLabel: string | null; readonly count: number };
+
+type TriggerParams = {
+  readonly hiddenRows: number;
+  readonly preset: ActivityPreset | null;
+};
+
+const triggerDetailOf = ({ hiddenRows, preset }: TriggerParams): TriggerDetail | null => {
   if (preset === 'needsYou') {
-    return ACTIVITY_PRESET_LABEL.needsYou;
+    return { kind: 'label', text: ACTIVITY_PRESET_LABEL.needsYou };
   }
-  return hidden.length === 0 ? null : `${hidden.length} hidden`;
+  if (hiddenRows === 0) {
+    return null;
+  }
+  return {
+    kind: 'count',
+    presetLabel: preset === null ? null : ACTIVITY_PRESET_LABEL[preset],
+    count: hiddenRows,
+  };
 };
 
 export const ActivityFilterPanel = ({
   filter,
   hidden,
+  hiddenRows,
   preset,
   counts,
   visibleCount,
@@ -95,7 +114,15 @@ export const ActivityFilterPanel = ({
     width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
   });
   const { open, toggle } = dropdown;
-  const detail = triggerDetailOf({ hidden, preset });
+  const detail = triggerDetailOf({ hiddenRows, preset });
+  const previousHiddenRowsRef = useRef(hiddenRows);
+  const [flashNonce, setFlashNonce] = useState(0);
+  useEffect(() => {
+    if (hiddenRows > previousHiddenRowsRef.current) {
+      setFlashNonce((nonce) => nonce + 1);
+    }
+    previousHiddenRowsRef.current = hiddenRows;
+  }, [hiddenRows]);
   const presetOptions: ReadonlyArray<SegmentedTabOption<PresetOption>> = [
     ...PRESET_ORDER.map((value) => ({ value, label: ACTIVITY_PRESET_LABEL[value] })),
     ...(preset === null ? [CUSTOM_OPTION] : []),
@@ -125,7 +152,16 @@ export const ActivityFilterPanel = ({
         >
           <ListFilter size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="@max-md/activity:hidden">Filter</span>
-          {detail === null ? null : <span className="text-faint-foreground">{detail}</span>}
+          {detail === null ? null : detail.kind === 'label' ? (
+            <span className="text-faint-foreground">{detail.text}</span>
+          ) : (
+            <span className="text-faint-foreground">
+              {detail.presetLabel === null ? null : `${detail.presetLabel} · `}
+              <span key={flashNonce} className={cn(flashNonce > 0 && 'hidden-count-flash')}>
+                {`${detail.count} hidden`}
+              </span>
+            </span>
+          )}
         </button>
       }
     >

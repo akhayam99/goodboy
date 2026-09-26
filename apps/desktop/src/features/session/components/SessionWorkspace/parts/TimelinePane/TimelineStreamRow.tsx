@@ -37,6 +37,7 @@ type Props = {
   readonly menu?: ReactNode;
   readonly lanes?: TimelineLaneControl | null;
   readonly runLane?: TimelineLaneTarget | null;
+  readonly isRevealed?: boolean;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -57,6 +58,7 @@ export const TimelineStreamRow = ({
   menu = null,
   lanes = null,
   runLane = null,
+  isRevealed = false,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -94,6 +96,7 @@ export const TimelineStreamRow = ({
           isLaneLit={isLaneLit}
           worktrees={worktrees}
           stateNote={stateNote}
+          isRevealed={isRevealed}
         />
       </span>
       {openTarget == null ? null : (
