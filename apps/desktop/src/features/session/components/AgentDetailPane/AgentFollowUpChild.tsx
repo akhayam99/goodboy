@@ -42,7 +42,7 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-xs">
+    <div className="flex items-center gap-2 rounded-md border border-border-soft bg-elevated px-3 py-2 text-label">
       <AgentKindChip kind={kind} />
       <span className="min-w-0 flex-1 truncate text-foreground">{agent.name}</span>
       {hasQuestion ? (
@@ -50,12 +50,14 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
       ) : (
         <AgentStatusIcon status={child.status} />
       )}
-      <span className="max-w-28 shrink-0 truncate text-2xs text-muted-foreground">{label}</span>
+      <span className="max-w-28 shrink-0 truncate text-secondary text-muted-foreground">
+        {label}
+      </span>
       <button
         type="button"
         onClick={onOpen}
         className={cn(
-          'shrink-0 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+          'shrink-0 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
           'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >

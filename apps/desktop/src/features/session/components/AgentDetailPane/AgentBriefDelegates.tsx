@@ -1,4 +1,4 @@
-import { SectionSurface, StatusDot } from '@goodboy/ui';
+import { Band, StatusDot } from '@goodboy/ui';
 import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
 
@@ -31,11 +31,12 @@ export const AgentBriefDelegates = ({ sessionId, delegates, questions }: Props) 
   };
 
   return (
-    <SectionSurface
+    <Band
+      inset="content"
       label="Delegated answers"
       hint="Agents answering an open question on your behalf."
       action={
-        <span className="text-2xs tabular-nums text-muted-foreground">
+        <span className="text-secondary tabular-nums text-muted-foreground">
           {String(delegates.length)}
         </span>
       }
@@ -54,15 +55,15 @@ export const AgentBriefDelegates = ({ sessionId, delegates, questions }: Props) 
               size="sm"
               pulsing={delegate.status === 'running'}
             />
-            <span className="min-w-0 flex-1 truncate text-xs leading-4 text-foreground">
+            <span className="min-w-0 flex-1 truncate text-label text-foreground">
               {textOf({ delegate })}
             </span>
-            <span className="shrink-0 text-2xs text-muted-foreground">
+            <span className="shrink-0 text-secondary text-muted-foreground">
               {delegate.status === 'pending' ? 'queued' : delegate.status}
             </span>
           </button>
         ))}
       </div>
-    </SectionSurface>
+    </Band>
   );
 };

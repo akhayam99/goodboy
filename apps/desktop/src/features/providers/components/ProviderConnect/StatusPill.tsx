@@ -57,7 +57,7 @@ const connectionSpec = ({ connection }: SpecParams): PillSpec => {
 export const StatusPill = ({ connection }: Props) => {
   const spec = connectionSpec({ connection });
   return (
-    <span className="inline-flex items-center gap-1.5 text-2xs font-medium">
+    <span className="inline-flex items-center gap-1.5 text-secondary font-medium">
       <StatusDot tone={spec.tone} size="sm" className={spec.dotClassName} />
       <span className={spec.labelClass}>{spec.label}</span>
     </span>

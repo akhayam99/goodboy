@@ -37,9 +37,9 @@ export const SuggestionRow = ({
         aria-hidden
       />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm text-foreground">{suggestion.title}</span>
+        <span className="truncate text-body text-foreground">{suggestion.title}</span>
         {suggestion.detail != null ? (
-          <span className="truncate text-xs text-muted-foreground">{suggestion.detail}</span>
+          <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
         ) : null}
       </span>
       <Button

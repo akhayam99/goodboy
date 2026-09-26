@@ -57,7 +57,7 @@ export const ArtifactAttachmentsField = ({
         disabled={worktree === null}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-2xs transition-colors',
+          'inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-secondary transition-colors',
           worktree === null
             ? 'cursor-not-allowed text-muted-foreground'
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -76,13 +76,13 @@ export const ArtifactAttachmentsField = ({
           />
         ))
       ) : (
-        <span className="text-2xs text-faint-foreground">
+        <span className="text-secondary text-faint-foreground">
           {worktree === null ? NO_WORKTREE_HINT : EMPTY_HINT}
         </span>
       )}
     </div>
     {note === null ? null : (
-      <span role="status" className="text-2xs text-muted-foreground">
+      <span role="status" className="text-secondary text-muted-foreground">
         {note}
       </span>
     )}

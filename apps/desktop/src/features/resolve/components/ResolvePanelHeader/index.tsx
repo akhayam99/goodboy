@@ -71,7 +71,7 @@ export const ResolvePanelHeader = ({
         <h2
           tabIndex={-1}
           data-resolve-heading
-          className="min-w-0 flex-1 truncate font-mono text-2xs text-muted-foreground"
+          className="min-w-0 flex-1 truncate font-mono text-secondary text-muted-foreground"
           title={location ?? RESOLVE_ITEM_LABEL.comment}
         >
           {onOpenLocation !== null && location !== null ? (
@@ -103,7 +103,7 @@ export const ResolvePanelHeader = ({
             onClick={onNext}
           />
           {position !== null && (
-            <span className="px-1 text-2xs tabular-nums text-muted-foreground">
+            <span className="px-1 text-secondary tabular-nums text-muted-foreground">
               {position.index} of {position.total}
             </span>
           )}

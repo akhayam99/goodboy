@@ -526,12 +526,12 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           aria-autocomplete="list"
           aria-activedescendant={selected === null ? undefined : optionId(selected.id)}
           aria-label="Command palette search"
-          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="w-full bg-background px-4 py-3 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         />
         <Divider />
 
         {parsed.prefix === null && query.length === 0 && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-meta text-muted-foreground">
             {PALETTE_PREFIXES.map((p) => (
               <button
                 key={p.symbol}
@@ -574,7 +574,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                     data-id={item.id}
                     role="option"
                     aria-selected={isSelected}
-                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 text-sm ${
+                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 text-body ${
                       isSelected ? 'bg-muted' : 'hover:bg-hover'
                     }`}
                     onMouseEnter={() => setSelectedId(item.id)}
@@ -590,7 +590,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                     <div className="min-w-0 flex-1">
                       <span className="block truncate">{item.label}</span>
                       {item.sublabel ? (
-                        <span className="block truncate text-xs text-muted-foreground">
+                        <span className="block truncate text-label text-muted-foreground">
                           {item.sublabel}
                         </span>
                       ) : null}
@@ -604,7 +604,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                   <li
                     key={`group:${item.group}`}
                     role="presentation"
-                    className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground"
+                    className="bg-subtle px-4 py-1 text-secondary font-medium tracking-wide text-muted-foreground"
                   >
                     {GROUP_LABELS[item.group]}
                   </li>,

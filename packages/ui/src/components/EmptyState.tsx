@@ -32,26 +32,26 @@ const SIZE_CLASSES = {
   inline: {
     root: 'flex items-start gap-2.5 px-3 py-2.5 text-left',
     content: 'flex min-w-0 flex-1 flex-col gap-1',
-    title: 'text-xs font-medium text-foreground',
+    title: 'text-label font-medium text-foreground',
     description: 'text-xs leading-relaxed text-muted-foreground',
   },
   sm: {
     root: 'flex flex-col items-center gap-3 px-6 py-10 text-center',
     content: 'flex flex-col gap-1',
-    title: 'text-sm font-medium text-foreground',
+    title: 'text-row text-foreground',
     description: 'max-w-xs text-xs leading-relaxed text-muted-foreground',
   },
   lg: {
     root: 'flex flex-col items-center gap-6 px-8 py-10 text-center',
     content: 'flex flex-col gap-2.5',
-    title: 'text-lg font-semibold tracking-tight text-foreground',
-    description: 'max-w-sm text-sm leading-relaxed text-muted-foreground',
+    title: 'text-title text-foreground',
+    description: 'max-w-sm text-prose text-muted-foreground',
   },
   xl: {
     root: 'flex flex-col items-center gap-10 px-10 py-14 text-center',
     content: 'flex flex-col gap-3',
-    title: 'text-2xl font-semibold tracking-tight text-foreground',
-    description: 'max-w-md text-sm leading-relaxed text-muted-foreground',
+    title: 'text-display text-foreground',
+    description: 'max-w-md text-prose text-muted-foreground',
   },
 } satisfies Record<
   Size,

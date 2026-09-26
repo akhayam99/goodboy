@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { SectionHeader, Select } from '@goodboy/ui';
+import { Listbox, SectionHeader } from '@goodboy/ui';
 import type { WorkflowRunId } from '@goodboy/types';
 import type { ArtifactBasedOn } from '../../../../store/slices/artifactDrafts/types';
 
@@ -7,6 +7,8 @@ export type ArtifactRunOption = Readonly<{
   workflowRunId: WorkflowRunId;
   label: string;
 }>;
+
+const SESSION_VALUE = '';
 
 type Props = {
   readonly runs: ReadonlyArray<ArtifactRunOption>;
@@ -23,28 +25,25 @@ export const ArtifactBasedOnField = ({ runs, value, scopeLine, repoLine, onChang
     <section className="flex min-w-0 flex-col gap-2">
       <SectionHeader label="Based on" htmlFor={fieldId} />
       <div className="flex min-w-0 flex-col gap-1.5">
-        <Select
+        <Listbox
           id={fieldId}
           size="sm"
-          block
-          data-testid="artifact-based-on"
-          value={value.kind === 'workflow-run' ? value.workflowRunId : ''}
-          onChange={(event) => {
-            const next = event.target.value;
+          isBlock
+          testId="artifact-based-on"
+          value={value.kind === 'workflow-run' ? value.workflowRunId : SESSION_VALUE}
+          options={[
+            { value: SESSION_VALUE, label: 'This session' },
+            ...runs.map((run) => ({ value: run.workflowRunId, label: run.label })),
+          ]}
+          onChange={(next) => {
+            const run = runs.find((candidate) => candidate.workflowRunId === next);
             onChange(
-              next === ''
+              run === undefined
                 ? { kind: 'session' }
-                : { kind: 'workflow-run', workflowRunId: next as WorkflowRunId },
+                : { kind: 'workflow-run', workflowRunId: run.workflowRunId },
             );
           }}
-        >
-          <option value="">This session</option>
-          {runs.map((run) => (
-            <option key={run.workflowRunId} value={run.workflowRunId}>
-              {run.label}
-            </option>
-          ))}
-        </Select>
+        />
         <span className="text-2xs leading-relaxed text-muted-foreground">{scopeLine}</span>
         <span className="text-2xs leading-relaxed text-muted-foreground">{repoLine}</span>
       </div>

@@ -54,7 +54,7 @@ export const ScriptsFilterInput = ({ value, onChange }: Props) => {
           event.stopPropagation();
           onChange('');
         }}
-        className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground"
+        className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-muted-foreground"
       />
       {value === '' ? <KbdPill>/</KbdPill> : null}
     </div>

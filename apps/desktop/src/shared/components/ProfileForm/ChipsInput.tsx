@@ -1,6 +1,14 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { X } from 'lucide-react';
-import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { Plus, X } from 'lucide-react';
+import {
+  AnchoredPopover,
+  ListboxList,
+  ScrollFade,
+  Tooltip,
+  cn,
+  listboxOptionId,
+  useDropdown,
+} from '@goodboy/ui';
 import { chipsInputOptions, type ChipSuggestion } from './chipsInputOptions';
 
 type Props = {
@@ -105,9 +113,7 @@ export const ChipsInput = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="listbox"
-      ariaLabel={`${label} suggestions`}
-      className="max-h-60 overflow-y-auto py-1"
+      className="motion-safe:animate-popover-in"
       anchorClassName="w-full"
       trigger={
         <div
@@ -120,7 +126,7 @@ export const ChipsInput = ({
           {values.map((value) => (
             <span
               key={value}
-              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-xs text-foreground"
+              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-label text-foreground"
             >
               {value}
               <Tooltip content={`Remove ${value}`} anchorClassName="flex">
@@ -148,7 +154,11 @@ export const ChipsInput = ({
             aria-expanded={open}
             aria-controls={listId}
             aria-autocomplete="list"
-            aria-activedescendant={highlighted === undefined ? undefined : `${listId}-${highlight}`}
+            aria-activedescendant={
+              highlighted === undefined
+                ? undefined
+                : listboxOptionId({ id: listId, index: highlight })
+            }
             autoComplete="off"
             disabled={disabled}
             placeholder={values.length === 0 ? placeholder : ''}
@@ -156,43 +166,40 @@ export const ChipsInput = ({
             onKeyDown={onKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            className="h-6 min-w-24 flex-1 bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-faint-foreground"
+            className="h-6 min-w-24 flex-1 bg-transparent px-1 text-body text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
       }
     >
-      <ul id={listId} className="flex flex-col">
-        {options.map((option, index) => {
-          const previousGroup = index === 0 ? undefined : options[index - 1]?.group;
-          const isGroupStart = option.group !== undefined && option.group !== previousGroup;
-          return (
-            <li key={option.key} className="flex flex-col">
-              {isGroupStart ? (
-                <span className="px-3 pb-1 pt-2 text-3xs font-medium uppercase tracking-eyebrow text-faint-foreground">
-                  {option.group}
-                </span>
-              ) : null}
-              <button
-                id={`${listId}-${index}`}
-                type="button"
-                role="option"
-                aria-selected={index === highlight}
-                tabIndex={-1}
-                onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setHighlight(index)}
-                onClick={() => add({ value: option.value })}
-                className={cn(
-                  'mx-1 rounded-sm px-2 py-1 text-left text-sm',
-                  option.isCustom ? 'text-muted-foreground' : 'text-foreground',
-                  index === highlight && 'bg-hover',
-                )}
-              >
-                {option.label}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <ScrollFade
+        className="flex min-h-0 flex-col"
+        viewportClassName="max-h-60 p-1"
+        fadeFrom="floating"
+        fadeSize={12}
+      >
+        <ListboxList
+          id={listId}
+          ariaLabel={`${label} suggestions`}
+          entries={options.map((option) => ({
+            option: {
+              value: option.key,
+              label: option.label,
+              group: option.group,
+              leading: option.isCustom ? <Plus size={14} /> : undefined,
+            },
+            match: [],
+          }))}
+          activeIndex={highlight}
+          selectedValues={[]}
+          onSelect={(index) => {
+            const option = options[index];
+            if (option !== undefined) {
+              add({ value: option.value });
+            }
+          }}
+          onActivate={setHighlight}
+        />
+      </ScrollFade>
     </AnchoredPopover>
   );
 };

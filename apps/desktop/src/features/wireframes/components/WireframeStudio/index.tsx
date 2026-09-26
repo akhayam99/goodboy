@@ -32,7 +32,7 @@ export const WireframeStudio = ({ sessionId, artifact, onScreenChange }: Props) 
           onRepair={() => respawn({ fidelity })}
         />
         {error === null ? null : (
-          <span role="alert" className="text-2xs text-danger">
+          <span role="alert" className="text-secondary text-danger">
             {error}
           </span>
         )}

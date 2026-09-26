@@ -126,10 +126,10 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             <StatusDot tone={m.tone} size="sm" className="mt-1" />
             <span className="min-w-0 flex-1">
               <span className={cn('block font-medium', m.text)}>{m.label}</span>
-              <span className="block text-2xs text-muted-foreground">{m.description}</span>
+              <span className="block text-secondary text-muted-foreground">{m.description}</span>
             </span>
             {active ? (
-              <span aria-hidden className="mt-0.5 text-2xs text-primary">
+              <span aria-hidden className="mt-0.5 text-secondary text-primary">
                 ✓
               </span>
             ) : null}
@@ -137,7 +137,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
         );
       })}
       {unenforced ? (
-        <p className="px-2.5 pb-1 pt-1.5 text-2xs text-muted-foreground">
+        <p className="px-2.5 pb-1 pt-1.5 text-secondary text-muted-foreground">
           Not enforced for cursor and gemini.
         </p>
       ) : null}

@@ -43,7 +43,7 @@ describe('StudioFrame', () => {
     );
 
     const frame = container.querySelector('[data-studio-frame]');
-    expect(frame?.className).toContain('bg-background');
+    expect(frame?.className).toContain('bg-chrome');
     expect(screen.getByRole('status', { name: 'Loading Workflows' })).toBeDefined();
     expect(container.querySelector('[data-studio-skeleton="grid"]')).not.toBeNull();
     expect(screen.getByRole('banner', { name: 'Workflows' })).toBeDefined();

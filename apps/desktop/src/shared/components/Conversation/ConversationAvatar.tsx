@@ -23,7 +23,7 @@ export const ConversationAvatar = ({ author }: Props) => {
     return (
       <span
         aria-hidden
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-3xs font-semibold text-muted-foreground"
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-meta font-semibold text-muted-foreground"
       >
         {initialsOf(author.name)}
       </span>

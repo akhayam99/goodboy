@@ -57,7 +57,7 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => void save()}
         onKeyDown={onKeyDown}
-        className="h-6 min-w-0 flex-1 rounded-sm border border-border-soft bg-transparent px-1.5 text-xs text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
+        className="h-6 min-w-0 flex-1 rounded-sm border border-border-soft bg-transparent px-1.5 text-label text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
       />
     );
   }
@@ -73,7 +73,7 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
       disabled={busy}
       onClick={() => setDraft(description)}
       className={cn(
-        'min-w-0 flex-1 truncate rounded-sm px-1 text-left text-xs',
+        'min-w-0 flex-1 truncate rounded-sm px-1 text-left text-label',
         description === ''
           ? 'text-faint-foreground hover:text-muted-foreground'
           : 'text-muted-foreground hover:text-foreground',

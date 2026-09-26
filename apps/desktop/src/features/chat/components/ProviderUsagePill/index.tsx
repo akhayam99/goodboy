@@ -40,7 +40,7 @@ export const ProviderUsagePill = ({ provider }: Props) => {
     <span
       title={tooltip}
       className={cn(
-        'inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-2xs',
+        'inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-secondary',
         tone,
       )}
     >

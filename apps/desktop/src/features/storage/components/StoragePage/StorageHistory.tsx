@@ -58,15 +58,15 @@ export const StorageHistory = () => {
         icon={<HistoryIcon size={ICON_SIZE.row} aria-hidden />}
         label="History and app data"
       />
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">Archived transcripts</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             Streamed events of {pluralize(stats.archivedSessionCount, 'archived session')}. Final
             messages stay.
           </span>
         </div>
-        <span className="text-2xs tabular-nums text-muted-foreground">
+        <span className="text-secondary tabular-nums text-muted-foreground">
           {formatBytes({ bytes: stats.archivedTranscriptBytes })}
         </span>
         <Button
@@ -91,17 +91,17 @@ export const StorageHistory = () => {
           onCancel={() => setIsConfirming(false)}
         />
       ) : null}
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">App data</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             Database {formatBytes({ bytes: stats.databaseBytes })}
             {copies === 0
               ? '.'
               : `, ${copies === 1 ? '1 safety copy' : `${copies} safety copies`} from updates ${formatBytes({ bytes: stats.snapshotBytes })}.`}
           </span>
         </div>
-        <span className="text-2xs tabular-nums text-muted-foreground">
+        <span className="text-secondary tabular-nums text-muted-foreground">
           {formatBytes({ bytes: stats.databaseBytes + stats.snapshotBytes })}
         </span>
         {folder === null ? null : (

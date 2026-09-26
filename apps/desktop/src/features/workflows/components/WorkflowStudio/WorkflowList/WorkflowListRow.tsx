@@ -46,14 +46,14 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
           className="shrink-0 text-faint-foreground"
         />
         <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate text-sm text-foreground">{workflow.name}</span>
+          <span className="truncate text-body text-foreground">{workflow.name}</span>
           {builtin === 'custom' ? null : (
-            <span className="shrink-0 text-3xs font-semibold uppercase tracking-eyebrow text-faint-foreground">
+            <span className="shrink-0 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground">
               Built in
             </span>
           )}
           {builtin === 'edited' ? (
-            <span className="inline-flex shrink-0 items-center gap-1 text-2xs text-warning">
+            <span className="inline-flex shrink-0 items-center gap-1 text-secondary text-warning">
               <span aria-hidden className="size-1.5 rounded-full bg-warning" />
               Edited
             </span>
@@ -69,10 +69,10 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
             />
           ))}
           {hidden > 0 ? (
-            <span className="text-2xs tabular-nums text-faint-foreground">{`+${hidden}`}</span>
+            <span className="text-secondary tabular-nums text-faint-foreground">{`+${hidden}`}</span>
           ) : null}
         </span>
-        <span className="w-36 shrink-0 truncate text-right text-2xs tabular-nums text-faint-foreground">
+        <span className="w-36 shrink-0 truncate text-right text-secondary tabular-nums text-faint-foreground">
           {metaOf({ workflow, builtin })}
         </span>
       </button>

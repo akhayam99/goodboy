@@ -15,7 +15,7 @@ export const ProviderIcon = ({ provider, size = 14, muted, variant = 'icon' }: P
     return null;
   }
   if (id == null) {
-    return <span className="text-2xs text-muted-foreground">{provider}</span>;
+    return <span className="text-secondary text-muted-foreground">{provider}</span>;
   }
 
   const brand = PROVIDER_BRAND[id];

@@ -81,7 +81,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
     <div className={cn(BLOCK_CLASS, className)}>
       <ImageOff size={14} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {alt !== '' && <span className="text-xs font-medium text-foreground">{alt}</span>}
+        {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
         <span className="text-xs leading-relaxed text-muted-foreground">
           {isFailed ? 'Could not load this image from ' : 'An image lives at '}
           <Tooltip content={url}>

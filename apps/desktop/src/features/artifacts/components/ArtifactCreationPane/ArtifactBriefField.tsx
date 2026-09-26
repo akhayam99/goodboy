@@ -111,7 +111,7 @@ export const ArtifactBriefField = ({
         }}
       />
       {clipNote === null ? null : (
-        <span role="status" className="text-2xs text-muted-foreground">
+        <span role="status" className="text-secondary text-muted-foreground">
           {clipNote}
         </span>
       )}
@@ -124,7 +124,7 @@ export const ArtifactBriefField = ({
         <span
           data-testid="artifact-brief-counter"
           className={cn(
-            'self-end text-2xs tabular-nums text-muted-foreground',
+            'self-end text-secondary tabular-nums text-muted-foreground',
             isAtLimit && 'text-warning',
           )}
         >

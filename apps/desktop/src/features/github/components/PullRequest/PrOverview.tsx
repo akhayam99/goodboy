@@ -90,7 +90,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
                 onClick={() => setEditing('title')}
                 title="Edit title"
                 aria-label="Edit title"
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-meta font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -112,7 +112,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
                 }
               }}
               autoFocus
-              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+              className="w-full rounded-md border border-border-soft bg-background px-2.5 py-1.5 text-body text-foreground outline-none focus:border-primary"
             />
             <SaveCancel
               isBusy={busy === 'title'}
@@ -124,7 +124,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           <button
             type="button"
             onClick={() => setEditing('title')}
-            className="w-full cursor-text rounded-md border border-transparent px-3 py-2 text-left text-sm text-foreground transition-colors hover:border-border-soft hover:bg-hover"
+            className="w-full cursor-text rounded-md border border-transparent px-3 py-2 text-left text-body text-foreground transition-colors hover:border-border-soft hover:bg-hover"
           >
             {pr.title}
           </button>
@@ -136,7 +136,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
           label="Description"
           action={
             editing === 'body' ? (
-              <span className="inline-flex items-center gap-1 text-3xs text-faint-foreground">
+              <span className="inline-flex items-center gap-1 text-meta text-faint-foreground">
                 <ImagePlus size={11} aria-hidden />
                 paste an image url to embed it
               </span>
@@ -144,7 +144,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               <button
                 type="button"
                 onClick={() => setEditing('body')}
-                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-meta font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
               >
                 <Pencil size={11} aria-hidden />
                 Edit
@@ -160,7 +160,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               onChange={(e) => setBodyDraft(e.target.value)}
               onPaste={onPasteBody}
               placeholder="describe what changed and why (markdown + images supported)"
-              className="text-sm"
+              className="text-body"
               autoGrow
               maxRows={24}
               autoFocus
@@ -178,19 +178,19 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
             onClick={onDescClick}
             className="cursor-text rounded-md border border-transparent px-3 py-2 transition-colors hover:border-border-soft hover:bg-hover"
           >
-            <Markdown text={pr.body} className="text-sm leading-relaxed" />
+            <Markdown text={pr.body} className="text-prose" />
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setEditing('body')}
-            className="rounded-md border border-dashed border-border-soft px-3 py-4 text-left text-sm text-faint-foreground transition-colors hover:border-border hover:text-muted-foreground"
+            className="rounded-md border border-dashed border-border-soft px-3 py-4 text-left text-body text-faint-foreground transition-colors hover:border-border hover:text-muted-foreground"
           >
             No description yet. Click to add one.
           </button>
         )}
 
-        {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+        {error != null ? <p className="text-label text-danger">{error}</p> : null}
       </div>
     </div>
   );

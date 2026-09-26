@@ -16,7 +16,7 @@ export const TimelineRowWorktrees = ({ names }: Props) => {
       data-testid="timeline-row-worktrees"
       title={title}
       aria-label={title}
-      className="inline-flex shrink-0 items-center gap-0.5 text-2xs leading-4 tabular-nums text-muted-foreground"
+      className="inline-flex shrink-0 items-center gap-0.5 text-secondary tabular-nums text-muted-foreground"
     >
       <CONCEPT_ICONS.worktree size={10} aria-hidden className="shrink-0 text-faint-foreground" />
       {names.length}

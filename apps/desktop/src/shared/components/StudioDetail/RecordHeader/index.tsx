@@ -55,7 +55,7 @@ export const RecordHeader = ({
     <div data-slot="record-header" className="flex min-w-0 flex-col gap-2">
       <div className="flex h-7 min-w-0 items-center gap-2">
         <IntegrationGlyph provider={provider} size="xs" useBrandColor />
-        <span className="shrink-0 font-mono text-2xs tabular-nums text-muted-foreground">
+        <span className="shrink-0 font-mono text-secondary tabular-nums text-muted-foreground">
           {identifier}
         </span>
         {state}

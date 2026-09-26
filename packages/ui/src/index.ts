@@ -1,4 +1,7 @@
 export { cn } from './cn';
+export { TYPE_ROLES } from './typeRoles';
+export { SHEET_CLASSES } from './sheet';
+export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
@@ -171,12 +174,36 @@ export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
-export { SectionSurface } from './components/SectionSurface';
-export type { SectionSurfaceProps } from './components/SectionSurface';
+export {
+  Band,
+  BandRow,
+  BandStack,
+  BAND_ROW_CLASS,
+  STRIPED_BLOCK_LIST,
+  STRIPED_LIST,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+  STRIPED_TABLE,
+} from './components/Band';
+export type { BandProps } from './components/Band';
+export { Listbox, LISTBOX_SEARCH_THRESHOLD } from './components/Listbox';
+export type {
+  ListboxCreate,
+  ListboxOption,
+  ListboxProps,
+  ListboxSize,
+  ListboxTriggerVariant,
+  ListboxValue,
+} from './components/Listbox';
+export { ListboxList, listboxOptionId } from './components/Listbox/ListboxList';
+export type { ListboxListProps } from './components/Listbox/ListboxList';
+export { ListboxOptionRow } from './components/Listbox/ListboxOptionRow';
+export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRow';
+export { filterOptions } from './components/Listbox/filterOptions';
+export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
+export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
-export { Select } from './components/Select';
-export type { SelectProps, SelectSize } from './components/Select';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';

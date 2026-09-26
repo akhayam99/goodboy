@@ -26,7 +26,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
       data-testid="handoff-thread"
     >
       <div className="flex min-w-0 items-center gap-2">
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
+        <span className="min-w-0 flex-1 truncate text-code text-foreground">
           {entry.location ?? 'PR conversation'}
         </span>
         {reviewSessionId !== null && threadId !== null ? (
@@ -43,7 +43,7 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
-            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-secondary font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
           >
             {open ? 'Hide thread' : 'View thread'}
             <TranscriptChevron open={open} />
@@ -57,12 +57,12 @@ export const HandoffThreadRow = ({ entry, sessionId }: Props) => {
         ) : null}
       </div>
       {entry.author === null ? null : (
-        <span className="text-2xs text-muted-foreground">{entry.author}</span>
+        <span className="text-secondary text-muted-foreground">{entry.author}</span>
       )}
       {open && docked !== null ? (
         <ConversationThread thread={docked} onOpenUrl={(url) => void openUrl(url)} />
       ) : entry.label === '' ? null : (
-        <span className="text-xs text-foreground">{entry.label}</span>
+        <span className="text-label text-foreground">{entry.label}</span>
       )}
     </div>
   );

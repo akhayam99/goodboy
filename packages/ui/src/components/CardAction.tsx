@@ -51,7 +51,7 @@ export const CardAction = ({
         }}
         className={cn(
           'inline-flex size-full shrink-0 items-center justify-center rounded-md font-medium text-muted-foreground transition-[background-color,color,opacity] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          size === 'compact' ? 'text-3xs' : 'text-xs',
+          size === 'compact' ? 'text-meta' : 'text-label',
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
           reveal ? cn('opacity-0', revealGroup) : disabled && 'opacity-40',

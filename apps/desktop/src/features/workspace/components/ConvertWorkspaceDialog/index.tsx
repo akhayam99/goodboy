@@ -1,6 +1,6 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, formatError, Input, SegmentedTabs, Select, StatusDot } from '@goodboy/ui';
+import { Button, Dialog, formatError, Input, Listbox, SegmentedTabs, StatusDot } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import {
   createGithubRepo,
@@ -259,7 +259,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           <Button onClick={onClose}>Done</Button>
         ) : (
           <>
-            {error != null && <span className="mr-auto text-xs text-danger">{error}</span>}
+            {error != null && <span className="mr-auto text-label text-danger">{error}</span>}
             <Button variant="ghost" onClick={onClose} disabled={isBusy}>
               Cancel
             </Button>
@@ -277,7 +277,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
     >
       {isConverted ? (
         <div className="flex flex-col gap-3">
-          <span className="flex items-center gap-1.5 text-xs text-success">
+          <span className="flex items-center gap-1.5 text-label text-success">
             <Check size={ICON_SIZE.row} aria-hidden />
             {project?.name ?? workspace.name} is backed by git
           </span>
@@ -324,13 +324,13 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           )}
 
           {isConnected ? (
-            <span className="flex items-center gap-1.5 text-xs text-success">
+            <span className="flex items-center gap-1.5 text-label text-success">
               <Check size={11} aria-hidden />
               {HOST_NAME[host]} is connected
             </span>
           ) : (
             <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2">
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-label text-muted-foreground">
                 <StatusDot tone="warning" size="sm" />
                 {reposState.kind === 'unauthenticated'
                   ? 'the GitHub CLI is installed but not signed in'
@@ -345,7 +345,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           {isCreating && isConnected && (
             <>
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-foreground">repository name</span>
+                <span className="text-label font-semibold text-foreground">repository name</span>
                 <Input
                   value={repoName}
                   placeholder={lastPathSegment({ path: project?.rootPath ?? '' })}
@@ -355,14 +355,14 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                   aria-invalid={nameCheck.kind === 'invalid'}
                 />
                 {nameCheck.kind === 'invalid' && repoName.trim() !== '' && (
-                  <span role="alert" className="text-xs text-danger">
+                  <span role="alert" className="text-label text-danger">
                     {nameCheck.reason}
                   </span>
                 )}
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-foreground">visibility</span>
+                <span className="text-label font-semibold text-foreground">visibility</span>
                 <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
                   {VISIBILITY_OPTIONS.map((option) => (
                     <Button
@@ -378,7 +378,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                   ))}
                 </div>
                 {visibility === null && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-label text-muted-foreground">
                     Pick who can see the repository. Goodboy does not choose for you.
                   </span>
                 )}
@@ -395,30 +395,33 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
 
           {!isCreating && host === 'github' && isConnected && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-foreground">repository</span>
-              <Select
-                block
+              <span className="text-label font-semibold text-foreground">repository</span>
+              <Listbox
+                isBlock
                 value={selectedRepo}
-                onChange={(event) => setSelectedRepo(event.target.value)}
+                options={[
+                  {
+                    value: MANUAL_REPO,
+                    label: areReposLoading
+                      ? 'loading your repositories…'
+                      : 'paste a remote url instead',
+                  },
+                  ...repos.map((repo) => ({
+                    value: repo.nameWithOwner,
+                    label: repo.nameWithOwner,
+                  })),
+                ]}
+                onChange={setSelectedRepo}
                 disabled={isBusy || areReposLoading}
-                aria-label="Repository"
-              >
-                <option value={MANUAL_REPO}>
-                  {areReposLoading ? 'loading your repositories…' : 'paste a remote url instead'}
-                </option>
-                {repos.map((repo) => (
-                  <option key={repo.nameWithOwner} value={repo.nameWithOwner}>
-                    {repo.nameWithOwner}
-                  </option>
-                ))}
-              </Select>
+                ariaLabel="Repository"
+              />
               {reposState.kind === 'ok' && repos.length === 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-label text-muted-foreground">
                   this account owns no repositories yet
                 </span>
               )}
               {reposState.kind === 'failed' && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-label text-muted-foreground">
                   gh could not list your repositories: {reposState.message}
                 </span>
               )}
@@ -427,7 +430,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
 
           {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-foreground">remote url</span>
+              <span className="text-label font-semibold text-foreground">remote url</span>
               <Input
                 value={manualUrl}
                 placeholder={HOST_URL_PLACEHOLDER[host]}
@@ -441,7 +444,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-foreground">what happens</span>
+            <span className="text-label font-semibold text-foreground">what happens</span>
             <ul className="flex flex-col gap-1 text-xs leading-relaxed text-muted-foreground">
               <li className="flex items-center gap-1.5">
                 <GitBranch size={11} aria-hidden className="shrink-0" />

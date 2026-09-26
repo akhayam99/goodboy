@@ -47,10 +47,8 @@ export const AgentStoppedNotice = ({
       <span aria-hidden className={cn('absolute inset-y-0 left-0 w-0.5', tint.dot)} />
       <Icon size={ICON_SIZE.control} aria-hidden className={cn('mt-px shrink-0', tint.icon)} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-xs font-semibold leading-4 text-foreground">{copy.title}</p>
-        {copy.body == null ? null : (
-          <p className="text-xs leading-4 text-muted-foreground">{copy.body}</p>
-        )}
+        <p className="text-label font-semibold text-foreground">{copy.title}</p>
+        {copy.body == null ? null : <p className="text-label text-muted-foreground">{copy.body}</p>}
       </div>
       {copy.canContinue ? (
         <Button

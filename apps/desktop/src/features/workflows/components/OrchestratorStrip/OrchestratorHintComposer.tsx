@@ -67,7 +67,7 @@ export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }
           placeholder="Tell the orchestrator something"
           aria-label="Hint for the orchestrator"
           data-testid="orchestrator-hint-input"
-          className="h-7 min-w-0 flex-1 text-2xs"
+          className="h-7 min-w-0 flex-1 text-secondary"
         />
         <Button
           type="submit"
@@ -88,7 +88,7 @@ export const OrchestratorHintComposer = ({ isDeciding, isStepRunning, onSubmit }
           Read now
         </Button>
       </div>
-      <span data-testid="orchestrator-hint-timing" className="text-2xs text-muted-foreground">
+      <span data-testid="orchestrator-hint-timing" className="text-secondary text-muted-foreground">
         Queue waits for the next decision. {readNowCopy({ isDeciding, isStepRunning })}
       </span>
     </form>

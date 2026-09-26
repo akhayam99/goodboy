@@ -54,7 +54,7 @@ export const ChecksBlock = ({ checks, canRunCheck, isRunning, note, onRunCheck }
       {runCount === 0 ? (
         <p
           className={cn(
-            'w-fit rounded-md text-sm text-foreground',
+            'w-fit rounded-md text-body text-foreground',
             isRunning && 'spin-border spin-border-info px-2 py-1',
           )}
         >
@@ -78,11 +78,11 @@ export const ChecksBlock = ({ checks, canRunCheck, isRunning, note, onRunCheck }
                     tone={receiptTone({ receipt })}
                     label={receiptWord({ receipt })}
                   />
-                  <span className="min-w-0 truncate font-mono text-3xs text-foreground">
+                  <span className="min-w-0 truncate font-mono text-meta text-foreground">
                     {receipt.run.command}
                   </span>
                 </span>
-                <span className="flex min-w-0 items-center gap-2 text-3xs text-muted-foreground">
+                <span className="flex min-w-0 items-center gap-2 text-meta text-muted-foreground">
                   <span className="min-w-0 truncate">
                     {receiptLine({
                       tree: receipt.tree,
@@ -97,7 +97,7 @@ export const ChecksBlock = ({ checks, canRunCheck, isRunning, note, onRunCheck }
           </ul>
         </Collapsible>
       )}
-      {note !== null && <p className="text-2xs text-warning">{note}</p>}
+      {note !== null && <p className="text-secondary text-warning">{note}</p>}
     </div>
   );
 };

@@ -397,10 +397,10 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expandStep(0);
 
     fireEvent.click(withinSteps().getAllByRole('button', { name: /^verbosity:normal$/i })[0]!);
-    fireEvent.click(withinSteps().getAllByRole('button', { name: /^scout$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('combobox', { name: 'Agent role' })[0]!);
     fireEvent.click(
-      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('button', {
-        name: /reviewer/i,
+      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('option', {
+        name: /^reviewer/i,
       }),
     );
 

@@ -10,7 +10,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const infoTint = tintClasses('info');
 
-const LABEL_CLASS = 'text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground';
+const LABEL_CLASS = 'text-secondary font-medium uppercase tracking-eyebrow text-muted-foreground';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'orchestrator_decision' }>;
@@ -25,7 +25,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
     <TranscriptDisclosure
       tone="neutral"
       open={open}
-      bodyClassName="gap-2 text-xs text-foreground"
+      bodyClassName="gap-2 text-label text-foreground"
       header={
         <TranscriptRowHeader
           grouped
@@ -37,7 +37,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
               <span
                 data-testid="orchestrator-decision-note-badge"
                 className={cn(
-                  'shrink-0 rounded-md px-1 py-px text-2xs font-medium',
+                  'shrink-0 rounded-md px-1 py-px text-secondary font-medium',
                   infoTint.bg,
                   infoTint.text,
                 )}
@@ -60,7 +60,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
             <TranscriptShell
               tone="info"
               variant="boxed"
-              className="min-w-0 text-xs text-foreground"
+              className="min-w-0 text-label text-foreground"
             >
               <Markdown text={note} />
             </TranscriptShell>

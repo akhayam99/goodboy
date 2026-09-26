@@ -214,7 +214,7 @@ export const ProjectMountRow = ({
         ) : (
           <div className={CELL}>
             <Tooltip content={`Part ${row.series.label} of ${row.series.name}`}>
-              <span className="truncate text-3xs tabular-nums text-faint-foreground">
+              <span className="truncate text-meta text-faint-foreground">
                 {`Part ${row.series.label}`}
               </span>
             </Tooltip>
@@ -288,7 +288,7 @@ export const ProjectMountRow = ({
               aria-label={`Reopen ${label}`}
               onClick={() => void mount()}
               className={cn(
-                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground',
+                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground',
                 'disabled:cursor-not-allowed disabled:opacity-50',
               )}
             >

@@ -9,7 +9,7 @@ type Props = {
 };
 
 const ROW_FRAME =
-  'flex w-full min-w-0 items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-left text-sm font-medium';
+  'flex w-full min-w-0 items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-left text-row';
 
 const LABEL: Readonly<Record<DelegateRowState, string>> = {
   available: QUESTION_DELEGATE_COPY.offer,

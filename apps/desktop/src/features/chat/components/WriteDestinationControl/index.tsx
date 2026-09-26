@@ -1,12 +1,20 @@
-import { useState } from 'react';
-import { AnchoredPopover, Button, Chip, SelectableRow, useDropdown } from '@goodboy/ui';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  AnchoredPopover,
+  Button,
+  Chip,
+  ListboxList,
+  filterOptions,
+  listboxOptionId,
+  useDropdown,
+  useListboxKeyboard,
+} from '@goodboy/ui';
 import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import {
   mountDisplayName,
   writeDestinationDetail,
   writeDestinationLabel,
-  type WriteDestinationCandidate,
 } from '../../../../store/slices/project-mounts/writeDestination';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useWriteDestination } from './useWriteDestination';
@@ -30,6 +38,47 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 320 });
   const [pendingMountId, setPendingMountId] = useState<MountId | null>(null);
   const [isApplying, setIsApplying] = useState(false);
+  const listId = useId();
+  const listRef = useRef<HTMLDivElement>(null);
+  const entries = useMemo(
+    () =>
+      filterOptions({
+        options: candidates.map((candidate) => ({
+          value: candidate.mountId,
+          label: mountDisplayName({
+            projectName: candidate.projectName,
+            mountName: candidate.mountName,
+          }),
+          description: `${candidate.hasGit ? candidate.branch : 'no git'} · ${candidate.worktreePath}`,
+        })),
+        query: '',
+      }),
+    [candidates],
+  );
+  const keyboard = useListboxKeyboard({
+    items: entries.map(({ option }) => ({ label: option.label, isDisabled: false })),
+    isOpen: dropdown.open,
+    isTypeaheadEnabled: true,
+    onOpen: () => undefined,
+    onClose: dropdown.close,
+    onCommit: (index) => {
+      const entry = entries[index];
+      if (entry !== undefined) {
+        setPendingMountId(entry.option.value);
+      }
+    },
+    onTab: () => undefined,
+  });
+  const { activeIndex, setActiveIndex } = keyboard;
+
+  useEffect(() => {
+    if (!dropdown.open) {
+      return;
+    }
+    const current = entries.findIndex(({ option }) => option.value === pendingMountId);
+    setActiveIndex(current === -1 ? 0 : current);
+    listRef.current?.focus();
+  }, [dropdown.open]);
 
   const nextLabel = writeDestinationLabel(next);
   const runningLabel = running === null ? null : writeDestinationLabel(running);
@@ -117,40 +166,41 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
-          <span className="text-sm font-semibold text-foreground">New turns start in</span>
+          <span className="text-heading text-foreground">New turns start in</span>
 
           {running !== null && diverges ? (
-            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-2xs">
+            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-secondary">
               <span className="text-muted-foreground">This turn runs in {runningLabel}</span>
               <span className="text-muted-foreground">New turns start in {nextLabel}</span>
             </div>
           ) : null}
 
-          <ul className="flex flex-col gap-0.5" role="listbox" aria-label="Places a turn can start">
-            {candidates.map((candidate: WriteDestinationCandidate) => (
-              <li key={candidate.mountId}>
-                <SelectableRow
-                  role="option"
-                  ariaSelected={pendingMountId === candidate.mountId}
-                  selected={pendingMountId === candidate.mountId}
-                  onClick={() => setPendingMountId(candidate.mountId)}
-                  className="flex-col items-start gap-0 px-2 py-1.5"
-                >
-                  <span className="truncate text-xs">
-                    {mountDisplayName({
-                      projectName: candidate.projectName,
-                      mountName: candidate.mountName,
-                    })}
-                  </span>
-                  <span className="truncate text-3xs text-muted-foreground">
-                    {candidate.hasGit ? candidate.branch : 'no git'} · {candidate.worktreePath}
-                  </span>
-                </SelectableRow>
-              </li>
-            ))}
-          </ul>
+          <div
+            ref={listRef}
+            tabIndex={0}
+            aria-activedescendant={
+              activeIndex >= 0 ? listboxOptionId({ id: listId, index: activeIndex }) : undefined
+            }
+            onKeyDown={keyboard.onKeyDown}
+            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <ListboxList
+              id={listId}
+              ariaLabel="Places a turn can start"
+              entries={entries}
+              activeIndex={activeIndex}
+              selectedValues={pendingMountId === null ? [] : [pendingMountId]}
+              onSelect={(index) => {
+                const entry = entries[index];
+                if (entry !== undefined) {
+                  setPendingMountId(entry.option.value);
+                }
+              }}
+              onActivate={setActiveIndex}
+            />
+          </div>
 
-          <span className="text-2xs text-muted-foreground">
+          <span className="text-secondary text-muted-foreground">
             Every agent can write in all of them. This picks where a new turn opens its terminal,
             runs git and shows its pull request.
           </span>

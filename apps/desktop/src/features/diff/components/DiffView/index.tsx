@@ -287,7 +287,7 @@ export const DiffView = ({
       {mountedCount < files.length ? (
         <div className="flex flex-col gap-2" aria-label="Loading more files">
           <Skeleton className="h-9 w-full rounded-md" />
-          <span className="text-center text-2xs tabular-nums text-muted-foreground">
+          <span className="text-center text-secondary tabular-nums text-muted-foreground">
             {mountedCount} of {files.length} files
           </span>
         </div>

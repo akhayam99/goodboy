@@ -24,10 +24,10 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
           disabled={disabled}
           onChange={onToggle}
           className="min-w-0 flex-1"
-          label={<span className="truncate text-xs text-foreground">{workflow.name}</span>}
+          label={<span className="truncate text-label text-foreground">{workflow.name}</span>}
         />
         {isNameTaken ? (
-          <span className="shrink-0 text-2xs text-faint-foreground">Same name here</span>
+          <span className="shrink-0 text-secondary text-faint-foreground">Same name here</span>
         ) : null}
       </div>
       <div className="flex min-w-0 items-center gap-2 pl-5.5" aria-hidden>
@@ -41,7 +41,7 @@ export const ImportRow = ({ workflow, isSelected, isNameTaken, disabled, onToggl
             />
           ))}
         </span>
-        <span className="text-2xs tabular-nums text-faint-foreground">
+        <span className="text-secondary tabular-nums text-faint-foreground">
           {`${count} ${count === 1 ? 'step' : 'steps'}`}
         </span>
       </div>

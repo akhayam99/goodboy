@@ -422,7 +422,7 @@ describe('IntegrationPane', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Link an issue' }), {
       target: { value: 'https://linear.app/goodboy/issue/GB-99/new-link' },
     });
-    fireEvent.mouseDown(screen.getByRole('option', { name: 'Link GB-99' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Link GB-99' }));
 
     await waitFor(() => expect(h.store.linkSessionExternalTask).toHaveBeenCalledOnce());
     expect(h.store.linkSessionExternalTask).toHaveBeenCalledWith(SESSION_ID, {
@@ -499,7 +499,7 @@ describe('IntegrationPane', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Link issue' }));
     fireEvent.focus(screen.getByRole('combobox', { name: 'Link an issue' }));
-    fireEvent.mouseDown(screen.getByText('Ship the issue picker'));
+    fireEvent.click(screen.getByText('Ship the issue picker'));
 
     await waitFor(() => expect(h.store.linkSessionExternalTask).toHaveBeenCalledOnce());
     expect(h.store.linkSessionExternalTask).toHaveBeenCalledWith(

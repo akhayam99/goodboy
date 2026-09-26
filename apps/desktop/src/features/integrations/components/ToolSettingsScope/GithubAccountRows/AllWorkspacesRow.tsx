@@ -39,10 +39,10 @@ export const AllWorkspacesRow = ({ status }: Props) => {
       <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border-soft bg-subtle px-3 py-2.5">
         <IntegrationGlyph provider="github" size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-xs font-medium text-foreground">
+          <span className="truncate text-label font-medium text-foreground">
             {`Connected as ${status.user ?? 'an unknown user'} through the gh CLI`}
           </span>
-          <span className="truncate text-2xs text-muted-foreground">
+          <span className="truncate text-secondary text-muted-foreground">
             Run gh auth logout to sign out
           </span>
         </div>
@@ -52,7 +52,7 @@ export const AllWorkspacesRow = ({ status }: Props) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs text-muted-foreground">
+      <p className="text-label text-muted-foreground">
         Paste a personal API key, or run <code>gh auth login</code> in a terminal and check the
         connection again.
       </p>

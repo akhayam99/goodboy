@@ -70,7 +70,7 @@ export const WireframeShellActions = ({
           role={message.isError ? 'alert' : 'status'}
           title={message.text}
           className={cn(
-            'min-w-0 max-w-48 truncate text-2xs',
+            'min-w-0 max-w-48 truncate text-secondary',
             message.isError ? 'text-danger' : 'text-muted-foreground',
           )}
         >

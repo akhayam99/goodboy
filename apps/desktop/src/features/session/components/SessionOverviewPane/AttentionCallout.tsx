@@ -62,7 +62,7 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
       )}
     >
       <Icon size={ICON_SIZE.control} aria-hidden className={cn('shrink-0', tint.icon)} />
-      <p className="min-w-0 flex-1 text-xs text-foreground">
+      <p className="min-w-0 flex-1 text-label text-foreground">
         <span className="font-medium">Needs you</span>
         <span className="text-muted-foreground">{`: ${presentation.reason}`}</span>
       </p>

@@ -22,9 +22,7 @@ describe('HeaderBand', () => {
     const subtitle = screen.getByText('api/items');
     const action = screen.getByRole('link', { name: 'Open' });
 
-    expect(title.className).toContain('text-xl');
-    expect(title.className).toContain('font-semibold');
-    expect(title.className).toContain('leading-snug');
+    expect(title.className).toContain('text-title');
     expect(title.parentElement?.contains(action)).toBe(true);
     expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(meta.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -29,7 +29,7 @@ type Props = {
 };
 
 const TOOL_CLASS =
-  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
 const SESSION_PLACEHOLDER =
   'what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…';
@@ -72,7 +72,7 @@ export const GoalField = ({
       minRows={2}
       maxRows={6}
       disabled={disabled || isPolishing}
-      className="resize-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+      className="resize-none border-0 bg-transparent px-0 py-0 text-body shadow-none focus-visible:ring-0 focus-visible:shadow-none"
     />
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
       <div className="flex min-w-0 flex-wrap items-center gap-1.5">

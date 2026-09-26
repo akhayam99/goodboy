@@ -9,9 +9,9 @@ import {
   Input,
   PANE_RHYTHM,
   ScrollFade,
-  SectionSurface,
+  Band,
   SegmentedTabs,
-  Select,
+  Listbox,
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
@@ -313,28 +313,17 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 </FieldRow>
                 <FieldRow label="Area">
                   <div className="flex flex-col gap-2">
-                    <Select
-                      aria-label="Area"
+                    <Listbox
+                      ariaLabel="Area"
                       size="sm"
-                      value={area}
-                      onChange={(e) => {
-                        const nextArea = AREA_OPTIONS.find(
-                          (option) => option.value === e.target.value,
-                        )?.value;
-                        setSelectedArea(nextArea ?? '');
+                      placeholder="Choose an area"
+                      value={area === '' ? null : area}
+                      options={AREA_OPTIONS}
+                      onChange={(nextArea) => {
+                        setSelectedArea(nextArea);
                         setIsAreaTouched(true);
                       }}
-                      required
-                    >
-                      <option value="" disabled hidden>
-                        Choose an area
-                      </option>
-                      {AREA_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Select>
+                    />
                     {isAreaGuessed ? (
                       <p className="text-2xs leading-relaxed text-info">
                         Guessed from your words. Change it if it's off.
@@ -346,14 +335,15 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
 
               <Divider />
 
-              <SectionSurface
+              <Band
+                inset="content"
                 label="Preview"
                 ariaLabel="Preview"
                 hint={previewHint({ mode })}
                 headingSize="page"
               >
                 <div className="flex flex-col gap-3">
-                  <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
+                  <div className="flex max-w-prose flex-col gap-2 text-prose text-foreground">
                     <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
                     <p className="whitespace-pre-wrap text-foreground">{previewBody}</p>
                   </div>
@@ -361,20 +351,20 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                     <p className="text-2xs leading-relaxed text-warning">{previewTruncation}</p>
                   ) : null}
                 </div>
-              </SectionSurface>
+              </Band>
 
               <footer className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   {errorMessage != null ? (
                     <span
                       role="alert"
-                      className="inline-flex items-center gap-1 text-xs text-danger"
+                      className="inline-flex items-center gap-1 text-label text-danger"
                     >
                       <AlertTriangle size={ICON_SIZE.row} aria-hidden />
                       {errorMessage}
                     </span>
                   ) : version != null ? (
-                    <span className="text-2xs text-muted-foreground">
+                    <span className="text-secondary text-muted-foreground">
                       v{version} · Posts publicly on GitHub, under your account
                     </span>
                   ) : (

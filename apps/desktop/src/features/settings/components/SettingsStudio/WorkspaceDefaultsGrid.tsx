@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Input, Switch } from '@goodboy/ui';
+import { Eyebrow, Input, Switch } from '@goodboy/ui';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
@@ -8,7 +8,6 @@ import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overri
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { WorkspaceDefaultRow } from './WorkspaceDefaultRow';
-import { WorkspaceEyebrow } from './WorkspaceEyebrow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -80,7 +79,9 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
 
   return (
     <section aria-labelledby="workspace-new-sessions" className="flex flex-col gap-2">
-      <WorkspaceEyebrow id="workspace-new-sessions" label="New sessions" />
+      <h2 id="workspace-new-sessions">
+        <Eyebrow label="New sessions" />
+      </h2>
       <div className="grid grid-cols-1 gap-x-8 gap-y-1 @xl:grid-cols-2">
         <WorkspaceDefaultRow label="Branch prefix" help="Prefixes every new session branch.">
           <span className="flex items-center gap-1">
@@ -101,7 +102,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
               aria-label="Branch prefix"
               className="w-auto font-mono"
             />
-            <span className="font-mono text-xs text-faint-foreground">/&lt;slug&gt;</span>
+            <span className="text-code text-faint-foreground">/&lt;slug&gt;</span>
           </span>
         </WorkspaceDefaultRow>
 

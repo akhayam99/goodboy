@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
-import {
-  Button,
-  cn,
-  Divider,
-  EmptyState,
-  ScrollFade,
-  Skeleton,
-  Tooltip,
-  tintClasses,
-} from '@goodboy/ui';
+import { Button, cn, EmptyState, ScrollFade, Skeleton, Tooltip, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -263,6 +254,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         'mx-auto flex h-full w-full',
         PANE_RHYTHM.board.maxWidth,
         PANE_RHYTHM.stack,
+        'gap-6',
         PANE_RHYTHM.board.pad,
       )}
     >
@@ -270,9 +262,9 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
         <>
           <div className="flex shrink-0 items-center justify-between gap-4">
             <span className="flex min-w-0 items-baseline gap-2">
-              <h1 className="text-xl font-semibold leading-snug text-foreground">Board</h1>
+              <h1 className="text-title text-foreground">Board</h1>
               {activeSessions.length > 0 && (
-                <span className="text-xs tabular-nums text-muted-foreground">
+                <span className="text-label tabular-nums text-muted-foreground">
                   {activeSessions.length} {activeSessions.length === 1 ? 'session' : 'sessions'}
                 </span>
               )}
@@ -289,7 +281,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
               )}
             </span>
           </div>
-          <Divider />
         </>
       ) : null}
 

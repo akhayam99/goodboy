@@ -94,7 +94,7 @@ export const AgentHeaderActions = ({
           confirmLabel="Delete"
           note={
             deleteError !== null ? (
-              <p role="alert" className="text-2xs text-danger">
+              <p role="alert" className="text-secondary text-danger">
                 {deleteError}
               </p>
             ) : null

@@ -152,7 +152,7 @@ export const InboxList = ({
             <li key={day.day} role="presentation" className="flex flex-col gap-0.5">
               <div role="presentation" className="flex items-baseline gap-1.5 px-2.5 pb-1">
                 <Eyebrow label={day.label} />
-                <span className="text-2xs tabular-nums text-faint-foreground">
+                <span className="text-secondary tabular-nums text-faint-foreground">
                   {day.items.length}
                 </span>
               </div>

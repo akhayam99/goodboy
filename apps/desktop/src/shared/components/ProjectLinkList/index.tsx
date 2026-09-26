@@ -47,7 +47,7 @@ export const ProjectLinkList = ({
         </div>
       )}
       {linking.linked.length === 0 && emptyHint !== undefined && (
-        <p className="text-sm text-muted-foreground">{emptyHint}</p>
+        <p className="text-body text-muted-foreground">{emptyHint}</p>
       )}
       {linking.linked.length > 0 && (
         <ul className={isCompact ? 'flex flex-col' : 'flex flex-col gap-2'}>
@@ -100,14 +100,14 @@ export const ProjectLinkList = ({
           type="button"
           onClick={() => void linking.linkPlainFolder()}
           disabled={linking.busy}
-          className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
           Link a plain folder (no git)
         </button>
       )}
 
       {linking.error !== null && (
-        <p role="alert" className="text-xs text-danger">
+        <p role="alert" className="text-label text-danger">
           {linking.error}
         </p>
       )}

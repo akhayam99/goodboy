@@ -27,6 +27,7 @@ type Rule = {
   readonly id: string;
   readonly kinds: ReadonlyArray<SourceKind>;
   readonly count: (file: SourceFile) => number;
+  readonly hint?: string;
 };
 
 type Counts = Readonly<Record<string, Readonly<Record<string, number>>>>;
@@ -121,6 +122,23 @@ const hasCodeComment = (line: string): boolean => {
   return /(^|[^:])\/\/|\/\*/.test(code);
 };
 
+const RAW_TYPE_SIZE = /(?<![\w-])(?:[\w-]+:)*text-(?:3xs|2xs|xs|sm|base|lg|xl|[2-9]xl)(?![\w-])/;
+const RAW_FONT_WEIGHT = /(?<![\w-])(?:[\w-]+:)*font-(?:medium|semibold)(?![\w-])/;
+const RAW_LEADING = /(?<![\w-])(?:[\w-]+:)*leading-(?:\d|\[|[a-z])/;
+const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
+const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?![\w-])/;
+const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
+const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
+const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade.tsx';
+
+type ClassLineParams = {
+  readonly file: SourceFile;
+  readonly pattern: RegExp;
+};
+
+const countClassLines = ({ file, pattern }: ClassLineParams): number =>
+  countLines({ file, matches: (line) => pattern.test(line) });
+
 const TOP_LEVEL_COMPONENT =
   /^(?:export )?(?:const [A-Z][a-z][A-Za-z0-9]* = (?:memo\()?\(|function [A-Z])/;
 
@@ -206,7 +224,52 @@ const RULES: ReadonlyArray<Rule> = [
           })
         : 0,
   },
+  {
+    id: 'raw-type-size',
+    kinds: ['ts'],
+    count: (file) => countClassLines({ file, pattern: RAW_TYPE_SIZE }),
+    hint: 'use a type role: text-row, not text-sm font-medium; text-label, not text-xs; text-secondary, not text-2xs; text-meta, not text-3xs',
+  },
+  {
+    id: 'raw-font-weight',
+    kinds: ['ts'],
+    count: (file) => countClassLines({ file, pattern: RAW_FONT_WEIGHT }),
+    hint: 'the weight comes with the role: text-row, text-heading, text-title, text-eyebrow',
+  },
+  {
+    id: 'raw-leading',
+    kinds: ['ts'],
+    count: (file) => countClassLines({ file, pattern: RAW_LEADING }),
+    hint: 'the line box comes with the role: text-prose, not text-sm leading-relaxed',
+  },
+  {
+    id: 'raw-tracking',
+    kinds: ['ts'],
+    count: (file) => countClassLines({ file, pattern: RAW_TRACKING }),
+    hint: 'tracking lives inside the roles: text-display, text-title, text-eyebrow',
+  },
+  {
+    id: 'raw-scroller',
+    kinds: ['ts'],
+    count: (file) =>
+      file.path === SCROLL_OWNER ? 0 : countClassLines({ file, pattern: RAW_SCROLLER }),
+    hint: 'a region that scrolls is a ScrollFade',
+  },
+  {
+    id: 'tone-border-rail',
+    kinds: ['ts'],
+    count: (file) =>
+      countLines({
+        file,
+        matches: (line) => TONE_BORDER_RAIL.test(line) && ROUNDED.test(line),
+      }),
+    hint: 'a tone on a rounded box is a bar inside it, not a side border',
+  },
 ];
+
+const HINTS: Readonly<Record<string, string>> = Object.fromEntries(
+  RULES.flatMap((rule) => (rule.hint === undefined ? [] : [[rule.id, rule.hint]])),
+);
 
 const measure = (): Counts => {
   const sources = collectSources();
@@ -259,7 +322,10 @@ describe('forbidden code patterns only ever shrink', () => {
     const grown = Object.entries(current).flatMap(([rule, files]) =>
       Object.entries(files).flatMap(([path, count]) => {
         const allowed = baseline[rule]?.[path] ?? 0;
-        return count > allowed ? [`  - ${rule} ${path}: ${count} (baseline ${allowed})`] : [];
+        const hint = HINTS[rule] === undefined ? '' : `, ${HINTS[rule]}`;
+        return count > allowed
+          ? [`  - ${rule} ${path}: ${count} (baseline ${allowed})${hint}`]
+          : [];
       }),
     );
     if (grown.length > 0) {

@@ -38,7 +38,10 @@ export const ArtifactContextDisclosure = ({
     trigger={
       <span className="flex min-w-0 items-baseline gap-2">
         <Eyebrow label="Included context" />
-        <span className="text-2xs text-faint-foreground" data-testid="artifact-context-summary">
+        <span
+          className="text-secondary text-faint-foreground"
+          data-testid="artifact-context-summary"
+        >
           {triggerSummary({ rows, isCollecting })}
         </span>
       </span>
@@ -60,7 +63,7 @@ export const ArtifactContextDisclosure = ({
           ))}
         </div>
       )}
-      <span className="text-2xs text-faint-foreground">
+      <span className="text-secondary text-faint-foreground">
         collected when this pane opened. Generate collects again.
       </span>
     </div>

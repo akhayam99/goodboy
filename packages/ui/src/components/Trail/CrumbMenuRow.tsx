@@ -43,28 +43,28 @@ export const CrumbMenuRow = ({ row, metaWidthClass, onActivate }: Props) => {
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
         <span
           className={cn(
-            'shrink truncate text-xs',
+            'shrink truncate text-label',
             row.isDisabled ? 'text-disabled-foreground' : 'text-foreground',
-            row.isMiddleTruncated === true && 'font-mono text-2xs',
+            row.isMiddleTruncated === true && 'font-mono text-secondary',
           )}
         >
           {row.isMiddleTruncated === true ? middleTruncate(row.label) : row.label}
         </span>
         {row.secondary != null ? (
-          <span className="min-w-0 shrink-[2] truncate text-2xs text-faint-foreground">
+          <span className="min-w-0 shrink-[2] truncate text-secondary text-faint-foreground">
             {row.secondary}
           </span>
         ) : null}
       </span>
       <span
         className={cn(
-          'shrink-0 truncate text-right text-2xs tabular-nums text-muted-foreground',
+          'shrink-0 truncate text-right text-secondary tabular-nums text-muted-foreground',
           metaWidthClass,
         )}
       >
         {row.metaA}
       </span>
-      <span className="flex w-24 shrink-0 items-center justify-end gap-1.5 text-2xs">
+      <span className="flex w-24 shrink-0 items-center justify-end gap-1.5 text-secondary">
         {row.state == null ? null : (
           <>
             {StateGlyph != null ? (

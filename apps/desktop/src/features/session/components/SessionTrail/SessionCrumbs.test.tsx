@@ -697,10 +697,9 @@ describe('SessionCrumbs switcher popover', () => {
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
 
     expect(menu.style.maxHeight).not.toBe('');
-    const viewport = menu.querySelector('[data-crumb-list]');
-    expect(viewport?.className).toContain('overflow-y-auto');
-    expect(viewport?.className).toContain('flex-1');
-    expect(viewport?.className).not.toContain('max-h');
+    const list = menu.querySelector('[data-crumb-list]');
+    expect(list?.closest('.flex-1')).not.toBeNull();
+    expect(list?.className).not.toContain('max-h');
   });
 
   it('caps a downward menu at the room below the trigger', () => {

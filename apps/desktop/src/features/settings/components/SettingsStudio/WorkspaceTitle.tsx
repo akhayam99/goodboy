@@ -53,11 +53,7 @@ export const WorkspaceTitle = ({ workspaceId }: Props) => {
   };
 
   if (workspace == null) {
-    return (
-      <h1 className="min-w-0 truncate text-lg font-semibold leading-6 text-foreground">
-        Workspace
-      </h1>
-    );
+    return <h1 className="min-w-0 truncate text-title text-foreground">Workspace</h1>;
   }
 
   return (
@@ -82,13 +78,11 @@ export const WorkspaceTitle = ({ workspaceId }: Props) => {
               cancel();
             }
           }}
-          className="h-8 max-w-sm text-lg font-semibold"
+          className="h-8 max-w-sm text-title"
         />
       ) : (
         <div className="group flex min-h-8 min-w-0 items-center gap-2">
-          <h1 className="min-w-0 truncate text-lg font-semibold leading-6 text-foreground">
-            {draft}
-          </h1>
+          <h1 className="min-w-0 truncate text-title text-foreground">{draft}</h1>
           <Tooltip content="Rename" anchorClassName="flex shrink-0">
             <button
               type="button"
@@ -105,7 +99,7 @@ export const WorkspaceTitle = ({ workspaceId }: Props) => {
           </Tooltip>
         </div>
       )}
-      <p className="text-xs text-faint-foreground">{SUBTITLE}</p>
+      <p className="text-label text-faint-foreground">{SUBTITLE}</p>
     </div>
   );
 };

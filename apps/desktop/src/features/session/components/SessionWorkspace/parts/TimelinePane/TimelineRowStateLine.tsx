@@ -18,7 +18,7 @@ export const TimelineRowStateLine = ({ state, note = null }: Props) => {
       <span
         data-testid="timeline-row-state"
         className={cn(
-          'shrink-0 whitespace-nowrap text-2xs leading-4 text-faint-foreground',
+          'shrink-0 whitespace-nowrap text-secondary text-faint-foreground',
           WORK_ROW.state,
         )}
       >
@@ -36,7 +36,7 @@ export const TimelineRowStateLine = ({ state, note = null }: Props) => {
       data-testid="timeline-row-state"
       title={sentence}
       className={cn(
-        'shrink-0 whitespace-nowrap text-2xs leading-4',
+        'shrink-0 whitespace-nowrap text-secondary',
         WORK_ROW.state,
         tone === 'neutral' ? 'text-muted-foreground' : tintClasses(tone).text,
       )}

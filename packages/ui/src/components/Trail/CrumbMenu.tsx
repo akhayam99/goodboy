@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '../../cn';
+import { ScrollFade } from '../ScrollFade';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow as RowModel } from './crumbMenuTypes';
 import { CrumbMenuActions } from './CrumbMenuActions';
 import { CrumbMenuRow } from './CrumbMenuRow';
@@ -121,7 +122,7 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
       onKeyDown={onKeyDown}
       className="flex min-h-0 flex-1 flex-col gap-1 p-1 motion-safe:animate-crumb-menu-in"
     >
-      <div className="flex h-6.5 shrink-0 items-center justify-between gap-2 px-2 text-2xs text-faint-foreground">
+      <div className="flex h-6.5 shrink-0 items-center justify-between gap-2 px-2 text-secondary text-faint-foreground">
         <span className="min-w-0 truncate">
           <span className="text-muted-foreground">{model.title}</span>
           {model.context != null ? ` · ${model.context}` : null}
@@ -136,34 +137,36 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
           placeholder={model.filterPlaceholder ?? undefined}
           aria-label={model.filterPlaceholder ?? undefined}
           onChange={(event) => setQuery(event.target.value)}
-          className="h-7 shrink-0 rounded-md bg-fill px-2 text-xs text-foreground outline-none placeholder:text-faint-foreground focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="h-7 shrink-0 rounded-md bg-fill px-2 text-label text-foreground outline-none placeholder:text-faint-foreground focus-visible:ring-2 focus-visible:ring-focus-ring"
         />
       ) : null}
-      <div data-crumb-list="" className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-        {groups.map((group) => (
-          <div
-            key={group.id}
-            role="group"
-            aria-label={group.label ?? model.title}
-            className="flex flex-col"
-          >
-            {group.label != null ? (
-              <div className="flex h-6 items-center justify-between px-2 text-3xs font-medium uppercase tracking-eyebrow text-faint-foreground">
-                <span className="truncate">{group.label}</span>
-                <span className="tabular-nums">{group.rows.length}</span>
-              </div>
-            ) : null}
-            {group.rows.map((row) => (
-              <CrumbMenuRow
-                key={row.id}
-                row={row}
-                metaWidthClass={META_WIDTH[model.width]}
-                onActivate={activate}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
+      <ScrollFade className="min-h-0 flex-1" fadeFrom="floating">
+        <div data-crumb-list="" className="flex min-w-0 flex-col gap-1">
+          {groups.map((group) => (
+            <div
+              key={group.id}
+              role="group"
+              aria-label={group.label ?? model.title}
+              className="flex flex-col"
+            >
+              {group.label != null ? (
+                <div className="flex h-6 items-center justify-between px-2 text-eyebrow text-faint-foreground">
+                  <span className="truncate">{group.label}</span>
+                  <span className="tabular-nums">{group.rows.length}</span>
+                </div>
+              ) : null}
+              {group.rows.map((row) => (
+                <CrumbMenuRow
+                  key={row.id}
+                  row={row}
+                  metaWidthClass={META_WIDTH[model.width]}
+                  onActivate={activate}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </ScrollFade>
       {model.actions.length > 0 ? (
         <div className={cn('shrink-0')}>
           <CrumbMenuActions

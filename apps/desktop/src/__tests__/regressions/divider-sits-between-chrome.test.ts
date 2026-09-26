@@ -28,13 +28,13 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppFooter/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx': {
     count: 2,
     reason: 'chrome',
   },
   'apps/desktop/src/app/components/AppFooter/GoodboyChip/index.tsx': { count: 1, reason: 'chrome' },
-  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 2, reason: 'chrome' },
+  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
     { count: 1, reason: 'chrome' },
@@ -47,8 +47,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/budget/components/spend/ModelTable.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/budget/components/spend/TurnsTable.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatInput/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
@@ -159,10 +157,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/workspace/components/ProjectFilter/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
     reason: 'debt',
@@ -172,10 +166,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/workspace/components/StageBoard/index.tsx': {
     count: 1,
     reason: 'debt',
   },
@@ -192,14 +182,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioShell/DetachedStudio.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/shared/components/StudioShell/StudioBand.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
-  'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {
     count: 1,
@@ -294,7 +278,7 @@ describe('a divider sits between chrome and content, never inside content', () =
       .map(([path, count]) => `${path}: ${count} (allowed ${ALLOWED[path]?.count ?? 0})`);
     expect(
       offenders,
-      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a surface (SectionSurface, bg-subtle) or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
+      `A Divider, divide-y/x, <hr> or border-t/b separates chrome from content, never content from content. Use gap, a Band or a labeled rule (Eyebrow, TimelineDayRule) instead. docs/styling.md owns the rule:\n${offenders.join('\n')}`,
     ).toEqual([]);
   });
 

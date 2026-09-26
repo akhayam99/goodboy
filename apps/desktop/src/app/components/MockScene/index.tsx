@@ -69,6 +69,8 @@ import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
+import { DesignScaleScene } from './scenes/DesignScaleScene';
+import { ListboxScene } from './scenes/ListboxScene';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -133,6 +135,8 @@ export const MOCK_SCENES = {
   'workflow-builder-modes': WorkflowBuilderModesScene,
   'impact-scopes': ImpactScopesScene,
   explore: ExploreScene,
+  'design-scale': DesignScaleScene,
+  listbox: ListboxScene,
 };
 
 export const MockScene = () => {

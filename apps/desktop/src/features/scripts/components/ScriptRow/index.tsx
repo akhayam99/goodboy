@@ -70,16 +70,18 @@ export const ScriptRow = ({
         <CategoryIcon size={ICON_SIZE.row} />
       </span>
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="shrink-0 truncate text-sm font-medium text-foreground">{script.name}</span>
-        <span className="min-w-0 truncate font-mono text-2xs text-faint-foreground">
+        <span className="shrink-0 truncate text-row text-foreground">{script.name}</span>
+        <span className="min-w-0 truncate font-mono text-secondary text-faint-foreground">
           {script.command}
         </span>
       </span>
       {path === null ? (
-        <span className="w-24 shrink-0 truncate text-2xs text-muted-foreground">{sourceLabel}</span>
+        <span className="w-24 shrink-0 truncate text-secondary text-muted-foreground">
+          {sourceLabel}
+        </span>
       ) : (
         <Tooltip content={path}>
-          <span className="pointer-events-auto w-24 shrink-0 truncate text-2xs text-muted-foreground">
+          <span className="pointer-events-auto w-24 shrink-0 truncate text-secondary text-muted-foreground">
             {sourceLabel}
           </span>
         </Tooltip>

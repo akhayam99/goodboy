@@ -24,8 +24,8 @@ export const ProjectAdoptionNotice = ({ conflict, busy, onMove, onKeep }: Props)
     >
       <FolderGit2 size={16} aria-hidden className="shrink-0 text-primary" />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{project.name}</span>
-        <span className="block text-xs text-muted-foreground">
+        <span className="block truncate text-row text-foreground">{project.name}</span>
+        <span className="block text-label text-muted-foreground">
           already in {sourceWorkspace.name} with {sessionsLabel}
         </span>
       </span>

@@ -45,7 +45,7 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
   return (
     <div className="flex flex-col gap-2">
       {rollup !== '' && (
-        <p className="px-2 text-xs text-muted-foreground" data-testid="checks-rollup">
+        <p className="px-2 text-label text-muted-foreground" data-testid="checks-rollup">
           {rollup}
         </p>
       )}
@@ -56,11 +56,11 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
               type="button"
               onClick={() => onOpenUrl(c.detailsUrl ?? fallbackUrl)}
               title={c.detailsUrl ?? c.name}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-hover"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-hover"
             >
               <ConclusionIcon conclusion={c.conclusion} />
               <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>
-              <span className="shrink-0 text-xs tabular-nums text-faint-foreground">
+              <span className="shrink-0 text-label tabular-nums text-faint-foreground">
                 {formatDuration(c.durationMs)}
               </span>
             </button>

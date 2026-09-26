@@ -221,10 +221,8 @@ const ConnectedAccount = ({
   <div className="flex items-center gap-3 rounded-lg border border-border-soft bg-subtle p-4">
     <StatusDot tone="success" size="md" />
     <div className="flex min-w-0 flex-col">
-      <span className="truncate text-sm font-medium text-foreground">
-        {identity ?? 'connected'}
-      </span>
-      <span className="text-2xs text-muted-foreground">connected</span>
+      <span className="truncate text-row text-foreground">{identity ?? 'connected'}</span>
+      <span className="text-secondary text-muted-foreground">connected</span>
     </div>
     <div className="flex-1" />
     {confirmDisconnect ? (

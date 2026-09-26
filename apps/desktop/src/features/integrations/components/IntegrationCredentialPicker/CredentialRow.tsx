@@ -42,13 +42,17 @@ export const CredentialRow = ({
           {isSelected ? <Check size={10} aria-hidden /> : null}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-xs font-semibold text-foreground">{credential.label}</span>
-          <span className="truncate font-mono text-2xs text-muted-foreground">
+          <span className="truncate text-label font-semibold text-foreground">
+            {credential.label}
+          </span>
+          <span className="truncate font-mono text-secondary text-muted-foreground">
             {credential.account === '' ? usageLabel({ usedBy }) : credential.account}
           </span>
         </span>
       </button>
-      <span className="shrink-0 text-2xs text-muted-foreground">{usageLabel({ usedBy })}</span>
+      <span className="shrink-0 text-secondary text-muted-foreground">
+        {usageLabel({ usedBy })}
+      </span>
       <IconButton
         icon={Trash2}
         label={`Forget ${credential.label}`}

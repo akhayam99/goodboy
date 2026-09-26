@@ -561,7 +561,9 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
           label={RESOLVE_QUEUE_TITLE}
           meta={
             meta != null ? (
-              <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">{meta}</span>
+              <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
+                {meta}
+              </span>
             ) : undefined
           }
           action={actions ?? undefined}
@@ -703,7 +705,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
               />
             )}
             {reviewTarget?.status === 'pending' && (
-              <p role="status" className="text-2xs text-muted-foreground">
+              <p role="status" className="text-secondary text-muted-foreground">
                 {reviewTargetPending({ hasThread: targetThreadId !== null })}
               </p>
             )}

@@ -83,7 +83,7 @@ export const FlowPanel = ({
             {agents?.byKind.map((entry) => (
               <div
                 key={entry.kind}
-                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-1.5 text-xs"
+                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 rounded-md px-2 py-1.5 text-label"
               >
                 <span className="capitalize text-foreground">{entry.kind}</span>
                 <span className="font-mono tabular-nums text-muted-foreground">
@@ -107,20 +107,20 @@ export const FlowPanel = ({
         <StudioWidget label="where flow blocks" hint="active blockers in this workspace">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <span className="min-w-0 flex-1 text-xs">Waiting on open questions</span>
-              <span className="font-mono text-sm tabular-nums">
+              <span className="min-w-0 flex-1 text-label">Waiting on open questions</span>
+              <span className="font-mono text-body tabular-nums">
                 {countOrUnknown(health?.questionBlockedSessions)}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="min-w-0 flex-1 text-xs">Failed workflow agents</span>
-              <span className="font-mono text-sm tabular-nums">
+              <span className="min-w-0 flex-1 text-label">Failed workflow agents</span>
+              <span className="font-mono text-body tabular-nums">
                 {countOrUnknown(health?.failedAgents)}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="min-w-0 flex-1 text-xs">Undismissed budget alerts</span>
-              <span className="font-mono text-sm tabular-nums">
+              <span className="min-w-0 flex-1 text-label">Undismissed budget alerts</span>
+              <span className="font-mono text-body tabular-nums">
                 {countOrUnknown(health?.budgetAlerts)}
               </span>
             </div>

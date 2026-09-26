@@ -1168,7 +1168,7 @@ export const WireframeFlowOverview = ({
               x={box.x + box.width / 2}
               y={box.y + box.height / 2 + 4}
               textAnchor="middle"
-              className="fill-foreground text-2xs"
+              className="fill-foreground text-secondary"
             >
               {box.text}
               {box.text === box.title ? null : <title>{box.title}</title>}
@@ -1191,7 +1191,7 @@ export const WireframeFlowOverview = ({
                 x={edge.label.x + edge.label.width / 2}
                 y={edge.label.y + edge.label.height / 2 + 3.5}
                 textAnchor="middle"
-                className={cn('text-3xs', EDGE_PAINT[edge.role].ink)}
+                className={cn('text-meta', EDGE_PAINT[edge.role].ink)}
               >
                 {edge.label.glyph === null ? null : (
                   <tspan aria-hidden>{`${edge.label.glyph} `}</tspan>

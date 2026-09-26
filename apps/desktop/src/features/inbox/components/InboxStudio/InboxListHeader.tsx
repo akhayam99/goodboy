@@ -62,7 +62,7 @@ export const InboxListHeader = ({
           placeholder="Search"
           aria-label="Search the inbox"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-faint-foreground"
+          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
         />
         <KbdPill>/</KbdPill>
       </div>
@@ -78,7 +78,7 @@ export const InboxListHeader = ({
               onClick={filters.toggle}
               aria-expanded={filters.open}
               className={cn(
-                'flex h-7 items-center gap-1.5 rounded-md border border-border-soft px-2 text-xs text-muted-foreground hover:bg-hover hover:text-foreground',
+                'flex h-7 items-center gap-1.5 rounded-md border border-border-soft px-2 text-label text-muted-foreground hover:bg-hover hover:text-foreground',
                 filters.open && 'bg-selected text-foreground',
               )}
             >

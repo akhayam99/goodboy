@@ -101,7 +101,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
   return (
     <div className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border-soft bg-subtle p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-2xs font-medium tabular-nums text-muted-foreground">
+        <span className="text-secondary font-medium tabular-nums text-muted-foreground">
           Step {Math.min(stepIndex, steps.length - 1) + 1} of {steps.length}
         </span>
         <SegmentedTabs
@@ -134,7 +134,7 @@ export const SlackConnectGuide = ({ manifestUrl }: Props) => {
           {SLACK_USER_SCOPES.map((scope) => (
             <span
               key={scope}
-              className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-2xs text-foreground"
+              className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-secondary text-foreground"
             >
               {scope}
             </span>

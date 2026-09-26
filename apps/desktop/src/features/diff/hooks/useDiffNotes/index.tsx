@@ -48,13 +48,13 @@ export const noteThread = ({ note, agentName, onViewAgent }: ThreadParams): Diff
           <button
             type="button"
             onClick={() => onViewAgent(consumedBy)}
-            className="inline-flex w-fit items-center gap-0.5 rounded-sm text-2xs text-info hover:underline"
+            className="inline-flex w-fit items-center gap-0.5 rounded-sm text-secondary text-info hover:underline"
           >
             Picked up by {agentName}
             <ArrowUpRight size={10} aria-hidden />
           </button>
         ) : (
-          <span className="text-2xs text-muted-foreground">Picked up by a removed agent</span>
+          <span className="text-secondary text-muted-foreground">Picked up by a removed agent</span>
         )
       ) : undefined,
   };

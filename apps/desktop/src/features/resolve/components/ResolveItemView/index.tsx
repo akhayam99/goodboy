@@ -260,7 +260,7 @@ export const ResolveItemView = ({
                     <Markdown
                       text={question}
                       variant="preview"
-                      className="text-sm text-foreground"
+                      className="text-body text-foreground"
                     />
                   </div>
                 )}
@@ -283,8 +283,8 @@ export const ResolveItemView = ({
                   onEditReply={onEditReply}
                   settingsLine={<ReplySettingsLine sessionId={sessionId} />}
                 />
-                {note !== null && <p className="text-2xs text-warning">{note}</p>}
-                {error !== null && <p className="text-2xs text-danger">{error}</p>}
+                {note !== null && <p className="text-secondary text-warning">{note}</p>}
+                {error !== null && <p className="text-secondary text-danger">{error}</p>}
               </div>
               <section
                 aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
@@ -339,7 +339,7 @@ export const ResolveItemView = ({
                           <button
                             type="button"
                             onClick={() => onSelectRelated(covered.thread.threadId)}
-                            className="block w-full truncate rounded-sm text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                            className="block w-full truncate rounded-sm text-left text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                           >
                             {covered.reviewerNote?.body ?? RESOLVE_COMMENT_UNAVAILABLE}
                           </button>
@@ -355,7 +355,7 @@ export const ResolveItemView = ({
             <>
               <Divider />
               <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-                <p className="min-w-0 text-2xs text-muted-foreground">{nextStep ?? ''}</p>
+                <p className="min-w-0 text-secondary text-muted-foreground">{nextStep ?? ''}</p>
                 <div className="flex items-center gap-2">
                   {actions.secondary !== null && (
                     <ActionButton
@@ -377,7 +377,7 @@ export const ResolveItemView = ({
               <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
                 <p
                   className={cn(
-                    'min-w-0 text-2xs',
+                    'min-w-0 text-secondary',
                     isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
                   )}
                 >

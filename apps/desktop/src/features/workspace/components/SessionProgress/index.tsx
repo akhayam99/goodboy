@@ -17,7 +17,10 @@ export const SessionProgress = ({ progress, tone, className }: Props) => {
   return (
     <span
       data-testid="session-progress"
-      className={cn('flex min-w-0 items-center gap-1.5 text-2xs text-muted-foreground', className)}
+      className={cn(
+        'flex min-w-0 items-center gap-1.5 text-secondary text-muted-foreground',
+        className,
+      )}
     >
       <span role="img" aria-label={`Step ${count}`} className="flex shrink-0 items-center gap-0.5">
         {Array.from({ length: segments }, (_, index) => (

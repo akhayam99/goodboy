@@ -172,7 +172,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                     )}
                   </span>
                   <Folder size={ICON_SIZE.control} aria-hidden className="shrink-0" />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  <span className="min-w-0 flex-1 truncate text-row text-foreground">
                     {entry.name}
                   </span>
                 </button>
@@ -187,7 +187,7 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">
                     <File size={ICON_SIZE.control} aria-hidden />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                  <span className="min-w-0 flex-1 truncate text-row text-foreground">
                     {entry.name}
                   </span>
                 </button>
@@ -216,7 +216,9 @@ export const ExplorePane = ({ sessionId, sessionDir }: Props) => {
                 </Tooltip>
               </div>
             </div>
-            {actionError != null ? <p className="pl-8 text-xs text-danger">{actionError}</p> : null}
+            {actionError != null ? (
+              <p className="pl-8 text-label text-danger">{actionError}</p>
+            ) : null}
             {entry.isDir && isExpanded ? (
               <div className="flex flex-col gap-0.5 pl-5">
                 {isLoadingChildren ? (

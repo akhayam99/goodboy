@@ -118,11 +118,11 @@ export const CompanionStudio = ({ onClose }: Props) => {
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-7 px-8 py-10">
             {!isLoadingStatus && (
               <div className="flex flex-col items-center gap-1.5 text-center">
-                <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                <h2 className="text-title text-foreground">
                   {showsCode ? 'Scan to pair' : 'Paired devices'}
                 </h2>
                 {showsCode && (
-                  <p className="max-w-[18rem] text-2xs text-muted-foreground">
+                  <p className="max-w-[18rem] text-secondary text-muted-foreground">
                     Open Goodboy on your iPhone and point the camera at this code.
                   </p>
                 )}

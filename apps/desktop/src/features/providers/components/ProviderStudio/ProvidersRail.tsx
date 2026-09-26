@@ -46,7 +46,7 @@ export const ProvidersRail = ({ providers, focusedId, onSelect, onSelectDefaults
               aria-hidden
               className="shrink-0 text-primary"
             />
-            <span className="text-sm font-medium text-foreground">Defaults</span>
+            <span className="text-row text-foreground">Defaults</span>
           </SelectableRow>
         </li>
       )}

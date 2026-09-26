@@ -58,7 +58,7 @@ export const LinkedPrChip = ({ pr }: Props) => {
       title={description}
       aria-label={description}
       className={cn(
-        'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-2xs font-medium motion-safe:transition-opacity hover:opacity-80',
+        'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-secondary font-medium motion-safe:transition-opacity hover:opacity-80',
         tint.border,
         tint.bg,
         tint.text,

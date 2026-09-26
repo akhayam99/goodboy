@@ -22,7 +22,7 @@ export const LinearPriority = ({ priority, priorityLabel, appearance = 'labelled
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-2xs text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 text-secondary text-muted-foreground">
       <span
         aria-hidden
         className={cn('rounded-full', isDash ? 'h-0.5 w-2' : 'size-2', mark.tone)}

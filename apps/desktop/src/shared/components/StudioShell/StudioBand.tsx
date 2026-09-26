@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, Divider, tintClasses, Trail, type Tone } from '@goodboy/ui';
+import { cn, tintClasses, Trail, type Tone } from '@goodboy/ui';
 import { X, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../conceptIcons';
 
@@ -53,7 +53,7 @@ export const StudioBand = ({
                 ...(subtitle != null &&
                   subtitle !== '' && {
                     accessory: (
-                      <span className="truncate text-2xs font-normal text-muted-foreground">
+                      <span className="truncate text-secondary text-muted-foreground">
                         {subtitle}
                       </span>
                     ),
@@ -70,7 +70,7 @@ export const StudioBand = ({
         aria-label={closeLabel}
         className={cn(
           'inline-flex h-6 items-center gap-1.5 rounded-md border border-border px-2.5',
-          'text-xs font-semibold text-muted-foreground transition-colors',
+          'text-label text-muted-foreground transition-colors',
           'hover:bg-hover hover:text-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
@@ -78,6 +78,5 @@ export const StudioBand = ({
         <X size={13} aria-hidden /> Done
       </button>
     </header>
-    <Divider />
   </>
 );

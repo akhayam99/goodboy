@@ -166,7 +166,7 @@ describe('StageBoardCard layout', () => {
     expect(card.className).not.toContain('shadow-sm');
     expect(title.className).toContain('line-clamp-2');
     expect(title.className).toContain('min-h-10');
-    expect(title.className).toContain('leading-5');
+    expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBe(session.goal);
     expect(metaRow?.className).toContain('col-span-2');
     expect(metaRow?.className).toContain('col-start-1');
@@ -632,8 +632,8 @@ describe('StageBoardCard footer', () => {
     const updated = { ...session, updatedAt: new Date(Date.now() - 7_200_000).toISOString() };
     render(<StageBoardCard session={updated as unknown as Session} nav={nav} />);
     const cost = document.querySelector('[title="Session spend: $1.25 (excludes summarizer)"]');
-    expect(cost?.className).toContain('text-3xs');
-    expect(screen.getByText('2h ago').className).toContain('text-3xs');
+    expect(cost?.className).toContain('text-meta');
+    expect(screen.getByText('2h ago').className).toContain('text-meta');
   });
 
   it('singularizes the agent count label at one agent', () => {

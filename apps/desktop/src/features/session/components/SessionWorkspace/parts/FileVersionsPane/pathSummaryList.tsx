@@ -34,8 +34,8 @@ export const PathSummaryList = ({ groups, selectedPath, loading, onSelectPath }:
                 : 'hover:bg-hover',
             )}
           >
-            <span className="truncate font-mono text-xs text-foreground">{group.relativePath}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="truncate text-code text-foreground">{group.relativePath}</span>
+            <span className="text-label text-muted-foreground">
               {group.count} version{group.count === 1 ? '' : 's'} .{' '}
               {formatRelativeAge({ fromIso: group.lastCapturedAt })}
             </span>

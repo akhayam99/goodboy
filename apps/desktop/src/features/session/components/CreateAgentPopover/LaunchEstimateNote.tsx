@@ -34,7 +34,7 @@ export const LaunchEstimateNote = ({ workspaceId, kind, routing, isShown }: Prop
     >
       <span
         data-testid="launch-estimate"
-        className="min-w-0 flex-1 truncate text-2xs tabular-nums text-muted-foreground"
+        className="min-w-0 flex-1 truncate text-secondary tabular-nums text-muted-foreground"
       >
         {`Starts now · usually ${usualRangeLabel(estimate)}`}
       </span>

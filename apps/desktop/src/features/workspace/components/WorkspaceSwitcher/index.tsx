@@ -12,7 +12,7 @@ type Props = {
 };
 
 const actionClass =
-  'flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground';
+  'flex w-full items-center gap-2 px-3 py-2 text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground';
 
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
@@ -69,7 +69,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         onKeyDown={handleKeyDown}
         placeholder="Switch or open a workspace…"
         aria-label="Filter workspaces"
-        className="w-full bg-transparent px-3 py-2.5 text-xs focus-visible:outline-none"
+        className="w-full bg-transparent px-3 py-2.5 text-label focus-visible:outline-none"
       />
       <Divider />
       <ScrollFade className="max-h-96" viewportClassName="p-1" fadeFrom="elevated">

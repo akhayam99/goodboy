@@ -65,10 +65,12 @@ export const WorkflowStart = ({ session, onOpenWorkflowBuilder }: Props) => {
         minRows={2}
         maxRows={8}
         autoGrow
-        className="text-sm"
+        className="text-body"
       />
       {workflows.length === 0 ? (
-        <p className="px-2.5 text-xs text-muted-foreground">No workflows in this workspace yet.</p>
+        <p className="px-2.5 text-label text-muted-foreground">
+          No workflows in this workspace yet.
+        </p>
       ) : (
         <ul aria-label="Workflows" className="flex flex-col gap-0.5">
           {workflows.map((workflow) => {
@@ -84,8 +86,8 @@ export const WorkflowStart = ({ session, onOpenWorkflowBuilder }: Props) => {
                     isPicked ? 'bg-selected' : 'hover:bg-hover',
                   )}
                 >
-                  <span className="shrink-0 text-sm text-foreground">{workflow.name}</span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                  <span className="shrink-0 text-body text-foreground">{workflow.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">
                     {workflow.description}
                   </span>
                 </button>

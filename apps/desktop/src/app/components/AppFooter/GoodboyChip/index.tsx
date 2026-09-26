@@ -88,7 +88,7 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
           aria-expanded={isOpen}
           data-testid="goodboy-chip"
           className={cn(
-            'flex h-6 items-center gap-1.5 rounded-md px-2 text-2xs motion-safe:transition-colors',
+            'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
@@ -106,9 +106,9 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
               label="Back"
               onClick={() => setView('menu')}
             />
-            <span className="text-xs font-semibold text-foreground">Report a bug</span>
+            <span className="text-label font-semibold text-foreground">Report a bug</span>
             {hasDraft ? (
-              <span className="ml-auto pr-1 text-2xs text-faint-foreground">Draft saved</span>
+              <span className="ml-auto pr-1 text-secondary text-faint-foreground">Draft saved</span>
             ) : null}
           </header>
           <Divider />

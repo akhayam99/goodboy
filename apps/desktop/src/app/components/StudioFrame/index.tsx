@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { cn, useEscapeLayer } from '@goodboy/ui';
+import { cn, SHEET_CLASSES, useEscapeLayer } from '@goodboy/ui';
 import { StudioBand } from '../../../shared/components/StudioShell/StudioBand';
 import {
   StudioFrameContext,
@@ -58,7 +58,7 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
         data-studio-overlay=""
         data-studio={kind}
         className={cn(
-          'relative flex h-full w-full min-h-0 flex-col bg-background',
+          'relative flex h-full w-full min-h-0 flex-col bg-chrome',
           isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
         )}
       >
@@ -75,7 +75,13 @@ export const StudioFrame = ({ kind, onClose, children }: Props) => {
           trailSlotRef={setTrailSlot}
           onClose={requestClose}
         />
-        <div className="relative flex min-h-0 min-w-0 flex-1 bg-background">
+        <div
+          className={cn(
+            'relative flex min-h-0 min-w-0 flex-1 bg-background',
+            SHEET_CLASSES.flush,
+            'has-[[data-studio-rail]]:border-y-0',
+          )}
+        >
           <Suspense fallback={<StudioSkeleton layout={meta.skeleton} title={meta.title} />}>
             {children}
           </Suspense>

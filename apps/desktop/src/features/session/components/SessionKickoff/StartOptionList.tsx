@@ -107,8 +107,8 @@ export const StartOptionList = ({ labelledBy, value, onChange, onConfirm }: Prop
               className={cn('shrink-0', isChecked ? 'text-primary' : 'text-muted-foreground')}
             />
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-sm font-medium text-foreground">{option.title}</span>
-              <span className="truncate text-xs text-muted-foreground">{option.line}</span>
+              <span className="text-row text-foreground">{option.title}</span>
+              <span className="truncate text-label text-muted-foreground">{option.line}</span>
             </span>
           </button>
         );

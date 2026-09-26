@@ -60,7 +60,7 @@ export const NotificationRow = ({
     <time
       dateTime={latest.ts}
       title={formatAbsoluteDateTime({ iso: latest.ts })}
-      className="pointer-events-none relative text-right text-3xs tabular-nums text-faint-foreground"
+      className="pointer-events-none relative text-right text-meta text-faint-foreground"
     >
       {formatRelativeAge({ fromIso: latest.ts })}
     </time>
@@ -69,7 +69,7 @@ export const NotificationRow = ({
     notifications.length > 1 ? (
       <span
         aria-label={`${notifications.length} notifications`}
-        className="shrink-0 rounded-full bg-muted px-1.5 text-3xs tabular-nums text-muted-foreground"
+        className="shrink-0 rounded-full bg-muted px-1.5 text-meta text-muted-foreground"
       >
         {notifications.length}
       </span>
@@ -116,7 +116,7 @@ export const NotificationRow = ({
         <span className="pointer-events-none relative flex min-w-0 items-center gap-1.5">
           <span
             className={cn(
-              'truncate text-xs',
+              'truncate text-label',
               isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
             )}
           >
@@ -167,7 +167,7 @@ export const NotificationRow = ({
           <div className="flex min-w-0 items-center gap-2">
             <h3
               className={cn(
-                'truncate text-xs',
+                'truncate text-label',
                 isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground',
               )}
             >
@@ -178,7 +178,7 @@ export const NotificationRow = ({
           {hasBody && !isSelected && (
             <p
               className={cn(
-                'truncate text-xs',
+                'truncate text-label',
                 isUnread ? 'text-muted-foreground' : 'text-faint-foreground',
               )}
             >
@@ -186,7 +186,7 @@ export const NotificationRow = ({
             </p>
           )}
           {context != null && (
-            <span className="inline-flex min-w-0 items-center gap-1 text-3xs text-faint-foreground">
+            <span className="inline-flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
               <CONCEPT_ICONS.sessions size={10} aria-hidden className="shrink-0" />
               <span className="truncate">{context}</span>
             </span>
@@ -197,7 +197,7 @@ export const NotificationRow = ({
             <button
               type="button"
               onClick={runAction}
-              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-2xs text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
+              className="inline-flex h-5.5 items-center whitespace-nowrap rounded-sm px-2 text-secondary text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
             >
               {action.label}
             </button>

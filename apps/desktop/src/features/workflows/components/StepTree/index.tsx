@@ -56,7 +56,7 @@ export const StepTree = ({
         <Eyebrow label="Plan" muted />
         <span className="flex min-w-0 items-center gap-2">
           {count > 0 ? (
-            <span className="flex items-center gap-1 text-2xs tabular-nums text-faint-foreground">
+            <span className="flex items-center gap-1 text-secondary tabular-nums text-faint-foreground">
               <span>{`${count} step${count === 1 ? '' : 's'}`}</span>
               {editedCount > 0 ? <span>{`· ${editedCount} edited`}</span> : null}
             </span>

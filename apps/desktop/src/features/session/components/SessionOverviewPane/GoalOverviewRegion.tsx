@@ -132,7 +132,7 @@ export const GoalOverviewRegion = ({
             }
           }}
           aria-label="Goal"
-          className="min-w-0 text-sm"
+          className="min-w-0 text-body"
           autoGrow
           maxRows={12}
         />
@@ -153,7 +153,7 @@ export const GoalOverviewRegion = ({
             isSummarizing ? 'cursor-default' : 'cursor-text hover:bg-hover',
           )}
         >
-          <ClampedProse text={value} lines={4} className="text-sm text-foreground" />
+          <ClampedProse text={value} lines={4} className="text-body text-foreground" />
         </div>
       )}
       <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />

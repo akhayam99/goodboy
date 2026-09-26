@@ -29,11 +29,11 @@ export type ChipProps = {
 };
 
 const sizeClasses: Record<ChipSize, string> = {
-  '3xs': 'px-1.5 py-0.5 text-3xs',
-  xs: 'px-1.5 py-0.5 text-2xs',
-  sm: 'text-2xs px-2 py-0.5',
-  md: 'text-xs px-2 py-1',
-  control: 'h-6 shrink-0 gap-1.5 px-2 text-2xs',
+  '3xs': 'px-1.5 py-0.5 text-meta',
+  xs: 'px-1.5 py-0.5 text-secondary',
+  sm: 'text-secondary px-2 py-0.5',
+  md: 'text-label px-2 py-1',
+  control: 'h-6 shrink-0 gap-1.5 px-2 text-secondary',
 };
 
 const widthClasses: Record<'sm' | 'md' | 'lg', string> = {

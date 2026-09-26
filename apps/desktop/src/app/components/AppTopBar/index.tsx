@@ -46,6 +46,5 @@ export const AppTopBar = ({ sidebar, onOpenSpend, onOpenScript, openProviderId =
         <NotificationCenter />
       </div>
     </div>
-    <Divider />
   </>
 );

@@ -92,7 +92,7 @@ export const WorktreeSection = () => {
           className="ml-auto"
         />
       </div>
-      <p className="text-2xs text-faint-foreground">
+      <p className="text-secondary text-faint-foreground">
         Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the
         repository.
       </p>
@@ -101,7 +101,7 @@ export const WorktreeSection = () => {
       )}
       <StorageOutcomeNotice />
       {groups.length === 0 ? (
-        <p className="py-3 text-xs text-muted-foreground">{EMPTY_COPY[filter]}</p>
+        <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
       ) : (
         <div className="@container flex flex-col">
           <WorktreeColumns isSelecting={selected !== null} />

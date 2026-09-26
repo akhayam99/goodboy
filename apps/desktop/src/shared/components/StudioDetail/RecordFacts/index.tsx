@@ -17,7 +17,7 @@ export const RecordFacts = ({ facts }: Props) => {
         return (
           <li key={`${fact.slot}-${fact.key}`} data-fact-slot={fact.slot} className="min-w-0">
             <Tooltip content={fact.hint ?? fact.label}>
-              <span className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-md bg-subtle px-2 text-2xs text-muted-foreground ring-1 ring-inset ring-border-soft">
+              <span className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-md bg-subtle px-2 text-secondary text-muted-foreground ring-1 ring-inset ring-border-soft">
                 {Icon == null ? null : (
                   <Icon
                     size={ICON_SIZE.row}

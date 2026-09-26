@@ -188,7 +188,7 @@ export const ResolveWithPopover = ({
         }
       >
         <PopoverBody>
-          <p className="px-2.5 pb-1 pt-2 text-xs font-medium text-foreground">
+          <p className="px-2.5 pb-1 pt-2 text-label font-medium text-foreground">
             {resolvePopoverHeading({ count })}
           </p>
           <RoutingPickerBody
@@ -247,7 +247,7 @@ export const ResolveWithPopover = ({
           </div>
         </PopoverBody>
         <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
-          <span className="min-w-0 flex-1 truncate text-2xs text-faint-foreground">
+          <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
             {resolveAgentsLine({ agents, count })}
           </span>
           <Button

@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../cn';
 import { DrawerColumn } from './DrawerColumn';
+import { SHEET_CLASSES, type ResizeActivity } from '../sheet';
 import { ResizeHandle } from './ResizeHandle';
 
 export type AppShellProps = {
@@ -123,6 +124,8 @@ export const AppShell = ({
   const hasLeftSidebar = leftSidebar != null;
   const isLeftResizeDisabled = leftHidden || leftSidebarCollapsed;
   const [leftWidth, setLeftWidth] = useState<number>(readPersistedLeftWidth);
+  const [leftResize, setLeftResize] = useState<ResizeActivity>('idle');
+  const isSheetWrapped = hasLeftSidebar && !leftHidden;
 
   useEffect(() => {
     if (typeof localStorage === 'undefined') {
@@ -178,12 +181,19 @@ export const AppShell = ({
                 onChange={setLeftWidth}
                 onReset={() => setLeftWidth(LEFT_SIDEBAR_DEFAULT)}
                 ariaLabel="Resize left sidebar"
+                onActivityChange={setLeftResize}
+                drawsEdge={false}
               />
             )}
           </div>
         ) : null}
         <main
-          className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-background"
+          data-sheet={isSheetWrapped ? 'wrapped' : 'flush'}
+          data-left-resize={isLeftResizeDisabled ? 'idle' : leftResize}
+          className={cn(
+            'flex min-h-0 min-w-0 flex-col overflow-hidden bg-background',
+            SHEET_CLASSES[isSheetWrapped ? 'wrapped' : 'flush'],
+          )}
           style={{ gridArea: 'main' }}
         >
           <DrawerColumn

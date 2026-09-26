@@ -79,7 +79,14 @@ Radius comes from the scale and is never written inline. The mapping and
 values are in [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#radius-scale)'s
 radius table.
 
-Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
+Type takes a role (`text-row`, `text-body`, `text-label`, `text-meta` and the
+rest), never a size, a weight, a leading and a tracking written one by one. The
+roles and the ratchet that counts the raw classes are in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
+
+`no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
+`font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.
+The one standing exception for size is relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.
 
@@ -106,6 +113,18 @@ widths are saved, and clamped when read back. They are never nested flex
 containers. So hiding or resizing a column is one template declaration, and
 nothing inside it needs to know. [navigation.md](navigation.md) owns which
 columns exist and what each one may do.
+
+Top bar, sidebar and footer are one chrome field, and `main` is a **sheet** on
+it (`SHEET_CLASSES` in `packages/ui/src/sheet.ts`). A sheet corner rounds only
+where the chrome wraps it on two sides: with the sidebar, the top-left and
+bottom-left corners take `rounded-frame` (10px) and one uniform 1px
+`frame-edge` border runs along the top, left and bottom; the right side meets
+the window square. With no sidebar, or while it is hidden, the sheet has no
+radius and only a top and bottom edge. The left resize handle draws no line at
+rest: on hover and drag its `data-left-resize` state turns the sheet's left
+edge to `border` in 120ms, so the sheet edge is the handle. A studio follows
+the same rule: `StudioRailLayout` puts its rail on the chrome and its detail on
+a wrapped sheet, and a studio without a rail is a flush sheet.
 
 The top bar is drawn outside the window grid. Its centred layout uses two
 equal flexible outer columns around the command center. Page breadcrumbs stay
@@ -203,15 +222,18 @@ structure. Titles, breadcrumbs, toolbars and error banners live in a
 
 ## Dividers separate chrome from content, never content from content
 
-A `Divider` marks the boundary between app chrome and a pane's content, not a
-boundary inside content. Allowed: the top bar and footer, a studio or sidebar
-rail against the detail pane (vertical), a pane's fixed header against its
+Chrome and content separate with the edge of the content sheet, not with a
+line: the top bar, the footer and a studio rail draw no horizontal `Divider`
+against the content, and the board header sits `gap-6` above its columns. A
+`Divider` marks what is left of the boundary between chrome and a pane's
+content, never a boundary inside content. Allowed: a vertical divider inside
+the chrome (between top bar or footer groups), a pane's fixed header against its
 scrolling body (a `PaneShell` dock, the `DrawerFrame` header), and inside a
 floating surface (popover, palette) the seam between its header or input and
 its list, at most one per side.
 
 Inside content, separation comes from gap (the `gap-4/6/8` scale), from
-surface (`SectionSurface`, `bg-subtle` against the canvas), or from a label
+a band (`Band`, `bg-fill` inside its parent), or from a label
 that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that
 sits inside content does not get its own `<Divider>` either: it gets a `gap`

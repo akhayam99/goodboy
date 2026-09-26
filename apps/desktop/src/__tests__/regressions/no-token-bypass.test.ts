@@ -64,6 +64,11 @@ const RULES = [
     why: 'standing motion is the registered soft pulse; only the skeleton pulses to load',
   },
   {
+    pattern: /<select\b|\bSelect\b[^'"`]*\bfrom '@goodboy\/ui'|^\s*Select,\s*$|components\/Select'/,
+    allow: NO_ALLOW,
+    why: 'a value picker is a Listbox: the native select ignores theme, density and keyboard',
+  },
+  {
     pattern: /\bz-\[/,
     allow: NO_ALLOW,
     why: 'global layers use the named z-index tokens',
@@ -80,8 +85,12 @@ const RULES = [
       'packages/ui/src/components/AppShell.tsx',
       'apps/desktop/src/app/components/AppTopBar/index.tsx',
       'apps/desktop/src/app/components/AppFooter/index.tsx',
+      'apps/desktop/src/app/components/MockScene/scenes/DesignScaleScene.tsx',
+      'packages/ui/src/components/StudioRailLayout.tsx',
+      'apps/desktop/src/shared/components/StudioShell/DetachedStudio.tsx',
+      'apps/desktop/src/app/components/StudioFrame/index.tsx',
     ],
-    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar and the footer',
+    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar, the footer, a studio and its rail, and the scale scene that draws the frame',
   },
   {
     pattern: /\bduration-\[/,
@@ -93,6 +102,26 @@ const RULES = [
       /(?<![\w:$.{-])rounded(?=['"`]|\s+(?:[\w:[\]/.-]*-[\w\]/.-]|border\b|flex\b|block\b|grid\b|truncate\b|inline\b|hidden\b|shadow\b|relative\b|absolute\b|transition\b))|\brounded-\[/,
     allow: NO_ALLOW,
     why: 'radius comes from the sm, md, lg and full steps',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*rounded(?:-[trblse]{1,2})?-(?:xs|xl|2xl|3xl)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'radius stays on the concentric sm, md, lg and frame steps',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*font-(?:bold|extrabold|black)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'weights stop at 600: text-heading, text-title or font-semibold',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*text-(?:\[[\d.]+(?:px|rem)\]|[3-9]xl)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'type takes a role; only em sizes relative to prose stay arbitrary',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*shadow-\[/,
+    allow: ['apps/desktop/src/features/diff/lib/lineTone.ts'],
+    why: 'shadows come from the elevation levels; only the diff line rail paints an inset edge',
   },
   {
     pattern:
@@ -157,13 +186,17 @@ const COLOR_KEYWORDS = new Set([
   'dotted',
   'solid',
   'collapse',
+  'separate',
+  'spacing-0',
   'box',
   'inset',
 ]);
 
 const definedColorNames = (): ReadonlySet<string> => {
   const css = readFileSync(STYLES, 'utf8');
-  const tokens = [...css.matchAll(/--color-([a-z0-9-]+):/g)].map((match) => String(match[1]));
+  const tokens = [...css.matchAll(/--(?:color|text)-([a-z0-9]+(?:-[a-z0-9]+)*):/g)].map((match) =>
+    String(match[1]),
+  );
   const utilities = [...css.matchAll(/(?:@utility\s+|^\.)[a-z]+-([a-z0-9-]+)\s*\{/gm)].map(
     (match) => String(match[1]),
   );

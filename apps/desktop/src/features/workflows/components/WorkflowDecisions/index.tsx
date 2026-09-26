@@ -42,7 +42,7 @@ export const WorkflowDecisions = ({ run, steps, tree, highlightedStepId, onHighl
         label="Why each step"
         action={
           count === null ? undefined : (
-            <span className="text-2xs tabular-nums text-faint-foreground">{count}</span>
+            <span className="text-secondary tabular-nums text-faint-foreground">{count}</span>
           )
         }
       />

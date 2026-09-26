@@ -34,14 +34,14 @@ describe('TranscriptRowHeader', () => {
   it('reads the row as a nested row: eyebrow, step-grade preview, metadata time', () => {
     render(<TranscriptRowHeader tone="primary" eyebrow="tool" preview="read a file" meta="1.2s" />);
 
-    expect(screen.getByText('tool').className).toContain('text-2xs');
-    expect(screen.getByText('read a file').className).toContain('text-xs');
-    expect(screen.getByText('1.2s').className).toContain('text-3xs');
+    expect(screen.getByText('tool').className).toContain('text-secondary');
+    expect(screen.getByText('read a file').className).toContain('text-label');
+    expect(screen.getByText('1.2s').className).toContain('text-meta');
   });
 
   it('keeps the time off the grade its own label uses, so the row reads as one column', () => {
     render(<TranscriptRowHeader tone="primary" eyebrow="tool" preview="read a file" meta="1.2s" />);
 
-    expect(screen.getByText('1.2s').className).not.toContain('text-2xs');
+    expect(screen.getByText('1.2s').className).not.toContain('text-secondary');
   });
 });

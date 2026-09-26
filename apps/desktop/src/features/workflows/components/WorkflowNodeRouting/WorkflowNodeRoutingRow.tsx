@@ -73,7 +73,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
         <button
           type="button"
           onClick={() => navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })}
-          className="min-w-0 flex-1 truncate text-left text-2xs font-medium text-foreground transition-colors hover:text-primary"
+          className="min-w-0 flex-1 truncate text-left text-secondary font-medium text-foreground transition-colors hover:text-primary"
         >
           {agent.name}
         </button>
@@ -133,7 +133,7 @@ export const WorkflowNodeRoutingRow = ({ sessionId, agent, step, connectedProvid
             model={shown?.model ?? null}
             effort={shown?.effort ?? null}
           />
-          <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+          <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
             {WORKFLOW_ROUTING_COPY.immutableNote}
           </span>
         </div>

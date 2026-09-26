@@ -49,7 +49,7 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
               onRun(action);
             }}
             className={cn(
-              'flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-xs text-muted-foreground outline-none transition-colors',
+              'flex h-7 w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground outline-none transition-colors',
               'hover:bg-hover hover:text-foreground focus:bg-hover focus:text-foreground',
             )}
           >
@@ -58,7 +58,9 @@ export const CrumbMenuActions = ({ actions, confirmingId, onConfirmingChange, on
             </span>
             <span className="min-w-0 truncate">{action.label}</span>
             {action.hint != null ? (
-              <span className="min-w-0 truncate text-2xs text-faint-foreground">{action.hint}</span>
+              <span className="min-w-0 truncate text-secondary text-faint-foreground">
+                {action.hint}
+              </span>
             ) : null}
           </button>
         );

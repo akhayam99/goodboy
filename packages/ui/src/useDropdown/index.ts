@@ -13,6 +13,7 @@ type Params = {
   readonly expectedWidth?: number;
   readonly openEvent?: string;
   readonly isEscapeEnabled?: boolean;
+  readonly isAtLeastTriggerWidth?: boolean;
 };
 
 export type DropdownController = {
@@ -34,6 +35,7 @@ export const useDropdown = ({
   expectedWidth = 160,
   openEvent,
   isEscapeEnabled = true,
+  isAtLeastTriggerWidth = false,
 }: Params): DropdownController => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +49,7 @@ export const useDropdown = ({
     expectedWidth,
     align,
     shouldMatchTriggerWidth: width == null,
+    isAtLeastTriggerWidth,
   });
 
   useEffect(() => {

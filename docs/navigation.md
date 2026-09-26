@@ -146,8 +146,9 @@ never touches that preference.
 
 A window is a strip, a set of columns, and a pane. Each owns one thing.
 
-**The strip** is one row closed by a `<Divider />`. It renders **outside** the
-grid, so no column resize, hide animation or overlay can move it.
+**The strip** is one row on the chrome, with no line under it: the edge of the
+content sheet closes it. It renders **outside** the grid, so no column resize,
+hide animation or overlay can move it.
 
 **The columns** are one grid at saved widths, clamped when read.
 
@@ -584,7 +585,7 @@ one is open at a time.
   ready, info on Storage with "N GB can go" as its subtitle once clean idle
   folders pass 10 GB (warning when the disk has under 10 GB free and at least
   1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
-  `SectionSurface` cards with gap between them and no `Divider`; a danger zone
+  bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)

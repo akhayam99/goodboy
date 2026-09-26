@@ -314,18 +314,18 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     if (!group.isReady) {
       return (
-        <p className="px-2 py-1.5 text-xs text-faint-foreground">
+        <p className="px-2 py-1.5 text-label text-faint-foreground">
           {group.projectName} is still preparing.
         </p>
       );
     }
     const scan = scans?.[group.worktreePath];
     if (scan?.status === 'error') {
-      return <p className="px-2 py-1.5 text-xs text-faint-foreground">{scan.error}</p>;
+      return <p className="px-2 py-1.5 text-label text-faint-foreground">{scan.error}</p>;
     }
     if (discovered?.[group.worktreePath] === undefined) {
       return (
-        <p className="px-2 py-1.5 text-xs text-faint-foreground">
+        <p className="px-2 py-1.5 text-label text-faint-foreground">
           Reading scripts in {group.projectName}…
         </p>
       );
@@ -335,7 +335,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     }
     return (
       <div className="flex items-center gap-2 px-2 py-1">
-        <p className="min-w-0 flex-1 text-xs text-faint-foreground">
+        <p className="min-w-0 flex-1 text-label text-faint-foreground">
           No package.json or composer.json in {group.projectName}.
         </p>
         <Button
@@ -443,7 +443,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         />
       ) : null}
       {pageError === null ? null : (
-        <p role="alert" className="text-xs text-danger">
+        <p role="alert" className="text-label text-danger">
           {pageError}
         </p>
       )}
@@ -455,7 +455,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         />
       ) : null}
       {query.trim() !== '' && visibleGroups.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No scripts match "{query.trim()}".</p>
+        <p className="text-label text-muted-foreground">No scripts match "{query.trim()}".</p>
       ) : null}
       {visibleGroups.length > 0 ? (
         <div className="flex flex-col gap-4">

@@ -59,14 +59,14 @@ export const MountRequestAction = ({ sessionId, row, label, hasChanges, remoteKi
           });
         }}
         className={cn(
-          'shrink-0 rounded-md px-1.5 py-1 text-xs text-faint-foreground hover:bg-hover hover:text-foreground',
+          'shrink-0 rounded-md px-1.5 py-1 text-label text-faint-foreground hover:bg-hover hover:text-foreground',
           'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
         )}
       >
         {isBlocked ? 'Opening PR…' : idleLabel}
       </button>
       {error !== null && (
-        <span role="status" className="min-w-0 truncate text-2xs text-danger">
+        <span role="status" className="min-w-0 truncate text-secondary text-danger">
           {error}
         </span>
       )}

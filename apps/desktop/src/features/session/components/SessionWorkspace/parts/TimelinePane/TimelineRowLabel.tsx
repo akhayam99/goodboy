@@ -166,7 +166,7 @@ export const TimelineRowLabel = ({
   return (
     <>
       {item.ordinal != null ? (
-        <span className="w-6 shrink-0 text-right text-3xs tabular-nums text-faint-foreground">
+        <span className="w-6 shrink-0 text-right text-meta text-faint-foreground">
           {item.ordinal}
         </span>
       ) : null}
@@ -176,7 +176,7 @@ export const TimelineRowLabel = ({
         className={cn(
           'flex items-center overflow-hidden',
           entry.kind === 'agent' ? WORK_ROW.title : 'min-w-0',
-          isStep ? 'text-xs leading-4' : 'text-sm leading-5',
+          isStep ? 'text-label' : 'text-body',
           emphasis === 'muted' || isQueued
             ? 'text-muted-foreground'
             : item.rowState.phase === 'running' || item.hasUnread
@@ -208,7 +208,7 @@ export const TimelineRowLabel = ({
         <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
       )}
       {secondary != null ? (
-        <span className="min-w-0 truncate text-2xs text-muted-foreground">{secondary}</span>
+        <span className="min-w-0 truncate text-secondary text-muted-foreground">{secondary}</span>
       ) : null}
       {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} note={stateNote} />}
       {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}

@@ -28,7 +28,9 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
 
   if (status === 'pending' || status === 'idle') {
     return (
-      <div className="flex items-center gap-2 text-2xs text-faint-foreground">Following output</div>
+      <div className="flex items-center gap-2 text-secondary text-faint-foreground">
+        Following output
+      </div>
     );
   }
 
@@ -38,7 +40,7 @@ export const ScriptRunDock = ({ status, exitCode, elapsedMs, output }: Props) =>
 
   return (
     <div className="flex items-center gap-2">
-      <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+      <span className="flex min-w-0 flex-1 items-center gap-1.5 text-label text-muted-foreground">
         <Glyph
           size={ICON_SIZE.row}
           aria-hidden

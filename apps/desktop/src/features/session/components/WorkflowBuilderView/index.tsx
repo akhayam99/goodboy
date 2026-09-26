@@ -1160,7 +1160,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
                 }}
                 origin={
                   isPresetEdited && basePreset !== null ? (
-                    <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
+                    <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
                       {`Edited from ${basePreset.name}`}
                     </span>
                   ) : null

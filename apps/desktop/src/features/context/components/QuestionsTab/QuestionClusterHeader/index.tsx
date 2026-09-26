@@ -46,7 +46,7 @@ export const QuestionClusterHeader = ({
         type="button"
         onClick={() => navigate({ to: agentPlace({ sessionId, agentId: ownerAgent.id }) })}
         className={cn(
-          'flex min-w-0 items-center gap-1.5 rounded-md px-0.5 text-2xs font-medium',
+          'flex min-w-0 items-center gap-1.5 rounded-md px-0.5 text-secondary font-medium',
           'hover:opacity-70 motion-safe:transition-opacity',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
@@ -58,6 +58,8 @@ export const QuestionClusterHeader = ({
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-2xs font-medium">{inner}</div>
+    <div className="flex min-w-0 items-center gap-1.5 px-0.5 text-secondary font-medium">
+      {inner}
+    </div>
   );
 };

@@ -146,12 +146,14 @@ export const WorkflowStepCard = ({
 
   const headerRow = (trailing?: ReactNode) => (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className="w-4 shrink-0 text-right font-mono text-2xs tabular-nums text-muted-foreground">
+      <span className="w-4 shrink-0 text-right font-mono text-secondary tabular-nums text-muted-foreground">
         {String(ordinal + 1).padStart(2, '0')}
       </span>
       <AgentAvatar kind={kind} size="sm" />
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="min-w-0 truncate text-xs font-medium text-foreground">{displayName}</span>
+        <span className="min-w-0 truncate text-label font-medium text-foreground">
+          {displayName}
+        </span>
         {onRole == null ? <AgentKindChip kind={kind} label={ROLE_LABEL[role]} /> : null}
       </span>
       {trailing}
@@ -228,7 +230,7 @@ export const WorkflowStepCard = ({
               onChange={(e) => onName(e.target.value)}
               placeholder="step name"
               disabled={disabled}
-              className={cn('h-7 text-xs font-medium', pal.fg)}
+              className={cn('h-7 text-label font-medium', pal.fg)}
             />
             <div className="relative">
               <Textarea
