@@ -22,6 +22,7 @@
         "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
         "src/store/slices/project-mounts/mountRecoveryGuard.ts": ["exports"],
         "src/store/slices/turn/mountContinuations.ts": ["exports"],
+        "src/store/slices/turn/turnStartWindow.ts": ["exports"],
         "src/store/slices/turn/workflowTurnBreaker.ts": ["exports"]
       },
       "ignoreDependencies": ["tailwindcss"]

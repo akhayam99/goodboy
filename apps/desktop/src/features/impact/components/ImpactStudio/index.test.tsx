@@ -214,6 +214,21 @@ describe('ImpactStudio', () => {
     expect(screen.getByText('p90 4.0h')).toBeDefined();
   });
 
+  it('reports every scope change, so the navigation address stays honest', () => {
+    const onScopeChange = vi.fn();
+    render(
+      <ImpactStudio
+        workspaceId={'workspace-1' as never}
+        onClose={vi.fn()}
+        onScopeChange={onScopeChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+
+    expect(onScopeChange).toHaveBeenCalledWith({ kind: 'flow' });
+  });
+
   it('draws failed flow metrics as not loaded instead of zero', () => {
     mocks.metrics = {
       ...buildMetrics(),

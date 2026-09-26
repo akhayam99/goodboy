@@ -24,14 +24,22 @@ import { ShippedPanel } from './ShippedPanel';
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialScope?: ImpactScope;
+  readonly onScopeChange?: (scope: ImpactScope) => void;
   readonly onClose: () => void;
 };
 
 const DAY_MS = 86_400_000;
 
-export const ImpactStudio = ({ workspaceId, initialScope, onClose }: Props) => {
+export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
-  const [scope, setScope] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
+  const [scope, setScopeState] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
+  const setScope = useCallback(
+    (next: ImpactScope) => {
+      setScopeState(next);
+      onScopeChange?.(next);
+    },
+    [onScopeChange],
+  );
   const navigate = useAppStore((state) => state.navigate);
   const metrics = useImpactMetrics({ workspaceId, windowId });
   const sinceMs = useMemo(

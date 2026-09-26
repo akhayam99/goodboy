@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openMountRequest } from './openMountRequest';
+import { sessionPlace } from '../navigation/place';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -9,7 +10,7 @@ const MOUNT_ID = 'mount-1' as MountId;
 const harness = () => {
   const state = {
     setSessionActiveMount: vi.fn(async () => undefined),
-    setSessionStudio: vi.fn(),
+    navigate: vi.fn(),
     openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
   };
   const get = vi.fn(() => state) as unknown as GetFn;
@@ -32,7 +33,7 @@ describe('openMountRequest', () => {
       sessionId: SESSION_ID,
       destination: { kind: 'pull_request', mountId: MOUNT_ID, prNumber: 12 },
     });
-    expect(state.setSessionStudio).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('opens review on the create mode when the mount carries no request yet', async () => {
@@ -76,24 +77,25 @@ describe('openMountRequest', () => {
     ).resolves.toEqual({ kind: 'unavailable', reason: 'no_mount' });
   });
 
-  it('keeps gitlab and bitbucket on their own mount scoped studios', async () => {
+  it('keeps gitlab and bitbucket on their own mount scoped studios, through navigate', async () => {
     const gitlab = harness();
     await gitlab.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' });
     expect(gitlab.state.setSessionActiveMount).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
     });
-    expect(gitlab.state.setSessionStudio).toHaveBeenCalledWith(SESSION_ID, {
-      kind: 'mr',
-      mountId: MOUNT_ID,
+    expect(gitlab.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, studio: { kind: 'mr', mountId: MOUNT_ID } }),
     });
     expect(gitlab.state.openReviewTarget).not.toHaveBeenCalled();
 
     const bitbucket = harness();
     await bitbucket.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'bitbucket' });
-    expect(bitbucket.state.setSessionStudio).toHaveBeenCalledWith(SESSION_ID, {
-      kind: 'bitbucket',
-      mountId: MOUNT_ID,
+    expect(bitbucket.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({
+        sessionId: SESSION_ID,
+        studio: { kind: 'bitbucket', mountId: MOUNT_ID },
+      }),
     });
     expect(bitbucket.state.openReviewTarget).not.toHaveBeenCalled();
   });

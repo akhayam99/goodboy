@@ -3,6 +3,7 @@ import { useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
+import type { ImpactScope } from '../../../features/impact/lib';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
 import {
   useAppStore,
@@ -145,6 +146,11 @@ export const useAppOverlays = ({
     [amendStudio],
   );
 
+  const changeImpactScope = useCallback(
+    (scope: ImpactScope) => amendStudio({ studio: { kind: 'impact', scope } }),
+    [amendStudio],
+  );
+
   const armDeleteConfirm = useCallback(() => {
     if (currentSession === null) {
       return;
@@ -169,6 +175,7 @@ export const useAppOverlays = ({
           close,
           onSettingsScopeChange: changeSettingsScope,
           onInboxFocusChange: changeInboxFocus,
+          onImpactScopeChange: changeImpactScope,
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
@@ -179,6 +186,7 @@ export const useAppOverlays = ({
     close,
     onSettingsScopeChange: changeSettingsScope,
     onInboxFocusChange: changeInboxFocus,
+    onImpactScopeChange: changeImpactScope,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

@@ -4,6 +4,7 @@ import { DeleteSessionConfirm } from '../../../features/session/components/Delet
 import { ConvertWorkspaceDialog } from '../../../features/workspace/components/ConvertWorkspaceDialog';
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
+import type { ImpactScope } from '../../../features/impact/lib';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import { StudioFrame } from '../StudioFrame';
@@ -66,6 +67,7 @@ type Props = {
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
+  readonly onImpactScopeChange: (scope: ImpactScope) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -84,6 +86,7 @@ type StudioParams = {
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
+  readonly onImpactScopeChange: (scope: ImpactScope) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;
@@ -94,6 +97,7 @@ const renderStudio = ({
   close,
   onSettingsScopeChange,
   onInboxFocusChange,
+  onImpactScopeChange,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -144,6 +148,7 @@ const renderStudio = ({
         <ImpactStudio
           workspaceId={currentWorkspace.id}
           initialScope={overlay.scope ?? undefined}
+          onScopeChange={onImpactScopeChange}
           onClose={close}
         />
       );
@@ -163,6 +168,7 @@ export const AppStudio = ({
   close,
   onSettingsScopeChange,
   onInboxFocusChange,
+  onImpactScopeChange,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -177,6 +183,7 @@ export const AppStudio = ({
         close,
         onSettingsScopeChange,
         onInboxFocusChange,
+        onImpactScopeChange,
         currentWorkspace,
         workspaceProjectRoot,
         offerWorkspaceRepo,
@@ -190,6 +197,7 @@ export const AppOverlayRouter = ({
   close,
   onSettingsScopeChange,
   onInboxFocusChange,
+  onImpactScopeChange,
   currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
@@ -210,6 +218,7 @@ export const AppOverlayRouter = ({
           close={close}
           onSettingsScopeChange={onSettingsScopeChange}
           onInboxFocusChange={onInboxFocusChange}
+          onImpactScopeChange={onImpactScopeChange}
           currentWorkspace={currentWorkspace}
           workspaceProjectRoot={null}
           offerWorkspaceRepo={offerWorkspaceRepo}
