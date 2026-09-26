@@ -164,7 +164,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const onOpen = async () => {
     setOpenError(null);
     try {
-      await openInEditor(project.rootPath);
+      await openInEditor({ path: project.rootPath });
     } catch (error) {
       setOpenError(formatError(error));
     }

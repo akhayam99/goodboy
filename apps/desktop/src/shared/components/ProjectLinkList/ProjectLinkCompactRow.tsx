@@ -23,7 +23,7 @@ export const ProjectLinkCompactRow = ({ project, busy, accessory, onUnlink }: Pr
 
   const openProject = async () => {
     try {
-      await openInEditor(project.rootPath);
+      await openInEditor({ path: project.rootPath });
     } catch (error) {
       void reportError({ title: `Couldn't open ${project.name}`, error });
     }

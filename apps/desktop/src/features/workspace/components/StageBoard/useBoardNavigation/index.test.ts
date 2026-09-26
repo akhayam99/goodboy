@@ -116,7 +116,7 @@ describe('useBoardNavigation', () => {
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
     const { result } = renderHook(() => useBoardNavigation());
     result.current.openIDE(session);
-    expect(openInEditorMock).toHaveBeenCalledWith('/tmp/wt');
+    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt' });
   });
 
   it('openIDE does nothing when no worktree exists', () => {

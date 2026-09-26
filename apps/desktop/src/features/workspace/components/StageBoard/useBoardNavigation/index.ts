@@ -48,7 +48,7 @@ export const useBoardNavigation = (): BoardNavigation => {
     const openIDE = (session: Session): void => {
       const path = useAppStore.getState().sessionWorktrees[session.id]?.[0];
       if (path) {
-        void openInEditor(path);
+        void openInEditor({ path });
       }
     };
 

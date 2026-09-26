@@ -9,7 +9,12 @@ export const detectEditors = async (): Promise<ReadonlyArray<DetectedEditor>> =>
   return invoke<DetectedEditor[]>('detect_editors');
 };
 
-export const openInEditor = async (path: string, editor?: string): Promise<void> => {
+type OpenInEditorParams = {
+  readonly path: string;
+  readonly editor?: string;
+};
+
+export const openInEditor = async ({ path, editor }: OpenInEditorParams): Promise<void> => {
   await invoke('open_in_editor', { path, editor: editor ?? null });
 };
 
