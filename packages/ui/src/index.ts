@@ -142,7 +142,10 @@ export { LocalImage } from './components/LocalImage';
 export { LocalImageLoaderContext } from './components/LocalImage/loaderContext';
 export type { LocalImageLoader } from './components/LocalImage/loaderContext';
 export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageLoaderProvider';
-export type { RemoteImageLoader } from './components/RemoteImage/loaderContext';
+export type {
+  RemoteImageAutoLoad,
+  RemoteImageLoader,
+} from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export type { RevealProps } from './components/Reveal';

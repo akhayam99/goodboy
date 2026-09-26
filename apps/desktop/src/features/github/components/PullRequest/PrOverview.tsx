@@ -3,6 +3,7 @@ import type { PullRequestState, SessionId } from '@goodboy/types';
 import { formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { ImagePlus, Pencil } from 'lucide-react';
 import { useAppStore } from '../../../../store';
+import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
 import { SaveCancel } from './SaveCancel';
 
 type Props = {
@@ -72,7 +73,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   };
 
   const onDescClick = (e: MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('a, img, button') != null) {
+    if (isInteractiveClick({ target: e.target })) {
       return;
     }
     setEditing('body');

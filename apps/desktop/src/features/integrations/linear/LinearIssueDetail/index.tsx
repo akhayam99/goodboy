@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
+import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
 import type { LinearIssue } from '../client';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
@@ -75,7 +76,11 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
             label: 'Description',
             isCollapsible: false,
             defaultOpen: true,
-            content: <DescriptionSection text={description} onSave={save} />,
+            content: (
+              <ToolImageScope workspaceId={workspaceId} projectId={projectId} provider="linear">
+                <DescriptionSection text={description} onSave={save} />
+              </ToolImageScope>
+            ),
           },
           conversation.section,
         ]}
