@@ -3348,10 +3348,7 @@ pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
     if git_dir.join("MERGE_HEAD").is_file() {
         return Some(GitOperation::Merge);
     }
-    if git_dir.join("REBASE_HEAD").is_file()
-        || git_dir.join("rebase-merge").is_dir()
-        || git_dir.join("rebase-apply").is_dir()
-    {
+    if git_dir.join("rebase-merge").is_dir() || git_dir.join("rebase-apply").is_dir() {
         return Some(GitOperation::Rebase);
     }
     if git_dir.join("CHERRY_PICK_HEAD").is_file() {
@@ -3960,6 +3957,35 @@ mod rewrite_tests {
             super::in_progress_operation(&root),
             Some(super::GitOperation::Merge)
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_finished_conflicted_rebase_is_not_in_progress() {
+        let root = init_repo("finished-conflicted-rebase");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        commit(&root, "shared.txt", "feature\n", "feature change");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main change\n", "main change");
+        git_ok(&root, &["checkout", "feature"]);
+
+        let rebase = super::git(&root, &["rebase", "main"]);
+
+        assert!(rebase.is_err());
+        assert!(root.join(".git").join("rebase-merge").is_dir());
+
+        std::fs::write(root.join("shared.txt"), "resolved\n").unwrap();
+        git_ok(&root, &["add", "shared.txt"]);
+        git_ok(&root, &["rebase", "--continue"]);
+
+        assert!(
+            root.join(".git").join("REBASE_HEAD").is_file(),
+            "expected git's own leftover REBASE_HEAD after a finished rebase"
+        );
+        assert!(!root.join(".git").join("rebase-merge").exists());
+        assert!(!root.join(".git").join("rebase-apply").exists());
+        assert_eq!(super::in_progress_operation(&root), None);
         std::fs::remove_dir_all(root).unwrap();
     }
 
