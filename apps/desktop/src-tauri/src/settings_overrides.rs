@@ -267,8 +267,14 @@ mod tests {
         assert_eq!(overrides.resolve_commit_style.as_deref(), Some("fixup"));
         assert_eq!(overrides.reply_template_fixed, None);
         let encoded = serde_json::to_value(&overrides).expect("serialize overrides");
-        assert_eq!(encoded.get("replyVoice"), Some(&serde_json::json!("friendly")));
-        assert_eq!(encoded.get("replyStyleNote"), Some(&serde_json::Value::Null));
+        assert_eq!(
+            encoded.get("replyVoice"),
+            Some(&serde_json::json!("friendly"))
+        );
+        assert_eq!(
+            encoded.get("replyStyleNote"),
+            Some(&serde_json::Value::Null)
+        );
     }
 
     #[test]

@@ -183,7 +183,9 @@ fn restore_migration_snapshot(
         return Err(DbError::InvalidSnapshotPath);
     }
     let previous = std::mem::replace(conn, Connection::open_in_memory()?);
-    previous.close().map_err(|(_, error)| DbError::Sqlite(error))?;
+    previous
+        .close()
+        .map_err(|(_, error)| DbError::Sqlite(error))?;
     let swapped = swap_in_snapshot(db_path, &snapshot_path, stamp);
     *conn = open_connection(db_path)?;
     Ok(swapped?.to_string_lossy().into_owned())
@@ -636,10 +638,8 @@ mod tests {
     }
 
     fn scratch_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "goodboy-db-restore-{name}-{}",
-            std::process::id()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("goodboy-db-restore-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir

@@ -7,6 +7,7 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 
 const MAX_SLUG_LEN: usize = 48;
+const NON_INTERACTIVE_EDITOR: &str = "true";
 
 #[derive(Debug, Error)]
 pub enum WorktreeError {
@@ -2480,7 +2481,10 @@ fn worktree_blame_line_blocking(
         return Ok(None);
     }
     let span = format!("{line},{line}");
-    let Ok(raw) = git(p, &["blame", "--porcelain", "-L", &span, "HEAD", "--", &path]) else {
+    let Ok(raw) = git(
+        p,
+        &["blame", "--porcelain", "-L", &span, "HEAD", "--", &path],
+    ) else {
         return Ok(None);
     };
     let sha = raw
@@ -3537,6 +3541,8 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
         .env("GIT_ASKPASS", "")
         .env("SSH_ASKPASS", "")
         .env("GIT_SSH_COMMAND", "ssh -oBatchMode=yes")
+        .env("GIT_EDITOR", NON_INTERACTIVE_EDITOR)
+        .env("GIT_SEQUENCE_EDITOR", NON_INTERACTIVE_EDITOR)
         .output()?;
     if !output.status.success() {
         let stderr = String::from_utf8(output.stderr).unwrap_or_default();
@@ -6519,7 +6525,10 @@ mod candidate_tests {
         let base = commit(&root, "base.txt", "base", "base");
         commit(&root, "fix.txt", "fix", "fix");
         let candidate = quarantine(&root, "cand-1", &base).unwrap();
-        git_ok(&root, &["commit", "--amend", "--no-verify", "-m", "rewritten"]);
+        git_ok(
+            &root,
+            &["commit", "--amend", "--no-verify", "-m", "rewritten"],
+        );
         let rewritten = head(&root);
 
         let outcome = integrate(&root, "cand-1", &candidate, &base);
