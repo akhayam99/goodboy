@@ -19,6 +19,9 @@ export const CLAUDE_PERMISSION_MODES = [
   'plan',
 ] as const satisfies readonly ClaudePermissionMode[];
 
+export const isClaudePermissionMode = (value: unknown): value is ClaudePermissionMode =>
+  typeof value === 'string' && CLAUDE_PERMISSION_MODES.some((mode) => mode === value);
+
 export type PermissionRuleScope = 'workspace' | 'project' | 'session' | 'global';
 
 export type PermissionScope = PermissionRuleScope | 'once' | 'deny';

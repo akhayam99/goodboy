@@ -415,6 +415,10 @@ type AppActions = {
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
+  setWorkspacePermissionDefault(input: {
+    workspaceId: WorkspaceId;
+    mode: ClaudePermissionMode;
+  }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
     profile: WorkspaceProfile;

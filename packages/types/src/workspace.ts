@@ -58,6 +58,7 @@ export type Workspace = Readonly<{
   slug: string;
   profile?: WorkspaceProfile;
   overrides: OverrideSettings;
+  defaultPermissionMode?: ClaudePermissionMode;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
   deletedAt?: IsoDateTime;

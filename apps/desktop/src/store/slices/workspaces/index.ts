@@ -4,6 +4,7 @@ import { disconnectWorkspace } from './disconnectWorkspace';
 import { mergeWorkspaces } from './mergeWorkspaces';
 import { renameWorkspace } from './renameWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
+import { setWorkspacePermissionDefault } from './setWorkspacePermissionDefault';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
 import type { GetFn, SetFn } from './types';
@@ -17,6 +18,7 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
+    setWorkspacePermissionDefault: setWorkspacePermissionDefault(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get),
   };
 };
