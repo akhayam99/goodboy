@@ -45,13 +45,15 @@ They can also act on them, the same way you can from Goodboy:
 - **Which tools.** An agent is told only about the integrations this workspace has connected through **Link integration**. With nothing connected, the agent hears nothing about the bridge.
 - **Which account.** Each connection belongs to the workspace, and a project can override it with its own account. GitHub also works with your `gh` CLI login when the workspace has no GitHub token.
 - **The connection itself.** Only you can connect, disconnect or check a connection. No agent can.
-- **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready.
+- **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready. Slack works the same way: in Settings > Integrations > Slack, set replies and reactions to Allowed, Ask me first or Never. Ask me first queues the message instead of posting it.
+- **Slack channels and scope.** An agent only reads the channels you follow, never the rest of your workspace, and never starts a new conversation or sends a direct message.
 
 ## What you see
 
 - Comments, replies, approvals and merges show up in the tool itself, and in Goodboy wherever you read that tool
 - A pull request an agent opens is linked to the checkout it came from in the session
 - When an agent forks or switches a checkout, you see it in the session. After a fork, the work goes on in a new turn on the new checkout
+- A Slack reply queued under Ask me first shows up as an editable draft where you already read that thread in Goodboy, with Send and Discard
 
 ## Where it runs
 
