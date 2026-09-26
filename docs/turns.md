@@ -223,6 +223,45 @@ under `$CODEX_HOME/sessions` (default `~/.codex`) and takes the latest
 `last_token_usage` as the context size. When the rollout cannot be read, the
 parsed usage stands.
 
+## Turn footer
+
+`usage` transcript items no longer cluster with operations
+(`cluster-operations.ts`'s `ABSORBED_KINDS` dropped it): a `TurnFooter`
+(`features/chat/components/TurnFooter/`) always renders on its own row,
+right under the run's last assistant message. A `usage` item merges every
+`usage` event for the same `runId` into one (`sumUsage` in
+`transcript-items.ts`), because OpenCode reports several `step-finish`
+events per run.
+
+`useTurnFooter` reads its numbers from the store, not from the item: it
+sums `sessionTelemetry[sessionId]` for the item's `runId` (input, output,
+cached and cache-write tokens, context size, cost), and reads provider,
+model and effort from `runRouting[agentId][runId]`, the same live routing
+map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
+(`seedRunRoutingFromSpans`). Telemetry lags one store write behind the
+`usage` event in the rare case a component reads it first, so the footer
+falls back to the item's own `ProviderUsage` numbers (no provider or model
+yet) until telemetry lands. A cost of exactly zero hides the cost entry
+instead of showing `$0.00`, because zero usually means unknown, not free.
+
+`turnFootersFor` (`utils/turnOutcome.ts`) derives, per run that produced a
+`usage` item: `outcome` (`done`, `stopped` once a later run is active or
+the turn ended with no `done`/`error` for it, `failed` once an `error`
+lands for it) and `startedAt` (the earliest timestamp any item with that
+`runId` carries: a `tool_call`'s `startedAt`, a permission event's `at`,
+or the `usage` item's own `at` when nothing else timed the run). Duration
+is `startedAt` to the `usage` item's `at`, so a text-only turn with no
+tool call measures only from its own usage event onward. `ChatView`
+computes this once per render and `TranscriptRows` resolves each `usage`
+row's own `outcome`/`startedAt` before handing it to `TurnFooter`.
+
+A `stopped` or `failed` footer shows the outcome's `WorkNode` glyph (the
+same alphabet as the transcript's status column) and a token count when
+one exists, never the full stats line. A `done` footer's leading glyph is
+the provider's, not a lifecycle glyph, since done is the expected case;
+clicking it (or `ⓘ`) opens `TurnFooterDetail`, an `AnchoredPopover` with
+the itemized breakdown.
+
 ## Failure and fallback
 
 `classifyProviderError` names the failure. A usage limit puts the provider on

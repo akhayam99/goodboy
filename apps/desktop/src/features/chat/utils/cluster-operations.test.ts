@@ -44,6 +44,8 @@ function usage(key: string): TranscriptItem {
       cachedInputTokens: 0,
       estimatedCostUsd: 0,
     },
+    runId: runId('run-1'),
+    at: iso('2026-06-08T10:00:00.000Z'),
   };
 }
 
@@ -118,10 +120,10 @@ describe('clusterOperations', () => {
     expect(rows.map((r) => r.kind)).toEqual(['item', 'item', 'item']);
   });
 
-  it('absorbs usage into a cluster when it sits next to a real operation', () => {
+  it('never absorbs usage into a cluster, even next to a real operation', () => {
     const rows = clusterOperations([tool('a'), usage('u1')]);
-    expect(rows.map((r) => r.kind)).toEqual(['operations']);
+    expect(rows.map((r) => r.kind)).toEqual(['operations', 'item']);
     const ops = rows[0]!;
-    expect(ops.kind === 'operations' && ops.items).toHaveLength(2);
+    expect(ops.kind === 'operations' && ops.items).toHaveLength(1);
   });
 });

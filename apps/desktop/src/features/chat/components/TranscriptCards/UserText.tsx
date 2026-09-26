@@ -86,7 +86,6 @@ export const UserText = ({
         <MetaRow
           items={[
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
-            provider && model ? <span key="model">{modelLabel(model)}</span> : null,
             sentVia ? <span key="sent-via">{SENT_VIA_LABEL[sentVia]}</span> : null,
             <span key="time" className="font-mono">
               {formatClockTime({ iso: at })}

@@ -35,6 +35,9 @@ export const transcriptItemEqual = ({ previous, next }: ItemPair): boolean => {
       previous.title === next.title
     );
   }
+  if (previous.kind === 'usage' && next.kind === 'usage') {
+    return previous.at === next.at && previous.usage === next.usage;
+  }
   return true;
 };
 

@@ -257,7 +257,7 @@ describe('reduceTranscript incremental resume', () => {
     const items = reduceTranscript(events);
     expect(items).toEqual([
       { kind: 'assistant_text', key: 'text-0', text: 'partial' },
-      { kind: 'done', key: 'done-2' },
+      { kind: 'done', key: 'done-2', runId: RUN },
       { kind: 'assistant_text', key: 'text-3', text: 'after' },
     ]);
     expect(items).toEqual(freshPass({ events }));
@@ -434,7 +434,7 @@ describe('reduceTranscript artifact envelopes', () => {
         runId: RUN,
       },
       { kind: 'assistant_text', key: 'text-0-prose-1', text: '\ntell me what to change.' },
-      { kind: 'done', key: 'done-1' },
+      { kind: 'done', key: 'done-1', runId: RUN },
     ]);
     expect(
       items.some((item) => item.kind === 'assistant_text' && item.text.includes('<<artifact')),

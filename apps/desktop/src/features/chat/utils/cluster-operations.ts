@@ -7,7 +7,6 @@ const OPERATION_KINDS = new Set<TranscriptItem['kind']>([
 ]);
 
 const ABSORBED_KINDS = new Set<TranscriptItem['kind']>([
-  'usage',
   'permission_request',
   'permission_decision',
 ]);

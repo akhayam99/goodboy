@@ -34,6 +34,7 @@ import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
+import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatInput } from '../ChatInput';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
@@ -206,6 +207,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
     turnStateForRun.kind === 'running' || turnStateForRun.kind === 'blocked'
       ? turnStateForRun.runId
       : null;
+  const turnFooters = useMemo(() => turnFootersFor({ items, activeRunId }), [items, activeRunId]);
   const lastItem = items[items.length - 1];
   const lastRow = rows[rows.length - 1];
   const lastClusterRunning =
@@ -487,6 +489,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
                   retryingRunId={retryingRunId}
                   mountSuggestionsByRun={mountSuggestionsByRun}
                   activeRunId={activeRunId}
+                  turnFooters={turnFooters}
                 />
               </ChatImageLoaderProvider>
             </ul>

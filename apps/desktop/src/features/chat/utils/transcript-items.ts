@@ -60,7 +60,7 @@ export type TranscriptItem =
       endedAt: IsoDateTime | null;
     }
   | { kind: 'file_edit'; key: string; path: string; editType: 'create' | 'modify' | 'delete' }
-  | { kind: 'usage'; key: string; usage: ProviderUsage }
+  | { kind: 'usage'; key: string; usage: ProviderUsage; runId: ProviderRunId; at: IsoDateTime }
   | {
       kind: 'error';
       key: string;
@@ -106,7 +106,7 @@ export type TranscriptItem =
       at: IsoDateTime;
     }
   | { kind: 'oq_answer'; key: string }
-  | { kind: 'done'; key: string }
+  | { kind: 'done'; key: string; runId?: ProviderRunId }
   | {
       kind: 'permission_request';
       key: string;
@@ -128,6 +128,21 @@ export type TranscriptItem =
       decidedBy: 'engine' | 'user' | 'default';
       at: IsoDateTime;
     };
+
+type SumUsageParams = {
+  readonly first: ProviderUsage;
+  readonly second: ProviderUsage;
+};
+
+const sumUsage = ({ first, second }: SumUsageParams): ProviderUsage => ({
+  inputTokens: first.inputTokens + second.inputTokens,
+  outputTokens: first.outputTokens + second.outputTokens,
+  cachedInputTokens: first.cachedInputTokens + second.cachedInputTokens,
+  cacheCreationInputTokens:
+    (first.cacheCreationInputTokens ?? 0) + (second.cacheCreationInputTokens ?? 0),
+  contextTokens: second.contextTokens ?? first.contextTokens,
+  estimatedCostUsd: first.estimatedCostUsd + second.estimatedCostUsd,
+});
 
 type ReduceSnapshot = {
   readonly lastEvent: TurnEvent;
@@ -336,9 +351,25 @@ export const reduceTranscript = (
           editType: event.editType,
         });
         break;
-      case 'usage':
-        items.push({ kind: 'usage', key: `usage-${i}`, usage: event.usage });
+      case 'usage': {
+        const previous = items[items.length - 1];
+        if (previous !== undefined && previous.kind === 'usage' && previous.runId === event.runId) {
+          items[items.length - 1] = {
+            ...previous,
+            usage: sumUsage({ first: previous.usage, second: event.usage }),
+            at: event.at,
+          };
+          break;
+        }
+        items.push({
+          kind: 'usage',
+          key: `usage-${i}`,
+          usage: event.usage,
+          runId: event.runId,
+          at: event.at,
+        });
         break;
+      }
       case 'error': {
         const authPayload = decodeAuthRequiredMessage(event.message);
         if (authPayload !== null) {
@@ -421,7 +452,7 @@ export const reduceTranscript = (
         });
         break;
       case 'done':
-        items.push({ kind: 'done', key: `done-${i}` });
+        items.push({ kind: 'done', key: `done-${i}`, runId: event.runId });
         break;
       case 'permission_request':
         permToolNames.set(event.toolUseId, event.toolName);

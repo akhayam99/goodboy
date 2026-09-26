@@ -6,7 +6,7 @@ import { AnsweredCard } from '../../../../features/chat/components/ChatView/Answ
 import { AuthRequiredCallout } from '../../../../features/chat/components/AuthRequiredCallout';
 import { FileEditBlock } from '../../../../features/chat/components/TranscriptCards/FileEditBlock';
 import { NudgeCard } from '../../../../features/chat/components/NudgeCard';
-import { UsageRow } from '../../../../features/chat/components/TranscriptCards/UsageRow';
+import { TurnFooter } from '../../../../features/chat/components/TurnFooter';
 import { UserText } from '../../../../features/chat/components/TranscriptCards/UserText';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
@@ -159,14 +159,23 @@ export const CardRailsScene = () => {
         <Row label="file touched">
           <FileEditBlock path="packages/core/src/summarizer/step-output.ts" editType="modify" />
         </Row>
-        <Row label="usage">
-          <UsageRow
-            usage={{
-              inputTokens: 24,
-              outputTokens: 16200,
-              cachedInputTokens: 558300,
-              estimatedCostUsd: 1.26,
+        <Row label="turn footer">
+          <TurnFooter
+            item={{
+              kind: 'usage',
+              key: 'usage-scene',
+              usage: {
+                inputTokens: 182412,
+                outputTokens: 1388,
+                cachedInputTokens: 171300,
+                cacheCreationInputTokens: 8204,
+                contextTokens: 76000,
+                estimatedCostUsd: 0.12,
+              },
+              runId: 'run-scene' as ProviderRunId,
+              at: NOW,
             }}
+            startedAt={clock.iso({ at: '2026-09-22T09:11:18.000Z' })}
           />
         </Row>
         <Row label="your message">
