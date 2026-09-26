@@ -64,6 +64,12 @@ export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } fr
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
 export type { OpenQuestion, OpenQuestionSelectMode, OpenQuestionStatus } from './open-question';
 export { MATERIALIZATION_DEFERRAL_CAUSES, SESSION_EVENT_KINDS } from './session-event';
+export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-decision';
+export type {
+  SessionDecision,
+  SessionDecisionAuthor,
+  SessionDecisionStatus,
+} from './session-decision';
 export type {
   MaterializationDeferralCause,
   SessionEvent,

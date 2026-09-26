@@ -109,6 +109,7 @@ export {
   type ArchivedSessionRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
+export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
   detachWorkflowFromSession,
