@@ -9,9 +9,14 @@ export const navigate = (set: SetFn, get: GetFn) => {
     const state = get();
     const place = canonicalLocation({ state, request: to });
     const stack = currentStack(state);
-    const next: Location = { workspaceId: state.currentWorkspaceId, place, focus: EMPTY_FOCUS };
+    const next: Location = {
+      workspaceId: state.currentWorkspaceId,
+      place,
+      studio: null,
+      focus: EMPTY_FOCUS,
+    };
     const updated = mode === 'replace' ? replaceTop({ stack, next }) : pushEntry({ stack, next });
     set((current) => ({ navigation: { ...current.navigation, [stackKey(current)]: updated } }));
-    applyLocation({ set, get, place, isRestore: false });
+    applyLocation({ set, get, location: next, isRestore: false });
   };
 };

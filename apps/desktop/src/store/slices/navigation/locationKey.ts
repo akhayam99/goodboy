@@ -1,4 +1,5 @@
 import type { LensKind } from '../session-view/types';
+import { studioKey, type StudioPlace } from './studio';
 import type { Place, SessionTarget, SessionView } from './types';
 
 const LENS_ADDRESS: Record<LensKind, string> = {
@@ -74,14 +75,22 @@ const sessionViewAddress = ({ view }: ViewParams): string => {
   return parts.join('/');
 };
 
-type Params = {
+type PlaceParams = {
   readonly place: Place;
 };
 
-export const locationKey = ({ place }: Params): string => {
+const placeKey = ({ place }: PlaceParams): string => {
   if (place.at === 'board') {
     return 'board';
   }
   const view = sessionViewAddress({ view: place.view });
   return view === '' ? `s/${place.sessionId}` : `s/${place.sessionId}/${view}`;
 };
+
+type Params = {
+  readonly place: Place;
+  readonly studio?: StudioPlace | null;
+};
+
+export const locationKey = ({ place, studio = null }: Params): string =>
+  studio === null ? placeKey({ place }) : `${placeKey({ place })}+${studioKey({ studio })}`;

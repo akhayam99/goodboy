@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { drawerAfterMove } from '../drawer/drawerAfterMove';
-import type { GetFn, Place, SessionView, SetFn } from './types';
+import type { GetFn, Location, SessionView, SetFn } from './types';
 
 type SurfaceParams = {
   readonly state: AppState;
@@ -86,11 +86,15 @@ const surfaceChanges = ({
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly place: Place;
+  readonly location: Pick<Location, 'place' | 'studio'>;
   readonly isRestore: boolean;
 };
 
-export const applyLocation = ({ set, get, place, isRestore }: Params): void => {
+export const applyLocation = ({ set, get, location, isRestore }: Params): void => {
+  const { place, studio } = location;
+  if (get().appStudio !== studio) {
+    set({ appStudio: studio });
+  }
   if (place.at === 'board') {
     void get().setCurrentSession(null);
     return;

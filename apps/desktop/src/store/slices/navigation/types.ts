@@ -5,6 +5,7 @@ import type {
   LensKind,
   SessionStudio,
 } from '../session-view/types';
+import type { StudioPlace } from './studio';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -43,6 +44,7 @@ export type Focus = {
 export type Location = {
   readonly workspaceId: WorkspaceId | null;
   readonly place: Place;
+  readonly studio: StudioPlace | null;
   readonly focus: Focus;
 };
 
@@ -62,12 +64,17 @@ export type AmendFocusParams = {
   readonly patch: Partial<Focus>;
 };
 
+export type StudioParams = {
+  readonly studio: StudioPlace;
+};
+
 export type NavigationSliceState = {
   readonly navigation: Readonly<Record<string, NavigationStack>>;
+  readonly appStudio: StudioPlace | null;
 };
 
 export const EMPTY_FOCUS: Focus = { selection: {}, scroll: {}, revealed: [] };
 
 export const HISTORY_LIMIT = 50;
 
-export const initialNavigationState: NavigationSliceState = { navigation: {} };
+export const initialNavigationState: NavigationSliceState = { navigation: {}, appStudio: null };

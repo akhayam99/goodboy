@@ -11,6 +11,10 @@ export const up = (set: SetFn, get: GetFn) => {
   return (): void => {
     const state = get();
     const live = captureLocation({ state });
+    if (live.studio !== null) {
+      get().closeStudio();
+      return;
+    }
     const parent = parentPlace({ state, place: live.place });
     if (parent === null) {
       return;
@@ -20,11 +24,21 @@ export const up = (set: SetFn, get: GetFn) => {
     if (isStudio) {
       const updated = closeSideTrips({
         stack,
-        base: { workspaceId: state.currentWorkspaceId, place: parent, focus: EMPTY_FOCUS },
+        base: {
+          workspaceId: state.currentWorkspaceId,
+          place: parent,
+          studio: null,
+          focus: EMPTY_FOCUS,
+        },
       });
       const landing = updated.entries[updated.index];
       set((current) => ({ navigation: { ...current.navigation, [stackKey(current)]: updated } }));
-      applyLocation({ set, get, place: landing?.place ?? parent, isRestore: true });
+      applyLocation({
+        set,
+        get,
+        location: landing ?? { place: parent, studio: null },
+        isRestore: true,
+      });
       return;
     }
     const previous = stack.entries[stack.index - 1];

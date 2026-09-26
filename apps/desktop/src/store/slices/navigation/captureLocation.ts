@@ -55,7 +55,7 @@ export const captureLocation = ({ state, focus = EMPTY_FOCUS }: Params): Locatio
   const workspaceId = state.currentWorkspaceId;
   const sessionId = state.currentSessionId;
   if (sessionId === null) {
-    return { workspaceId, place: { at: 'board' }, focus };
+    return { workspaceId, place: { at: 'board' }, studio: state.appStudio, focus };
   }
   const lens = state.activeLens[sessionId] ?? null;
   const studio = state.sessionStudio[sessionId] ?? null;
@@ -71,6 +71,7 @@ export const captureLocation = ({ state, focus = EMPTY_FOCUS }: Params): Locatio
         target: captureTarget({ state, sessionId, lens }),
       },
     },
+    studio: state.appStudio,
     focus,
   };
 };

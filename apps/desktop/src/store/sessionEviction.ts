@@ -219,6 +219,7 @@ export const NON_SESSION_STATE_KEYS = [
   'bugReportDraft',
   'drawer',
   'navigation',
+  'appStudio',
   'slackChannels',
   'slackUsers',
   'slackThreadHeads',

@@ -33,6 +33,7 @@ const makeStore = () =>
         currentWorkspaceId: WS,
         currentSessionId: null,
         navigation: {},
+        appStudio: null,
         activeLens: {},
         sessionStudio: {},
         selectedAgentId: {},
@@ -218,6 +219,70 @@ describe('navigation slice', () => {
     ]);
   });
 
+  it('pushes an app studio over the place and walks back to it with its focus', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
+    store.getState().amendStudio({
+      studio: {
+        kind: 'inbox',
+        focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
+      },
+    });
+    store.getState().openStudio({ studio: { kind: 'workflow' } });
+    expect(keyOf(store)).toBe(`s/${S1}/review+workflows`);
+
+    store.getState().back();
+    expect(store.getState().appStudio).toEqual({
+      kind: 'inbox',
+      focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
+    });
+    expect(keyOf(store)).toBe(`s/${S1}/review+inbox/linear/NW-214`);
+
+    store.getState().back();
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().activeLens[S1]).toBe('review');
+  });
+
+  it('closes an app studio by folding every studio voice into the base', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().openStudio({ studio: { kind: 'inbox', focus: null } });
+    store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
+    store.getState().closeStudio();
+    const stack = store.getState().navigation[WS];
+    expect(store.getState().appStudio).toBeNull();
+    expect(stack?.entries.map((entry) => locationKey(entry))).toEqual(['board', `s/${S1}`]);
+  });
+
+  it('replaces the studio voice when the same studio opens again', () => {
+    const store = makeStore();
+    store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'app' } } });
+    store.getState().openStudio({ studio: { kind: 'settings', focus: { scope: 'providers' } } });
+    expect(store.getState().navigation[WS]?.entries).toHaveLength(2);
+    expect(keyOf(store)).toBe('board+settings/providers');
+  });
+
+  it('closes the studio on a forward move and finds it again on back', () => {
+    const store = makeStore();
+    store.getState().openStudio({ studio: { kind: 'notifications' } });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().appStudio).toBeNull();
+
+    store.getState().back();
+    expect(store.getState().appStudio).toEqual({ kind: 'notifications' });
+    expect(store.getState().currentSessionId).toBeNull();
+  });
+
+  it('goes up out of an app studio before it leaves the page', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().openStudio({ studio: { kind: 'changelog' } });
+    store.getState().up();
+    expect(store.getState().appStudio).toBeNull();
+    expect(store.getState().activeLens[S1]).toBe('agents');
+  });
+
   it('keeps one stack per workspace', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
@@ -240,9 +305,19 @@ describe('navigation slice', () => {
   });
 
   it('drops the voices of an evicted session and folds the duplicates', () => {
-    const board = { workspaceId: WS, place: BOARD_PLACE, focus: EMPTY };
-    const s1 = { workspaceId: WS, place: sessionPlace({ sessionId: S1 }), focus: EMPTY };
-    const s2 = { workspaceId: WS, place: sessionPlace({ sessionId: S2 }), focus: EMPTY };
+    const board = { workspaceId: WS, place: BOARD_PLACE, studio: null, focus: EMPTY };
+    const s1 = {
+      workspaceId: WS,
+      place: sessionPlace({ sessionId: S1 }),
+      studio: null,
+      focus: EMPTY,
+    };
+    const s2 = {
+      workspaceId: WS,
+      place: sessionPlace({ sessionId: S2 }),
+      studio: null,
+      focus: EMPTY,
+    };
     const dropped = dropSession({
       stack: { entries: [board, s1, board, s2], index: 3 },
       sessionId: S1,

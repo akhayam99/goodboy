@@ -287,6 +287,7 @@ import {
   initialNavigationState,
   type AmendFocusParams,
   type NavigateParams,
+  type StudioParams,
 } from './slices/navigation/types';
 import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
@@ -365,6 +366,9 @@ type AppActions = {
   forward(): void;
   up(): void;
   amendFocus(params: AmendFocusParams): void;
+  openStudio(params: StudioParams): void;
+  amendStudio(params: StudioParams): void;
+  closeStudio(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   openWorkspace(id: WorkspaceId, title: string): Promise<void>;

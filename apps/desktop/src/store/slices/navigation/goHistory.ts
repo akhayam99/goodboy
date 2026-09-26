@@ -19,6 +19,6 @@ export const goHistory = ({ set, get, delta }: Params): boolean => {
   set((current) => ({
     navigation: { ...current.navigation, [stackKey(current)]: { ...stack, index } },
   }));
-  applyLocation({ set, get, place: entry.place, isRestore: true });
+  applyLocation({ set, get, location: entry, isRestore: true });
   return true;
 };
