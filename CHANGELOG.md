@@ -32,13 +32,6 @@ Picking up a task, running a workflow, or asking an agent all start the same way
 
 Saving a script now scans it for tokens and keys, and a new Security findings page under App lists what it found. Dismiss a match that is not a secret, or flag it again if you change your mind.
 
-#### Eleven new things Next can ask you to do
-<!-- gb area=sessions -->
-
-Next now covers approving a change, signing in, unlocking a step, retrying, watching CI, pushing, opening a pull request, marking a plan ready, merging, reviewing, and closing a worktree.
-
-Starting a turn offers three quick choices plus a composer for asking a specific agent by role and model, and a workflow form works the same wherever you run it.
-
 ### Improved
 
 #### One page per provider
@@ -73,9 +66,9 @@ The Projects block now fetches every repo when you open it, tells you how many a
 #### A project list that scales past twenty
 <!-- gb area=settings screen=settings/workspace/projects -->
 
-Workspace settings now handles a long project list: star the ones you use, rename one inline, and see its actions without opening anything. Storage shows the space each workspace uses and the total on your machine, and a merged branch only counts as safe to delete once no one has picked it back up.
+Workspace settings keeps starred projects first, holds the order still while you work in it, shows eight at a time with Show more, and adds a filter once you have ten. Click a project to edit its description, base branch and folder in place, and a missing folder is flagged on its row.
 
-The Settings rail also says what to expect on each page before you open it, instead of scanning first.
+Settings now opens on App, and workspace settings opens from the gear on the current workspace in the workspace popover. The rail names what needs you on each page, such as folders not found, and Storage can show one workspace, removed ones, or the whole machine.
 
 #### Keep .goodboy out of git without asking twice
 <!-- gb area=settings screen=settings/workspace/projects -->

@@ -42,6 +42,7 @@ import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
+import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
 
@@ -375,6 +376,15 @@ describe('primary surfaces mount on real store selectors', () => {
     },
   );
 
+  it('opens the workspace popover', async () => {
+    seedBoardScene();
+
+    await mountSurface({ ui: <WorkspaceSwitcher onClose={() => undefined} /> });
+
+    expect(screen.getAllByText('Cascade').length).toBeGreaterThan(0);
+    expectNoRenderLoop();
+  });
+
   it('opens the board', async () => {
     seedBoardScene();
     const sessions = useAppStore.getState().sessions;
@@ -387,6 +397,7 @@ describe('primary surfaces mount on real store selectors', () => {
 
   it.each([
     ['app settings', { scope: 'app' }, 'Settings'],
+    ['workspace settings with its rail', { scope: 'workspace' }, 'Projects'],
     ['the providers page', { scope: 'providers' }, 'Providers'],
     ['a provider page', { scope: 'providers', provider: 'anthropic' as ProviderId }, 'Claude'],
   ] satisfies ReadonlyArray<readonly [string, SettingsFocus, string]>)(
