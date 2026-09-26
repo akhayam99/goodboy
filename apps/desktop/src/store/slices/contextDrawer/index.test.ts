@@ -4,7 +4,7 @@ import type { IsoDateTime, SessionEvent, SessionId } from '@goodboy/types';
 const { db } = vi.hoisted(() => ({
   db: {
     getSessionContextSeenAt: vi.fn(async (): Promise<string | null> => null),
-    setSessionContextSeenAt: vi.fn(async () => undefined),
+    setSessionContextSeenAt: vi.fn(async (_sessionId: unknown, _seenAt: unknown) => undefined),
   },
 }));
 
