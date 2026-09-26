@@ -80,11 +80,9 @@ const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
 type Props = {
   readonly session: Session;
   readonly actions: ReactNode;
-  readonly kickoff?: ReactNode;
-  readonly onKickoffShownChange?: (isShown: boolean) => void;
 };
 
-export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }: Props) => {
+export const TimelinePane = ({ session, actions }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -192,13 +190,6 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
       worktrees,
     ],
   );
-
-  const isKickoffShown =
-    model.entries.length === 0 && kickoff != null && areEventsLoaded && areAgentsLoaded;
-
-  useEffect(() => {
-    onKickoffShownChange?.(isKickoffShown);
-  }, [isKickoffShown, onKickoffShownChange]);
 
   const stepById = useMemo(() => {
     const steps = new Map<string, Step>();
@@ -517,10 +508,6 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
     areEventsLoaded && areAgentsLoaded && model.entries.length === 0
       ? 'Nothing yet. Agents, workflows and session facts land here as they happen.'
       : undefined;
-
-  if (isKickoffShown) {
-    return <>{kickoff}</>;
-  }
 
   return (
     <section aria-label="Activity" className="@container/activity flex flex-col gap-2">

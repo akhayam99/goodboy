@@ -28,7 +28,9 @@ export const WorkspaceFrame = ({ session, main }: Props) => {
       leftHidden={arrangement.leftHidden}
       leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
       leftSidebar={
-        arrangement.leftSlot === 'sessions' ? <SessionNavSidebar session={session} /> : undefined
+        arrangement.leftSlot === 'sessions' ? (
+          <SessionNavSidebar currentSessionId={session.id} />
+        ) : undefined
       }
       footer={
         <AppFooter

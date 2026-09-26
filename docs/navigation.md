@@ -223,26 +223,44 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**An empty session asks one question.** Until the session has any activity,
-the overview body is the kickoff: "How do you want to start?" with three
-options in a single-select list.
+**New session is a draft, not a session.** New, ⌘N, the board, the palette
+and the checklist open the `New session` draft (the `session-draft` place,
+address `new`). Nothing is written: no row in the database, the sidebar or
+the board. The trail and the title say `New session`, the title is faint and
+cannot be renamed, and there is no `⋯`, no chip and no projects section. The
+sidebar's New button stays selected while the draft is open. Each workspace
+keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
+leaving it keeps it intact, New brings it back, and the button shows a primary
+dot with `Draft in progress` while a written draft waits. `Discard draft` in
+the header empties it; Esc never does. Back returns to the draft like any
+other place.
+
+The draft asks one question, "How do you want to start?", with three options
+in a single-select list.
 
 - **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** links it and proposes the
-  brief, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Without a tracker it shows the connect links.
-- **Run a workflow** asks for the goal and a workflow, then **Run workflow**
+  search field. Picking one and pressing **Pick up** proposes the brief under
+  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Use brief, Edit or Use issue text starts the session. Without a tracker it
+  shows the connect links.
+- **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
   that reads the project and suggests where to start.
 
-Only the selected option's primary shows. **Draw a wireframe**, and **Write a
-report** once an agent has finished, sit in a quiet **More ways to start**
-menu. The list preselects Pick up a task when a tracker has open issues and
-Run a workflow otherwise, and it remembers the last choice per workspace in
-local UI storage. A new session puts focus on the question, not on the title.
-The empty header keeps the title, faint while it is still the placeholder, and
-one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
+Only the selected option's primary shows. The list preselects Pick up a task
+when a tracker has open issues and Run a workflow otherwise, and it never
+remembers the last choice. Opening the draft puts focus on the question.
+
+**Start is the only way a session is born from the draft.** The primary
+creates the session and starts the work in one gesture
+(`startSessionFromDraft`): the title and the goal come from the issue, the
+workflow goal or the first sentence of the Scout focus, a picked issue is
+linked, and the column moves to the new session. If the start fails, the
+session is removed again, the draft stays as it was and the reason shows
+inline above the primary. A session that exists always has a real title, so
+its header never has an empty state. Sessions created elsewhere with no
+activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 

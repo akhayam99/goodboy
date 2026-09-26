@@ -1,5 +1,5 @@
 import { slugifyDir } from './slugifyDir';
-import { UNTITLED_BASE } from './untitledTitle';
+import { UNTITLED_BASE } from '../../../features/session/sessionTitle';
 
 const MAX_SLUG_LENGTH = 48;
 const IDENTIFIER_MAX_LENGTH = 16;

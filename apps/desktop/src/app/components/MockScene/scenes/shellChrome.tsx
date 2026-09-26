@@ -116,7 +116,7 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
           arrangement.leftSlot === 'sessions' ? (
-            <SessionNavSidebar session={session} />
+            <SessionNavSidebar currentSessionId={session.id} />
           ) : (
             <CollapsedRail />
           )

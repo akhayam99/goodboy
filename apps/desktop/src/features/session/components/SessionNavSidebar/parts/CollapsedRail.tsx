@@ -12,9 +12,10 @@ const RAIL_BUTTON = cn(
 
 type Props = {
   readonly onToggleSidebar?: () => void;
+  readonly isDraftShown?: boolean;
 };
 
-export const CollapsedRail = ({ onToggleSidebar }: Props) => (
+export const CollapsedRail = ({ onToggleSidebar, isDraftShown = false }: Props) => (
   <div
     className="flex h-full min-w-0 shrink-0 flex-col items-center gap-1 py-2"
     style={{ width: COLLAPSED_RAIL_WIDTH }}
@@ -27,7 +28,8 @@ export const CollapsedRail = ({ onToggleSidebar }: Props) => (
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
         aria-label={`New session (${shortcutGlyphs('session.new')})`}
-        className={RAIL_BUTTON}
+        aria-pressed={isDraftShown}
+        className={cn(RAIL_BUTTON, isDraftShown && 'bg-selected text-foreground')}
       >
         <Plus size={ICON_SIZE.control} aria-hidden />
       </button>

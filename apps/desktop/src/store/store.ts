@@ -279,6 +279,11 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
+import { createSessionDraftSlice } from './slices/sessionDraft';
+import { initialSessionDraftState } from './slices/sessionDraft/state';
+import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
+import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
+import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import {
@@ -357,6 +362,10 @@ type AppActions = {
   addBugReportImages(params: AddBugReportImagesParams): void;
   removeBugReportImage(params: RemoveBugReportImageParams): void;
   clearBugReportDraft(): void;
+  openSessionDraft(): void;
+  patchSessionDraft(params: PatchSessionDraftParams): void;
+  discardSessionDraft(params: DiscardSessionDraftParams): void;
+  startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
@@ -497,8 +506,6 @@ type AppActions = {
     }>;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
-  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
-  clearPendingKickoffFocus(): void;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
@@ -1049,6 +1056,7 @@ export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
+  ...initialSessionDraftState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
@@ -1068,7 +1076,6 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
-  pendingKickoffFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,
@@ -1274,6 +1281,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
+  ...createSessionDraftSlice(set, get),
   ...createDrawerSlice(set, get),
   ...createNavigationSlice(set, get),
 }));

@@ -7,7 +7,13 @@ import type { DrawerRequest } from '../drawer/state';
 import { createNavigationSlice } from '.';
 import { dropSession } from './history';
 import { locationKey } from './locationKey';
-import { BOARD_PLACE, agentPlace, resolverPagePlace, sessionPlace } from './place';
+import {
+  BOARD_PLACE,
+  SESSION_DRAFT_PLACE,
+  agentPlace,
+  resolverPagePlace,
+  sessionPlace,
+} from './place';
 import { HISTORY_LIMIT } from './types';
 
 const WS = 'ws-harborline' as WorkspaceId;
@@ -47,6 +53,7 @@ const makeStore = () =>
         focusedGithubIssueNumber: {},
         focusedExternalTask: {},
         drawer: null,
+        openSessionDraftWorkspaceId: null,
         sessionPhaseRuns: {
           [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
         },
@@ -77,6 +84,26 @@ const keyOf = (store: ReturnType<typeof makeStore>): string => {
 };
 
 describe('navigation slice', () => {
+  it('opens the new session draft as its own entry and Back leaves it', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: SESSION_DRAFT_PLACE });
+
+    expect(store.getState().currentSessionId).toBeNull();
+    expect(store.getState().openSessionDraftWorkspaceId).toBe(WS);
+    expect(keyOf(store)).toBe('new');
+
+    store.getState().back();
+    expect(store.getState().currentSessionId).toBe(S1);
+    expect(store.getState().openSessionDraftWorkspaceId).toBeNull();
+
+    store.getState().forward();
+    expect(store.getState().openSessionDraftWorkspaceId).toBe(WS);
+    store.getState().navigate({ to: BOARD_PLACE });
+    expect(store.getState().openSessionDraftWorkspaceId).toBeNull();
+    expect(keyOf(store)).toBe('board');
+  });
+
   it('pushes a voice per place and walks back and forward', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });

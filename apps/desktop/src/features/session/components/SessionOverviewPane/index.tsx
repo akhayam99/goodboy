@@ -14,9 +14,6 @@ import { GoalDetailAction } from './GoalDetailAction';
 import { ArchivedGate } from './ArchivedGate';
 import { goalPresence } from './goalPresence';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
-import { SessionKickoff } from '../SessionKickoff';
-import { IssueBriefProposal } from '../SessionKickoff/IssueBriefProposal';
-import { useIssueBriefProposal } from './useIssueBriefProposal';
 import { OverviewActions } from './OverviewActions';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { AttentionCallout } from './AttentionCallout';
@@ -35,8 +32,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const [isGoalEditing, setIsGoalEditing] = useState(false);
-  const [isKickoffShown, setIsKickoffShown] = useState(false);
-  const { proposal, pickIssue } = useIssueBriefProposal({ session });
   const goalSlot = slots.find((slot) => slot.key === 'goal');
 
   const isGoalLoading = goalSlot == null && slotLoading.slots;
@@ -55,7 +50,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
         <HeaderBand
           session={session}
           onSelectLens={onSelectLens}
-          isEmpty={isKickoffShown}
           titleAction={
             presence === 'own' || isGoalEditing || isGoalLoading ? null : (
               <GoalDetailAction
@@ -86,9 +80,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       animationClassName="animate-fade-in"
     >
       <AttentionCallout session={session} onSelectLens={onSelectLens} />
-      {proposal !== null ? (
-        <IssueBriefProposal key={proposal.source.externalId} {...proposal} />
-      ) : null}
       <TimelinePane
         session={session}
         actions={
@@ -96,16 +87,6 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             <OverviewActions sessionId={sessionId} onOpenWorkflowBuilder={openWorkflowBuilder} />
           </ArchivedGate>
         }
-        kickoff={
-          isArchived ? undefined : (
-            <SessionKickoff
-              session={session}
-              onOpenWorkflowBuilder={openWorkflowBuilder}
-              onPickIssue={pickIssue}
-            />
-          )
-        }
-        onKickoffShownChange={setIsKickoffShown}
       />
     </PaneShell>
   );
