@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Checkbox, Eyebrow, Input, Switch } from '@goodboy/ui';
 import type { SlackIntegrationBinding, SlackIntegrationConfig, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { IntegrationConnectedRow } from '../../components/IntegrationConnectedRow';
 import { SlackPolicyRow } from './SlackPolicyRow';
 
@@ -35,7 +35,9 @@ const save = ({ config, workspaceId, update }: SaveParams): void => {
 };
 
 export const SlackSettings = ({ workspaceId, slack }: Props) => {
-  const channels = useAppStore((state) => state.slackChannels[workspaceId]?.channels ?? []);
+  const channels = useAppStore(
+    (state) => state.slackChannels[workspaceId]?.channels ?? EMPTY_ARRAY,
+  );
   const refreshSlackChannels = useAppStore((state) => state.refreshSlackChannels);
   const updateSlackConfig = useAppStore((state) => state.updateSlackConfig);
   const disconnectIntegration = useAppStore((state) => state.disconnectIntegration);
