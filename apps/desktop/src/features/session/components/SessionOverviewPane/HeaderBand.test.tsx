@@ -10,6 +10,7 @@ const { store } = vi.hoisted(() => ({
     sessionGithub: {},
     sessionExternalTasks: {},
     sessionArtifacts: {} as Record<string, ReadonlyArray<{ readonly kind: string }>>,
+    diffComments: {},
     sessionResolveQueueItems: {} as Record<
       string,
       ReadonlyArray<{

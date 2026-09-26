@@ -84,6 +84,7 @@ const thread = (threadId: string): ResolveThread => ({
   prNumber: 12,
   threadId,
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'publishing',
   stage: 'new',
   stateReason: null,

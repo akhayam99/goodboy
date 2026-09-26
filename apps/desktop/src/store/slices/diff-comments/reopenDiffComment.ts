@@ -1,14 +1,12 @@
-import { listDiffCommentsForSession, reopenDiffComment as dbReopenDiffComment } from '@goodboy/db';
+import { reopenDiffComment as dbReopenDiffComment } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { SetFn } from './types';
+import { refreshNotes } from './refreshNotes';
+import type { GetFn, SetFn } from './types';
 
-export const reopenDiffComment = (set: SetFn) => {
+export const reopenDiffComment = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, commentId: string) => {
     await dbReopenDiffComment(tauriDatabase, commentId);
-    const comments = await listDiffCommentsForSession(tauriDatabase, sessionId);
-    set((state) => ({
-      diffComments: { ...state.diffComments, [sessionId]: comments },
-    }));
+    await refreshNotes({ set, get, sessionId });
   };
 };

@@ -27,7 +27,7 @@ const { store, actions } = vi.hoisted(() => {
     setFocusedWorkflowRun: vi.fn(),
     setFocusedArtifactId: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
-    setReviewMode: vi.fn(),
+    setPullRequestMode: vi.fn(),
   };
   return { store, actions };
 });
@@ -144,7 +144,7 @@ beforeEach(() => {
     sessionWorkflows: {},
     sessionBranches: { [SESSION_ID]: 'feature/one' },
     workspaces: [{ id: 'workspace-1', kind: 'repo' }],
-    reviewModes: {},
+    pullRequestModes: {},
     ...actions,
   };
   store.openQuestions = [];

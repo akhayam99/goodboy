@@ -28,17 +28,15 @@ describe('openReview', () => {
     expect(h.state.openReviewTarget).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
-  it('carries the mount, the pull request, the thread and the mode to the store', async () => {
+  it('carries the mount, the pull request and the thread to the store', async () => {
     await openReview({
       sessionId: SESSION_ID,
       destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 248, threadId: 'PRRT_7' },
-      mode: 'pr_activity',
     });
 
     expect(h.state.openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       destination: { kind: 'thread', mountId: MOUNT_ID, prNumber: 248, threadId: 'PRRT_7' },
-      mode: 'pr_activity',
     });
   });
 

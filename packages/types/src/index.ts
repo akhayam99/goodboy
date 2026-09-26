@@ -342,6 +342,7 @@ export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
 export type {
   DiffComment,
   DiffCommentAnchor,
+  DiffCommentAuthorKind,
   DiffCommentSide,
   DiffCommentStatus,
 } from './diff-comment';

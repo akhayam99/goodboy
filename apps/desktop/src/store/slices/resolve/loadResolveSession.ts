@@ -14,6 +14,7 @@ import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { projectResolveRows } from './projectResolveRows';
 import { loadPublicationsInto } from './publicationState';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
+import { syncNoteThreads } from './syncNoteThreads';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams & SessionParams;
@@ -24,6 +25,7 @@ export const loadResolveSession = async ({ set, get, sessionId }: Params): Promi
     .catch(() => null);
   await recoverUncapturedResolveWork({ set, get, sessionId }).catch(() => null);
   await importLegacyResolve({ set, get, sessionId });
+  await syncNoteThreads({ set, get, sessionId }).catch(() => 0);
   await reconcileResolveAttempts({
     set,
     get,

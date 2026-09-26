@@ -211,6 +211,31 @@ describe('review-drafts slice', () => {
     expect(drafts[1]?.startLine).toBe(5);
   });
 
+  it('keeps agent markers as notes when the branch has no pull request', async () => {
+    const addDiffComment = vi.fn(async () => undefined);
+    const { slice } = buildHarness({
+      sessionExternalTasks: {},
+      diffComments: {
+        [SESSION_ID]: [{ filePath: 'src/a.ts', body: 'guard the null case' }],
+      },
+      loadDiffComments: vi.fn(async () => undefined),
+      addDiffComment,
+    });
+    await slice.queueAgentReviewComments(SESSION_ID, AGENT_ID, [
+      { path: 'src/a.ts', line: 2, startLine: null, side: 'new', body: 'guard the null case' },
+      { path: 'src/b.ts', line: 9, startLine: 5, side: 'new', body: 'extract this' },
+    ]);
+    expect(insertSpy).not.toHaveBeenCalled();
+    expect(addDiffComment).toHaveBeenCalledTimes(1);
+    expect(addDiffComment).toHaveBeenCalledWith(
+      SESSION_ID,
+      'src/b.ts',
+      'extract this',
+      { side: 'new', lineNumber: 5, endLineNumber: 9 },
+      { kind: 'agent', agentId: AGENT_ID },
+    );
+  });
+
   it('adds, updates, and discards a user draft', async () => {
     const { slice, getState } = buildHarness({});
     const draft = await slice.addReviewDraft({

@@ -15,6 +15,7 @@ import type {
 const h = vi.hoisted(() => {
   const state = {
     sessionGithub: {} as Record<string, unknown>,
+    diffComments: {},
     sessionResolveQueueItems: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
@@ -96,6 +97,7 @@ const threadOf = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   prNumber: 248,
   threadId: 'PRRT_1',
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'open',
   stage: 'new',
   stateReason: null,
@@ -749,5 +751,85 @@ describe('the shape of the queue surface', () => {
       }),
     );
     expect(h.state.acceptResolveQueueItem).toHaveBeenCalledTimes(1);
+  });
+});
+
+const noteOf = (id: string) => ({
+  id,
+  sessionId: SESSION_ID,
+  filePath: 'src/ledger.ts',
+  body: `Round half even in ${id}`,
+  status: 'open',
+  createdAt: '2026-01-05T09:00:00.000Z',
+  anchor: { side: 'new', lineNumber: 42 },
+  authorKind: 'user',
+});
+
+const noteEntryOf = (id: string): ResolveQueueItemWithThread =>
+  entryOf({
+    item: { id: `item-${id}`, threadId: `note:${id}` },
+    thread: {
+      id: `row-${id}`,
+      threadId: `note:${id}`,
+      prNumber: null,
+      originKind: 'diff_comment',
+      diffCommentId: id,
+    },
+  });
+
+describe('notes in Review', () => {
+  afterEach(() => {
+    h.state.diffComments = {};
+  });
+
+  it('lists the notes of a branch without a pull request', () => {
+    seed();
+    h.state.sessionGithub = {};
+    h.state.diffComments = { [SESSION_ID]: [noteOf('rounding'), noteOf('rates')] };
+    h.state.sessionResolveQueueItems = {
+      [SESSION_ID]: [entryOf(), noteEntryOf('rounding'), noteEntryOf('rates')],
+    };
+
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getByText('2 open notes')).toBeDefined();
+    expect(screen.getAllByText('Note')).toHaveLength(2);
+    expect(screen.queryByText('This retries forever on a 500.')).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Conversation source' })).toBeNull();
+  });
+
+  it('says there are no notes yet instead of asking for a pull request', () => {
+    seed();
+    h.state.sessionGithub = {};
+    h.state.sessionResolveQueueItems = {};
+
+    render(<ResolveQueueHome session={SESSION} />);
+
+    expect(screen.getAllByText('No open notes').length).toBeGreaterThan(0);
+    expect(screen.queryByText('No pull request')).toBeNull();
+  });
+
+  it('splits GitHub comments and notes only when both are there', () => {
+    seed();
+    h.state.diffComments = { [SESSION_ID]: [noteOf('rounding')] };
+    h.state.sessionResolveQueueItems = { [SESSION_ID]: [entryOf(), noteEntryOf('rounding')] };
+
+    render(<ResolveQueueHome session={SESSION} />);
+
+    const source = screen.getByRole('tablist', { name: 'Conversation source' });
+    fireEvent.click(within(source).getByRole('tab', { name: /Notes/ }));
+    expect(screen.queryByText('This retries forever on a 500.')).toBeNull();
+    expect(screen.getByText('Round half even in rounding')).toBeDefined();
+  });
+
+  it('offers to post the open notes to the pull request', () => {
+    seed();
+    h.state.diffComments = { [SESSION_ID]: [noteOf('rounding')] };
+    h.state.sessionResolveQueueItems = { [SESSION_ID]: [entryOf(), noteEntryOf('rounding')] };
+
+    render(<ResolveQueueHome session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Conversation actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Post open notes to the PR' })).toBeDefined();
   });
 });

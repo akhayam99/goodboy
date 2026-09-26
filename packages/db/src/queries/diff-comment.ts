@@ -2,6 +2,7 @@ import type {
   AgentId,
   DiffComment,
   DiffCommentAnchor,
+  DiffCommentAuthorKind,
   DiffCommentSide,
   DiffCommentStatus,
   IsoDateTime,
@@ -22,6 +23,13 @@ type DiffCommentRow = {
   line_number: number | null;
   line_side: string | null;
   end_line_number: number | null;
+  author_kind: string;
+  author_agent_id: string | null;
+};
+
+export type DiffCommentAuthor = {
+  readonly kind: DiffCommentAuthorKind;
+  readonly agentId?: AgentId;
 };
 
 function toDomain(row: DiffCommentRow): DiffComment {
@@ -51,11 +59,14 @@ function toDomain(row: DiffCommentRow): DiffComment {
     consumedByAgentId:
       row.consumed_by_agent_id !== null ? (row.consumed_by_agent_id as AgentId) : undefined,
     anchor,
+    authorKind: row.author_kind === 'agent' ? 'agent' : 'user',
+    ...(row.author_agent_id !== null && { authorAgentId: row.author_agent_id as AgentId }),
   };
 }
 
 const SELECT_COLUMNS = `id, session_id, file_path, body, status, created_at, resolved_at,
-    consumed_at, consumed_by_agent_id, line_number, line_side, end_line_number`;
+    consumed_at, consumed_by_agent_id, line_number, line_side, end_line_number, author_kind,
+    author_agent_id`;
 
 export const insertDiffComment = async (
   db: Database,
@@ -64,10 +75,11 @@ export const insertDiffComment = async (
   filePath: string,
   body: string,
   anchor?: DiffCommentAnchor,
+  author: DiffCommentAuthor = { kind: 'user' },
 ): Promise<void> => {
   await db.execute(
-    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side, end_line_number)
-     VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?)`,
+    `INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at, line_number, line_side, end_line_number, author_kind, author_agent_id)
+     VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)`,
     [
       id,
       sessionId,
@@ -77,6 +89,8 @@ export const insertDiffComment = async (
       anchor?.lineNumber ?? null,
       anchor?.side ?? null,
       anchor?.endLineNumber ?? null,
+      author.kind,
+      author.agentId ?? null,
     ],
   );
 };
@@ -100,23 +114,6 @@ export const resolveDiffComment = async (db: Database, id: string): Promise<void
     Date.now(),
     id,
   ]);
-};
-
-export const consumeDiffComments = async (
-  db: Database,
-  ids: ReadonlyArray<string>,
-  agentId: AgentId,
-): Promise<void> => {
-  if (ids.length === 0) {
-    return;
-  }
-  const placeholders = ids.map(() => '?').join(', ');
-  await db.execute(
-    `UPDATE diff_comments
-     SET status = 'consumed', consumed_at = ?, consumed_by_agent_id = ?
-     WHERE status = 'open' AND id IN (${placeholders})`,
-    [Date.now(), agentId, ...ids],
-  );
 };
 
 export const reopenDiffComment = async (db: Database, id: string): Promise<void> => {

@@ -36,8 +36,8 @@ type Store = {
   agentTurnState: Record<string, unknown>;
   agentKindOverride: Record<string, unknown>;
   sessionLoading: Record<string, { agents: boolean; plans: boolean }>;
-  reviewModes: Record<string, string>;
-  setReviewMode: ReturnType<typeof vi.fn>;
+  pullRequestModes: Record<string, string>;
+  setPullRequestMode: ReturnType<typeof vi.fn>;
   navigate: ReturnType<typeof vi.fn>;
   up: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
@@ -86,8 +86,8 @@ const { store, hooks } = vi.hoisted(() => ({
     agentKindOverride: {},
     sessionLoading: {},
     resolveAgentReturn: {},
-    reviewModes: {},
-    setReviewMode: vi.fn(),
+    pullRequestModes: {},
+    setPullRequestMode: vi.fn(),
     navigate: vi.fn(),
     up: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
@@ -213,6 +213,9 @@ vi.mock('../CreateAgentPopover', () => ({
 }));
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
+}));
+vi.mock('../../../review/components/PullRequestPage', () => ({
+  PullRequestPage: () => <div data-testid="pull-request-page" />,
 }));
 vi.mock('../../../review/components/ReviewPane', () => ({
   ReviewPane: () => <div data-testid="review-board" />,
@@ -460,18 +463,19 @@ describe('SessionWorkspace agent overlay', () => {
 });
 
 describe('SessionWorkspace code host routing', () => {
-  it('renders Review for a saved pr lens on a GitHub remote', () => {
+  it('keeps the pull request page for a saved pr lens on a GitHub remote', () => {
     hooks.remoteKind = 'github';
     store.activeLens = { [SESSION_ID]: 'pr' };
     store.selectedAgentId = {};
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('review-board')).toBeDefined();
+    expect(screen.getByTestId('pull-request-page')).toBeDefined();
+    expect(screen.queryByTestId('review-board')).toBeNull();
     expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 
-  it('renders Review for a pr lens when a GitHub pull request is loaded on an unnamed remote', () => {
+  it('opens the pull request page when a GitHub pull request is loaded on an unnamed remote', () => {
     hooks.remoteKind = null;
     store.sessionGithub = { [SESSION_ID]: { pr: { number: 248 } } };
     store.activeLens = { [SESSION_ID]: 'pr' };
@@ -479,7 +483,7 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('review-board')).toBeDefined();
+    expect(screen.getByTestId('pull-request-page')).toBeDefined();
     expect(screen.queryByTestId('code-host-pane')).toBeNull();
   });
 

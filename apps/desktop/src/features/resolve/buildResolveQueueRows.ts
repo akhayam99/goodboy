@@ -1,4 +1,5 @@
 import type {
+  DiffComment,
   PrComment,
   ResolveAttempt,
   ResolvePublicationThread,
@@ -8,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { groupThreads, type CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
+import { noteCommentThread } from './notes/noteThread';
 import {
   isDeliveryComplete,
   resolveDeliveryReceiptsFor,
@@ -23,7 +25,10 @@ import {
   type ResolveUiState,
 } from './resolveRowState';
 
+export type ResolveConversationSource = 'github' | 'note';
+
 export type ResolveQueueReviewerNote = {
+  readonly source: ResolveConversationSource;
   readonly body: string;
   readonly author: string;
   readonly createdAtMs: number;
@@ -60,14 +65,21 @@ type Params = {
   readonly attempts: ReadonlyArray<ResolveAttempt>;
   readonly deliveryReceipts: ReadonlyArray<ResolvePublicationThread>;
   readonly comments: ReadonlyArray<PrComment>;
+  readonly notes?: ReadonlyArray<DiffComment>;
 };
 
 const commentThreadByThreadId = ({
   comments,
+  notes,
 }: {
   readonly comments: ReadonlyArray<PrComment>;
+  readonly notes: ReadonlyArray<DiffComment>;
 }): ReadonlyMap<string, CommentThread> => {
   const map = new Map<string, CommentThread>();
+  for (const note of notes) {
+    const thread = noteCommentThread({ note });
+    map.set(thread.head.threadId ?? note.id, thread);
+  }
   const threads = groupThreads(comments.filter((comment) => comment.source === 'review'));
   for (const thread of threads) {
     const threadId = thread.head.threadId;
@@ -81,12 +93,15 @@ const commentThreadByThreadId = ({
 
 const reviewerNoteOf = ({
   thread,
+  source,
 }: {
   readonly thread: CommentThread | null;
+  readonly source: ResolveConversationSource;
 }): ResolveQueueReviewerNote | null =>
   thread === null
     ? null
     : {
+        source,
         body: thread.head.body,
         author: thread.head.author,
         createdAtMs: Date.parse(thread.head.createdAt),
@@ -193,8 +208,9 @@ export const buildResolveQueueRows = ({
   attempts,
   deliveryReceipts,
   comments,
+  notes = [],
 }: Params): ReadonlyArray<ResolveQueueRow> => {
-  const commentThreads = commentThreadByThreadId({ comments });
+  const commentThreads = commentThreadByThreadId({ comments, notes });
   return entries.map(({ item, thread }) => {
     const commentThread = commentThreads.get(thread.threadId) ?? null;
     const attempt =
@@ -219,7 +235,10 @@ export const buildResolveQueueRows = ({
       status: rowState.state,
       rowState,
       attempt,
-      reviewerNote: reviewerNoteOf({ thread: commentThread }),
+      reviewerNote: reviewerNoteOf({
+        thread: commentThread,
+        source: thread.originKind === 'diff_comment' ? 'note' : 'github',
+      }),
       proposal: thread.replyDraft,
       proposalKind,
       coveredThreadIds: coveredThreadIdsFor({ thread, entries }),

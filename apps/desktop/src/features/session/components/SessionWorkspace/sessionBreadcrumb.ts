@@ -12,8 +12,8 @@ export type SessionBreadcrumbHandlers = {
   toArtifactsList: () => void;
   toParentAgent: () => void;
   toRootAgent: () => void;
-  toReviewHome: () => void;
   toDiffBranch?: () => void;
+  toPullRequestHome: () => void;
   toThread?: () => void;
 };
 
@@ -32,7 +32,8 @@ export type SessionBreadcrumbInput = {
   selectedParentTone?: string | null;
   selectedRootTone?: string | null;
   selectedQuestionLabel: string | null;
-  reviewModeLabel: string | null;
+  pullRequestModeLabel: string | null;
+  pullRequestNumber?: number | null;
   diffBranchLabel?: string | null;
   diffPageLabel?: string | null;
   selectedThreadLabel?: string | null;
@@ -63,7 +64,8 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedParentTone = null,
     selectedRootTone = null,
     selectedQuestionLabel,
-    reviewModeLabel,
+    pullRequestModeLabel,
+    pullRequestNumber = null,
     diffBranchLabel = null,
     diffPageLabel = null,
     selectedThreadLabel = null,
@@ -233,17 +235,29 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     ]);
   }
 
-  if (lens === 'review' && reviewModeLabel != null) {
-    return sealLast([
-      overview,
-      {
-        id: 'lens-review',
-        label: lensLabel('review'),
-        icon: LENS_ICON.review,
-        onClick: handlers.toReviewHome,
-      },
-      { id: 'review-mode', label: reviewModeLabel, icon: CONCEPT_ICONS.pr },
-    ]);
+  if (lens === 'pr') {
+    const pullRequest: BreadcrumbCrumb = {
+      id: 'lens-pr',
+      label: lensLabel('pr'),
+      icon: LENS_ICON.pr,
+      onClick: handlers.toPullRequestHome,
+    };
+    const numbered: ReadonlyArray<BreadcrumbCrumb> =
+      pullRequestNumber === null
+        ? []
+        : [
+            {
+              id: 'pr-number',
+              label: `#${pullRequestNumber}`,
+              icon: CONCEPT_ICONS.pr,
+              onClick: handlers.toPullRequestHome,
+            },
+          ];
+    const child: ReadonlyArray<BreadcrumbCrumb> =
+      pullRequestModeLabel === null
+        ? []
+        : [{ id: 'pr-mode', label: pullRequestModeLabel, icon: CONCEPT_ICONS.pr }];
+    return sealLast([overview, pullRequest, ...numbered, ...child]);
   }
 
   if (lens === 'files' && diffBranchLabel != null && diffPageLabel != null) {

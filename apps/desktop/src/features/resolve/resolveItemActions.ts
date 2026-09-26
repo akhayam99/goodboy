@@ -55,6 +55,30 @@ const action = ({ id, label, blockedReason = null, isBusy }: ActionParams): Reso
   disabledReason: isBusy ? 'Another action is in progress' : blockedReason,
 });
 
+const NOT_FOR_NOTES: ReadonlySet<ResolveItemActionId> = new Set([
+  'discuss',
+  'open_github',
+  'check_publication',
+  'reopen_locally',
+]);
+
+const keepForNote = (action: ResolveItemAction | null): ResolveItemAction | null =>
+  action === null || NOT_FOR_NOTES.has(action.id) ? null : action;
+
+export const noteActions = ({
+  set,
+}: {
+  readonly set: ResolveItemActionSet;
+}): ResolveItemActionSet => {
+  const primary = keepForNote(set.primary);
+  const secondary = keepForNote(set.secondary);
+  return {
+    primary: primary ?? secondary,
+    secondary: primary === null ? null : secondary,
+    overflow: set.overflow.filter((action) => !NOT_FOR_NOTES.has(action.id)),
+  };
+};
+
 const empty = (): ResolveItemActionSet => ({ primary: null, secondary: null, overflow: [] });
 
 export const resolveItemActions = ({

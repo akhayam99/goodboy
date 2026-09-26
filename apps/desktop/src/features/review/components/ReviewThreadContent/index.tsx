@@ -1,4 +1,4 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, MessageSquare } from 'lucide-react';
 import { Avatar, Chip, Tooltip } from '@goodboy/ui';
 import type { CommentThread } from '../../../github/comment-threads';
 import { isBot } from '../../../github/comment-threads';
@@ -13,11 +13,14 @@ type Props = {
   readonly onOpenUrl: (url: string) => void;
 };
 
+export const NOTE_LABEL = 'Note';
+
 const OUTDATED_HINT = 'This comment is anchored to code that later commits changed';
 
 export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
   const { head, replies } = thread;
-  const isReview = head.source === 'review';
+  const isNote = head.url === '';
+  const isReview = head.source === 'review' && !isNote;
   const path = head.path ?? '';
 
   return (
@@ -30,23 +33,33 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
         <span className="shrink-0">{formatRelativeAge({ fromIso: head.createdAt })}</span>
         {isReview && head.resolved === false && <Chip tone="warning" size="xs" label="Open" />}
         {isReview && head.resolved === true && <Chip tone="success" size="xs" label="Resolved" />}
+        {isNote && (
+          <Chip
+            tone="neutral"
+            size="xs"
+            icon={<MessageSquare size={ICON_SIZE.row} aria-hidden />}
+            label={NOTE_LABEL}
+          />
+        )}
         {head.outdated === true && (
           <Chip tone="neutral" size="xs" label="Outdated" title={OUTDATED_HINT} />
         )}
-        <span className="ml-auto inline-flex shrink-0 items-center">
-          <Tooltip content="Open in browser">
-            <button
-              type="button"
-              onClick={() => onOpenUrl(head.url)}
-              aria-label="Open in browser"
-              className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
-            >
-              <ExternalLink size={ICON_SIZE.row} aria-hidden />
-            </button>
-          </Tooltip>
-        </span>
+        {!isNote && (
+          <span className="ml-auto inline-flex shrink-0 items-center">
+            <Tooltip content="Open in browser">
+              <button
+                type="button"
+                onClick={() => onOpenUrl(head.url)}
+                aria-label="Open in browser"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-hover hover:text-foreground"
+              >
+                <ExternalLink size={ICON_SIZE.row} aria-hidden />
+              </button>
+            </Tooltip>
+          </span>
+        )}
       </div>
-      {path !== '' && (
+      {path !== '' && !isNote && (
         <ThreadPathChip path={path} line={head.line ?? null} onOpen={() => onOpenUrl(head.url)} />
       )}
       <div className="[overflow-wrap:anywhere]">

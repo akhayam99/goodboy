@@ -26,7 +26,7 @@ export type ResolveStartStyle = {
 type Params = {
   readonly sessionId: SessionId;
   readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly routing: AgentKindRouting;
   readonly note?: string;
   readonly style?: ResolveStartStyle;
@@ -36,7 +36,7 @@ type Params = {
 
 type CountParams = {
   readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState;
+  readonly pr: PullRequestState | null;
   readonly routing: AgentKindRouting;
   readonly note?: string;
 };

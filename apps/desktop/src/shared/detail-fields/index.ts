@@ -1,11 +1,10 @@
-export { resolveDetailFields, type ResolvedDetailFields } from './resolveDetailFields';
 export { resolveFacts } from './resolveFacts';
 export { recordByline, relativeTimeNode } from './recordByline';
-export { linearIssueFields } from './linearIssueFields';
-export { jiraIssueFields } from './jiraIssueFields';
-export { sentryIssueFields } from './sentryIssueFields';
-export { githubIssueFields } from './githubIssueFields';
-export { githubPullRequestFields } from './githubPullRequestFields';
+export { linearIssueFields, linearStateCategory } from './linearIssueFields';
+export { jiraIssueFields, jiraStateCategory } from './jiraIssueFields';
+export { sentryIssueFields, sentryStateCategory } from './sentryIssueFields';
+export { githubIssueFields, githubStateCategory } from './githubIssueFields';
+export { githubPullRequestFields, type GithubPullRequestFacts } from './githubPullRequestFields';
 export { gitlabIssueFields } from './gitlabIssueFields';
 export { gitlabMergeRequestFields } from './gitlabMergeRequestFields';
 export { bitbucketPullRequestFields } from './bitbucketPullRequestFields';

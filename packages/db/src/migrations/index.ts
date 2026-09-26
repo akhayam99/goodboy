@@ -61,6 +61,7 @@ import { m199SessionEventHistoryKinds } from './m199-session-event-history-kinds
 import { m200ArtifactRevisions } from './m200-artifact-revisions';
 import { m201SlackBindingSettings } from './m201-slack-binding-settings';
 import { m202IntegrationDrafts } from './m202-integration-drafts';
+import { m203ResolveThreadsWithoutPr } from './m203-resolve-threads-without-pr';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -409,4 +410,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 200, sql: m200ArtifactRevisions },
   { version: 201, sql: m201SlackBindingSettings },
   { version: 202, sql: m202IntegrationDrafts },
+  { version: 203, sql: m203ResolveThreadsWithoutPr },
 ];

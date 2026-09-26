@@ -745,23 +745,28 @@ one is open at a time.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
-- **Review is the pull request destination for GitHub, and it has no second
-  copy.** The lens is Review, its list of review threads is Conversations
-  (heading, back links and the overview action say so), and Resolve stays a
-  verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
-  activity, the checks, the create-a-PR form and the reviewer's own draft
-  review. They are detail modes of that one surface, switched from its dock,
-  and each mode swaps in for the conversation list like any other detail. An
-  open mode is a child crumb (`Overview > Review > PR details`), and the Review
-  crumb is the way back to the conversations: there is no second back bar. The
-  mode lives in the store per session and drops back to the conversations when
-  the lens closes. There
-  is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
-  session lands on Review. The code-host lens still serves GitLab and
-  Bitbucket, which open their own studios. Everything the lens shows comes from
-  one durable conversation model. Everything it sends goes out through one
-  publisher. So a restart finds the same rows in the same states, and no second
-  path pushes a reply or closes a thread.
+- **Review is where the session's code is discussed; the pull request page is
+  where it ships.** The lens is Review, its list is Conversations (heading,
+  back links and the overview action say so), and Resolve stays a verb on the
+  actions that settle a thread. Review exists with or without a pull request:
+  without one it is one root with a `No pull request` header and the session's
+  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
+  publication, and its header links the pull request page (`PR #528 ›`).
+  The `pr` lens is the pull request page on GitHub too (`Merge request` on
+  GitLab, still their own studios there). Its trail is
+  `Overview › Pull request › #528`, and `#528` opens a menu of the session's
+  pull requests by branch, with `New pull request`. The page header carries the
+  state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.
+  The body reads, in order: one warning with `Resolve in Review` when
+  conversations wait or a reviewer asked for changes, otherwise the merge
+  readiness note; then Details, Checks and Activity. `Write review` is a child
+  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  without a pull request the page is the creation form
+  (`Overview › Pull request › New`). The child page lives in the store per
+  session and drops back to the page when the lens closes. Everything Review
+  shows comes from one durable conversation model and everything it sends goes
+  out through one publisher, so a restart finds the same rows in the same
+  states, and no second path pushes a reply or closes a thread.
 - **The resolver stays in Review.** A resolver exists for one comment, so its
   home is that comment, never the Agents lens. The conversation panel has two
   tabs, `Comment` and `Agent`; `Agent` shows the resolver's live transcript and
@@ -977,8 +982,8 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N open notes`, the resolver routing chip and
-`Propose fixes`; Write review docks `N drafts` and `Submit review`, whose
+The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
+the same notes; Write review docks `N drafts` and `Submit review`, whose
 popover holds the summary and the verdict. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 

@@ -160,6 +160,7 @@ const resetState = () => {
     sessionPhaseRuns: { [SESSION_ID]: [scout, implementer, workflowStep] },
     agentKindOverride: {},
     sessionResolveAttempts: {},
+    diffComments: {},
     sessionResolveQueueItems: {},
     sessionResolvePublications: {},
     sessionOpenQuestions: {},

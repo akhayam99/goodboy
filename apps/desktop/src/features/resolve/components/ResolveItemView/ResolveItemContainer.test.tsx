@@ -18,6 +18,7 @@ vi.mock('../../../../store', async () => {
     return {
       sessionResolveCandidates: {},
       sessionResolveCheckRuns: {},
+      diffComments: {},
       sessionResolveQueueItems: {},
       discoveredScripts: {},
       resolveItemDrafts: {},

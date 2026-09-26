@@ -52,6 +52,7 @@ const thread = ({
   prNumber: 1,
   threadId,
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'open',
   stage: 'new',
   stateReason: null,

@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import type { ReviewMode } from '../../../features/review/reviewMode';
+import type { PullRequestMode } from '../../../features/review/pullRequestMode';
 import type { ReviewDestination } from './destination';
 import type { ReviewNavigationState } from './state';
 
@@ -14,7 +14,6 @@ export type ReviewTarget = {
   readonly requestId: string;
   readonly status: ReviewTargetStatus;
   readonly destination: ReviewDestination;
-  readonly mode: ReviewMode | null;
   readonly reason: ReviewTargetReason | null;
   readonly error: string | null;
 };
@@ -22,7 +21,6 @@ export type ReviewTarget = {
 export type OpenReviewTargetParams = {
   readonly sessionId: SessionId;
   readonly destination?: ReviewDestination;
-  readonly mode?: ReviewMode;
 };
 
 export type ReviewTargetOutcome =
@@ -35,13 +33,13 @@ export type ConsumeReviewTargetParams = {
   readonly requestId: string;
 };
 
-export type SetReviewModeParams = {
+export type SetPullRequestModeParams = {
   readonly sessionId: SessionId;
-  readonly mode: ReviewMode;
+  readonly mode: PullRequestMode;
 };
 
 export type ReviewNavigationSlice = ReviewNavigationState & {
   openReviewTarget(params: OpenReviewTargetParams): Promise<ReviewTargetOutcome>;
   consumeReviewTarget(params: ConsumeReviewTargetParams): void;
-  setReviewMode(params: SetReviewModeParams): void;
+  setPullRequestMode(params: SetPullRequestModeParams): void;
 };
