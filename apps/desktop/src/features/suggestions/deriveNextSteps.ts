@@ -229,7 +229,8 @@ export const deriveNextSteps = ({
       fingerprint: `retry-agent:${lastStandaloneAgent.id}`,
       payload: { agentId: lastStandaloneAgent.id, agentKind: lastStandaloneAgent.roleKind },
     });
-  } else if (
+  }
+  if (
     lastStandaloneAgent?.status === 'completed' &&
     lastStandaloneAgent.roleKind === 'implementer'
   ) {
@@ -387,7 +388,8 @@ export const deriveNextSteps = ({
             },
           });
         }
-      } else if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
+      }
+      if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
         suggestions.push({
           id: `open-pr:${mount.mountId}`,
           kind: 'open-pr',
