@@ -57,6 +57,7 @@ const LINEAR_ISSUE: LinearIssue = {
 };
 
 const SENTRY_ISSUE: SentryIssueProperties = {
+  status: 'unresolved',
   level: 'error',
   culprit: 'api/items',
   count: '128',
@@ -140,13 +141,13 @@ describe('fact registries', () => {
       'labels',
     ]);
     expect(slotsOf(resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }))).toEqual([
+      'state',
       'weight',
       'place',
       'labels',
       'labels',
       'labels',
       'measure',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }))).toEqual([
       'place',

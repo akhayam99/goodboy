@@ -1,3 +1,4 @@
+import { sentryStateCategory } from '../../../shared/detail-fields/sentryIssueFields';
 import type { SentryIssueRow } from '../../integrations/sentry/SentryStudio/useSentryIssues';
 import type { InboxRecord } from '../types';
 import { stateWord } from '../stateWord';
@@ -14,7 +15,7 @@ export const adaptSentryIssues = ({ rows }: Params): InboxRecord[] =>
     kind: 'error',
     identifier: issue.shortId ?? issue.id,
     title: issue.title,
-    state: issue.status === 'resolved' || issue.status === 'ignored' ? 'done' : 'alert',
+    state: sentryStateCategory({ status: issue.status }),
     stateLabel: stateWord({ value: issue.status ?? 'unresolved' }),
     updatedAt: issue.lastSeen ?? issue.firstSeen ?? '',
     url: issue.permalink ?? '',

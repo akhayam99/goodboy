@@ -3,7 +3,7 @@ export { resolveFacts } from './resolveFacts';
 export { recordByline, relativeTimeNode } from './recordByline';
 export { linearIssueFields, linearStateCategory } from './linearIssueFields';
 export { jiraIssueFields, jiraStateCategory } from './jiraIssueFields';
-export { sentryIssueFields } from './sentryIssueFields';
+export { sentryIssueFields, sentryStateCategory } from './sentryIssueFields';
 export { githubIssueFields } from './githubIssueFields';
 export { githubPullRequestFields } from './githubPullRequestFields';
 export { gitlabIssueFields } from './gitlabIssueFields';

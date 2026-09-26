@@ -4,14 +4,41 @@ import { RecordProperties } from '../../../../shared/components/StudioDetail/Rec
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
-import { ErrorStrip, Skeleton, StateBadge } from '@goodboy/ui';
+import { ErrorStrip, Skeleton } from '@goodboy/ui';
 import type { SentryIssueDetail as Detail } from '../client';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
-import { resolveFacts, sentryIssueFields } from '../../../../shared/detail-fields';
-import { stateWord } from '../../../inbox/stateWord';
+import {
+  relativeTimeNode,
+  resolveFacts,
+  sentryIssueFields,
+} from '../../../../shared/detail-fields';
 import { SentryBreadcrumbs } from '../SentryBreadcrumbs';
 import { SentryStackTrace } from '../SentryStackTrace';
 import { sentryIssueView } from '../sentryIssueView';
+
+type BylineParams = {
+  readonly firstSeen: string | null;
+  readonly lastSeen: string | null;
+};
+
+const sentryByline = ({ firstSeen, lastSeen }: BylineParams) => {
+  const first = relativeTimeNode({ iso: firstSeen });
+  const last = relativeTimeNode({ iso: lastSeen });
+  if (first == null && last == null) {
+    return null;
+  }
+  if (first == null) {
+    return <>Last seen {last}</>;
+  }
+  if (last == null) {
+    return <>First seen {first}</>;
+  }
+  return (
+    <>
+      First seen {first} · last seen {last}
+    </>
+  );
+};
 
 type Props = {
   readonly identifier: string;
@@ -122,7 +149,7 @@ export const SentryIssueDetail = ({
           provider="sentry"
           identifier={view.identifier}
           title={view.title}
-          state={<StateBadge>{stateWord({ value: view.status ?? 'unresolved' })}</StateBadge>}
+          byline={sentryByline({ firstSeen: view.firstSeen, lastSeen: view.lastSeen })}
           facts={
             <RecordProperties facts={resolveFacts({ registry: sentryIssueFields, entity: view })} />
           }

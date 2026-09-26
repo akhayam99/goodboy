@@ -1,10 +1,13 @@
 import { Activity, Code2, Tag } from 'lucide-react';
 import type { SentryTag } from '../../features/integrations/sentry/client';
 import { SentryLevelBadge } from '../../features/integrations/sentry/SentryLevelBadge';
+import { stateWord } from '../../features/inbox/stateWord';
+import type { InboxState } from '../../features/inbox/types';
+import { RecordState } from '../components/StudioDetail/RecordState';
 import type { FactRegistry } from './factTypes';
-import { timeFact } from './timeFact';
 
 export type SentryIssueProperties = {
+  readonly status: string | null;
   readonly level: string | null;
   readonly culprit: string | null;
   readonly count: string | null;
@@ -12,6 +15,13 @@ export type SentryIssueProperties = {
   readonly lastSeen: string | null;
   readonly tags: ReadonlyArray<SentryTag>;
 };
+
+type StateCategoryParams = {
+  readonly status: string | null;
+};
+
+export const sentryStateCategory = ({ status }: StateCategoryParams): InboxState =>
+  status === 'resolved' || status === 'ignored' ? 'done' : 'alert';
 
 const MAX_TAGS = 3;
 
@@ -29,6 +39,17 @@ const measureOf = ({ count, userCount }: MeasureParams): string | null => {
 };
 
 export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
+  state: ({ entity }) => ({
+    key: 'state',
+    label: 'Status',
+    icon: null,
+    node: (
+      <RecordState
+        category={sentryStateCategory({ status: entity.status })}
+        label={stateWord({ value: entity.status ?? 'unresolved' })}
+      />
+    ),
+  }),
   weight: ({ entity }) =>
     entity.level == null
       ? null
@@ -57,5 +78,4 @@ export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
     icon: Activity,
     node: measureOf({ count: entity.count, userCount: entity.userCount }),
   }),
-  time: ({ entity }) => timeFact({ label: 'Last seen', iso: entity.lastSeen }),
 };
