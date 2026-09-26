@@ -32,7 +32,7 @@ type ReasonParams = {
 };
 
 const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
+  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const SCREEN_HINT = 'Jira asks for extra fields on this move. Goodboy sends it without them.';
 
@@ -94,7 +94,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
           title={reason ?? 'Move this issue through its Jira workflow'}
           onClick={toggle}
           className={cn(
-            'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium',
+            'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary font-medium',
             tintClasses(state.tone).bg,
             tintClasses(state.tone).text,
             (isBlocked || busyId != null) && 'opacity-50',
@@ -118,7 +118,9 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
           >
             <span className="min-w-0 truncate">{transition.name}</span>
             {transition.to != null && (
-              <span className="shrink-0 text-2xs text-muted-foreground">{transition.to.name}</span>
+              <span className="shrink-0 text-secondary text-muted-foreground">
+                {transition.to.name}
+              </span>
             )}
           </button>
         ))}
@@ -126,7 +128,7 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
       {moveError != null && (
         <>
           <Divider />
-          <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
+          <p role="alert" className="px-2 py-1.5 text-secondary text-danger">
             {moveError}
           </p>
         </>

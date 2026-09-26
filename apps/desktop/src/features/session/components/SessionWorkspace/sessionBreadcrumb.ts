@@ -13,6 +13,7 @@ export type SessionBreadcrumbHandlers = {
   toParentAgent: () => void;
   toRootAgent: () => void;
   toReviewHome: () => void;
+  toThread?: () => void;
 };
 
 export type SessionBreadcrumbInput = {
@@ -26,8 +27,13 @@ export type SessionBreadcrumbInput = {
   selectedChildHome: AgentHomeLens | null;
   selectedParentLabel: string | null;
   selectedRootLabel: string | null;
+  selectedChildTone?: string | null;
+  selectedParentTone?: string | null;
+  selectedRootTone?: string | null;
   selectedQuestionLabel: string | null;
   reviewModeLabel: string | null;
+  diffBranchLabel?: string | null;
+  selectedThreadLabel?: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -51,11 +57,20 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedChildHome,
     selectedParentLabel,
     selectedRootLabel,
+    selectedChildTone = null,
+    selectedParentTone = null,
+    selectedRootTone = null,
     selectedQuestionLabel,
     reviewModeLabel,
+    diffBranchLabel = null,
+    selectedThreadLabel = null,
     lensLabel,
     handlers,
   } = input;
+  const agentIcon = (tone: string | null) => ({
+    icon: CONCEPT_ICONS.agents,
+    ...(tone != null && { iconClassName: tone }),
+  });
 
   const overview: BreadcrumbCrumb = {
     id: 'overview',
@@ -78,7 +93,11 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
 
   if (studio != null) {
     if (studio.kind === 'workflow') {
-      return sealLast([overview, workflowsList, { id: 'create', label: 'Create' }]);
+      return sealLast([
+        overview,
+        workflowsList,
+        { id: 'create', label: 'Create', icon: CONCEPT_ICONS.workflows },
+      ]);
     }
     if (studio.kind === 'bitbucket') {
       return sealLast([
@@ -89,7 +108,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
           icon: LENS_ICON.pr,
           onClick: () => handlers.toLens('pr'),
         },
-        { id: 'bitbucket', label: 'Bitbucket' },
+        { id: 'bitbucket', label: 'Bitbucket', icon: CONCEPT_ICONS.bitbucket },
       ]);
     }
     return sealLast([
@@ -100,7 +119,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         icon: LENS_ICON.gitlab_issues,
         onClick: () => handlers.toLens('gitlab_issues'),
       },
-      { id: 'mr', label: 'Merge request' },
+      { id: 'mr', label: 'Merge request', icon: CONCEPT_ICONS.gitlab },
     ]);
   }
 
@@ -108,16 +127,27 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     const question: BreadcrumbCrumb[] =
       selectedQuestionLabel == null
         ? []
-        : [{ id: 'selected-question', label: selectedQuestionLabel }];
+        : [
+            {
+              id: 'selected-question',
+              label: selectedQuestionLabel,
+              icon: CONCEPT_ICONS.questions,
+            },
+          ];
     const selectedChild: BreadcrumbCrumb =
       selectedQuestionLabel == null
-        ? { id: 'selected-child', label: selectedChildLabel }
+        ? {
+            id: 'selected-child',
+            label: selectedChildHome === 'review' ? 'Agent' : selectedChildLabel,
+            ...agentIcon(selectedChildTone),
+          }
         : { id: 'delegated-answers', label: 'Answers', icon: CONCEPT_ICONS.agents };
     const ancestors: BreadcrumbCrumb[] = [];
     if (selectedRootLabel != null) {
       ancestors.push({
         id: 'selected-root',
         label: selectedRootLabel,
+        ...agentIcon(selectedRootTone),
         onClick: handlers.toRootAgent,
       });
     }
@@ -125,11 +155,23 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       ancestors.push({
         id: 'selected-parent',
         label: selectedParentLabel,
+        ...agentIcon(selectedParentTone),
         onClick: handlers.toParentAgent,
       });
     }
 
     if (selectedChildHome !== 'workflows') {
+      const thread: BreadcrumbCrumb[] =
+        selectedChildHome === 'review' && selectedThreadLabel != null
+          ? [
+              {
+                id: 'review-thread',
+                label: selectedThreadLabel,
+                icon: CONCEPT_ICONS.comments,
+                ...(handlers.toThread !== undefined && { onClick: handlers.toThread }),
+              },
+            ]
+          : [];
       return sealLast([
         overview,
         {
@@ -138,6 +180,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
           icon: LENS_ICON[selectedChildHome],
           onClick: () => handlers.toLens(selectedChildHome),
         },
+        ...thread,
         ...ancestors,
         selectedChild,
         ...question,
@@ -154,6 +197,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
       {
         id: 'workflow-run',
         label: selectedChildWorkflowName,
+        icon: CONCEPT_ICONS.sessions,
         onClick: handlers.toWorkflowRun,
       },
       ...ancestors,
@@ -163,15 +207,27 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
   }
 
   if (lens === 'workflows' && focusedWorkflowName != null) {
-    return sealLast([overview, workflowsList, { id: 'workflow-run', label: focusedWorkflowName }]);
+    return sealLast([
+      overview,
+      workflowsList,
+      { id: 'workflow-run', label: focusedWorkflowName, icon: CONCEPT_ICONS.sessions },
+    ]);
   }
 
   if (lens === 'plans' && artifactCreationLabel != null) {
-    return sealLast([overview, plansList, { id: 'artifact-create', label: artifactCreationLabel }]);
+    return sealLast([
+      overview,
+      plansList,
+      { id: 'artifact-create', label: artifactCreationLabel, icon: CONCEPT_ICONS.artifacts },
+    ]);
   }
 
   if (lens === 'plans' && focusedArtifactTitle != null) {
-    return sealLast([overview, plansList, { id: 'artifact', label: focusedArtifactTitle }]);
+    return sealLast([
+      overview,
+      plansList,
+      { id: 'artifact', label: focusedArtifactTitle, icon: CONCEPT_ICONS.artifacts },
+    ]);
   }
 
   if (lens === 'review' && reviewModeLabel != null) {
@@ -183,7 +239,15 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
         icon: LENS_ICON.review,
         onClick: handlers.toReviewHome,
       },
-      { id: 'review-mode', label: reviewModeLabel },
+      { id: 'review-mode', label: reviewModeLabel, icon: CONCEPT_ICONS.pr },
+    ]);
+  }
+
+  if (lens === 'files' && diffBranchLabel != null) {
+    return sealLast([
+      overview,
+      { id: 'lens-files', label: lensLabel('files'), icon: LENS_ICON.files },
+      { id: 'diff-branch', label: diffBranchLabel, icon: CONCEPT_ICONS.branch },
     ]);
   }
 

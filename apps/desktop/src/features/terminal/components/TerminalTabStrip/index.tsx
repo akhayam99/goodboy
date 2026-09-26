@@ -1,5 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { cn, StatusDot, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
+import { cn, ScrollFade, StatusDot, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
 import type {
   TerminalTab,
   TerminalTabId,
@@ -23,7 +23,11 @@ const STATUS_TONE: Record<TerminalTabStatus, Tone> = {
 
 export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }: Props) => {
   return (
-    <div className="flex items-center gap-1 overflow-x-auto px-2 py-1.5">
+    <ScrollFade
+      orientation="horizontal"
+      viewportClassName="flex items-center gap-1 px-2 py-1.5"
+      fadeSize={16}
+    >
       {tabs.map((t) => {
         const active = t.id === activeId;
         return (
@@ -40,7 +44,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
               }
             }}
             className={cn(
-              'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
+              'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-label motion-safe:transition-colors',
               active
                 ? cn(
                     tintClasses('primary').bg,
@@ -78,6 +82,6 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
           <Plus size={ICON_SIZE.row} aria-hidden />
         </button>
       </Tooltip>
-    </div>
+    </ScrollFade>
   );
 };

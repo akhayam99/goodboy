@@ -29,7 +29,7 @@ export const FooterButton = ({
       onClick={onClick}
       aria-label={title ?? label}
       className={cn(
-        'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
+        'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
         showLabel ? FOOTER_LABELED_PAD : 'px-1.5',
         active
           ? 'bg-muted text-foreground'

@@ -49,7 +49,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
           onClick={toggle}
           title="Request review"
           aria-label="Request review"
-          className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-3xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          className="inline-flex items-center gap-0.5 rounded-md border border-border-soft px-1.5 py-0.5 text-meta font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
         >
           <Plus size={11} aria-hidden />
           Add
@@ -63,7 +63,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="filter collaborators"
-          className="w-full bg-transparent text-xs text-foreground outline-none placeholder:text-faint-foreground"
+          className="w-full bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
         />
       </div>
       {isLoading ? (
@@ -95,7 +95,7 @@ export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props
                     close();
                     setQuery('');
                   }}
-                  className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-xs text-foreground hover:bg-hover"
+                  className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-label text-foreground hover:bg-hover"
                 >
                   <Avatar url={null} alt={login} size="xs" />
                   <span className="min-w-0 flex-1 truncate">{login}</span>

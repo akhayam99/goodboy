@@ -26,7 +26,7 @@ export const IntegrationConnectPanel = ({
     <section className="m-auto flex w-full min-w-0 max-w-md flex-col gap-3 rounded-lg border border-border-soft bg-elevated p-5">
       <div className="flex items-center gap-2.5">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.hero} />
-        <Heading className="text-sm font-semibold text-foreground">
+        <Heading className="text-heading text-foreground">
           Connect {integrationLabel({ provider })}
         </Heading>
       </div>

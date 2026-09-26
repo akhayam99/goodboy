@@ -22,7 +22,7 @@ export const WireframeDivergenceChip = ({ artifact, creatorName }: Props) => {
       className={cn(
         'shrink-0 rounded-sm',
         tintClasses('warning').bg,
-        'px-1.5 py-0.5 text-2xs uppercase tracking-eyebrow text-warning',
+        'px-1.5 py-0.5 text-secondary uppercase tracking-eyebrow text-warning',
       )}
     >
       {requested} asked, {fidelity} produced

@@ -42,7 +42,6 @@ vi.mock('../../terminal', () => ({
 
 vi.mock('../../closeTab', () => ({ disposeTerminalPty: vi.fn() }));
 
-import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
 import { TerminalDock } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -71,20 +70,6 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   platform.current = 'darwin';
-});
-
-describe('TerminalDock crumb', () => {
-  it('renders the session crumb above the tab strip', () => {
-    render(
-      <PageCrumbContext.Provider value={<nav aria-label="Breadcrumb">Overview</nav>}>
-        <TerminalDock sessionId={SESSION_ID} isActive cwd="/repo" />
-      </PageCrumbContext.Provider>,
-    );
-
-    const crumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
-    const strip = screen.getByRole('tab');
-    expect(crumb.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
 });
 
 describe('TerminalDock new tab shortcut', () => {

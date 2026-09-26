@@ -1,5 +1,4 @@
 import { cancelPublication } from './cancelPublication';
-import { cancelResolveAttempt } from './cancelResolveAttempt';
 import { drainResolveQueue } from './drainResolveQueue';
 import { preparePublication } from './preparePublication';
 import { publishConversations } from './publishConversations';
@@ -19,7 +18,6 @@ import { publishResolveThread } from './publishResolveThread';
 import { beginResolveCandidate } from './beginResolveCandidate';
 import { captureResolveCandidate } from './captureResolveCandidate';
 import { runResolveCheck } from './runResolveCheck';
-import { invalidateIntegratedApprovals } from './invalidateIntegratedApprovals';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
 import { deferResolveQueueItem } from './deferResolveQueueItem';
 import { reopenResolveQueueItem } from './reopenResolveQueueItem';
@@ -31,7 +29,6 @@ import type {
   ResolveActions,
   BatchUpdateParams,
   AttemptParams,
-  CancelAttemptParams,
   DrainParams,
   PhaseParams,
   PreparePublicationParams,
@@ -113,11 +110,6 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => recordResolveAttempt({ set, get, ...params }),
       }),
-    cancelResolveAttempt: (params: CancelAttemptParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => cancelResolveAttempt({ set, get, ...params }),
-      }),
     recordResolvePhase: (params: PhaseParams) =>
       serialize({
         sessionId: params.sessionId,
@@ -134,11 +126,6 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         run: () => captureResolveCandidate({ set, get, ...params }),
       }),
     runResolveCheck: (params: CheckRunParams) => runResolveCheck({ set, get, ...params }),
-    invalidateIntegratedApprovals: (params: SessionParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => invalidateIntegratedApprovals({ set, get, ...params }),
-      }),
     recoverUncapturedResolveWork: (params: SessionParams) =>
       serialize({
         sessionId: params.sessionId,

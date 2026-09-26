@@ -39,8 +39,8 @@ export const DefinitionList = ({ rows }: Props) => (
           />
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-sm font-semibold text-foreground">{row.term}</span>
-          <span className="text-sm leading-relaxed text-muted-foreground">{row.desc}</span>
+          <span className="text-heading text-foreground">{row.term}</span>
+          <span className="text-prose text-muted-foreground">{row.desc}</span>
         </div>
       </li>
     ))}

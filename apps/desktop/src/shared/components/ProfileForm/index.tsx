@@ -53,7 +53,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground">Your roles</span>
+        <span className="text-label font-medium text-muted-foreground">Your roles</span>
         <ChipsInput
           label="Your roles"
           values={value.roles}
@@ -65,7 +65,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={aboutWorkId} className="text-xs font-medium text-muted-foreground">
+        <label htmlFor={aboutWorkId} className="text-label font-medium text-muted-foreground">
           About your work{' '}
           <span className="font-normal text-faint-foreground">what you do and for whom</span>
         </label>
@@ -81,7 +81,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={workingRulesId} className="text-xs font-medium text-muted-foreground">
+        <label htmlFor={workingRulesId} className="text-label font-medium text-muted-foreground">
           How agents should work with you
         </label>
         <Textarea
@@ -96,7 +96,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
         />
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-label font-medium text-muted-foreground">
           Explain more when it touches
         </span>
         <ChipsInput
@@ -108,7 +108,7 @@ export const ProfileForm = ({ value, disabled = false, onChange, onCommit }: Pro
           onChange={(next) => changeList({ key: 'explainMore', next })}
         />
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-faint-foreground">
+      <div className="flex items-center gap-1.5 text-label text-faint-foreground">
         <Eye size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         Agents read these fields by role.
         <ProfileAccessPopover />

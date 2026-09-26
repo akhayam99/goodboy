@@ -28,7 +28,8 @@ const h = vi.hoisted(() => {
   return { state, gate, detachWorkflowFromSession, setPanelSectionExpanded };
 });
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
   useSessionLoading: () => ({ agents: false, transcript: false }),
   useSessionOpenQuestions: () => [],
@@ -287,7 +288,8 @@ function reset() {
     sessionActiveProject: {},
     sessionGithub: {},
     diffComments: {},
-    selectAgent: vi.fn(),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     resolveGithubThread: vi.fn(),
     dequeueResolution: vi.fn(),
     spawnAgent: vi.fn(),
@@ -427,8 +429,8 @@ describe('AgentsSection collapse defaults', () => {
   });
 
   it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
-    const selectAgent = vi.fn();
-    h.state.selectAgent = selectAgent;
+    const navigate = vi.fn();
+    h.state.navigate = navigate;
     h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
     const reveal = vi.fn();
     window.addEventListener('goodboy:reveal-chat', reveal);
@@ -436,7 +438,9 @@ describe('AgentsSection collapse defaults', () => {
 
     fireEvent.click(screen.getByText('agent one'));
 
-    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    expect(navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
+    });
     expect(reveal).toHaveBeenCalled();
     window.removeEventListener('goodboy:reveal-chat', reveal);
   });

@@ -60,7 +60,7 @@ export const HeaderBand = ({
                 aria-label="Session title"
                 className="text-xl font-semibold"
               />
-              <div className="flex items-center justify-between gap-2 text-2xs">
+              <div className="flex items-center justify-between gap-2 text-secondary">
                 <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
                 <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
                   {rename.draft.length}/{rename.maxLength}
@@ -82,7 +82,7 @@ export const HeaderBand = ({
                 }}
                 title={inlineMarkdownText({ text: titleText })}
                 className={cn(
-                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-xl font-semibold leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isPlaceholderTitle ? 'text-faint-foreground' : 'text-foreground',
                 )}
               >

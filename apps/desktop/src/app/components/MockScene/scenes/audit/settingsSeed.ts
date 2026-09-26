@@ -18,9 +18,7 @@ const SETTINGS_NOW = clock.iso({ at: '2026-09-22T10:12:00.000Z' });
 
 export const SETTINGS_OVERRIDES: OverrideSettings = {
   defaultProviderId: 'anthropic',
-  defaultWorkflowId: null,
   defaultBranchPrefix: 'hb',
-  parallelEnabled: null,
   defaultVerbosity: 'normal',
   providerBindings: null,
   taskModels: {

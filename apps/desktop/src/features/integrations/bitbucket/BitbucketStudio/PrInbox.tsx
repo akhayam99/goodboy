@@ -56,7 +56,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
             placeholder="Search pull requests…"
             aria-label="Search Bitbucket pull requests"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-faint-foreground"
+            className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
       </div>
@@ -108,7 +108,7 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                   className="px-1"
                   label={group.label}
                   action={
-                    <span className="text-2xs tabular-nums text-faint-foreground">
+                    <span className="text-secondary tabular-nums text-faint-foreground">
                       {group.rows.length}
                     </span>
                   }
@@ -131,11 +131,11 @@ export const PrInbox = ({ groups, focusedPrId, onSelect, loading, error, onRefre
                               aria-hidden
                               className="shrink-0 text-provider-bitbucket"
                             />
-                            <span className="min-w-0 flex-1 truncate text-xs">
+                            <span className="min-w-0 flex-1 truncate text-label">
                               {pullRequest.title}
                             </span>
                           </span>
-                          <span className="flex items-center gap-1.5 text-2xs text-faint-foreground">
+                          <span className="flex items-center gap-1.5 text-secondary text-faint-foreground">
                             <span className="shrink-0 font-mono tabular-nums">
                               #{pullRequest.id}
                             </span>

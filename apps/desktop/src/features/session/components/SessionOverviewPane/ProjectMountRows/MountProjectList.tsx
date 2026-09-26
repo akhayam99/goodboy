@@ -86,11 +86,11 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           placeholder="Search projects…"
           autoComplete="off"
           onChange={(event) => setQuery(event.target.value)}
-          className="border-b border-border-soft bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-faint-foreground"
+          className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
         />
       ) : null}
       {filtered.length === 0 ? (
-        <p className="px-3 py-2 text-xs text-muted-foreground">No matching projects</p>
+        <p className="px-3 py-2 text-label text-muted-foreground">No matching projects</p>
       ) : (
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
           <ul>
@@ -106,7 +106,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
                       setSelectedProjectId(project.id);
                     }}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-hover',
+                      'flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-body text-foreground motion-safe:transition-colors hover:bg-hover',
                     )}
                   >
                     <GlyphIcon

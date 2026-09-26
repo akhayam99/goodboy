@@ -13,7 +13,6 @@ import { WorkflowRailCard } from './WorkflowRailCard';
 import { WorkflowRunDetail } from './WorkflowRunDetail';
 import { useAgentMetrics } from '../../../hooks/useAgentMetrics';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { FocusedPane } from '../../../../../shared/components/PaneShell/FocusedPane';
 import { GhostActionButton } from '@goodboy/ui';
 import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
 
@@ -80,9 +79,11 @@ export const WorkflowsPane = ({ session }: Props) => {
 
   if (focusedRun != null) {
     return (
-      <FocusedPane
-        lens="Workflows"
-        count={attachedRuns.length}
+      <PaneShell
+        scroll="self"
+        title={focusedRun.run.title ?? workflowKindName(focusedRun.workflow)}
+        icon={CONCEPT_ICONS.workflows}
+        tone={CONCEPT_TONE.workflows}
         actions={
           <>
             {focusedRun.workflow != null && focusedRun.workflow.isPreset === false ? (
@@ -102,7 +103,7 @@ export const WorkflowsPane = ({ session }: Props) => {
         }
       >
         <WorkflowRunDetail session={session} workflowRunId={focusedRun.run.id} />
-      </FocusedPane>
+      </PaneShell>
     );
   }
 

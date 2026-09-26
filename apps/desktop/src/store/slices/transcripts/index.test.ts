@@ -34,9 +34,6 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
-  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
-);
 vi.mock('../../../features/onboarding/onboarding-store', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );
@@ -112,9 +109,7 @@ function buildWorkspace(overrides: Partial<Workspace> = {}): Workspace {
     slug: 'ws',
     overrides: {
       defaultProviderId: null,
-      defaultWorkflowId: null,
       defaultBranchPrefix: null,
-      parallelEnabled: null,
       defaultVerbosity: null,
       providerBindings: null,
       taskModels: null,
@@ -210,19 +205,6 @@ describe('store contract', () => {
       } as TurnEvent;
       store.getState().appendTurnEvent(AGENT_ID, SESSION_ID, ev);
       expect(store.getState().transcripts[AGENT_ID]).toEqual([ev]);
-    });
-
-    it('resetTranscript clears the per-agent transcript', async () => {
-      const store = useAppStore;
-      const ev: TurnEvent = {
-        kind: 'assistant_text',
-        runId: RUN_ID,
-        delta: 'x',
-        at: NOW,
-      } as TurnEvent;
-      store.setState({ transcripts: { [AGENT_ID]: [ev] } });
-      store.getState().resetTranscript(AGENT_ID);
-      expect(store.getState().transcripts[AGENT_ID]).toEqual([]);
     });
 
     it('appendTurnEvent bumps unknownPayloadCounts for unknown_payload events', async () => {

@@ -20,6 +20,7 @@ type Props = {
   readonly record: ScriptRunRecord | null;
   readonly now: number;
   readonly isSelected: boolean;
+  readonly showSource: boolean;
   readonly blockedReason: string | null;
   readonly menuItems: ReadonlyArray<OverflowMenuItem>;
   readonly onOpen: (script: RunnableScript) => void;
@@ -27,18 +28,17 @@ type Props = {
   readonly onStop: (script: RunnableScript) => void;
 };
 
-const sourcePath = ({ script }: { readonly script: RunnableScript }): string | null => {
-  if (script.source === 'saved' || script.relDir === '') {
-    return null;
-  }
-  return `${script.relDir}/${SCRIPT_SOURCE_LABEL[script.source]}`;
-};
+const runsInLabel = ({ script }: { readonly script: RunnableScript }): string =>
+  script.relDir === ''
+    ? `Runs ${script.invocation}`
+    : `Runs ${script.invocation} in ${script.relDir}`;
 
 export const ScriptRow = ({
   script,
   record,
   now,
   isSelected,
+  showSource,
   blockedReason,
   menuItems,
   onOpen,
@@ -49,7 +49,6 @@ export const ScriptRow = ({
     SCRIPT_CATEGORIES.find((candidate) => candidate.id === script.category)?.icon ?? Terminal;
   const isRunning = record?.status === 'pending';
   const lastRun = describeLastRun({ record, now });
-  const path = sourcePath({ script });
   const sourceLabel = SCRIPT_SOURCE_LABEL[script.source];
 
   return (
@@ -70,20 +69,18 @@ export const ScriptRow = ({
         <CategoryIcon size={ICON_SIZE.row} />
       </span>
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
-        <span className="shrink-0 truncate text-sm font-medium text-foreground">{script.name}</span>
-        <span className="min-w-0 truncate font-mono text-2xs text-faint-foreground">
-          {script.command}
+        <Tooltip content={runsInLabel({ script })}>
+          <span className="shrink-0 truncate text-row text-foreground">{script.name}</span>
+        </Tooltip>
+        <span className="min-w-0 truncate font-mono text-secondary text-faint-foreground">
+          {script.body}
         </span>
       </span>
-      {path === null ? (
-        <span className="w-24 shrink-0 truncate text-2xs text-muted-foreground">{sourceLabel}</span>
-      ) : (
-        <Tooltip content={path}>
-          <span className="pointer-events-auto w-24 shrink-0 truncate text-2xs text-muted-foreground">
-            {sourceLabel}
-          </span>
-        </Tooltip>
-      )}
+      {showSource ? (
+        <span className="w-24 shrink-0 truncate text-secondary text-muted-foreground">
+          {sourceLabel}
+        </span>
+      ) : null}
       <LastRunCell lastRun={lastRun} blockedReason={blockedReason} />
       <span className="flex w-7 shrink-0 justify-center">
         {isRunning ? (

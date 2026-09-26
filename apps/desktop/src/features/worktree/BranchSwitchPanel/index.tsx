@@ -128,12 +128,14 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
   return (
     <div className="flex w-96 flex-col gap-3 p-4">
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold text-foreground">Switch branch</span>
-        <span className="text-2xs text-muted-foreground">Move this worktree to another branch</span>
+        <span className="text-heading text-foreground">Switch branch</span>
+        <span className="text-secondary text-muted-foreground">
+          Move this worktree to another branch
+        </span>
       </div>
 
       {branch === null ? null : (
-        <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-label text-muted-foreground">
           <GitBranch size={11} aria-hidden className="shrink-0" />
           <span title={branch} className="min-w-0 flex-1 truncate font-mono text-foreground">
             {branch}
@@ -221,7 +223,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
         />
       ) : null}
 
-      {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+      {error != null ? <p className="text-label text-danger">{error}</p> : null}
 
       <div className="flex justify-end">
         <Button
@@ -229,13 +231,14 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
           onClick={() => void onChangeBranch()}
           disabled={isBusy || target === '' || (branchMode === 'existing' && isBranchesLoading)}
           variant={needsConfirmation && isReuseConfirmed ? 'warning' : 'primary'}
-          className={isBusy ? 'animate-border-pulse' : undefined}
         >
-          {isBusy
-            ? 'Switching…'
-            : needsConfirmation && isReuseConfirmed
-              ? 'Confirm switch'
-              : 'Switch branch'}
+          <span className={isBusy ? 'text-shimmer' : undefined}>
+            {isBusy
+              ? 'Switching…'
+              : needsConfirmation && isReuseConfirmed
+                ? 'Confirm switch'
+                : 'Switch branch'}
+          </span>
         </Button>
       </div>
     </div>

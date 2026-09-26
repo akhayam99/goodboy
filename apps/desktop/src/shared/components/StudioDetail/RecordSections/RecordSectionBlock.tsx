@@ -13,7 +13,7 @@ export const RecordSectionBlock = ({ section }: Props) => {
   const panelId = useId();
   const count =
     section.count == null ? null : (
-      <span className="text-3xs tabular-nums text-faint-foreground">{section.count}</span>
+      <span className="text-meta text-faint-foreground">{section.count}</span>
     );
 
   if (!section.isCollapsible) {
@@ -58,9 +58,13 @@ export const RecordSectionBlock = ({ section }: Props) => {
             isOpen && 'rotate-90',
           )}
         />
-        <span className="shrink-0 text-2xs font-semibold text-foreground">{section.label}</span>
+        <span className="shrink-0 text-secondary font-semibold text-foreground">
+          {section.label}
+        </span>
         {section.summary == null ? null : (
-          <span className="min-w-0 truncate text-2xs text-muted-foreground">{section.summary}</span>
+          <span className="min-w-0 truncate text-secondary text-muted-foreground">
+            {section.summary}
+          </span>
         )}
         {count}
       </button>

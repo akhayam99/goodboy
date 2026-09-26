@@ -80,7 +80,7 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
       : TRACKER_STUDIO_LINKS;
     return (
       <div className="flex flex-wrap items-center gap-2 px-2.5 py-1.5">
-        <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+        <p className="min-w-0 flex-1 text-label text-muted-foreground">
           {issues.hasSources ? 'No open issues detected' : 'No tracker connected yet'}
         </p>
         <div className="shrink-0">
@@ -119,7 +119,7 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
         aria-label="Search issues"
         placeholder="Search issues"
         data-kickoff-field
-        className="h-8 text-sm"
+        className="h-8 text-body"
       />
       <ul aria-label="Issues" className="flex flex-col gap-0.5">
         {visibleRows.map((candidate) => {
@@ -139,10 +139,10 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
                 )}
               >
                 <IntegrationGlyph provider={candidate.provider} size="xs" />
-                <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                <span className="shrink-0 font-mono text-secondary text-muted-foreground">
                   {candidate.identifier}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                <span className="min-w-0 flex-1 truncate text-body text-foreground">
                   {candidate.title}
                 </span>
               </button>
@@ -150,7 +150,7 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
           );
         })}
         {visibleRows.length === 0 ? (
-          <li className="px-2 py-1.5 text-xs text-muted-foreground">No issue matches</li>
+          <li className="px-2 py-1.5 text-label text-muted-foreground">No issue matches</li>
         ) : null}
       </ul>
       <StartFooter note={selected == null ? 'Pick an issue to link it to this session.' : null}>

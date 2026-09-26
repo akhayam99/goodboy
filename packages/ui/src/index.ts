@@ -1,4 +1,7 @@
 export { cn } from './cn';
+export { TYPE_ROLES } from './typeRoles';
+export { SHEET_CLASSES } from './sheet';
+export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
@@ -17,13 +20,28 @@ export {
   LEFT_SIDEBAR_MAX,
   LEFT_SIDEBAR_MIN,
   LEFT_SIDEBAR_STORAGE_KEY,
+} from './components/AppShell';
+export {
+  DRAWER_INSET,
+  DrawerColumn,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
   RIGHT_DRAWER_MIN,
   RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
-} from './components/AppShell';
+} from './components/DrawerColumn';
+export type { DrawerColumnProps } from './components/DrawerColumn';
 export { DrawerFrame } from './components/DrawerFrame';
+export { Trail } from './components/Trail';
+export type { TrailSegmentModel } from './components/Trail/types';
+export type {
+  CrumbLead,
+  CrumbMenuAction,
+  CrumbMenuGroup,
+  CrumbMenuModel,
+  CrumbMenuRow,
+  CrumbState,
+} from './components/Trail/crumbMenuTypes';
 export type { DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
@@ -142,26 +160,53 @@ export { LocalImage } from './components/LocalImage';
 export { LocalImageLoaderContext } from './components/LocalImage/loaderContext';
 export type { LocalImageLoader } from './components/LocalImage/loaderContext';
 export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageLoaderProvider';
-export type { RemoteImageLoader } from './components/RemoteImage/loaderContext';
+export type {
+  RemoteImageAutoLoad,
+  RemoteImageLoader,
+} from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
-export { ScrollArea } from './components/ScrollArea';
-export type { ScrollAreaProps } from './components/ScrollArea';
 export { PageColumn, PAGE_COLUMN_CLASS } from './components/PageColumn';
 export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
+export { ScrollerStyleContext } from './components/ScrollFade/scrollerStyleContext';
+export type { ScrollerStyle } from './components/ScrollFade/scrollerStyleContext';
 export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
 export type { SectionHeaderProps } from './components/SectionHeader';
-export { SectionSurface } from './components/SectionSurface';
-export type { SectionSurfaceProps } from './components/SectionSurface';
+export {
+  Band,
+  BandRow,
+  BandStack,
+  BAND_ROW_CLASS,
+  STRIPED_BLOCK_LIST,
+  STRIPED_LIST,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+  STRIPED_TABLE,
+} from './components/Band';
+export type { BandProps } from './components/Band';
+export { Listbox, LISTBOX_SEARCH_THRESHOLD } from './components/Listbox';
+export type {
+  ListboxCreate,
+  ListboxOption,
+  ListboxProps,
+  ListboxSize,
+  ListboxTriggerVariant,
+  ListboxValue,
+} from './components/Listbox';
+export { ListboxList, listboxOptionId } from './components/Listbox/ListboxList';
+export type { ListboxListProps } from './components/Listbox/ListboxList';
+export { ListboxOptionRow } from './components/Listbox/ListboxOptionRow';
+export type { ListboxOptionRowProps } from './components/Listbox/ListboxOptionRow';
+export { filterOptions } from './components/Listbox/filterOptions';
+export type { FilteredOption, ListboxMatch } from './components/Listbox/filterOptions';
+export { useListboxKeyboard } from './components/Listbox/useListboxKeyboard';
 export { SelectableRow } from './components/SelectableRow';
 export type { SelectableRowProps } from './components/SelectableRow';
-export { Select } from './components/Select';
-export type { SelectProps, SelectSize } from './components/Select';
 export { Skeleton, SkeletonText } from './components/Skeleton';
 export { StatCard } from './components/StatCard';
 export type { StatCardProps } from './components/StatCard';
@@ -173,6 +218,8 @@ export { Switch } from './components/Switch';
 export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
+export { ToneBar } from './components/ToneBar';
+export type { ToneBarDensity } from './components/ToneBar';
 export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';

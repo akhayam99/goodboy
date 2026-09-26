@@ -217,8 +217,8 @@ describe('AgentBriefChildren', () => {
   });
 
   it('marks the agent on screen and opens a part from its row', () => {
-    const selectAgent = vi.fn(async () => undefined);
-    useAppStore.setState({ selectAgent });
+    const navigate = vi.fn();
+    useAppStore.setState({ navigate });
     renderBrief({ agents: [scout, implement, part(1)], root: implement });
 
     expect(
@@ -228,7 +228,9 @@ describe('AgentBriefChildren', () => {
     ).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Step 2.1, Part 1' }));
 
-    expect(selectAgent).toHaveBeenCalledWith(SESSION_ID, 'part-1');
+    expect(navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'part-1' },
+    });
   });
 
   it('numbers the subagents of an agent outside a workflow from 1', () => {

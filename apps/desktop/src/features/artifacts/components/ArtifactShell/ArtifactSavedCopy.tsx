@@ -17,7 +17,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
         <span
           data-testid="artifact-saved-copy-path"
           title={location?.path}
-          className="min-w-0 flex-1 truncate font-mono text-2xs text-muted-foreground"
+          className="min-w-0 flex-1 truncate font-mono text-secondary text-muted-foreground"
         >
           {saved !== null ? saved.path : 'Not on disk yet'}
         </span>
@@ -34,7 +34,7 @@ export const ArtifactSavedCopy = ({ savedCopy }: Props) => {
         ) : null}
       </div>
       {error === null ? null : (
-        <span role="alert" className="text-2xs text-danger">
+        <span role="alert" className="text-secondary text-danger">
           {error}
         </span>
       )}

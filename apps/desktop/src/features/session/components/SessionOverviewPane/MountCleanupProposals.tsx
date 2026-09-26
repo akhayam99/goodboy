@@ -50,10 +50,10 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
       {proposals.map((proposal) => (
         <div key={proposal.requestId} className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
-            <span className="truncate text-xs text-foreground">
+            <span className="truncate text-label text-foreground">
               {proposal.branch} ({reasonLabel(proposal)})
             </span>
-            <span className="truncate text-2xs text-muted-foreground">
+            <span className="truncate text-secondary text-muted-foreground">
               {proposal.worktreePath}
               {proposal.sizeBytes === null
                 ? ''

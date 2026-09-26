@@ -4,8 +4,8 @@ import type { AgentCardDensity } from './agentCardDensity';
 import { agentCardTitleClass } from './agentCardTitleClass';
 
 const INPUT_SIZE: Record<AgentCardDensity, string> = {
-  lane: 'text-sm',
-  sidebar: 'text-2xs',
+  lane: 'text-body',
+  sidebar: 'text-secondary',
 };
 
 type Props = {

@@ -56,7 +56,7 @@ export const IntegrationAddPopover = ({
             aria-label={actionLabel}
             aria-expanded={dropdown.open}
             className={cn(
-              'flex items-center rounded-md py-1 text-2xs font-medium transition-colors',
+              'flex items-center rounded-md py-1 text-secondary font-medium transition-colors',
               isEmpty ? 'gap-1.5 px-2' : FOOTER_LABELED_PAD,
               active
                 ? 'bg-muted text-foreground'

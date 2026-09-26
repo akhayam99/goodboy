@@ -60,7 +60,7 @@ export const RoutingIndicator = ({
       <TranscriptShell
         tone="warning"
         variant="boxed"
-        className={`flex items-center gap-2 text-xs ${warningAccent.text}`}
+        className={`flex items-center gap-2 text-label ${warningAccent.text}`}
       >
         <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="flex-1">All provider budgets exceeded</span>
@@ -99,7 +99,7 @@ export const RoutingIndicator = ({
     <TranscriptShell
       tone="warning"
       variant="boxed"
-      className={`flex w-fit items-center gap-1.5 text-xs ${warningAccent.text}`}
+      className={`flex w-fit items-center gap-1.5 text-label ${warningAccent.text}`}
     >
       <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="flex items-center gap-1.5">

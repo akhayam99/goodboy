@@ -49,11 +49,11 @@ export const VersionHistoryList = ({
           >
             <div className="flex items-center gap-2">
               <AuthorshipChip byUser={version.snapshotSource === 'restore'} />
-              <span className="text-2xs text-muted-foreground">{version.changeKind}</span>
-              <span className="text-2xs text-muted-foreground">
+              <span className="text-secondary text-muted-foreground">{version.changeKind}</span>
+              <span className="text-secondary text-muted-foreground">
                 {formatRelativeAge({ fromIso: version.capturedAt })}
               </span>
-              <span className="ml-auto text-2xs text-muted-foreground">
+              <span className="ml-auto text-secondary text-muted-foreground">
                 {formatAbsoluteDateTime({ iso: version.capturedAt })}
               </span>
             </div>

@@ -10,7 +10,6 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { LensEmptyState } from '@goodboy/ui';
-import { PageCrumbRow } from '../../../../shared/components/PaneShell/PageCrumbRow';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import {
   LazyGenericTerminalPanel,
@@ -153,7 +152,6 @@ export const TerminalDock = ({ sessionId, isActive, cwd }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" onKeyDown={handleKeyDown}>
-      <PageCrumbRow />
       <TerminalTabStrip
         tabs={tabs}
         activeId={activeId}

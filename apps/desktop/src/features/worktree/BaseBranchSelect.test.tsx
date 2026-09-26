@@ -9,6 +9,9 @@ vi.mock('./worktree', () => ({ listBranchNames }));
 
 import { BaseBranchSelect } from './BaseBranchSelect';
 
+const trigger = () => screen.getByRole('combobox', { name: 'Base branch' });
+const search = () => screen.getByRole('combobox', { name: 'Search branches' });
+
 describe('BaseBranchSelect', () => {
   beforeEach(() => {
     listBranchNames.mockReset();
@@ -19,32 +22,32 @@ describe('BaseBranchSelect', () => {
   it('fetches branches only after the popover opens', async () => {
     render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
 
+    expect(trigger().textContent).toBe('main');
     expect(listBranchNames).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: main' }));
+    fireEvent.click(trigger());
 
     await waitFor(() => expect(listBranchNames).toHaveBeenCalledWith({ repoPath: '/repo' }));
   });
 
   it('filters the fetched branch list', async () => {
     render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: main' }));
-    const input = screen.getByRole('combobox', { name: 'Base branch' });
-    await screen.findByRole('button', { name: 'develop' });
+    fireEvent.click(trigger());
+    await screen.findByRole('option', { name: 'develop' });
 
-    fireEvent.change(input, { target: { value: 'rel' } });
+    fireEvent.change(search(), { target: { value: 'rel' } });
 
-    expect(screen.getByRole('button', { name: 'release' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'develop' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'release' })).toBeDefined();
+    expect(screen.queryByRole('option', { name: 'develop' })).toBeNull();
   });
 
   it('commits an unlisted trimmed branch on Enter', async () => {
     const onCommit = vi.fn();
     render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={onCommit} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: main' }));
-    const input = screen.getByRole('combobox', { name: 'Base branch' });
+    fireEvent.click(trigger());
+    await screen.findByRole('option', { name: 'develop' });
 
-    fireEvent.change(input, { target: { value: '  topic/new  ' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.change(search(), { target: { value: '  topic/new  ' } });
+    fireEvent.keyDown(search(), { key: 'Enter' });
 
     expect(onCommit).toHaveBeenCalledWith('topic/new');
   });
@@ -52,7 +55,7 @@ describe('BaseBranchSelect', () => {
   it('clears an explicit branch to null', () => {
     const onCommit = vi.fn();
     render(<BaseBranchSelect repoPath="/repo" value="develop" onCommit={onCommit} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Base branch: develop' }));
+    fireEvent.click(trigger());
 
     fireEvent.click(screen.getByRole('button', { name: 'Use default' }));
 

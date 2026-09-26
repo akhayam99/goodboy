@@ -202,6 +202,7 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
         return { inserted, resolvedKind, resolvedProvider, resolvedModel, resolvedEffort };
       },
     });
+  get().revealActivityRow(sessionId, `agent:${inserted.id}`);
   const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
   const effectiveKind: AgentKind =
     args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;

@@ -116,8 +116,8 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       }
     >
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">Ask an agent about this file</p>
-        <p className="truncate font-mono text-2xs text-muted-foreground">{entry.relPath}</p>
+        <p className="text-row text-foreground">Ask an agent about this file</p>
+        <p className="truncate font-mono text-secondary text-muted-foreground">{entry.relPath}</p>
       </div>
       <Divider />
       <div className="flex flex-col gap-2">
@@ -138,7 +138,7 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           className="gap-1.5"
           role={{ label: AGENT_KIND_META.generic.label, hint: 'Fixed by the explore panel' }}
         />
-        {spawnError != null ? <p className="text-xs text-danger">{spawnError}</p> : null}
+        {spawnError != null ? <p className="text-label text-danger">{spawnError}</p> : null}
       </div>
       <Divider />
       <div className="flex items-center justify-end">

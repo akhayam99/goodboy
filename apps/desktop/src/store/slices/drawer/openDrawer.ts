@@ -3,8 +3,6 @@ import type { SetFn } from './types';
 
 export const openDrawer = (set: SetFn) => {
   return (request: DrawerRequest): void => {
-    set((state) => ({
-      drawer: { ...request, lens: state.activeLens[request.sessionId] ?? null },
-    }));
+    set({ drawer: request });
   };
 };

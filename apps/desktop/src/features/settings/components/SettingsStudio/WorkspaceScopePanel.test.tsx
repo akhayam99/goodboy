@@ -67,9 +67,7 @@ vi.mock('../../../../features/providers/components/provider-brand', () => ({
 
 const EMPTY: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,

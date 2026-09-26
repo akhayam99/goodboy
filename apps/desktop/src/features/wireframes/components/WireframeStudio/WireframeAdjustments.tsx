@@ -84,7 +84,7 @@ export const WireframeAdjustments = ({ adjustments }: Props) => {
         open={isOpen}
         onOpenChange={setIsOpen}
         trigger={
-          <span className="text-2xs font-normal text-muted-foreground">
+          <span className="text-secondary font-normal text-muted-foreground">
             {summaryOf({ adjustments })}
           </span>
         }
@@ -92,13 +92,13 @@ export const WireframeAdjustments = ({ adjustments }: Props) => {
         <ul className="flex flex-col gap-1">
           {adjustments.map((adjustment) =>
             adjustment.change === 'hidden' ? (
-              <li key="hidden" className="text-2xs text-muted-foreground">
+              <li key="hidden" className="text-secondary text-muted-foreground">
                 {hiddenLabel({ hidden: adjustment })}
               </li>
             ) : (
               <li
                 key={`${adjustment.path}-${adjustment.message}`}
-                className="text-2xs text-muted-foreground"
+                className="text-secondary text-muted-foreground"
               >
                 <span className="font-mono text-foreground">{adjustment.path}</span>
                 {': '}

@@ -4,7 +4,6 @@ import {
   cancelTurnStartWindow,
   claimTurnStart,
   closeTurnStartWindow,
-  isTurnStartCancelled,
   openTurnStartWindow,
   resetTurnStartWindows,
 } from './turnStartWindow';
@@ -24,7 +23,6 @@ describe('turnStartWindow', () => {
   it('refuses a start cancelled while the turn was still queued', () => {
     openTurnStartWindow({ agentId: AGENT_ID });
     expect(cancelTurnStartWindow({ agentId: AGENT_ID })).toBe(true);
-    expect(isTurnStartCancelled({ agentId: AGENT_ID })).toBe(true);
     expect(claimTurnStart({ agentId: AGENT_ID })).toBe('cancelled');
   });
 

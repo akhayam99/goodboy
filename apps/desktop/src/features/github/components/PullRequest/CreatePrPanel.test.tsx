@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   Agent,
@@ -26,9 +27,8 @@ type CreatePr = (input: {
 type Store = {
   readonly createPrForSession: ReturnType<typeof vi.fn<CreatePr>>;
   readonly spawnAgent: ReturnType<typeof vi.fn<SpawnAgent>>;
-  readonly selectAgent: ReturnType<typeof vi.fn>;
-  readonly setActiveLens: ReturnType<typeof vi.fn>;
-  readonly setCurrentSession: ReturnType<typeof vi.fn>;
+  readonly navigate: ReturnType<typeof vi.fn>;
+  readonly loadAgentTranscript: ReturnType<typeof vi.fn>;
   sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
   readonly sessionBranches: Record<string, string>;
   readonly sessionProjectMounts: Record<string, ReadonlyArray<never>>;
@@ -70,9 +70,8 @@ const h = vi.hoisted(() => ({
   store: {
     createPrForSession: vi.fn<CreatePr>(async () => undefined),
     spawnAgent: vi.fn<SpawnAgent>(async () => 'agent-2'),
-    selectAgent: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
-    setCurrentSession: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
     sessionBranches: { 'session-2': 'ak/card-config' },
     sessionProjectMounts: {},
@@ -85,7 +84,8 @@ const h = vi.hoisted(() => ({
   } satisfies Store,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
@@ -164,9 +164,7 @@ beforeEach(() => {
   h.store.createPrForSession.mockClear();
   h.store.createPrForSession.mockImplementation(async () => undefined);
   h.store.spawnAgent.mockClear();
-  h.store.selectAgent.mockClear();
-  h.store.setActiveLens.mockClear();
-  h.store.setCurrentSession.mockClear();
+  h.store.navigate.mockClear();
   h.store.sessionPhaseRuns = {};
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
@@ -272,16 +270,17 @@ describe('CreatePrPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
 
     await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
-    expect(h.store.setCurrentSession).toHaveBeenCalledWith(SESSION_ID);
-    expect(h.store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, null);
-    expect(h.store.selectAgent).not.toHaveBeenCalled();
+    expect(h.store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
     const action = h.showToast.mock.calls[0]![0]?.action;
     expect(action?.label).toBe('Open the agent');
 
     action?.onClick();
 
-    await waitFor(() => expect(h.store.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-2'));
-    expect(h.store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'agents');
+    await waitFor(() =>
+      expect(h.store.navigate).toHaveBeenCalledWith({
+        to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-2' },
+      }),
+    );
   });
 
   it('blocks both create actions while a drafting agent runs', async () => {

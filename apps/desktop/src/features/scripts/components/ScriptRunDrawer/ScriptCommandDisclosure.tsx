@@ -19,7 +19,7 @@ export const ScriptCommandDisclosure = ({ command }: Props) => {
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex items-center gap-1 self-start rounded-sm text-2xs text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-1 self-start rounded-sm text-secondary text-muted-foreground hover:text-foreground"
       >
         <ChevronRight
           size={ICON_SIZE.row}

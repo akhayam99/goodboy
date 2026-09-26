@@ -48,14 +48,15 @@ describe('buildContextPreamble', () => {
     expect(out).toContain('context handoff protocol');
   });
 
-  it('budget-compacts oversized slots before rendering the preamble', () => {
+  it('budget-compacts oversized slots before rendering the preamble, keeping the newest', () => {
     const decisions = Array.from(
       { length: 20 },
       (_, index) => `- decision-${index}-${'x'.repeat(80)}`,
     ).join('\n');
     const out = buildContextPreamble([slot('decisions', decisions)]);
     expect(out).toContain('- ...');
-    expect(out).not.toContain('decision-19');
+    expect(out).toContain('decision-19');
+    expect(out).not.toContain('decision-0-');
   });
 
   it('logs serialized slot sizes in development above 80 percent of the total budget', () => {

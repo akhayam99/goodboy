@@ -7,7 +7,11 @@ import {
   formatUsd,
   formatUsdPrecise,
   SegmentedTabs,
+  STRIPED_MIN_ROWS,
+  STRIPED_ROW,
+  STRIPED_TABLE,
   Tooltip,
+  cn,
   type SegmentedTabOption,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -81,23 +85,29 @@ export const TurnsTable = ({
       ) : (
         <div className="flex max-w-full flex-col gap-1">
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-left text-xs">
-              <thead className="text-muted-foreground">
+            <table className={cn('w-full min-w-[36rem] text-left text-label', STRIPED_TABLE)}>
+              <thead className="text-eyebrow text-faint-foreground">
                 <tr>
-                  <th className="px-2 py-2 font-medium">type</th>
-                  <th className="px-2 py-2 font-medium">model</th>
-                  {showSession ? <th className="px-2 py-2 font-medium">session</th> : null}
-                  <th className="px-2 py-2 text-right font-medium">in</th>
-                  <th className="px-2 py-2 text-right font-medium">out</th>
-                  <th className="px-2 py-2 text-right font-medium">cost</th>
+                  <th className="px-2 py-2">type</th>
+                  <th className="px-2 py-2">model</th>
+                  {showSession ? <th className="px-2 py-2">session</th> : null}
+                  <th className="px-2 py-2 text-right">in</th>
+                  <th className="px-2 py-2 text-right">out</th>
+                  <th className="px-2 py-2 text-right">cost</th>
                   <th className="w-5 px-2 py-2">
                     <span className="sr-only">Open session</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-soft">
+              <tbody>
                 {shown.map(({ record, sessionId, sessionGoal }) => (
-                  <tr key={record.id} className="group transition-colors hover:bg-hover">
+                  <tr
+                    key={record.id}
+                    className={cn(
+                      'group hover:[&>*]:bg-hover',
+                      shown.length >= STRIPED_MIN_ROWS && STRIPED_ROW,
+                    )}
+                  >
                     <td className="px-2 py-2">
                       <span>
                         <Chip

@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { PaneShell } from './PaneShell';
-import { FocusedPane } from './PaneShell/FocusedPane';
 
 afterEach(cleanup);
 
@@ -38,9 +37,6 @@ describe('pane rhythm', () => {
         <PaneShell title="Framed" scroll="body">
           <p>Framed body</p>
         </PaneShell>
-        <FocusedPane lens="Lens">
-          <p>Focused body</p>
-        </FocusedPane>
         <PaneShell header={<span>Detail header</span>} scroll="self">
           <p>Detail body</p>
         </PaneShell>
@@ -51,7 +47,6 @@ describe('pane rhythm', () => {
       nearestClasses({ node: screen.getByText('Pane body'), pattern: GUTTER }),
       nearestClasses({ node: screen.getByText('Framed'), pattern: GUTTER }),
       nearestClasses({ node: screen.getByText('Framed body'), pattern: GUTTER }),
-      nearestClasses({ node: screen.getByText('Lens'), pattern: GUTTER }),
       nearestClasses({ node: screen.getByText('Detail header'), pattern: GUTTER }),
     ];
     for (const gutter of gutters) {

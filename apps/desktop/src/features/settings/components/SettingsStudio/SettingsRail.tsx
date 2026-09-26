@@ -21,7 +21,7 @@ type Props = {
   readonly onSelect: (params: SettingsScopeChange) => void;
 };
 
-const SCOPE_ITEMS = [
+export const SCOPE_ITEMS = [
   { scope: 'workspace', label: 'Workspace', icon: CONCEPT_ICONS.workspace, needsWorkspace: true },
   {
     scope: 'providers',

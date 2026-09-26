@@ -68,10 +68,12 @@ export const ProjectMountGroup = ({
           aria-hidden
           className="shrink-0 text-muted-foreground"
         />
-        <span className="truncate text-sm font-medium text-foreground">{group.projectName}</span>
+        <span className="truncate text-row text-foreground">{group.projectName}</span>
         {group.seriesName === null ? null : (
           <Tooltip content="Each part of this split is its own branch and pull request">
-            <span className="truncate text-2xs text-muted-foreground">{group.seriesName}</span>
+            <span className="truncate text-secondary text-muted-foreground">
+              {group.seriesName}
+            </span>
           </Tooltip>
         )}
         <div className="ml-auto flex shrink-0 items-center gap-1">

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
@@ -26,7 +27,7 @@ const { state, mocks } = vi.hoisted(() => ({
     budgetRules: [] as ReadonlyArray<unknown>,
     sessionBudgets: {} as Record<string, { softCapUsd: number }>,
     currentWorkspaceId: 'workspace-1',
-    setCurrentSession: vi.fn(),
+    navigate: vi.fn(),
     loadBudgetRules: vi.fn(),
     loadBudgetAlerts: vi.fn(),
     loadSessionTelemetry: vi.fn(),
@@ -43,7 +44,8 @@ vi.mock('../../hooks/useImpactMetrics', () => ({
   useImpactMetrics: mocks.useImpactMetrics,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useSessions: () => state.sessions,
@@ -291,7 +293,9 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' }, onClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+    });
     expect(onClose).toHaveBeenCalled();
   });
 

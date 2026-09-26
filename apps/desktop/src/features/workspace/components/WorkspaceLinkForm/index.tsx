@@ -55,7 +55,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const addProjects = useAppStore((state) => state.addProjects);
   const adoptProject = useAppStore((state) => state.adoptProject);
   const removeProject = useAppStore((state) => state.removeProject);
-  const setCurrentWorkspace = useAppStore((state) => state.setCurrentWorkspace);
+  const openWorkspace = useAppStore((state) => state.openWorkspace);
   const projects = useAppStore((state) => state.projects);
   const { detected, detect, clear } = useChildRepoDetection();
 
@@ -90,7 +90,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly rootPaths: ReadonlyArray<string>;
   }) => {
     const workspace = await createWorkspace({ name });
-    await setCurrentWorkspace(workspace.id);
+    await openWorkspace(workspace.id, workspace.name);
     const result = await addProjects({ workspaceId: workspace.id, rootPaths });
     adoption.noteConflicts(result.conflicts);
     return workspace;
@@ -109,7 +109,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     readonly mode: WorkspaceLinkMode;
     readonly workspace: Workspace;
   }) => {
-    await setCurrentWorkspace(workspace.id);
+    await openWorkspace(workspace.id, workspace.name);
     onComplete({ mode, workspace });
   };
 
@@ -248,7 +248,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const onCreateWorkspace = () =>
     run(async () => {
       const workspace = await createWorkspace({ name: workspaceName.trim() });
-      await setCurrentWorkspace(workspace.id);
+      await openWorkspace(workspace.id, workspace.name);
       setCreated(workspace);
     });
 
@@ -282,7 +282,10 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const actions = (
     <>
       {error != null ? (
-        <span role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-xs text-danger">
+        <span
+          role="alert"
+          className="flex min-w-0 flex-1 items-center gap-1 text-label text-danger"
+        >
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
         </span>
@@ -334,7 +337,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                   <option.icon size={ICON_SIZE.hero} aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-foreground">{option.label}</span>
+                  <span className="block text-row text-foreground">{option.label}</span>
                   <span className="block text-xs leading-relaxed text-muted-foreground">
                     {option.hint}
                   </span>
@@ -377,7 +380,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 type="button"
                 onClick={onLinkPlainFolder}
                 disabled={busy}
-                className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
                 Link a plain folder (no git)
               </button>
@@ -388,7 +391,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
             <div className="flex flex-col gap-1.5">
               <label
                 htmlFor={`${formId}-workspace-name`}
-                className="text-xs font-medium text-foreground"
+                className="text-label font-medium text-foreground"
               >
                 Workspace name
               </label>
@@ -427,9 +430,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-foreground">
-                        {project.name}
-                      </span>
+                      <span className="truncate text-row text-foreground">{project.name}</span>
                       <Chip
                         tone="neutral"
                         size="3xs"
@@ -438,7 +439,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                         className="shrink-0"
                       />
                     </span>
-                    <span className="block truncate font-mono text-xs text-muted-foreground">
+                    <span className="block truncate text-code text-muted-foreground">
                       {project.rootPath}
                     </span>
                   </span>
@@ -512,7 +513,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
             type="button"
             onClick={onLinkPlainFolder}
             disabled={busy}
-            className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="self-start text-label font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Link a plain folder (no git)
           </button>

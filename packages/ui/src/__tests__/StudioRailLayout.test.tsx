@@ -20,10 +20,10 @@ describe('StudioRailLayout', () => {
     expect(screen.getByRole('complementary', { name: 'Project navigation' })).toBeDefined();
     expect(screen.getByText('Rail content')).toBeDefined();
     expect(screen.getByText('Detail content')).toBeDefined();
-    expect(screen.getByRole('separator').getAttribute('aria-orientation')).toBe('vertical');
+    expect(screen.queryByRole('separator')).toBeNull();
   });
 
-  it('wraps aside, divider and detail in a flex row so hosts cannot break the layout', () => {
+  it('wraps aside and detail sheet in a flex row so hosts cannot break the layout', () => {
     render(
       <StudioRailLayout
         rail={<p>Rail content</p>}
@@ -41,20 +41,16 @@ describe('StudioRailLayout', () => {
     }
 
     expect(wrapper.classList.contains('flex')).toBe(true);
-    expect(Array.from(wrapper.children).map((child) => child.tagName)).toEqual([
-      'ASIDE',
-      'DIV',
-      'DIV',
-    ]);
+    expect(Array.from(wrapper.children).map((child) => child.tagName)).toEqual(['ASIDE', 'DIV']);
 
-    const [asideChild, separatorChild, detailChild] = wrapper.children;
+    const [asideChild, detailChild] = wrapper.children;
 
-    if (asideChild == null || separatorChild == null || detailChild == null) {
+    if (asideChild == null || detailChild == null) {
       throw new Error('wrapper children not found');
     }
 
     expect(asideChild).toBe(aside);
-    expect(separatorChild).toBe(screen.getByRole('separator'));
+    expect((detailChild as HTMLElement).dataset.sheet).toBe('wrapped');
     expect(detailChild.textContent).toBe('Detail content');
   });
 

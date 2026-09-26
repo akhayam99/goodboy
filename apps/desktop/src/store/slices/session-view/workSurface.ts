@@ -1,103 +1,36 @@
 import type { ArtifactId, SessionExternalTask, SessionId } from '@goodboy/types';
-import type {
-  DiffFocus,
-  GetFn,
-  LensKind,
-  SessionStudio,
-  SetFn,
-  WorkSurfacePosition,
-} from './types';
+import type { DiffFocus, GetFn, LensKind, SessionStudio, SetFn } from './types';
 import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
-import { amendTopPosition } from './amendTopPosition';
 import { workSurfaceFocus } from './workSurfaceFocus';
-import { writePersistedLens } from './workSurfaceStorage';
-import { drawerAfterMove } from '../drawer/drawerAfterMove';
 import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
+import { sessionPlace } from '../navigation/place';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
-    writePersistedLens(sessionId, lens);
-    set((s) => {
-      const prev = s.lensHistory[sessionId];
-      const trimmed = prev ? prev.entries.slice(0, prev.index + 1) : [];
-      const current: WorkSurfacePosition = {
-        lens: s.activeLens[sessionId] ?? null,
-        agentId: s.selectedAgentId[sessionId] ?? null,
-        studio: s.sessionStudio[sessionId] ?? null,
-      };
-      const amended = amendTopPosition({ entries: trimmed, current });
-      const top = amended[amended.length - 1];
-      const sameTop =
-        top != null && top.lens === lens && top.agentId === null && top.studio === null;
-      const entries = sameTop ? amended : [...amended, { lens, agentId: null, studio: null }];
-      return {
-        ...workSurfaceFocus({
-          sessionId,
-          focus: { kind: 'lens', lens },
-          activeLens: s.activeLens,
-          sessionStudio: s.sessionStudio,
-          selectedAgentId: s.selectedAgentId,
-        }),
-        focusedWorkflowRunId:
-          lens === 'workflows'
-            ? s.focusedWorkflowRunId
-            : { ...s.focusedWorkflowRunId, [sessionId]: null },
-        diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
-        diffMountPath:
-          lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
-        terminalMountPath:
-          lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
-        focusedArtifactId:
-          lens === 'plans' ? s.focusedArtifactId : { ...s.focusedArtifactId, [sessionId]: null },
-        focusedGithubIssueNumber:
-          lens === 'github_issue'
-            ? s.focusedGithubIssueNumber
-            : { ...s.focusedGithubIssueNumber, [sessionId]: null },
-        focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
-        lensHistory: {
-          ...s.lensHistory,
-          [sessionId]: { entries, index: entries.length - 1 },
-        },
-        drawer: drawerAfterMove({ drawer: s.drawer, sessionId, lens }),
-      };
-    });
-  };
-};
-
-export const lensGo = (set: SetFn, get: GetFn) => {
-  return (sessionId: SessionId, delta: number): void => {
-    const hist = get().lensHistory[sessionId];
-    if (!hist) return;
-    const nextIndex = Math.min(Math.max(hist.index + delta, 0), hist.entries.length - 1);
-    if (nextIndex === hist.index) return;
-    const entry = hist.entries[nextIndex];
-    if (entry == null) return;
-    const runs = get().sessionPhaseRuns[sessionId] ?? [];
-    const agentId =
-      entry.agentId != null && runs.some((run) => run.id === entry.agentId) ? entry.agentId : null;
-    const restored: WorkSurfacePosition = { lens: entry.lens, agentId, studio: entry.studio };
-    writePersistedLens(sessionId, restored.lens);
     set((s) => ({
       ...workSurfaceFocus({
         sessionId,
-        focus: {
-          kind: 'restore',
-          lens: restored.lens,
-          studio: restored.studio,
-          agentId: restored.agentId,
-        },
+        focus: { kind: 'lens', lens },
         activeLens: s.activeLens,
         sessionStudio: s.sessionStudio,
         selectedAgentId: s.selectedAgentId,
       }),
-      lensHistory: {
-        ...s.lensHistory,
-        [sessionId]: {
-          entries: hist.entries.map((item, index) => (index === nextIndex ? restored : item)),
-          index: nextIndex,
-        },
-      },
+      focusedWorkflowRunId:
+        lens === 'workflows'
+          ? s.focusedWorkflowRunId
+          : { ...s.focusedWorkflowRunId, [sessionId]: null },
+      diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
+      diffMountPath: lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
+      terminalMountPath:
+        lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
+      focusedArtifactId:
+        lens === 'plans' ? s.focusedArtifactId : { ...s.focusedArtifactId, [sessionId]: null },
+      focusedGithubIssueNumber:
+        lens === 'github_issue'
+          ? s.focusedGithubIssueNumber
+          : { ...s.focusedGithubIssueNumber, [sessionId]: null },
+      focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
     }));
   };
 };
@@ -134,23 +67,41 @@ export const setDiffFocus = (set: SetFn) => {
 
 export const openDiffLens = (get: GetFn) => {
   return (sessionId: SessionId, focus: DiffFocus | null): void => {
-    get().setDiffFocus(sessionId, focus);
-    get().setActiveLens(sessionId, 'files');
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens: 'files',
+        target: {
+          kind: 'diff',
+          mountPath: get().diffMountPath[sessionId] ?? null,
+          focus,
+        },
+      }),
+    });
   };
 };
 
-export const openMountDiff = (set: SetFn, get: GetFn) => {
+export const openMountDiff = (get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string): void => {
-    set((s) => ({ diffMountPath: { ...s.diffMountPath, [sessionId]: worktreePath } }));
-    get().setDiffFocus(sessionId, null);
-    get().setActiveLens(sessionId, 'files');
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens: 'files',
+        target: { kind: 'diff', mountPath: worktreePath, focus: null },
+      }),
+    });
   };
 };
 
-export const openMountTerminal = (set: SetFn, get: GetFn) => {
+export const openMountTerminal = (get: GetFn) => {
   return (sessionId: SessionId, worktreePath: string): void => {
-    set((s) => ({ terminalMountPath: { ...s.terminalMountPath, [sessionId]: worktreePath } }));
-    get().setActiveLens(sessionId, 'terminal');
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens: 'terminal',
+        target: { kind: 'terminal', mountPath: worktreePath },
+      }),
+    });
   };
 };
 
@@ -171,7 +122,7 @@ export const setFocusedGithubIssueNumber = (set: SetFn) => {
   };
 };
 
-export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
+export const openExternalTaskLens = (get: GetFn) => {
   return (sessionId: SessionId, task: SessionExternalTask): void => {
     if (task.provider === 'sentry') {
       const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
@@ -187,21 +138,31 @@ export const openExternalTaskLens = (set: SetFn, get: GetFn) => {
       );
       return;
     }
-    get().setActiveLens(sessionId, PROVIDER_LENS[task.provider]);
+    const lens = PROVIDER_LENS[task.provider];
     if (task.provider === 'github') {
-      get().setFocusedGithubIssueNumber(sessionId, Number(task.externalId));
+      get().navigate({
+        to: sessionPlace({
+          sessionId,
+          lens,
+          target: { kind: 'github-issue', issueNumber: Number(task.externalId) },
+        }),
+      });
       return;
     }
-    set((s) => ({
-      focusedExternalTask: {
-        ...s.focusedExternalTask,
-        [sessionId]: {
-          provider: task.provider,
-          externalId: task.externalId,
-          projectId: task.projectId ?? null,
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens,
+        target: {
+          kind: 'external-task',
+          task: {
+            provider: task.provider,
+            externalId: task.externalId,
+            projectId: task.projectId ?? null,
+          },
         },
-      },
-    }));
+      }),
+    });
   };
 };
 

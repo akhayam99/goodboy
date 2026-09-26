@@ -8,7 +8,8 @@ const { state } = vi.hoisted(() => ({
   state: {
     answerOpenQuestions: vi.fn(async () => undefined),
     dismissOpenQuestion: vi.fn(async () => undefined),
-    selectAgent: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     spawnQuestionDelegates: vi.fn(
       async ({ requests }: { requests: ReadonlyArray<{ question: { id: string } }> }) =>
         requests.map((request) => ({
@@ -29,7 +30,8 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
@@ -83,7 +85,7 @@ beforeEach(() => {
   state.sessionPhaseRuns['sess-1'] = BASE_RUNS;
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
-  state.selectAgent.mockClear();
+  state.navigate.mockClear();
   state.spawnQuestionDelegates.mockClear();
   useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
 });
@@ -258,7 +260,9 @@ describe('OpenQuestionCluster', () => {
 
     fireEvent.click(screen.getByText('scout'));
 
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-1');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-1' },
+    });
   });
 
   it('drops the asking agent line when it is the agent being read', () => {
@@ -528,7 +532,9 @@ describe('OpenQuestionCluster delegation', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
 
     fireEvent.click(screen.getByTestId('delegate-waiting-row'));
-    expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'delegate-1');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: 'sess-1', agentId: 'delegate-1' },
+    });
   });
 
   it('drops a typed answer once the question is handed to an agent', async () => {

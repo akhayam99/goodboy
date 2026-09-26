@@ -105,13 +105,16 @@ record a live turn already wrote wins.
   the prior turns block replays it for Codex, Cursor and Antigravity.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
-  sent it, the ask in one line, the why, and a chip per section; a chip opens
-  the block on its section. It opens by itself only while the agent has not
-  answered yet. Earlier steps open their agent, the plan is a title and Open
-  plan (never its body), and **View as sent** shows the exact text in mono, in
-  two parts for Claude and one for the others with a line that says why. When
-  you wrote the first message yourself, your bubble stays and a one-line
-  **Also received** strip sits above it.
+  sent it, the ask in one line, the why, and a chip per section, always
+  visible whether the block is open or closed. A chip opens its section in a
+  single panel below; the same chip closes it, and a second chip replaces the
+  first rather than stacking. **All** shows every section together, including
+  **View as sent**. It opens by itself only while the agent has not answered
+  yet. Earlier steps open their agent, the plan is a title and Open plan
+  (never its body), and **View as sent** shows the exact text in mono, in two
+  parts for Claude and one for the others with a line that says why. When you
+  wrote the first message yourself, your bubble stays and a one-line **Also
+  received** strip sits above it.
 - On screen the block never says "handoff" (an internal word,
   `jargon-copy.test.ts`): its eyebrow is "sent by". An agent from before m185
   has no handoff row: its first message shows closed as "first message · older

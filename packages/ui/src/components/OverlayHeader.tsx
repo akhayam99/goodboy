@@ -39,9 +39,9 @@ export const OverlayHeader = ({
             <Icon size={18} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
           ) : null)}
         <div className="flex min-w-0 flex-col">
-          <span className="text-sm font-semibold text-foreground">{title}</span>
+          <span className="text-heading text-foreground">{title}</span>
           {subtitle != null ? (
-            <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
+            <span className="truncate text-secondary text-muted-foreground">{subtitle}</span>
           ) : null}
         </div>
         <div className="flex-1" />
@@ -53,7 +53,7 @@ export const OverlayHeader = ({
           aria-label={closeLabel}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5',
-            'text-xs font-semibold text-muted-foreground transition-colors',
+            'text-label font-semibold text-muted-foreground transition-colors',
             'hover:bg-hover hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             closeDisabled && 'cursor-not-allowed opacity-50',
@@ -74,9 +74,9 @@ export const OverlayHeader = ({
         (Icon != null ? (
           <Icon size={12} className={cn('shrink-0', tintClasses(tone).icon)} aria-hidden />
         ) : null)}
-      <span className="shrink-0 text-2xs font-semibold text-foreground">{title}</span>
+      <span className="shrink-0 text-secondary font-semibold text-foreground">{title}</span>
       {subtitle != null && subtitle !== '' ? (
-        <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
+        <span className="truncate text-secondary text-muted-foreground">{subtitle}</span>
       ) : null}
       <div className="flex-1" />
       {children}

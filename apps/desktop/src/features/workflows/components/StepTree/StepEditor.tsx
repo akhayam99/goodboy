@@ -117,7 +117,7 @@ export const StepEditor = ({
           {estimateNote === null ? null : (
             <p
               data-testid="plan-step-estimate"
-              className="min-w-0 flex-1 truncate text-2xs tabular-nums text-faint-foreground"
+              className="min-w-0 flex-1 truncate text-secondary tabular-nums text-faint-foreground"
             >
               {estimateNote}
             </p>

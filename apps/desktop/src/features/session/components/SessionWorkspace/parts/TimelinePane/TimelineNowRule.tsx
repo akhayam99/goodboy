@@ -13,7 +13,7 @@ type Props = {
 };
 
 const LABEL_CLASS =
-  'absolute -translate-y-1/2 text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground';
+  'absolute -translate-y-1/2 text-meta font-medium uppercase tracking-eyebrow text-muted-foreground';
 
 export const TimelineNowRule = ({
   item,

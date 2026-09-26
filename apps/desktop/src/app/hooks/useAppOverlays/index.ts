@@ -1,13 +1,18 @@
-import { createElement, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { createElement, useCallback, useState, type ReactNode } from 'react';
+import { useEscapeLayer } from '@goodboy/ui';
 import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
-import { useSessionById } from '../../../store';
+import {
+  useAppStore,
+  useSessionById,
+  type InboxStudioFocus,
+  type StudioPlace,
+} from '../../../store';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
-import { footerTarget, type ConnectedIntegrations, type Overlay } from './overlayState';
-import { useCloseOverlayOnNavigation } from './useCloseOverlayOnNavigation';
+import { footerTarget, type ConnectedIntegrations } from './overlayState';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 import { useStudioEvents } from './useStudioEvents';
@@ -23,7 +28,7 @@ type Params = {
 };
 
 type OpenParams = {
-  readonly overlay: Overlay;
+  readonly overlay: StudioPlace;
 };
 
 type OpenIntegrationParams = {
@@ -39,7 +44,10 @@ export const useAppOverlays = ({
   isWorkspaceLauncherBranch,
   pinSessionSidebar,
 }: Params) => {
-  const [overlay, setOverlay] = useState<Overlay | null>(null);
+  const overlay = useAppStore((state) => state.appStudio);
+  const openStudio = useAppStore((state) => state.openStudio);
+  const amendStudio = useAppStore((state) => state.amendStudio);
+  const closeStudio = useAppStore((state) => state.closeStudio);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const deleteTargetSession = useSessionById(deleteSessionId);
@@ -48,8 +56,11 @@ export const useAppOverlays = ({
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
   useCommitDiff();
 
-  const open = useCallback(({ overlay: next }: OpenParams) => setOverlay(next), []);
-  const close = useCallback(() => setOverlay(null), []);
+  const open = useCallback(
+    ({ overlay: next }: OpenParams) => openStudio({ studio: next }),
+    [openStudio],
+  );
+  const close = useCallback(() => closeStudio(), [closeStudio]);
 
   const openPalette = useCallback((prefix = '') => {
     setPalettePrefix(prefix);
@@ -58,7 +69,6 @@ export const useAppOverlays = ({
   }, []);
 
   useStudioEvents({ open, close, openPalette });
-  useCloseOverlayOnNavigation({ close });
   useSessionSurfaceEvents({
     close,
     currentSession,
@@ -67,19 +77,8 @@ export const useAppOverlays = ({
     pinSessionSidebar,
   });
 
-  useEffect(() => {
-    if (!deleteOpen) {
-      return;
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      setDeleteOpen(false);
-    };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
-  }, [deleteOpen]);
+  const dismissDelete = useCallback(() => setDeleteOpen(false), []);
+  useEscapeLayer(dismissDelete, deleteOpen);
 
   const openAddWorkspace = useCallback(() => open({ overlay: { kind: 'addWorkspace' } }), [open]);
 
@@ -132,13 +131,18 @@ export const useAppOverlays = ({
 
   const changeSettingsScope = useCallback(
     ({ scope, section }: SettingsScopeChange) =>
-      open({
-        overlay: {
+      amendStudio({
+        studio: {
           kind: 'settings',
           focus: section === undefined ? { scope } : { scope, section },
         },
       }),
-    [open],
+    [amendStudio],
+  );
+
+  const changeInboxFocus = useCallback(
+    (focus: InboxStudioFocus) => amendStudio({ studio: { kind: 'inbox', focus } }),
+    [amendStudio],
   );
 
   const armDeleteConfirm = useCallback(() => {
@@ -164,6 +168,7 @@ export const useAppOverlays = ({
           overlay,
           close,
           onSettingsScopeChange: changeSettingsScope,
+          onInboxFocusChange: changeInboxFocus,
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
@@ -173,6 +178,7 @@ export const useAppOverlays = ({
     overlay,
     close,
     onSettingsScopeChange: changeSettingsScope,
+    onInboxFocusChange: changeInboxFocus,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

@@ -34,13 +34,13 @@ export const CommentComposer = ({
         tintClasses('primary').rail,
       )}
     >
-      <span className="text-2xs font-medium text-muted-foreground">{label}</span>
+      <span className="text-secondary font-medium text-muted-foreground">{label}</span>
       <Textarea
         autoFocus
         value={body}
         onChange={(event) => setBody(event.target.value)}
         aria-label={label}
-        className="text-sm"
+        className="text-body"
         autoGrow
         minRows={2}
         maxRows={10}
@@ -58,7 +58,7 @@ export const CommentComposer = ({
         }}
       />
       <div className="flex items-center gap-1.5">
-        <span className="mr-auto flex items-center gap-1 text-2xs text-faint-foreground">
+        <span className="mr-auto flex items-center gap-1 text-secondary text-faint-foreground">
           <KbdPill>⌘</KbdPill>
           <KbdPill>↵</KbdPill>
           <span>{submitLabel.toLowerCase()}</span>

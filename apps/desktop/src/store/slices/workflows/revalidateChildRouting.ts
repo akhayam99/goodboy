@@ -1,5 +1,4 @@
 import type { Agent, AgentRole, SessionId } from '@goodboy/types';
-import { workflowRoutingFlags } from '../../../features/workflows/workflowRoutingFlags';
 import { applyWorkflowNodeRouting } from '../workflowRouting/applyWorkflowNodeRouting';
 import { resolveOneChildRouting } from './childRoutingBatch';
 import type { GetFn, SetFn } from './types';
@@ -39,13 +38,9 @@ export const revalidateChildRouting = async ({
       childLock: lock,
     },
     workflowRunId: child.workflowRunId ?? null,
-    isChildSelectionEnabled: workflowRoutingFlags().isChildModelSelectionEnabled,
   });
   if (outcome.kind === 'blocked') {
     return { kind: 'blocked', reason: outcome.reason };
-  }
-  if (outcome.kind === 'legacy') {
-    return { kind: 'ok' };
   }
   const resolved = outcome.fields.routingDecision;
   if (resolved === null) {

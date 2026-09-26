@@ -193,13 +193,14 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   return (
     <div className="flex flex-col">
       {status == null ? (
-        <div className="p-3 text-xs text-muted-foreground">Reading git status</div>
+        <div className="p-3 text-label text-muted-foreground">Reading git status</div>
       ) : status.state === 'missing' ? (
         <div className="flex items-start gap-2 p-3 text-xs leading-relaxed text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span>
-            Goodboy cannot reach <span className="font-mono text-2xs">{project.rootPath}</span>.
-            Reconnect the workspace once the folder is back.
+            Goodboy cannot reach{' '}
+            <span className="font-mono text-secondary">{project.rootPath}</span>. Reconnect the
+            workspace once the folder is back.
           </span>
         </div>
       ) : status.state === 'absent' || status.state === 'unborn' ? (
@@ -208,7 +209,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
         <div className="flex flex-col gap-2 p-3">
           <div className="flex flex-col gap-1.5">
             {details.length === 0 && notes.length === 0 ? (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 text-label text-muted-foreground">
                 <Check size={11} aria-hidden />
                 {status.upstream != null ? 'In sync and clean' : 'Clean, no upstream yet'}
               </span>
@@ -216,26 +217,26 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             {details.map((detail) => (
               <span
                 key={detail.key}
-                className="flex items-center gap-2 text-xs text-muted-foreground"
+                className="flex items-center gap-2 text-label text-muted-foreground"
               >
                 <detail.icon size={11} aria-hidden />
                 {detail.label}
               </span>
             ))}
             {readFailure ? (
-              <span className="flex items-center gap-1 text-xs text-warning">
+              <span className="flex items-center gap-1 text-label text-warning">
                 <AlertTriangle size={11} aria-hidden />
                 Goodboy cannot read this checkout
               </span>
             ) : null}
             {notes.map((note) => (
-              <span key={note} className="text-2xs text-muted-foreground">
+              <span key={note} className="text-secondary text-muted-foreground">
                 {note}
               </span>
             ))}
           </div>
           <div className="flex flex-col gap-1 border-t border-border-soft pt-2">
-            <span className="flex items-center gap-2 text-2xs text-muted-foreground">
+            <span className="flex items-center gap-2 text-secondary text-muted-foreground">
               <span className="shrink-0">Base branch</span>
               <BaseBranchSelect
                 repoPath={project.rootPath}
@@ -244,7 +245,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
               />
             </span>
             {baseBranchError != null ? (
-              <span role="alert" className="text-2xs text-danger">
+              <span role="alert" className="text-secondary text-danger">
                 {baseBranchError}
               </span>
             ) : null}
@@ -270,18 +271,18 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
             </Button>
           </div>
           {pullError != null ? (
-            <span role="alert" className="text-2xs text-danger">
+            <span role="alert" className="text-secondary text-danger">
               {pullError}
             </span>
           ) : null}
           {openError != null ? (
-            <span role="alert" className="text-2xs text-danger">
+            <span role="alert" className="text-secondary text-danger">
               {openError}
             </span>
           ) : null}
         </div>
       )}
-      <span className="border-t border-border-soft px-3 py-2 text-2xs text-faint-foreground">
+      <span className="border-t border-border-soft px-3 py-2 text-secondary text-faint-foreground">
         Sessions keep working in their own worktree, never on this checkout.
       </span>
     </div>

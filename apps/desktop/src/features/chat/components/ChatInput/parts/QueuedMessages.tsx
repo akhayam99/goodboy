@@ -46,7 +46,7 @@ export const QueuedMessages = ({ items, canEdit, onEdit, onRemove, onSendNow }: 
             data-testid="queued-message-row"
             data-status={item.status}
             className={cn(
-              'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-2xs',
+              'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-secondary',
               ROW_CLASSES[item.status],
             )}
           >

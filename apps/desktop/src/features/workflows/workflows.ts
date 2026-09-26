@@ -606,10 +606,6 @@ export const invokeWorkflowNodeRoutingUpdate = async ({
   });
 };
 
-export const invokeAgentSetKind = async (id: AgentId, kind: string | null): Promise<void> => {
-  return invoke<void>('agent_set_kind', { id, kind });
-};
-
 export const invokeAgentSetVerbosity = async (
   id: AgentId,
   verbosity: VerbosityLevel | null,

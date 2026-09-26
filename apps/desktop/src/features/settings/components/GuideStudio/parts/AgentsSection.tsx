@@ -43,7 +43,7 @@ export const AgentsSection = ({}: Props) => (
     </Block>
 
     <Block title="Reading the agent row">
-      <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4 text-xs">
+      <div className="flex flex-col gap-2 rounded-lg border border-border-soft bg-subtle p-4 text-label">
         <Eyebrow label="Second line of each agent" />
         <div className="flex flex-wrap items-center gap-2 font-mono text-foreground">
           <Chip tone="primary">model</Chip>

@@ -53,9 +53,11 @@ export const IntegrationConnectedRow = ({
       <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border-soft bg-subtle px-3 py-2.5">
         <IntegrationGlyph provider={provider} size={ICON_SIZE.control} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-xs font-medium text-foreground">{primary}</span>
+          <span className="truncate text-label font-medium text-foreground">{primary}</span>
           {secondary != null ? (
-            <span className="truncate font-mono text-2xs text-muted-foreground">{secondary}</span>
+            <span className="truncate font-mono text-secondary text-muted-foreground">
+              {secondary}
+            </span>
           ) : null}
         </div>
         {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}

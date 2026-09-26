@@ -49,14 +49,17 @@ export const DelegateAnswerPanel = ({
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="text-2xs text-muted-foreground" data-testid="delegate-hidden-options">
+        <span
+          className="text-secondary text-muted-foreground"
+          data-testid="delegate-hidden-options"
+        >
           {hiddenLabel({ count: hiddenOptionCount })}
         </span>
         <button
           type="button"
           onClick={onCancel}
           className={cn(
-            'shrink-0 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+            'shrink-0 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
             'transition-colors duration-150 hover:text-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           )}
@@ -77,15 +80,15 @@ export const DelegateAnswerPanel = ({
       >
         <div className="flex min-w-0 items-center gap-2">
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-primary" />
-          <span className="min-w-0 text-2xs font-medium text-primary">
+          <span className="min-w-0 text-secondary font-medium text-primary">
             {QUESTION_DELEGATE_COPY.panelTitle}
           </span>
         </div>
-        <p className="text-2xs text-muted-foreground">{QUESTION_DELEGATE_COPY.panelHint}</p>
+        <p className="text-secondary text-muted-foreground">{QUESTION_DELEGATE_COPY.panelHint}</p>
         <div className="flex flex-col gap-1">
           <span className="flex items-baseline gap-1.5">
             <Eyebrow label={QUESTION_DELEGATE_COPY.hintsLabel} />
-            <span className="text-2xs lowercase tracking-normal text-faint-foreground">
+            <span className="text-secondary lowercase tracking-normal text-faint-foreground">
               optional
             </span>
           </span>
@@ -97,7 +100,7 @@ export const DelegateAnswerPanel = ({
             minRows={2}
             maxRows={6}
             autoGrow
-            className="text-xs"
+            className="text-label"
           />
         </div>
         <RoutingPicker

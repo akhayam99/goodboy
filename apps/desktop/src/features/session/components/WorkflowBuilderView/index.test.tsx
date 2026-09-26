@@ -352,9 +352,10 @@ describe('uniqueWorkflowName', () => {
 });
 
 describe('WorkflowBuilderView (studio chrome)', () => {
-  it('renders the studio header with the title and no workspace echo', () => {
+  it('leaves the title to the session trail, with no second title bar', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
-    expect(screen.getByRole('banner', { name: /start a workflow/i })).toBeDefined();
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.queryByRole('button', { name: /cancel workflow builder/i })).toBeNull();
     expect(screen.queryByText('Test workspace')).toBeNull();
   });
 });
@@ -396,10 +397,10 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expandStep(0);
 
     fireEvent.click(withinSteps().getAllByRole('button', { name: /^verbosity:normal$/i })[0]!);
-    fireEvent.click(withinSteps().getAllByRole('button', { name: /^scout$/i })[0]!);
+    fireEvent.click(withinSteps().getAllByRole('combobox', { name: 'Agent role' })[0]!);
     fireEvent.click(
-      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('button', {
-        name: /reviewer/i,
+      within(screen.getByRole('listbox', { name: 'Agent role' })).getByRole('option', {
+        name: /^reviewer/i,
       }),
     );
 
@@ -740,10 +741,10 @@ describe('WorkflowBuilderView (custom mode, no presets)', () => {
     expect(mockSetActiveLens).not.toHaveBeenCalled();
   });
 
-  it('closes via the header close button', async () => {
+  it('closes on Escape, the way up from the studio', async () => {
     const onClose = vi.fn();
     render(<WorkflowBuilderView session={session} onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: /cancel workflow builder/i }));
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 });
@@ -1523,7 +1524,7 @@ describe('WorkflowBuilderView (draft persistence)', () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     fireEvent.change(goalField(), { target: { value: 'discard me' } });
     expect(storeState.workflowDrafts['sess-1']).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /cancel workflow builder/i }));
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     await waitFor(() => expect(storeState.workflowDrafts['sess-1']).toBeUndefined());
   });
 });

@@ -1,10 +1,14 @@
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { cn } from '../../cn';
 import { Button } from '../Button';
 import { Skeleton } from '../Skeleton';
 import { Tooltip } from '../Tooltip';
-import { RemoteImageLoaderContext, type RemoteImageLoader } from './loaderContext';
+import {
+  RemoteImageAutoLoadContext,
+  RemoteImageLoaderContext,
+  type RemoteImageLoader,
+} from './loaderContext';
 
 type Props = {
   readonly url: string;
@@ -37,7 +41,9 @@ const hostOf = (url: string): string => {
 
 export const RemoteImage = ({ url, alt, load, className }: Props) => {
   const contextLoad = useContext(RemoteImageLoaderContext);
+  const shouldAutoLoad = useContext(RemoteImageAutoLoadContext);
   const loader = load ?? contextLoad;
+  const isAutoLoad = shouldAutoLoad?.(url) ?? false;
   const [state, setState] = useState<State>({ kind: 'blocked' });
   const host = hostOf(url);
 
@@ -59,6 +65,12 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
       });
   }, [loader, url]);
 
+  useEffect(() => {
+    if (isAutoLoad && loader != null) {
+      requestImage();
+    }
+  }, [isAutoLoad, loader, requestImage]);
+
   if (state.kind === 'loaded') {
     return <img src={state.dataUri} alt={alt} className={cn(IMAGE_CLASS, className)} />;
   }
@@ -70,9 +82,15 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
         role="status"
         aria-label={`Loading an image from ${host}`}
       >
-        <Skeleton className="h-32 w-full rounded-md" />
+        <Skeleton
+          className={isAutoLoad ? 'aspect-video h-40 w-full rounded-md' : 'h-32 w-full rounded-md'}
+        />
       </div>
     );
+  }
+
+  if (isAutoLoad && state.kind === 'blocked') {
+    return null;
   }
 
   const isFailed = state.kind === 'failed';
@@ -81,7 +99,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
     <div className={cn(BLOCK_CLASS, className)}>
       <ImageOff size={14} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {alt !== '' && <span className="text-xs font-medium text-foreground">{alt}</span>}
+        {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
         <span className="text-xs leading-relaxed text-muted-foreground">
           {isFailed ? 'Could not load this image from ' : 'An image lives at '}
           <Tooltip content={url}>

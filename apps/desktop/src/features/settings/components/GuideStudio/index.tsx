@@ -80,7 +80,7 @@ export const GuideStudio = ({ onClose }: Props) => {
                 selected={active === item.id}
                 onClick={() => jump(item.id)}
                 ariaCurrent={active === item.id ? 'true' : undefined}
-                className="items-center gap-2 py-2 pl-3 pr-2 text-sm"
+                className="items-center gap-2 py-2 pl-3 pr-2 text-body"
               >
                 {item.icon}
                 <span>{item.label}</span>

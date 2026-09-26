@@ -144,7 +144,8 @@ mod tests {
             file("screens/sign-in.html", "<p>sign in</p>"),
             file("wireframe.json", "{}"),
         ];
-        let root = write_folder(&parent, "2026-09-25-settlement-flow-8d21e0", &files).expect("write");
+        let root =
+            write_folder(&parent, "2026-09-25-settlement-flow-8d21e0", &files).expect("write");
         assert_eq!(
             std::fs::read_to_string(root.join("screens").join("sign-in.html")).expect("read"),
             "<p>sign in</p>"
@@ -156,9 +157,14 @@ mod tests {
     #[test]
     fn refuses_a_path_that_climbs_out() {
         let parent = scratch();
-        for path in ["../escape.html", "screens/../../x.html", "/abs.html", ".hidden.html"] {
+        for path in [
+            "../escape.html",
+            "screens/../../x.html",
+            "/abs.html",
+            ".hidden.html",
+        ] {
             let error = write_folder(&parent, "flow", &[file(path, "x")]).unwrap_err();
-            assert_eq!(error.to_string().contains("plain file name"), true, "{path}");
+            assert!(error.to_string().contains("plain file name"), "{path}");
         }
         let _ = std::fs::remove_dir_all(parent);
     }
@@ -183,7 +189,8 @@ mod tests {
     #[test]
     fn refuses_a_relative_or_missing_parent() {
         assert!(write_folder(Path::new("relative"), "flow", &[file("a.html", "x")]).is_err());
-        let missing = std::env::temp_dir().join(format!("goodboy-missing-{}", crate::util::uuid_v4()));
+        let missing =
+            std::env::temp_dir().join(format!("goodboy-missing-{}", crate::util::uuid_v4()));
         assert!(write_folder(&missing, "flow", &[file("a.html", "x")]).is_err());
     }
 

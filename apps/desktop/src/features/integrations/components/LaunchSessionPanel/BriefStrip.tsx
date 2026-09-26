@@ -17,9 +17,11 @@ type Props = {
 export const BriefStrip = ({ source, entry, isShowingBrief, onToggle, onRetry }: Props) => (
   <div className="flex min-h-6 items-center gap-2 px-2">
     <IntegrationGlyph provider={source.provider} size="xs" />
-    <span className="shrink-0 font-mono text-2xs text-muted-foreground">{source.identifier}</span>
+    <span className="shrink-0 font-mono text-secondary text-muted-foreground">
+      {source.identifier}
+    </span>
     {entry.status === 'loading' && (
-      <span role="status" className="min-w-0 flex-1 truncate text-2xs text-shimmer">
+      <span role="status" className="min-w-0 flex-1 truncate text-secondary text-shimmer">
         Writing a brief
       </span>
     )}
@@ -34,7 +36,7 @@ export const BriefStrip = ({ source, entry, isShowingBrief, onToggle, onRetry }:
     )}
     {entry.status === 'failed' && (
       <>
-        <span role="alert" className="min-w-0 flex-1 truncate text-2xs text-danger">
+        <span role="alert" className="min-w-0 flex-1 truncate text-secondary text-danger">
           {`Couldn't write a brief. ${issueBriefFailureText({ failure: entry.failure })}`}
         </span>
         <Button variant="ghost" size="sm" onClick={onRetry}>

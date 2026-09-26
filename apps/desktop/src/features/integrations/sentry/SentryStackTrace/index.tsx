@@ -24,7 +24,7 @@ export const SentryStackTrace = ({ frames, isLoading, error }: Props) => {
   }
 
   if (error != null) {
-    return <p className="text-sm text-danger">{error}</p>;
+    return <p className="text-body text-danger">{error}</p>;
   }
 
   if (frames.length === 0) {

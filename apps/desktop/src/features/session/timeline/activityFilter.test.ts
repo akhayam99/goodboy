@@ -11,11 +11,11 @@ import {
   activityFilterPresetOf,
   activityToggleLabel,
   hiddenActivityToggles,
+  hiddenRowCount,
   activityChildOf,
   filterTimelineEntries,
   parseActivityFilter,
   readActivityFilter,
-  writeActivityFilter,
   type ActivityFilter,
 } from './activityFilter';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
@@ -225,26 +225,19 @@ describe('filterTimelineEntries', () => {
   });
 });
 
-describe('the suggestions category', () => {
-  it('sits in the category list, labelled and on by default', () => {
-    expect(ACTIVITY_CATEGORIES).toContain('suggestions');
-    expect(ACTIVITY_CATEGORY_LABEL.suggestions).toBe('Suggestions');
-    expect(DEFAULT_ACTIVITY_FILTER.suggestions).toBe(true);
+describe('the resolver category', () => {
+  it('sits in the Work group with the label Resolvers, not Session log', () => {
+    expect(ACTIVITY_CATEGORIES).toContain('resolver');
+    expect(ACTIVITY_CATEGORY_LABEL.resolver).toBe('Resolvers');
+    expect(ACTIVITY_GROUPS.find((group) => group.id === 'work')?.categories).toContain('resolver');
+    expect(ACTIVITY_GROUPS.find((group) => group.id === 'log')?.categories).not.toContain(
+      'resolver',
+    );
   });
 
-  it('defaults to on for a payload stored before it existed', () => {
-    expect(parseActivityFilter({ raw: '{"worktree":false}' }).suggestions).toBe(true);
-  });
-
-  it('round trips a hidden choice through storage', () => {
-    localStorage.clear();
-    writeActivityFilter({ filter: { ...DEFAULT_ACTIVITY_FILTER, suggestions: false } });
-
-    const stored = readActivityFilter();
-
-    expect(stored.suggestions).toBe(false);
-    expect(stored.worktree).toBe(true);
-    localStorage.clear();
+  it('is no longer a filterable toggle', () => {
+    expect(ACTIVITY_CATEGORIES).not.toContain('suggestions');
+    expect(parseActivityFilter({ raw: '{"suggestions":false}' })).toEqual(DEFAULT_ACTIVITY_FILTER);
   });
 
   it('keeps the mount proposal events with the worktree category', () => {
@@ -326,6 +319,31 @@ describe('parseActivityFilter', () => {
     );
     expect(parseActivityFilter({ raw: '{"agentSubagents":false}' }).agentSubagents).toBe(false);
   });
+
+  it('migrates a saved payload equal to the old Work preset onto the new one', () => {
+    const legacyWorkPayload =
+      '{"agents":true,"workflows":true,"questions":true,"suggestions":true,' +
+      '"agentSubagents":true,"workflowSubagents":true,"artifacts":false,"plans":false,' +
+      '"reports":false,"wireframes":false,"pullRequests":false,"worktree":false,' +
+      '"issues":false,"resolver":false,"decisions":false,"session":false}';
+
+    localStorage.clear();
+    localStorage.setItem('goodboy:activity-filter', legacyWorkPayload);
+    const stored = readActivityFilter();
+
+    expect(stored).toEqual(ACTIVITY_FILTER_PRESETS.work);
+    expect(activityFilterPresetOf({ filter: stored })).toBe('work');
+    localStorage.clear();
+  });
+
+  it('leaves a payload that only resembles the old Work preset alone', () => {
+    const parsed = parseActivityFilter({
+      raw: '{"agents":true,"workflows":true,"questions":true,"resolver":false,"decisions":true}',
+    });
+
+    expect(parsed.decisions).toBe(true);
+    expect(activityFilterPresetOf({ filter: parsed })).toBeNull();
+  });
 });
 
 describe('ACTIVITY_GROUPS', () => {
@@ -347,11 +365,11 @@ describe('activity presets', () => {
     expect(ACTIVITY_FILTER_PRESETS.everything).toEqual(DEFAULT_ACTIVITY_FILTER);
   });
 
-  it('keeps only the Work group and its children on the Work preset', () => {
+  it('keeps only the Work group and its children on the Work preset, resolver included', () => {
     const work = ACTIVITY_FILTER_PRESETS.work;
 
     expect(work.agents && work.agentSubagents && work.workflowSubagents).toBe(true);
-    expect(work.questions && work.suggestions).toBe(true);
+    expect(work.questions && work.resolver).toBe(true);
     expect(work.artifacts || work.plans || work.pullRequests || work.decisions).toBe(false);
     expect(activityFilterPresetOf({ filter: work })).toBe('work');
   });
@@ -385,8 +403,8 @@ describe('hiddenActivityToggles', () => {
 
     expect(hiddenActivityToggles({ filter })).toEqual([
       'workflowSubagents',
-      'wireframes',
       'resolver',
+      'wireframes',
     ]);
   });
 
@@ -427,7 +445,6 @@ describe('activityCounts', () => {
         artifactEntry({ kind: 'report' }),
         eventEntry({ id: 'e1', kind: 'pr_created' }),
       ],
-      suggestionCount: 2,
     });
 
     expect(counts.agents).toBe(1);
@@ -440,6 +457,44 @@ describe('activityCounts', () => {
     expect(counts.reports).toBe(1);
     expect(counts.wireframes).toBe(0);
     expect(counts.pullRequests).toBe(1);
-    expect(counts.suggestions).toBe(2);
+  });
+});
+
+describe('hiddenRowCount', () => {
+  it('counts hidden rows, not hidden toggles', () => {
+    const filter: ActivityFilter = { ...DEFAULT_ACTIVITY_FILTER, pullRequests: false };
+    const entries = [
+      eventEntry({ id: 'a', kind: 'pr_merged' }),
+      eventEntry({ id: 'b', kind: 'pr_approved' }),
+      eventEntry({ id: 'c', kind: 'branch_created' }),
+    ];
+
+    expect(hiddenRowCount({ entries, filter })).toBe(2);
+  });
+
+  it('does not count a row that was just revealed', () => {
+    const filter: ActivityFilter = { ...DEFAULT_ACTIVITY_FILTER, pullRequests: false };
+    const entries = [
+      eventEntry({ id: 'a', kind: 'pr_merged' }),
+      eventEntry({ id: 'b', kind: 'pr_approved' }),
+    ];
+
+    expect(hiddenRowCount({ entries, filter, revealed: new Set(['event:a']) })).toBe(1);
+  });
+});
+
+describe('filterTimelineEntries with revealed rows', () => {
+  it('keeps a row visible when it was just revealed, even if its category is hidden', () => {
+    const filter: ActivityFilter = { ...DEFAULT_ACTIVITY_FILTER, pullRequests: false };
+    const entries = [
+      eventEntry({ id: 'a', kind: 'pr_merged' }),
+      eventEntry({ id: 'b', kind: 'branch_created' }),
+    ];
+
+    expect(
+      filterTimelineEntries({ entries, filter, revealed: new Set(['event:a']) }).map(
+        (entry) => entry.id,
+      ),
+    ).toEqual(['event:a', 'event:b']);
   });
 });

@@ -12,7 +12,7 @@ type Props = {
 };
 
 const ACTION_CLASS =
-  'rounded-sm px-1 text-2xs text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
+  'rounded-sm px-1 text-secondary text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 const excerpt = (body: string): string => {
   const line = body.split('\n')[0] ?? '';
@@ -29,7 +29,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
       <div
         data-slot="diff-thread"
         data-thread-state="resolved"
-        className="flex min-w-0 items-center gap-1.5 rounded-md bg-subtle px-3 py-1.5 font-sans text-2xs text-muted-foreground"
+        className="flex min-w-0 items-center gap-1.5 rounded-md bg-subtle px-3 py-1.5 font-sans text-secondary text-muted-foreground"
       >
         <span className="shrink-0 font-medium">{thread.statusLabel}</span>
         <span aria-hidden>·</span>
@@ -74,7 +74,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
         tint.rail,
       )}
     >
-      <div className="flex min-w-0 items-center gap-2 text-2xs text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-2 text-secondary text-muted-foreground">
         {thread.isAgent ? (
           <span
             aria-hidden
@@ -123,7 +123,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
           ) : null}
         </span>
       </div>
-      <div className="min-w-0 text-sm text-foreground">
+      <div className="min-w-0 text-body text-foreground">
         <Markdown text={thread.body} variant="preview" />
       </div>
       {thread.footer ?? null}

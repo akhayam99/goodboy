@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Button, Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
+import {
+  Button,
+  Eyebrow,
+  STRIPED_BLOCK_LIST,
+  STRIPED_MIN_ROWS,
+  SegmentedTabs,
+  cn,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   isStorageArtifactSuggested,
@@ -97,27 +105,34 @@ export const ArtifactSection = () => {
           className="ml-auto"
         />
       </div>
-      <p className="text-2xs text-faint-foreground">
+      <p className="text-secondary text-faint-foreground">
         Copies in ~/.goodboy/workspaces/&lt;workspace&gt;/artifacts. They are small: clean them to
         tidy up, not for space. Opening one in the reader counts as use.
       </p>
       {shown.length === 0 ? (
-        <p className="py-3 text-xs text-muted-foreground">{EMPTY_COPY[filter]}</p>
+        <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
       ) : (
         <div className="@container flex flex-col">
           <ArtifactColumns isSelecting={selected !== null} />
-          {visible.map((artifact) => (
-            <ArtifactRow
-              key={artifact.id}
-              artifact={artifact}
-              now={now}
-              suggestAfterDays={suggestAfterDays}
-              isSelecting={selected !== null}
-              isSelected={selected?.has(artifact.id) ?? false}
-              isSuggested={suggestedIds.has(artifact.id)}
-              onToggle={onToggle}
-            />
-          ))}
+          <div
+            className={cn(
+              'flex flex-col',
+              visible.length >= STRIPED_MIN_ROWS && STRIPED_BLOCK_LIST,
+            )}
+          >
+            {visible.map((artifact) => (
+              <ArtifactRow
+                key={artifact.id}
+                artifact={artifact}
+                now={now}
+                suggestAfterDays={suggestAfterDays}
+                isSelecting={selected !== null}
+                isSelected={selected?.has(artifact.id) ?? false}
+                isSuggested={suggestedIds.has(artifact.id)}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
           {hidden > 0 ? (
             <Button
               variant="ghost"

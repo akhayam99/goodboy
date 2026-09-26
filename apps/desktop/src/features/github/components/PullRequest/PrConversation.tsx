@@ -112,7 +112,7 @@ export const PrConversation = ({
       <button
         type="button"
         onClick={() => onOpenUrl(pr.url)}
-        className="inline-flex w-fit items-center gap-1 text-xs text-faint-foreground transition-colors hover:text-foreground"
+        className="inline-flex w-fit items-center gap-1 text-label text-faint-foreground transition-colors hover:text-foreground"
       >
         open full conversation on GitHub
         <ExternalLink size={11} aria-hidden />

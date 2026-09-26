@@ -209,7 +209,7 @@ const renderTaskMark = ({ task }: TaskMarkParams): ReactNode => {
   );
 };
 
-const PREVIEW_LINE_CLASS = 'truncate font-mono text-xs text-muted-foreground';
+const PREVIEW_LINE_CLASS = 'truncate text-code text-muted-foreground';
 
 type KitPreviewParams = {
   readonly key: string;
@@ -365,7 +365,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
                   <th
                     key={`${key}-h-${j}`}
                     className={cn(
-                      'px-3 py-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground break-words',
+                      'px-3 py-1.5 text-eyebrow text-muted-foreground break-words',
                       alignClass(block.align[j]),
                     )}
                   >
@@ -401,7 +401,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
       const label = ctxTagLabel({ tag: block.tag });
       if (variant === 'preview') {
         return (
-          <div key={key} className="flex min-w-0 items-center gap-1.5 text-sm">
+          <div key={key} className="flex min-w-0 items-center gap-1.5 text-body">
             <span
               data-block="chip"
               data-tone={label}
@@ -432,7 +432,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           />
           <div
             data-block="callout-label"
-            className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground"
+            className="inline-flex items-center gap-1.5 text-eyebrow text-muted-foreground"
           >
             <Icon size={11} aria-hidden className={style.iconClass} />
             {label}
@@ -581,7 +581,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
 
   if (variant === 'preview') {
     return (
-      <div className={cn('flex flex-col gap-1 text-sm text-foreground', className)}>
+      <div className={cn('flex flex-col gap-1 text-body text-foreground', className)}>
         {document.blocks.map((block, idx) =>
           renderBlock({ block, id: `b-${idx}`, variant, depth: 0 }),
         )}
@@ -590,7 +590,7 @@ const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) 
   }
 
   return (
-    <div className={cn('flex flex-col gap-5 text-sm text-foreground', className)}>
+    <div className={cn('flex flex-col gap-5 text-body text-foreground', className)}>
       {document.sections.map((section, si) => (
         <div key={`s-${si}`} className="flex flex-col gap-2.5">
           {section.map((block, bi) =>

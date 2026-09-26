@@ -23,15 +23,15 @@ controls. Opacity modifiers do not create additional text steps.
 Six opaque roles, from the back of the window to the eye. Components step
 between them instead of mixing one surface through opacity.
 
-| step | role     | class           | holds                                                   |
-| ---- | -------- | --------------- | ------------------------------------------------------- |
-| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer                 |
-| 1    | content  | `bg-background` | the content column, full-screen studios, viewer dialogs |
-| 2    | panel    | `bg-subtle`     | a drawer that pushes the column, `SectionSurface`       |
-| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                     |
-| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                          |
-| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette   |
-| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                     |
+| step | role     | class           | holds                                                 |
+| ---- | -------- | --------------- | ----------------------------------------------------- |
+| 0    | chrome   | `bg-chrome`     | the app frame: top bar, sidebar, footer, studio rails |
+| 1    | sheet    | `bg-background` | the content sheet, a studio's detail, viewer dialogs  |
+| 2    | panel    | `bg-subtle`     | a drawer that pushes the column                       |
+| 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
+| 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
+| 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
+| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                   |
 
 Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
 Light mode is ink on paper, read on two axes. On the elevation axis (what sits
@@ -53,6 +53,12 @@ Three borders, each with one job:
 | `border-soft`   | decorative hairline: dividers, image frames, resting raised card | 1.2:1, 1.3:1 on raised/floating |
 | `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
 | `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
+
+Three translucent tokens paint over whatever sits below them: `frame-edge`
+(white 8% in dark, black 8.5% in light) draws the content sheet and the
+floating drawer at 1.2:1 or more on chrome and background, and
+`scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
+background, panel and floating.
 
 A clickable card at rest carries two signals together (a fill one step above
 its parent plus the hairline). Its states clear 3:1: hover `border`, selection
@@ -85,60 +91,96 @@ step.
 
 ## Type scale
 
-`text-3xs` 10px/14px, `2xs` 11px/16px, `xs` 12px, `sm` 14px/20px, `base` 15px,
-`lg` 17px, `xl` 20px, and one display grade, `2xl` 24px/32px, kept for the
-onboarding titles, the `EmptyState` hero and the Impact headline. Arbitrary
-sizes are covered by [docs/styling.md](../../docs/styling.md).
+Features name a **type role**, never a size, a leading, a weight and a
+tracking one by one. Each role is a `--text-*` token in `styles.css`, or an
+`@utility` when it also sets case or family, and fixes size, a whole-pixel line
+box, weight and tracking together. `cn` reads every role as a font size, so a
+later role or grade replaces an earlier one and a text colour never drops it.
+The list is `TYPE_ROLES` in `typeRoles.ts`.
 
-**Every size a repeated row uses declares its own line-height.** Without that
-pair, the box height follows whatever `line-height` the size inherits. For
-example, `3xs` and `2xs` inherited the body's 1.55 and came out at 15.5px and
-17.05px. That put the lens rail's group labels and count chips on a fractional
-pixel, and a row with a count ended up taller than a row without one. `3xs`,
-`2xs`, `sm` and `2xl` have a fixed line height in the tokens. `xs` does not, so
-a repeated row that uses it writes `leading-4` where it is used.
+| role             | measure                       | used for                                                   |
+| ---------------- | ----------------------------- | ---------------------------------------------------------- |
+| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title |
+| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                       |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question  |
+| `text-row`       | 14/20, 500                    | a top-level row label, a card title                        |
+| `text-body`      | 14/20                         | running text; text with no class inherits it from the body |
+| `text-prose`     | 14/22                         | messages, markdown, artifacts                              |
+| `text-label`     | 12/16                         | controls, a nested row, a status label                     |
+| `text-secondary` | 11/16                         | a secondary line, a chip, an option description            |
+| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                    |
+| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                 |
+| `text-code`      | mono 12/18                    | branch, path, command, inline code                         |
 
-### One grade per role
+A role with no weight inherits one: `text-label font-medium` is a control label
+at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
+600 belongs to display, title, heading and eyebrow. Tracking lives only inside
+the roles. A leading utility still composes with a role
+(`text-secondary leading-none` for a one-line badge), because the role reads
+the leading before its own line box.
 
-The grade follows what a thing **is**, not which file draws it. A row label is a
-row label in the activity feed and in a brief, so it is the same size in both.
-The session Overview is the reference surface. Its density was tuned on
+The raw grades stay defined, each on a whole-pixel line box: `3xs` 10/14, `2xs`
+11/16, `xs` 12/16, `sm` 14/20, `base` 15/24, `lg` 17/24, `xl` 20/28, `2xl`
+24/32. New code does not reach for them. `forbidden-patterns.test.ts` counts
+raw sizes, weights, leadings and tracking per file, and the count only goes
+down. `scripts/codemods/type-roles.mjs` (`pnpm codemod:type-roles`) rewrites
+the combinations that map one to one (`text-sm font-medium` to `text-row`,
+`text-3xs` to `text-meta`, `text-sm leading-relaxed` to `text-prose`); the rest
+moves by hand, area by area. Arbitrary sizes are covered by
+[docs/styling.md](../../docs/styling.md).
+
+The `html` root stays 15px while any `rem` remains. `body` and `#root` are
+14/20, so text with no class lands on the body role instead of 15/23.25.
+
+### One role per job
+
+The role follows what a thing **is**, not which file draws it. A row label is a
+row label in the activity feed and in a brief, so it takes the same role in
+both. The session Overview is the reference surface. Its density was tuned on
 purpose. Window zoom scales every surface at once. So if another surface uses a
-larger grade for the same role, the user has to choose between a comfortable
+larger role for the same thing, the user has to choose between a comfortable
 Overview and a comfortable everything else.
-
-| role                                             | grade               | resolves to |
-| ------------------------------------------------ | ------------------- | ----------- |
-| pane title                                       | `text-lg`           | 17px / 24px |
-| section label, and its `hint`                    | `text-2xs`          | 11px / 16px |
-| top-level row label                              | `text-sm leading-5` | 14px / 20px |
-| nested row label, a child of the row above it    | `text-xs leading-4` | 12px / 16px |
-| secondary label beside a row label               | `text-2xs`          | 11px / 16px |
-| chip                                             | `text-2xs`          | 11px / 16px |
-| metadata inside a row: time, ordinal, cost, hint | `text-3xs`          | 10px / 14px |
-| status label                                     | `text-xs`           | 12px        |
 
 **Prose is the one exception. It is a reading grade, not drift.** Human and
 assistant transcript messages, a markdown body and any artifact the reader came
-for stay on the comfortable grade (`text-sm`). Making those smaller makes the
-app worse. The chrome around prose still takes the grade its role asks for. A
+for stay on `text-prose` or `text-body`. Making those smaller makes the app
+worse. The chrome around prose still takes the role its job asks for. A
 document pane's section label is an eyebrow even when the body under it is
-`text-sm`, because `DESIGN.md` compresses chrome without limit and never the
+prose, because `DESIGN.md` compresses chrome without limit and never the
 artifact.
 
 ## Radius scale
 
-One radius family, one step away from square. There is no `rounded-xl` token:
-larger radii look bubbly at this scale. `no-token-bypass.test.ts` rejects bare
-`rounded` and arbitrary `rounded-[Npx]`. Bare `rounded` comes out at 3.75px on
-the 15px root, so it is always written `rounded-sm`.
+One concentric family: an inner radius is the outer radius minus the padding
+between them, so a popover at 8 with 4 of padding holds rows at 4.
+`no-token-bypass.test.ts` rejects bare `rounded` and arbitrary `rounded-[Npx]`.
+Bare `rounded` comes out at 3.75px on the 15px root, so it is always written
+`rounded-sm`.
 
-| token          | value | used for                                                      |
-| -------------- | ----- | ------------------------------------------------------------- |
-| `rounded-lg`   | 8px   | framed surfaces: cards, banners, panels                       |
-| `rounded-md`   | 6px   | controls and popovers: buttons, inputs, selects, icon buttons |
-| `rounded-sm`   | 4px   | inline tokens: kbd, code, small badges, checkboxes            |
-| `rounded-full` | n/a   | pills, avatars, circular icon buttons                         |
+| token           | value | used for                                                        |
+| --------------- | ----- | --------------------------------------------------------------- |
+| `rounded-frame` | 10px  | only the content sheet and the floating drawer                  |
+| `rounded-lg`    | 8px   | surfaces: cards, popovers, menus, bands, notices, toasts        |
+| `rounded-md`    | 6px   | controls: buttons, inputs, triggers, icon buttons, sidebar rows |
+| `rounded-sm`    | 4px   | role pill, kbd, inline code, checkbox, rows inside a popover    |
+| `rounded-full`  | n/a   | avatars, nodes, status bars, thumbs                             |
+
+## Elevation
+
+Five levels plus the tooltip. A level sets surface, shadow, border and radius
+together, and there is no arbitrary shadow.
+
+| level      | surface                          | shadow      | border                        | radius                     | holds                                 |
+| ---------- | -------------------------------- | ----------- | ----------------------------- | -------------------------- | ------------------------------------- |
+| 0 frame    | `chrome`                         | none        | none                          | n/a                        | top bar, sidebar, footer, studio rail |
+| 1 sheet    | `background`                     | none        | `frame-edge`                  | `frame` where chrome wraps | content, studio detail                |
+| 2 band     | `fill` (band), `subtle` (drawer) | none        | none                          | `lg` band, `frame` drawer  | groups, a drawer that pushes          |
+| 3 card     | `elevated`                       | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`               |
+| 4 floating | `floating`                       | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs      |
+| 5 tooltip  | `foreground`                     | `shadow-md` | none                          | `md`                       | tooltips                              |
+
+A drawer in overlay adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
+only to a dragged card.
 
 ## Spacing scale
 
@@ -163,16 +205,6 @@ One limited scale where each step has a meaning. Never an arbitrary value.
 | `gap-4` | controls, or related blocks    |
 | `gap-6` | sections                       |
 | `gap-8` | a header zone from a body zone |
-
-## Density grades
-
-Four grades, set by `--density-{compact,cozy,comfortable,scan}`:
-
-- **Compact**: the sidebar.
-- **Cozy**: the strips inside a pane, the composer, tool/system transcript rows.
-- **Comfortable**: human and assistant prose. Built for reading.
-- **Scan**: the stage board and other card grids. Tuned for sweeping down a
-  column of cards, not reading one.
 
 ## Color and tone resolution
 
@@ -541,6 +573,45 @@ list in a doc goes stale, `src/index.ts` cannot. If a register needs a shape
 the family does not have, add it to the family. A register never keeps a
 private one.
 
+## Listbox
+
+`Listbox` is the one control for picking a value from a list. There is no
+native `<select>`: the WebKit menu ignores theme, density and keyboard.
+`no-token-bypass.test.ts` fails on `<select` and on any import of `Select`.
+
+- **Trigger**: `field` in forms and Settings (hairline `border`, the
+  container's fill, 28px `sm` or 32px `md`, `rounded-md`), `quiet` for a value
+  inside a row (muted text, `bg-hover` on hover), `chip` inside cards and steps
+  (`chipClasses`). Open, the border goes to `border-strong` and the chevron
+  turns 180 degrees in 120ms. Disabled, the text is `disabled-foreground` and
+  `disabledReason` shows in a tooltip.
+- **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+  padding 4, at least the trigger's width and at most 360 by 320, scrolling in
+  a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`).
+- **Option**: 32px on one line, or two lines with an 11/16 faint description;
+  a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
+  keyboard, is `bg-selected`; the current value is a check on the right and
+  `text-row`. No primary tint. A blocked option stays visible in
+  `disabled-foreground` and says why on its second line. A group label is a
+  muted `Eyebrow`.
+- **Search** appears on its own above 8 options (or with `searchable`): a fuzzy
+  filter, the match underlined, a count ("3 of 41"), and an empty state in one
+  sentence plus the `create` row when the caller can make the value.
+- **Multiple**: a checkbox in the leading slot, Enter toggles and stays open,
+  a footer with the count and Clear.
+- **Keyboard and ARIA**: the APG select-only combobox. Enter, Space and the
+  arrows open on the current value; arrows, Home, End, PageUp and PageDown move;
+  letters run typeahead; Enter chooses; Escape and a click outside close and
+  give focus back to the trigger; Tab closes and moves on. The trigger is
+  `role="combobox"` with `aria-activedescendant` (the search field takes it
+  when it shows), the list `role="listbox"`, each row `role="option"`.
+
+`ListboxList` and `ListboxOptionRow` are the headless list and row for a list
+that lives inside another popover (chips input suggestions, a preset list with
+its own actions), so every value list draws the same row. Menus of actions stay
+on `MenuItems`, and inline choice rows stay inline.
+
 ## Notices
 
 `Notice` is the one shape for an error, a warning, an info line or a success
@@ -585,7 +656,7 @@ The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,
 and `Divider`, not a pane frame. `PaneShell` is a desktop component at
 `apps/desktop/src/shared/components/PaneShell/`, built from those primitives,
 and it is the one wrapper every main pane uses. It is a scroll region whose
-crumb, header and body share one `PageColumn`. It has one `h1` per surface.
+header and body share one `PageColumn` with the session trail band above it. It has one `h1` per surface.
 `meta` holds counts and totals in `tabular-nums`, never a control. The header
 row wraps, so actions drop under the title instead of squeezing it. The pane
 owns the gap below the header, and children add no top margins. The root is
@@ -593,9 +664,11 @@ owns the gap below the header, and children add no top margins. The root is
 `StudioShell` it fills the pane and the column centres in the full width.
 
 **One title grade, one header height.** Every lens pane and studio detail gets
-its title from `PaneShell`: the crumb row (24px, only inside a session), then an
-`h1` at `text-lg` with `meta` inline and actions on the right (32px). Padding
-is 12px above and 16px below, 92px in all, 128px with the optional `tabs` row.
+its title from `PaneShell`: an `h1` at `text-lg` with `meta` inline and
+actions on the right (32px), 16px below. Inside a session the `Trail` band
+(40px: 12 above, a 24px row, 4 below) sits above it and the header adds no top
+padding; outside a session the header keeps 12px above. 92px in all, 128px
+with the optional `tabs` row.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
@@ -603,8 +676,7 @@ its own header row passes `HeaderBand` (also an `h1`) through the custom
 `header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a row to the bottom of the same column. Studio
-chrome (`OverlayHeader`) and the focused-pane lens label are window chrome,
-not headings. The header is named with `aria-label`, so the detail title is
+chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
 **The content column is 960px and centres.** `PANE_RHYTHM.column` caps at
@@ -613,6 +685,15 @@ the only `h1` on the surface.
 width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
+
+**Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
+`floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
+(`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots
+(20px lead, 12px label with an 11px faint second part, fixed-width tabular
+meta, a state word with its dot or glyph, a 14px check on the current row on
+`overlay-selected`), and an action band on `fill` under the list with at most
+two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
+4px drop) and closes without motion.
 
 ## Action zones
 
@@ -656,14 +737,38 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 
 **The outline is independent of the grade.** `headingLevel` turns an eyebrow-grade label into an `h2` or `h3`. So a pane section keeps its place in the document outline without taking the page grade. A section that needs a heading does not need bigger type because of that.
 
-`SectionSurface` is `SectionHeader` on the one raised section surface. Use it
-for a reading surface whose sections would otherwise be separated by empty
-space alone. It sits on the panel step of the surface ladder, so the cards
-inside it take the raised step and nothing stacks another level. A metadata line is not a
-section and does not get a surface. Its optional `icon` goes to the heading,
-the same slot `SectionHeader` gives it, at the row icon size.
+**A group of rows that belong together under one name is a `Band`.** The band
+is `bg-fill` and `rounded-lg`, with 4px of padding (`inset="rows"`) or 12px
+for prose (`inset="content"`). `fill` and not `subtle`: `subtle` on the sheet
+is 1.06:1 and does not read, `fill` is 1.17:1 in dark and 1.12:1 in light, and
+because it is relative to its parent it steps down on its own inside a drawer.
+The section keeps its uppercase eyebrow **outside** the band (`label`, with the
+same `icon`, `hint`, `action` and `headingLevel` slots `SectionHeader` gives).
+A group inside a section names itself on the band's first row (`groupLabel`),
+in sentence case on `text-label` medium muted, with a faint count on the right
+(`groupMeta`, "3 roles"). A group of one row drops its label. Rows inside are
+`BandRow`: `rounded-sm` (8 minus 4, concentric) with `bg-hover` when they act.
+Bands of one block stack 8px apart (`BandStack`), sections 24px.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, `SectionSurface`, or a labeled rule like `Eyebrow` instead.
+Use a band where something is configured in groups: defaults, the provider
+page, settings, a tool's detail, skills. Never on a navigation or selection
+list (sidebar, inbox, facet rail, popover, palette: there the background means
+hover and selection), never in a creation flow, never in a card or in another
+band (`Band` throws when nested), never together with a border or a divider.
+
+**A table read across columns stripes its rows.** From five rows up
+(`STRIPED_MIN_ROWS`), even rows take `bg-fill` with `rounded-sm` at the ends,
+under an eyebrow header with no line and no divider between rows. A `<table>`
+takes `STRIPED_TABLE` (separate borders, so cells can round) and each `<tr>`
+takes `STRIPED_ROW`, which paints the cells; row hover goes on the cells too
+(`hover:[&>*]:bg-hover`). A list of row elements takes `STRIPED_LIST` on the
+container; a list whose items wrap a row and an inline confirm takes
+`STRIPED_BLOCK_LIST`, which paints only the row. Spend tables, Storage, Impact,
+usage windows and Models in the picker stripe this way.
+
+A metadata line is not a section and does not get a band.
+
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 
@@ -767,8 +872,11 @@ What "empty" means, and the copy rule for it, are product rules and live in
 ## Motion registry
 
 Seven animations, one meaning each. Transition keyframes (`fade-in`,
-`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
-states and sit outside the registry.
+`nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`) move content between states and sit outside the
+registry. The `Trail` closes a crumb label with `grid-template-columns` from
+`1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
+trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
 from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`
@@ -777,10 +885,10 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
-- `spin-border`: working. A card that carries its tone on a left rail runs the
-  same signal down that rail instead (`spin-rail`), so the tone never wraps the
-  box. Under reduced motion the rail holds still at full tone.
-- `border-pulse`: a warning-stage card needs you.
+- `spin-border`: working, on an element whose own edge carries the signal
+  (a `WorkNode`'s ring). A session card or row carries its tone in a
+  `ToneBar` instead, a bar inside the surface rather than a border around it,
+  breathing through `soft-pulse` while running.
 - `attention-ring`: something new arrived. It is a short outward breath (three
   cycles, then rest) on an element that now needs the user, never one that
   is working.
@@ -788,9 +896,9 @@ never mounts and unmounts its panel by hand.
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
   progress arc (which then replaces the centre dot), a running tool icon or
-  scout dot, and the boot splash status. On the rail it sits inside the
-  `spin-border` ring, or on the arc, so the pair reads as one running state,
-  not two claims. The bar for another lasting-state
+  scout dot, a running session's `ToneBar`, and the boot splash status. On the
+  rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
+  as one running state, not two claims. The bar for another lasting-state
   animation is high.
 - `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
   the digit roll.
@@ -820,7 +928,10 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.ts` pins both. Widening the rail to fix a padding is
+`collapsed-rail-width.test.ts` pins both. The sidebar toggle is therefore not
+in the top bar: it is the first `size-8` button of the collapsed rail and of
+the open sidebar's first row, on the same axis in both states
+(`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

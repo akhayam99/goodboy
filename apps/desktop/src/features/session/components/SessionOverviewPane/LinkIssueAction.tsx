@@ -95,7 +95,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
       }
     >
       {connected.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-label text-muted-foreground">
           {`No tracker connected yet. Connect ${TRACKER_NAMES} from the footer, then link issues here.`}
         </p>
       ) : tracker != null ? (
@@ -104,7 +104,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
             <button
               type="button"
               onClick={() => setPickedTracker(null)}
-              className="flex items-center gap-1 self-start text-xs text-muted-foreground motion-safe:transition-colors hover:text-foreground"
+              className="flex items-center gap-1 self-start text-label text-muted-foreground motion-safe:transition-colors hover:text-foreground"
             >
               <ChevronLeft size={ICON_SIZE.row} aria-hidden />
               All trackers
@@ -127,7 +127,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
               key={candidate.provider}
               type="button"
               onClick={() => setPickedTracker(candidate)}
-              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground motion-safe:transition-colors hover:bg-hover"
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-body text-foreground motion-safe:transition-colors hover:bg-hover"
             >
               <IntegrationGlyph provider={candidate.provider} size="xs" />
               {candidate.label}

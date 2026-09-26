@@ -23,7 +23,7 @@ export const NextActionDetails = ({ agentId }: Props) => {
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
-          'w-fit rounded-sm text-2xs font-medium text-muted-foreground underline decoration-border-soft underline-offset-2',
+          'w-fit rounded-sm text-secondary font-medium text-muted-foreground underline decoration-border-soft underline-offset-2',
           'transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
         )}
       >

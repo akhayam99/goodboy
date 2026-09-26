@@ -98,7 +98,8 @@ export const serializeSlotsBudgeted = ({ slots }: Params): string => {
 
     const lines = value.split('\n');
     const keptLines: string[] = [];
-    if (key === 'files_touched') {
+    const keepsNewestFirst = key === 'files_touched' || key === 'decisions';
+    if (keepsNewestFirst) {
       for (let index = lines.length - 1; index >= 0; index -= 1) {
         const line = lines[index]!;
         const bodyLength = keptLines.join('\n').length;
@@ -109,7 +110,7 @@ export const serializeSlotsBudgeted = ({ slots }: Params): string => {
         keptLines.unshift(line);
       }
     }
-    if (key !== 'files_touched') {
+    if (!keepsNewestFirst) {
       for (const line of lines) {
         const bodyLength = keptLines.join('\n').length;
         const candidateLength = bodyLength + (bodyLength > 0 ? 1 : 0) + line.length;

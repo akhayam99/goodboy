@@ -22,12 +22,12 @@ const widthOf = ({ kind }: { readonly kind: AgentKind }): string => {
 describe('AgentKindChip', () => {
   it('renders the palette label for the given kind', () => {
     render(<AgentKindChip kind="planner" />);
-    expect(screen.getByText('Plan')).toBeDefined();
+    expect(screen.getByText('Planner')).toBeDefined();
   });
 
   it('renders a different label for a different kind', () => {
     render(<AgentKindChip kind="implementer" />);
-    expect(screen.getByText('Implement')).toBeDefined();
+    expect(screen.getByText('Implementer')).toBeDefined();
   });
 
   it('degrades to the stored value instead of crashing on a kind the app does not know', () => {
@@ -55,7 +55,7 @@ describe('AgentKindChip', () => {
     widths.add(widthOf({ kind: persistedKind('gremlin') }));
 
     expect(widths.size).toBe(1);
-    expect([...widths][0]).toBe('w-24');
+    expect([...widths][0]).toBe('w-20');
   });
 
   it('insets the label so the longest role never touches the chip edge', () => {
@@ -72,20 +72,20 @@ describe('AgentKindChip', () => {
   it('exposes the role label to assistive tech', () => {
     const { container } = render(<AgentKindChip kind="tester" />);
     expect(container.querySelector('[aria-hidden]')).toBeNull();
-    expect(screen.getByText('Test')).toBeDefined();
+    expect(screen.getByText('Tester')).toBeDefined();
   });
 
   it('renders the label density by default with the kind label, or the label it is given', () => {
     render(<AgentKindChip kind="debugger" label="Debugger" />);
-    expect(screen.getByText('Debugger').className).toContain('w-24');
+    expect(screen.getByText('Debugger').className).toContain('w-20');
   });
 
   it('renders the glyph density as the kind avatar named by its tooltip', () => {
     render(<AgentKindChip kind="planner" density="glyph" />);
 
-    const glyph = screen.getByRole('img', { name: 'Plan' });
-    expect(screen.queryByText('Plan')).toBeNull();
-    expect(tooltipTextOf({ element: glyph })).toBe('Plan');
+    const glyph = screen.getByRole('img', { name: 'Planner' });
+    expect(screen.queryByText('Planner')).toBeNull();
+    expect(tooltipTextOf({ element: glyph })).toBe('Planner');
   });
 
   it('lets a glyph name the step it stands for', () => {

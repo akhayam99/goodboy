@@ -214,7 +214,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
             void check();
           }}
           className={cn(
-            'shrink-0 rounded-md px-1.5 py-1 text-xs text-faint-foreground hover:bg-hover hover:text-danger',
+            'shrink-0 rounded-md px-1.5 py-1 text-label text-faint-foreground hover:bg-hover hover:text-danger',
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-faint-foreground',
             triggerClassName,
           )}

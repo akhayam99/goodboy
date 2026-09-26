@@ -13,7 +13,7 @@ const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
 const mockRestoreDismissedOpenQuestion = vi.fn().mockResolvedValue(undefined);
 const mockLoadSessionOpenQuestions = vi.fn().mockResolvedValue(undefined);
 const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
-const mockSelectAgent = vi.fn().mockResolvedValue(undefined);
+const mockNavigate = vi.fn();
 const mockFlashAnswered = vi.fn();
 const mockToggleSuggestion = vi.fn();
 const mockSetCustomAnswer = vi.fn((questionId: string, text: string) => {
@@ -37,7 +37,8 @@ vi.mock('@tauri-apps/plugin-sql', () => ({
   default: { load: vi.fn().mockResolvedValue({}) },
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [] as never[],
   useAppStore: vi.fn((selector: (s: unknown) => unknown) => selector(_storeState)),
   useSessionOpenQuestions: vi.fn(() => _openQuestions),
@@ -235,7 +236,7 @@ function setupStore(overrides: {
     restoreDismissedOpenQuestion: mockRestoreDismissedOpenQuestion,
     loadSessionOpenQuestions: mockLoadSessionOpenQuestions,
     loadSessionAnsweredQuestions: mockLoadSessionAnsweredQuestions,
-    selectAgent: mockSelectAgent,
+    navigate: mockNavigate,
     spawnQuestionDelegates: mockSpawnQuestionDelegates,
   };
 }
@@ -943,7 +944,7 @@ describe('QuestionsPane', () => {
       expect(agentLabels[1]!.textContent).toBe('older-agent');
     });
 
-    it('clicking agent header calls selectAgent', () => {
+    it('clicking agent header opens the agent', () => {
       const scout = mkAgent('agent_scout', undefined, 'scout');
       setupStore({
         openQuestions: [],
@@ -960,7 +961,9 @@ describe('QuestionsPane', () => {
 
       render(<QuestionsPane session={BASE_SESSION} />);
       fireEvent.click(screen.getByText('scout'));
-      expect(mockSelectAgent).toHaveBeenCalledWith(SESSION_ID, scout.id);
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: { at: 'agent', sessionId: SESSION_ID, agentId: scout.id },
+      });
     });
 
     it('renders answered section below open questions', () => {

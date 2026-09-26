@@ -124,7 +124,7 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
             />
           )}
           {section.spawnError != null && (
-            <p className="px-2 text-2xs text-danger">{section.spawnError}</p>
+            <p className="px-2 text-secondary text-danger">{section.spawnError}</p>
           )}
           <PlanReadySuggestion task={task} />
         </>

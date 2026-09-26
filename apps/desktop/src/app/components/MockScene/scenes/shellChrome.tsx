@@ -14,8 +14,8 @@ import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
-import { SessionCrumbs } from '../../../../features/session/components/SessionCrumbBar/SessionCrumbs';
-import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCrumbContext';
+import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
+import { UnderTrailContext } from '../../../../shared/components/PaneShell/underTrailContext';
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
@@ -91,8 +91,7 @@ export const seedShellChrome = ({
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
     loadArchivedSessions: async () => undefined,
-    setCurrentSession: async () => undefined,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 
@@ -112,17 +111,7 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
   return (
     <ToastProvider>
       <AppShell
-        topBar={
-          <AppTopBar
-            sidebar={{
-              hasSidebar: arrangement.leftSlot !== 'none',
-              isCollapsed: arrangement.leftSlot === 'rail',
-              onToggle: noop,
-            }}
-            onOpenSpend={noop}
-            onOpenScript={noop}
-          />
-        }
+        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
@@ -154,11 +143,12 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
           />
         }
         main={
-          <PageCrumbContext.Provider value={<SessionCrumbs session={session} />}>
-            <div className="flex h-full w-full min-w-0 flex-col">
+          <div className="@container flex h-full w-full min-w-0 flex-col">
+            <TrailBar session={session} />
+            <UnderTrailContext.Provider value>
               <div className="min-h-0 flex-1">{main}</div>
-            </div>
-          </PageCrumbContext.Provider>
+            </UnderTrailContext.Provider>
+          </div>
         }
       />
     </ToastProvider>
@@ -173,7 +163,7 @@ export const seedStudioChrome = (): void => {
     loadNotifications: async () => undefined,
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
-    setCurrentSession: async () => undefined,
+    navigate: () => undefined,
   });
 };
 
@@ -188,9 +178,7 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
   slug: name.toLowerCase(),
   overrides: {
     defaultProviderId: null,
-    defaultWorkflowId: null,
     defaultBranchPrefix: null,
-    parallelEnabled: null,
     defaultVerbosity: null,
     providerBindings: null,
     taskModels: null,

@@ -16,7 +16,7 @@ export const MessageAction = ({ icon: Icon, label, tooltip, isDisabled = false, 
       disabled={isDisabled}
       onClick={onRun}
       className={cn(
-        'inline-flex h-6 items-center gap-1 rounded-sm px-1.5 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground disabled:opacity-50',
+        'inline-flex h-6 items-center gap-1 rounded-sm px-1.5 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground disabled:opacity-50',
         FOCUS_RING,
       )}
     >

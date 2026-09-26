@@ -4,12 +4,10 @@ import { connectJira } from './connectJira';
 import { connectLinear } from './connectLinear';
 import { connectSentry } from './connectSentry';
 import { connectSlack } from './connectSlack';
-import { disconnectGithub } from './disconnectGithub';
 import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
-import { resolveBinding } from './resolveBinding';
 import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
@@ -18,13 +16,11 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     loadIntegrationCredentials: loadIntegrationCredentials(set),
     forgetIntegrationCredential: forgetIntegrationCredential(set, get),
     disconnectIntegration: disconnectIntegration(set),
-    resolveBinding: resolveBinding(get),
     connectLinear: connectLinear(set),
     connectSentry: connectSentry(set),
     connectGitlab: connectGitlab(set, get),
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
     connectSlack: connectSlack(set),
-    disconnectGithub: disconnectGithub(),
   };
 };

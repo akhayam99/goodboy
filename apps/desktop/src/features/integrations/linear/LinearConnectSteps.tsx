@@ -111,18 +111,18 @@ export const LinearConnectSteps = ({
             spellCheck={false}
           />
           {status === 'checking' && (
-            <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-secondary text-muted-foreground">
               <StatusDot tone="info" size="sm" pulsing />
               Checking with Linear
             </span>
           )}
           {status === 'error' && error != null && (
-            <span role="alert" className="flex items-start gap-1.5 text-2xs text-danger">
+            <span role="alert" className="flex items-start gap-1.5 text-secondary text-danger">
               <ShieldAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
               {error}
             </span>
           )}
-          <span className="text-2xs text-muted-foreground">
+          <span className="text-secondary text-muted-foreground">
             If you can&apos;t create keys, a Linear admin has turned them off for members.
           </span>
         </div>

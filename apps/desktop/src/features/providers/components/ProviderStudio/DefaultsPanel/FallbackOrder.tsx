@@ -31,7 +31,7 @@ export const FallbackOrder = ({
             {index > 0 ? (
               <ArrowRight size={11} aria-hidden className="shrink-0 text-faint-foreground" />
             ) : null}
-            <span className="text-2xs tabular-nums text-faint-foreground">{index + 1}</span>
+            <span className="text-secondary tabular-nums text-faint-foreground">{index + 1}</span>
             <ProviderChip
               id={providerId}
               selected

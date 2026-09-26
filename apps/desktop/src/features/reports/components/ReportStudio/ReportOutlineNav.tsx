@@ -28,7 +28,7 @@ export const ReportOutlineNav = ({ entries, activeId, showHeader, onSelect }: Pr
               type="button"
               onClick={() => onSelect(entry.id)}
               className={cn(
-                'w-full truncate rounded-sm text-left text-2xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
+                'w-full truncate rounded-sm text-left text-secondary text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
                 INDENT[entry.level] ?? 'pl-6',
                 activeId === entry.id && 'font-medium text-foreground',
               )}

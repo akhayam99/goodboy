@@ -30,13 +30,13 @@ export const AddStepMenuOption = ({
     onMouseDown={(event) => event.preventDefault()}
     onClick={onPick}
     className={cn(
-      'flex h-7 min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-xs',
+      'flex h-7 min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-label',
       isActive ? 'bg-hover text-foreground' : 'text-muted-foreground',
     )}
   >
     <span className="flex shrink-0 items-center">{lead}</span>
     <span className="shrink-0 truncate text-foreground">{name}</span>
-    <span className="min-w-0 flex-1 truncate text-2xs text-faint-foreground">{note}</span>
+    <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">{note}</span>
     {trail}
   </li>
 );

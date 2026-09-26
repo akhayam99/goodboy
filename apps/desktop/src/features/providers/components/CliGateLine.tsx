@@ -14,7 +14,7 @@ export const CliGateLine = ({ gate, onUpdate, className }: Props) => (
   <p
     role="status"
     aria-label="CLI update needed"
-    className={cn('flex items-start gap-1.5 text-2xs text-muted-foreground', className)}
+    className={cn('flex items-start gap-1.5 text-secondary text-muted-foreground', className)}
   >
     <TriangleAlert
       size={ICON_SIZE.row}

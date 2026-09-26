@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
@@ -45,9 +45,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   );
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const announceAgentStarted = useAgentStartedToast();
   const spawnedChildren = useMemo(
     () => selectSpawnedChildren({ runs, parentAgentId: sourceAgentId, turnStates }),
@@ -105,12 +103,8 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     if (spawnedChild == null) {
       return;
     }
-    void (async () => {
-      await setCurrentSession(sessionId);
-      setActiveLens(sessionId, 'agents');
-      await selectAgent(sessionId, spawnedChild.agent.id);
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-    })();
+    navigate({ to: agentPlace({ sessionId, agentId: spawnedChild.agent.id }) });
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
   const statusLabel =
@@ -121,7 +115,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       data-testid="handoff-card"
       tone="neutral"
       variant="leftBorder"
-      className="flex w-full max-w-xl flex-col gap-1.5 text-xs"
+      className="flex w-full max-w-xl flex-col gap-1.5 text-label"
     >
       <span className="font-medium text-foreground">{`Suggested next: ${roleLabel}`}</span>
       {handoff.reason != null && handoff.reason.length > 0 ? (
@@ -134,7 +128,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             disabled={isPending}
             onClick={onSpawn}
             className={cn(
-              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
               'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
@@ -149,12 +143,12 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
         ) : (
           <>
             <AgentStatusIcon status={spawnedChild.status} />
-            <span className="text-2xs text-muted-foreground">{statusLabel}</span>
+            <span className="text-secondary text-muted-foreground">{statusLabel}</span>
             <button
               type="button"
               onClick={onOpen}
               className={cn(
-                'rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+                'rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
                 'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               )}
             >

@@ -78,7 +78,7 @@ type SourceTrailingParams = {
 const sourceTrailing = ({ isLoading, error }: SourceTrailingParams) => {
   if (error != null) {
     return (
-      <span className="flex shrink-0 items-center gap-1 text-3xs text-faint-foreground">
+      <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground">
         <TriangleAlert size={ICON_SIZE.row} aria-hidden className="text-warning" />
         Didn&apos;t load
       </span>
@@ -168,7 +168,7 @@ export const InboxFacetRail = ({
         <button
           type="button"
           onClick={onClearFilters}
-          className="self-start rounded-md px-2 py-1 text-2xs text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="self-start rounded-md px-2 py-1 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
           Clear filters
         </button>

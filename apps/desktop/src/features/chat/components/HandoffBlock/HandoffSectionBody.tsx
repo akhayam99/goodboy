@@ -27,11 +27,11 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
     case 'ask':
       return (
         <div className="flex min-w-0 flex-col gap-2">
-          <div className="text-sm text-foreground">
+          <div className="text-body text-foreground">
             <Markdown text={section.bodyMd} />
           </div>
           {doneWhen === null ? null : (
-            <div className="flex min-w-0 gap-2 text-xs">
+            <div className="flex min-w-0 gap-2 text-label">
               <span className="w-32 shrink-0 text-muted-foreground">Done when</span>
               <span className="min-w-0 flex-1 text-foreground">{doneWhen}</span>
             </div>
@@ -40,7 +40,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
       );
     case 'goal':
       return (
-        <div className="text-sm text-foreground">
+        <div className="text-body text-foreground">
           <Markdown text={section.bodyMd} />
         </div>
       );
@@ -56,7 +56,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
       );
     case 'plan':
       return (
-        <div className="flex min-w-0 items-center gap-2 text-xs">
+        <div className="flex min-w-0 items-center gap-2 text-label">
           <span className="min-w-0 flex-1 truncate text-foreground">{section.summary}</span>
           {section.refs.flatMap((entry) =>
             entry.kind === 'plan' && sessionId !== null
@@ -104,7 +104,7 @@ export const HandoffSectionBody = ({ section, doneWhen, sessionId }: Props) => {
           {section.refs.flatMap((entry) =>
             entry.kind === 'rule'
               ? [
-                  <div key={entry.label} className="flex min-w-0 gap-2 text-xs">
+                  <div key={entry.label} className="flex min-w-0 gap-2 text-label">
                     <span className="w-32 shrink-0 text-muted-foreground">{entry.label}</span>
                     <span className="min-w-0 flex-1 text-foreground">{entry.detail}</span>
                   </div>,

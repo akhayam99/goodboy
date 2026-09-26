@@ -35,7 +35,7 @@ export const OrchestratorHintRow = ({ hint, status, onRemove }: Props) => {
       data-testid="orchestrator-hint-row"
       data-status={status}
       className={cn(
-        'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-2xs',
+        'flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-secondary',
         ROW_CLASSES[status],
       )}
     >

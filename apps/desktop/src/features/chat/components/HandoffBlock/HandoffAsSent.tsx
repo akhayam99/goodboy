@@ -45,7 +45,7 @@ export const HandoffAsSent = ({ handoff }: Props) => {
         {open ? <CopyButton value={copied} label="Copy text as sent" /> : null}
       </div>
       {open && handoff.sentSystem === null ? (
-        <span className="px-2 text-2xs text-muted-foreground">
+        <span className="px-2 text-secondary text-muted-foreground">
           {provider} has no separate system prompt, so scope, profile and role come first in the
           message.
         </span>

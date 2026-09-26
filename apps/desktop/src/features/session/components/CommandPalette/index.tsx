@@ -9,6 +9,9 @@ import {
   useCurrentWorkspace,
   useSessions,
   useWorkspaces,
+  BOARD_PLACE,
+  agentPlace,
+  sessionPlace,
 } from '../../../../store';
 import { AGENT_KIND_META, agentKindPalette, classifyAgent, type AgentKind } from '../../agent-kind';
 import { parseQuery } from '../../../quick-actions';
@@ -147,8 +150,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
@@ -190,7 +192,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: inlineMarkdownText({ text: s.goal }) || 'untitled session',
         sublabel: ws?.name,
         group: 'session',
-        onSelect: () => void setCurrentSession(s.id),
+        onSelect: () => navigate({ to: sessionPlace({ sessionId: s.id }) }),
       });
     }
 
@@ -206,7 +208,10 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           sublabel: AGENT_KIND_META[kind].label,
           group: 'agent',
           accent: agentKindPalette({ kind }).bg,
-          onSelect: () => void selectAgent(currentSession.id, a.id as AgentId),
+          onSelect: () =>
+            navigate({
+              to: agentPlace({ sessionId: currentSession.id, agentId: a.id as AgentId }),
+            }),
         });
       }
       const sessionId = currentSession.id as SessionId;
@@ -230,7 +235,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         sublabel: shortcutGlyphs('session.board'),
         group: 'goto',
         icon: CONCEPT_ICONS.workspace,
-        onSelect: () => void setCurrentSession(null),
+        onSelect: () => navigate({ to: BOARD_PLACE }),
       });
     }
     if (currentWorkspace !== null) {
@@ -397,8 +402,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     agentKindOverride,
     destinations,
     openWorkspace,
-    setCurrentSession,
-    selectAgent,
+    navigate,
     theme,
     toggleTheme,
   ]);
@@ -522,12 +526,12 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           aria-autocomplete="list"
           aria-activedescendant={selected === null ? undefined : optionId(selected.id)}
           aria-label="Command palette search"
-          className="w-full bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          className="w-full bg-background px-4 py-3 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         />
         <Divider />
 
         {parsed.prefix === null && query.length === 0 && (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-3xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-subtle px-3 py-1.5 text-meta text-muted-foreground">
             {PALETTE_PREFIXES.map((p) => (
               <button
                 key={p.symbol}
@@ -570,7 +574,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                     data-id={item.id}
                     role="option"
                     aria-selected={isSelected}
-                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 text-sm ${
+                    className={`flex cursor-pointer items-center gap-3 px-4 py-2 text-body ${
                       isSelected ? 'bg-muted' : 'hover:bg-hover'
                     }`}
                     onMouseEnter={() => setSelectedId(item.id)}
@@ -586,7 +590,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                     <div className="min-w-0 flex-1">
                       <span className="block truncate">{item.label}</span>
                       {item.sublabel ? (
-                        <span className="block truncate text-xs text-muted-foreground">
+                        <span className="block truncate text-label text-muted-foreground">
                           {item.sublabel}
                         </span>
                       ) : null}
@@ -600,7 +604,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
                   <li
                     key={`group:${item.group}`}
                     role="presentation"
-                    className="bg-subtle px-4 py-1 text-2xs font-medium tracking-wide text-muted-foreground"
+                    className="bg-subtle px-4 py-1 text-secondary font-medium tracking-wide text-muted-foreground"
                   >
                     {GROUP_LABELS[item.group]}
                   </li>,

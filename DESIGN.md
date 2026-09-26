@@ -216,14 +216,14 @@ about its effect is a worse defect than one that reads badly.
 - **The stage palette tracks the life of the work**, not its mood. Done uses
   the merged purple on purpose. A finished session is almost always a merged
   pull request, and one outcome must not show in two colors.
-- **A card says what it is with a rail, never with a fill.** The kind of an
-  element lives in its left border and its icon: warning for a question,
-  info for a file, danger for a failure. The surface behind it stays the app
-  background. A column of cards reads as one dark page with a colored edge on
-  each row, not a stack of tinted blocks. Three things still get a fill: the
-  neutral elevation ramp (`bg-elevated` panels and insets), a choice the user
-  made (the picked answer), and a badge or pill small enough to read as a
-  label.
+- **A card says what it is with a bar, never with a fill.** The kind of an
+  element lives in a `ToneBar` inside the surface and its icon: warning for a
+  question, info for a file, danger for a failure. The surface behind it stays
+  the app background. A column of cards reads as one dark page with a colored
+  bar on each row, not a stack of tinted blocks. Three things still get a
+  fill: the neutral elevation ramp (`bg-elevated` panels and insets), a choice
+  the user made (the picked answer), and a badge or pill small enough to read
+  as a label.
 
 ## Status & signals
 
@@ -234,10 +234,11 @@ about its effect is a worse defect than one that reads badly.
   only shrinks. The anatomy and placements live in
   [packages/ui/DESIGN-SYSTEM.md](packages/ui/DESIGN-SYSTEM.md) → Notices.
 
-- **The element is the signal.** A running session shows a moving border, not a
-  spinner placed beside it. On a board card the border that moves is the left
-  rail, because that is where a card keeps its tone: a light runs down the info
-  rail. A card never gets a tinted box around it.
+- **The element is the signal.** A running session shows a moving signal, not a
+  spinner placed beside it. On a board card or a sidebar row, its `ToneBar`
+  breathes the info tone, because that is where a card keeps its tone: every
+  stage carries the bar, running is the one that breathes. A card never gets a
+  tinted box around it.
 - **One signal hierarchy.** Toasts and inline nudges are _previews_. The
   notification inbox is the _log_. Nothing lives only in a toast.
 - **A toast says what already happened.** `success` means finished. `info`

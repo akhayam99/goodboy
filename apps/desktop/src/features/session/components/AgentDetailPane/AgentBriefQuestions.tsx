@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { SectionSurface } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions } from '../../../../store';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
@@ -29,8 +29,8 @@ export const AgentBriefQuestions = ({ session, agent }: Props) => {
   }
 
   return (
-    <SectionSurface label={unanswered.length === 1 ? 'Open question' : 'Open questions'}>
+    <Band inset="content" label={unanswered.length === 1 ? 'Open question' : 'Open questions'}>
       <OpenQuestionCluster questions={unanswered} sessionId={session.id} viewerAgentId={agent.id} />
-    </SectionSurface>
+    </Band>
   );
 };

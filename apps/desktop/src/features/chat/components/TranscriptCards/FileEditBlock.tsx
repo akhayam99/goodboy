@@ -24,10 +24,10 @@ export const FileEditBlock = ({ path, editType, workingDir, onOpenDiff }: Props)
   const inner = (
     <>
       <FileEdit size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className={`text-2xs uppercase tracking-eyebrow ${infoAccent.text}`}>
+      <span className={`text-secondary uppercase tracking-eyebrow ${infoAccent.text}`}>
         {EDIT_LABEL[editType]}
       </span>
-      <code className="min-w-0 truncate font-mono text-xs text-foreground" title={path}>
+      <code className="min-w-0 truncate text-code text-foreground" title={path}>
         {rel}
       </code>
       {onOpenDiff ? (

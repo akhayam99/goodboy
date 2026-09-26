@@ -94,7 +94,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
           <ErrorStrip label="the diff" error={new Error(diff.error)} onRetry={diff.refresh} />
         </div>
       ) : files.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">
+        <p className="p-4 text-body text-muted-foreground">
           {path === null ? 'No changes in this commit.' : 'This file has no changes here.'}
         </p>
       ) : (

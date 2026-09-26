@@ -16,7 +16,6 @@ import {
 import { ActivityFilterOption } from './ActivityFilterOption';
 
 const ACTIVITY_CATEGORY_CONCEPT = {
-  suggestions: 'suggestion',
   worktree: 'branch',
   issues: 'issues',
   pullRequests: 'pr',

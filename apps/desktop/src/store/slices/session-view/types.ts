@@ -80,41 +80,23 @@ export type FocusedExternalTask = {
 };
 
 export type ResolveQueueView = {
-  readonly expandedThreadId: string | null;
   readonly order: ReadonlyArray<string>;
   readonly scrollTop: number;
   readonly detailScrollTop: number;
-  readonly detailFocus: 'heading' | 'primary';
   readonly isDeferredShown: boolean;
   readonly isCompletedShown: boolean;
   readonly lastRouting: AgentKindRouting | null;
 };
 
-export type ResolvePublicationReturn = {
-  readonly threadId: string;
+export type ResolvePublicationRequest = {
   readonly reconcile: boolean;
   readonly requestId: number;
 };
 
-export type ResolveAgentReturn = {
-  readonly agentId: AgentId;
-  readonly threadId: string;
-  readonly prNumber: number;
-  readonly view: ResolveQueueView;
-};
-
-export type ResolveDiffReturn = {
-  readonly threadId: string;
-  readonly path: string | null;
-  readonly line: number | null;
-};
-
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
-  expandedThreadId: null,
   order: [],
   scrollTop: 0,
   detailScrollTop: 0,
-  detailFocus: 'primary',
   isDeferredShown: false,
   isCompletedShown: false,
   lastRouting: null,
@@ -148,17 +130,6 @@ export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   merged: 6,
 };
 
-export type WorkSurfacePosition = {
-  readonly lens: LensKind | null;
-  readonly agentId: AgentId | null;
-  readonly studio: SessionStudio | null;
-};
-
-export type LensHistory = {
-  readonly entries: ReadonlyArray<WorkSurfacePosition>;
-  readonly index: number;
-};
-
 export type ArtifactCreationTarget = Readonly<{
   kind: GeneratedArtifactKind;
   note: string | null;
@@ -190,7 +161,6 @@ type SessionViewSliceState = {
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;
-  readonly lensHistory: Readonly<Record<SessionId, LensHistory>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;
   readonly artifactConversationAgentId: Readonly<Record<SessionId, AgentId | null>>;
@@ -202,15 +172,14 @@ type SessionViewSliceState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
-  readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
-  readonly resolveAgentReturn: Readonly<Record<SessionId, ResolveAgentReturn | null>>;
+  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
+  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
 };
 
 type SessionViewSliceActions = {
@@ -219,7 +188,6 @@ type SessionViewSliceActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
   setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
@@ -247,27 +215,15 @@ type SessionViewSliceActions = {
   }): void;
   openResolveDiff(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly sha: string;
     readonly path: string | null;
-    readonly line: number | null;
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  returnFromResolveDiff(params: { readonly sessionId: SessionId }): void;
   openResolvePublication(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly reconcile: boolean;
   }): void;
-  returnFromResolvePublication(params: { readonly sessionId: SessionId }): void;
-  openResolveAgent(params: {
-    readonly sessionId: SessionId;
-    readonly agentId: AgentId;
-    readonly threadId: string;
-    readonly prNumber: number;
-  }): void;
-  returnFromResolveAgent(params: { readonly sessionId: SessionId }): void;
   setResolveItemDraft(params: {
     readonly sessionId: SessionId;
     readonly threadId: string;
@@ -281,6 +237,7 @@ type SessionViewSliceActions = {
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
+  revealActivityRow(sessionId: SessionId, rowId: string): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

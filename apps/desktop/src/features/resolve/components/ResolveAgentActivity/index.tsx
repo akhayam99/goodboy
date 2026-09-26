@@ -109,7 +109,7 @@ export const ResolveAgentActivity = ({
       />
       <p
         className={cn(
-          'w-fit rounded-md text-xs leading-4 text-foreground',
+          'w-fit rounded-md text-label text-foreground',
           isRunning && 'spin-border spin-border-info px-2 py-1',
         )}
       >
@@ -118,13 +118,13 @@ export const ResolveAgentActivity = ({
       {preview !== '' && (
         <div className="flex min-w-0 flex-col gap-1">
           <Eyebrow label={RESOLVE_ITEM_LABEL.latest} />
-          <p className="min-w-0 max-w-[65ch] whitespace-pre-line break-words text-xs leading-4 text-muted-foreground">
+          <p className="min-w-0 max-w-[65ch] whitespace-pre-line break-words text-label text-muted-foreground">
             {preview}
           </p>
         </div>
       )}
       <MetaRow
-        className="text-3xs"
+        className="text-meta"
         items={[
           <span key="model" className="font-mono" title={attempt.model}>
             {modelLabel(attempt.model)}

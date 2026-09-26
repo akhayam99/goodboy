@@ -64,13 +64,15 @@ export const DiffNotesDrawer = ({ sessionId, onClose }: Props) => {
               <button
                 type="button"
                 onClick={() => setDiffFocus(sessionId, { kind: 'branch', path })}
-                className="w-fit truncate rounded-sm font-mono text-2xs text-muted-foreground hover:text-foreground"
+                className="w-fit truncate rounded-sm font-mono text-secondary text-muted-foreground hover:text-foreground"
               >
                 {path}
               </button>
               {threads.map((thread) => (
                 <div key={thread.id} className="flex flex-col gap-1">
-                  <span className="text-2xs text-faint-foreground">{anchorLabel(thread)}</span>
+                  <span className="text-secondary text-faint-foreground">
+                    {anchorLabel(thread)}
+                  </span>
                   <CommentThread thread={thread} comments={comments} />
                 </div>
               ))}

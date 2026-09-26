@@ -24,9 +24,9 @@ type Store = {
   summarizerStatus: Record<string, { status: string }>;
   recoverStuckStep: ReturnType<typeof vi.fn>;
   skipStuckStepAndAdvance: ReturnType<typeof vi.fn>;
-  selectAgent: ReturnType<typeof vi.fn>;
+  navigate: ReturnType<typeof vi.fn>;
+  loadAgentTranscript: ReturnType<typeof vi.fn>;
   requestOpenQuestionScroll: ReturnType<typeof vi.fn>;
-  setActiveLens: ReturnType<typeof vi.fn>;
 };
 
 const { store } = vi.hoisted(() => ({
@@ -37,13 +37,14 @@ const { store } = vi.hoisted(() => ({
     summarizerStatus: {},
     recoverStuckStep: vi.fn(async () => undefined),
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
-    selectAgent: vi.fn(async () => undefined),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
     requestOpenQuestionScroll: vi.fn(),
-    setActiveLens: vi.fn(),
   } as Store,
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
   useSessionOpenQuestions: (sessionId: string) => store.sessionOpenQuestions[sessionId] ?? [],
@@ -113,9 +114,9 @@ beforeEach(() => {
   store.recoverStuckStep.mockResolvedValue(undefined);
   store.skipStuckStepAndAdvance.mockReset();
   store.skipStuckStepAndAdvance.mockResolvedValue(undefined);
-  store.selectAgent.mockReset();
+  store.navigate.mockReset();
   store.requestOpenQuestionScroll.mockReset();
-  store.setActiveLens.mockReset();
+  store.navigate.mockReset();
 });
 
 afterEach(cleanup);
@@ -243,7 +244,9 @@ describe('NextActionStrip', () => {
     expect(strip.className).toContain('border-l-warning');
     fireEvent.click(within(strip).getByRole('button', { name: 'Answer' }));
 
-    expect(store.selectAgent).toHaveBeenCalledWith(SESSION_ID, 'agent-1');
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
+    });
     expect(store.requestOpenQuestionScroll).toHaveBeenCalledWith({
       agentId: 'agent-1',
       questionId: 'q-1',

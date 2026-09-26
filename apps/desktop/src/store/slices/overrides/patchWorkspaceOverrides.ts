@@ -12,9 +12,7 @@ type Params = {
 
 const EMPTY_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -41,9 +39,7 @@ export const mergeWorkspaceOverrides = ({
     key in patch ? (patch[key] ?? EMPTY_OVERRIDES[key]) : base[key];
   return {
     defaultProviderId: pick('defaultProviderId'),
-    defaultWorkflowId: pick('defaultWorkflowId'),
     defaultBranchPrefix: pick('defaultBranchPrefix'),
-    parallelEnabled: pick('parallelEnabled'),
     defaultVerbosity: pick('defaultVerbosity'),
     providerBindings: pick('providerBindings'),
     taskModels: pick('taskModels'),
