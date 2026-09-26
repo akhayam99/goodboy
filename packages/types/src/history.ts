@@ -48,6 +48,12 @@ export type HistoryTrialStop = {
   readonly message: string;
 };
 
+export type HistoryPlannedStep = {
+  readonly sha: string;
+  readonly verb: HistoryVerb;
+  readonly message: string;
+};
+
 export type HistoryTrialResult = {
   readonly head: string | null;
   readonly map: ReadonlyArray<HistoryShaMove>;
@@ -55,6 +61,30 @@ export type HistoryTrialResult = {
   readonly changedFiles: ReadonlyArray<string>;
   readonly stop: HistoryTrialStop | null;
   readonly copyPath: string | null;
+  readonly order: ReadonlyArray<HistoryPlannedStep>;
+};
+
+export type HistoryRebaseCommit = {
+  readonly sha: string;
+  readonly subject: string;
+};
+
+export type HistoryRebasePlan = {
+  readonly onto: string;
+  readonly ontoRef: string;
+  readonly mergeBase: string;
+  readonly head: string;
+  readonly commits: ReadonlyArray<HistoryRebaseCommit>;
+  readonly behind: number;
+  readonly fetchError: string | null;
+};
+
+export type HistoryRewriterCheck = {
+  readonly head: string | null;
+  readonly map: ReadonlyArray<HistoryShaMove>;
+  readonly problems: ReadonlyArray<string>;
+  readonly isTreeEqual: boolean;
+  readonly changedFiles: ReadonlyArray<string>;
 };
 
 export type HistoryMoveOutcome =

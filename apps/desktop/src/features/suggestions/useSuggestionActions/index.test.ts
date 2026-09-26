@@ -51,7 +51,7 @@ const { storeState, spies } = vi.hoisted(() => {
       rebaseRun,
       runPlan,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
-      useRebaseAgent: vi.fn((_params: unknown) => ({
+      useRebaseBranch: vi.fn((_params: unknown) => ({
         canRebase: false,
         isRunning: false,
         error: null,
@@ -95,8 +95,8 @@ vi.mock('../../session/agent-kind', () => ({
 vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: spies.worktreeStatuses,
 }));
-vi.mock('../../session/hooks/useRebaseAgent', () => ({
-  useRebaseAgent: spies.useRebaseAgent,
+vi.mock('../../session/hooks/useRebaseBranch', () => ({
+  useRebaseBranch: spies.useRebaseBranch,
 }));
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
   useAdvanceWorkflowAgent: () => spies.advanceAgent,
@@ -415,7 +415,7 @@ describe('useSuggestionActions', () => {
     expect(spies.worktreeStatuses).toHaveBeenLastCalledWith({
       targets: [{ worktreePath: '/tmp/web-open', baseBranch: 'main' }],
     });
-    expect(spies.useRebaseAgent).toHaveBeenLastCalledWith(
+    expect(spies.useRebaseBranch).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: activeStatus }),
     );
   });

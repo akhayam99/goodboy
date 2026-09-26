@@ -221,6 +221,17 @@ import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
+import { createHistorySlice, historyInitialState } from './slices/history';
+import type {
+  ApplyHistoryRewriteInput,
+  ApplyHistoryRewriteOutcome,
+  HistoryMountInput,
+  HistoryRunOrigin,
+  RebaseBranchOutcome,
+  SettleHistoryRewriterInput,
+  StartHistoryRewriterInput,
+} from './slices/history/types';
+import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -556,6 +567,17 @@ type AppActions = {
     input: SessionCleanupKeyInput,
   ): Promise<ReadonlyArray<MountCleanupProposal>>;
   resolveMountCleanup(input: ResolveMountCleanupInput): Promise<void>;
+  rebaseBranch(input: HistoryMountInput): Promise<RebaseBranchOutcome>;
+  applyHistoryRewrite(input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome>;
+  pushHistoryRewrite(input: {
+    sessionId: SessionId;
+    mountId: MountId;
+    origin: HistoryRunOrigin;
+    planId: string | null;
+    expectedRemoteSha: string | null;
+  }): Promise<ApplyHistoryRewriteOutcome>;
+  startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
+  settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
@@ -1167,6 +1189,7 @@ export const initialState: AppState = {
   sessionProjectMounts: {},
   ...projectMountsInitialState,
   ...mountCleanupInitialState,
+  ...historyInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
   ...issueBriefsInitialState,
@@ -1326,6 +1349,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createProjectsSlice(set, get),
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
+  ...createHistorySlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),

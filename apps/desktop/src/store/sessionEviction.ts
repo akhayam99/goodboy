@@ -37,6 +37,8 @@ export const SESSION_EVICTION = [
   { key: 'sessionPhaseRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGithub', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectPrs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSelectedPrNumber', keyedBy: 'session', evictOn: 'archive' },

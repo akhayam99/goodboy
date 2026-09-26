@@ -114,6 +114,15 @@ pub struct TrialResult {
     pub changed_files: Vec<String>,
     pub stop: Option<TrialStop>,
     pub copy_path: Option<String>,
+    pub order: Vec<PlannedStep>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PlannedStep {
+    pub sha: String,
+    pub verb: HistoryVerb,
+    pub message: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -810,6 +819,7 @@ pub(crate) fn trial(
     let old_head = resolve_commit(cwd, &args.head)?;
     let steps = resolved_steps(cwd, &args.steps)?;
     let ordered = order_steps(&steps)?;
+    let order = planned_order(cwd, &ordered)?;
     let copy = copy_path_of(slug);
     let copy_text = copy.to_string_lossy().to_string();
     discard_copy(cwd, &copy_text);
@@ -838,6 +848,7 @@ pub(crate) fn trial(
             changed_files: Vec::new(),
             stop: replay.stop,
             copy_path,
+            order,
         });
     }
     discard_copy(cwd, &copy_text);
@@ -848,7 +859,37 @@ pub(crate) fn trial(
         map: replay.map,
         stop: None,
         copy_path: None,
+        order,
     })
+}
+
+fn planned_order(cwd: &Path, ordered: &[HistoryStep]) -> Result<Vec<PlannedStep>, WorktreeError> {
+    let mut group_message: Option<String> = None;
+    let mut planned = Vec::new();
+    for step in ordered {
+        if step.verb == HistoryVerb::Drop {
+            planned.push(PlannedStep {
+                sha: step.sha.clone(),
+                verb: step.verb,
+                message: String::new(),
+            });
+            continue;
+        }
+        let info = single_parent(cwd, &step.sha)?;
+        let message = match (&group_message, step.verb) {
+            (Some(current), HistoryVerb::Squash | HistoryVerb::Fixup) => {
+                combined_message(step, current, &info)
+            }
+            _ => message_of(step, &info),
+        };
+        group_message = Some(message.clone());
+        planned.push(PlannedStep {
+            sha: step.sha.clone(),
+            verb: step.verb,
+            message,
+        });
+    }
+    Ok(planned)
 }
 
 fn backup_namespace(branch: &str) -> String {
@@ -1125,6 +1166,306 @@ pub async fn history_backups_list(
 #[tauri::command]
 pub fn history_git_supported() -> bool {
     supports_merge_tree_base()
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseCommit {
+    pub sha: String,
+    pub subject: String,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RebasePlan {
+    pub onto: String,
+    pub onto_ref: String,
+    pub merge_base: String,
+    pub head: String,
+    pub commits: Vec<RebaseCommit>,
+    pub behind: u32,
+    pub fetch_error: Option<String>,
+}
+
+pub(crate) fn rebase_plan(
+    cwd: &Path,
+    base_branch: &str,
+    fetches: bool,
+) -> Result<RebasePlan, WorktreeError> {
+    let base = base_branch.trim();
+    if base.is_empty() {
+        return Err(plan_error("the base branch is empty"));
+    }
+    let fetch_error = if fetches {
+        git(cwd, &["fetch", "--quiet", "origin", base])
+            .err()
+            .map(|error| error.to_string())
+    } else {
+        None
+    };
+    let remote_ref = format!("origin/{base}");
+    let (onto_ref, onto) = match resolve_commit(cwd, &remote_ref) {
+        Ok(sha) => (remote_ref, sha),
+        Err(_) => (base.to_string(), resolve_commit(cwd, base)?),
+    };
+    let head = resolve_commit(cwd, "HEAD")?;
+    let merge_base = git(cwd, &["merge-base", "HEAD", &onto])?.trim().to_string();
+    let range = format!("{merge_base}..{head}");
+    let raw = git(
+        cwd,
+        &["log", "--reverse", "--format=%H%x1f%P%x1f%s", &range],
+    )?;
+    let mut commits = Vec::new();
+    for line in raw.lines().filter(|line| !line.trim().is_empty()) {
+        let mut parts = line.splitn(3, '\u{1f}');
+        let sha = parts.next().unwrap_or_default().to_string();
+        let parents = parts.next().unwrap_or_default().split_whitespace().count();
+        if parents != 1 {
+            return Err(plan_error(&format!(
+                "{} is a merge commit: rebase it by hand",
+                short(&sha)
+            )));
+        }
+        commits.push(RebaseCommit {
+            sha,
+            subject: parts.next().unwrap_or_default().to_string(),
+        });
+    }
+    let behind = git(cwd, &["rev-list", "--count", &format!("{head}..{onto}")])?
+        .trim()
+        .parse::<u32>()
+        .unwrap_or_default();
+    Ok(RebasePlan {
+        onto,
+        onto_ref,
+        merge_base,
+        head,
+        commits,
+        behind,
+        fetch_error,
+    })
+}
+
+#[tauri::command]
+pub async fn history_rebase_plan(
+    worktree_path: String,
+    base_branch: String,
+    fetches: bool,
+) -> Result<RebasePlan, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        rebase_plan(&cwd, &base_branch, fetches)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RewriterPrepareArgs {
+    pub plan: HistoryPlanArgs,
+    pub slug: String,
+}
+
+#[tauri::command]
+pub async fn history_rewriter_prepare(
+    args: RewriterPrepareArgs,
+) -> Result<TrialResult, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || trial(&args.plan, &args.slug, true))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RewriterCollectArgs {
+    pub plan: HistoryPlanArgs,
+    pub copy_path: String,
+    #[serde(default)]
+    pub skipped: Vec<String>,
+    #[serde(default)]
+    pub keeps_copy: bool,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RewriterCheck {
+    pub head: Option<String>,
+    pub map: Vec<ShaMove>,
+    pub problems: Vec<String>,
+    pub is_tree_equal: bool,
+    pub changed_files: Vec<String>,
+}
+
+struct ExpectedGroup {
+    members: Vec<String>,
+    message: String,
+    author: Author,
+}
+
+fn expected_groups(
+    cwd: &Path,
+    ordered: &[HistoryStep],
+    skipped: &[String],
+) -> Result<Vec<ExpectedGroup>, WorktreeError> {
+    let mut groups: Vec<ExpectedGroup> = Vec::new();
+    for step in ordered {
+        if step.verb == HistoryVerb::Drop {
+            continue;
+        }
+        let info = single_parent(cwd, &step.sha)?;
+        let is_folding = matches!(step.verb, HistoryVerb::Squash | HistoryVerb::Fixup);
+        if is_folding {
+            if let Some(current) = groups.last_mut() {
+                current.message = combined_message(step, &current.message, &info);
+                current.members.push(step.sha.clone());
+                continue;
+            }
+        }
+        if skipped.iter().any(|sha| sha == &step.sha) {
+            continue;
+        }
+        groups.push(ExpectedGroup {
+            members: vec![step.sha.clone()],
+            message: message_of(step, &info),
+            author: info.author(),
+        });
+    }
+    Ok(groups)
+}
+
+fn copy_problem(copy: &Path) -> Option<String> {
+    if in_progress_operation(copy).is_some() {
+        return Some("The copy still has a cherry-pick or merge in progress.".to_string());
+    }
+    match read_working_tree(copy) {
+        GitWorkingTree::Known {
+            staged,
+            unstaged,
+            unmerged,
+            ..
+        } if staged + unstaged + unmerged > 0 => {
+            Some("The copy has changes that were never committed.".to_string())
+        }
+        GitWorkingTree::Known { .. } => None,
+        GitWorkingTree::Unknown { .. } => Some("Couldn't read the copy.".to_string()),
+    }
+}
+
+pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterCheck, WorktreeError> {
+    let cwd = Path::new(&args.plan.worktree_path);
+    let copy = Path::new(&args.copy_path);
+    if !cwd.exists() {
+        return Err(WorktreeError::RepoNotFound(args.plan.worktree_path.clone()));
+    }
+    if !copy.exists() {
+        return Err(WorktreeError::RepoNotFound(args.copy_path.clone()));
+    }
+    let base = resolve_commit(cwd, &args.plan.base)?;
+    let old_head = resolve_commit(cwd, &args.plan.head)?;
+    let steps = resolved_steps(cwd, &args.plan.steps)?;
+    let ordered = order_steps(&steps)?;
+    let skipped: Vec<String> = args
+        .skipped
+        .iter()
+        .filter_map(|sha| resolve_commit(cwd, sha).ok())
+        .collect();
+    let groups = expected_groups(cwd, &ordered, &skipped)?;
+    let mut problems = Vec::new();
+    if let Some(problem) = copy_problem(copy) {
+        problems.push(problem);
+    }
+    let copy_head = resolve_commit(copy, "HEAD")?;
+    let range = format!("{base}..{copy_head}");
+    let made: Vec<String> = git(copy, &["rev-list", "--reverse", "--first-parent", &range])?
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect();
+    if git(copy, &["merge-base", "--is-ancestor", &base, &copy_head]).is_err() {
+        problems.push("The copy is no longer built on the plan base.".to_string());
+    }
+    if made.len() != groups.len() {
+        problems.push(format!(
+            "The rewriter made {} {}, the plan has {}.",
+            made.len(),
+            if made.len() == 1 { "commit" } else { "commits" },
+            groups.len()
+        ));
+    }
+    if !problems.is_empty() {
+        return Ok(RewriterCheck {
+            head: None,
+            map: Vec::new(),
+            problems,
+            is_tree_equal: false,
+            changed_files: Vec::new(),
+        });
+    }
+    let mut tip = base.clone();
+    let mut map = Vec::new();
+    for (commit, group) in made.iter().zip(groups.iter()) {
+        let tree = tree_of(copy, commit)?;
+        tip = commit_tree(cwd, &tree, &tip, &group.message, &group.author)?;
+        for member in &group.members {
+            map.push(ShaMove {
+                from: member.clone(),
+                to: Some(tip.clone()),
+            });
+        }
+    }
+    for step in &ordered {
+        if map.iter().any(|moved| moved.from == step.sha) {
+            continue;
+        }
+        map.push(ShaMove {
+            from: step.sha.clone(),
+            to: None,
+        });
+    }
+    if !args.keeps_copy {
+        discard_copy(cwd, &args.copy_path);
+    }
+    Ok(RewriterCheck {
+        is_tree_equal: tree_of(cwd, &tip)? == tree_of(cwd, &old_head)?,
+        changed_files: changed_files(cwd, &old_head, &tip),
+        head: Some(tip),
+        map,
+        problems,
+    })
+}
+
+#[tauri::command]
+pub async fn history_rewriter_collect(
+    args: RewriterCollectArgs,
+) -> Result<RewriterCheck, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || collect_rewrite(&args))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[tauri::command]
+pub async fn history_copy_discard(
+    worktree_path: String,
+    copy_path: String,
+) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        if !copy_path.contains(COPY_PREFIX) {
+            return Err(plan_error("that folder is not a history copy"));
+        }
+        discard_copy(&cwd, &copy_path);
+        Ok(())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
 #[cfg(test)]
@@ -1544,5 +1885,160 @@ mod tests {
             git_ok(&remote, &["rev-parse", "refs/heads/feature"]),
             new_head
         );
+    }
+
+    fn with_remote(b: &Branch) -> PathBuf {
+        let remote = b.root.join("remote.git");
+        git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &b.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&b.root, &["push", "origin", "main", "feature"]);
+        remote
+    }
+
+    #[test]
+    fn a_rebase_plan_lists_the_branch_commits_onto_origin() {
+        let b = branch("rebase-plan");
+        with_remote(&b);
+        git_ok(&b.root, &["checkout", "main"]);
+        let upstream = commit(&b.root, "readme.txt", "hello\n", "main moves on");
+        git_ok(&b.root, &["push", "origin", "main"]);
+        git_ok(&b.root, &["checkout", "feature"]);
+        let plan = rebase_plan(&b.root, "main", true).unwrap();
+        assert_eq!(plan.onto, upstream);
+        assert_eq!(plan.onto_ref, "origin/main");
+        assert_eq!(plan.merge_base, b.base);
+        assert_eq!(plan.behind, 1);
+        assert_eq!(
+            plan.commits
+                .iter()
+                .map(|c| c.sha.clone())
+                .collect::<Vec<_>>(),
+            vec![b.a.clone(), b.b.clone(), b.c.clone()]
+        );
+        let args = plan_args_for_rebase(&b.root, &plan);
+        let prediction = predict(&args).unwrap();
+        assert!(prediction
+            .steps
+            .iter()
+            .all(|step| step.outcome == StepOutcome::Clean));
+    }
+
+    fn plan_args_for_rebase(root: &Path, plan: &RebasePlan) -> HistoryPlanArgs {
+        HistoryPlanArgs {
+            worktree_path: root.to_string_lossy().into_owned(),
+            base: plan.onto.clone(),
+            head: plan.head.clone(),
+            steps: plan
+                .commits
+                .iter()
+                .map(|c| step(&c.sha, HistoryVerb::Pick))
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn the_engine_rebuilds_the_rewriter_result_with_the_plan_messages_and_authors() {
+        let b = branch("rewriter-collect");
+        let mut reword = step(&b.a, HistoryVerb::Reword);
+        reword.message = Some("A edits the policy, reworded".to_string());
+        let args = plan(
+            &b.root,
+            &b.base,
+            &b.c,
+            vec![
+                step(&b.b, HistoryVerb::Pick),
+                reword,
+                step(&b.c, HistoryVerb::Pick),
+            ],
+        );
+        let prepared = trial(&args, "rewriter-collect", true).unwrap();
+        let copy = PathBuf::from(prepared.copy_path.clone().unwrap());
+        assert_eq!(prepared.stop.unwrap().files, vec!["policy.txt".to_string()]);
+        std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(
+            &copy,
+            &["commit", "--no-verify", "-m", "whatever the agent typed"],
+        );
+        let second = git_run(&copy, &["cherry-pick", "--no-commit", &b.a], None, None).unwrap();
+        assert_ne!(second.status, 0);
+        std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(
+            &copy,
+            &["commit", "--no-verify", "--allow-empty", "-m", "second"],
+        );
+        git_ok(&copy, &["cherry-pick", &b.c]);
+        let check = collect_rewrite(&RewriterCollectArgs {
+            plan: args,
+            copy_path: copy.to_string_lossy().into_owned(),
+            skipped: Vec::new(),
+            keeps_copy: false,
+        })
+        .unwrap();
+        assert!(check.problems.is_empty(), "{:?}", check.problems);
+        let head = check.head.unwrap();
+        assert_eq!(
+            subjects(&b.root, &format!("{}..{head}", b.base)),
+            vec![
+                "C adds notes",
+                "A edits the policy, reworded",
+                "B edits the policy again"
+            ]
+        );
+        assert!(check.is_tree_equal);
+        assert!(!copy.exists());
+        assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
+    }
+
+    #[test]
+    fn the_engine_refuses_a_rewrite_with_the_wrong_number_of_commits() {
+        let b = branch("rewriter-count");
+        let args = plan(
+            &b.root,
+            &b.base,
+            &b.c,
+            vec![step(&b.b, HistoryVerb::Pick), step(&b.a, HistoryVerb::Pick)],
+        );
+        let prepared = trial(&args, "rewriter-count", true).unwrap();
+        let copy = PathBuf::from(prepared.copy_path.unwrap());
+        git_ok(&copy, &["checkout", "--theirs", "policy.txt"]);
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(&copy, &["commit", "--no-verify", "-m", "only one"]);
+        let check = collect_rewrite(&RewriterCollectArgs {
+            plan: args,
+            copy_path: copy.to_string_lossy().into_owned(),
+            skipped: Vec::new(),
+            keeps_copy: false,
+        })
+        .unwrap();
+        assert_eq!(check.head, None);
+        assert_eq!(check.problems.len(), 1);
+        discard_copy(&b.root, &copy.to_string_lossy());
+    }
+
+    #[test]
+    fn a_turn_with_the_push_block_cannot_push_to_origin() {
+        let b = branch("push-block");
+        let remote = with_remote(&b);
+        commit(&b.root, "extra.txt", "extra\n", "extra");
+        let mut command = crate::path_env::command("git");
+        command
+            .args(["push", "origin", "feature"])
+            .current_dir(&b.root)
+            .env("GIT_TERMINAL_PROMPT", "0");
+        crate::turn::apply_push_block(&mut command);
+        let output = command.output().unwrap();
+        assert!(!output.status.success());
+        let mut bare = crate::path_env::command("git");
+        bare.args(["push"])
+            .current_dir(&b.root)
+            .env("GIT_TERMINAL_PROMPT", "0");
+        crate::turn::apply_push_block(&mut bare);
+        assert!(!bare.output().unwrap().status.success());
+        assert_eq!(git_ok(&remote, &["rev-parse", "refs/heads/feature"]), b.c);
     }
 }

@@ -4,6 +4,8 @@ import type {
   HistoryMoveOutcome,
   HistoryPlanArgs,
   HistoryPlanPrediction,
+  HistoryRebasePlan,
+  HistoryRewriterCheck,
   HistoryTrialResult,
   LeasePushOutcome,
 } from '@goodboy/types';
@@ -82,3 +84,55 @@ export const pushWithLease = async ({
     workspaceId,
     projectId,
   });
+
+type RebasePlanParams = {
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+  readonly fetches: boolean;
+};
+
+export const readRebasePlan = async ({
+  worktreePath,
+  baseBranch,
+  fetches,
+}: RebasePlanParams): Promise<HistoryRebasePlan> =>
+  invoke<HistoryRebasePlan>('history_rebase_plan', { worktreePath, baseBranch, fetches });
+
+type PrepareRewriteParams = {
+  readonly plan: HistoryPlanArgs;
+  readonly slug: string;
+};
+
+export const prepareHistoryRewrite = async ({
+  plan,
+  slug,
+}: PrepareRewriteParams): Promise<HistoryTrialResult> =>
+  invoke<HistoryTrialResult>('history_rewriter_prepare', { args: { plan: toArgs(plan), slug } });
+
+type CollectRewriteParams = {
+  readonly plan: HistoryPlanArgs;
+  readonly copyPath: string;
+  readonly skipped: ReadonlyArray<string>;
+  readonly keepsCopy: boolean;
+};
+
+export const collectHistoryRewrite = async ({
+  plan,
+  copyPath,
+  skipped,
+  keepsCopy,
+}: CollectRewriteParams): Promise<HistoryRewriterCheck> =>
+  invoke<HistoryRewriterCheck>('history_rewriter_collect', {
+    args: { plan: toArgs(plan), copyPath, skipped, keepsCopy },
+  });
+
+type DiscardCopyParams = {
+  readonly worktreePath: string;
+  readonly copyPath: string;
+};
+
+export const discardHistoryCopy = async ({
+  worktreePath,
+  copyPath,
+}: DiscardCopyParams): Promise<void> =>
+  invoke<void>('history_copy_discard', { worktreePath, copyPath });

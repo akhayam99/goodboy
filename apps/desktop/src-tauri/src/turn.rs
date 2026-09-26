@@ -94,6 +94,8 @@ pub struct SpawnArgs {
     pub cursor_max_mode: bool,
     #[serde(default)]
     pub writer_lease: Option<WriterLeaseBinding>,
+    #[serde(default)]
+    pub blocks_push: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -346,6 +348,19 @@ struct SpawnOneArgs<'a> {
     pub mount_id: Option<&'a str>,
     pub cursor_max_mode: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
+    pub blocks_push: bool,
+}
+
+pub(crate) const PUSH_BLOCK_URL: &str = "goodboy-blocked://history-rewriter";
+
+pub(crate) fn apply_push_block(command: &mut Command) {
+    command.env("GIT_CONFIG_COUNT", "2");
+    command.env("GIT_CONFIG_KEY_0", "remote.origin.pushurl");
+    command.env("GIT_CONFIG_VALUE_0", PUSH_BLOCK_URL);
+    command.env("GIT_CONFIG_KEY_1", "remote.pushDefault");
+    command.env("GIT_CONFIG_VALUE_1", "goodboy-blocked");
+    command.env_remove("GH_TOKEN");
+    command.env_remove("GITHUB_TOKEN");
 }
 
 fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::path::PathBuf> {
@@ -406,7 +421,9 @@ fn spawn_one(
         }
     }
 
-    if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
+    if args.blocks_push {
+        apply_push_block(&mut command);
+    } else if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
         command.env("GH_TOKEN", &token);
         command.env("GITHUB_TOKEN", &token);
     }
@@ -535,6 +552,7 @@ pub async fn turn_spawn(
             mount_id: args.mount_id.as_deref(),
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
+            blocks_push: args.blocks_push,
         },
     )
 }
@@ -795,6 +813,7 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            blocks_push: false,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -827,6 +846,7 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            blocks_push: false,
         }
     }
 
@@ -1350,6 +1370,7 @@ mod tests {
             mount_id: None,
             cursor_max_mode: false,
             writer_lease: None,
+            blocks_push: false,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

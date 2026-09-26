@@ -308,6 +308,14 @@ pick it when you start the agent.
 - **Report** and **Wireframe** run as workflow steps
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
+- **History rewriter** is hidden: nobody picks it. Goodboy starts it only
+  when replaying a branch history hits a conflict git cannot settle alone
+  (a rebase on main, or a Rewrite history plan). It works in a throwaway
+  copy of the branch, never in a mount. Its turn carries a git config that
+  points `origin` at a push URL that always fails, it has no GitHub token and
+  no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
+  `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
+  and authors, checks the count, and moves the branch itself
 
 A kind is worked out in the same order on every screen:
 
@@ -808,20 +816,21 @@ Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
-| Kind          | Label       | Started from      |
-| ------------- | ----------- | ----------------- |
-| `planner`     | Plan        | spawn menu        |
-| `scout`       | Scout       | spawn menu        |
-| `implementer` | Implement   | spawn menu        |
-| `debugger`    | Debug       | spawn menu        |
-| `tester`      | Test        | spawn menu        |
-| `reviewer`    | Review      | spawn menu        |
-| `pr-reviewer` | PR reviewer | PR review session |
-| `docs`        | Docs        | spawn menu        |
-| `report`      | Report      | workflow step     |
-| `wireframe`   | Wireframe   | workflow step     |
-| `resolver`    | Resolve     | Review lens       |
-| `generic`     | Generalist  | spawn menu        |
+| Kind          | Label            | Started from                    |
+| ------------- | ---------------- | ------------------------------- |
+| `planner`     | Plan             | spawn menu                      |
+| `scout`       | Scout            | spawn menu                      |
+| `implementer` | Implement        | spawn menu                      |
+| `debugger`    | Debug            | spawn menu                      |
+| `tester`      | Test             | spawn menu                      |
+| `reviewer`    | Review           | spawn menu                      |
+| `pr-reviewer` | PR reviewer      | PR review session               |
+| `docs`        | Docs             | spawn menu                      |
+| `report`      | Report           | workflow step                   |
+| `wireframe`   | Wireframe        | workflow step                   |
+| `resolver`    | Resolve          | Review lens                     |
+| `rewriter`    | History rewriter | a history replay that conflicts |
+| `generic`     | Generalist       | spawn menu                      |
 
 Other identifiers:
 

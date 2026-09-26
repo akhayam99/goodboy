@@ -907,7 +907,13 @@ meta `repo · N commits · state word`, one primary chosen from the branch state
 (`Rebase on main` when it is behind main, `Push branch` when it is local only
 with commits, none otherwise), the history rewrite menu and `⋯` (Refresh, Open
 all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
-mount's `mountId`, never the active mount. `Branch vs main` sits in the file
+mount's `mountId`, never the active mount. `Rebase on main` replays the
+branch on origin with the history engine and runs no agent. The engine first
+predicts the replay in memory; when it conflicts, the button reads
+`Rebase on main · N conflicts` and the tooltip names the files, and only then
+the hidden History rewriter merges the edits in a throwaway copy. The branch
+moves only after the engine checks the result, with a backup ref and a push
+with lease. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,

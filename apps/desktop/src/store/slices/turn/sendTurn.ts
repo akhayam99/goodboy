@@ -142,6 +142,8 @@ import {
   selectWritableMounts,
 } from '../project-mounts/selectors';
 import { selectAutomaticTurnMount } from '../project-mounts/selectAutomaticTurnMount';
+import { rewriterCopyFor } from '../history/rewriterCopyFor';
+import { rewriterWritableRoots } from '../history/rewriterWritableRoots';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import {
   mountContinuationPrompt,
@@ -274,9 +276,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!isFrozenTargetHeld) {
       throw new Error('the branch mount this turn was queued on changed before it could start');
     }
-    const selectedMount = aimedMount ?? selectActiveMount({ state: before, sessionId });
+    const rewriterAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
+    const rewriterCopy =
+      rewriterAgentId === null
+        ? null
+        : rewriterCopyFor({ state: before, sessionId, agentId: rewriterAgentId });
+    const selectedMount =
+      rewriterCopy !== null
+        ? null
+        : (aimedMount ?? selectActiveMount({ state: before, sessionId }));
     const activeMount =
-      selectedMount ?? selectAutomaticTurnMount({ state: before, sessionId }) ?? undefined;
+      rewriterCopy !== null
+        ? undefined
+        : (selectedMount ?? selectAutomaticTurnMount({ state: before, sessionId }) ?? undefined);
     const turnTarget =
       activeMount === undefined
         ? null
@@ -288,7 +300,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const turnMountId = turnTarget?.mountId ?? null;
     const turnMountRevision = turnTarget?.mountRevision ?? null;
     const workingDir =
-      activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
+      rewriterCopy !== null
+        ? rewriterCopy.copyPath
+        : activeMount !== undefined
+          ? activeMount.worktreePath
+          : await scratchDirPrepare({ sessionId });
     const isPlainSessionDir =
       activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
     if (isPlainSessionDir) {
@@ -655,6 +671,9 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
+    if (turnAgentKind === 'rewriter' && rewriterCopy === null) {
+      throw new Error('The copy this rewrite worked in is gone. Retry the rewrite from Activity.');
+    }
     const isResolverTurn = turnAgentKind === 'resolver';
     const agentRowForLease = isResolverTurn
       ? ((get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ??
@@ -1003,7 +1022,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    const scopeMounts = selectWritableMounts({ state: get(), sessionId });
+    const scopeMounts =
+      rewriterCopy !== null ? [] : selectWritableMounts({ state: get(), sessionId });
     const activeProject =
       activeMount !== undefined
         ? get().projects.find((project) => project.id === activeMount.projectId)
@@ -1090,11 +1110,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const gitDirs = await resolveGitCommonDirs({
       repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
     });
-    const writableRoots = buildTurnWritableRoots({
-      mounts: scopeMounts,
-      workingDir,
-      gitDirs,
-    });
+    const writableRoots =
+      rewriterCopy !== null
+        ? await rewriterWritableRoots({ copyPath: rewriterCopy.copyPath })
+        : buildTurnWritableRoots({
+            mounts: scopeMounts,
+            workingDir,
+            gitDirs,
+          });
 
     resolvedPrompt = renderedHandoff.message;
 
@@ -1183,6 +1206,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...(effortFlag !== undefined && { effort: effortFlag }),
           ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
           ...(writerLease !== undefined && { writerLease }),
+          ...(rewriterCopy !== null && { blocksPush: true }),
           ...(apiKeyBinding ?? {}),
           ...claudeFlags,
         },
@@ -1730,6 +1754,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
       }
       clearMaterializationBatch({ sessionId, batchId: runId });
+    }
+
+    if (rewriterCopy !== null && !turnWasCancelled) {
+      void get()
+        .settleHistoryRewriter({
+          sessionId,
+          agentId: activeAgentId,
+          assistantText,
+          hasFailed: lastError !== null,
+        })
+        .catch(() => undefined);
     }
 
     if (assistantText.length > 0 && !purgedAgentIds.has(activeAgentId)) {
