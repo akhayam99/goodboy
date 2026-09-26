@@ -80,8 +80,9 @@ const RULES = [
       'packages/ui/src/components/AppShell.tsx',
       'apps/desktop/src/app/components/AppTopBar/index.tsx',
       'apps/desktop/src/app/components/AppFooter/index.tsx',
+      'apps/desktop/src/app/components/MockScene/scenes/DesignScaleScene.tsx',
     ],
-    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar and the footer',
+    why: 'the chrome surface frames the app: the shell, its sidebar column, the top bar, the footer and the scale scene that draws the frame',
   },
   {
     pattern: /\bduration-\[/,
@@ -93,6 +94,26 @@ const RULES = [
       /(?<![\w:$.{-])rounded(?=['"`]|\s+(?:[\w:[\]/.-]*-[\w\]/.-]|border\b|flex\b|block\b|grid\b|truncate\b|inline\b|hidden\b|shadow\b|relative\b|absolute\b|transition\b))|\brounded-\[/,
     allow: NO_ALLOW,
     why: 'radius comes from the sm, md, lg and full steps',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*rounded(?:-[trblse]{1,2})?-(?:xs|xl|2xl|3xl)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'radius stays on the concentric sm, md, lg and frame steps',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*font-(?:bold|extrabold|black)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'weights stop at 600: text-heading, text-title or font-semibold',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*text-(?:\[[\d.]+(?:px|rem)\]|[3-9]xl)(?![\w-])/,
+    allow: NO_ALLOW,
+    why: 'type takes a role; only em sizes relative to prose stay arbitrary',
+  },
+  {
+    pattern: /(?<![\w-])(?:[\w-]+:)*shadow-\[/,
+    allow: ['apps/desktop/src/features/diff/lib/lineTone.ts'],
+    why: 'shadows come from the elevation levels; only the diff line rail paints an inset edge',
   },
   {
     pattern:

@@ -323,7 +323,7 @@ html[data-theme='light'] {
   --color-overlay-hover: oklch(0 0 0 / 0.04);
   --color-overlay-selected: oklch(0 0 0 / 0.07);
   --color-scrim: oklch(0 0 0 / 0.35);
-  --color-frame-edge: oklch(0 0 0 / 0.08);
+  --color-frame-edge: oklch(0 0 0 / 0.085);
   --color-scrollbar-thumb: oklch(0 0 0 / 0.26);
   --color-scrollbar-thumb-active: oklch(0 0 0 / 0.45);
   --color-primary: oklch(0.455 0.14 210);

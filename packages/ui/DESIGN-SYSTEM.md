@@ -54,6 +54,12 @@ Three borders, each with one job:
 | `border`        | controls, the floating edge, card hover                          | 3:1 on every step               |
 | `border-strong` | emphasis: control hover                                          | 4.5:1 on every step             |
 
+Three translucent tokens paint over whatever sits below them: `frame-edge`
+(white 8% in dark, black 8.5% in light) draws the content sheet and the
+floating drawer at 1.2:1 or more on chrome and background, and
+`scrollbar-thumb` and `scrollbar-thumb-active` clear 1.8:1 and 3:1 on
+background, panel and floating.
+
 A clickable card at rest carries two signals together (a fill one step above
 its parent plus the hairline). Its states clear 3:1: hover `border`, selection
 `bg-selected`, focus ring. `token-contrast-floor.test.ts` holds the ladder

@@ -84,7 +84,9 @@ rest), never a size, a weight, a leading and a tracking written one by one. The
 roles and the ratchet that counts the raw classes are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
 
-Any `text-[Npx]` is rejected, with one standing exception: relative `em` sizing
+`no-token-bypass.test.ts` rejects any `text-[Npx]`, a display grade above `2xl`,
+`font-bold`, `rounded-xs` or `rounded-xl` and up, and an arbitrary `shadow-[`.
+The one standing exception for size is relative `em` sizing
 inside prose and markdown rendering. There the size is meant to scale with a
 parent whose size changes from place to place.
 
