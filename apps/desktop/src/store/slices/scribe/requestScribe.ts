@@ -39,7 +39,13 @@ const slotValue = ({
 }): string => slots.find((slot) => slot.key === key)?.value ?? '';
 
 export const requestScribe = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId, task, hint }: RequestScribeInput): Promise<string> => {
+  return async ({
+    sessionId,
+    mountId,
+    task,
+    hint,
+    routing,
+  }: RequestScribeInput): Promise<string> => {
     const key = scribeKeyOf({ mountId, kind: task.kind });
     if (get().scribeWork[key]?.status === 'writing') {
       return key;
@@ -53,13 +59,17 @@ export const requestScribe = (set: SetFn, get: GetFn) => {
     const project = state.projects.find((candidate) => candidate.id === mount.projectId) ?? null;
     const overrides =
       session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
-    const config = taskModelAgentSpawnConfig({
+    const resolved = taskModelAgentSpawnConfig({
       task: 'pr_draft',
       preferences: overrides?.taskModels,
       workspaceDefaultProviderId: overrides?.defaultProviderId,
       sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
       limitContext: autoLimitContext({ state }),
     });
+    const config =
+      routing !== undefined && routing.provider !== ''
+        ? { provider: routing.provider, model: routing.model, effort: routing.effort }
+        : resolved;
     if (config.provider === '') {
       throw new Error('No provider is connected to write this text.');
     }

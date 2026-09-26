@@ -1,5 +1,5 @@
 import type { ExtractedScribeText } from '@goodboy/core';
-import type { AgentId, MountId, SessionId } from '@goodboy/types';
+import type { AgentId, MountId, ProviderId, SessionId } from '@goodboy/types';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -36,6 +36,11 @@ export type RequestScribeInput = {
   readonly mountId: MountId;
   readonly task: ScribeTask;
   readonly hint?: string;
+  readonly routing?: {
+    readonly provider: ProviderId | '';
+    readonly model: string;
+    readonly effort: string;
+  };
 };
 
 export type SettleScribeInput = {

@@ -97,6 +97,7 @@ const harness = () => {
     spawnAgent: vi.fn(async () => AGENT_ID),
     sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
     updateResolveThread: vi.fn(async () => true),
+    refreshPrDescription: vi.fn(async () => false),
   };
   const set = ((patch: unknown) => {
     const next =

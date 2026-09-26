@@ -147,6 +147,9 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
     if (pushed.kind === 'pushed') {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
+      void get()
+        .refreshPrDescription({ sessionId, mountId })
+        .catch(() => false);
       return 'pushed';
     }
     const stop: HistoryStop =

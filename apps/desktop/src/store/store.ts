@@ -582,6 +582,7 @@ type AppActions = {
   settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
+  refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;

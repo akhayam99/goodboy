@@ -316,6 +316,16 @@ pick it when you start the agent.
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
   `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
   and authors, checks the count, and moves the branch itself
+- **Scribe** is hidden too: it writes text about the code and never code.
+  `Write it for me` in the pull request panel asks it for the title and
+  body, which fill the form for you to check before `Create PR`; it can also
+  write a commit message for a squash or a reword and a changelog entry. It
+  answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
+  `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
+  and Goodboy opens or edits the pull request itself. A body Scribe wrote
+  ends with an invisible `goodboy-scribe` signature; after Goodboy pushes new
+  history to the branch it rewrites the body only while that signature still
+  matches, so a body you edited stays yours
 
 A kind is worked out in the same order on every screen:
 
@@ -830,6 +840,7 @@ Agent kinds, in `AGENT_KIND_ORDER`:
 | `wireframe`   | Wireframe        | workflow step                   |
 | `resolver`    | Resolve          | Review lens                     |
 | `rewriter`    | History rewriter | a history replay that conflicts |
+| `scribe`      | Scribe           | pull request panel              |
 | `generic`     | Generalist       | spawn menu                      |
 
 Other identifiers:
