@@ -1,3 +1,5 @@
+import type { MountId, SessionId } from './ids';
+
 export const HISTORY_VERBS = ['pick', 'reword', 'squash', 'fixup', 'drop'] as const;
 
 export type HistoryVerb = (typeof HISTORY_VERBS)[number];
@@ -104,3 +106,24 @@ export type LeasePushOutcome =
   | { readonly kind: 'pushed' }
   | { readonly kind: 'stale'; readonly message: string }
   | { readonly kind: 'failed'; readonly message: string };
+
+export const HISTORY_PLAN_STATES = ['draft', 'applied', 'pushed', 'discarded'] as const;
+
+export type HistoryPlanState = (typeof HISTORY_PLAN_STATES)[number];
+
+export type HistoryPlan = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly branch: string;
+  readonly baseSha: string;
+  readonly headSha: string;
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly state: HistoryPlanState;
+  readonly backupRef: string | null;
+  readonly remoteShaAtApply: string | null;
+  readonly appliedAt: number | null;
+  readonly pushedAt: number | null;
+  readonly createdAt: number;
+  readonly updatedAt: number;
+};

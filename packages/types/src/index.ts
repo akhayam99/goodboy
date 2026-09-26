@@ -261,7 +261,9 @@ export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
 export type {
   HistoryBackup,
   HistoryMoveOutcome,
+  HistoryPlan,
   HistoryPlanArgs,
+  HistoryPlanState,
   HistoryPlanPrediction,
   HistoryPlannedStep,
   HistoryRebaseCommit,
@@ -277,7 +279,7 @@ export type {
   HistoryVerb,
   LeasePushOutcome,
 } from './history';
-export { HISTORY_VERBS } from './history';
+export { HISTORY_PLAN_STATES, HISTORY_VERBS } from './history';
 export type {
   BranchCommit,
   BranchIntegration,
