@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import type { GoodboyIgnoreMode, WorkspaceId } from '@goodboy/types';
 import { Button, Notice, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -11,14 +12,16 @@ type Props = {
 type ApplyMode = Exclude<GoodboyIgnoreMode, 'existing'>;
 
 export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
-  const pendingProjects = useAppStore((state) =>
-    state.projects.filter(
-      (project) =>
-        project.workspaceId === workspaceId &&
-        project.kind === 'repo' &&
-        project.disconnectedAt === undefined &&
-        project.goodboyIgnoreCheckedAt !== undefined &&
-        project.goodboyIgnore === undefined,
+  const pendingProjects = useAppStore(
+    useShallow((state) =>
+      state.projects.filter(
+        (project) =>
+          project.workspaceId === workspaceId &&
+          project.kind === 'repo' &&
+          project.disconnectedAt === undefined &&
+          project.goodboyIgnoreCheckedAt !== undefined &&
+          project.goodboyIgnore === undefined,
+      ),
     ),
   );
   const saveGoodboyIgnore = useAppStore((state) => state.saveGoodboyIgnore);
