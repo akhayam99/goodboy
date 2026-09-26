@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { CHANGELOG_SCREEN_VALUES } from './changelogScreens';
+import { CHANGELOG_SCREENS, isChangelogScreen } from './changelogScreens';
 import { resolveChangelogScreenOverlay } from './resolveChangelogScreenOverlay';
 
 describe('resolveChangelogScreenOverlay', () => {
   it('resolves every closed-list screen to an overlay without throwing', () => {
-    CHANGELOG_SCREEN_VALUES.forEach((screen) => {
-      expect(() => resolveChangelogScreenOverlay({ screen })).not.toThrow();
-    });
+    Object.keys(CHANGELOG_SCREENS)
+      .filter(isChangelogScreen)
+      .forEach((screen) => {
+        expect(() => resolveChangelogScreenOverlay({ screen })).not.toThrow();
+      });
   });
 
   it('opens settings on the workspace scope with the review-replies section', () => {

@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { lintRelease } from './lintRelease';
-import type { ChangelogLine } from './lintRelease';
+import { lintRelease } from './testing/lintRelease';
+import type { ChangelogLine } from './testing/lintRelease';
 
 const CHANGELOG_PATH = join(__dirname, '..', '..', '..', '..', '..', 'CHANGELOG.md');
 const MIN_VERSION: readonly [number, number, number] = [0, 5, 0];

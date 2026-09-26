@@ -16,7 +16,7 @@ export const PrRef = ({ prs }: Props) => {
           key={pr}
           type="button"
           onClick={() => void openUrl(PR_URL({ number: pr }))}
-          className="text-2xs text-faint-foreground hover:text-muted-foreground hover:underline"
+          className="text-secondary text-faint-foreground hover:text-muted-foreground hover:underline"
         >
           #{pr}
         </button>

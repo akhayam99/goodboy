@@ -58,10 +58,10 @@ export const UpdateArrivalCard = ({ onOpenChangelog }: Props) => {
           className="mt-0.5 shrink-0 text-primary"
         />
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground">{arrivalTitle({ version })}</p>
-          {lead !== null ? <p className="text-xs text-muted-foreground">{lead}</p> : null}
+          <p className="text-heading text-foreground">{arrivalTitle({ version })}</p>
+          {lead !== null ? <p className="text-label text-muted-foreground">{lead}</p> : null}
           {bullets.length > 0 ? (
-            <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+            <ul className="flex flex-col gap-0.5 text-label text-muted-foreground">
               {bullets.map((bullet) => (
                 <li key={bullet.title} className="flex items-start gap-1.5">
                   <span

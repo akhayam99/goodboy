@@ -101,7 +101,7 @@ export const ChangelogRail = ({
           placeholder="Search releases"
           aria-label="Search releases"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-faint-foreground"
+          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
         />
       </div>
       {catchUp !== null && !isSearching ? (
@@ -112,13 +112,15 @@ export const ChangelogRail = ({
           className="items-center gap-1.5 px-2.5 py-2"
         >
           <History size={ICON_SIZE.row} aria-hidden className="shrink-0 text-primary" />
-          <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+          <span className="min-w-0 flex-1 truncate text-body text-foreground">
             Since {catchUp.fromVersion} · {catchUp.releases.length} releases
           </span>
         </SelectableRow>
       ) : null}
       {releases.length === 0 ? (
-        <p className="px-1.5 py-2 text-xs text-faint-foreground">No release mentions "{query}".</p>
+        <p className="px-1.5 py-2 text-label text-faint-foreground">
+          No release mentions "{query}".
+        </p>
       ) : null}
       {groups.map((group) => {
         if (group.isOlder && !isSearching) {
@@ -128,7 +130,7 @@ export const ChangelogRail = ({
                 type="button"
                 onClick={() => setIsOlderOpen((open) => !open)}
                 aria-expanded={isOlderOpen}
-                className="flex items-center gap-1 px-1.5 py-1 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground hover:text-muted-foreground"
+                className="flex items-center gap-1 px-1.5 py-1 text-eyebrow text-faint-foreground hover:text-muted-foreground"
               >
                 <ChevronRight
                   size={ICON_SIZE.row}

@@ -1,5 +1,5 @@
-import { CHANGELOG_AREA_VALUES } from './changelogAreas';
-import { CHANGELOG_SCREEN_VALUES } from './changelogScreens';
+import { isChangelogArea } from '../changelogAreas';
+import { isChangelogScreen } from '../changelogScreens';
 
 export type ChangelogLine = {
   readonly number: number;
@@ -51,8 +51,6 @@ const IMAGE_NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PR_LIST_PATTERN = /^\d+(,\d+)*$/;
 
 const SECTION_ORDER: ReadonlyArray<'New' | 'Improved' | 'Fixed'> = ['New', 'Improved', 'Fixed'];
-const AREA_VALUES: ReadonlySet<string> = new Set(CHANGELOG_AREA_VALUES);
-const SCREEN_VALUES: ReadonlySet<string> = new Set(CHANGELOG_SCREEN_VALUES);
 const META_KNOWN_KEYS: ReadonlySet<string> = new Set(['area', 'screen', 'image', 'pr']);
 
 const EM_DASH = String.fromCharCode(0x2014);
@@ -239,14 +237,14 @@ const validateMeta = ({ line }: ValidateMetaParams): ReadonlyArray<ChangelogLint
       });
       return;
     }
-    if (key === 'area' && !AREA_VALUES.has(value)) {
+    if (key === 'area' && !isChangelogArea(value)) {
       violations.push({
         line: line.number,
         rule: 'meta-area-unknown',
         message: `unknown area "${value}"`,
       });
     }
-    if (key === 'screen' && !SCREEN_VALUES.has(value)) {
+    if (key === 'screen' && !isChangelogScreen(value)) {
       violations.push({
         line: line.number,
         rule: 'meta-screen-unknown',

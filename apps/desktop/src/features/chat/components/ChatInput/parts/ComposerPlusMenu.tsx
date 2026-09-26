@@ -36,10 +36,10 @@ export const ComposerPlusMenu = ({ onAttachFiles, onInsertPrefix, disabled = fal
         dropdown.close();
         onClick();
       }}
-      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-hover"
+      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-body text-foreground transition-colors hover:bg-hover"
     >
       <span>{label}</span>
-      {symbol != null && <span className="font-mono text-xs text-faint-foreground">{symbol}</span>}
+      {symbol != null && <span className="text-code text-faint-foreground">{symbol}</span>}
     </button>
   );
 

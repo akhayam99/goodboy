@@ -518,7 +518,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             >
               <div
                 className={cn(
-                  'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
+                  'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-label font-medium text-primary ring-1 transition-transform duration-150',
                   tintClasses('primary').ring,
                   isDragging ? 'scale-100' : 'scale-95',
                 )}
@@ -561,7 +561,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 autoGrow
                 rows={1}
                 maxRows={12}
-                className="resize-none border-0 bg-transparent px-3 py-2 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+                className="resize-none border-0 bg-transparent px-3 py-2 text-body text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
               />
             </div>
             <div className="flex h-8 items-center justify-between gap-2 px-2.5 pb-1.5">
@@ -576,7 +576,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   activeProvider={routing.effectiveProvider}
                 />
                 {attachments.length > 0 && (
-                  <span className="text-2xs text-faint-foreground">
+                  <span className="text-secondary text-faint-foreground">
                     {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
                   </span>
                 )}

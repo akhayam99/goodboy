@@ -575,7 +575,6 @@
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDefaultRow.tsx": 1,
     "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.tsx": 3,
     "apps/desktop/src/features/storage/components/StoragePage/WorktreeGroup.tsx": 2,
-    "apps/desktop/src/features/suggestions/components/SuggestionActionButton.tsx": 1,
     "apps/desktop/src/features/wireframes/components/WireframeContactSheet/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/AddStepMenu/index.tsx": 2,
     "apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx": 1,

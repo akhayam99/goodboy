@@ -19,8 +19,6 @@ export const CHANGELOG_AREAS = {
 
 export type ChangelogArea = keyof typeof CHANGELOG_AREAS;
 
-export const CHANGELOG_AREA_VALUES = Object.keys(CHANGELOG_AREAS) as ReadonlyArray<ChangelogArea>;
-
 export const isChangelogArea = (value: string): value is ChangelogArea =>
   Object.hasOwn(CHANGELOG_AREAS, value);
 

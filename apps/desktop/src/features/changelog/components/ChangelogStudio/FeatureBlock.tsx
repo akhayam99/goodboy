@@ -21,14 +21,14 @@ export const FeatureBlock = ({ feature, showPrRef, headingLevel, onOpenScreen }:
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-start justify-between gap-2">
-        <Heading className="text-sm font-semibold text-foreground">{feature.title}</Heading>
+        <Heading className="text-heading text-foreground">{feature.title}</Heading>
         <div className="flex items-center gap-2">
           <AreaTag area={feature.area} />
           {showPrRef ? <PrRef prs={feature.prs} /> : null}
         </div>
       </div>
       {feature.paragraphs.map((paragraph, index) => (
-        <p key={index} className="text-xs leading-[1.62] text-muted-foreground">
+        <p key={index} className="text-label text-muted-foreground">
           {paragraph}
         </p>
       ))}

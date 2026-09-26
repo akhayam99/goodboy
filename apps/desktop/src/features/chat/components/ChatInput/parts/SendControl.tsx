@@ -46,13 +46,13 @@ export const SendControl = ({
       <>
         <Button variant="ghost" size="sm" onClick={onSend}>
           Queue{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+          <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
             ↵
           </KbdPill>
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
           Send now{' '}
-          <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+          <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
             ⌘↵
           </KbdPill>
         </Button>

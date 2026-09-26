@@ -98,7 +98,7 @@ export const SecurityFindingRow = ({
       placement="inline"
       title={title}
       body={
-        <span className="font-mono text-2xs">
+        <span className="font-mono text-secondary">
           {SECRET_KIND_LABEL[finding.secretKind]} ending ••••{finding.last4}
         </span>
       }
@@ -123,7 +123,7 @@ export const SecurityFindingRow = ({
       }
     >
       {error !== null && (
-        <p role="alert" className="text-2xs text-danger">
+        <p role="alert" className="text-secondary text-danger">
           {error}
         </p>
       )}

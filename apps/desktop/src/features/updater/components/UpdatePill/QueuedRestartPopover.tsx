@@ -21,7 +21,7 @@ export const QueuedRestartPopover = ({ trigger, agentCount, onCancel }: Props) =
         </button>
       }
     >
-      <p className="text-xs text-muted-foreground">
+      <p className="text-label text-muted-foreground">
         Goodboy restarts once {agentCount} agent{agentCount === 1 ? '' : 's'} finish.
       </p>
       <Button

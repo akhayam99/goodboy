@@ -228,7 +228,7 @@ const OperationsClusterView = ({
                 )}
               </span>
             ) : state === 'stopped' ? (
-              <span className="truncate text-2xs text-faint-foreground">
+              <span className="truncate text-secondary text-faint-foreground">
                 Stopped after {stoppedCount} {stoppedCount === 1 ? 'operation' : 'operations'}
               </span>
             ) : state === 'failed' ? (
@@ -244,7 +244,7 @@ const OperationsClusterView = ({
                 ]}
               />
             ) : summaryLine.length > 0 ? (
-              <span className="truncate text-2xs text-faint-foreground">{summaryLine}</span>
+              <span className="truncate text-secondary text-faint-foreground">{summaryLine}</span>
             ) : undefined
           }
           meta={

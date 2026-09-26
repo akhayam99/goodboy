@@ -30,7 +30,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
         <span
           aria-hidden
           className={cn(
-            'flex items-center justify-center rounded-full border text-2xs font-semibold',
+            'flex items-center justify-center rounded-full border text-secondary',
             step.status === 'done' && cn(successTint.solid, successTint.border),
             step.status === 'current' && cn(primaryTint.solid, primaryTint.border),
             step.status === 'later' && 'border-border-soft text-faint-foreground',
@@ -52,7 +52,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
       <div className={cn('flex min-w-0 flex-1 flex-col gap-1', !isLast && 'pb-4')}>
         <span
           className={cn(
-            'text-[13px] font-semibold',
+            'text-heading',
             step.status === 'later' ? 'text-faint-foreground' : 'text-foreground',
           )}
         >
@@ -61,7 +61,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
         {step.help != null && (
           <span
             className={cn(
-              'text-2xs leading-relaxed',
+              'text-secondary',
               step.status === 'later' ? 'text-faint-foreground' : 'text-muted-foreground',
             )}
           >

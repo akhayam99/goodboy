@@ -18,4 +18,4 @@ export const ConnectSteps = ({ steps, ariaLabel }: Props) => (
   </ol>
 );
 
-export type { ConnectStepDef, StepStatus } from './Step';
+export type { ConnectStepDef } from './Step';

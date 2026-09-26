@@ -17,7 +17,7 @@ export const CatchUpReader = ({ catchUp, dates, installedVersion }: Props) => (
     <div className="flex flex-col gap-8">
       {catchUp.releases.map((release) => (
         <div key={release.version} className="flex flex-col gap-5">
-          <h2 className="text-sm font-semibold text-foreground">Goodboy {release.version}</h2>
+          <h2 className="text-heading text-foreground">Goodboy {release.version}</h2>
           <ReleaseBody
             release={release}
             dateLabel={dates[release.version] ?? null}

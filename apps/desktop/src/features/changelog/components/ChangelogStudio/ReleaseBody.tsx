@@ -70,12 +70,12 @@ export const ReleaseBody = ({
       {eyebrowLabel !== null || metaLine !== '' || showPrInMeta ? (
         <div className="flex items-center gap-2">
           {eyebrowLabel !== null ? <Eyebrow label={eyebrowLabel} /> : null}
-          <span className="text-xs text-muted-foreground">{metaLine}</span>
+          <span className="text-label text-muted-foreground">{metaLine}</span>
           {showPrInMeta ? <PrRef prs={prs} /> : null}
         </div>
       ) : null}
       {release.shape === 'v2' && release.lead !== null ? (
-        <p className="text-base text-muted-foreground">{release.lead}</p>
+        <p className="text-body text-muted-foreground">{release.lead}</p>
       ) : null}
       {release.shape === 'v2' && release.oneWayFrom !== null ? (
         <Notice
@@ -122,7 +122,7 @@ export const ReleaseBody = ({
         </div>
       ) : null}
       {release.shape === 'markdown' && release.markdown !== null ? (
-        <Markdown text={release.markdown} className="text-sm leading-relaxed" />
+        <Markdown text={release.markdown} className="text-prose" />
       ) : null}
     </div>
   );

@@ -264,7 +264,7 @@ describe('ImpactStudio', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
 
     expect(onScopeChange).toHaveBeenCalledWith({ kind: 'flow' });
   });

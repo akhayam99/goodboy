@@ -7,16 +7,12 @@ export const CHANGELOG_SCREENS = {
   'settings/app': 'Settings',
   'settings/app/storage': 'Storage',
   'settings/providers': 'Providers',
-  'settings/tools': 'Tools',
+  'settings/tools': 'Integrations',
   'settings/workspace/projects': 'Projects',
   'settings/workspace/review-replies': 'Review replies',
 } as const satisfies Record<string, string>;
 
 export type ChangelogScreen = keyof typeof CHANGELOG_SCREENS;
-
-export const CHANGELOG_SCREEN_VALUES = Object.keys(
-  CHANGELOG_SCREENS,
-) as ReadonlyArray<ChangelogScreen>;
 
 export const isChangelogScreen = (value: string): value is ChangelogScreen =>
   Object.hasOwn(CHANGELOG_SCREENS, value);

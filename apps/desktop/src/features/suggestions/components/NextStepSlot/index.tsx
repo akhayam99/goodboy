@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, sessionPlace, useAppStore } from '../../../../store';
 import { useSessionSuggestions } from '../../useSessionSuggestions';
 import { useSuggestionActions } from '../../useSuggestionActions';
+import { useTranscriptMountProposals } from '../../useTranscriptMountProposals';
+import { transcriptOwnedProjectIds } from '../../transcriptMountProposals';
 import { NextStepRow } from './NextStepRow';
 
 type Props = {
@@ -12,17 +14,26 @@ type Props = {
 export const NextStepSlot = ({ session }: Props) => {
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const suggestions = useSessionSuggestions({ session, agents });
+  const transcriptProposals = useTranscriptMountProposals({ session });
+  const transcriptOwned = useMemo(
+    () => transcriptOwnedProjectIds({ proposals: transcriptProposals }),
+    [transcriptProposals],
+  );
   const actionsFor = useSuggestionActions({
     session,
     agents,
-    onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
+    onSelectQuestions: () => navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),
   });
   const [expanded, setExpanded] = useState(false);
   const [notNowIds, setNotNowIds] = useState<ReadonlySet<string>>(new Set());
 
-  const visible = suggestions.filter((suggestion) => !notNowIds.has(suggestion.id));
+  const visible = suggestions.filter(
+    (suggestion) =>
+      !notNowIds.has(suggestion.id) &&
+      (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
+  );
   const [first, ...rest] = visible;
   if (first === undefined) {
     return null;
@@ -44,7 +55,7 @@ export const NextStepSlot = ({ session }: Props) => {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="self-start px-2 text-xs text-faint-foreground transition-colors hover:text-foreground"
+          className="self-start px-2 text-label text-faint-foreground transition-colors hover:text-foreground"
         >
           {rest.length} more
         </button>

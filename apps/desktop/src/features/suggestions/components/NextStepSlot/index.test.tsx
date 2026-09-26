@@ -5,7 +5,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 import type { SessionSuggestion } from '../../types';
 
-const { suggestionState } = vi.hoisted(() => ({
+const { suggestionState, transcriptState } = vi.hoisted(() => ({
+  transcriptState: { proposals: [] as ReadonlyArray<{ readonly projectId: string }> },
   suggestionState: {
     list: [] as ReadonlyArray<SessionSuggestion>,
     onAct: vi.fn(),
@@ -15,11 +16,15 @@ const { suggestionState } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
+  sessionPlace: vi.fn(),
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ sessionPhaseRuns: {}, setActiveLens: vi.fn() }),
+    selector({ sessionPhaseRuns: {}, navigate: vi.fn() }),
 }));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
+}));
+vi.mock('../../useTranscriptMountProposals', () => ({
+  useTranscriptMountProposals: () => transcriptState.proposals,
 }));
 vi.mock('../../useSuggestionActions', () => ({
   useSuggestionActions:
@@ -40,6 +45,7 @@ import { NextStepSlot } from './index';
 afterEach(() => {
   cleanup();
   suggestionState.list = [];
+  transcriptState.proposals = [];
   suggestionState.onAct.mockReset();
   suggestionState.onDismiss.mockReset();
 });
@@ -103,5 +109,21 @@ describe('NextStepSlot', () => {
     fireEvent.click(screen.getByText('Not now'));
     expect(suggestionState.onDismiss).toHaveBeenCalledWith('mount-project:1');
     expect(screen.queryByText('Add web')).toBeNull();
+  });
+
+  it('leaves a project proposal to the transcript that already shows it', () => {
+    suggestionState.list = [
+      suggestion({
+        id: 'mount-project:project-web',
+        kind: 'mount-project',
+        title: 'Add web',
+        payload: { projectId: 'project-web' },
+      } as Partial<SessionSuggestion>),
+      suggestion({ id: 'answer', title: 'Answer open questions' }),
+    ];
+    transcriptState.proposals = [{ projectId: 'project-web' }];
+    render(<NextStepSlot session={SESSION} />);
+    expect(screen.queryByText('Add web')).toBeNull();
+    expect(screen.getByText('Answer open questions')).toBeTruthy();
   });
 });

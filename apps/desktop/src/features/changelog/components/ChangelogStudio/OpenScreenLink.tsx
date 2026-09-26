@@ -16,7 +16,7 @@ export const OpenScreenLink = ({ screen, onOpenScreen }: Props) => {
     <button
       type="button"
       onClick={() => onOpenScreen({ screen })}
-      className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+      className="flex items-center gap-0.5 text-label text-primary hover:underline"
     >
       Open {changelogScreenLabel({ screen })}
       <ChevronRight size={ICON_SIZE.row} aria-hidden />

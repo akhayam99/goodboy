@@ -45,25 +45,25 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   }, [loadSecurityFindings, workspaceId]);
 
   if (workspaceId === null) {
-    return <p className="text-sm text-muted-foreground">Add a workspace to see this.</p>;
+    return <p className="text-body text-muted-foreground">Add a workspace to see this.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         Goodboy checks the text it keeps for you (saved scripts, workflow prompts, your profile,
         reply templates, permission rules) for anything that looks like a key or a token. This text
         never leaves your Mac.
       </p>
       {open.length > 0 && (
-        <p className="text-xs text-faint-foreground">
+        <p className="text-label text-faint-foreground">
           Keep the value in your shell or in a .env file git ignores, and use its name instead:{' '}
           <code>$DEPLOY_TOKEN</code>.
         </p>
       )}
-      {status === 'loading' && <p className="text-sm text-muted-foreground">Checking…</p>}
+      {status === 'loading' && <p className="text-body text-muted-foreground">Checking…</p>}
       {status === 'ready' && open.length === 0 && (
-        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        <p className="flex items-center gap-1.5 text-body text-muted-foreground">
           <ShieldCheck size={ICON_SIZE.row} aria-hidden />
           No findings.
         </p>
@@ -84,7 +84,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
           <button
             type="button"
             onClick={() => setIsDismissedOpen((value) => !value)}
-            className="self-start text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="self-start text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             {`Dismissed ${dismissed.length}`}
           </button>
@@ -92,7 +92,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
             dismissed.map((finding) => (
               <div
                 key={finding.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 text-xs text-muted-foreground"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border-soft bg-subtle px-3 py-2 text-label text-muted-foreground"
               >
                 <span className="font-mono">
                   {SECRET_KIND_LABEL[finding.secretKind]} ending ••••{finding.last4}
