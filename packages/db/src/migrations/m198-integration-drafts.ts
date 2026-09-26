@@ -1,4 +1,4 @@
-export const m205IntegrationDrafts = `
+export const m198IntegrationDrafts = `
 CREATE TABLE integration_drafts (
   id TEXT PRIMARY KEY,
   workspace_id TEXT NOT NULL,

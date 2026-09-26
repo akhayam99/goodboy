@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { m204SlackBindingSettings } from './m204-slack-binding-settings';
+import { m197SlackBindingSettings } from './m197-slack-binding-settings';
 
-describe('m204 slack binding settings', () => {
+describe('m197 slack binding settings', () => {
   it('renames the Slack identity and adds safe agent defaults', async () => {
     const db = await makeMigratedTestDatabase({ throughVersion: 190 });
     await db.execute(
@@ -19,7 +19,7 @@ describe('m204 slack binding settings', () => {
         ('binding', 'workspace', NULL, 'slack', '{"teamId":"T1","teamName":"Harborline","botUserId":"U1","botUserName":"Mara"}', 'credential', 1, 1)`,
     );
 
-    await db.exec(m204SlackBindingSettings);
+    await db.exec(m197SlackBindingSettings);
 
     const rows = await db.select<{ readonly config: string }>(
       "SELECT config FROM integration_bindings WHERE id = 'binding'",

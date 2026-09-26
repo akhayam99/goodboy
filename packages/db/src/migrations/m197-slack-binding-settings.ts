@@ -1,4 +1,4 @@
-export const m204SlackBindingSettings = `
+export const m197SlackBindingSettings = `
 UPDATE integration_bindings
 SET config = json_set(
   json_remove(config, '$.botUserId', '$.botUserName'),

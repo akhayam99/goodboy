@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { m205IntegrationDrafts } from '../migrations/m205-integration-drafts';
 import {
   decideIntegrationDraft,
   listPendingIntegrationDraftsForWorkspace,
@@ -13,7 +12,6 @@ const sessionId = 's1' as SessionId;
 
 async function seed() {
   const db = await makeMigratedTestDatabase();
-  await db.exec(m205IntegrationDrafts);
   const now = Date.now();
   await db.execute(
     `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`,

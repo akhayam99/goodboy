@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { m205IntegrationDrafts } from './m205-integration-drafts';
+import { m198IntegrationDrafts } from './m198-integration-drafts';
 
-describe('m205 integration drafts', () => {
+describe('m198 integration drafts', () => {
   it('stores durable drafts and removes them with their session', async () => {
     const db = await makeMigratedTestDatabase({ throughVersion: 190 });
-    await db.exec(m205IntegrationDrafts);
+    await db.exec(m198IntegrationDrafts);
     await db.execute(
       "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Harborline', 'harborline', 1, 1)",
     );
