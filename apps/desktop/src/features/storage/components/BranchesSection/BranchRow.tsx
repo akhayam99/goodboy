@@ -2,7 +2,7 @@ import { Cloud, CloudOff, GitMerge, Laptop } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Checkbox, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SessionChip } from '../../../../shared/components/SessionChip';
+import { BranchOwnerCell } from './BranchOwnerCell';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import type { BranchLocation } from '../../../worktree/branchCleanup';
 import { LOCATION_LABEL, verdictCopy } from '../../branches/branchCopy';
@@ -26,18 +26,6 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-const OwnerCell = ({ entry }: { readonly entry: ClassifiedBranch }) => {
-  switch (entry.owner.kind) {
-    case 'session':
-      return <SessionChip sessionId={entry.owner.sessionId} />;
-    case 'by-you':
-      return <span className="text-label text-muted-foreground">By you</span>;
-    case 'no-session':
-    case 'someone':
-      return <span className="text-label text-faint-foreground">No session</span>;
-  }
-};
-
 export const BranchRow = ({ entry, base, isSelected, isBusy, onToggle, onDelete }: Props) => {
   const { branch } = entry;
   const verdict = verdictCopy({ branch, base });
@@ -58,13 +46,13 @@ export const BranchRow = ({ entry, base, isSelected, isBusy, onToggle, onDelete 
         <span className="truncate font-mono text-code text-foreground">{branch.name}</span>
       </Tooltip>
       <span className="flex min-w-0">
-        <OwnerCell entry={entry} />
+        <BranchOwnerCell entry={entry} />
       </span>
       <span className="flex items-center gap-1 text-label text-muted-foreground">
         <LocationIcon size={ICON_SIZE.control} aria-hidden />
         {LOCATION_LABEL[branch.location]}
       </span>
-      <span className="flex min-w-0 flex-col leading-tight">
+      <span className="flex min-w-0 flex-col">
         <span
           className={cn(
             'flex items-center gap-1 truncate text-label',

@@ -282,9 +282,9 @@ export const BranchesSection = ({ scope }: Props) => {
             <div key={group.project.id} className="flex flex-col">
               <div className={`${BRANCH_ROW_GRID} px-2 py-1`}>
                 <span />
-                <span className="text-label font-medium text-foreground">
+                <span className="text-row text-foreground">
                   {group.project.name}{' '}
-                  <span className="font-normal text-muted-foreground">
+                  <span className="text-label text-muted-foreground">
                     {branchCount(group.entries.length)}
                   </span>
                 </span>

@@ -87,7 +87,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-label font-medium text-foreground">After a pull request merges</span>
+      <span className="text-row text-foreground">After a pull request merges</span>
       <SegmentedTabs
         ariaLabel="After a pull request merges"
         size="sm"
