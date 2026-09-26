@@ -5,7 +5,9 @@ import { ConvertWorkspaceDialog } from '../../../features/workspace/components/C
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
-import { isAppScopeOverlay, type Overlay } from '../../hooks/useAppOverlays/overlayState';
+import type { InboxStudioFocus, StudioPlace } from '../../../store';
+import { StudioFrame } from '../StudioFrame';
+import { isAppScopeOverlay } from '../../hooks/useAppOverlays/overlayState';
 import { AppScopeOverlays } from './AppScopeOverlays';
 
 const SettingsStudio = lazy(() =>
@@ -60,9 +62,10 @@ const CompanionStudio = lazy(() =>
 );
 
 type Props = {
-  readonly overlay: Overlay | null;
+  readonly overlay: StudioPlace | null;
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
+  readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -77,9 +80,10 @@ type Props = {
 };
 
 type StudioParams = {
-  readonly overlay: Overlay;
+  readonly overlay: StudioPlace;
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
+  readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;
@@ -89,6 +93,7 @@ const renderStudio = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onInboxFocusChange,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -130,6 +135,7 @@ const renderStudio = ({
           initialKind={overlay.focus?.kind ?? null}
           initialRecordKey={overlay.focus?.recordKey ?? null}
           initialSessionId={overlay.focus?.sessionId ?? null}
+          onFocusChange={onInboxFocusChange}
           onClose={close}
         />
       );
@@ -156,24 +162,26 @@ export const AppStudio = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onInboxFocusChange,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
-}: Omit<StudioParams, 'overlay'> & { readonly overlay: Overlay | null }) => {
+}: Omit<StudioParams, 'overlay'> & { readonly overlay: StudioPlace | null }) => {
   if (overlay === null) {
     return null;
   }
   return (
-    <Suspense fallback={null}>
+    <StudioFrame kind={overlay.kind} onClose={close}>
       {renderStudio({
         overlay,
         close,
         onSettingsScopeChange,
+        onInboxFocusChange,
         currentWorkspace,
         workspaceProjectRoot,
         offerWorkspaceRepo,
       })}
-    </Suspense>
+    </StudioFrame>
   );
 };
 
@@ -181,6 +189,7 @@ export const AppOverlayRouter = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onInboxFocusChange,
   currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
@@ -200,6 +209,7 @@ export const AppOverlayRouter = ({
           overlay={overlay}
           close={close}
           onSettingsScopeChange={onSettingsScopeChange}
+          onInboxFocusChange={onInboxFocusChange}
           currentWorkspace={currentWorkspace}
           workspaceProjectRoot={null}
           offerWorkspaceRepo={offerWorkspaceRepo}

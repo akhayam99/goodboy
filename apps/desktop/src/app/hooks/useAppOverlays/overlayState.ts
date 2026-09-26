@@ -1,29 +1,8 @@
-import type { SessionId } from '@goodboy/types';
-import type { ImpactScope } from '../../../features/impact/lib';
-import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
+import type { InboxStudioFocus, StudioPlace } from '../../../store';
 
-export type InboxStudioFocus = {
-  readonly provider: InboxProvider | null;
-  readonly kind: InboxKind | null;
-  readonly recordKey: string | null;
-  readonly sessionId: SessionId | null;
-};
-
-export type Overlay =
-  | { readonly kind: 'settings'; readonly focus: SettingsFocus }
-  | { readonly kind: 'guide' }
-  | { readonly kind: 'report' }
-  | { readonly kind: 'companion' }
-  | { readonly kind: 'addWorkspace' }
-  | { readonly kind: 'workflow' }
-  | { readonly kind: 'inbox'; readonly focus: InboxStudioFocus | null }
-  | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
-  | { readonly kind: 'changelog' }
-  | { readonly kind: 'notifications' };
-
-export const isAppScopeOverlay = ({ overlay }: { readonly overlay: Overlay }): boolean => {
+export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }): boolean => {
   switch (overlay.kind) {
     case 'settings':
     case 'guide':
@@ -57,7 +36,7 @@ export type FooterTarget =
   | null;
 
 type FooterTargetParams = {
-  readonly overlay: Overlay | null;
+  readonly overlay: StudioPlace | null;
   readonly connected: ConnectedIntegrations;
 };
 

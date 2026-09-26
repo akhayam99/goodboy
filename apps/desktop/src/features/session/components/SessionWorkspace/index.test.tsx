@@ -757,7 +757,7 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     render(<SessionWorkspace session={workflowSession} isActive />);
 
     expect(screen.queryByText('Part of')).toBeNull();
-    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
     expect(store.up).toHaveBeenCalledTimes(1);
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));

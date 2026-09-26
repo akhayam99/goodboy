@@ -27,12 +27,12 @@ export const LinkedPrChip = ({ pr }: Props) => {
   );
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const navigate = useAppStore((s) => s.navigate);
+  const isUnderStudio = useAppStore((s) => s.appStudio !== null);
   const sessionPr =
     branchPrs.find((candidate) => candidate.url === pr.url) ??
     (canonicalPr?.url === pr.url ? canonicalPr : null);
 
   const open = () => {
-    const isUnderStudio = document.querySelector('[data-studio-overlay]') != null;
     if (sessionId == null || sessionPr == null || isUnderStudio) {
       void openUrl(pr.url);
       return;

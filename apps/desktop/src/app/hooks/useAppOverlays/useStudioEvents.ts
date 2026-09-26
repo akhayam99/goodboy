@@ -12,10 +12,10 @@ import {
   isWorkspaceId,
   settingsOverlayFromEvent,
 } from './eventDetail';
-import type { Overlay } from './overlayState';
+import type { StudioPlace } from '../../../store';
 
 type Params = {
-  readonly open: (params: { readonly overlay: Overlay }) => void;
+  readonly open: (params: { readonly overlay: StudioPlace }) => void;
   readonly close: () => void;
   readonly openPalette: () => void;
 };

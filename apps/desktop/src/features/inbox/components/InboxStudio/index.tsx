@@ -9,7 +9,7 @@ import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { openUrl } from '../../../../shared/lib/editor';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
-import { useSessionById } from '../../../../store';
+import { useSessionById, type InboxStudioFocus } from '../../../../store';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
 import { orderInboxRecords } from '../../orderInboxRecords';
@@ -37,6 +37,7 @@ type Props = {
   readonly initialKind?: InboxKind | null;
   readonly initialRecordKey?: string | null;
   readonly initialSessionId?: SessionId | null;
+  readonly onFocusChange?: (focus: InboxStudioFocus) => void;
   readonly onClose: () => void;
 };
 
@@ -112,6 +113,7 @@ export const InboxStudio = ({
   initialKind = null,
   initialRecordKey = null,
   initialSessionId = null,
+  onFocusChange,
   onClose,
 }: Props) => {
   const { records, isLoading, loading, errors, connected, refetch } = useInboxRecords({
@@ -134,6 +136,17 @@ export const InboxStudio = ({
   useEffect(() => {
     writeInboxFilters({ workspaceId, kind: filters.kind, source: filters.source });
   }, [workspaceId, filters.kind, filters.source]);
+
+  const onFocusChangeRef = useRef(onFocusChange);
+  onFocusChangeRef.current = onFocusChange;
+  useEffect(() => {
+    onFocusChangeRef.current?.({
+      provider: filters.source,
+      kind: initialKind,
+      recordKey: selectedKey,
+      sessionId: sessionFilter,
+    });
+  }, [filters.source, initialKind, selectedKey, sessionFilter]);
 
   const scopedRecords = useMemo(
     () =>

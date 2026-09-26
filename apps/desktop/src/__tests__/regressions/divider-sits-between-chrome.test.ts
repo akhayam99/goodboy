@@ -193,7 +193,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/shared/components/StudioShell/index.tsx': { count: 1, reason: 'chrome' },
+  'apps/desktop/src/shared/components/StudioShell/DetachedStudio.tsx': {
+    count: 1,
+    reason: 'chrome',
+  },
+  'apps/desktop/src/shared/components/StudioShell/StudioBand.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/StudioRailLayout.tsx': { count: 1, reason: 'chrome' },

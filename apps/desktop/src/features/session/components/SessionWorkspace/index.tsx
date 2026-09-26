@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
-import { cn } from '@goodboy/ui';
+import { cn, useEscapeLayer } from '@goodboy/ui';
 import { TerminalDock } from '../../../terminal/components/TerminalDock';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { ScriptsPanel } from '../../../scripts';
@@ -164,16 +164,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     up();
   }, [resolveAgentOrigin, returnFromResolveAgent, selectedAgentId, sessionId, up]);
 
-  useEffect(() => {
-    if (!showAgentOverlay) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      event.preventDefault();
-      leaveAgentOverlay();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showAgentOverlay, leaveAgentOverlay]);
+  useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const crumb = useMemo(() => <SessionCrumbs session={session} />, [session]);
 

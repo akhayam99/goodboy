@@ -44,6 +44,10 @@ const { sessionList, state } = vi.hoisted(() => {
       activeLens: {} as Record<string, string | null>,
       selectedAgentId: {} as Record<string, string | null>,
       sessionWorktrees: {},
+      appStudio: null,
+      openStudio: vi.fn(),
+      amendStudio: vi.fn(),
+      closeStudio: vi.fn(),
     },
   };
 });

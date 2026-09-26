@@ -22,6 +22,7 @@ type Store = {
   sessionActiveProject: Record<string, string>;
   sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionGithub: Record<string, { pr: PullRequestState | null }>;
+  appStudio: { readonly kind: string } | null;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly navigate: ReturnType<typeof vi.fn>;
 };
@@ -45,6 +46,7 @@ const h = vi.hoisted(() => ({
     sessionActiveProject: { 'session-1': 'project-1' },
     sessionProjectPrs: {},
     sessionGithub: {},
+    appStudio: null,
     selectSessionPr: vi.fn(async () => undefined),
     navigate: vi.fn(),
   } as Store,
@@ -126,11 +128,9 @@ describe('LinkedPrChip', () => {
     expect(h.store.navigate).not.toHaveBeenCalled();
   });
 
-  it('falls back to the browser while a studio overlay covers the session', () => {
+  it('falls back to the browser while a studio covers the session', () => {
     h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
-    const overlay = document.createElement('div');
-    overlay.setAttribute('data-studio-overlay', '');
-    document.body.appendChild(overlay);
+    h.store.appStudio = { kind: 'inbox' };
 
     render(
       <LinkedPrChip
@@ -142,6 +142,6 @@ describe('LinkedPrChip', () => {
     expect(h.openUrl).toHaveBeenCalledWith(SESSION_PR.url);
     expect(h.store.navigate).not.toHaveBeenCalled();
     expect(h.store.selectSessionPr).not.toHaveBeenCalled();
-    overlay.remove();
+    h.store.appStudio = null;
   });
 });

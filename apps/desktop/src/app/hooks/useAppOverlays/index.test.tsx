@@ -3,37 +3,33 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import type { AgentId, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 
 vi.mock('../../../store', async () => {
   const { create } = await import('zustand');
+  type Studio = { readonly kind: string };
   type MockState = {
     readonly currentWorkspaceId: string | null;
     readonly currentSessionId: string | null;
-    readonly activeLens: Readonly<Record<string, string | null>>;
-    readonly selectedAgentId: Readonly<Record<string, string | null>>;
-    readonly setSessionStudio: () => void;
+    readonly appStudio: Studio | null;
     readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
     readonly setCurrentWorkspace: (id: string) => Promise<void>;
-    readonly setCurrentSession: (id: string | null) => Promise<void>;
-    readonly setActiveLens: (sessionId: string, lens: string | null) => void;
-    readonly selectAgent: (sessionId: string, agentId: string) => Promise<void>;
+    readonly openStudio: (params: { readonly studio: Studio }) => void;
+    readonly amendStudio: (params: { readonly studio: Studio }) => void;
+    readonly closeStudio: () => void;
   };
   const useAppStore = create<MockState>((set) => ({
     currentWorkspaceId: 'ws-1',
     currentSessionId: null,
-    activeLens: {},
-    selectedAgentId: {},
-    setSessionStudio: () => undefined,
+    appStudio: null,
     setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
-    setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id }),
-    setCurrentSession: async (id) => set({ currentSessionId: id }),
-    setActiveLens: (sessionId, lens) =>
-      set((state) => ({ activeLens: { ...state.activeLens, [sessionId]: lens } })),
-    selectAgent: async (sessionId, agentId) =>
-      set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } })),
+    setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id, appStudio: null }),
+    openStudio: ({ studio }) => set({ appStudio: studio }),
+    amendStudio: ({ studio }) =>
+      set((state) => (state.appStudio?.kind === studio.kind ? { appStudio: studio } : state)),
+    closeStudio: () => set({ appStudio: null }),
   }));
   return { useAppStore, useSessionById: () => null };
 });
@@ -107,10 +103,6 @@ type Overlays = ReturnType<typeof useAppOverlays>;
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
-const SESSION_ID = 'session-1' as SessionId;
-
-const AGENT_ID = 'agent-1' as AgentId;
-
 const WORKSPACE = { id: WORKSPACE_ID, name: 'Northwind' } as unknown as Workspace;
 
 const handle: { current: Overlays | null } = { current: null };
@@ -174,8 +166,7 @@ beforeEach(() => {
   useAppStore.setState({
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: null,
-    activeLens: {},
-    selectedAgentId: {},
+    appStudio: null,
   });
 });
 
@@ -195,34 +186,46 @@ describe('app overlay hook, navigation', () => {
     expect(overlays().studio).not.toBeNull();
   });
 
-  it('closes the open studio when the current session changes', async () => {
+  it('mounts no frame node while no studio is open', async () => {
+    const { container } = renderHarness();
+    await act(async () => undefined);
+
+    expect(container.querySelector('[data-studio-frame]')).toBeNull();
+  });
+
+  it('closes the studio when the history entry loses it', async () => {
     renderHarness();
     act(() => overlays().openInbox());
     expect(await openStudios()).toEqual(['inbox']);
 
-    await act(async () => useAppStore.getState().setCurrentSession(SESSION_ID));
+    act(() => useAppStore.setState({ appStudio: null }));
 
     expect(await openStudios()).toEqual([]);
   });
 
-  it('closes the open studio when the current session changes lens', async () => {
-    useAppStore.setState({ currentSessionId: SESSION_ID });
-    renderHarness();
+  it('keeps the frame and swaps the body when another studio opens', async () => {
+    const { container } = renderHarness();
+    act(() => overlays().openInbox());
+    await openStudios();
+    const frame = container.querySelector('[data-studio-frame]');
+
     act(() => overlays().openWorkflows());
-
-    act(() => useAppStore.getState().setActiveLens(SESSION_ID, 'files'));
-
-    expect(await openStudios()).toEqual([]);
-  });
-
-  it('keeps the studio open when an agent is selected behind it', async () => {
-    useAppStore.setState({ currentSessionId: SESSION_ID });
-    renderHarness();
-    act(() => overlays().openWorkflows());
-
-    await act(async () => useAppStore.getState().selectAgent(SESSION_ID, AGENT_ID));
 
     expect(await openStudios()).toEqual(['workflow']);
+    expect(container.querySelector('[data-studio-frame]')).toBe(frame);
+    expect(frame?.getAttribute('data-studio')).toBe('workflow');
+  });
+
+  it('changes the settings scope in place', async () => {
+    renderHarness();
+    act(() => overlays().openSettings());
+
+    await openStudios();
+
+    act(() => overlays().openShortcutHelp());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('shortcuts');
   });
 
   it('lands the inbox event on another workspace open', async () => {

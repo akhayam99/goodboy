@@ -447,11 +447,31 @@ shortcuts), the guide and Report an issue. The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
-- **Navigating closes the studio.** Moving to another workspace, session, or
-  lens of the current session closes whatever studio is open, whether the move
-  came from the palette, a needs-you row, a shortcut or a link inside the
-  studio, so the destination always lands in front. Selecting an agent does
-  not count: workflow steps select agents on their own.
+- **An open studio is a history entry.** Opening a studio, or switching from
+  one studio to another, pushes an entry over the page underneath
+  (`openStudio`). Reopening the same studio, a Settings scope change and the
+  Inbox's provider and record update that entry (`amendStudio`). Back from
+  Workflows reopens the Inbox with its record. Close and Esc fold every studio
+  entry stacked on the same page into that page (`closeStudio`): closing means
+  the side trip is over, Back means one step.
+- **Navigating closes the studio.** A forward move to a place (another
+  session, a lens, an agent, the board) arrives with no studio, whether it came
+  from the palette, a needs-you row, a shortcut or a link inside the studio, so
+  the destination always lands in front. Switching workspace closes it too.
+- **One frame for every studio.** `StudioFrame` (`app/components/StudioFrame`)
+  mounts only while a studio is open and stays mounted from Inbox to Workflows
+  to Settings. It owns the 40px band (the studio's icon and name, the body's
+  subtitle and accessory, Done), the Esc layer and the motion: `studio-in` when
+  it opens, `studio-out` when it closes, and on a switch only the band's name
+  fades while the new body enters in 160ms. A studio body still renders
+  `StudioShell`; inside the frame it only hands its chrome to the band. Until a
+  body's chunk arrives, the frame shows one of three opaque skeletons: `list`
+  (Inbox, Notifications, Report an issue, Add workspace), `rail` (Settings,
+  Impact) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  open, no frame node exists, so nothing covers the page.
+- **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
+  open), the agent overlay and the delete confirm all register with
+  `useEscapeLayer`, so Esc closes the topmost layer only.
 
 - **Not every studio earns a footer entry.** Notifications opens from the bell
   popover (its footer's Open all notifications) and from the palette's Go to

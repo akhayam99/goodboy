@@ -140,7 +140,7 @@ describe('WorkspaceLinkStudio', () => {
     const onClose = vi.fn();
     render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
 
-    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
