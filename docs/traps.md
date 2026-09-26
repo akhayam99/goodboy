@@ -92,6 +92,19 @@ fails silently at runtime.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
 
+## Traps in the store
+
+- A store helper named `select*` is not always safe as a `useAppStore`
+  selector. `selectWritableMounts` maps `sessionMounts` views through
+  `toProjectMounts`, so it and every helper built on it (`selectMountForPath`,
+  `selectMountById`, `selectActiveMount`) return new objects on each read once
+  a session's mounts load. `selectSessionForPr` builds its match object too.
+  Subscribing to one of those objects re-renders forever and crashes with
+  React #185. Select a primitive field (`?.mountName`), wrap the selector in
+  `useShallow`, or read `useAppStore.getState()` inside the handler that needs
+  it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
+  the main surfaces on the real store to catch this.
+
 ## Traps in the toolchain
 
 - A new worktree needs `pnpm install`. In this checkout that install exits 1
