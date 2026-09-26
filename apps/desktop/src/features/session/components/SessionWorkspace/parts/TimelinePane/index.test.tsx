@@ -51,6 +51,7 @@ const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded,
       sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
       sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
       selectedAgentId: {} as Record<string, string | null>,
+      revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
       projects: [] as ReadonlyArray<unknown>,
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
@@ -451,14 +452,17 @@ describe('TimelinePane suggestions', () => {
     expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
   });
 
-  it('hides every suggestion row once the category is filtered out', () => {
+  it('keeps every suggestion row even with the Work filter narrowed down', () => {
     suggestionState.list = [ANSWER, MOUNT];
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ suggestions: false }));
+    localStorage.setItem(
+      'goodboy:activity-filter',
+      JSON.stringify({ agents: true, workflows: true, questions: true, resolver: true }),
+    );
 
     renderWithActivity();
 
-    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).toBeNull();
-    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).toBeNull();
+    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
+    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).not.toBeNull();
     expect(screen.getByTestId('timeline-now-dot')).not.toBeNull();
   });
 

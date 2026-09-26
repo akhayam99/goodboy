@@ -11,6 +11,7 @@ import {
   openMountDiff,
   openMountTerminal,
   openExternalTaskLens,
+  replaceActiveLens,
   setActiveLens,
   setDiffFocus,
   setFocusedArtifactId,
@@ -30,6 +31,7 @@ import {
 } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
+import { revealActivityRow } from './revealActivityRow';
 import type { GetFn, SessionViewSlice, SetFn } from './types';
 
 export { sortAndGroupSessions } from './sortAndGroupSessions';
@@ -63,6 +65,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),
     setActiveLens: setActiveLens(set),
+    replaceActiveLens: replaceActiveLens(set),
     lensGo: lensGo(set, get),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),
@@ -89,5 +92,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     openExternalTaskLens: openExternalTaskLens(set, get),
     beginSessionCreation: beginSessionCreation(set),
     endSessionCreation: endSessionCreation(set),
+    revealActivityRow: revealActivityRow(set),
   };
 };

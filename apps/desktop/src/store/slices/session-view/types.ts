@@ -211,6 +211,7 @@ type SessionViewSliceState = {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
+  readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
 };
 
 type SessionViewSliceActions = {
@@ -219,6 +220,7 @@ type SessionViewSliceActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
+  replaceActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
@@ -281,6 +283,7 @@ type SessionViewSliceActions = {
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
+  revealActivityRow(sessionId: SessionId, rowId: string): void;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

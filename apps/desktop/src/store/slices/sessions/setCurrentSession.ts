@@ -29,6 +29,7 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
     }
     const tSwitch = performance.now();
     const stateNow = get();
+    const previousSessionId = stateNow.currentSessionId;
     const cached = id
       ? {
           telemetry: stateNow.sessionTelemetry[id] !== undefined,
@@ -47,14 +48,23 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
           summary: true,
         }
       : EMPTY_LOADING;
-    set((state) => ({
-      currentSessionId: id,
-      drawer: drawerAfterMove({ drawer: state.drawer, sessionId: id }),
-      sessionSummary: null,
-      sessionLoading: id ? { ...state.sessionLoading, [id]: initialLoading } : state.sessionLoading,
-      activeLens: id ? { ...state.activeLens, [id]: null } : state.activeLens,
-      selectedAgentId: id ? { ...state.selectedAgentId, [id]: null } : state.selectedAgentId,
-    }));
+    set((state) => {
+      const revealedActivityRows = { ...state.revealedActivityRows };
+      if (previousSessionId) {
+        delete revealedActivityRows[previousSessionId];
+      }
+      return {
+        currentSessionId: id,
+        drawer: drawerAfterMove({ drawer: state.drawer, sessionId: id }),
+        sessionSummary: null,
+        sessionLoading: id
+          ? { ...state.sessionLoading, [id]: initialLoading }
+          : state.sessionLoading,
+        activeLens: id ? { ...state.activeLens, [id]: null } : state.activeLens,
+        selectedAgentId: id ? { ...state.selectedAgentId, [id]: null } : state.selectedAgentId,
+        revealedActivityRows,
+      };
+    });
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');
     if (!id) {
       return;

@@ -16,6 +16,7 @@ import type {
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
 import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhythm';
+import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
 import { TimelineRunLabel } from './TimelineRunLabel';
@@ -27,6 +28,7 @@ type Props = {
   readonly isLaneLit?: boolean;
   readonly worktrees?: ReadonlyArray<string>;
   readonly stateNote?: string | null;
+  readonly isRevealed?: boolean;
 };
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -142,6 +144,7 @@ export const TimelineRowLabel = ({
   isLaneLit = false,
   worktrees = NO_WORKTREES,
   stateNote = null,
+  isRevealed = false,
 }: Props) => {
   const { entry, grade } = item;
   if (entry.kind === 'run') {
@@ -151,6 +154,7 @@ export const TimelineRowLabel = ({
         rowState={item.rowState}
         isLaneLit={isLaneLit}
         stateNote={stateNote}
+        isRevealed={isRevealed}
       />
     );
   }
@@ -214,6 +218,7 @@ export const TimelineRowLabel = ({
       ) : null}
       {entry.kind === 'agent' && <TimelineRowStateLine state={item.rowState} note={stateNote} />}
       {entry.kind === 'agent' && <TimelineRowWorktrees names={worktrees} />}
+      {isRevealed ? <RevealedRowTag /> : null}
     </>
   );
 };

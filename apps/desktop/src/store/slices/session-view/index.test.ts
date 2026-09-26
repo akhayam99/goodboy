@@ -406,6 +406,31 @@ describe('store contract', () => {
       expect(store.getState().activeLens[SESSION_ID]).toBe('files');
     });
 
+    it('replaceActiveLens swaps the current entry instead of pushing a new one', async () => {
+      const store = useAppStore;
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'pr');
+      const before = store.getState().lensHistory[SESSION_ID]?.entries.length;
+
+      store.getState().replaceActiveLens(SESSION_ID, 'review');
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('review');
+      expect(store.getState().lensHistory[SESSION_ID]?.entries.length).toBe(before);
+    });
+
+    it('back never lands on a lens replaceActiveLens swapped out, so the redirect cannot trap it', async () => {
+      const store = useAppStore;
+      store.getState().setActiveLens(SESSION_ID, 'agents');
+      store.getState().setActiveLens(SESSION_ID, 'pr');
+      store.getState().replaceActiveLens(SESSION_ID, 'review');
+
+      store.getState().lensGo(SESSION_ID, -1);
+
+      expect(store.getState().activeLens[SESSION_ID]).toBe('agents');
+      store.getState().lensGo(SESSION_ID, 1);
+      expect(store.getState().activeLens[SESSION_ID]).toBe('review');
+    });
+
     it('toggleWorkflowExpand flips around the supplied default and persists per run', async () => {
       const store = useAppStore;
       store.getState().toggleWorkflowExpand(SESSION_ID, 'run-a', true);

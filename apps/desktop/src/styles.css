@@ -698,6 +698,21 @@ dialog[open]::backdrop {
   }
 }
 
+@keyframes hidden-count-flash {
+  0% {
+    color: oklch(from var(--color-info) l c h);
+  }
+  100% {
+    color: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hidden-count-flash {
+    animation: hidden-count-flash 600ms ease-out;
+  }
+}
+
 @keyframes text-shimmer {
   to {
     background-position: -200% center;

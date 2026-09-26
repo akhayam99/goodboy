@@ -127,6 +127,7 @@ export const SESSION_EVICTION = [
   { key: 'announcedRunBudget', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'pendingOrchestrations', keyedBy: 'workflowRun', evictOn: 'delete' },
   { key: 'sessionTurnSpans', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'revealedActivityRows', keyedBy: 'session', evictOn: 'archive' },
 ] as const satisfies ReadonlyArray<SessionEvictionRule>;
 
 export const NON_SESSION_STATE_KEYS = [

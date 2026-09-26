@@ -40,6 +40,10 @@ const { showToast, state } = vi.hoisted(() => ({
       string,
       ReadonlyArray<{ id: string; name: string; status: string }>
     >,
+    sessionEvents: {} as Record<
+      string,
+      ReadonlyArray<{ kind: string; payload?: { mountId?: string; agentId?: string } }>
+    >,
     spawnAgent: vi.fn(async () => 'agent-1'),
     selectAgent: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
@@ -89,6 +93,7 @@ const unreadableStatus: WorktreeStatus = {
 
 beforeEach(() => {
   state.sessionPhaseRuns = {};
+  state.sessionEvents = {};
   state.spawnAgent.mockReset();
   state.spawnAgent.mockResolvedValue('agent-1');
   state.selectAgent.mockReset();
@@ -366,14 +371,50 @@ describe('useRebaseAgent', () => {
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
   });
 
-  it('guards against a second rebase while the named agent is running', async () => {
+  it('guards against a second rebase while the named agent is running on this mount', async () => {
     state.sessionPhaseRuns = {
       [sessionId]: [{ id: 'agent-9', name: 'Rebase on main', status: 'running' }],
     };
-    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+    state.sessionEvents = {
+      [sessionId]: [
+        { kind: 'rebase_requested', payload: { mountId: 'mount-1', agentId: 'agent-9' } },
+      ],
+    };
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, mountId, status: status(2) }));
 
     expect(result.current.isRunning).toBe(true);
     await act(() => result.current.run({ mountId }));
     await waitFor(() => expect(state.spawnAgent).not.toHaveBeenCalled());
+  });
+
+  it('lets a second mount rebase while a different mount is still running', async () => {
+    state.sessionPhaseRuns = {
+      [sessionId]: [{ id: 'agent-9', name: 'Rebase on main', status: 'running' }],
+    };
+    state.sessionEvents = {
+      [sessionId]: [
+        { kind: 'rebase_requested', payload: { mountId: 'mount-1', agentId: 'agent-9' } },
+      ],
+    };
+    const otherMountId = 'mount-2' as MountId;
+    const { result } = renderHook(() =>
+      useRebaseAgent({ sessionId, mountId: otherMountId, status: status(2) }),
+    );
+
+    expect(result.current.isRunning).toBe(false);
+  });
+
+  it('stays quiet about a running agent when this hook is not told which mount it watches', () => {
+    state.sessionPhaseRuns = {
+      [sessionId]: [{ id: 'agent-9', name: 'Rebase on main', status: 'running' }],
+    };
+    state.sessionEvents = {
+      [sessionId]: [
+        { kind: 'rebase_requested', payload: { mountId: 'mount-1', agentId: 'agent-9' } },
+      ],
+    };
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
+
+    expect(result.current.isRunning).toBe(false);
   });
 });

@@ -65,6 +65,42 @@ export const setActiveLens = (set: SetFn) => {
   };
 };
 
+export const replaceActiveLens = (set: SetFn) => {
+  return (sessionId: SessionId, lens: LensKind | null): void => {
+    writePersistedLens(sessionId, lens);
+    set((s) => {
+      const hist = s.lensHistory[sessionId];
+      const replaced: WorkSurfacePosition = { lens, agentId: null, studio: null };
+      const entries =
+        hist != null && hist.entries.length > 0
+          ? hist.entries.map((entry, index) => (index === hist.index ? replaced : entry))
+          : [replaced];
+      const index = hist != null && hist.entries.length > 0 ? hist.index : 0;
+      return {
+        ...workSurfaceFocus({
+          sessionId,
+          focus: { kind: 'lens', lens },
+          activeLens: s.activeLens,
+          sessionStudio: s.sessionStudio,
+          selectedAgentId: s.selectedAgentId,
+        }),
+        focusedWorkflowRunId: { ...s.focusedWorkflowRunId, [sessionId]: null },
+        diffFocus: { ...s.diffFocus, [sessionId]: null },
+        diffMountPath: { ...s.diffMountPath, [sessionId]: null },
+        terminalMountPath: { ...s.terminalMountPath, [sessionId]: null },
+        focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
+        focusedGithubIssueNumber: { ...s.focusedGithubIssueNumber, [sessionId]: null },
+        focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
+        lensHistory: {
+          ...s.lensHistory,
+          [sessionId]: { entries, index },
+        },
+        drawer: drawerAfterMove({ drawer: s.drawer, sessionId, lens }),
+      };
+    });
+  };
+};
+
 export const lensGo = (set: SetFn, get: GetFn) => {
   return (sessionId: SessionId, delta: number): void => {
     const hist = get().lensHistory[sessionId];

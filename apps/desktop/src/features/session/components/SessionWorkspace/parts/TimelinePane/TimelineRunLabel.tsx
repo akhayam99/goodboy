@@ -2,6 +2,7 @@ import { WORK_ROW, cn } from '@goodboy/ui';
 import type { RowState } from '../../../../../workTreeModel/rowState';
 import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
 import { runWorkflowKind } from '../../../../timeline/runWorkflowKind';
+import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunChip } from './TimelineRunChip';
 
@@ -10,6 +11,7 @@ type Props = {
   readonly rowState: RowState;
   readonly isLaneLit?: boolean;
   readonly stateNote?: string | null;
+  readonly isRevealed?: boolean;
 };
 
 export const TimelineRunLabel = ({
@@ -17,6 +19,7 @@ export const TimelineRunLabel = ({
   rowState,
   isLaneLit = false,
   stateNote = null,
+  isRevealed = false,
 }: Props) => {
   const isDiscarded = entry.run.discardedAt != null;
   const title = entry.run.title ?? entry.workflow.name;
@@ -40,6 +43,7 @@ export const TimelineRunLabel = ({
         {title}
       </span>
       <TimelineRowStateLine state={rowState} note={stateNote} />
+      {isRevealed ? <RevealedRowTag /> : null}
     </>
   );
 };

@@ -8,37 +8,42 @@ import {
 } from '../../../../shared/pullRequestPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { openUrl } from '../../../../shared/lib/editor';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
+import { useAppStore } from '../../../../store';
+import { selectSessionForPr } from '../../../../store/slices/github/selectSessionForPr';
 
 type Props = {
   readonly pr: LinearLinkedPr;
 };
 
 export const LinkedPrChip = ({ pr }: Props) => {
-  const sessionId = useAppStore((s) => s.currentSessionId);
-  const branchPrs = useAppStore((s) =>
-    s.currentSessionId == null
-      ? EMPTY_ARRAY
-      : selectActiveProjectPrs({ state: s, sessionId: s.currentSessionId }),
-  );
-  const canonicalPr = useAppStore((s) =>
-    s.currentSessionId == null ? null : (s.sessionGithub[s.currentSessionId]?.pr ?? null),
+  const currentSessionId = useAppStore((s) => s.currentSessionId);
+  const workspaceId = useAppStore((s) => s.currentWorkspaceId);
+  const sessionMatch = useAppStore((s) =>
+    workspaceId == null ? null : selectSessionForPr({ state: s, workspaceId, url: pr.url }),
   );
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const sessionPr =
-    branchPrs.find((candidate) => candidate.url === pr.url) ??
-    (canonicalPr?.url === pr.url ? canonicalPr : null);
+  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
+  const reportError = useAppStore((s) => s.reportError);
 
   const open = () => {
-    const isUnderStudio = document.querySelector('[data-studio-overlay]') != null;
-    if (sessionId == null || sessionPr == null || isUnderStudio) {
+    if (sessionMatch == null) {
       void openUrl(pr.url);
       return;
     }
-    void selectSessionPr(sessionId, sessionPr.number);
-    setActiveLens(sessionId, 'pr');
+    const { sessionId, number } = sessionMatch;
+    if (sessionId === currentSessionId) {
+      void selectSessionPr(sessionId, number);
+      setActiveLens(sessionId, 'pr');
+      return;
+    }
+    void (async () => {
+      await setCurrentSession(sessionId);
+      await selectSessionPr(sessionId, number);
+      setActiveLens(sessionId, 'pr');
+    })().catch((error: unknown) => {
+      void reportError({ title: "Couldn't open this pull request", error });
+    });
   };
 
   const state = linearPrStateKind({ status: pr.status });

@@ -5,12 +5,11 @@ export const ACTIVITY_CATEGORIES = [
   'agents',
   'workflows',
   'questions',
+  'resolver',
   'artifacts',
   'pullRequests',
-  'suggestions',
   'worktree',
   'issues',
-  'resolver',
   'decisions',
   'session',
 ] as const;
@@ -52,7 +51,6 @@ export const ACTIVITY_CHILD: Record<ActivityChildToggle, ActivityChild> = {
 export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
 
 export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
-  suggestions: 'Suggestions',
   worktree: 'Branches and worktrees',
   issues: 'Issues',
   pullRequests: 'Pull requests',
@@ -60,13 +58,12 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
   artifacts: 'Artifacts',
   agents: 'Agents',
   questions: 'Questions',
-  resolver: 'Resolver',
+  resolver: 'Resolvers',
   decisions: 'Decisions',
   session: 'Session events',
 };
 
 export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
-  suggestions: true,
   worktree: true,
   issues: true,
   pullRequests: true,
@@ -91,12 +88,12 @@ type ActivityGroup = {
 };
 
 export const ACTIVITY_GROUPS = [
-  { id: 'work', label: 'Work', categories: ['agents', 'workflows', 'questions', 'suggestions'] },
+  { id: 'work', label: 'Work', categories: ['agents', 'workflows', 'questions', 'resolver'] },
   { id: 'outputs', label: 'Outputs', categories: ['artifacts', 'pullRequests', 'issues'] },
   {
     id: 'log',
     label: 'Session log',
-    categories: ['worktree', 'resolver', 'decisions', 'session'],
+    categories: ['worktree', 'decisions', 'session'],
   },
 ] as const satisfies ReadonlyArray<ActivityGroup>;
 
@@ -172,7 +169,6 @@ export type ActivityCounts = Readonly<Record<ActivityToggle, number>>;
 
 type CountsParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly suggestionCount: number;
 };
 
 type AgentTreeParams = {
@@ -182,12 +178,11 @@ type AgentTreeParams = {
 const agentTreeSize = ({ children }: AgentTreeParams): number =>
   children.reduce((total, child) => total + 1 + agentTreeSize({ children: child.children }), 0);
 
-export const activityCounts = ({ entries, suggestionCount }: CountsParams): ActivityCounts => {
+export const activityCounts = ({ entries }: CountsParams): ActivityCounts => {
   const counts = Object.fromEntries(ACTIVITY_TOGGLES.map((toggle) => [toggle, 0])) as Record<
     ActivityToggle,
     number
   >;
-  counts.suggestions = suggestionCount;
   const countChild = ({ entry }: EntryParams) => {
     const child = activityChildOf({ entry });
     if (child != null) {
@@ -294,23 +289,42 @@ type ChildShownParams = {
 export const isActivityChildShown = ({ filter, toggle }: ChildShownParams): boolean =>
   filter[ACTIVITY_CHILD[toggle].parent] && filter[toggle];
 
+const EMPTY_REVEALED: ReadonlySet<string> = new Set();
+
 type FilterParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly filter: ActivityFilter;
+  readonly revealed?: ReadonlySet<string>;
+};
+
+const isHiddenByFilter = ({
+  entry,
+  filter,
+}: {
+  readonly entry: TimelineTopLevelEntry;
+  readonly filter: ActivityFilter;
+}): boolean => {
+  const category = activityCategoryOf({ entry });
+  if (category != null && !filter[category]) {
+    return true;
+  }
+  const child = activityChildOf({ entry });
+  return child != null && !isActivityChildShown({ filter, toggle: child });
 };
 
 export const filterTimelineEntries = ({
   entries,
   filter,
+  revealed = EMPTY_REVEALED,
 }: FilterParams): ReadonlyArray<TimelineTopLevelEntry> =>
-  entries.filter((entry) => {
-    const category = activityCategoryOf({ entry });
-    if (category != null && !filter[category]) {
-      return false;
-    }
-    const child = activityChildOf({ entry });
-    return child == null || isActivityChildShown({ filter, toggle: child });
-  });
+  entries.filter((entry) => revealed.has(entry.id) || !isHiddenByFilter({ entry, filter }));
+
+export const hiddenRowCount = ({
+  entries,
+  filter,
+  revealed = EMPTY_REVEALED,
+}: FilterParams): number =>
+  entries.filter((entry) => !revealed.has(entry.id) && isHiddenByFilter({ entry, filter })).length;
 
 type ParseParams = {
   readonly raw: string | null;
@@ -333,6 +347,36 @@ const migratedArtifactToggles = ({
   };
 };
 
+const LEGACY_WORK_PRESET: Readonly<Record<string, boolean>> = {
+  agents: true,
+  workflows: true,
+  questions: true,
+  suggestions: true,
+  agentSubagents: true,
+  workflowSubagents: true,
+  artifacts: false,
+  plans: false,
+  reports: false,
+  wireframes: false,
+  pullRequests: false,
+  worktree: false,
+  issues: false,
+  resolver: false,
+  decisions: false,
+  session: false,
+};
+
+const migratedWorkPreset = ({
+  source,
+}: {
+  readonly source: Readonly<Record<string, unknown>>;
+}): Partial<Record<ActivityToggle, boolean>> => {
+  const matchesLegacyWork = Object.entries(LEGACY_WORK_PRESET).every(
+    ([toggle, expected]) => source[toggle] === expected,
+  );
+  return matchesLegacyWork ? ACTIVITY_FILTER_PRESETS.work : {};
+};
+
 export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
   if (raw == null || raw.length === 0) {
     return DEFAULT_ACTIVITY_FILTER;
@@ -343,7 +387,7 @@ export const parseActivityFilter = ({ raw }: ParseParams): ActivityFilter => {
       return DEFAULT_ACTIVITY_FILTER;
     }
     const source = parsed as Readonly<Record<string, unknown>>;
-    const migrated = migratedArtifactToggles({ source });
+    const migrated = { ...migratedArtifactToggles({ source }), ...migratedWorkPreset({ source }) };
     const entries = ACTIVITY_TOGGLES.map((toggle) => {
       const migratedValue = migrated[toggle];
       if (typeof migratedValue === 'boolean') {

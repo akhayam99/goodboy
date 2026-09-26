@@ -35,6 +35,7 @@ import {
   activityCategoryOf,
   activityCounts,
   filterTimelineEntries,
+  hiddenRowCount,
   isActivityChildShown,
 } from '../../../../timeline/activityFilter';
 import { agentSpendById } from '../../../../timeline/agentSpendById';
@@ -73,6 +74,8 @@ import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
 
+const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
+
 type Props = {
   readonly session: Session;
   readonly actions: ReactNode;
@@ -109,6 +112,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
+  const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const suggestions = useSessionSuggestions({ session, agents });
   const transcriptProposals = useTranscriptMountProposals({ session });
   const transcriptOwned = useMemo(
@@ -263,8 +267,12 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
     () =>
       isNeedsYou
         ? needsYouEntries({ entries: model.entries, rootIds: attentionRootIds })
-        : filterTimelineEntries({ entries: model.entries, filter: activity.filter }),
-    [activity.filter, attentionRootIds, isNeedsYou, model.entries],
+        : filterTimelineEntries({
+            entries: model.entries,
+            filter: activity.filter,
+            revealed: revealedRows,
+          }),
+    [activity.filter, attentionRootIds, isNeedsYou, model.entries, revealedRows],
   );
 
   const stream = useMemo(
@@ -286,6 +294,20 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
       }),
     [activity.filter, advanceByRunId, decidingRunIds, isNeedsYou, unreadAgentIds, visibleEntries],
   );
+
+  const unfilteredStream = useMemo(
+    () =>
+      buildTimelineStream({
+        entries: visibleEntries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+      }),
+    [advanceByRunId, decidingRunIds, unreadAgentIds, visibleEntries],
+  );
+
+  const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -479,11 +501,14 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
       suggestion.kind !== 'plan-ready' &&
       (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
   );
-  const visibleSuggestions = activity.filter.suggestions && !isNeedsYou ? feedSuggestions : [];
-  const counts = activityCounts({
-    entries: model.entries,
-    suggestionCount: feedSuggestions.length,
-  });
+  const visibleSuggestions = feedSuggestions;
+  const counts = activityCounts({ entries: model.entries });
+  const hiddenRows =
+    hiddenRowCount({
+      entries: model.entries,
+      filter: activity.filter,
+      revealed: revealedRows,
+    }) + hiddenChildRows;
   const rowKindCount = new Set(model.entries.map((entry) => activityCategoryOf({ entry }))).size;
   const hasFilter = rowKindCount >= 2 || activity.hidden.length > 0 || isNeedsYou;
   const isLoading = (!areEventsLoaded || !areAgentsLoaded) && model.entries.length === 0;
@@ -516,6 +541,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
               <ActivityFilterPanel
                 filter={activity.filter}
                 hidden={activity.hidden}
+                hiddenRows={hiddenRows}
                 preset={activity.preset}
                 counts={counts}
                 visibleCount={visibleEntries.length}
@@ -596,6 +622,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
                       action={actionFor({ item })}
                       diffStat={diffStatFor({ item })}
                       worktrees={touchedWorktrees.get(entry.agent.id) ?? NO_WORKTREES}
+                      isRevealed={revealedRows.has(entry.id)}
                       lanes={lanes}
                       runLane={runLaneFor({ item })}
                       step={
@@ -622,6 +649,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
                       openTarget={target}
                       action={actionFor({ item })}
                       diffStat={diffStatFor({ item })}
+                      isRevealed={revealedRows.has(entry.id)}
                       lanes={lanes}
                       runLane={runLaneFor({ item })}
                       roleModels={roleModels}
@@ -642,6 +670,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
                     openTarget={target}
                     action={actionFor({ item })}
                     diffStat={diffStatFor({ item })}
+                    isRevealed={revealedRows.has(entry.id)}
                     lanes={lanes}
                     runLane={runLaneFor({ item })}
                   />
