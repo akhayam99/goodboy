@@ -93,7 +93,7 @@ Gemini runs through Antigravity (`agy`), the app that replaces the Gemini CLI.
 1. Install `agy` from a terminal:
    `curl -fsSL https://antigravity.google/cli/install.sh | bash`
 2. Sign in to the Antigravity app with your Google account
-3. In Goodboy, click the refresh icon (**Re-detect CLIs**) on the Gemini card
+3. In Goodboy, open the Gemini page menu and choose **Check again**
 
 You sign in to Antigravity inside its own app, so the card has no **Connect** button.
 Rather use a key? Add a Gemini API key under **API keys** instead.
@@ -175,9 +175,10 @@ clears them after a confirm.
 
 ## Models in the picker
 
-Each CLI provider page has a **Models in the picker** section under Account. It
-changes only what the model picker lists, for every workspace in the app. Auto and
-pinned models keep working.
+Each provider page has a **Models in the picker** group under Usage. It changes
+only what the model picker lists, for every workspace in the app. Auto and pinned
+models keep working. Its header says how many show (`Showing 6 of 11`) next to
+**Show all**.
 
 - Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
   version. A lit chip shows in the picker
@@ -187,19 +188,43 @@ pinned models keep working.
 - In the picker, the settings icon next to **Provider** opens this section for the
   provider you are looking at
 
-## Usage and spend
+## The provider page
 
-Each provider page in **Settings > Providers & models** opens on **Usage**:
+Each provider page in **Settings > Providers & models** has four groups, in the
+same order for every provider: **Usage**, **Models in the picker**,
+**Permissions** and **Account**. The header carries the plan, the account and the
+CLI version (`Team plan · Signed in as you@acme.test · Claude CLI 2.1.282`), and
+its menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
+path**. A provider that is not connected shows only its connect card.
 
-- **Usage limits**: one row per window the provider reported (5 hours, the
-  week, a model's week), with the share used and the reset. A notice says when
-  the provider is about to run out or is out. Cursor and Gemini report nothing
-  Goodboy can read, and an API key provider is billed per token, so neither
-  shows windows
-- **Spend in Goodboy**: today, the last 7 days and this month for the current
-  workspace, counted by Goodboy at API prices, and the provider's budget when
-  you set one in Impact. On a plan this is what the same tokens would cost on
-  the API, not what you pay
+- **Usage**: one row per window the provider reported (5 hours, the week, a
+  model's week), with the share used and the reset. The header says when the
+  numbers were last updated and has a refresh button that asks the CLI now. A
+  notice says when the provider is about to run out or is out, or that three
+  checks in a row failed. Cursor and Gemini don't share usage with other apps,
+  and an API key provider is billed per token, so neither shows windows
+- **Free resets**: when Codex holds a free reset, Usage shows it with its expiry
+  and **Use reset**. The confirm opens in place of the row. When half the week or
+  more is still left, or the week refills by itself within a day, it becomes a
+  strong stop: **Keep my reset** is the default, and **Use reset anyway** stays
+  off until you tick that you understand. Goodboy sends
+  `account/rateLimitResetCredit/consume` to `codex app-server`
+  (`codex_consume_reset_credit`) with one attempt key, kept in
+  `codexPendingReset` until Codex answers, so **Try again** after a network
+  error can never spend two resets. After a reset Goodboy reads the limits again.
+  Claude's free resets only work on claude.ai or in Claude Desktop, so a full
+  Claude window shows **Open Claude usage** instead. Goodboy never buys a reset
+- **Spent in Goodboy**, the last row of Usage: today, the last 7 days and this
+  month for the current workspace, counted by Goodboy at API prices, and the
+  provider's budget when you set one. **Open in Impact** edits the budget. On a
+  plan this is what the same tokens would cost on the API, not what you pay
+- **Permissions**: what this CLI does with each mode (`Works`, `Partly` with the
+  reason, or `Not available` with the mode it runs as instead), whether it
+  follows Allow and Deny rules (only Claude does), and that role limits are
+  asked, not locked. It reads `modeSupport` in `@goodboy/core`
+- **Account**: who is signed in with the plan, the CLI version, and **Use an API
+  key instead of your plan**, which opens the API keys. Keys you already have
+  show directly, with the workspace credentials under them
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
 
@@ -210,7 +235,7 @@ pays for every turn.
 
 1. Click **Disconnect** and **Confirm**
 2. Click **Connect** and sign in with the other account
-3. Click the refresh icon and check the account on the card before you continue
+3. Choose **Check again** in the page menu and check the account in the header before you continue
 
 ## Troubleshooting
 
@@ -223,8 +248,8 @@ pays for every turn.
 - **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
   the 5-hour window above, the week below. From 80% it adds the worse window's
   number with its short name (`5h 86%`, `wk 94%`). Hover one for every window and
-  its reset, click it for the provider page. Claude updates its numbers only while
-  a Claude agent runs
+  its reset, click it for the provider page. Claude's numbers update at boot,
+  every 15 minutes, and during a turn
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
@@ -285,8 +310,9 @@ Each provider's connect options live in one table, not in UI code. The table is
 - `manual`: the card shows `manualReason` and a docs link. It has no **Connect** and
   no **Sign in again** button
 - `isApiProvider` reads `PROVIDER_KIND` in `packages/types/src/provider-catalog.ts`.
-  It marks openrouter and moonshot as `api`. Their card is `ApiProviderDetail`, which
-  checks the runtime and lists keys, instead of the CLI connect card
+  It marks openrouter and moonshot as `api`. Their page keeps the same four groups;
+  Account shows the OpenCode runtime with **Detect** and lists keys, instead of the
+  CLI connect card
 
 ### Commands per provider
 
@@ -455,8 +481,34 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
   `--disallowedTools`). The other CLIs have no equivalent flag
-- The composer's mode picker disables the rows the active provider can't honor
-  and says why
+- Settings, Workspace, Permissions shows this table in words, one column per
+  provider, and lists the workspace and global rules. Each rule names the
+  provider that follows it and the ones that ignore it, and a deny rule that a
+  provider running agents in the workspace ignores raises a warning. Remove
+  deletes the rule (`permission_rule_delete`)
+- The composer's mode picker offers four modes: Read only, Ask first, Edits
+  allowed and Full access. It disables the rows the active provider can't
+  honor and says why. `dontAsk` stays in the type for older sessions and reads
+  as Ask first; the picker never offers it
+- Every workspace starts on Full access (`workspaces.default_permission_mode`).
+  A new session takes its workspace's default, which Settings, Workspace,
+  Permissions can lower; a running session keeps its mode
+
+#### Why Ask first asks after the fact
+
+- Claude answers a permission prompt in `--print` only through a host. With
+  `--input-format stream-json` and `--permission-prompts host` (the default in
+  2.1.282) it writes a `control_request` whose `subtype` is `can_use_tool`
+  (tool name, input, tool use id, suggested rules) and waits for a
+  `control_response` with `behavior` `allow` or `deny`. That shape is read from
+  the 2.1.282 binary and `claude --help`; no real turn has exercised it
+- `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
+  exists: every call the mode doesn't allow is denied, the turn stops, and the
+  approval card takes it from there
+- Cursor's help describes `--mode plan` as read-only planning with no edits.
+  Goodboy passes it without `--force`. Whether read-only shell commands still
+  run in that mode has not been checked on a real turn, so the table keeps
+  Cursor's Read only at Partly
 
 ### API keys
 
@@ -577,28 +629,58 @@ When a provider ships or retires a model, update three files under
 
 ### Usage limits
 
-Goodboy reads the usage limits a provider reports on its own. It never makes a
-network call for them and never reads a sign-in token or the keychain.
+Goodboy asks each provider's own CLI for your usage, the same way you would.
+It never reads your sign-in: the CLI authenticates with its own stored
+credentials, Goodboy only spawns it and reads what it prints.
 
-- **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
-  stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
-  of the transcript. Every event carries `rate_limit_info.unifiedWindows` with
-  `five_hour` and `seven_day` (`utilization` 0 to 1, `resetsAt` in epoch seconds),
-  so both windows arrive together, 5-hour first. The top-level `rateLimitType`
-  names the window that limits you (`five_hour`, `seven_day`, `seven_day_opus`,
-  `seven_day_sonnet`) and its `status` (`allowed`, `allowed_warning`, `rejected`).
-  The status goes to that window, and a per-model type adds its own window. An
-  unknown type drops only its window, never the event. `mergeProviderLimits`
-  keeps windows it saw until their reset. The numbers change only while a Claude
-  agent runs
-- **Codex**: the `token_count` lines of the rollout files under
-  `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
-  `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
-  `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
-  also sees Codex use outside Goodboy. A reading with neither window is skipped:
-  Codex writes an empty `premium` bucket after the real `codex` one, and taking
-  it left the boot read with no data. The desktop asks for it at boot and after
-  every Codex usage event
+- **Claude**: two sources, most recent observation wins per window.
+  - **Probe** (`usage_probe.rs`, `claude_usage_probe`): a free, read-only
+    side-spawn of `claude -p "/usage" --output-format json --setting-sources
+project,local --no-session-persistence` in an empty scratch directory,
+    15 s timeout. It is not a turn: it never goes through `sendTurn`, never
+    enters telemetry or spend. `useProviderLimitsProbe` runs it at boot,
+    every 15 minutes, and on the next focus once 15 minutes have passed.
+    `parseClaudeUsageText` reads the envelope's `result` text for lines like
+    `Current session: 4% used · resets Sep 26 at 7:40am (Europe/Rome)` and
+    `Current week (Fable): 11% used · resets ...`. The percentage is the only
+    number treated as ground truth; the reset time is converted using the
+    timezone in parentheses, and a line it cannot parse contributes no
+    `resetsAt` rather than a guessed one. An unrecognized line is skipped, not
+    fatal to the rest of the probe.
+  - **Turn**: during a turn, `claude -p` emits a `rate_limit_event` line in
+    the stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and
+    keeps it out of the transcript. Every event carries
+    `rate_limit_info.unifiedWindows` with `five_hour` and `seven_day`
+    (`utilization` 0 to 1, `resetsAt` in epoch seconds). The top-level
+    `rateLimitType` names the window that limits you and its `status`
+    (`allowed`, `allowed_warning`, `rejected`); a per-model type adds its own
+    window. An unknown type drops only its window, never the event.
+    `mergeProviderLimits` keeps windows it saw until their reset.
+- **Codex**: two sources, the app server first and the rollout files after.
+  - **App server** (`codex_app_server.rs`, `codex_rate_limits_probe`): spawns
+    `codex app-server` on stdio in an empty scratch directory, sends
+    `initialize`, then `initialized` and `account/rateLimits/read`, reads
+    newline-delimited JSON until the answer or 15 s, and kills the server. Zero
+    tokens. `parseCodexAppServerLimits` takes the `codex` bucket of
+    `rateLimitsByLimitId` (or `rateLimits`): `primary` is the 5-hour window,
+    `secondary` the week, `planType` the plan. `parseCodexResetCredits` reads
+    `rateLimitResetCredits` (count, and the first available credit's id and
+    expiry) into `codexResetCredits`. Background polls pass
+    `excludeResetCreditDetails`; the provider page asks with details and a poll
+    keeps the details it already had while the count is unchanged. Verified
+    against codex 0.156.0 and its `codex app-server generate-json-schema`
+    output. The app server is marked experimental: when it fails, the rollout
+    read below runs instead
+  - **Rollout**: the `token_count` lines of the rollout files under
+    `$CODEX_HOME/sessions` carry `payload.rate_limits` (same windows in snake
+    case, plus `plan_type`). `codex_rate_limits_latest` in `codex_rollout.rs`
+    reads the newest reading among the five newest rollouts, so it also sees
+    Codex use outside Goodboy. A reading with neither window is skipped: Codex
+    writes an empty `premium` bucket after the real `codex` one, and taking it
+    left the boot read with no data
+  - The desktop asks at boot, every 15 minutes alongside the Claude probe, and
+    after every Codex usage event. `providerLimitsProbe` keeps, per provider,
+    whether a probe is running, when one last worked and how many failed in a row
 - **Antigravity and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the
   `providerLimits` store slice. A write never replaces a newer observation.
@@ -614,7 +696,7 @@ network call for them and never reads a sign-in token or the keychain.
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
-- `apps/desktop/src/features/providers/components/ProviderStudio/`: the provider cards and **Defaults**
+- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Defaults** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks

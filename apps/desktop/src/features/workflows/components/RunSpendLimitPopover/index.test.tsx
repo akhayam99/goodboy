@@ -66,7 +66,7 @@ describe('RunSpendLimitPopover', () => {
 
     openPopover();
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '25' } });
-    fireEvent.click(screen.getByRole('tab', { name: /notify/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
     fireEvent.click(screen.getByTestId('run-spend-limit-save'));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
@@ -88,7 +88,9 @@ describe('RunSpendLimitPopover', () => {
     openPopover();
 
     expect((screen.getByTestId('spend-limit-amount') as HTMLInputElement).value).toBe('12.5');
-    expect(screen.getByRole('tab', { name: /notify/i }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: /Only warn me/ }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
   });
 
   it('takes the limit off without touching the amount left in the field', () => {

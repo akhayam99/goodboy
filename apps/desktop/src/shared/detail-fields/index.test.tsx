@@ -57,6 +57,7 @@ const LINEAR_ISSUE: LinearIssue = {
 };
 
 const SENTRY_ISSUE: SentryIssueProperties = {
+  status: 'unresolved',
   level: 'error',
   culprit: 'api/items',
   count: '128',
@@ -133,25 +134,25 @@ describe('fact registries', () => {
     const slotsOf = (facts: ReadonlyArray<ResolvedFact>) => facts.map((fact) => fact.slot);
 
     expect(slotsOf(resolveFacts({ registry: linearIssueFields, entity: LINEAR_ISSUE }))).toEqual([
-      'person',
+      'state',
       'weight',
+      'person',
       'place',
       'labels',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }))).toEqual([
+      'state',
       'weight',
       'place',
       'labels',
       'labels',
       'labels',
       'measure',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }))).toEqual([
+      'state',
       'place',
       'labels',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }))).toEqual([
       'place',
@@ -216,11 +217,11 @@ describe('fact registries', () => {
   });
 
   it('shows time as a relative age with the absolute date in the hint', () => {
-    const [time] = resolveFacts({ registry: githubIssueFields, entity: GITHUB_ISSUE }).filter(
+    const [time] = resolveFacts({ registry: gitlabIssueFields, entity: GITLAB_ISSUE }).filter(
       (fact) => fact.slot === 'time',
     );
 
-    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITHUB_ISSUE.updatedAt })}`);
+    expect(time?.hint).toBe(`Updated ${formatAbsoluteDateTime({ iso: GITLAB_ISSUE.updatedAt })}`);
   });
 
   it('leaves no empty pill for a fact the payload does not carry', () => {
@@ -236,7 +237,7 @@ describe('fact registries', () => {
       },
     });
 
-    expect(sparse.map((fact) => fact.key)).toEqual(['place']);
+    expect(sparse.map((fact) => fact.key)).toEqual(['state', 'place']);
   });
 });
 

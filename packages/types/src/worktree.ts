@@ -13,7 +13,8 @@ export type GitUnknownReason =
   | 'detached-head'
   | 'rev-list-failed'
   | 'main-ref-unresolved'
-  | 'status-read-failed';
+  | 'status-read-failed'
+  | 'upstream-gone';
 
 export type GitDistance =
   | { readonly kind: 'known'; readonly ahead: number; readonly behind: number }

@@ -87,6 +87,7 @@ type TestState = {
   workspaceSummary: unknown;
   providerSpendBreakdown: ReadonlyArray<unknown>;
   budgetAlerts: ReadonlyArray<BudgetAlert>;
+  sessionBudgets: Record<string, unknown>;
   emitNotification: ReturnType<typeof vi.fn>;
 };
 
@@ -106,6 +107,7 @@ describe('recordUsageTelemetry', () => {
       workspaceSummary: null,
       providerSpendBreakdown: [],
       budgetAlerts: [],
+      sessionBudgets: {},
       emitNotification,
     }));
     const usage = {
@@ -132,8 +134,8 @@ describe('recordUsageTelemetry', () => {
       expect.objectContaining({
         kind: 'budget-cap',
         severity: 'error',
-        title: 'Session budget cap reached',
-        body: '$12.30 spent against a $10.00 cap.',
+        title: 'Finish the budget path paused its workflows at the $10.00 spend limit.',
+        body: '$12.30 spent so far.',
         sessionId: SESSION_ID,
         action: { kind: 'open-budget', sessionId: SESSION_ID },
       }),

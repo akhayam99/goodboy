@@ -89,6 +89,36 @@ describe('useSentryIssues', () => {
     expect(fetchIssues).toHaveBeenCalledWith(WS, undefined, undefined);
   });
 
+  it('adds the first page of every linked sentry project, skipping one that fails', async () => {
+    fetchIssues.mockImplementation(async (_ws, _query, _cursor, _projectId, slug) => {
+      if (slug === 'gone') {
+        throw new Error('404');
+      }
+      return page([makeIssue({ id: slug ?? 'default' }), makeIssue({ id: 'shared' })]);
+    });
+    const { result } = renderHook(() =>
+      useSentryIssues(WS, true, ['payments-worker', 'gone', 'payments-worker']),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() =>
+      expect(result.current.rows.map((row) => row.issue.id).sort()).toEqual([
+        'default',
+        'payments-worker',
+        'shared',
+      ]),
+    );
+    expect(result.current.error).toBeNull();
+    expect(fetchIssues).toHaveBeenCalledWith(
+      WS,
+      undefined,
+      undefined,
+      undefined,
+      'payments-worker',
+    );
+    expect(fetchIssues).toHaveBeenCalledTimes(3);
+  });
+
   it('exposes hasMore and forwards the cursor on loadMore, deduping across pages', async () => {
     fetchIssues
       .mockResolvedValueOnce(page([makeIssue({ id: 'a' }), makeIssue({ id: 'b' })], 'cur-1'))

@@ -14,9 +14,12 @@ export type BudgetRule = Readonly<{
   createdAt: IsoDateTime;
 }>;
 
+export type SessionBudgetOnExceed = 'pause' | 'warn';
+
 export type SessionBudget = Readonly<{
   sessionId: SessionId;
   softCapUsd: number;
+  onExceed: SessionBudgetOnExceed;
 }>;
 
 export type BudgetCheckResult = Readonly<{

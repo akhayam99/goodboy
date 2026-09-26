@@ -1,7 +1,7 @@
 import { RecordDetailEmptyState } from '../../../../../shared/components/StudioDetail';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../../shared/components/StudioDetail/RecordActions/types';
@@ -341,7 +341,7 @@ export const MrDetailPanel = ({
             title={mr.title}
             state={<PullRequestChip state={gitlabMrStateKind({ mr })} variant="badge" />}
             facts={
-              <RecordFacts
+              <RecordProperties
                 facts={resolveFacts({
                   registry: gitlabMergeRequestFields,
                   entity: { mr, approval },

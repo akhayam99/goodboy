@@ -12,6 +12,7 @@ import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import { classifyAgent, KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
+import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -36,6 +37,18 @@ export const completeResolvedAgent = async ({
   now,
 }: Params): Promise<boolean | null> => {
   const ranAgent = get().sessionPhaseRuns[sessionId]?.find((run) => run.id === resolvedAgentId);
+  if (get().agentTurnState?.[resolvedAgentId]?.kind === 'blocked') {
+    if (ranAgent?.stepId != null && ranAgent.workflowRunId != null) {
+      await persistOrchestrationStop({
+        set,
+        sessionId,
+        workflowRunId: ranAgent.workflowRunId,
+        stop: { kind: 'needs-approval', message: 'Waiting for your approval on a tool call.' },
+      });
+      return false;
+    }
+    return null;
+  }
   if (ranAgent !== undefined && isQuestionDelegate({ agent: ranAgent })) {
     await get().resolveQuestionDelegate({ sessionId, agentId: resolvedAgentId, assistantText });
     return null;

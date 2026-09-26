@@ -130,7 +130,11 @@ describe('WorkspaceLinkForm', () => {
     await waitFor(() =>
       expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/alpha' }),
     );
-    expect(state.openWorkspace).toHaveBeenCalledWith('ws-direct', 'alpha');
+    expect(state.openWorkspace).toHaveBeenCalledWith({
+      id: 'ws-direct',
+      title: 'alpha',
+      onRunning: 'new-window',
+    });
     expect(onComplete).toHaveBeenCalledWith({
       mode: 'project',
       workspace: expect.objectContaining({ id: 'ws-direct' }),
@@ -203,7 +207,11 @@ describe('WorkspaceLinkForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create workspace' }));
 
     await waitFor(() => expect(state.createWorkspace).toHaveBeenCalledWith({ name: 'Acme' }));
-    expect(state.openWorkspace).toHaveBeenCalledWith('ws-created', 'Acme');
+    expect(state.openWorkspace).toHaveBeenCalledWith({
+      id: 'ws-created',
+      title: 'Acme',
+      onRunning: 'new-window',
+    });
 
     const done = await screen.findByRole('button', { name: 'Done' });
     expect(done.hasAttribute('disabled')).toBe(true);

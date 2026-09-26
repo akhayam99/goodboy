@@ -7,6 +7,8 @@ import { CrumbMenuLead } from './CrumbMenuLead';
 type Props = {
   readonly row: CrumbMenuRowModel;
   readonly metaWidthClass: string;
+  readonly showMeta: boolean;
+  readonly showState: boolean;
   readonly onActivate: (row: CrumbMenuRowModel) => void;
 };
 
@@ -19,7 +21,7 @@ const middleTruncate = (text: string): string => {
   return `${text.slice(0, keep)}…${text.slice(text.length - keep)}`;
 };
 
-export const CrumbMenuRow = ({ row, metaWidthClass, onActivate }: Props) => {
+export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActivate }: Props) => {
   const StateGlyph = row.state?.glyph ?? null;
   return (
     <button
@@ -35,7 +37,7 @@ export const CrumbMenuRow = ({ row, metaWidthClass, onActivate }: Props) => {
         'flex h-7.5 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2 text-left outline-none transition-colors',
         'focus-visible:ring-2 focus-visible:ring-focus-ring',
         row.indent === 1 && 'pl-7',
-        row.isCurrent ? 'bg-overlay-selected' : 'hover:bg-hover focus:bg-hover',
+        'hover:bg-hover focus:bg-hover',
         row.isDisabled && 'cursor-default text-disabled-foreground hover:bg-transparent',
       )}
     >
@@ -56,33 +58,37 @@ export const CrumbMenuRow = ({ row, metaWidthClass, onActivate }: Props) => {
           </span>
         ) : null}
       </span>
-      <span
-        className={cn(
-          'shrink-0 truncate text-right text-secondary tabular-nums text-muted-foreground',
-          metaWidthClass,
-        )}
-      >
-        {row.metaA}
-      </span>
-      <span className="flex w-24 shrink-0 items-center justify-end gap-1.5 text-secondary">
-        {row.state == null ? null : (
-          <>
-            {StateGlyph != null ? (
-              <StateGlyph
-                size={12}
-                aria-hidden
-                className={cn('shrink-0', tintClasses(row.state.tone).icon)}
-              />
-            ) : (
-              <span
-                aria-hidden
-                className={cn('size-1.5 shrink-0 rounded-full', tintClasses(row.state.tone).dot)}
-              />
-            )}
-            <span className="truncate text-muted-foreground">{row.state.word}</span>
-          </>
-        )}
-      </span>
+      {showMeta ? (
+        <span
+          className={cn(
+            'shrink-0 truncate text-right text-secondary tabular-nums text-muted-foreground',
+            metaWidthClass,
+          )}
+        >
+          {row.metaA}
+        </span>
+      ) : null}
+      {showState ? (
+        <span className="flex w-24 shrink-0 items-center justify-end gap-1.5 text-secondary">
+          {row.state == null ? null : (
+            <>
+              {StateGlyph != null ? (
+                <StateGlyph
+                  size={12}
+                  aria-hidden
+                  className={cn('shrink-0', tintClasses(row.state.tone).icon)}
+                />
+              ) : (
+                <span
+                  aria-hidden
+                  className={cn('size-1.5 shrink-0 rounded-full', tintClasses(row.state.tone).dot)}
+                />
+              )}
+              <span className="truncate text-muted-foreground">{row.state.word}</span>
+            </>
+          )}
+        </span>
+      ) : null}
       <span className="flex w-3.5 shrink-0 items-center justify-center">
         {row.isCurrent ? <Check size={14} aria-hidden className="text-foreground" /> : null}
       </span>

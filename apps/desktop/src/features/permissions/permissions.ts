@@ -134,6 +134,45 @@ export const invokePermissionRuleUpsert = async (
   return rowToPermissionRule(row);
 };
 
+export const invokePermissionRuleDelete = async ({
+  id,
+}: {
+  readonly id: PermissionRuleId;
+}): Promise<void> => invoke<void>('permission_rule_delete', { id });
+
+export type RecentDecision = {
+  readonly id: string;
+  readonly sessionId: SessionId;
+  readonly toolName: string;
+  readonly input: unknown;
+  readonly decision: PermissionDecisionOutcome;
+  readonly decidedAt: string;
+};
+
+const parsedInput = ({ json }: { readonly json: string }): unknown => {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+export const invokePermissionAuditList = async ({
+  sessionIds,
+}: {
+  readonly sessionIds: ReadonlyArray<SessionId>;
+}): Promise<ReadonlyArray<RecentDecision>> => {
+  const rows = await invoke<RawPermissionAuditRow[]>('permission_audit_list', { sessionIds });
+  return rows.map((row) => ({
+    id: row.id,
+    sessionId: row.sessionId as SessionId,
+    toolName: row.toolName,
+    input: parsedInput({ json: row.inputJson }),
+    decision: row.decision === 'deny' ? 'deny' : 'allow',
+    decidedAt: row.decidedAt,
+  }));
+};
+
 export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
 ): Promise<PermissionAuditEntry> => {

@@ -111,7 +111,7 @@ describe('IntegrationCredentialPicker', () => {
 
     const remove = screen.getByRole('button', { name: /forget work/i }) as HTMLButtonElement;
     expect(remove.disabled).toBe(false);
-    expect(screen.getByText('Used by 2 projects')).toBeDefined();
+    expect(screen.getByText('Used by 2 workspaces')).toBeDefined();
 
     fireEvent.click(remove);
 

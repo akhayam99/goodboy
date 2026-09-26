@@ -1,19 +1,18 @@
+import { useShallow } from 'zustand/react/shallow';
+import type { WorkspaceId } from '@goodboy/types';
 import { PANE_RHYTHM, Reveal, StatusRailItem, cn } from '@goodboy/ui';
 import type { SettingsScopeChange, SettingsStudioScope } from './types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
-import { selectProviderAttention } from '../../../../store/slices/providers/selectProviderAttention';
-import {
-  selectStorageAttention,
-  selectStorageAttentionTone,
-} from '../../../../store/slices/storage/selectStorageAttention';
+import { railSubtitles } from './railSubtitles';
 
 export type NestedScope = 'providers' | 'tools';
 
 type Props = {
   readonly scope: SettingsStudioScope;
   readonly appSection: AppSection;
+  readonly workspaceId: WorkspaceId | null;
   readonly workspaceName: string | null;
   readonly hasWorkspace: boolean;
   readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
@@ -29,7 +28,12 @@ export const SCOPE_ITEMS = [
     icon: CONCEPT_ICONS.providers,
     needsWorkspace: false,
   },
-  { scope: 'tools', label: 'Tools', icon: CONCEPT_ICONS.integrations, needsWorkspace: true },
+  {
+    scope: 'tools',
+    label: 'Integrations',
+    icon: CONCEPT_ICONS.integrations,
+    needsWorkspace: true,
+  },
 ] as const satisfies ReadonlyArray<{
   scope: Exclude<SettingsStudioScope, 'app'>;
   label: string;
@@ -56,16 +60,14 @@ export const settingsScopeAvailable = ({
 export const SettingsRail = ({
   scope,
   appSection,
+  workspaceId,
   workspaceName,
   hasWorkspace,
   nestedSlot,
   onNestedClosed,
   onSelect,
 }: Props) => {
-  const providerAttention = useAppStore((state) => selectProviderAttention({ state }));
-  const hasUpdate = useAppStore((state) => state.updaterStatus === 'available');
-  const storageAttention = useAppStore((state) => selectStorageAttention({ state }));
-  const storageTone = useAppStore((state) => selectStorageAttentionTone({ state }));
+  const rail = useAppStore(useShallow((state) => railSubtitles({ state, workspaceId })));
 
   return (
     <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
@@ -83,17 +85,31 @@ export const SettingsRail = ({
         >
           {APP_SECTIONS.map((section) => {
             const Icon = CONCEPT_ICONS[section.concept];
-            const isGeneralUpdate = section.id === 'general' && hasUpdate;
-            const isStorageNudge = section.id === 'storage' && storageTone !== null;
+            const subtitleText =
+              section.id === 'general'
+                ? rail.generalText
+                : section.id === 'storage'
+                  ? rail.storageText
+                  : section.id === 'security-findings'
+                    ? rail.securityFindingsText
+                    : undefined;
+            const subtitleTone =
+              section.id === 'general'
+                ? rail.generalTone
+                : section.id === 'storage'
+                  ? rail.storageTone
+                  : section.id === 'security-findings'
+                    ? rail.securityFindingsTone
+                    : undefined;
             return (
               <li key={section.id}>
                 <StatusRailItem
                   icon={<Icon size={ICON_SIZE.row} />}
                   label={section.label}
                   density="compact"
-                  subtitle={isStorageNudge ? (storageAttention ?? undefined) : undefined}
-                  tone={isGeneralUpdate ? 'info' : isStorageNudge ? storageTone : undefined}
-                  statusLabel={isGeneralUpdate ? 'Update available' : undefined}
+                  subtitle={subtitleText}
+                  tone={subtitleTone}
+                  statusLabel={section.id === 'general' ? subtitleText : undefined}
                   selected={scope === 'app' && appSection === section.id}
                   onClick={() => onSelect({ scope: 'app', section: section.id })}
                   className={cn(section.id === 'danger' && DANGER_ROW)}
@@ -108,18 +124,19 @@ export const SettingsRail = ({
           const Icon = item.icon;
           const isActive = scope === item.scope;
           const nested = isNestedScope(item.scope) ? item.scope : null;
-          const attention = item.scope === 'providers' ? providerAttention : null;
+          const attentionText = item.scope === 'providers' ? rail.providersText : undefined;
+          const attentionTone = item.scope === 'providers' ? rail.providersTone : undefined;
+          const workspaceSubtitle =
+            item.scope === 'workspace'
+              ? (rail.workspaceText ?? workspaceName ?? undefined)
+              : undefined;
           return (
             <div key={item.scope} className="flex flex-col gap-0.5">
               <StatusRailItem
                 icon={<Icon size={ICON_SIZE.control} />}
                 label={item.label}
-                subtitle={
-                  item.scope === 'workspace'
-                    ? (workspaceName ?? undefined)
-                    : (attention ?? undefined)
-                }
-                tone={attention === null ? undefined : 'warning'}
+                subtitle={item.scope === 'workspace' ? workspaceSubtitle : attentionText}
+                tone={item.scope === 'workspace' ? rail.workspaceTone : attentionTone}
                 selected={isActive && nested === null}
                 onClick={() => onSelect({ scope: item.scope })}
                 className={cn(isActive && 'text-foreground')}

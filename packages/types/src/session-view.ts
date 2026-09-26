@@ -23,7 +23,8 @@ export type SessionAttentionReason =
   | 'unread-reply'
   | 'ci-failed'
   | 'changes-requested'
-  | 'pr-approved';
+  | 'pr-approved'
+  | 'needs-approval';
 
 export type SessionPrFetchState = 'unknown' | 'unreachable' | 'known';
 

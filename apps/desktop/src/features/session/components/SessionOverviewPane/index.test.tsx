@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
@@ -24,37 +24,16 @@ vi.mock('../../../../shared/components/PaneShell', () => ({
 }));
 
 vi.mock('./HeaderBand', () => ({
-  HeaderBand: ({ isEmpty }: { isEmpty?: boolean }) => (
-    <header data-testid="header" data-empty={String(isEmpty ?? false)} />
-  ),
+  HeaderBand: () => <header data-testid="header" />,
 }));
 
 vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
-  TimelinePane: ({
-    kickoff,
-    onKickoffShownChange,
-  }: {
-    kickoff?: ReactNode;
-    onKickoffShownChange?: (isShown: boolean) => void;
-  }) => {
-    useEffect(() => {
-      onKickoffShownChange?.(kickoff != null);
-    }, [kickoff, onKickoffShownChange]);
-    return <>{kickoff ?? <section aria-label="Activity" />}</>;
-  },
+  TimelinePane: () => <section aria-label="Activity" />,
 }));
 
-vi.mock('../SessionKickoff', () => ({
-  SessionKickoff: () => <section aria-label="Kickoff" />,
-}));
-vi.mock('../SessionKickoff/IssueBriefProposal', () => ({ IssueBriefProposal: () => null }));
-vi.mock('./useIssueBriefProposal', () => ({
-  useIssueBriefProposal: () => ({ proposal: null, pickIssue: vi.fn() }),
-}));
 vi.mock('./AttentionCallout', () => ({ AttentionCallout: () => null }));
-vi.mock('./GoalOverviewRegion', () => ({ GoalOverviewRegion: () => null }));
-vi.mock('./GoalDetailAction', () => ({ GoalDetailAction: () => null }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
+vi.mock('../../../suggestions/components/NextStepSlot', () => ({ NextStepSlot: () => null }));
 
 import { SessionOverviewPane } from './index';
 
@@ -64,20 +43,19 @@ const session = (archivedAt: string | null): Session =>
   ({ id: 'sess-1', workspaceId: 'ws-1', goal: 'Untitled session', archivedAt }) as Session;
 
 describe('SessionOverviewPane', () => {
-  it('asks how to start on an empty live session and trims its header', () => {
+  it('shows the activity of a live session, never a kickoff', () => {
     render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByRole('region', { name: 'Kickoff' })).toBeDefined();
-    expect(screen.getByTestId('header').getAttribute('data-empty')).toBe('true');
+    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
+    expect(screen.getByTestId('header')).toBeDefined();
   });
 
-  it('shows no kickoff on an archived session', () => {
+  it('shows the activity of an archived session', () => {
     render(
       <SessionOverviewPane session={session('2026-09-01T00:00:00.000Z')} onSelectLens={vi.fn()} />,
     );
 
-    expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
-    expect(screen.getByTestId('header').getAttribute('data-empty')).toBe('false');
   });
 });

@@ -1,14 +1,17 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
-import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
+import { linearIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
+import type { ResolvedFact } from '../../../../shared/detail-fields/factTypes';
+import { useAppStore } from '../../../../store';
+import { LinearStateMenu } from '../LinearStateMenu';
+import { useLinearIssueState } from '../useLinearIssueState';
 import type { LinearIssue } from '../client';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
@@ -30,6 +33,33 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
     projectId,
   });
   const { description, save } = useLinearIssueDescription({ issue, workspaceId, projectId });
+  const { state, change } = useLinearIssueState({ issue, workspaceId, projectId });
+  const reportError = useAppStore((s) => s.reportError);
+  const facts = useMemo(
+    (): ReadonlyArray<ResolvedFact> =>
+      resolveFacts({ registry: linearIssueFields, entity: { ...issue, state } }).map((fact) =>
+        fact.key !== 'state' || change === null
+          ? fact
+          : {
+              ...fact,
+              editor: ({ close }) => (
+                <LinearStateMenu
+                  workspaceId={workspaceId}
+                  projectId={projectId}
+                  issueId={issue.id}
+                  currentName={state.name}
+                  onPick={(stateId) =>
+                    void change(stateId).catch((error: unknown) =>
+                      reportError({ title: "Couldn't change the status", error, workspaceId }),
+                    )
+                  }
+                  onClose={close}
+                />
+              ),
+            },
+      ),
+    [issue, state, change, workspaceId, projectId, reportError],
+  );
   const source = useMemo<ConversationSource>(
     () => ({
       toolLabel: 'Linear',
@@ -59,10 +89,12 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           provider="linear"
           identifier={issue.identifier}
           title={issue.title}
-          state={<StateBadge>{issue.state.name}</StateBadge>}
-          facts={
-            <RecordFacts facts={resolveFacts({ registry: linearIssueFields, entity: issue })} />
-          }
+          byline={recordByline({
+            lead: issue.creator == null ? null : `Opened by ${issue.creator.name}`,
+            verb: 'updated',
+            iso: issue.updatedAt,
+          })}
+          facts={<RecordProperties facts={facts} />}
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />

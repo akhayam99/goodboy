@@ -83,6 +83,15 @@ one-line **description**. Both live on the project row in workspace settings.
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
+**One workspace per window.** Switching a window to another workspace cancels
+every turn running in the one it had, so opening a workspace only switches
+this window in place when nothing is running here. When agents are running,
+the workspace popover asks first and offers a new window, which keeps them
+going; a side door that used to switch silently (a notification, an inbox
+item, Add workspace) now opens that workspace's own window instead of
+touching this one. `⌘Enter` on a workspace row always opens a new window,
+no question asked.
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes
@@ -156,7 +165,10 @@ touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
 days. A clean folder idle longer than "Suggest cleanup after" (30 days by
 default) can go in one bulk step. Its branch stays, even with commits that were
-never pushed.
+never pushed. A scope picker filters all of this to one workspace, to
+**Removed workspaces** (folders whose owning workspace is gone or never had
+one), or to **All workspaces** (the machine total); it defaults to the
+current window's workspace.
 
 Storage also lists **artifacts from deleted sessions**: the plans, reports and
 wireframes whose session is gone, with their saved copy on disk. Each row says
@@ -202,8 +214,7 @@ groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
 with plans, reports and wireframes, pull requests, issues) and Session log
 (branches and worktrees, decisions, session events). Each row shows how many
 of its kind the session holds, and how many of those rows the filter is
-hiding when the toggle is off. Suggestions live outside the filter: the
-Suggested next strip never disappears behind a preset. Presets set the whole
+hiding when the toggle is off. Presets set the whole
 filter in one click: **Everything**, **Work**, and **Needs you**, which shows
 only what waits on you whatever the filter hides and lasts until you leave
 it. A saved filter that matches the old Work preset migrates onto the new
@@ -215,9 +226,44 @@ visible, tagged "Shown because you started it", until you leave the session;
 the next visit it follows the filter like every other row. The filter shows
 once the feed holds more than one kind of row. **Start agent** is the one
 primary, and its menu starts a workflow, a report or a wireframe. When the
-activity column is narrower than 28rem, the needs-you chip keeps its count,
-Filter keeps its icon and the Suggested next strip keeps its title and
-action.
+activity column is narrower than 28rem, the needs-you chip keeps its count
+and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
+and outside its filter, not as a row inside the feed.
+
+## Next steps
+
+One engine, `deriveNextSteps` (`features/suggestions/`), decides everything
+the app suggests doing next. It owns the concept: nothing else derives a
+suggestion, and every surface that shows one calls the same
+`useSuggestionActions` resolver, so clicking "Continue" does the same thing
+whether you clicked it on the board or in the session overview.
+
+- **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
+  in the session overview, above Activity, outside its filter and its
+  grouping: a suggestion is not activity, it is a pointer to what activity
+  should happen next. A new session shows the kickoff instead; the two never
+  compete for the same moment.
+- Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
+  2 ships something, 3 improves something), a **why** (the second line, the
+  concrete reason), a **fingerprint** (kind, object, trigger version) and a
+  **target key** (the object it is about, when it has one). One winning
+  suggestion per target key survives per render: `dedupeByTargetKey` keeps
+  whichever has the lower band number.
+- A suggestion you acted on does not come back for the same fingerprint;
+  "Not now" is scoped the same way. Three "Not now" on the same kind inside
+  a workspace in 14 days, with no acceptance between them, moves that kind
+  behind everything else instead of leading (`shouldDemote`,
+  `nextStepGates.ts`): the only learning this engine does, and it resets
+  the moment one of that kind is accepted.
+- Six suggestion kinds ship today: answer open questions, continue a
+  workflow's ready step, fix review conversations, rebase a project, run a
+  ready plan, add a proposed project. Eleven more (approve a permission,
+  sign in, retry a failed run, fix CI, push, open or ready a pull request,
+  merge, close a finished worktree, and more) are a later addition to the
+  same engine, not a second one.
+- The board card's "Continue" and the Next surface's primary action for a
+  ready workflow step both call `activateWorkflowAgent` on the same pending
+  agent; neither one just opens a panel and leaves starting the step to you.
 
 ## Agents
 
@@ -390,12 +436,15 @@ code starts, Goodboy materializes those projects.
 Agents in the same session do **not** see each other's chats. What they share
 is the **session record** on the **Overview**:
 
-- The goal, the decisions and the session summary, in that order
+- The goal, the decisions and the summary, in that order, in the **Context**
+  drawer (the overview keeps one `Goal` line under the title when the goal
+  says more than the title). The summary reads as State, Next and Learned.
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
-Goodboy updates the goal, decisions and summary after every turn. You can
-edit them yourself too.
+Goodboy updates the decisions and the summary when the summarizer runs after a
+turn, and writes the goal when the session starts. You can edit all three
+yourself too.
 
 Each of those sections is a **lens**, a view of the session. You open it from
 rows and chips on the **Overview**. It opens in place or in a side panel, and
@@ -522,19 +571,34 @@ Settings can be set at four levels. The level closest to the work wins:
 ## Permission rules
 
 A **permission rule** matches a tool and says **allow**, **deny** or **ask**.
+It can match the whole tool or, for Bash, a command prefix ("pnpm test", not
+every Bash call) so approving one command never approves the rest of Bash.
 You can set it globally, or on a workspace, project or session. The most
 specific rule that fits wins.
 
 - Rules reach Claude only. The session's permission mode reaches every
   provider, and a mode a provider can't honor runs as a stricter one
-  ([providers.md](providers.md#permission-modes-per-cli))
-- When a call is denied in a run with no one watching, the turn stops
-- You approve on purpose, and you can retry after approving
+  ([providers.md](providers.md#permission-modes-per-cli)); the agent's row
+  then says so (`Read only · Ask first isn't available on Codex`)
+- When a call is denied in a run with no one watching, the turn stops. The
+  agent's row, its session card and the top bar's Needs you all read **Needs
+  approval**, not running, until you answer
+- The approval card's primary action, **Allow and continue**, grants that
+  exact call once and resumes the turn by itself; the secondary "Always
+  allow" actions write a rule (command-prefix for Bash, the whole tool for an
+  edit) and need a manual retry
+- Settings › Workspace › Permissions lists the rules and adds one inline
+  (`Add rule`: Allow or Deny, a command prefix, this workspace or all of
+  them), then the last 50 decisions of the workspace's sessions from the
+  audit log (`permission_audit_list`)
+- A workflow step that was denied pauses the run instead of finishing the
+  step with whatever text the model produced meanwhile
 
 ## Workspace profile
 
 Each workspace can have one profile, edited under "About you" on the workspace
-page and in onboarding. It has four fields:
+page. Onboarding does not ask for it: "Tell agents about you" in the setup
+checklist opens it. It has four fields:
 
 - **Your roles**: chips from a library of about 30 roles, or your own
 - **About your work**: what you do and for whom
@@ -563,7 +627,7 @@ A connection to a tool lives on the **workspace**. Goodboy calls it a
   Goodboy uses it before the workspace binding.
 - GitHub works the same way. A workspace with no GitHub key of its own uses
   the key for all workspaces, then your `gh` CLI login. Both are set in one
-  place, **Settings > Tools > GitHub**, in an **All workspaces** row and a
+  place, **Settings > Integrations > GitHub**, in an **All workspaces** row and a
   **This workspace** row. App settings have no GitHub section.
 - Secrets stay inside Goodboy. Agents reach your tools only through the
   [query bridge](query-bridge.md).
@@ -587,15 +651,15 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the session kickoff, or opening Launch session on an
+Picking an issue in the new session draft, or opening Launch session on an
 inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the overview you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The brief
-renames the session only when you have not renamed it yourself, and the goal it
-writes lands in the goal history, so the previous goal can be restored. In the
+brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
+text or Dismiss, and a failure stays inline in the card with Retry. The first
+three start the session with the brief's title and goal and link the issue;
+nothing exists before that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
@@ -617,11 +681,20 @@ Merge and pull requests launch with their text as it is.
 - **Jira**: read full issues and act on them. Comment, assign, move to another
   status, edit the description.
 - **Linear**: read issues and turn them into sessions. The description and
-  comments are written back.
+  comments are written back, and the status row moves the issue to another
+  state of its team.
 - **Sentry**: read issues and events and turn them into sessions.
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own
   Slack connection.
+
+Linear, Jira and Sentry connect in numbered steps (`ConnectSteps`): a button
+opens the page where the key is made, the pasted key is checked on its own with
+no Connect button, and the last step picks from a list instead of free text
+(Jira projects from `jira_list_projects`, Sentry organizations and projects
+from `sentry_list_organizations` and `sentry_list_projects`). Each field uses
+the tool's own name for the secret: API key on Linear, API token on Jira, auth
+token on Sentry. A key saved for another workspace can be picked instead.
 
 ## Inbox
 
@@ -636,6 +709,17 @@ in one notice above the list. The state column uses the tool's own word, the
 same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
 to it.
+
+With two or more projects in the workspace, the rail also filters by project.
+Code host records belong to the project at the workspace root. A Sentry error
+belongs to every project linked to its Sentry project in Settings, Integrations,
+Sentry, where each project can read several Sentry projects and one Sentry
+project can serve several projects (`project_sentry_links`, m191). Links can be
+suggested from Sentry code mappings and wait for your Link. The inbox reads the
+first page of every linked Sentry project besides the connected one. A record
+no project claims, such as a Linear or Jira issue, stays visible under every
+project filter. In Settings, Workspace, a project that reads Sentry shows the
+Sentry glyph, and its tooltip names the Sentry projects.
 
 ## Providers and routing
 
@@ -667,8 +751,8 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   total per session
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
-- **Budgets**: a monthly cap per provider and a soft cap per session, with an
-  alert before you reach them
+- **Budgets**: a monthly budget per provider and a spend limit per session that
+  pauses workflows or only warns, with an alert before you reach them
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the

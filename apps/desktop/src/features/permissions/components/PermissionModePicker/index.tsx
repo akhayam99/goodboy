@@ -1,68 +1,19 @@
-import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Chip, cn, StatusDot, type Tone, useDropdown, Eyebrow } from '@goodboy/ui';
+import { Check, ChevronDown, X } from 'lucide-react';
+import { AnchoredPopover, Button, Chip, cn, tintClasses, useDropdown } from '@goodboy/ui';
 import type { ClaudePermissionMode, ProviderId, Session } from '@goodboy/types';
 import { modeSupportFor } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-
-type ModeMeta = {
-  readonly value: ClaudePermissionMode;
-  readonly label: string;
-  readonly description: string;
-  readonly tone: Tone;
-  readonly text: string;
-};
-
-const PERMISSION_MODE_META: Record<ClaudePermissionMode, ModeMeta> = {
-  bypassPermissions: {
-    value: 'bypassPermissions',
-    label: 'Bypass',
-    description: 'Agent uses all tools freely, no prompts',
-    tone: 'danger',
-    text: 'text-danger',
-  },
-  acceptEdits: {
-    value: 'acceptEdits',
-    label: 'Edits',
-    description: 'File edits allowed, asks before bash',
-    tone: 'warning',
-    text: 'text-warning',
-  },
-  default: {
-    value: 'default',
-    label: 'Default',
-    description: 'Asks before writes and runs',
-    tone: 'info',
-    text: 'text-info',
-  },
-  dontAsk: {
-    value: 'dontAsk',
-    label: "Don't ask",
-    description: 'Requests that need approval are denied, no prompts',
-    tone: 'neutral',
-    text: 'text-muted-foreground',
-  },
-  plan: {
-    value: 'plan',
-    label: 'Plan',
-    description: 'No tool calls executed, read-only',
-    tone: 'neutral',
-    text: 'text-muted-foreground',
-  },
-};
-
-const PERMISSION_MODES: ReadonlyArray<ModeMeta> = [
-  PERMISSION_MODE_META.bypassPermissions,
-  PERMISSION_MODE_META.acceptEdits,
-  PERMISSION_MODE_META.default,
-  PERMISSION_MODE_META.dontAsk,
-  PERMISSION_MODE_META.plan,
-];
-
-export const permissionModeMeta = (mode: ClaudePermissionMode): ModeMeta => {
-  return PERMISSION_MODE_META[mode] ?? PERMISSION_MODE_META.plan;
-};
+import {
+  DEFAULT_PERMISSION_MODE,
+  MODE_COPY,
+  PICKER_MODES,
+  modeCopyOf,
+  pickerModeOf,
+} from '../../modeCopy';
+import { openPermissionSettings } from '../../openPermissionSettings';
 
 type Props = {
   readonly session: Session;
@@ -71,13 +22,19 @@ type Props = {
 
 export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const dropdown = useDropdown({
-    width: 'w-64',
-    expectedHeight: 280,
+    width: 'w-80',
+    expectedHeight: 300,
     openEvent: 'goodboy:open-permission-picker',
   });
   const { open, close, toggle } = dropdown;
   const setSessionPermissionMode = useAppStore((s) => s.setSessionPermissionMode);
-  const current = permissionModeMeta(session.permissionMode);
+  const workspaceDefault = useAppStore(
+    (s) =>
+      s.workspaces.find((workspace) => workspace.id === session.workspaceId)
+        ?.defaultPermissionMode ?? DEFAULT_PERMISSION_MODE,
+  );
+  const current = modeCopyOf({ mode: session.permissionMode });
+  const defaultCopy = modeCopyOf({ mode: workspaceDefault });
   const unavailableReason = (mode: ClaudePermissionMode): string | null => {
     const support = modeSupportFor({ provider: activeProvider, mode });
     if (support.support !== 'fallback' || support.reason === null) {
@@ -89,8 +46,9 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
   const runsAs = modeSupportFor({ provider: activeProvider, mode: session.permissionMode }).runsAs;
   const triggerLabel =
     currentUnavailable === null
-      ? current.description
-      : `${currentUnavailable}. Runs as ${permissionModeMeta(runsAs).label}`;
+      ? current.promise
+      : `${currentUnavailable}. Runs as ${modeCopyOf({ mode: runsAs }).label}`;
+  const CurrentIcon = current.icon;
 
   const onPick = (mode: ClaudePermissionMode) => {
     void setSessionPermissionMode(session.id, mode);
@@ -117,60 +75,102 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
           hasPopup="dialog"
           expanded={open}
           className="gap-1.5 bg-subtle px-2.5 py-0.5 hover:bg-hover hover:opacity-100"
-          icon={<StatusDot tone={current.tone} size="sm" />}
-          label={<span className={cn(current.text)}>{current.label}</span>}
+          icon={
+            <CurrentIcon
+              size={ICON_SIZE.row}
+              aria-hidden
+              className={tintClasses(current.tone).icon}
+            />
+          }
+          label={<span className="text-foreground">{current.label}</span>}
           trailing={<ChevronDown size={11} aria-hidden className="text-faint-foreground" />}
         />
       }
     >
-      <div className="flex items-center px-2.5 pb-0.5 pt-1">
-        <Eyebrow label="Permission mode" muted />
+      <div className="flex items-center px-2.5 pb-1 pt-1">
+        <span className="text-label text-muted-foreground">What can agents do?</span>
       </div>
-      {PERMISSION_MODES.map((m) => {
-        const active = session.permissionMode === m.value;
-        const reason = unavailableReason(m.value);
+      {PICKER_MODES.map((mode) => {
+        const copy = MODE_COPY[mode];
+        const Icon = copy.icon;
+        const isActive = pickerModeOf({ mode: session.permissionMode }) === mode;
+        const reason = unavailableReason(mode);
         const isUnavailable = reason !== null;
         return (
           <button
-            key={m.value}
+            key={mode}
             type="button"
             disabled={isUnavailable}
-            onClick={() => onPick(m.value)}
+            onClick={() => onPick(mode)}
             className={cn(
-              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left transition-colors',
+              'flex w-full items-start gap-2 px-2.5 py-1.5 text-left motion-safe:transition-colors',
               isUnavailable ? 'cursor-not-allowed' : 'hover:bg-hover',
             )}
           >
-            <StatusDot tone={isUnavailable ? 'neutral' : m.tone} size="sm" className="mt-1" />
-            <span className="min-w-0 flex-1">
-              <span
-                className={cn(
-                  'block font-medium',
-                  isUnavailable ? 'text-disabled-foreground' : m.text,
-                )}
-              >
-                {m.label}
+            <Icon
+              size={ICON_SIZE.control}
+              aria-hidden
+              className={cn(
+                'mt-0.5 shrink-0',
+                isUnavailable ? 'text-disabled-foreground' : tintClasses(copy.tone).icon,
+              )}
+            />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'text-label',
+                    isUnavailable ? 'text-disabled-foreground' : 'text-foreground',
+                  )}
+                >
+                  {copy.label}
+                </span>
+                {defaultCopy.mode === mode ? (
+                  <span className="rounded-sm bg-muted px-1 text-meta text-muted-foreground">
+                    Default
+                  </span>
+                ) : null}
               </span>
               <span
                 className={cn(
-                  'block text-secondary',
+                  'text-secondary',
                   isUnavailable ? 'text-disabled-foreground' : 'text-muted-foreground',
                 )}
               >
-                {m.description}
+                {copy.promise}
               </span>
               {isUnavailable ? (
-                <span className="block text-secondary text-muted-foreground">{reason}</span>
+                <span className="flex items-center gap-1 text-secondary text-muted-foreground">
+                  <X size={10} aria-hidden />
+                  {reason}
+                </span>
               ) : null}
             </span>
-            {active ? (
-              <span aria-hidden className="mt-0.5 text-secondary text-primary">
-                ✓
-              </span>
+            {isActive ? (
+              <Check
+                size={ICON_SIZE.row}
+                aria-label="Current mode"
+                className="mt-0.5 shrink-0 text-primary"
+              />
             ) : null}
           </button>
         );
       })}
+      <div className="flex items-center gap-2 px-2.5 pt-1.5">
+        <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
+          Workspace default: {defaultCopy.label}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            close();
+            openPermissionSettings();
+          }}
+        >
+          Rules
+        </Button>
+      </div>
     </AnchoredPopover>
   );
 };

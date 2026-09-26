@@ -152,6 +152,10 @@ export const createSession = (set: SetFn, get: GetFn) => {
       ...(inheritedEnabledProviders == null ? {} : { enabledProviders: inheritedEnabledProviders }),
     };
 
+    const workspacePermissionMode =
+      get().workspaces.find((candidate) => candidate.id === workspaceId)?.defaultPermissionMode ??
+      'bypassPermissions';
+
     const now = new Date().toISOString() as IsoDateTime;
     const initialState: TurnState = { kind: 'draft' };
     const sessionAutoRun = autoRun === true;
@@ -165,7 +169,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
       state: initialState,
       contextSlots: [],
       providerPreference: providerPreference ?? inheritedPreference,
-      permissionMode: 'bypassPermissions',
+      permissionMode: workspacePermissionMode,
       workflowRuns:
         workflowId !== undefined && workflowRunId !== undefined
           ? [

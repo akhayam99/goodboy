@@ -7,6 +7,7 @@ import type { SettingsScopeChange } from '../../../features/settings/components/
 import type { ImpactScope } from '../../../features/impact/lib';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
+import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { StudioFrame } from '../StudioFrame';
 import { isAppScopeOverlay } from '../../hooks/useAppOverlays/overlayState';
 import { AppScopeOverlays } from './AppScopeOverlays';
@@ -68,6 +69,7 @@ type Props = {
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
   readonly onImpactScopeChange: (scope: ImpactScope) => void;
+  readonly onOpenChangelogScreen: (params: { readonly screen: ChangelogScreen }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -87,6 +89,7 @@ type StudioParams = {
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
   readonly onInboxFocusChange: (focus: InboxStudioFocus) => void;
   readonly onImpactScopeChange: (scope: ImpactScope) => void;
+  readonly onOpenChangelogScreen: (params: { readonly screen: ChangelogScreen }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;
@@ -98,6 +101,7 @@ const renderStudio = ({
   onSettingsScopeChange,
   onInboxFocusChange,
   onImpactScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -147,13 +151,16 @@ const renderStudio = ({
       return currentWorkspace === null ? null : (
         <ImpactStudio
           workspaceId={currentWorkspace.id}
+          workspaceName={currentWorkspace.name}
           initialScope={overlay.scope ?? undefined}
           onScopeChange={onImpactScopeChange}
           onClose={close}
         />
       );
     case 'changelog':
-      return currentWorkspace === null ? null : <ChangelogStudio onClose={close} />;
+      return currentWorkspace === null ? null : (
+        <ChangelogStudio onClose={close} onOpenScreen={onOpenChangelogScreen} />
+      );
     case 'notifications':
       return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;
     default: {
@@ -169,6 +176,7 @@ export const AppStudio = ({
   onSettingsScopeChange,
   onInboxFocusChange,
   onImpactScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -184,6 +192,7 @@ export const AppStudio = ({
         onSettingsScopeChange,
         onInboxFocusChange,
         onImpactScopeChange,
+        onOpenChangelogScreen,
         currentWorkspace,
         workspaceProjectRoot,
         offerWorkspaceRepo,
@@ -198,6 +207,7 @@ export const AppOverlayRouter = ({
   onSettingsScopeChange,
   onInboxFocusChange,
   onImpactScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
@@ -219,6 +229,7 @@ export const AppOverlayRouter = ({
           onSettingsScopeChange={onSettingsScopeChange}
           onInboxFocusChange={onInboxFocusChange}
           onImpactScopeChange={onImpactScopeChange}
+          onOpenChangelogScreen={onOpenChangelogScreen}
           currentWorkspace={currentWorkspace}
           workspaceProjectRoot={null}
           offerWorkspaceRepo={offerWorkspaceRepo}

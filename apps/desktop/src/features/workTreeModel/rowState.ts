@@ -11,6 +11,7 @@ export type RowStateReason =
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
   | { readonly kind: 'blocked' }
+  | { readonly kind: 'needsApproval' }
   | { readonly kind: 'stepFailed'; readonly stepLabel: string | null }
   | { readonly kind: 'stepBlocked'; readonly stepLabel: string | null }
   | { readonly kind: 'orchestratorFailed' }
@@ -153,6 +154,9 @@ const waitingRunState = ({
   const stop = run.orchestrationStop?.kind ?? null;
   if (stop === 'failure') {
     return { phase: 'failed', reason: { kind: 'orchestratorFailed' }, ask: null };
+  }
+  if (stop === 'needs-approval') {
+    return { phase: 'waiting', reason: { kind: 'needsApproval' }, ask: null };
   }
   if (failedStep?.isBlocked === true) {
     return {

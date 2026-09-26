@@ -187,6 +187,36 @@ behavior beyond rendering:
 - `unknown_payload` keeps provider output the parsers do not model yet,
   counted per provider and payload type.
 
+## Tool call states
+
+A `tool_call` transcript item carries `runId`, `startedAt` and `endedAt`
+(`apps/desktop/src/features/chat/utils/transcript-items.ts`), taken from the
+`at` of `tool_call_start`/`tool_call_end` rather than the moment the row
+mounts, so a duration survives a reload. `toolStatus`
+(`apps/desktop/src/features/chat/utils/toolStatus.ts`) is the pure selector
+that turns a tool call plus its context into one of six states, the same
+alphabet the timeline's `WorkNode` uses at its `sm` size:
+
+- `running`: started, not yet ended, and the caller vouches for its run
+  (`activeRunId` matches, or is not given at all).
+- `done`: ended without error.
+- `failed`: ended with `isError`.
+- `approval`: a `permission_request` for the same `toolUseId` has no
+  `permission_decision` yet. `permissionFor` scans the surrounding items for
+  this, since `cluster-operations.ts` now absorbs `permission_request` and
+  `permission_decision` into the same operations cluster as the tool call
+  they gate, instead of splitting the cluster around them.
+- `stopped`: never ended, and the run it belongs to is no longer the active
+  one (the turn ended, or a later run has started).
+- `denied`: `permission_decision` was `deny`, whether or not the tool ever
+  ended.
+
+`OperationsCluster` derives one aggregate state the same way (approval beats
+running beats stopped beats failed beats done) for its header glyph and
+sentence; the rail on that header only appears for `approval`, because a
+neutral row carries no rail (`DESIGN.md` → "A row that needs you or went
+wrong carries a tone rail").
+
 ## Context measurement
 
 Usage events feed telemetry and the context meter. Codex reports token totals
@@ -195,6 +225,45 @@ Codex usage event `codexMeasuredUsage` asks Rust for the thread's rollout file
 under `$CODEX_HOME/sessions` (default `~/.codex`) and takes the latest
 `last_token_usage` as the context size. When the rollout cannot be read, the
 parsed usage stands.
+
+## Turn footer
+
+`usage` transcript items no longer cluster with operations
+(`cluster-operations.ts`'s `ABSORBED_KINDS` dropped it): a `TurnFooter`
+(`features/chat/components/TurnFooter/`) always renders on its own row,
+right under the run's last assistant message. A `usage` item merges every
+`usage` event for the same `runId` into one (`sumUsage` in
+`transcript-items.ts`), because OpenCode reports several `step-finish`
+events per run.
+
+`useTurnFooter` reads its numbers from the store, not from the item: it
+sums `sessionTelemetry[sessionId]` for the item's `runId` (input, output,
+cached and cache-write tokens, context size, cost), and reads provider,
+model and effort from `runRouting[agentId][runId]`, the same live routing
+map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
+(`seedRunRoutingFromSpans`). Telemetry lags one store write behind the
+`usage` event in the rare case a component reads it first, so the footer
+falls back to the item's own `ProviderUsage` numbers (no provider or model
+yet) until telemetry lands. A cost of exactly zero hides the cost entry
+instead of showing `$0.00`, because zero usually means unknown, not free.
+
+`turnFootersFor` (`utils/turnOutcome.ts`) derives, per run that produced a
+`usage` item: `outcome` (`done`, `stopped` once a later run is active or
+the turn ended with no `done`/`error` for it, `failed` once an `error`
+lands for it) and `startedAt` (the earliest timestamp any item with that
+`runId` carries: a `tool_call`'s `startedAt`, a permission event's `at`,
+or the `usage` item's own `at` when nothing else timed the run). Duration
+is `startedAt` to the `usage` item's `at`, so a text-only turn with no
+tool call measures only from its own usage event onward. `ChatView`
+computes this once per render and `TranscriptRows` resolves each `usage`
+row's own `outcome`/`startedAt` before handing it to `TurnFooter`.
+
+A `stopped` or `failed` footer shows the outcome's `WorkNode` glyph (the
+same alphabet as the transcript's status column) and a token count when
+one exists, never the full stats line. A `done` footer's leading glyph is
+the provider's, not a lifecycle glyph, since done is the expected case;
+clicking it (or `ⓘ`) opens `TurnFooterDetail`, an `AnchoredPopover` with
+the itemized breakdown.
 
 ## Failure and fallback
 
@@ -277,6 +346,44 @@ the chat's handoff, as the post-step summarizer is a workflow's
   sets the error state and offers a retry. The turn itself never fails because
   its summary did.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
+
+## Composer
+
+`ChatInput` is one shell: field, then a 32px action row, no divider between
+them. Focus shows as a stronger border plus a soft shadow, never a full ring:
+the ring the box carried at every focus wrapped the whole thing in a color
+loud enough to compete with the transcript, and the same anti-pattern is
+avoided on `SendControl`'s own buttons.
+
+- The action row's left side is `ComposerPlusMenu` (`+`, `parts/`): the menu
+  is where the prefix syntax (`$` script, `~` workflow, `@` agent) is learned,
+  not the placeholder, and it also holds Attach files. It reads `CHAT_PREFIXES`
+  so a new prefix group appears there on its own. Then `PermissionModePicker`,
+  then an attachment count once files are staged (the attachment chips
+  themselves sit above the field, not in this row).
+- The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
+  passed in rather than living beside it) then `SendControl` (`parts/`): the
+  same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
+  nothing to send, Queue/Send now once there is something to deliver while a
+  turn runs.
+- `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
+  advertised every prefix inline: a role's first turn gets its
+  `firstMessagePrompt`, otherwise `Reply to {role}` idle or `Queue a message
+for {role}` while a turn runs, `{role}` being the agent's own name over its
+  kind label. No prefix syntax appears in it.
+- Queued messages and the agent's own suggestion sit in a tray attached above
+  the shell (`bg-muted`, rounded top corners) when either has something to
+  show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
+  sits above that, since it is a warning rather than composer content.
+- `resolveSkillPrompt` returns the content unresolved when
+  `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
+  plain text instead of failing with "unknown skill" while skills are
+  disabled.
+- Sending: `Enter` in this composer, because it talks to an agent;
+  `⌘Enter` is for a composer that talks to a person (a PR comment, a Linear
+  or Slack reply). Both are already the rule elsewhere in the app
+  (`ConversationComposer`), this just names it: an agent composer sends on
+  Enter, a people composer on ⌘Enter.
 
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
 a time with a 90 second timeout, and a failure falls back to the deterministic

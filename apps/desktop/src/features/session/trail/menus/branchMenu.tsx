@@ -6,9 +6,15 @@ import type {
   CrumbMenuRow,
   CrumbState,
 } from '@goodboy/ui';
-import { ArrowDown, Cloud, Laptop } from 'lucide-react';
+import { ArrowDown, Cloud, CloudOff, GitMerge, Laptop } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { distanceBehind } from '../../../../shared/lib/gitStatus';
+import {
+  branchPresenceOf,
+  branchPriorityOf,
+  isBranchMergedOf,
+  mainPresenceOf,
+  type BranchPriorityKind,
+} from '../../../../shared/lib/branchPresence';
 import { DiffStat } from '../../components/DiffStat';
 
 export type BranchStat = {
@@ -25,22 +31,40 @@ type Params = {
   readonly onSelect: (mount: SessionProjectMount) => void;
 };
 
-export const branchStateOf = ({
-  status,
-}: {
+type BranchLook = Pick<CrumbState, 'tone' | 'glyph'>;
+
+const PRIORITY_LOOK = {
+  merged: { tone: 'merged', glyph: GitMerge },
+  'gone-on-origin': { tone: 'danger', glyph: CloudOff },
+  'local-only': { tone: 'warning', glyph: Laptop },
+  'behind-main': { tone: 'warning', glyph: ArrowDown },
+  'on-origin': { tone: 'neutral', glyph: Cloud },
+} satisfies Record<BranchPriorityKind, BranchLook>;
+
+export type BranchPlace = Pick<SessionProjectMount, 'baseBranch' | 'worktreePath' | 'repoRoot'>;
+
+type BranchStateParams = {
   readonly status: WorktreeStatus | null;
-}): CrumbState | null => {
+  readonly mount: BranchPlace | null;
+};
+
+export const branchStateOf = ({ status, mount }: BranchStateParams): CrumbState | null => {
   if (status === null) {
     return null;
   }
-  if (status.upstream === null) {
-    return { word: 'Local only', tone: 'warning', glyph: Laptop };
-  }
-  const behind = distanceBehind({ distance: status.mainDistance });
-  if (behind !== null && behind > 0) {
-    return { word: `Behind main by ${behind}`, tone: 'warning', glyph: ArrowDown };
-  }
-  return { word: 'On origin', tone: 'neutral', glyph: Cloud };
+  const isMerged =
+    mount !== null &&
+    isBranchMergedOf({
+      status,
+      baseBranch: mount.baseBranch,
+      isMainCheckout: mount.worktreePath === mount.repoRoot,
+      isRequestMerged: false,
+    });
+  const priority = branchPriorityOf({
+    presence: branchPresenceOf({ status, isMerged }),
+    main: mainPresenceOf({ status, isRebasingAgent: false }),
+  });
+  return { word: priority.word, ...PRIORITY_LOOK[priority.kind] };
 };
 
 export const branchMenu = ({
@@ -65,7 +89,7 @@ export const branchMenu = ({
         ) : (
           <span className="text-faint-foreground">No changes</span>
         ),
-      state: branchStateOf({ status: statusOf(mount) }),
+      state: branchStateOf({ status: statusOf(mount), mount }),
       isCurrent: mount.worktreePath === currentPath,
       isDisabled: false,
       indent: 0,

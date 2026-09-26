@@ -1,6 +1,6 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
@@ -62,7 +62,9 @@ export const GitlabIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           title={issue.title}
           state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
           facts={
-            <RecordFacts facts={resolveFacts({ registry: gitlabIssueFields, entity: issue })} />
+            <RecordProperties
+              facts={resolveFacts({ registry: gitlabIssueFields, entity: issue })}
+            />
           }
           externalRef={{ url: issue.webUrl, label: 'issue' }}
           frame={frame}

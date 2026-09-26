@@ -37,10 +37,10 @@ import { ConnectIntegrationEmptyState } from './ConnectIntegrationEmptyState';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROVIDERS = [
-  ['linear', 'Linear', 'Personal API key'],
-  ['sentry', 'Sentry', 'Personal API key'],
+  ['linear', 'Linear', 'API key'],
+  ['sentry', 'Sentry', 'Auth token'],
   ['gitlab', 'GitLab', 'Personal API key'],
-  ['jira', 'Jira', 'Personal API key'],
+  ['jira', 'Jira', 'API token'],
   ['bitbucket', 'Bitbucket', 'Personal API key'],
   ['slack', 'Slack', 'User token'],
 ] as const;
@@ -63,17 +63,29 @@ describe('ConnectIntegrationEmptyState', () => {
     window.removeEventListener(`goodboy:open-${provider}-studio`, studioListener);
   });
 
-  const PERSONAL_KEY_PROVIDERS = PROVIDERS.filter(([provider]) => provider !== 'slack');
+  const PERSONAL_KEY_PROVIDERS = PROVIDERS.filter(
+    ([provider]) => provider !== 'slack' && provider !== 'jira' && provider !== 'sentry',
+  );
 
   it.each(PERSONAL_KEY_PROVIDERS)(
-    'labels the %s credential field a personal API key, never a token',
-    (provider) => {
+    'labels the %s credential field an API key, never a token',
+    (provider, _name, fieldLabel) => {
       render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
 
-      expect(screen.getByLabelText('Personal API key')).toBeDefined();
+      expect(screen.getByLabelText(fieldLabel)).toBeDefined();
       expect(screen.queryByLabelText(/access token|auth token|api token/i)).toBeNull();
     },
   );
+
+  it.each([
+    ['jira', 'API token'],
+    ['sentry', 'Auth token'],
+  ] as const)('names the %s secret the way the tool itself does', (provider, fieldLabel) => {
+    render(<ConnectIntegrationEmptyState provider={provider} workspaceId={WORKSPACE_ID} />);
+
+    expect(screen.getByLabelText(fieldLabel)).toBeDefined();
+    expect(screen.queryByLabelText('Personal API key')).toBeNull();
+  });
 
   it('asks Slack for a user token, so replies carry the person and not an app', () => {
     render(<ConnectIntegrationEmptyState provider="slack" workspaceId={WORKSPACE_ID} />);

@@ -1,6 +1,6 @@
 import { useAppStore } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
-import { SlotHistoryDrawer } from '../../../features/session/components/SessionWorkspace/parts/SlotHistoryDrawer';
+import { ContextDrawer } from '../../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../../features/explore/components/ExploreFileDrawer';
 import { ArtifactShellDrawer } from '../../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { PlanPartDrawer } from '../../../features/plans/components/PlanParts/PlanPartDrawer';
@@ -19,11 +19,13 @@ export const DrawerHost = () => {
     return null;
   }
   switch (drawer.kind) {
-    case 'slot-history':
+    case 'context':
       return (
-        <SlotHistoryDrawer
+        <ContextDrawer
+          key={drawer.sessionId}
           sessionId={drawer.sessionId}
-          slotKey={drawer.payload.slotKey}
+          tab={drawer.payload.tab}
+          view={drawer.payload.view}
           onClose={closeDrawer}
         />
       );

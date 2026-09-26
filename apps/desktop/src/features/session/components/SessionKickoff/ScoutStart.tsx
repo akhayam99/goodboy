@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { Button, Input } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { StartFooter } from './StartFooter';
+import { useDraftStart } from './useDraftStart';
 
 type Props = {
-  readonly session: Session;
+  readonly workspaceId: WorkspaceId;
 };
 
 const SCOUT_BRIEF =
@@ -20,55 +21,49 @@ export const scoutKickoffPrompt = ({ focus }: BriefParams): string => {
   return trimmed === '' ? SCOUT_BRIEF : `${SCOUT_BRIEF}\n\nFocus on: ${trimmed}`;
 };
 
-export const ScoutStart = ({ session }: Props) => {
-  const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const reportError = useAppStore((state) => state.reportError);
-  const [focus, setFocus] = useState('');
-  const [isStarting, setIsStarting] = useState(false);
+export const ScoutStart = ({ workspaceId }: Props) => {
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const focus = useAppStore((state) => selectSessionDraft({ state, workspaceId }).agentPrompt);
+  const { start, isStarting, error } = useDraftStart({ workspaceId });
 
-  const start = async () => {
-    if (isStarting) {
+  const startScout = async () => {
+    const isStarted = await start({
+      kind: 'scout',
+      focus,
+      prompt: scoutKickoffPrompt({ focus }),
+    });
+    if (!isStarted) {
       return;
     }
-    setIsStarting(true);
-    try {
-      await spawnAgent(session.id, {
-        kindOverride: 'scout',
-        initialPrompt: scoutKickoffPrompt({ focus }),
-        focus: 'agent',
-      });
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
-    } catch (error) {
-      void reportError({ title: "Couldn't start Scout", error, sessionId: session.id });
-    } finally {
-      setIsStarting(false);
-    }
+    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
   return (
     <div className="flex flex-col gap-2">
       <Input
         value={focus}
-        onChange={(event) => setFocus(event.target.value)}
+        onChange={(event) =>
+          patchSessionDraft({ workspaceId, patch: { agentPrompt: event.target.value } })
+        }
         onKeyDown={(event) => {
           if (event.key !== 'Enter') {
             return;
           }
           event.preventDefault();
-          void start();
+          void startScout();
         }}
         aria-label="Scout focus"
         placeholder="Optional: an area, a file or a question"
         data-kickoff-field
         className="h-8 text-body"
       />
-      <StartFooter note="Scout only reads. It changes nothing.">
+      <StartFooter note="Scout only reads. It changes nothing." error={error}>
         <Button
           size="sm"
           disabled={isStarting}
           isBusy={isStarting}
           busyLabel="Starting Scout"
-          onClick={() => void start()}
+          onClick={() => void startScout()}
         >
           Start Scout
         </Button>

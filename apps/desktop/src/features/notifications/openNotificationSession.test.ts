@@ -94,7 +94,13 @@ describe('openNotificationSession', () => {
       notification: buildNotification({ workspaceId: 'ws-2' as WorkspaceId }),
     });
 
-    await vi.waitFor(() => expect(state.openWorkspace).toHaveBeenCalledWith('ws-2', 'Northwind'));
+    await vi.waitFor(() =>
+      expect(state.openWorkspace).toHaveBeenCalledWith({
+        id: 'ws-2',
+        title: 'Northwind',
+        onRunning: 'new-window',
+      }),
+    );
     await vi.waitFor(() =>
       expect(state.navigate).toHaveBeenCalledWith({
         to: sessionPlace({ sessionId: 'session-1' as SessionId }),
@@ -109,7 +115,13 @@ describe('openNotificationSession', () => {
       notification: buildNotification({ workspaceId: 'ws-2' as WorkspaceId }),
     });
 
-    await vi.waitFor(() => expect(state.openWorkspace).toHaveBeenCalledWith('ws-2', 'Northwind'));
+    await vi.waitFor(() =>
+      expect(state.openWorkspace).toHaveBeenCalledWith({
+        id: 'ws-2',
+        title: 'Northwind',
+        onRunning: 'new-window',
+      }),
+    );
     expect(state.navigate).not.toHaveBeenCalled();
   });
 });

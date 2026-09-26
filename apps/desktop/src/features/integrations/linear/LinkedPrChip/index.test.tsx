@@ -35,7 +35,9 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
+  useAppStore: Object.assign(<T,>(selector: (state: Store) => T) => selector(h.store), {
+    getState: () => h.store,
+  }),
 }));
 
 vi.mock('../../../../shared/lib/editor', () => ({

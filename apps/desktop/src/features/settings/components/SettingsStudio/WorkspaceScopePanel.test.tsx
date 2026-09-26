@@ -27,6 +27,7 @@ const { state, toastMock } = vi.hoisted(() => ({
     orphanWorktrees: {} as Record<string, ReadonlyArray<{ path: string; name: string }>>,
     retainedWorktreePaths: {} as Record<string, ReadonlyArray<unknown>>,
     focusStorage: vi.fn(),
+    setStorageScope: vi.fn(),
     currentWorkspaceId: null as string | null,
     sessions: [] as ReadonlyArray<{ id: string; state: { kind: string } }>,
   },
@@ -106,6 +107,7 @@ beforeEach(() => {
   state.orphanWorktrees = {};
   state.retainedWorktreePaths = {};
   state.focusStorage = vi.fn();
+  state.setStorageScope = vi.fn();
   state.currentWorkspaceId = null;
   state.sessions = [];
   toastMock.mockReset();
@@ -325,7 +327,8 @@ describe('WorkspaceScopePanel', () => {
     expect(screen.getByText('1 session folder from this workspace is left on disk.')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Review in Storage' }));
 
-    expect(state.focusStorage).toHaveBeenCalledWith({ filter: 'review', workspaceId: 'ws-1' });
+    expect(state.focusStorage).toHaveBeenCalledWith({ filter: 'review' });
+    expect(state.setStorageScope).toHaveBeenCalledWith({ kind: 'workspace', id: 'ws-1' });
     expect(opened).toHaveBeenCalledTimes(1);
     window.removeEventListener('goodboy:open-settings', opened);
   });

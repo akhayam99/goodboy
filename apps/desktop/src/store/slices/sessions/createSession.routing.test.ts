@@ -105,6 +105,7 @@ const baseState = (): StoreState => ({
   sessionWorkflows: {},
   phaseTemplates: { [WS_ID]: [workflow] },
   workspaceOverrides: { [WS_ID]: {} },
+  workspaces: [],
   loadWorkspaceOverrides: vi.fn(async () => undefined),
   activeLens: {},
   sessionStudio: {},

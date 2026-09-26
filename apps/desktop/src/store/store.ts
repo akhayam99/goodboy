@@ -18,12 +18,14 @@ import type {
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
+  PermissionRulePattern,
   PermissionScope,
   PlanId,
   PlanStatus,
   StepId,
   Session,
   SessionId,
+  SessionBudgetOnExceed,
   SessionProviderPreference,
   StepDef,
   StepDefId,
@@ -35,6 +37,7 @@ import type {
   WorkflowSpendLimitMode,
   ProviderId,
   Project,
+  GoodboyIgnoreMode,
   ProjectId,
   ProviderCredential,
   CredentialId,
@@ -227,7 +230,10 @@ import { createDurationEstimatesSlice } from './slices/durationEstimates';
 import { durationEstimatesInitialState } from './slices/durationEstimates/state';
 import { createProviderLimitsSlice } from './slices/providerLimits';
 import { providerLimitsInitialState } from './slices/providerLimits/state';
+import { createSentryLinksSlice } from './slices/sentryLinks';
+import { sentryLinksInitialState } from './slices/sentryLinks/state';
 import { createHandoffsSlice } from './slices/handoffs';
+import { createSecurityFindingsSlice } from './slices/security-findings';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -266,6 +272,7 @@ import type {
 } from './slices/project-mounts/removeMountWorktree';
 import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
+import type { OpenWorkspaceParams, OpenWorkspaceResult } from './slices/presence/openWorkspace';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
@@ -274,11 +281,20 @@ import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSe
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
+import type { SetUpdateQueuedUntilIdleParams } from './slices/updater/setUpdateQueuedUntilIdle';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
+import { createSessionDraftSlice } from './slices/sessionDraft';
+import { createContextDrawerSlice } from './slices/contextDrawer';
+import { initialContextDrawerState } from './slices/contextDrawer/state';
+import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
+import { initialSessionDraftState } from './slices/sessionDraft/state';
+import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
+import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
+import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import {
@@ -346,10 +362,12 @@ type AppActions = {
   restoreNewerDatabaseBackup(): Promise<void>;
   quitApp(): Promise<void>;
   checkForUpdates(): Promise<void>;
-  installUpdate(): Promise<void>;
+  downloadUpdate(): Promise<void>;
+  applyUpdate(): Promise<void>;
+  setUpdateQueuedUntilIdle(params: SetUpdateQueuedUntilIdleParams): void;
   relaunchApp(): Promise<void>;
-  loadChangelog(): Promise<void>;
-  reloadChangelog(): Promise<void>;
+  loadChangelogDates(): Promise<void>;
+  reloadChangelogDates(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
@@ -357,6 +375,14 @@ type AppActions = {
   addBugReportImages(params: AddBugReportImagesParams): void;
   removeBugReportImage(params: RemoveBugReportImageParams): void;
   clearBugReportDraft(): void;
+  openSessionDraft(): void;
+  openContextDrawer(params: OpenContextDrawerParams): void;
+  toggleContextDrawer(params: OpenContextDrawerParams): void;
+  loadSessionContextSeen(sessionId: SessionId): Promise<void>;
+  markSessionContextSeen(sessionId: SessionId): Promise<void>;
+  patchSessionDraft(params: PatchSessionDraftParams): void;
+  discardSessionDraft(params: DiscardSessionDraftParams): void;
+  startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
@@ -371,7 +397,8 @@ type AppActions = {
   closeStudio(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  openWorkspace(id: WorkspaceId, title: string): Promise<void>;
+  switchWorkspaceHere(params: { readonly id: WorkspaceId; readonly title: string }): Promise<void>;
+  openWorkspace(params: OpenWorkspaceParams): Promise<OpenWorkspaceResult>;
   setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
   removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
@@ -414,18 +441,33 @@ type AppActions = {
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
+  checkGoodboyIgnore(input: { projectId: ProjectId }): Promise<void>;
+  saveGoodboyIgnore(input: {
+    projectId: ProjectId;
+    mode: Exclude<GoodboyIgnoreMode, 'existing'>;
+  }): Promise<void>;
   renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
+  setWorkspacePermissionDefault(input: {
+    workspaceId: WorkspaceId;
+    mode: ClaudePermissionMode;
+  }): Promise<Workspace>;
   updateWorkspaceProfile(input: {
     workspaceId: WorkspaceId;
     profile: WorkspaceProfile;
   }): Promise<Workspace>;
   disconnectWorkspace(id: WorkspaceId): Promise<void>;
+  loadDisconnectedWorkspaces(): Promise<void>;
+  reconnectWorkspaceById(id: WorkspaceId): Promise<void>;
   mergeWorkspaces(input: {
     sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
     targetWorkspaceId: WorkspaceId;
   }): Promise<void>;
   loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
   fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
+  fetchProjectCheckouts(input: { workspaceId: WorkspaceId }): Promise<void>;
+  fastForwardProjectCheckouts(input: {
+    workspaceId: WorkspaceId;
+  }): Promise<{ readonly updated: number; readonly failed: number }>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -497,8 +539,6 @@ type AppActions = {
     }>;
     omitGoalSlot?: boolean;
   }): Promise<{ session: Session }>;
-  createUntitledSession(input: { workspaceId: WorkspaceId }): Promise<{ session: Session }>;
-  clearPendingKickoffFocus(): void;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
@@ -647,6 +687,7 @@ type AppActions = {
     origin?: 'operator' | 'workflow';
     handoff?: HandoffDraft;
     sentVia?: UserTurnSentVia;
+    permissionOnceAllow?: string;
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(
     sessionId: SessionId,
@@ -664,7 +705,12 @@ type AppActions = {
   saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
   deleteBudgetRule(id: string): Promise<void>;
   loadSessionBudget(sessionId: SessionId): Promise<void>;
-  setSessionBudget(sessionId: SessionId, softCapUsd: number): Promise<void>;
+  setSessionBudget(
+    sessionId: SessionId,
+    softCapUsd: number,
+    onExceed?: SessionBudgetOnExceed,
+  ): Promise<void>;
+  clearSessionBudget(sessionId: SessionId): Promise<void>;
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
   loadBudgetAlerts(): Promise<void>;
   dismissBudgetAlert(id: string): Promise<void>;
@@ -872,11 +918,28 @@ type AppActions = {
     toolName: string;
     runId: ProviderRunId;
     scope: PermissionScope;
+    pattern?: PermissionRulePattern;
   }): Promise<void>;
   retryBlockedTool(input: {
     sessionId: SessionId;
     agentId: AgentId;
     toolName: string;
+  }): Promise<void>;
+  allowAndContinue(input: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    toolUseId: string;
+    toolName: string;
+    input: unknown;
+    runId: ProviderRunId;
+  }): Promise<void>;
+  denyWithReason(input: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    toolUseId: string;
+    toolName: string;
+    runId: ProviderRunId;
+    reason: string;
   }): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
@@ -1042,25 +1105,32 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
-  ReturnType<typeof createHandoffsSlice>;
+  ReturnType<typeof createHandoffsSlice> &
+  ReturnType<typeof createSecurityFindingsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
+  ...initialSessionDraftState,
+  ...initialContextDrawerState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
+  disconnectedWorkspaces: [],
   projects: [],
   workspaceIntegrations: {},
   integrationCredentials: [],
   integrationCredentialUsage: {},
   projectGitStatus: {},
   projectCheckoutPulling: {},
+  projectFetchedAt: {},
+  projectCheckoutResult: {},
   sessionExternalTasks: {},
   sessionEvents: {},
   currentWorkspaceId: null,
@@ -1068,7 +1138,6 @@ export const initialState: AppState = {
   sessions: [],
   archivedSessions: {},
   currentSessionId: null,
-  pendingKickoffFocusSessionId: null,
   settings: {},
   sessionSummary: null,
   providerStatus: null,
@@ -1108,6 +1177,7 @@ export const initialState: AppState = {
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
+  ...sentryLinksInitialState,
   ...handoffsInitialState,
   sessionLanguageAnchor: {},
   sessionActiveProject: {},
@@ -1128,6 +1198,7 @@ export const initialState: AppState = {
   storageRemovingPaths: {},
   storageOutcome: null,
   storageFocus: null,
+  storageScope: null,
   storageArtifacts: [],
   storageDeletingArtifacts: {},
   budgetRules: [],
@@ -1266,7 +1337,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
+  ...createSentryLinksSlice(set, get),
   ...createHandoffsSlice(set, get),
+  ...createSecurityFindingsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
@@ -1274,6 +1347,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
+  ...createSessionDraftSlice(set, get),
+  ...createContextDrawerSlice(set, get),
   ...createDrawerSlice(set, get),
   ...createNavigationSlice(set, get),
 }));

@@ -109,7 +109,7 @@ export const ghAssignedIssues = async (
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubIssue>> => listAssignedIssues(tauriGhRunner, slug, opts);
 
-const ISSUE_VIEW_FIELDS = 'number,title,body,url,state,labels,updatedAt';
+const ISSUE_VIEW_FIELDS = 'number,title,body,url,state,labels,author,updatedAt';
 
 type RawGithubIssueView = {
   number: number;
@@ -118,6 +118,7 @@ type RawGithubIssueView = {
   url: string;
   state: string;
   labels: ReadonlyArray<{ name: string }>;
+  author: { login: string } | null;
   updatedAt: string;
 };
 
@@ -144,6 +145,7 @@ export const ghIssueByNumber = async (
     state: raw.state,
     labels: raw.labels.map((label) => label.name),
     updatedAt: raw.updatedAt,
+    author: raw.author?.login ?? null,
   };
 };
 

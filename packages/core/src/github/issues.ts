@@ -10,6 +10,7 @@ const ISSUE_FIELDS = [
   'state',
   'labels',
   'assignees',
+  'author',
   'updatedAt',
 ] as const;
 
@@ -21,6 +22,7 @@ type RawGithubIssue = {
   state: string;
   labels: ReadonlyArray<{ name: string }>;
   assignees: ReadonlyArray<{ login: string }>;
+  author: { login: string } | null;
   updatedAt: string;
 };
 
@@ -159,5 +161,6 @@ export const listAssignedIssues = async (
     state: issue.state,
     labels: issue.labels.map((label) => label.name),
     updatedAt: issue.updatedAt,
+    author: issue.author?.login ?? null,
   }));
 };

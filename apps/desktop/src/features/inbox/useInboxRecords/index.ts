@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import type { WorkspaceId } from '@goodboy/types';
+import { useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import type { Project, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useGithubIssues } from '../../github/components/PullRequest/useGithubIssues';
 import { useBitbucketPrs } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
@@ -17,6 +18,7 @@ import { adaptJiraIssues } from '../adapters/jira';
 import { adaptLinearIssues } from '../adapters/linear';
 import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
+import { attachInboxProjects } from '../attachInboxProjects';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 
 type Params = { readonly workspaceId: WorkspaceId; readonly rootPath: string };
@@ -28,6 +30,7 @@ type Result = {
   readonly loading: Loading;
   readonly errors: Errors;
   readonly connected: ReadonlyArray<InboxProvider>;
+  readonly projects: ReadonlyArray<Project>;
   readonly refetch: () => void;
 };
 
@@ -42,11 +45,31 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   const gitlabMrs = useGitlabMrs({ workspaceId, isEnabled: has('gitlab') });
   const linear = useLinearIssues(workspaceId, has('linear'));
   const jira = useJiraIssues({ workspaceId, isEnabled: has('jira'), assignedOnly: true });
-  const sentry = useSentryIssues(workspaceId, has('sentry'));
+  const projects = useAppStore(
+    useShallow((state) =>
+      state.projects.filter(
+        (project) => project.workspaceId === workspaceId && project.disconnectedAt == null,
+      ),
+    ),
+  );
+  const sentryLinks = useAppStore((state) => state.projectSentryLinks[workspaceId] ?? EMPTY_ARRAY);
+  const loadProjectSentryLinks = useAppStore((state) => state.loadProjectSentryLinks);
+  const hasSentry = has('sentry');
+  useEffect(() => {
+    if (!hasSentry) {
+      return;
+    }
+    void loadProjectSentryLinks({ workspaceId }).catch(() => undefined);
+  }, [hasSentry, loadProjectSentryLinks, workspaceId]);
+  const linkedSentryProjects = useMemo(
+    () => sentryLinks.map((link) => link.sentryProject),
+    [sentryLinks],
+  );
+  const sentry = useSentryIssues(workspaceId, hasSentry, linkedSentryProjects);
   const slack = useSlackThreads({ workspaceId, isEnabled: has('slack') });
   const bitbucketRepo = useWorkspaceBitbucketRepo({ workspaceId, isEnabled: has('bitbucket') });
   const bitbucket = useBitbucketPrs({ repo: bitbucketRepo });
-  const records = useMemo(
+  const adapted = useMemo(
     () =>
       [
         ...adaptGithubIssues({ groups: github.groups }),
@@ -73,6 +96,10 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
       bitbucket.groups,
       bitbucketRepo,
     ],
+  );
+  const records = useMemo(
+    () => attachInboxProjects({ records: adapted, projects, rootPath, links: sentryLinks }),
+    [adapted, projects, rootPath, sentryLinks],
   );
   const errors = {
     github: github.error,
@@ -109,6 +136,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     records,
     errors,
     connected,
+    projects,
     refetch,
     loading,
     isLoading: INBOX_PROVIDERS.some((provider) => loading[provider]),

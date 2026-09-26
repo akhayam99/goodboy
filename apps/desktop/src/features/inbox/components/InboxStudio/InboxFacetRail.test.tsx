@@ -1,3 +1,4 @@
+import type { Project } from '@goodboy/types';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NO_INBOX_FILTERS, type InboxFacetCounts, type InboxFilters } from '../../kindFilter';
@@ -18,6 +19,7 @@ const COUNTS: InboxFacetCounts = {
   view: { all: 7, 'in-progress': 2, 'with-session': 1, closed: 0 },
   kind: { issue: 5, 'pr-mr': 0, thread: 0, error: 2 },
   source: { ...NONE, github: 5, sentry: 2 },
+  project: () => 0,
 };
 
 const NOT_LOADING: Readonly<Record<InboxProvider, boolean>> = {
@@ -129,5 +131,38 @@ describe('InboxFacetRail', () => {
 
     expect(screen.getByText('Launch or open session')).toBeDefined();
     expect(screen.getByText('Open in the tool')).toBeDefined();
+  });
+
+  it('filters by project when the workspace has several', () => {
+    const onFiltersChange = vi.fn();
+    const projects = [
+      { id: 'ledger', name: 'ledger-core', kind: 'repo' },
+      { id: 'store', name: 'storefront-web', kind: 'repo' },
+    ] as unknown as ReadonlyArray<Project>;
+    render(
+      <InboxFacetRail
+        filters={NO_INBOX_FILTERS}
+        counts={{ ...COUNTS, project: (id) => (id === 'ledger' ? 4 : 1) }}
+        connected={['github', 'sentry']}
+        loading={NOT_LOADING}
+        errors={NO_ERRORS}
+        projects={projects}
+        onFiltersChange={onFiltersChange}
+        onClearFilters={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(within(section('Project')).getByRole('button', { name: /ledger-core/ }));
+
+    expect(onFiltersChange).toHaveBeenCalledWith({ ...NO_INBOX_FILTERS, project: 'ledger' });
+  });
+
+  it('leaves the project section out with a single project', () => {
+    renderRail();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Filter the inbox' })).queryByRole('region', {
+        name: 'Project',
+      }),
+    ).toBeNull();
   });
 });

@@ -43,7 +43,7 @@ export const useEditorMenuItems = ({ worktreePath }: Params): ReadonlyArray<Over
         return;
       }
       try {
-        await openInEditor(worktreePath, binary);
+        await openInEditor({ path: worktreePath, editor: binary });
       } catch (error) {
         void reportError({ title: "Couldn't open the editor", error });
       }

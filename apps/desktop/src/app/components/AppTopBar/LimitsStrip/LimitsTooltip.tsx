@@ -1,5 +1,6 @@
 import { sortLimitWindows, type LimitsChip } from '@goodboy/core';
 import { cn } from '@goodboy/ui';
+import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../../features/providers/providerLabel';
 import { formatLimitReset } from '../../../../features/providers/limits/formatLimitReset';
 import { formatUsedPercent } from '../../../../features/providers/limits/formatUsedPercent';
@@ -15,6 +16,11 @@ type Props = {
 
 export const LimitsTooltip = ({ chip, nowMs }: Props) => {
   const windows = sortLimitWindows({ windows: chip.windows });
+  const freeResets = useAppStore((state) =>
+    chip.providerId === 'codex' && chip.state === 'out'
+      ? (state.codexResetCredits?.availableCount ?? 0)
+      : 0,
+  );
   const footer =
     chip.observedAt === null
       ? 'Click for details'
@@ -45,6 +51,11 @@ export const LimitsTooltip = ({ chip, nowMs }: Props) => {
               </span>
             </span>
           ))}
+        </span>
+      ) : null}
+      {freeResets > 0 ? (
+        <span className="text-primary">
+          {freeResets === 1 ? '1 free reset available' : `${freeResets} free resets available`}
         </span>
       ) : null}
       <span className="text-faint-foreground">{footer}</span>

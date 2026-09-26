@@ -3,21 +3,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IntegrationCredentialId, JiraIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import { chooseListboxValue } from '../../../__tests__/helpers/listbox';
 
-const { state } = vi.hoisted(() => ({
+const { state, client, openUrl } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    connectJira: vi.fn(async () => undefined),
+    connectJira: vi.fn(async (_params: unknown) => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
     integrationCredentialUsage: {} as Record<string, number>,
   },
+  client: {
+    jiraValidateConnection: vi.fn(async (_params: unknown) => ({
+      accountId: 'acc-1',
+      displayName: 'Priya Moss',
+    })),
+    jiraListProjects: vi.fn(async (_params: unknown) => [
+      { id: '10000', key: 'ENG', name: 'Engineering' },
+      { id: '10001', key: 'OPS', name: 'Operations' },
+    ]),
+  },
+  openUrl: vi.fn(async (_url: string) => undefined),
 }));
 
 vi.mock('../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
+
+vi.mock('./client', () => client);
+
+vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
 
@@ -37,123 +53,99 @@ const jiraIntegration: JiraIntegrationBinding = {
   updatedAt: '2026-01-01T00:00:00.000Z' as never,
 };
 
-const fillConnectForm = () => {
-  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: ' ATATT-x ' } });
-  fireEvent.change(screen.getByLabelText(/site url/i), {
-    target: { value: 'acme.atlassian.net/' },
-  });
-  fireEvent.change(screen.getByLabelText(/account email/i), {
-    target: { value: ' grace@acme.com ' },
-  });
-  fireEvent.change(screen.getByLabelText(/project key/i), { target: { value: 'eng' } });
+const fillStepTwo = () => {
+  fireEvent.change(screen.getByLabelText('Site'), { target: { value: 'acme.atlassian.net/' } });
+  fireEvent.change(screen.getByLabelText('Email'), { target: { value: ' grace@acme.com ' } });
+  fireEvent.change(screen.getByLabelText('API token'), { target: { value: ' ATATT-x ' } });
 };
 
 beforeEach(() => {
   state.workspaceIntegrations = {};
-  state.connectJira = vi.fn(async () => undefined);
+  state.connectJira.mockClear();
   state.disconnectIntegration = vi.fn(async () => undefined);
-  state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
-  state.integrationCredentialUsage = {};
+  client.jiraValidateConnection.mockClear();
+  client.jiraListProjects.mockClear();
+  openUrl.mockClear();
 });
 afterEach(cleanup);
 
 import { JiraFormBody } from './JiraFormBody';
 
 describe('JiraFormBody', () => {
-  it('shows the token field first and the get-a-token link right under it', () => {
+  it('starts with the Atlassian button and shows all three fields at once', () => {
     render(<JiraFormBody workspaceId={WS_ID} />);
 
-    const field = screen.getByLabelText(/personal API key/i);
-    const link = screen.getByRole('link', { name: /get an API token from Atlassian/i });
+    fireEvent.click(screen.getByRole('button', { name: /Open Atlassian/ }));
 
-    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(openUrl).toHaveBeenCalledWith(
+      'https://id.atlassian.com/manage-profile/security/api-tokens',
+    );
+    expect(screen.getByLabelText('Site')).toBeDefined();
+    expect(screen.getByLabelText('Email')).toBeDefined();
+    expect(screen.getByLabelText('API token')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
   });
 
-  it('keeps site, email and project key out of sight until the token is pasted', () => {
-    render(<JiraFormBody workspaceId={WS_ID} />);
-    expect(screen.queryByLabelText(/site url/i)).toBeNull();
-    expect(screen.queryByLabelText(/account email/i)).toBeNull();
-    expect(screen.queryByLabelText(/project key/i)).toBeNull();
-    fireEvent.change(screen.getByLabelText(/personal API key/i), {
-      target: { value: 'ATATT-x' },
-    });
-    expect(screen.getByLabelText(/site url/i)).toBeDefined();
-    expect(screen.getByLabelText(/account email/i)).toBeDefined();
-    expect(screen.getByLabelText(/project key/i)).toBeDefined();
-  });
-
-  it('keeps Connect disabled until every field is filled', () => {
-    render(<JiraFormBody workspaceId={WS_ID} />);
-    const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
-    expect(btn.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/personal API key/i), {
-      target: { value: 'ATATT-x' },
-    });
-    expect(btn.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/site url/i), {
-      target: { value: 'acme.atlassian.net' },
-    });
-    fireEvent.change(screen.getByLabelText(/account email/i), {
-      target: { value: 'grace@acme.com' },
-    });
-    expect(btn.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText(/project key/i), { target: { value: 'ENG' } });
-    expect(btn.disabled).toBe(false);
-  });
-
-  it('normalizes the site url, trims the email and uppercases the project key', async () => {
+  it('checks the key on its own and lists the projects to pick from', async () => {
     const onConnected = vi.fn();
     render(<JiraFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-    fillConnectForm();
-    fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-    await waitFor(() =>
-      expect(state.connectJira).toHaveBeenCalledWith({
-        workspaceId: WS_ID,
+
+    fillStepTwo();
+
+    await waitFor(() => expect(screen.getByText('Signed in as Priya Moss')).toBeDefined());
+    expect(client.jiraValidateConnection).toHaveBeenCalledWith(
+      expect.objectContaining({
         siteUrl: 'https://acme.atlassian.net',
         email: 'grace@acme.com',
-        projectKey: 'ENG',
         apiToken: 'ATATT-x',
-        credentialId: null,
       }),
     );
-    await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
-  });
+    chooseListboxValue({ trigger: screen.getByLabelText('Jira project'), value: 'OPS' });
 
-  it('shows the failure and skips onConnected when the connect is rejected', async () => {
-    const onConnected = vi.fn();
-    state.connectJira = vi.fn(async () => {
-      throw new Error('site not reachable');
+    await waitFor(() => expect(onConnected).toHaveBeenCalled());
+    expect(state.connectJira).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      siteUrl: 'https://acme.atlassian.net',
+      email: 'grace@acme.com',
+      projectKey: 'OPS',
+      apiToken: 'ATATT-x',
+      credentialId: null,
     });
-    render(<JiraFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-    fillConnectForm();
-    fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-    expect(await screen.findByText(/site not reachable/i)).toBeDefined();
-    expect(onConnected).not.toHaveBeenCalled();
   });
 
-  describe('when Jira is already connected', () => {
+  it('says what went wrong inside the step when the key is refused', async () => {
+    client.jiraValidateConnection.mockRejectedValueOnce(new Error('Jira said 401: bad token'));
+    render(<JiraFormBody workspaceId={WS_ID} />);
+
+    fillStepTwo();
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('401'));
+    expect(client.jiraListProjects).not.toHaveBeenCalled();
+  });
+
+  it('says what Goodboy can do and that only Jira Cloud works', () => {
+    render(<JiraFormBody workspaceId={WS_ID} />);
+    expect(screen.getByText('Comments as you')).toBeDefined();
+    expect(screen.getByText(/Data Center and Server are not supported/)).toBeDefined();
+  });
+
+  describe('when connected', () => {
     beforeEach(() => {
       state.workspaceIntegrations = { [WS_ID]: [jiraIntegration] };
     });
 
-    it('renders one connected row with site and project instead of the form', () => {
+    it('renders one connected row with site and project instead of the steps', () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected as Grace Hopper/i)).toBeDefined();
       expect(screen.getByText('https://acme.atlassian.net (ENG)')).toBeDefined();
-      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
-    });
-
-    it('arms the disconnect confirm instead of disconnecting immediately', () => {
-      render(<JiraFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /disconnect jira/i }));
-      expect(screen.getByText(/Disconnect Jira\?/i)).toBeDefined();
-      expect(state.disconnectIntegration).not.toHaveBeenCalled();
+      expect(screen.queryByRole('list', { name: 'Connect Jira' })).toBeNull();
     });
 
     it('disconnects Jira for the workspace once the confirm is confirmed', async () => {
       render(<JiraFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect jira/i }));
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /^disconnect jira$/i }));
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
@@ -162,14 +154,5 @@ describe('JiraFormBody', () => {
         }),
       );
     });
-  });
-
-  it('keeps the cloud-only note behind a quiet disclosure and says where the token travels', () => {
-    render(<JiraFormBody workspaceId={WS_ID} />);
-    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /jira cloud only/i }));
-    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
-    expect(screen.getByText(/Data Center and Server are not supported/i)).toBeDefined();
-    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

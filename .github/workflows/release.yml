@@ -37,24 +37,7 @@ jobs:
         # a release can no longer ship with an empty body. See CHANGELOG.md.
         run: |
           set -euo pipefail
-          version="${GITHUB_REF_NAME#v}"
-          version="${version%-rc.*}"
-          heading="## Goodboy v${version}"
-          notes="$(awk -v heading="$heading" '
-            $0 == heading { found=1; lines[++n] = $0; next }
-            found && /^## / { exit }
-            found { lines[++n] = $0 }
-            END {
-              start = 1; end = n
-              while (start <= end && lines[start] ~ /^[[:space:]]*$/) start++
-              while (end >= start && lines[end] ~ /^[[:space:]]*$/) end--
-              for (i = start; i <= end; i++) print lines[i]
-            }
-          ' CHANGELOG.md)"
-          if [ -z "$notes" ]; then
-            echo "::error::No CHANGELOG.md entry found for '$heading' (tag $GITHUB_REF_NAME). Add it before tagging."
-            exit 1
-          fi
+          notes="$(node scripts/release-notes.mjs "$GITHUB_REF_NAME")"
           delimiter="RELEASE_NOTES_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           {
             echo "body<<$delimiter"

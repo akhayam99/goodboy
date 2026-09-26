@@ -684,6 +684,7 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
     >
       <div
         class="h-full max-h-[inherit] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-6 py-5"
+        style="--fade-top: 0px; --fade-bottom: 0px;"
       >
         <div
           aria-label="Loading session overview"
@@ -842,16 +843,6 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
           </div>
         </div>
       </div>
-      <div
-        aria-hidden="true"
-        class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 top-0 bg-gradient-to-b from-background opacity-0"
-        style="height: 24px;"
-      />
-      <div
-        aria-hidden="true"
-        class="pointer-events-none absolute to-transparent motion-safe:transition-opacity duration-200 inset-x-0 bottom-0 bg-gradient-to-t from-background opacity-0"
-        style="height: 24px;"
-      />
     </div>
   </div>
 </div>

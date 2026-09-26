@@ -46,7 +46,7 @@ export const agentNowState = ({ agent, turnState, transcript }: NowStateParams):
     return { tone: 'info', label: runningLabel({ transcript }), isPulsing: true };
   }
   if (turnState?.kind === 'blocked') {
-    return { tone: 'warning', label: 'waiting on a permission decision', isPulsing: false };
+    return { tone: 'warning', label: 'Needs approval', isPulsing: false };
   }
   if (turnState?.kind === 'error') {
     return { tone: 'danger', label: turnState.message, isPulsing: false };

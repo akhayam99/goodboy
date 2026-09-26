@@ -15,6 +15,7 @@ export type {
   PermissionRuleId,
   ProviderRunId,
   SessionEventId,
+  SecurityFindingId,
   SessionId,
   SkillId,
   StepDefId,
@@ -88,6 +89,7 @@ export type {
   OrchestratorRouting,
   Session,
   Project,
+  GoodboyIgnoreMode,
   ProjectScript,
   SentryIntegrationConfig,
   SessionExternalTask,
@@ -210,6 +212,7 @@ export type {
   BudgetPeriod,
   BudgetCheckResult,
   SessionBudget,
+  SessionBudgetOnExceed,
   RoutingReason,
   RoutingDecision,
   BudgetAlertKind,
@@ -221,6 +224,7 @@ export type {
   ProviderLimitWindow,
   ProviderLimitWindowKind,
   ProviderLimits,
+  CodexResetCredits,
 } from './provider-limits';
 export type {
   Agent,
@@ -299,7 +303,7 @@ export type {
   PermissionRuleScope,
   PermissionScope,
 } from './permission';
-export { CLAUDE_PERMISSION_MODES } from './permission';
+export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
 export type {
   DiffComment,
   DiffCommentAnchor,
@@ -408,3 +412,5 @@ export type {
   ResolvePublicationThread,
   PublicationBlocker,
 } from './resolve';
+export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
+export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';

@@ -7,6 +7,7 @@ mod bitbucket;
 mod boot_breadcrumb;
 mod bridge;
 mod budget;
+mod codex_app_server;
 mod codex_rollout;
 mod config_export;
 mod cursor_config;
@@ -17,6 +18,7 @@ mod external_terminal;
 mod file_versions;
 mod github;
 mod gitlab;
+mod goodboy_ignore;
 mod integration_credentials;
 mod jira;
 mod linear;
@@ -48,6 +50,7 @@ mod storage;
 mod summarize;
 mod terminal;
 mod turn;
+mod usage_probe;
 mod util;
 mod workflows;
 mod worktree;
@@ -229,6 +232,8 @@ pub fn run() {
             worktree::worktree_detach_assessment,
             worktree::worktree_directory_size,
             worktree::worktree_tidy_goodboy,
+            goodboy_ignore::goodboy_ignore_status,
+            goodboy_ignore::goodboy_ignore_apply,
             worktree::worktree_orphans,
             worktree::worktree_folder_remove,
             storage::worktree_folder_facts,
@@ -241,6 +246,7 @@ pub fn run() {
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
+            worktree::worktree_abort_rebase,
             worktree::worktree_commit_range,
             worktree::worktree_blame_line,
             worktree::worktree_remote_head,
@@ -255,6 +261,8 @@ pub fn run() {
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,
+            worktree::worktree_repo_default_base_branch,
+            worktree::worktree_branch_merge_state,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
@@ -303,8 +311,12 @@ pub fn run() {
             planner::planner_run,
             codex_rollout::codex_rollout_context,
             codex_rollout::codex_rate_limits_latest,
+            usage_probe::claude_usage_probe,
+            codex_app_server::codex_rate_limits_probe,
+            codex_app_server::codex_consume_reset_credit,
             repo::validate_git_repo,
             repo::project_git_status,
+            repo::project_fetch,
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,
@@ -313,6 +325,7 @@ pub fn run() {
             budget::budget_rule_delete,
             budget::session_budget_set,
             budget::session_budget_get,
+            budget::session_budget_clear,
             budget::budget_alerts_list,
             budget::budget_alert_dismiss,
             budget::budget_emit_alerts,
@@ -352,6 +365,8 @@ pub fn run() {
             workflows::workspaces_with_unread,
             permissions::permission_rule_list,
             permissions::permission_rule_upsert,
+            permissions::permission_rule_delete,
+            permissions::permission_audit_list,
             permissions::permission_audit_insert,
             permissions::permission_audit_retry_enqueue,
             permissions::permission_audit_retry_drain,
@@ -379,8 +394,13 @@ pub fn run() {
             linear::linear_fetch_issue_comments,
             linear::linear_create_comment,
             linear::linear_update_issue,
+            linear::linear_fetch_team_states,
+            linear::linear_update_issue_state,
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
+            sentry::sentry_list_organizations,
+            sentry::sentry_list_projects,
+            sentry::sentry_list_code_mappings,
             sentry::sentry_fetch_issues,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
@@ -408,6 +428,7 @@ pub fn run() {
             gitlab::gitlab_update_mr_state,
             jira::jira_validate_connection,
             jira::jira_connect,
+            jira::jira_list_projects,
             jira::jira_list_issues,
             jira::jira_get_issue,
             jira::jira_list_comments,

@@ -92,14 +92,18 @@ export const LegendSection = ({}: Props) => (
     <LegendBlock title="Permission mode, tool access">
       <LegendaGrid
         rows={[
-          { dot: 'bg-danger', label: 'bypass', desc: 'all tools used freely, no prompts' },
-          { dot: 'bg-warning', label: 'edits', desc: 'file edits allowed; bash asks first' },
-          { dot: 'bg-info', label: 'default', desc: 'writes and runs ask for approval' },
+          { dot: 'bg-danger', label: 'Full access', desc: 'does anything without asking' },
           {
-            dot: 'bg-idle',
-            label: 'plan',
-            desc: 'no tool calls executed, read-only',
+            dot: 'bg-warning',
+            label: 'Edits allowed',
+            desc: 'changes files in your projects, asks before anything else',
           },
+          {
+            dot: 'bg-info',
+            label: 'Ask first',
+            desc: "stops before anything it hasn't been allowed",
+          },
+          { dot: 'bg-idle', label: 'Read only', desc: 'reads and answers, changes nothing' },
         ]}
       />
     </LegendBlock>

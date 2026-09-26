@@ -3,21 +3,43 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IntegrationCredentialId, WorkspaceId } from '@goodboy/types';
+import { chooseListboxValue } from '../../../__tests__/helpers/listbox';
 
-const { state } = vi.hoisted(() => ({
+const { state, client, openUrl } = vi.hoisted(() => ({
   state: {
     workspaceIntegrations: {} as Record<string, ReadonlyArray<unknown>>,
-    connectSentry: vi.fn(async () => undefined),
+    connectSentry: vi.fn(async (_params: unknown) => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     forgetIntegrationCredential: vi.fn(async () => undefined),
     integrationCredentials: [] as ReadonlyArray<unknown>,
     integrationCredentialUsage: {} as Record<string, number>,
+    projects: [] as ReadonlyArray<unknown>,
+    projectSentryLinks: {} as Record<string, ReadonlyArray<unknown>>,
+    loadProjectSentryLinks: vi.fn(async () => undefined),
+    linkSentryProject: vi.fn(async () => undefined),
+    unlinkSentryProject: vi.fn(async () => undefined),
   },
+  client: {
+    sentryListCodeMappings: vi.fn(async () => []),
+    sentryListOrganizations: vi.fn(async (_params: unknown) => [
+      { slug: 'northwind', name: 'Northwind' },
+    ]),
+    sentryListProjects: vi.fn(async (_params: unknown) => [
+      { id: '4501', slug: 'payments-api', name: 'payments-api', platform: 'python' },
+      { id: '4502', slug: 'storefront-web', name: 'storefront-web', platform: null },
+    ]),
+  },
+  openUrl: vi.fn(async (_url: string) => undefined),
 }));
 
 vi.mock('../../../store', () => ({
+  EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
+
+vi.mock('./client', () => client);
+
+vi.mock('../../../shared/lib/editor', () => ({ openUrl }));
 
 const WS_ID = 'ws-1' as WorkspaceId;
 
@@ -31,90 +53,69 @@ const sentryIntegration = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const fillForm = ({ token, org, project }: { token: string; org: string; project: string }) => {
-  fireEvent.change(screen.getByLabelText(/personal API key/i), { target: { value: token } });
-  fireEvent.change(screen.getByLabelText(/organization slug/i), { target: { value: org } });
-  fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: project } });
-};
-
 beforeEach(() => {
   state.workspaceIntegrations = {};
-  state.connectSentry = vi.fn(async () => undefined);
+  state.connectSentry.mockClear();
   state.disconnectIntegration = vi.fn(async () => undefined);
-  state.forgetIntegrationCredential = vi.fn(async () => undefined);
   state.integrationCredentials = [];
-  state.integrationCredentialUsage = {};
+  client.sentryListOrganizations.mockClear();
+  client.sentryListProjects.mockClear();
+  openUrl.mockClear();
 });
 afterEach(cleanup);
 
 import { SentryFormBody } from './SentryFormBody';
 
 describe('SentryFormBody', () => {
-  it('shows the token field first and the get-a-token link right under it', () => {
+  it('starts with the Sentry button that opens the token page', () => {
     render(<SentryFormBody workspaceId={WS_ID} />);
 
-    const field = screen.getByLabelText(/personal API key/i);
-    const link = screen.getByRole('link', { name: /get a user auth token/i });
+    fireEvent.click(screen.getByRole('button', { name: /Open Sentry/ }));
 
-    expect(field.compareDocumentPosition(link)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(openUrl).toHaveBeenCalledWith('https://sentry.io/settings/account/api/auth-tokens/');
+    expect(screen.getByLabelText('Auth token')).toBeDefined();
   });
 
-  describe('connect form (happy path)', () => {
-    it('keeps org and project out of sight until the token is pasted', () => {
-      render(<SentryFormBody workspaceId={WS_ID} />);
-      expect(screen.queryByLabelText(/organization slug/i)).toBeNull();
-      expect(screen.queryByLabelText(/project slug/i)).toBeNull();
-      fireEvent.change(screen.getByLabelText(/personal API key/i), {
-        target: { value: 'sntryu_x' },
-      });
-      expect(screen.getByLabelText(/organization slug/i)).toBeDefined();
-      expect(screen.getByLabelText(/project slug/i)).toBeDefined();
-    });
+  it('checks the token on paste, then picks org and project from lists', async () => {
+    const onConnected = vi.fn();
+    render(<SentryFormBody workspaceId={WS_ID} onConnected={onConnected} />);
 
-    it('keeps Connect disabled until token, org and project are all filled', () => {
-      render(<SentryFormBody workspaceId={WS_ID} />);
-      const btn = screen.getByRole('button', { name: /^connect$/i }) as HTMLButtonElement;
-      expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/personal API key/i), {
-        target: { value: 'sntryu_x' },
-      });
-      expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/organization slug/i), {
-        target: { value: 'my-org' },
-      });
-      expect(btn.disabled).toBe(true);
-      fireEvent.change(screen.getByLabelText(/project slug/i), { target: { value: 'my-proj' } });
-      expect(btn.disabled).toBe(false);
-    });
+    fireEvent.change(screen.getByLabelText('Auth token'), { target: { value: ' sntryu_x ' } });
 
-    it('connects with all trimmed fields and fires onConnected', async () => {
-      const onConnected = vi.fn();
-      render(<SentryFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fillForm({ token: '  sntryu_x  ', org: ' my-org ', project: ' my-proj ' });
-      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      await waitFor(() =>
-        expect(state.connectSentry).toHaveBeenCalledWith({
-          workspaceId: WS_ID,
-          token: 'sntryu_x',
-          org: 'my-org',
-          project: 'my-proj',
-          credentialId: null,
-        }),
-      );
-      await waitFor(() => expect(onConnected).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(screen.getByText('The token works. 1 organization found.')).toBeDefined(),
+    );
+    chooseListboxValue({
+      trigger: screen.getByLabelText('Sentry organization'),
+      value: 'northwind',
     });
+    await waitFor(() =>
+      expect(client.sentryListProjects).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'sntryu_x', org: 'northwind' }),
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText('Sentry project').hasAttribute('disabled')).toBe(false),
+    );
+    chooseListboxValue({ trigger: screen.getByLabelText('Sentry project'), value: 'payments-api' });
 
-    it('shows the formatted error and skips onConnected when the connect fails', async () => {
-      const onConnected = vi.fn();
-      state.connectSentry = vi.fn(async () => {
-        throw new Error('org not found');
-      });
-      render(<SentryFormBody workspaceId={WS_ID} onConnected={onConnected} />);
-      fillForm({ token: 'sntryu_x', org: 'nope', project: 'my-proj' });
-      fireEvent.click(screen.getByRole('button', { name: /^connect$/i }));
-      expect(await screen.findByText(/org not found/i)).toBeDefined();
-      expect(onConnected).not.toHaveBeenCalled();
+    await waitFor(() => expect(onConnected).toHaveBeenCalled());
+    expect(state.connectSentry).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      token: 'sntryu_x',
+      org: 'northwind',
+      project: 'payments-api',
+      credentialId: null,
     });
+  });
+
+  it('says what went wrong when Sentry refuses the token', async () => {
+    client.sentryListOrganizations.mockRejectedValueOnce(new Error('status 401: invalid token'));
+    render(<SentryFormBody workspaceId={WS_ID} />);
+
+    fireEvent.change(screen.getByLabelText('Auth token'), { target: { value: 'bad' } });
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('401'));
   });
 
   describe('when Sentry is already connected', () => {
@@ -126,19 +127,13 @@ describe('SentryFormBody', () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       expect(screen.getByText(/Connected to My Project/i)).toBeDefined();
       expect(screen.getByText('my-org/my-proj')).toBeDefined();
-      expect(screen.queryByRole('button', { name: /^connect$/i })).toBeNull();
-    });
-
-    it('arms the disconnect confirm instead of disconnecting immediately', () => {
-      render(<SentryFormBody workspaceId={WS_ID} />);
-      fireEvent.click(screen.getByRole('button', { name: /disconnect sentry/i }));
-      expect(screen.getByText(/Disconnect Sentry\?/i)).toBeDefined();
-      expect(state.disconnectIntegration).not.toHaveBeenCalled();
+      expect(screen.queryByRole('list', { name: 'Connect Sentry' })).toBeNull();
     });
 
     it('disconnects Sentry for the workspace once the confirm is confirmed', async () => {
       render(<SentryFormBody workspaceId={WS_ID} />);
       fireEvent.click(screen.getByRole('button', { name: /disconnect sentry/i }));
+      expect(state.disconnectIntegration).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole('button', { name: /^disconnect sentry$/i }));
       await waitFor(() =>
         expect(state.disconnectIntegration).toHaveBeenCalledWith({
@@ -147,13 +142,5 @@ describe('SentryFormBody', () => {
         }),
       );
     });
-  });
-
-  it('keeps the keychain note behind a quiet disclosure and says where the token travels', () => {
-    render(<SentryFormBody workspaceId={WS_ID} />);
-    expect(screen.queryByText(/never touches Goodboy's own servers/i)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /where your key goes/i }));
-    expect(screen.getByText(/never touches Goodboy's own servers/i)).toBeDefined();
-    expect(screen.queryByText(/never leaves this machine/i)).toBeNull();
   });
 });

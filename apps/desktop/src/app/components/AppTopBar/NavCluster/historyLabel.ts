@@ -22,6 +22,9 @@ export const historyLabel = ({ location, sessions }: Params): HistoryLabel => {
   if (place.at === 'board') {
     return { label: 'Board', context: null };
   }
+  if (place.at === 'session-draft') {
+    return { label: 'New session', context: null };
+  }
   const session = sessions.find((candidate) => candidate.id === place.sessionId) ?? null;
   const lens = place.view.lens;
   return {

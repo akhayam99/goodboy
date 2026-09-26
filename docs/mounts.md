@@ -22,6 +22,23 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
 - A folder mount is a plain directory at `<project-root>/sessions/<name>`.
   Folder projects always keep their directory; no Goodboy action deletes it.
 
+## Hiding .goodboy from git
+
+`goodboy_ignore_status` (`apps/desktop/src-tauri/src/goodboy_ignore.rs`) checks
+whether git already ignores `.goodboy` before anything writes to it: it runs
+`git check-ignore -v --no-index .goodboy/worktrees/probe`, never a bare
+`.goodboy` probe, since a trailing-slash rule (`.goodboy/`) only matches a
+probe path that is clearly inside the folder. The check classifies the hit as
+the project's `.gitignore`, `.git/info/exclude`, or the user's global ignore
+file, and the result is stored on `projects.goodboy_ignore` so a re-check on
+every render is never needed. When nothing already ignores it,
+`goodboy_ignore_apply` writes `/.goodboy/` to one of those three places, never
+more than one at a time, and removes the `.git/info/exclude` entry when the
+project switches to the project or global choice. Adopting a repository that
+already has commits never touches its `.gitignore` (`repo.rs::adopt_repo`);
+only a still-commit-less repo gets the bootstrap write, matching
+`create_repo`.
+
 ## Rows and disk
 
 `session_worktrees` is the mount table. The row id is the mount identity; a
@@ -175,6 +192,15 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   adopts the observed branch on the existing mount; `fork` adopts it on the
   existing directory and creates a second mount for the recorded branch. An
   in-progress merge, rebase or cherry-pick is finished first.
+- **A stopped rebase says so under its row.** Only `rebase-merge/` or
+  `rebase-apply/` count, as git reads them. The Projects block shows a
+  `Rebase stopped` notice with `Hand it to an agent` (a `Rebase on <base>`
+  agent on that mount finishes it), `Open terminal`, and `Abort rebase`
+  behind an inline confirm (`worktree_abort_rebase`, which refuses when no
+  rebase is stopped).
+- **Merged rows move under `Show completed`.** A row is merged when its
+  request merged, or when a pushed branch that tracks its own name has a
+  clean tree and nothing past the base.
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts

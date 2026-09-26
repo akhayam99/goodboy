@@ -163,6 +163,7 @@ export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageL
 export type {
   RemoteImageAutoLoad,
   RemoteImageLoader,
+  RemoteImageTool,
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
@@ -227,5 +228,10 @@ export type { TintClasses, Tone } from './tint';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
 export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
-export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
-export type { WorkNodeMark, WorkNodeState } from './components/WorkTree/workNodeSpec';
+export {
+  WORK_NODE_GLYPH_SIZE,
+  WORK_NODE_GLYPH_SIZE_SM,
+  WORK_NODE_SIZE,
+  WORK_NODE_SIZE_SM,
+} from './components/WorkTree/workNodeSpec';
+export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';

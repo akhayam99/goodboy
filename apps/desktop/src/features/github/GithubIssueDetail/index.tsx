@@ -1,16 +1,14 @@
 import { PaneShell } from '../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { GithubIssue } from '@goodboy/types';
-import { StateBadge } from '@goodboy/ui';
-import { githubIssueFields, resolveFacts } from '../../../shared/detail-fields';
+import { githubIssueFields, recordByline, resolveFacts } from '../../../shared/detail-fields';
 import { DescriptionSection } from '../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../shared/components/ToolImageScope';
-import { stateWord } from '../../inbox/stateWord';
 import { useConversationPane } from '../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../shared/components/Conversation/types';
 import { GITHUB_ISSUE_CAPABILITIES, githubIssueConversation } from '../githubIssueConversation';
@@ -87,8 +85,12 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
           provider="github"
           identifier={`#${issue.number}`}
           title={issue.title}
-          state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
-          facts={<RecordFacts facts={facts} />}
+          byline={recordByline({
+            lead: issue.author == null ? null : `Opened by ${issue.author}`,
+            verb: 'updated',
+            iso: issue.updatedAt,
+          })}
+          facts={<RecordProperties facts={facts} />}
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />

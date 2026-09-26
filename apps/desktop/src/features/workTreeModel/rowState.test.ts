@@ -142,7 +142,7 @@ describe('resolveAgentRowState', () => {
       'A14 blocked, alive but stuck',
       { agent: { status: 'blocked' } },
       {
-        node: 'question',
+        node: 'approval',
         sentence: 'Blocked, tell the agent what to do next',
         tone: 'warning',
         ask: null,
@@ -223,7 +223,7 @@ describe('resolveRunRowState', () => {
       'R7b a step is blocked, alive but stuck',
       { failedStep: { stepLabel: '4.1', isBlocked: true }, advance: blocked('failed-step') },
       {
-        node: 'question',
+        node: 'approval',
         sentence: 'Step 4.1 is blocked, tell the agent what to do next',
         tone: 'warning',
         ask: 'restartStep',

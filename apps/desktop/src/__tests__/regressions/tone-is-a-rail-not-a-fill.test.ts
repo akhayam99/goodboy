@@ -38,10 +38,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/session/components/SummarizerBadge/index.tsx': {
-    count: 1,
-    reason: 'chip',
-  },
   'apps/desktop/src/features/session/components/AgentTree/ScoutSubtree.tsx': {
     count: 1,
     reason: 'chip',
@@ -53,10 +49,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx': {
     count: 1,
     reason: 'chip',
-  },
-  'apps/desktop/src/features/chat/components/ChatInput/index.tsx': {
-    count: 1,
-    reason: 'control',
   },
   'apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.tsx': {
     count: 1,

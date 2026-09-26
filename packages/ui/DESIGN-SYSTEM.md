@@ -389,11 +389,9 @@ open. Queued children of an agent you closed draw as skipped. Both shapes come
 from each row's `RowState` in `buildTimelineStream`, not from a second status
 check.
 
-Suggestions are not scheduled work, so they never draw a dash. They sit in one
-**Suggested next** strip above NOW, on a `bg-subtle` surface aligned with the
-row text, with no rail and no node: an eyebrow, then one line per suggestion
-with its glyph, title, detail and one action. A suggestion leaves the strip
-once its work exists, for example a plan once an agent consumes it.
+Suggestions are not scheduled work, so they never draw a dash and never sit in
+the activity feed. They live in the Next steps slot (`NextStepSlot`) above
+Activity, outside its filter, as `docs/concepts.md` (Next steps) describes.
 
 The workflow detail uses the same vocabulary for one run. Its run tree has no
 session spine: `layoutTimelineRail` runs with `hasSpine: false`, the run lane
@@ -412,10 +410,11 @@ clock glyph.
 ### Work nodes and row states
 
 Every surface that draws a sequence of work (the activity feed, the workflow
-run tree, the agents on a project) draws its nodes with one primitive,
-`WorkNode` in `packages/ui/src/components/WorkTree/`. It is 20px on every
-grade, sits on the canvas so the lane never shows through it, and knows
-nothing about agents: the caller hands it a state, a mark and a label.
+run tree, the agents on a project, the transcript's status column) draws its
+nodes with one primitive, `WorkNode` in `packages/ui/src/components/WorkTree/`.
+It knows nothing about agents: the caller hands it a state, a mark, a label
+and a `size` (`md`, 20px, the default; `sm`, 14px, for a transcript row's
+icon column), and sits on the canvas so the lane never shows through it.
 
 | node       | ring                                    | centre                   |
 | ---------- | --------------------------------------- | ------------------------ |
@@ -424,12 +423,19 @@ nothing about agents: the caller hands it a state, a mark and a label.
 | `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot |
 | `question` | 1.5px `warning`                         | `?`, warning             |
 | `budget`   | 1.5px `warning`                         | `$`, warning             |
+| `approval` | 1.5px `warning`                         | shield, warning          |
 | `failed`   | 1.5px `danger`                          | `!`, danger              |
 | `done`     | 1px `success` over a `success/18` fill  | check, success           |
 | `closed`   | 1px `border`                            | check, muted             |
 | `stopped`  | 1px `border`                            | small square, muted      |
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+
+`approval` is a pending permission request without a decision yet: a tool
+call waiting on you, distinct from `question` (an open question waiting on
+you) even though both use the warning tone. The transcript also gives a
+turn's `blocked` state its own node this way instead of sharing `question`'s
+glyph.
 
 A node can also take `progress`, measured active time over the usual time,
 from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc
@@ -673,7 +679,11 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
 its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
+`header` slot. The session overview's `HeaderBand` holds the title, then one
+`Goal` line (an 11px faint label, the goal in muted text on one line with an
+ellipsis) only when the goal says more than the title, or `Add a goal` when
+there is none, then the chips, `Context` first. Goal, decisions and summary
+live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a row to the bottom of the same column. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
@@ -706,7 +716,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
-- The empty session follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. Rarer starts sit in a quiet `More ways to start` menu, and an item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
+- The new session draft follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
 
@@ -837,7 +847,7 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-The empty Activity of a new session is the kickoff. It asks "How do you want to
+The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept
 glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
 selected row reveals its fields and its one primary under the list. Arrow keys
@@ -871,7 +881,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Seven animations, one meaning each. Transition keyframes (`fade-in`,
+Eight animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
 `layer-out`, `trail-crumb-in`, `crumb-menu-in`) move content between states and sit outside the
 registry. The `Trail` closes a crumb label with `grid-template-columns` from
@@ -900,10 +910,14 @@ never mounts and unmounts its panel by hand.
   rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
   as one running state, not two claims. The bar for another lasting-state
   animation is high.
-- `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
-  the digit roll.
+- `cost-tick`: the spend chip's amount just changed. The figure rises 6px into
+  place in 160ms; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
+- `update-sweep`: a new version arrived. One 1.2s light sweep across the
+  update pill, on arrival and again when the window regains focus at least
+  an hour after the last sweep, capped at six a day. Never loops, never
+  wraps the pill in a ring.
 - Skeleton pulse (`animate-pulse` inside `Skeleton` only): loading.
 
 `no-token-bypass.test.ts` rejects any `animate-pulse` or `animate-ping`

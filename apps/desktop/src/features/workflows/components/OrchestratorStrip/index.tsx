@@ -13,7 +13,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store/store';
 import { workflowRunHasOpenQuestions } from '../../../context/openQuestionsGate';
-import { openImpactStudio } from '../../../impact/openImpactStudio';
+import { requestSessionSpendLimitEdit } from '../../../budget/requestSessionSpendLimitEdit';
 import { isBudgetBlocked } from '../../../../store/slices/workflows/budgetBlock';
 import { WorkflowAutorunToggle } from '../WorkflowAutorunToggle';
 import { WorkflowNodeRouting } from '../WorkflowNodeRouting';
@@ -62,7 +62,11 @@ export const OrchestratorStrip = ({
     (state) => state.sessionOpenQuestions[sessionId] ?? EMPTY_QUESTIONS,
   );
   const sessionBudgetBlocked = useAppStore((state) =>
-    isBudgetBlocked({ alerts: state.budgetAlerts ?? EMPTY_ALERTS, sessionId }),
+    isBudgetBlocked({
+      alerts: state.budgetAlerts ?? EMPTY_ALERTS,
+      budgets: state.sessionBudgets,
+      sessionId,
+    }),
   );
   const readingHintIds = useAppStore(
     (state) => state.orchestratorReadingHints[run.id] ?? EMPTY_READING,
@@ -122,12 +126,12 @@ export const OrchestratorStrip = ({
         return sessionBudgetBlocked ? (
           <OrchestratorAction
             icon={Wallet}
-            label="Review budget"
+            label="Raise limit"
             variant="primary"
             tone="warning"
-            testId="orchestrator-review-budget"
-            title="The session budget cap is what stopped this run"
-            onClick={() => openImpactStudio({ scope: { kind: 'session', sessionId } })}
+            testId="orchestrator-raise-session-limit"
+            title="The spend limit of this session is what paused this run"
+            onClick={() => requestSessionSpendLimitEdit({ sessionId })}
           />
         ) : (
           <RunSpendLimitPopover sessionId={sessionId} run={run} variant="primary" />
@@ -175,6 +179,7 @@ export const OrchestratorStrip = ({
       case 'waiting':
       case 'automatic':
       case 'needs-answer':
+      case 'needs-approval':
       case 'step-failed':
         return null;
       default: {

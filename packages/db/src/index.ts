@@ -30,11 +30,13 @@ export {
   insertWorkspace,
   getWorkspaceById,
   listWorkspaces,
+  listDisconnectedWorkspaces,
   disconnectWorkspace,
   disconnectWorkspaceAndProjects,
   reconnectWorkspace,
   reconnectWorkspaceAndProjects,
   renameWorkspace,
+  setWorkspacePermissionDefault,
   touchWorkspaceLastAccessed,
   deleteWorkspace,
   upsertWorkspaceProfile,
@@ -52,7 +54,16 @@ export {
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
+  updateProjectGoodboyIgnore,
 } from './queries/project';
+export {
+  recordSecurityFindings,
+  listOpenSecurityFindings,
+  listDismissedSecurityFindings,
+  countOpenSecurityFindings,
+  dismissSecurityFinding,
+  flagSecurityFindingAgain,
+} from './queries/security-finding';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,
@@ -98,6 +109,7 @@ export {
   type SessionConfigUpdate,
   type ArchivedSessionRef,
 } from './queries/session';
+export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export {
   attachWorkflowToSession,
   detachWorkflowFromSession,
@@ -476,3 +488,8 @@ export {
   upsertResolvePublicationThread,
   listResolvePublicationThreads,
 } from './queries/resolve-publication';
+export {
+  addProjectSentryLink,
+  listProjectSentryLinks,
+  removeProjectSentryLink,
+} from './queries/project-sentry-link';

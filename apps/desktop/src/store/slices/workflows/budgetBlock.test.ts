@@ -12,7 +12,13 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { isBudgetBlocked, loadSpendLimitTelemetry, resolveSpendLimitStop } from './budgetBlock';
+import {
+  budgetBlockMessage,
+  isBudgetBlocked,
+  loadSpendLimitTelemetry,
+  resolveSpendLimitStop,
+  sessionBudgetBlockAfterLoad,
+} from './budgetBlock';
 
 const SESSION_ID = 'ses-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -70,6 +76,7 @@ describe('isBudgetBlocked', () => {
     expect(
       isBudgetBlocked({
         alerts: [budgetAlert({ sessionId: SESSION_ID })],
+        budgets: {},
         sessionId: SESSION_ID,
       }),
     ).toBe(true);
@@ -79,15 +86,53 @@ describe('isBudgetBlocked', () => {
     expect(
       isBudgetBlocked({
         alerts: [budgetAlert({ kind: 'provider-exceeded', provider: 'openai' })],
+        budgets: {},
         sessionId: SESSION_ID,
       }),
     ).toBe(false);
+  });
+
+  it('keeps the session running when its limit only warns', () => {
+    expect(
+      isBudgetBlocked({
+        alerts: [budgetAlert({ sessionId: SESSION_ID })],
+        budgets: { [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' } },
+        sessionId: SESSION_ID,
+      }),
+    ).toBe(false);
+  });
+
+  it('says the limit that paused the session', () => {
+    expect(budgetBlockMessage({ limitUsd: 10 })).toBe(
+      'Paused at the $10.00 spend limit for this session.',
+    );
+  });
+
+  it('reads the limit mode before it decides, when it was never loaded', async () => {
+    const state: Record<string, unknown> = {
+      budgetAlerts: [budgetAlert({ sessionId: SESSION_ID })],
+      sessionBudgets: {},
+    };
+    state['loadSessionBudget'] = vi.fn(async () => {
+      state['sessionBudgets'] = {
+        [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' },
+      };
+    });
+
+    const block = await sessionBudgetBlockAfterLoad({
+      get: (() => state) as never,
+      sessionId: SESSION_ID,
+    });
+
+    expect(block).toBeNull();
+    expect(state['loadSessionBudget']).toHaveBeenCalledWith(SESSION_ID);
   });
 
   it('ignores another session exceeded cap', () => {
     expect(
       isBudgetBlocked({
         alerts: [budgetAlert({ sessionId: 'ses-2' as SessionId })],
+        budgets: {},
         sessionId: SESSION_ID,
       }),
     ).toBe(false);

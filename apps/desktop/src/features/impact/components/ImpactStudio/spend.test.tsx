@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
 
@@ -26,6 +26,7 @@ const { state, mocks } = vi.hoisted(() => ({
     budgetAlerts: [] as ReadonlyArray<unknown>,
     budgetRules: [] as ReadonlyArray<unknown>,
     sessionBudgets: {} as Record<string, { softCapUsd: number }>,
+    clearSessionBudget: vi.fn(),
     currentWorkspaceId: 'workspace-1',
     navigate: vi.fn(),
     loadBudgetRules: vi.fn(),
@@ -144,21 +145,31 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Impact studio spend scopes', () => {
-  it('groups providers and sessions in the one rail, under a single window control', () => {
-    renderStudio();
+  it('keeps providers and sessions in the spend tab, under one window control', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     expect(screen.getByRole('tablist', { name: 'Impact window' })).toBeDefined();
-    expect(screen.getByText('spend by provider')).toBeDefined();
-    expect(screen.getByText('spend by session')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Overview' })).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
+    expect(screen.getByText('Sessions by spend')).toBeDefined();
+    expect(screen.queryByText('spend by provider')).toBeNull();
   });
 
-  it('switches to a provider scope from the rail and shows its spend breakdown', () => {
-    renderStudio();
+  it('anchors a provider inside spend and goes back to all spend', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     const [claudeRow] = screen.getAllByRole('button', { name: /claude/i });
     fireEvent.click(claudeRow!);
     expect(screen.getByText(/total spend/i)).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'All spend' }));
+    expect(screen.queryByText(/total spend/i)).toBeNull();
+  });
+
+  it('anchors a session inside spend from its row', () => {
+    renderStudio({ initialScope: { kind: 'spend' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /build the feature/i }));
+    expect(screen.getByText('Session spend')).toBeDefined();
   });
 
   it('opens the provider panel when the studio is asked for a provider scope', () => {
@@ -172,7 +183,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
 
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/session cost/i)).toBeDefined();
+    expect(screen.getByText('Session spend')).toBeDefined();
     expect(screen.getByText(/cost per turn/i)).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Recent' })).toBeDefined();
   });
@@ -271,17 +282,22 @@ describe('Impact studio spend scopes', () => {
     expect(state.deleteBudgetRule).toHaveBeenCalledWith('rule-1');
   });
 
-  it('sets a session soft cap via setSessionBudget', () => {
+  it('sets a session spend limit via setSessionBudget', async () => {
     renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
 
-    fireEvent.change(screen.getByLabelText(/session soft cap/i), { target: { value: '12.5' } });
-    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
-    expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5);
+    fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
+    fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
+      target: { value: '12.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(state.setSessionBudget).toHaveBeenCalledWith('session-1', 12.5, 'pause'),
+    );
   });
 
   it('renders a failed spend load and retries it', async () => {
     state.loadBudgetAlerts.mockRejectedValueOnce(new Error('alerts unavailable'));
-    renderStudio();
+    renderStudio({ initialScope: { kind: 'spend' } });
 
     expect((await screen.findByRole('alert')).textContent).toContain('alerts unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));

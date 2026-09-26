@@ -1,9 +1,12 @@
 import { addWorkspace } from './addWorkspace';
 import { createWorkspace } from './createWorkspace';
 import { disconnectWorkspace } from './disconnectWorkspace';
+import { loadDisconnectedWorkspaces } from './loadDisconnectedWorkspaces';
 import { mergeWorkspaces } from './mergeWorkspaces';
+import { reconnectWorkspaceById } from './reconnectWorkspaceById';
 import { renameWorkspace } from './renameWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
+import { setWorkspacePermissionDefault } from './setWorkspacePermissionDefault';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
 import { wipeLocalDatabase } from './wipeLocalDatabase';
 import type { GetFn, SetFn } from './types';
@@ -13,10 +16,13 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     addWorkspace: addWorkspace(set, get),
     createWorkspace: createWorkspace(set, get),
     disconnectWorkspace: disconnectWorkspace(set, get),
+    loadDisconnectedWorkspaces: loadDisconnectedWorkspaces(set),
+    reconnectWorkspaceById: reconnectWorkspaceById(set, get),
     mergeWorkspaces: mergeWorkspaces(set, get),
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),
     setCurrentWorkspace: setCurrentWorkspace(set, get),
+    setWorkspacePermissionDefault: setWorkspacePermissionDefault(set, get),
     wipeLocalDatabase: wipeLocalDatabase(set, get),
   };
 };

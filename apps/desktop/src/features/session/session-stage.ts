@@ -27,6 +27,11 @@ export const ATTENTION_REASON_META: Record<SessionAttentionReason, AttentionEntr
     tone: 'success',
     reason: 'the pull request is approved and ready to merge',
   },
+  'needs-approval': {
+    icon: 'approval',
+    tone: 'warning',
+    reason: 'the agent is waiting for you to approve a tool call',
+  },
 };
 
 type SessionStageEntry = {

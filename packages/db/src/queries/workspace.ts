@@ -1,9 +1,11 @@
-import type {
-  IsoDateTime,
-  OverrideSettings,
-  Workspace,
-  WorkspaceId,
-  WorkspaceProfile,
+import {
+  isClaudePermissionMode,
+  type ClaudePermissionMode,
+  type IsoDateTime,
+  type OverrideSettings,
+  type Workspace,
+  type WorkspaceId,
+  type WorkspaceProfile,
 } from '@goodboy/types';
 import type { Database } from '../client';
 import {
@@ -22,6 +24,7 @@ type WorkspaceRow = OverrideRow & {
   readonly deleted_at: number | null;
   readonly disconnected_at: number | null;
   readonly last_accessed_at: number | null;
+  readonly default_permission_mode: string | null;
   readonly profile_workspace_id: string | null;
   readonly profile_roles_json: string | null;
   readonly profile_about_work: string | null;
@@ -83,6 +86,9 @@ const toDomain = ({ row }: ToDomainParams): Workspace => {
     slug: row.slug,
     ...(profile === undefined ? {} : { profile }),
     overrides: overridesFromRow({ row }),
+    ...(isClaudePermissionMode(row.default_permission_mode)
+      ? { defaultPermissionMode: row.default_permission_mode }
+      : {}),
     createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
     updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
     ...(row.deleted_at === null
@@ -122,8 +128,8 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
        default_branch_prefix, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer,
-       ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       default_permission_mode, ${REPLY_SETTING_COLUMNS}
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       workspace.id,
       workspace.name,
@@ -150,6 +156,7 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
         : workspace.overrides.attributionFooter
           ? 1
           : 0,
+      workspace.defaultPermissionMode ?? 'bypassPermissions',
       ...replySettingValues({ overrides: workspace.overrides }),
     ],
   );
@@ -184,6 +191,21 @@ export const listWorkspaces = async ({
     `${WORKSPACE_SELECT}
      WHERE w.deleted_at IS NULL AND w.disconnected_at IS NULL
      ORDER BY w.created_at DESC`,
+  );
+  return rows.map((row) => toDomain({ row }));
+};
+
+type ListDisconnectedWorkspacesParams = {
+  readonly db: Database;
+};
+
+export const listDisconnectedWorkspaces = async ({
+  db,
+}: ListDisconnectedWorkspacesParams): Promise<ReadonlyArray<Workspace>> => {
+  const rows = await db.select<WorkspaceRow>(
+    `${WORKSPACE_SELECT}
+     WHERE w.deleted_at IS NULL AND w.disconnected_at IS NOT NULL
+     ORDER BY w.disconnected_at DESC`,
   );
   return rows.map((row) => toDomain({ row }));
 };
@@ -297,6 +319,23 @@ export const renameWorkspace = async ({ db, id, name }: RenameWorkspaceParams): 
     Date.now(),
     id,
   ]);
+};
+
+type SetPermissionDefaultParams = {
+  readonly db: Database;
+  readonly id: WorkspaceId;
+  readonly mode: ClaudePermissionMode;
+};
+
+export const setWorkspacePermissionDefault = async ({
+  db,
+  id,
+  mode,
+}: SetPermissionDefaultParams): Promise<void> => {
+  await db.execute(
+    'UPDATE workspaces SET default_permission_mode = ?, updated_at = ? WHERE id = ?',
+    [mode, Date.now(), id],
+  );
 };
 
 type WorkspaceIdParams = {

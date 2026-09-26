@@ -1,4 +1,4 @@
-import type { GithubIssue, SessionId } from '@goodboy/types';
+import type { GithubIssue, ProjectId, SessionId } from '@goodboy/types';
 import type { BitbucketPullRequest, BitbucketRepo } from '../integrations/bitbucket/client';
 import type { GitlabIssue, GitlabMergeRequest } from '../integrations/gitlab/client';
 import type { JiraIssue } from '../integrations/jira/client';
@@ -87,5 +87,6 @@ export type InboxRecord = {
   readonly updatedAt: string;
   readonly url: string;
   readonly context: string;
+  readonly projectIds?: ReadonlyArray<ProjectId>;
   readonly payload: Payload;
 };

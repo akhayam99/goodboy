@@ -22,6 +22,14 @@ const makeOverflow = ({ viewport }: { readonly viewport: HTMLElement }): void =>
   Object.defineProperty(viewport, 'clientWidth', { value: 100, configurable: true });
 };
 
+const runFrames = (): void => {
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    callback(0);
+    return 0;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
+};
+
 describe('ScrollFade', () => {
   it('bounds the scrolling viewport by the root height cap so a max-h root can scroll', () => {
     const { container } = render(
@@ -54,28 +62,70 @@ describe('ScrollFade', () => {
     expect(viewportOf(container).className).toContain('px-3');
   });
 
-  it('fades to the elevated surface color for floating panels', () => {
+  it('masks the viewport instead of painting an overlay gradient over neighbours', () => {
     const { container } = render(
-      <ScrollFade className="max-h-80" fadeFrom="elevated">
+      <ScrollFade className="max-h-80">
         <p>content</p>
       </ScrollFade>,
     );
+    const viewport = viewportOf(container);
+    expect(viewport.style.maskImage).toContain('linear-gradient');
     const root = container.firstElementChild as HTMLElement;
-    const fades = root.querySelectorAll('[aria-hidden]');
-    expect(fades.length).toBeGreaterThan(0);
-    fades.forEach((fade) => expect(fade.className).toContain('from-elevated'));
+    expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-b').length).toBe(0);
+    expect(root.querySelectorAll('[aria-hidden].bg-gradient-to-t').length).toBe(0);
   });
 
-  it('fades to the floating surface color for popovers and listboxes', () => {
+  it('sets no top fade and a full bottom fade at the start of the scroll range', () => {
+    runFrames();
     const { container } = render(
-      <ScrollFade className="max-h-80" fadeFrom="floating">
+      <ScrollFade className="h-40" fadeSize={32}>
         <p>content</p>
       </ScrollFade>,
     );
-    const root = container.firstElementChild as HTMLElement;
-    const fades = root.querySelectorAll('[aria-hidden]');
-    expect(fades.length).toBeGreaterThan(0);
-    fades.forEach((fade) => expect(fade.className).toContain('from-floating'));
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('0px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+    vi.unstubAllGlobals();
+  });
+
+  it('grows the top fade and keeps the bottom fade in the middle of the scroll range', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="h-40" fadeSize={32}>
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 150;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('32px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('32px');
+    vi.unstubAllGlobals();
+  });
+
+  it('shrinks the bottom fade to 0 and keeps the top fade at the end of the scroll range', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="h-40" fadeSize={32}>
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    viewport.scrollTop = 300;
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+    expect(viewport.style.getPropertyValue('--fade-top')).toBe('32px');
+    expect(viewport.style.getPropertyValue('--fade-bottom')).toBe('0px');
+    vi.unstubAllGlobals();
   });
 
   it('renders no scrollbar track when the content does not overflow', () => {
@@ -101,14 +151,6 @@ describe('ScrollFade', () => {
 });
 
 describe('ScrollFade overlay thumb', () => {
-  const runFrames = (): void => {
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0);
-      return 0;
-    });
-    vi.stubGlobal('cancelAnimationFrame', () => undefined);
-  };
-
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
@@ -131,6 +173,25 @@ describe('ScrollFade overlay thumb', () => {
     const track = container.querySelector('.pointer-events-auto');
     expect(track).not.toBeNull();
     expect(track?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('renders exactly one thumb, sitting on the inline-end edge of its own scroller', () => {
+    runFrames();
+    const { container } = render(
+      <ScrollFade className="h-40">
+        <p>content</p>
+      </ScrollFade>,
+    );
+    const viewport = viewportOf(container);
+    makeOverflow({ viewport });
+    act(() => {
+      fireEvent.scroll(viewport);
+    });
+
+    const tracks = container.querySelectorAll('.pointer-events-auto');
+    expect(tracks.length).toBe(1);
+    expect(tracks[0]?.className).toContain('end-0.5');
+    expect(tracks[0]?.className).not.toContain('right-0.5');
   });
 
   it('never takes width away from the content, only overlays it', () => {

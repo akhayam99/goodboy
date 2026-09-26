@@ -205,6 +205,22 @@ describe('impact overview', () => {
     expect(result.spendSessions[0]).toMatchObject({ sessionId: 'recent', value: 2.5 });
   });
 
+  it('compares a short window with the stretch of the same length before it', async () => {
+    const db = await seedDb();
+    const weekSince = NOW - 7 * DAY_MS;
+    await addSession({ db, seed: { id: 'this-week', createdAt: RECENT } });
+    await addSession({ db, seed: { id: 'last-week', createdAt: NOW - 10 * DAY_MS } });
+    await addSession({ db, seed: { id: 'last-month', createdAt: NOW - 20 * DAY_MS } });
+
+    const result = await getImpactOverview({
+      ...params({ db, sinceMs: weekSince }),
+      windowMs: 7 * DAY_MS,
+    });
+
+    expect(result.sessionCount).toBe(1);
+    expect(result.previousSessionCount).toBe(1);
+  });
+
   it('reports spend as absent rather than zero when no telemetry was recorded', async () => {
     const db = await seedDb();
     await addSession({ db, seed: { id: 'untelemetered', createdAt: RECENT } });

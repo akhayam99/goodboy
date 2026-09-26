@@ -14,6 +14,7 @@ import { NotificationToastBridge } from './features/notifications/components/Not
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
+import { SessionDraftPane } from './features/session/components/SessionDraftPane';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
@@ -29,6 +30,7 @@ import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
+import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
@@ -48,6 +50,7 @@ import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessi
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
+import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -79,7 +82,8 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const currentWorkspaceSessions = useSessions();
-  const hasActiveSession = currentSession != null;
+  const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
+  const hasActiveSession = currentSession != null || isDraftShown;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -95,6 +99,7 @@ export const App = () => {
     openSettings,
     openShortcutHelp,
     openSpend,
+    openImpact,
     openWorkflows,
     settingsProviderId,
     studio,
@@ -118,6 +123,7 @@ export const App = () => {
 
   useGithubPolling();
   useProviderRefreshOnFocus();
+  useProviderLimitsProbe();
   useUpdaterPolling();
   useWindowPresence();
   useWindowShortcuts();
@@ -225,6 +231,7 @@ export const App = () => {
             onOpenIntegration={openIntegration}
             onOpenInbox={openInbox}
             onOpenWorkflows={openWorkflows}
+            onOpenImpact={openImpact}
             onOpenSettings={openSettings}
             onOpenChangelog={openChangelog}
             onOpenShortcuts={openShortcutHelp}
@@ -233,16 +240,19 @@ export const App = () => {
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          currentSession && arrangement.leftSlot !== 'none' ? (
+          hasActiveSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} />
+              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} isDraftShown={isDraftShown} />
             ) : (
-              <SessionNavSidebar session={currentSession} onToggleSidebar={sessionSidebar.toggle} />
+              <SessionNavSidebar
+                currentSessionId={currentSession?.id ?? null}
+                onToggleSidebar={sessionSidebar.toggle}
+              />
             )
           ) : undefined
         }
         leftOverlay={
-          currentSession && arrangement.leftOverlaySlot === 'peek' ? (
+          hasActiveSession && arrangement.leftOverlaySlot === 'peek' ? (
             <SidebarPeekOverlay
               isPeeking={sessionSidebar.isPeeking}
               onEdgeEnter={sessionSidebar.requestPeek}
@@ -256,7 +266,7 @@ export const App = () => {
               onRelease={sessionSidebar.releasePeek}
             >
               <SessionNavSidebar
-                session={currentSession}
+                currentSessionId={currentSession?.id ?? null}
                 onNavigate={sessionSidebar.closePeek}
                 isCollapsed={sessionSidebar.isCollapsed}
                 onToggleSidebar={sessionSidebar.toggle}
@@ -277,6 +287,8 @@ export const App = () => {
                   />
                 ))}
               </div>
+            ) : currentWorkspace && isDraftShown ? (
+              <SessionDraftPane workspaceId={currentWorkspace.id} />
             ) : currentWorkspace ? (
               <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
             ) : (

@@ -1,6 +1,11 @@
-import type { WorkspaceId } from '@goodboy/types';
 import { storageFolderBucket } from '../../store/slices/storage/classifyStorageFolder';
-import type { StorageFilter, StorageFolder, StorageRoot } from '../../store/slices/storage/types';
+import type {
+  StorageFilter,
+  StorageFolder,
+  StorageRoot,
+  StorageScope,
+} from '../../store/slices/storage/types';
+import { filterFoldersByScope } from './filterFoldersByScope';
 
 export type StorageFolderGroup = {
   readonly root: StorageRoot;
@@ -12,7 +17,7 @@ type Params = {
   readonly folders: ReadonlyArray<StorageFolder>;
   readonly roots: ReadonlyArray<StorageRoot>;
   readonly filter: StorageFilter;
-  readonly workspaceId: WorkspaceId | null;
+  readonly scope: StorageScope;
   readonly now: number;
 };
 
@@ -34,18 +39,13 @@ export const groupStorageFolders = ({
   folders,
   roots,
   filter,
-  workspaceId,
+  scope,
   now,
 }: Params): ReadonlyArray<StorageFolderGroup> => {
   const rootByPath = new Map(roots.map((root) => [root.repoRoot, root]));
   const grouped = new Map<string, Array<StorageFolder>>();
-  for (const folder of folders) {
+  for (const folder of filterFoldersByScope({ folders, roots, scope })) {
     if (storageFolderBucket({ folder, now }) !== filter) {
-      continue;
-    }
-    const root = rootByPath.get(folder.repoRoot);
-    const ownerWorkspace = folder.workspaceId ?? root?.workspaceId ?? null;
-    if (workspaceId !== null && ownerWorkspace !== workspaceId) {
       continue;
     }
     grouped.set(folder.repoRoot, [...(grouped.get(folder.repoRoot) ?? []), folder]);

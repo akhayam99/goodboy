@@ -22,14 +22,36 @@ export const projectGitStatus = async ({
   return invoke<WorkspaceGitStatus>('project_git_status', { projectPath });
 };
 
+type ProjectFetchParams = {
+  readonly projectPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const projectFetch = async ({
+  projectPath,
+  workspaceId,
+  projectId,
+}: ProjectFetchParams): Promise<void> => {
+  return invoke<void>('project_fetch', { projectPath, workspaceId, projectId });
+};
+
 type CheckoutFastForwardParams = {
   readonly checkoutPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
 };
 
 export const checkoutFastForward = async ({
   checkoutPath,
+  workspaceId,
+  projectId,
 }: CheckoutFastForwardParams): Promise<FastForwardResult> => {
-  return invoke<FastForwardResult>('checkout_fast_forward', { checkoutPath });
+  return invoke<FastForwardResult>('checkout_fast_forward', {
+    checkoutPath,
+    workspaceId,
+    projectId,
+  });
 };
 
 export type ChildRepo = {

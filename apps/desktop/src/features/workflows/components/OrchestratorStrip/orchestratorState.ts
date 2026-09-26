@@ -15,6 +15,7 @@ type OrchestratorPhase =
   | 'needs-answer'
   | 'paused-budget'
   | 'blocked'
+  | 'needs-approval'
   | 'failed'
   | 'step-failed'
   | 'stopped'
@@ -47,8 +48,8 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
   budget: {
     phase: 'paused-budget',
     tone: 'warning',
-    sentence: 'Paused · budget cap reached',
-    showsMessage: true,
+    sentence: 'Paused at the spend limit',
+    showsMessage: false,
   },
   failure: {
     phase: 'failed',
@@ -73,6 +74,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     tone: 'neutral',
     sentence: 'Closed by you',
     showsMessage: false,
+  },
+  'needs-approval': {
+    phase: 'needs-approval',
+    tone: 'warning',
+    sentence: 'Paused · needs your approval',
+    showsMessage: true,
   },
 };
 
@@ -159,11 +166,12 @@ export const resolveOrchestratorState = ({
   if (stop != null && isAnsweredQuestionStop === false) {
     const known: StopPresentation | undefined = STOP_PRESENTATION[stop.kind];
     const presentation = known ?? UNKNOWN_STOP;
+    const isSpendStop = stop.kind === 'budget' && stop.message.startsWith('Paused at the ');
     return {
       ...base,
       phase: presentation.phase,
       tone: presentation.tone,
-      sentence: presentation.sentence,
+      sentence: isSpendStop ? stop.message : presentation.sentence,
       detail: presentation.showsMessage ? stop.message : null,
     };
   }

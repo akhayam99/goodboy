@@ -143,44 +143,84 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('ImpactStudio', () => {
-  it('renders the overview outcome verdict and opens session drill-down', () => {
-    const onClose = vi.fn();
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={onClose} />);
+const renderStudio = (onClose = vi.fn()) =>
+  render(
+    <ImpactStudio
+      workspaceId={'workspace-1' as never}
+      workspaceName="Northwind"
+      onClose={onClose}
+    />,
+  );
 
-    expect(screen.getByText('orchestrated')).toBeDefined();
-    expect(screen.getByText('75%')).toBeDefined();
-    expect(screen.getByText(/longest session wall-clock/i)).toBeDefined();
-    expect(screen.getByText(/spend this window/i)).toBeDefined();
-    expect(screen.getByText('$12.50')).toBeDefined();
-    expect(screen.getByText('$7.25')).toBeDefined();
-    const drillDowns = screen.getAllByRole('button', { name: /ship impact studio/i });
-    expect(drillDowns).toHaveLength(2);
-    fireEvent.click(drillDowns[0]!);
+describe('ImpactStudio', () => {
+  it('opens on a summary sentence built from the numbers', () => {
+    renderStudio();
+
+    expect(
+      screen.getByText(
+        (_, node) =>
+          node?.tagName === 'P' &&
+          node.textContent ===
+            'In the last 30 days Goodboy ran 4 sessions in Northwind, merged 3 pull requests and spent $12.50. Workflows ran 75% of sessions.',
+      ),
+    ).toBeDefined();
+    expect(screen.getByRole('tab', { name: 'Overview', selected: true })).toBeDefined();
+  });
+
+  it('leaves spend out of the sentence when nothing was measured', () => {
+    const base = buildMetrics();
+    mocks.metrics = {
+      ...base,
+      overview: result({ ...base.overview.data!, spendUsd: null, spendSessions: [] }),
+    };
+    renderStudio();
+
+    expect(screen.queryByText('$0')).toBeNull();
+    expect(screen.queryByText(/spent/)).toBeNull();
+  });
+
+  it('opens the tab that explains a tile, not a session', () => {
+    renderStudio();
+
+    fireEvent.click(screen.getByRole('button', { name: /pull requests merged/i }));
+    expect(screen.getByText('PR funnel')).toBeDefined();
+    expect(mocks.state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('names each change in words next to its tile', () => {
+    renderStudio();
+
+    expect(screen.getByText('up 50%')).toBeDefined();
+    expect(screen.getByText('down 1.0h')).toBeDefined();
+  });
+
+  it('opens a session from the sessions that shipped the most', () => {
+    const onClose = vi.fn();
+    renderStudio(onClose);
+
+    fireEvent.click(screen.getByRole('button', { name: /ship impact studio/i }));
     expect(mocks.state.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-1' as SessionId }),
     });
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('renders the spend widget as absent rather than zero when nothing was measured', () => {
+  it('shows the empty state when the window has no sessions', () => {
     const base = buildMetrics();
     mocks.metrics = {
       ...base,
-      overview: result({ ...base.overview.data!, spendUsd: null, spendSessions: [] }),
+      overview: result({ ...base.overview.data!, sessionCount: 0, orchestratedSessions: 0 }),
     };
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    expect(screen.getByText('No spend recorded in this window')).toBeDefined();
-    expect(screen.queryByText('$0')).toBeNull();
-    expect(screen.queryByText('$0.00')).toBeNull();
-    expect(screen.queryByText('$12.50')).toBeNull();
+    expect(screen.getByText('Impact fills in as sessions finish.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start a session' })).toBeDefined();
   });
 
   it('switches to Shipped and renders its key outcome rows', () => {
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Shipped' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Shipped' }));
     expect(screen.getByText('PR funnel')).toBeDefined();
     expect(screen.getByText('Published drafts: 4')).toBeDefined();
     expect(screen.getByText('src/hot.ts')).toBeDefined();
@@ -197,18 +237,18 @@ describe('ImpactStudio', () => {
         entries: prs.entries.map((entry) => ({ ...entry, spendUsd: null })),
       }),
     };
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Shipped' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Shipped' }));
     expect(screen.getByText('PR funnel')).toBeDefined();
     expect(screen.queryByText('$3.50')).toBeNull();
     expect(screen.queryByText('$0')).toBeNull();
   });
 
   it('switches to Flow and renders tempo and blocker rows', () => {
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
     expect(screen.getByText('agent duration by kind')).toBeDefined();
     expect(screen.getByText('Waiting on open questions')).toBeDefined();
     expect(screen.getByText('p90 4.0h')).toBeDefined();
@@ -224,7 +264,7 @@ describe('ImpactStudio', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
 
     expect(onScopeChange).toHaveBeenCalledWith({ kind: 'flow' });
   });
@@ -234,38 +274,30 @@ describe('ImpactStudio', () => {
       ...buildMetrics(),
       flowHealth: { data: null, error: new Error('database is locked') },
     };
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Flow' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Flow' }));
     expect(screen.getAllByText('not loaded')).toHaveLength(4);
     expect(screen.queryByText('0 answered')).toBeNull();
     expect(screen.getAllByText('\u2013').length).toBeGreaterThanOrEqual(4);
   });
 
-  it('switches to Efficiency and stops pointing at a separate budget studio', () => {
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+  it('folds efficiency into the spend tab', () => {
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Efficiency' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
     expect(screen.getByText('cache reuse by provider')).toBeDefined();
     expect(screen.getByText('context growth per turn')).toBeDefined();
-    expect(screen.queryByText(/spend and caps live in budget/i)).toBeNull();
-  });
-
-  it('carries spend into the overview and keeps the rail free of empty spend groups', () => {
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
-
-    expect(screen.getByText('Spend')).toBeDefined();
-    expect(screen.queryByText('spend by provider')).toBeNull();
-    expect(screen.queryByText('spend by session')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Efficiency' })).toBeNull();
   });
 
   it('updates the query window from the header toggle', () => {
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'All time' }));
+    fireEvent.click(screen.getByRole('tab', { name: '7 days' }));
     expect(mocks.useImpactMetrics).toHaveBeenLastCalledWith({
       workspaceId: 'workspace-1',
-      windowId: 'all',
+      windowId: 'last7',
     });
   });
 
@@ -274,7 +306,7 @@ describe('ImpactStudio', () => {
       ...buildMetrics(),
       overview: { data: null, error: new Error('database unavailable') },
     };
-    render(<ImpactStudio workspaceId={'workspace-1' as never} onClose={vi.fn()} />);
+    renderStudio();
 
     expect(screen.getByRole('alert').textContent).toContain('database unavailable');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));

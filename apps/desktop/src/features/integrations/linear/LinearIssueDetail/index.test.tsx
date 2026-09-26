@@ -3,11 +3,18 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
-import { linearUpdateIssueDescription, type LinearIssue } from '../client';
+import {
+  linearFetchTeamStates,
+  linearUpdateIssueDescription,
+  linearUpdateIssueState,
+  type LinearIssue,
+} from '../client';
 
 vi.mock('../client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../client')>()),
   linearUpdateIssueDescription: vi.fn(),
+  linearFetchTeamStates: vi.fn(),
+  linearUpdateIssueState: vi.fn(),
 }));
 
 const postComment = vi.hoisted(() => vi.fn(async () => {}));
@@ -155,11 +162,55 @@ describe('LinearIssueDetail', () => {
   it('renders the facts in the canonical slot order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
-    const facts = screen.getByRole('list', { name: 'Facts' });
+    const facts = screen.getByRole('list', { name: 'Properties' });
     expect(
       within(facts)
         .getAllByRole('listitem')
         .map((item) => item.getAttribute('data-fact-slot')),
-    ).toEqual(['person', 'weight', 'place', 'labels', 'time']);
+    ).toEqual(['state', 'weight', 'person', 'place', 'labels']);
+    expect(screen.getByText('In Progress')).toBeDefined();
+  });
+
+  it('moves the update time into the byline instead of a fact', () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    expect(screen.getByRole('time')).toBeDefined();
+  });
+
+  it('moves the issue to another status from the status row', async () => {
+    vi.mocked(linearFetchTeamStates).mockResolvedValue([
+      { id: 'state-todo', name: 'Todo', type: 'unstarted', position: 1 },
+      { id: 'state-doing', name: 'In Progress', type: 'started', position: 2 },
+      { id: 'state-done', name: 'Done', type: 'completed', position: 3 },
+    ]);
+    vi.mocked(linearUpdateIssueState).mockResolvedValue({ name: 'Done', type: 'completed' });
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Change status' }));
+    const current = await screen.findByRole('menuitem', { name: 'In Progress' });
+    expect(current.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Done' }));
+
+    await waitFor(() =>
+      expect(linearUpdateIssueState).toHaveBeenCalledWith({
+        workspaceId: 'workspace-1',
+        issueId: 'issue-1',
+        stateId: 'state-done',
+        projectId: undefined,
+      }),
+    );
+    const trigger = screen.getByRole('button', { name: 'Change status' });
+    await waitFor(() => expect(within(trigger).getByText('Done')).toBeDefined());
+  });
+
+  it('names who opened the issue in the byline', () => {
+    render(
+      <LinearIssueDetail
+        issue={{ ...ISSUE, creator: { name: 'Mara Lin' } }}
+        workspaceId={'workspace-1' as WorkspaceId}
+      />,
+    );
+
+    expect(screen.getByText(/Opened by Mara Lin/)).toBeDefined();
   });
 });

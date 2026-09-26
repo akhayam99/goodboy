@@ -451,3 +451,132 @@ pub async fn permission_audit_retry_delete(
     )?;
     Ok(())
 }
+
+fn delete_rule(conn: &rusqlite::Connection, id: &str) -> Result<usize, rusqlite::Error> {
+    conn.execute(
+        "DELETE FROM permission_rules WHERE id = ?1",
+        rusqlite::params![id],
+    )
+}
+
+#[tauri::command]
+pub async fn permission_rule_delete(
+    state: State<'_, Db>,
+    id: String,
+) -> Result<(), PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    delete_rule(&conn, &id)?;
+    Ok(())
+}
+
+const AUDIT_LIST_LIMIT: i64 = 50;
+
+fn audit_time_to_iso(value: rusqlite::types::Value) -> String {
+    match value {
+        rusqlite::types::Value::Integer(ms) => crate::util::ms_to_iso(ms),
+        rusqlite::types::Value::Text(text) => text
+            .parse::<i64>()
+            .map(crate::util::ms_to_iso)
+            .unwrap_or(text),
+        _ => String::new(),
+    }
+}
+
+fn list_audit(
+    conn: &rusqlite::Connection,
+    session_ids: &[String],
+) -> Result<Vec<PermissionAuditRow>, rusqlite::Error> {
+    if session_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let placeholders = vec!["?"; session_ids.len()].join(", ");
+    let sql = format!(
+        "SELECT id, run_id, session_id, tool_use_id, tool_name, input_json,
+                decision, rule_id, decided_by, requested_at, decided_at
+         FROM permission_audit_log
+         WHERE session_id IN ({placeholders})
+         ORDER BY decided_at DESC
+         LIMIT {AUDIT_LIST_LIMIT}"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params_from_iter(session_ids.iter()), |row| {
+        Ok(PermissionAuditRow {
+            id: row.get(0)?,
+            run_id: row.get(1)?,
+            session_id: row.get(2)?,
+            tool_use_id: row.get(3)?,
+            tool_name: row.get(4)?,
+            input_json: row.get(5)?,
+            decision: row.get(6)?,
+            rule_id: row.get(7)?,
+            decided_by: row.get(8)?,
+            requested_at: audit_time_to_iso(row.get(9)?),
+            decided_at: audit_time_to_iso(row.get(10)?),
+        })
+    })?;
+    rows.collect()
+}
+
+#[tauri::command]
+pub async fn permission_audit_list(
+    state: State<'_, Db>,
+    session_ids: Vec<String>,
+) -> Result<Vec<PermissionAuditRow>, PermissionError> {
+    let conn = state.0.lock().map_err(|_| PermissionError::Poisoned)?;
+    Ok(list_audit(&conn, &session_ids)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{delete_rule, list_audit};
+
+    #[test]
+    fn delete_rule_removes_only_the_named_rule() {
+        let conn = rusqlite::Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE permission_rules (id TEXT PRIMARY KEY);
+             INSERT INTO permission_rules (id) VALUES ('keep'), ('drop');",
+        )
+        .expect("seed");
+
+        assert_eq!(delete_rule(&conn, "drop").expect("delete"), 1);
+        assert_eq!(delete_rule(&conn, "missing").expect("delete"), 0);
+        let left: Vec<String> = conn
+            .prepare("SELECT id FROM permission_rules")
+            .expect("prepare")
+            .query_map([], |row| row.get(0))
+            .expect("query")
+            .collect::<Result<_, _>>()
+            .expect("rows");
+        assert_eq!(left, vec!["keep".to_string()]);
+    }
+
+    #[test]
+    fn list_audit_returns_the_newest_decisions_of_the_given_sessions() {
+        let conn = rusqlite::Connection::open_in_memory().expect("open");
+        conn.execute_batch(
+            "CREATE TABLE permission_audit_log (
+               id TEXT PRIMARY KEY, run_id TEXT, session_id TEXT, tool_use_id TEXT,
+               tool_name TEXT, input_json TEXT, decision TEXT, rule_id TEXT,
+               decided_by TEXT, requested_at TEXT, decided_at TEXT);
+             INSERT INTO permission_audit_log VALUES
+               ('old', 'r', 'harborline-1', 't1', 'Bash', '{}', 'allow', NULL, 'user', 1000, 1000),
+               ('new', 'r', 'harborline-2', 't2', 'Bash', '{}', 'deny', NULL, 'rule', 2000, 2000),
+               ('other', 'r', 'northwind-1', 't3', 'Bash', '{}', 'allow', NULL, 'user', 3000, 3000);",
+        )
+        .expect("seed");
+
+        let rows = list_audit(
+            &conn,
+            &["harborline-1".to_string(), "harborline-2".to_string()],
+        )
+        .expect("list");
+
+        assert_eq!(
+            rows.iter().map(|row| row.id.as_str()).collect::<Vec<_>>(),
+            vec!["new", "old"]
+        );
+        assert_eq!(rows[0].decided_at, crate::util::ms_to_iso(2000));
+        assert!(list_audit(&conn, &[]).expect("empty").is_empty());
+    }
+}

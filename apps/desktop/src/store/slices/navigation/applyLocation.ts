@@ -94,9 +94,12 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   if (get().appStudio !== studio) {
     set({ appStudio: studio });
   }
-  if (place.at === 'board') {
+  if (place.at === 'board' || place.at === 'session-draft') {
     void get().setCurrentSession(null);
-    set({ drawer: null });
+    set({
+      drawer: null,
+      openSessionDraftWorkspaceId: place.at === 'board' ? null : get().currentWorkspaceId,
+    });
     return;
   }
   const { sessionId, view } = place;
@@ -110,7 +113,11 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     runs !== undefined &&
     !runs.some((run) => run.id === view.agentId);
   const resolved: SessionView = isAgentGone ? { ...view, agentId: null } : view;
-  set((state) => ({ ...surfaceChanges({ state, sessionId, view: resolved, isRestore }), drawer }));
+  set((state) => ({
+    ...surfaceChanges({ state, sessionId, view: resolved, isRestore }),
+    drawer,
+    openSessionDraftWorkspaceId: null,
+  }));
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()
       .selectAgent(sessionId, resolved.agentId)

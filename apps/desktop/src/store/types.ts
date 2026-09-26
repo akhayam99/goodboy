@@ -2,11 +2,13 @@ import type { CliRequirement } from '@goodboy/core';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
+import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
   StorageFocus,
+  StorageScope,
   StorageFolder,
   StorageRemovalSummary,
   StorageRoot,
@@ -19,6 +21,7 @@ import type { PrWritesState } from './slices/pr-writes/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
+import type { SentryLinksState } from './slices/sentryLinks/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
   Agent,
@@ -102,6 +105,8 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
+import type { SessionDraftState } from './slices/sessionDraft/state';
+import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
@@ -247,10 +252,13 @@ type AppSliceState = ArtifactsState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
+  SentryLinksState &
   UpdaterState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState &
+  SessionDraftState &
+  ContextDrawerSliceState &
   DrawerSliceState &
   NavigationSliceState;
 
@@ -259,12 +267,15 @@ export type NotificationScope = 'workspace' | 'all';
 export type AppState = AppSliceState & {
   readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly disconnectedWorkspaces: ReadonlyArray<Workspace>;
   readonly projects: ReadonlyArray<Project>;
   readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
   readonly integrationCredentialUsage: IntegrationCredentialUsage;
   readonly projectGitStatus: Readonly<Record<ProjectId, WorkspaceGitStatus>>;
   readonly projectCheckoutPulling: Readonly<Record<ProjectId, boolean>>;
+  readonly projectFetchedAt: Readonly<Record<ProjectId, number>>;
+  readonly projectCheckoutResult: Readonly<Record<ProjectId, ProjectCheckoutUpdate>>;
   readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
   readonly sessionEvents: Readonly<Record<SessionId, ReadonlyArray<SessionEvent> | undefined>>;
   readonly currentWorkspaceId: WorkspaceId | null;
@@ -272,7 +283,6 @@ export type AppState = AppSliceState & {
   readonly sessions: ReadonlyArray<Session>;
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
-  readonly pendingKickoffFocusSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;
@@ -325,6 +335,7 @@ export type AppState = AppSliceState & {
   readonly storageRemovingPaths: Readonly<Record<string, true>>;
   readonly storageOutcome: StorageRemovalSummary | null;
   readonly storageFocus: StorageFocus | null;
+  readonly storageScope: StorageScope | null;
   readonly storageArtifacts: ReadonlyArray<StorageArtifact>;
   readonly storageDeletingArtifacts: Readonly<Record<string, true>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;

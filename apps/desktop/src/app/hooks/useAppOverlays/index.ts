@@ -4,7 +4,8 @@ import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import type { ImpactScope } from '../../../features/impact/lib';
-import { markStepComplete } from '../../../features/onboarding/onboarding-store';
+import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
+import { resolveChangelogScreenOverlay } from '../../../features/changelog/resolveChangelogScreenOverlay';
 import {
   useAppStore,
   useSessionById,
@@ -66,7 +67,6 @@ export const useAppOverlays = ({
   const openPalette = useCallback((prefix = '') => {
     setPalettePrefix(prefix);
     setPaletteOpen(true);
-    markStepComplete('palette');
   }, []);
 
   useStudioEvents({ open, close, openPalette });
@@ -83,22 +83,27 @@ export const useAppOverlays = ({
 
   const openAddWorkspace = useCallback(() => open({ overlay: { kind: 'addWorkspace' } }), [open]);
 
-  const hasWorkspace = currentWorkspace !== null;
   const openSettings = useCallback(() => {
     clearCurrentSessionStudio();
     open({
-      overlay: { kind: 'settings', focus: { scope: hasWorkspace ? 'workspace' : 'app' } },
+      overlay: { kind: 'settings', focus: { scope: 'app', section: 'general' } },
     });
-  }, [hasWorkspace, open]);
+  }, [open]);
 
   const openSpend = useCallback(
-    () => open({ overlay: { kind: 'impact', scope: { kind: 'overview' } } }),
+    () => open({ overlay: { kind: 'impact', scope: { kind: 'spend' } } }),
     [open],
   );
 
   const openImpact = useCallback(() => open({ overlay: { kind: 'impact', scope: null } }), [open]);
 
   const openChangelog = useCallback(() => open({ overlay: { kind: 'changelog' } }), [open]);
+
+  const onOpenChangelogScreen = useCallback(
+    ({ screen }: { readonly screen: ChangelogScreen }) =>
+      open({ overlay: resolveChangelogScreenOverlay({ screen }) }),
+    [open],
+  );
 
   const openWorkflows = useCallback(() => open({ overlay: { kind: 'workflow' } }), [open]);
 
@@ -176,6 +181,7 @@ export const useAppOverlays = ({
           onSettingsScopeChange: changeSettingsScope,
           onInboxFocusChange: changeInboxFocus,
           onImpactScopeChange: changeImpactScope,
+          onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
@@ -187,6 +193,7 @@ export const useAppOverlays = ({
     onSettingsScopeChange: changeSettingsScope,
     onInboxFocusChange: changeInboxFocus,
     onImpactScopeChange: changeImpactScope,
+    onOpenChangelogScreen,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

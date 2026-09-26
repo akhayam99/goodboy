@@ -1,8 +1,6 @@
-import { openToolSettings } from '../../integrations/openToolSettings';
 import { Check } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
-import type { OnboardingStepId } from '../onboarding-store';
-import { OPEN_COMMAND_PALETTE_EVENT } from '../openCommandPaletteEvent';
+import { openWizardStep, type OnboardingStepId } from '../onboarding-store';
 
 type Props = {
   readonly id: OnboardingStepId;
@@ -13,11 +11,20 @@ type Props = {
 
 export const StepRow = ({ id, title, why, done }: Props) => {
   const actionByStep: Partial<Record<OnboardingStepId, () => void>> = {
-    workspace: () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace')),
-    codeHost: () => openToolSettings({ tool: 'github' }),
-    tools: () => openToolSettings({ tool: 'linear' }),
-    session: () => window.dispatchEvent(new CustomEvent('goodboy:new-session')),
-    palette: () => window.dispatchEvent(new CustomEvent(OPEN_COMMAND_PALETTE_EVENT)),
+    provider: () =>
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
+      ),
+    project: () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace')),
+    codeHost: () => openWizardStep('code-host'),
+    taskManager: () => openWizardStep('tasks'),
+    firstSession: () => window.dispatchEvent(new CustomEvent('goodboy:new-session')),
+    profile: () =>
+      window.dispatchEvent(
+        new CustomEvent('goodboy:open-settings', {
+          detail: { scope: 'workspace', section: 'profile' },
+        }),
+      ),
   };
   const action = actionByStep[id];
   const activate = () => action?.();

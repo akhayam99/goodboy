@@ -151,6 +151,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const currentSession = useCurrentSession();
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const navigate = useAppStore((s) => s.navigate);
+  const toggleContextDrawer = useAppStore((s) => s.toggleContextDrawer);
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
@@ -178,7 +179,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: w.name,
         sublabel: linkedProjectsLabel({ projects, workspaceId: w.id }),
         group: 'workspace',
-        onSelect: () => void openWorkspace(w.id, w.name),
+        onSelect: () => void openWorkspace({ id: w.id, title: w.name, onRunning: 'new-window' }),
       });
     }
 
@@ -226,6 +227,14 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           onSelect: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
+      out.push({
+        id: 'action:context',
+        label: SHORTCUTS['lens.context'].label,
+        sublabel: shortcutGlyphs('lens.context'),
+        group: 'action',
+        icon: CONCEPT_ICONS.context,
+        onSelect: () => toggleContextDrawer({ sessionId }),
+      });
     }
 
     if (currentSession) {
@@ -260,6 +269,13 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
           group: 'goto',
           icon: CONCEPT_ICONS.impact,
           onSelect: () => openImpactStudio({}),
+        },
+        {
+          id: 'goto:impact-spend',
+          label: 'Impact: Spend',
+          group: 'goto',
+          icon: CONCEPT_ICONS.budget,
+          onSelect: () => openImpactStudio({ scope: { kind: 'spend' } }),
         },
         {
           id: 'goto:changelog',
@@ -403,6 +419,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     destinations,
     openWorkspace,
     navigate,
+    toggleContextDrawer,
     theme,
     toggleTheme,
   ]);

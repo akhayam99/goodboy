@@ -7,6 +7,7 @@ import type {
   ProviderName,
   SessionId,
   SessionBudget,
+  SessionBudgetOnExceed,
 } from '@goodboy/types';
 
 type Params = {
@@ -29,8 +30,13 @@ export const invokeBudgetRuleDelete = async (id: string): Promise<void> => {
 export const invokeSessionBudgetSet = async (
   sessionId: string,
   softCapUsd: number,
+  onExceed: SessionBudgetOnExceed,
 ): Promise<void> => {
-  return invoke<void>('session_budget_set', { sessionId, softCapUsd });
+  return invoke<void>('session_budget_set', { sessionId, softCapUsd, onExceed });
+};
+
+export const invokeSessionBudgetClear = async (sessionId: string): Promise<void> => {
+  return invoke<void>('session_budget_clear', { sessionId });
 };
 
 export const invokeSessionBudgetGet = async (sessionId: string): Promise<SessionBudget | null> => {

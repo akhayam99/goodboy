@@ -43,11 +43,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/budget/components/spend/SessionBudgetContent.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/chat/components/ChatInput/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
     count: 1,
@@ -69,10 +64,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/impact/components/ImpactStudio/RailGroupLabel.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
     count: 1,
     reason: 'chrome',
@@ -87,7 +78,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderRow.tsx': {
+  'apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx': {
+    count: 1,
+    reason: 'chrome',
+  },
+  'apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderCard.tsx': {
     count: 1,
     reason: 'debt',
   },
@@ -119,10 +114,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectSyncControl.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx': {
-    count: 2,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
@@ -162,8 +153,8 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'debt',
   },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx': {
-    count: 1,
-    reason: 'debt',
+    count: 2,
+    reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx': {
     count: 1,

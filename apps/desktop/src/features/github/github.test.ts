@@ -86,6 +86,7 @@ describe('ghIssueByNumber', () => {
       url: 'https://github.com/acme/web/issues/42',
       state: 'OPEN',
       labels: [{ name: 'bug' }],
+      author: { login: 'dvance' },
       updatedAt: '2026-05-21T10:00:00Z',
     });
 
@@ -99,6 +100,7 @@ describe('ghIssueByNumber', () => {
       state: 'OPEN',
       labels: ['bug'],
       updatedAt: '2026-05-21T10:00:00Z',
+      author: 'dvance',
     });
     expect(h.ghRunJson).toHaveBeenCalledWith({
       runner: expect.anything(),
@@ -109,7 +111,7 @@ describe('ghIssueByNumber', () => {
         '--repo',
         'acme/web',
         '--json',
-        'number,title,body,url,state,labels,updatedAt',
+        'number,title,body,url,state,labels,author,updatedAt',
       ],
       opts: { cwd: '/repo', workspaceId: 'workspace-1' },
       shape: 'object',

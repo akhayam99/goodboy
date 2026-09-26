@@ -53,6 +53,9 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<unknown>,
     cliRequirements: [] as ReadonlyArray<unknown>,
     agentTurnState: {},
+    openSecurityFindings: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
+    projectGitStatus: {} as Record<string, unknown>,
   },
   toastMock: vi.fn(),
 }));
@@ -65,6 +68,8 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useSessions: () => [],
+  useWorkspaces: () => [],
+  useCurrentWorkspace: () => null,
 }));
 
 vi.mock('../../../providers/components/ProviderStudio', () => ({
@@ -151,9 +156,9 @@ describe('SettingsStudio', () => {
         onClose={vi.fn()}
       />,
     );
-    expect((await screen.findByLabelText('Personal API key')).id).toBe('linear-pat');
+    expect((await screen.findByLabelText('API key')).id).toBe('linear-api-key');
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    const tools = screen.getByRole('list', { name: 'Tools settings' });
+    const tools = screen.getByRole('list', { name: 'Integrations settings' });
     expect(
       within(tools)
         .getByRole('button', { name: /^Linear/ })
@@ -161,7 +166,7 @@ describe('SettingsStudio', () => {
     ).toBe('true');
     expect(
       within(screen.getByRole('navigation', { name: 'Settings scopes' }))
-        .getByRole('button', { name: 'Tools' })
+        .getByRole('button', { name: 'Integrations' })
         .getAttribute('aria-current'),
     ).toBe('false');
   });
@@ -197,6 +202,7 @@ describe('SettingsStudio', () => {
       'shortcuts',
       'backup',
       'storage',
+      'security-findings',
       'help',
       'danger',
     ]);
@@ -219,7 +225,7 @@ describe('SettingsStudio', () => {
 
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
     expect(within(rail).queryByRole('button', { name: /^Workspace/ })).toBeNull();
-    expect(within(rail).queryByRole('button', { name: 'Tools' })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: 'Integrations' })).toBeNull();
     expect(within(rail).getByRole('button', { name: 'App' })).toBeDefined();
     expect(within(rail).getByRole('button', { name: 'Providers & models' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
@@ -342,7 +348,7 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
-  it('leaves GitHub to Tools settings', () => {
+  it('leaves GitHub to Integrations settings', () => {
     renderApp();
 
     expect(screen.queryByText('GitHub')).toBeNull();

@@ -9,6 +9,7 @@ export type ImpactQueryParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;
   readonly sinceMs: number | null;
+  readonly windowMs?: number;
 };
 
 export type ImpactSession = {
@@ -224,6 +225,7 @@ type ReadCountParams = {
 
 type WindowBoundsParams = {
   readonly sinceMs: number | null;
+  readonly windowMs: number | undefined;
 };
 
 const readCount = ({ value }: ReadCountParams): number => (value == null ? 0 : value);
@@ -237,9 +239,9 @@ const percentile = ({ values, percentile: requested }: PercentileParams): number
   return sorted[index] ?? null;
 };
 
-const windowBounds = ({ sinceMs }: WindowBoundsParams): WindowBounds => ({
+const windowBounds = ({ sinceMs, windowMs }: WindowBoundsParams): WindowBounds => ({
   currentStart: sinceMs,
-  previousStart: sinceMs === null ? null : sinceMs - WINDOW_MS,
+  previousStart: sinceMs === null ? null : sinceMs - (windowMs ?? WINDOW_MS),
   previousEnd: sinceMs,
 });
 
@@ -360,8 +362,9 @@ export const getImpactOverview = async ({
   db,
   workspaceId,
   sinceMs,
+  windowMs,
 }: ImpactQueryParams): Promise<ImpactOverview> => {
-  const bounds = windowBounds({ sinceMs });
+  const bounds = windowBounds({ sinceMs, windowMs });
   const [current, previous, durations, previousDurations, spend] = await Promise.all([
     selectOverview({ db, workspaceId, sinceMs, startMs: bounds.currentStart, endMs: null }),
     sinceMs === null
@@ -476,8 +479,9 @@ export const getPullRequestOutcomes = async ({
   db,
   workspaceId,
   sinceMs,
+  windowMs,
 }: ImpactQueryParams): Promise<PullRequestOutcomes> => {
-  const bounds = windowBounds({ sinceMs });
+  const bounds = windowBounds({ sinceMs, windowMs });
   const [current, previous] = await Promise.all([
     selectPullRequests({
       db,
@@ -552,8 +556,9 @@ export const getReviewOutcomes = async ({
   db,
   workspaceId,
   sinceMs,
+  windowMs,
 }: ImpactQueryParams): Promise<ReviewOutcomes> => {
-  const bounds = windowBounds({ sinceMs });
+  const bounds = windowBounds({ sinceMs, windowMs });
   const [durations, previousDurations, draftRows, resolutionRows, outcomeRows] = await Promise.all([
     selectReviewDurations({
       db,

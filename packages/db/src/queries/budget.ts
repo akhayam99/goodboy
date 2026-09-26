@@ -33,12 +33,14 @@ export const listBudgetRules = async (db: Database): Promise<ReadonlyArray<Budge
 type SessionBudgetRow = {
   session_id: string;
   soft_cap_usd: number;
+  on_exceed: string;
 };
 
 function toSessionBudget(row: SessionBudgetRow): SessionBudget {
   return {
     sessionId: row.session_id as SessionId,
     softCapUsd: row.soft_cap_usd,
+    onExceed: row.on_exceed === 'warn' ? 'warn' : 'pause',
   };
 }
 

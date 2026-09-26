@@ -9,6 +9,7 @@ export const ROW_NODE_LABEL: Record<Exclude<WorkNodeState, 'marker'>, string> = 
   running: 'Running',
   question: 'Waiting on your answer',
   budget: 'Paused at the spend limit',
+  approval: 'Waiting for your approval',
   failed: 'Failed',
   done: 'Done',
   closed: 'Closed by you',
@@ -36,6 +37,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Failed';
     case 'blocked':
       return 'Blocked, tell the agent what to do next';
+    case 'needsApproval':
+      return 'Needs approval, answer the request in the transcript';
     case 'stepFailed':
       return reason.stepLabel == null ? 'A step failed' : `Step ${reason.stepLabel} failed`;
     case 'stepBlocked':
@@ -103,6 +106,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Write to start';
     case 'blocked':
       return 'Blocked';
+    case 'needsApproval':
+      return 'Needs approval';
     case 'stepBlocked':
       return reason.stepLabel == null ? 'Step blocked' : `Step ${reason.stepLabel} blocked`;
     case 'failed':
@@ -166,11 +171,16 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       if (isRowStoppedByUser({ state })) {
         return 'stopped';
       }
-      return state.reason?.kind === 'ready'
-        ? 'ready'
-        : state.reason?.kind === 'budget'
-          ? 'budget'
-          : 'question';
+      if (state.reason?.kind === 'ready') {
+        return 'ready';
+      }
+      if (state.reason?.kind === 'budget') {
+        return 'budget';
+      }
+      if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
+        return 'approval';
+      }
+      return 'question';
     case 'failed':
       return 'failed';
     case 'done':
@@ -196,6 +206,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
     return { state: node, label: 'Blocked' };
+  }
+  if (state.reason?.kind === 'needsApproval') {
+    return { state: node, label: 'Needs approval' };
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
     return { state: node, label: 'Stopped when Goodboy quit' };

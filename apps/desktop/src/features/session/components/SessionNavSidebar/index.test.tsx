@@ -45,7 +45,7 @@ const session = { id: 'session-1' as SessionId, goal: 'ship the nav' } as Sessio
 
 describe('SessionNavSidebar', () => {
   it('always renders the session list, with no lens navigation', () => {
-    render(<SessionNavSidebar session={session} />);
+    render(<SessionNavSidebar currentSessionId={session.id} />);
 
     expect(screen.getByTestId('activity-bar')).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: /lenses/i })).toBeNull();
@@ -54,7 +54,7 @@ describe('SessionNavSidebar', () => {
 
   it('opens on the collapse control, with Board gone to the top bar', () => {
     const onToggle = vi.fn();
-    render(<SessionNavSidebar session={session} onToggleSidebar={onToggle} />);
+    render(<SessionNavSidebar currentSessionId={session.id} onToggleSidebar={onToggle} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Hide sessions/ }));
     expect(onToggle).toHaveBeenCalledOnce();
@@ -66,7 +66,7 @@ describe('SessionNavSidebar', () => {
 
   it('closes the peek once a session is picked', () => {
     const onNavigate = vi.fn();
-    render(<SessionNavSidebar session={session} onNavigate={onNavigate} />);
+    render(<SessionNavSidebar currentSessionId={session.id} onNavigate={onNavigate} />);
 
     activityBar.onSelectSession('session-2' as SessionId);
     expect(state.navigate).toHaveBeenCalledWith({

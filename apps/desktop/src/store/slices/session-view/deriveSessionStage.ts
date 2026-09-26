@@ -12,6 +12,7 @@ type Params = {
   hasUnread: boolean;
   openQuestionCount: number;
   hasRunningAgent?: boolean;
+  hasBlockedAgent?: boolean;
   isDecidingWorkflow?: boolean;
   isPrReview?: boolean;
   isBranchless?: boolean;
@@ -33,6 +34,7 @@ const deriveStage = ({
   hasUnread,
   openQuestionCount,
   hasRunningAgent = false,
+  hasBlockedAgent = false,
   isDecidingWorkflow = false,
   isPrReview = false,
   isBranchless = false,
@@ -43,6 +45,9 @@ const deriveStage = ({
   hasRun = true,
 }: Params): StageWithoutRequest => {
   const label = requestLabel ?? (pr === null ? '' : `PR #${pr.number}`);
+  if (hasBlockedAgent) {
+    return { stage: 'attention', reason: 'Needs approval', attention: 'needs-approval' };
+  }
   if (isBranchless) {
     if (session.state.kind === 'running' || session.state.kind === 'starting' || hasRunningAgent) {
       return { stage: 'running', reason: 'agent running', attention: null };

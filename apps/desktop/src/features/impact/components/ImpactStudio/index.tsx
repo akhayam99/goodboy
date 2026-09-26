@@ -1,36 +1,44 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ScrollFade, SegmentedTabs, StudioRailLayout, inlineMarkdownText } from '@goodboy/ui';
+import { SegmentedTabs, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore, sessionPlace } from '../../../../store';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
-import { SpendSection } from '../../../budget/components/spend/SpendSection';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
 import { useImpactMetrics } from '../../hooks/useImpactMetrics';
 import {
-  IMPACT_WINDOW_DAYS,
   IMPACT_WINDOW_OPTIONS,
+  impactTabOf,
+  impactWindowStart,
   type ImpactScope,
+  type ImpactTab,
   type ImpactWindowId,
 } from '../../lib';
-import { EfficiencyPanel } from './EfficiencyPanel';
 import { FlowPanel } from './FlowPanel';
+import { ImpactTabs } from './ImpactTabs';
 import { OverviewPanel } from './OverviewPanel';
-import { ScopeRail } from './ScopeRail';
 import { ShippedPanel } from './ShippedPanel';
+import { SpendPanel } from './SpendPanel';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
+  readonly workspaceName?: string;
   readonly initialScope?: ImpactScope;
   readonly onScopeChange?: (scope: ImpactScope) => void;
   readonly onClose: () => void;
 };
 
-const DAY_MS = 86_400_000;
+const SPEND_SCOPE: ImpactScope = { kind: 'spend' };
 
-export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
+export const ImpactStudio = ({
+  workspaceId,
+  workspaceName,
+  initialScope,
+  onScopeChange,
+  onClose,
+}: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
   const [scope, setScopeState] = useState<ImpactScope>(initialScope ?? { kind: 'overview' });
   const setScope = useCallback(
@@ -42,10 +50,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
   );
   const navigate = useAppStore((state) => state.navigate);
   const metrics = useImpactMetrics({ workspaceId, windowId });
-  const sinceMs = useMemo(
-    () => (windowId === 'all' ? null : Date.now() - IMPACT_WINDOW_DAYS * DAY_MS),
-    [windowId],
-  );
+  const sinceMs = useMemo(() => impactWindowStart({ windowId, nowMs: Date.now() }), [windowId]);
   const spend = useWorkspaceSpend({ sinceMs });
   const openSession = useCallback(
     (sessionId: SessionId) => {
@@ -54,6 +59,8 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     },
     [onClose, navigate],
   );
+  const selectTab = useCallback((tab: ImpactTab) => setScope({ kind: tab }), []);
+  const backToSpend = useCallback(() => setScope(SPEND_SCOPE), []);
 
   const selectedSession =
     scope.kind === 'session'
@@ -62,47 +69,38 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
 
   useEffect(() => {
     if (scope.kind === 'session' && selectedSession === null) {
-      setScope({ kind: 'overview' });
+      setScope(SPEND_SCOPE);
     }
   }, [scope, selectedSession]);
+
+  const header = <ImpactTabs value={impactTabOf({ scope })} onChange={selectTab} />;
 
   const renderDetail = (requestClose: () => void): ReactNode => {
     switch (scope.kind) {
       case 'overview':
         return (
           <OverviewPanel
+            header={header}
+            windowId={windowId}
+            workspaceName={workspaceName ?? null}
             overview={metrics.overview}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
             isLoading={metrics.loading.overview || metrics.loading.shipped}
             onRetryOverview={() => metrics.retry('overview')}
             onRetryShipped={() => metrics.retry('shipped')}
+            onSelectTab={selectTab}
             onOpenSession={openSession}
-            hasSpend={spend.providers.length > 0}
-            spendSection={
-              <SpendSection
-                providers={spend.providers}
-                alerts={spend.alerts}
-                rulesResult={spend.data.rules}
-                alertsResult={spend.data.alerts}
-                telemetryResult={spend.data.telemetry}
-                isLoading={
-                  spend.data.loading.rules ||
-                  spend.data.loading.alerts ||
-                  spend.data.loading.telemetry
-                }
-                onDismissAlert={spend.dismissAlert}
-                onSelectProvider={(provider) => setScope({ kind: 'provider', provider })}
-                onRetryRules={() => spend.data.retry('rules')}
-                onRetryAlerts={() => spend.data.retry('alerts')}
-                onRetryTelemetry={() => spend.data.retry('telemetry')}
-              />
-            }
+            onStartSession={() => {
+              window.dispatchEvent(new CustomEvent('goodboy:new-session'));
+              requestClose();
+            }}
           />
         );
       case 'shipped':
         return (
           <ShippedPanel
+            header={header}
             pullRequests={metrics.pullRequests}
             reviews={metrics.reviews}
             externalTasks={metrics.externalTasks}
@@ -114,6 +112,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'flow':
         return (
           <FlowPanel
+            header={header}
             agentDurations={metrics.agentDurations}
             flowHealth={metrics.flowHealth}
             isLoading={metrics.loading.flow}
@@ -121,20 +120,22 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
             onOpenSession={openSession}
           />
         );
-      case 'efficiency':
+      case 'spend':
         return (
-          <EfficiencyPanel
-            cacheEfficiency={metrics.cacheEfficiency}
-            contextGrowth={metrics.contextGrowth}
-            turns={metrics.turns}
-            nudges={metrics.nudges}
-            isLoading={metrics.loading.efficiency}
-            onRetry={() => metrics.retry('efficiency')}
+          <SpendPanel
+            header={header}
+            windowId={windowId}
+            spend={spend}
+            metrics={metrics}
+            onSelectProvider={(provider) => setScope({ kind: 'provider', provider })}
+            onSelectSession={(sessionId) => setScope({ kind: 'session', sessionId })}
           />
         );
       case 'provider':
         return (
           <ProviderPanel
+            header={header}
+            onBack={backToSpend}
             provider={scope.provider}
             entry={spend.providers.find((entry) => entry.provider === scope.provider) ?? null}
             turns={spend.turns}
@@ -155,17 +156,15 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       case 'session':
         return selectedSession === null ? null : (
           <SessionPanel
+            header={header}
+            onBack={backToSpend}
             sessionId={selectedSession.sessionId}
             goal={inlineMarkdownText({ text: selectedSession.goal })}
             isCurrent={selectedSession.isCurrent}
             turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
-            softCapUsd={spend.softCapUsd(selectedSession.sessionId)}
             telemetryResult={spend.data.telemetry}
             budgetResult={spend.data.sessionBudgets}
             isLoading={spend.data.loading.telemetry || spend.data.loading.sessionBudgets}
-            onSaveCap={(capUsd) =>
-              spend.saveSessionCap({ sessionId: selectedSession.sessionId, capUsd })
-            }
             onOpened={requestClose}
             onRetryTelemetry={() => spend.data.retry('telemetry')}
             onRetryBudget={() => spend.data.retry('sessionBudgets')}
@@ -184,6 +183,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       icon={CONCEPT_ICONS.impact}
       tone={CONCEPT_TONE.impact}
       title="Impact"
+      subtitle="What Goodboy got done, and what it cost."
       closeLabel="close impact"
       headerAccessory={
         <SegmentedTabs
@@ -197,21 +197,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
       onClose={onClose}
     >
       {(requestClose) => (
-        <StudioRailLayout
-          railLabel="Impact scopes"
-          railWidth="standard"
-          rail={
-            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-              <ScopeRail
-                scope={scope}
-                providers={spend.providers}
-                sessions={spend.sessions}
-                onSelect={setScope}
-              />
-            </ScrollFade>
-          }
-          detail={renderDetail(requestClose)}
-        />
+        <div className="flex min-h-0 min-w-0 flex-1">{renderDetail(requestClose)}</div>
       )}
     </StudioShell>
   );

@@ -53,6 +53,8 @@ vi.mock('../../../../store', () => ({
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
   }),
+  useWorkspaces: () => (state.workspaces as ReadonlyArray<unknown>) ?? [],
+  useCurrentWorkspace: () => (state.currentWorkspace as unknown) ?? null,
 }));
 
 vi.mock('../../../../app/components/Toast', () => ({
@@ -162,6 +164,11 @@ beforeEach(() => {
     saveSetting: vi.fn(async () => undefined),
     scanStorageRepository: vi.fn(async () => undefined),
     setCurrentSession: vi.fn(async () => undefined),
+    storageScope: null,
+    setStorageScope: vi.fn(),
+    currentWorkspaceId: null,
+    workspaces: [],
+    currentWorkspace: null,
   });
 });
 
@@ -275,5 +282,80 @@ describe('StoragePage', () => {
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
 
     expect(state.deleteStorageArtifacts).toHaveBeenCalledWith({ ids: [freshPlan.id] });
+  });
+
+  describe('storage scope', () => {
+    const northwindFolder = folder('northwind-cleanup', {
+      repoRoot: '/repos/notify-relay',
+      workspaceId: 'northwind' as WorkspaceId,
+      sizeBytes: 2 * 1024 ** 3,
+    });
+
+    beforeEach(() => {
+      Object.assign(state, {
+        storageFolders: [safeIdle, dirty, untracked, recent, northwindFolder],
+        storageRoots: [
+          {
+            repoRoot: '/repos/ledger-core',
+            projectName: 'ledger-core',
+            workspaceId: 'harborline',
+            workspaceName: 'Harborline',
+            isDisconnected: false,
+          },
+          {
+            repoRoot: '/repos/notify-relay',
+            projectName: 'notify-relay',
+            workspaceId: 'northwind',
+            workspaceName: 'Northwind',
+            isDisconnected: false,
+          },
+        ],
+        workspaces: [
+          { id: 'harborline', name: 'Harborline' },
+          { id: 'northwind', name: 'Northwind' },
+        ],
+      });
+    });
+
+    it('defaults to the current window workspace, hiding other workspaces folders', () => {
+      Object.assign(state, {
+        currentWorkspaceId: 'harborline',
+        currentWorkspace: { id: 'harborline', name: 'Harborline' },
+      });
+      render(<StoragePage />);
+
+      expect(screen.queryByText('goodboy/northwind-cleanup')).toBeNull();
+      expect(screen.getByText('All workspaces:', { exact: false })).toBeDefined();
+    });
+
+    it('defaults to all workspaces without a current window workspace', () => {
+      render(<StoragePage />);
+
+      expect(screen.queryByText('All workspaces:', { exact: false })).toBeNull();
+    });
+
+    it('switches scope from the All workspaces line back to all', () => {
+      Object.assign(state, {
+        currentWorkspaceId: 'harborline',
+        currentWorkspace: { id: 'harborline', name: 'Harborline' },
+      });
+      render(<StoragePage />);
+
+      fireEvent.click(screen.getByText('All workspaces:', { exact: false }));
+
+      expect(state.setStorageScope).toHaveBeenCalledWith({ kind: 'all' });
+    });
+
+    it('drops the App data segment from the legend once a scope is active', () => {
+      Object.assign(state, {
+        currentWorkspaceId: 'harborline',
+        currentWorkspace: { id: 'harborline', name: 'Harborline' },
+      });
+      render(<StoragePage />);
+
+      const summary = screen.getByRole('region', { name: 'Storage summary' });
+      expect(within(summary).queryByText('App data')).toBeNull();
+      expect(screen.getByText(/of app data shared by every workspace/)).toBeDefined();
+    });
   });
 });

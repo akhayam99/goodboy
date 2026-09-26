@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '../../../../app/components/Toast';
 import { useAppStore } from '../../../../store';
+import { changelogCatchUp } from '../../changelogCatchUp';
 import { isInstalledRelease } from '../../isInstalledRelease';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
+import { releaseSummary } from '../../releaseSummary';
 
 type Props = {
   readonly onOpenChangelog: () => void;
@@ -11,6 +13,7 @@ type Props = {
 export const ReleaseNoticeBridge = ({ onOpenChangelog }: Props) => {
   const isHydrated = useAppStore((state) => state.changelogSeenHydrated);
   const seenVersion = useAppStore((state) => state.changelogSeenVersion);
+  const releases = useAppStore((state) => state.changelogReleases);
   const markChangelogSeen = useAppStore((state) => state.markChangelogSeen);
   const focusChangelogRelease = useAppStore((state) => state.focusChangelogRelease);
   const installedVersion = useInstalledVersion();
@@ -34,13 +37,21 @@ export const ReleaseNoticeBridge = ({ onOpenChangelog }: Props) => {
       return;
     }
     shownVersion.current = installedVersion;
+    const catchUp = changelogCatchUp({ releases, seenVersion, installedVersion });
+    const installedRelease = releases.find((release) =>
+      isInstalledRelease({ tag: release.version, installed: installedVersion }),
+    );
+    const message =
+      installedRelease === undefined ? '' : releaseSummary({ release: installedRelease });
+    const actionLabel =
+      catchUp === null ? 'Read the changelog' : `What's new since ${catchUp.fromVersion}`;
     previewNotification({
       severity: 'info',
       persist: true,
       title: `Updated to ${installedVersion}`,
-      message: 'The release notes list what changed.',
+      message,
       action: {
-        label: 'Read the changelog',
+        label: actionLabel,
         onClick: () => {
           focusChangelogRelease({ version: installedVersion });
           openRef.current();
@@ -54,6 +65,7 @@ export const ReleaseNoticeBridge = ({ onOpenChangelog }: Props) => {
     isHydrated,
     installedVersion,
     seenVersion,
+    releases,
     markChangelogSeen,
     focusChangelogRelease,
     previewNotification,

@@ -87,9 +87,18 @@ pub struct SentryIssueMetadata {
     pub value: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryIssueProject {
+    pub slug: String,
+    #[serde(default)]
+    pub name: Option<String>,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct SentryIssue {
     pub id: String,
+    #[serde(default)]
+    pub project: Option<SentryIssueProject>,
     #[serde(rename = "shortId", default)]
     pub short_id: Option<String>,
     pub title: String,
@@ -311,6 +320,128 @@ pub async fn sentry_validate_connection(
     Ok(res.json().await?)
 }
 
+const MAX_LIST_PAGES: u32 = 10;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryOrganizationSummary {
+    pub slug: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryProjectSummary {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    #[serde(default)]
+    pub platform: Option<String>,
+}
+
+fn verified_secret(
+    credential_id: &str,
+    token: Option<String>,
+    cache: &SentryTokenCache,
+) -> Result<String, SentryError> {
+    integration_credentials::secret_to_verify(PROVIDER, credential_id, token, &cache.0)
+        .map(|raw| token_from_secret(&raw))
+        .map_err(SentryError::from)
+}
+
+async fn get_all_pages<T: serde::de::DeserializeOwned>(
+    url: &str,
+    secret: &str,
+) -> Result<Vec<T>, SentryError> {
+    let mut items: Vec<T> = Vec::new();
+    let mut cursor: Option<String> = None;
+    for _ in 0..MAX_LIST_PAGES {
+        let mut request = http_client().get(url).bearer_auth(secret);
+        if let Some(value) = cursor.as_deref() {
+            request = request.query(&[("cursor", value)]);
+        }
+        let res = request.send().await?;
+        let status = res.status();
+        if !status.is_success() {
+            let body = res.text().await.unwrap_or_default();
+            return Err(SentryError::Http(format!("status {}: {}", status, body)));
+        }
+        let next = res
+            .headers()
+            .get(reqwest::header::LINK)
+            .and_then(|v| v.to_str().ok())
+            .and_then(parse_next_cursor);
+        let body = res.text().await?;
+        let page: Vec<T> = serde_json::from_str(&body)?;
+        items.extend(page);
+        match next {
+            Some(value) if Some(&value) != cursor.as_ref() => cursor = Some(value),
+            _ => break,
+        }
+    }
+    Ok(items)
+}
+
+fn organizations_url() -> String {
+    format!("{}/organizations/?member=1", BASE_URL)
+}
+
+fn organization_projects_url(org: &str) -> String {
+    format!("{}/organizations/{}/projects/", BASE_URL, org)
+}
+
+#[tauri::command]
+pub async fn sentry_list_organizations(
+    credential_id: String,
+    token: Option<String>,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<Vec<SentryOrganizationSummary>, SentryError> {
+    let secret = verified_secret(&credential_id, token, &cache)?;
+    get_all_pages(&organizations_url(), &secret).await
+}
+
+#[tauri::command]
+pub async fn sentry_list_projects(
+    credential_id: String,
+    token: Option<String>,
+    org: String,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<Vec<SentryProjectSummary>, SentryError> {
+    let secret = verified_secret(&credential_id, token, &cache)?;
+    get_all_pages(&organization_projects_url(org.trim()), &secret).await
+}
+
+fn issues_url(cfg: &SentryConfig, sentry_project: Option<&str>) -> String {
+    let project = sentry_project
+        .map(str::trim)
+        .filter(|slug| !slug.is_empty())
+        .unwrap_or(&cfg.project);
+    format!("{}/projects/{}/{}/issues/", BASE_URL, cfg.org, project)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SentryCodeMapping {
+    #[serde(rename = "projectSlug", default)]
+    pub project_slug: Option<String>,
+    #[serde(rename = "repoName", default)]
+    pub repo_name: Option<String>,
+    #[serde(rename = "stackRoot", default)]
+    pub stack_root: Option<String>,
+    #[serde(rename = "sourceRoot", default)]
+    pub source_root: Option<String>,
+}
+
+fn code_mappings_url(org: &str) -> String {
+    format!("{}/organizations/{}/code-mappings/", BASE_URL, org)
+}
+
+#[tauri::command]
+pub async fn sentry_list_code_mappings(
+    workspace_id: String,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<Vec<SentryCodeMapping>, SentryError> {
+    let cfg = read_config(&workspace_id, None, &cache)?;
+    get_all_pages(&code_mappings_url(&cfg.org), &cfg.token).await
+}
+
 #[tauri::command]
 pub async fn sentry_connect(
     credential_id: String,
@@ -330,10 +461,11 @@ pub async fn sentry_fetch_issues(
     project_id: Option<String>,
     query: Option<String>,
     cursor: Option<String>,
+    sentry_project: Option<String>,
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssuesPage, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
-    let url = format!("{}/projects/{}/{}/issues/", BASE_URL, cfg.org, cfg.project);
+    let url = issues_url(&cfg, sentry_project.as_deref());
     let mut params: Vec<(&str, String)> = vec![
         ("limit", PAGE_LIMIT.to_string()),
         ("query", query.unwrap_or_else(|| DEFAULT_QUERY.to_string())),
@@ -427,6 +559,108 @@ pub async fn sentry_fetch_issue_detail(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const CODE_MAPPINGS_FIXTURE: &str = r#"[{"id":"12","projectId":"4501","projectSlug":"payments-api","repoId":"77","repoName":"northwind/ledger-core","integrationId":"5","provider":{"key":"github","slug":"github","name":"GitHub"},"stackRoot":"services/payments","sourceRoot":"services/payments","defaultBranch":"main"},{"id":"13","projectSlug":"storefront-web","repoName":"northwind/storefront-web","stackRoot":"","sourceRoot":""}]"#;
+    const ISSUE_WITH_PROJECT: &str = r#"{"id":"91","shortId":"PAYMENTS-API-3","title":"KeyError: amount","project":{"id":"4501","name":"payments-api","slug":"payments-api","platform":"python"}}"#;
+
+    fn config(project: &str) -> SentryConfig {
+        SentryConfig {
+            token: "t".to_string(),
+            org: "northwind".to_string(),
+            project: project.to_string(),
+        }
+    }
+
+    #[test]
+    fn code_mappings_fixture_reads_project_repo_and_roots() {
+        let mappings: Vec<SentryCodeMapping> =
+            serde_json::from_str(CODE_MAPPINGS_FIXTURE).expect("parses");
+        assert_eq!(mappings[0].project_slug.as_deref(), Some("payments-api"));
+        assert_eq!(
+            mappings[0].repo_name.as_deref(),
+            Some("northwind/ledger-core")
+        );
+        assert_eq!(mappings[0].stack_root.as_deref(), Some("services/payments"));
+        assert_eq!(mappings[1].project_slug.as_deref(), Some("storefront-web"));
+        assert_eq!(
+            code_mappings_url("northwind"),
+            "https://sentry.io/api/0/organizations/northwind/code-mappings/"
+        );
+    }
+
+    #[test]
+    fn issue_carries_its_sentry_project() {
+        let issue: SentryIssue = serde_json::from_str(ISSUE_WITH_PROJECT).expect("parses");
+        assert_eq!(
+            issue.project,
+            Some(SentryIssueProject {
+                slug: "payments-api".to_string(),
+                name: Some("payments-api".to_string()),
+            })
+        );
+    }
+
+    #[test]
+    fn issues_url_uses_a_linked_project_over_the_default() {
+        let cfg = config("storefront-web");
+        assert_eq!(
+            issues_url(&cfg, None),
+            "https://sentry.io/api/0/projects/northwind/storefront-web/issues/"
+        );
+        assert_eq!(
+            issues_url(&cfg, Some("payments-api")),
+            "https://sentry.io/api/0/projects/northwind/payments-api/issues/"
+        );
+        assert_eq!(
+            issues_url(&cfg, Some("  ")),
+            "https://sentry.io/api/0/projects/northwind/storefront-web/issues/"
+        );
+    }
+
+    const ORGANIZATIONS_FIXTURE: &str = r#"[{"id":"1","slug":"northwind","name":"Northwind","dateCreated":"2024-01-01T00:00:00Z","isEarlyAdopter":false,"require2FA":false,"avatar":{"avatarType":"letter_avatar","avatarUuid":null},"features":[],"status":{"id":"active","name":"active"}},{"id":"2","slug":"harborline","name":"Harborline"}]"#;
+    const PROJECTS_FIXTURE: &str = r#"[{"id":"4501","slug":"payments-api","name":"payments-api","platform":"python","dateCreated":"2024-01-01T00:00:00Z","isBookmarked":false,"isMember":true,"features":[],"firstEvent":null,"hasAccess":true,"team":{"id":"9","slug":"core","name":"Core"},"teams":[]},{"id":"4502","slug":"storefront-web","name":"storefront-web","platform":null}]"#;
+
+    #[test]
+    fn organizations_fixture_reads_slug_and_name() {
+        let orgs: Vec<SentryOrganizationSummary> =
+            serde_json::from_str(ORGANIZATIONS_FIXTURE).expect("parses");
+        assert_eq!(
+            orgs,
+            vec![
+                SentryOrganizationSummary {
+                    slug: "northwind".to_string(),
+                    name: "Northwind".to_string()
+                },
+                SentryOrganizationSummary {
+                    slug: "harborline".to_string(),
+                    name: "Harborline".to_string()
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn projects_fixture_reads_id_slug_name_and_platform() {
+        let projects: Vec<SentryProjectSummary> =
+            serde_json::from_str(PROJECTS_FIXTURE).expect("parses");
+        assert_eq!(projects.len(), 2);
+        assert_eq!(projects[0].id, "4501");
+        assert_eq!(projects[0].slug, "payments-api");
+        assert_eq!(projects[0].platform.as_deref(), Some("python"));
+        assert_eq!(projects[1].platform, None);
+    }
+
+    #[test]
+    fn list_urls_point_at_the_member_orgs_and_the_org_projects() {
+        assert_eq!(
+            organizations_url(),
+            "https://sentry.io/api/0/organizations/?member=1"
+        );
+        assert_eq!(
+            organization_projects_url("northwind"),
+            "https://sentry.io/api/0/organizations/northwind/projects/"
+        );
+    }
 
     #[test]
     fn next_cursor_extracts_when_results_true() {

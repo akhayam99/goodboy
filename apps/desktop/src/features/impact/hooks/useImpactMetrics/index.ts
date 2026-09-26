@@ -24,9 +24,12 @@ import {
 import type { WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { QueryResult } from '../../../../shared/types/queryResult';
-import { IMPACT_WINDOW_DAYS, type ImpactScopeId, type ImpactWindowId } from '../../lib';
-
-const DAY_MS = 86_400_000;
+import {
+  impactWindowMs,
+  impactWindowStart,
+  type ImpactMetricGroup,
+  type ImpactWindowId,
+} from '../../lib';
 
 export type ImpactMetrics = {
   readonly overview: QueryResult<ImpactOverview>;
@@ -39,8 +42,8 @@ export type ImpactMetrics = {
   readonly contextGrowth: QueryResult<ReadonlyArray<ContextGrowthPoint>>;
   readonly turns: QueryResult<ReadonlyArray<TurnBucket>>;
   readonly nudges: QueryResult<ReadonlyArray<NudgeOutcomeCount>>;
-  readonly loading: Readonly<Record<ImpactScopeId, boolean>>;
-  readonly retry: (scope: ImpactScopeId) => void;
+  readonly loading: Readonly<Record<ImpactMetricGroup, boolean>>;
+  readonly retry: (scope: ImpactMetricGroup) => void;
 };
 
 type Params = {
@@ -55,7 +58,7 @@ type LoadQueryParams<T> = {
 };
 
 type LoadScopeParams = {
-  readonly scope: ImpactScopeId;
+  readonly scope: ImpactMetricGroup;
   readonly activeGeneration: number;
 };
 
@@ -68,7 +71,7 @@ const EMPTY_LOADING = {
   shipped: true,
   flow: true,
   efficiency: true,
-} satisfies Record<ImpactScopeId, boolean>;
+} satisfies Record<ImpactMetricGroup, boolean>;
 
 const EMPTY_RESULT = { data: null, error: null };
 
@@ -90,13 +93,15 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     useState<QueryResult<ReadonlyArray<ContextGrowthPoint>>>(EMPTY_RESULT);
   const [turns, setTurns] = useState<QueryResult<ReadonlyArray<TurnBucket>>>(EMPTY_RESULT);
   const [nudges, setNudges] = useState<QueryResult<ReadonlyArray<NudgeOutcomeCount>>>(EMPTY_RESULT);
-  const [loading, setLoading] = useState<Readonly<Record<ImpactScopeId, boolean>>>(EMPTY_LOADING);
+  const [loading, setLoading] =
+    useState<Readonly<Record<ImpactMetricGroup, boolean>>>(EMPTY_LOADING);
 
   const params = useMemo(
     () => ({
       db: tauriDatabase,
       workspaceId,
-      sinceMs: windowId === 'all' ? null : Date.now() - IMPACT_WINDOW_DAYS * DAY_MS,
+      sinceMs: impactWindowStart({ windowId, nowMs: Date.now() }),
+      windowMs: impactWindowMs({ windowId }) ?? undefined,
     }),
     [windowId, workspaceId],
   );
@@ -209,9 +214,9 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
     const activeGeneration = generation.current;
     setLoading(EMPTY_LOADING);
     void Promise.all(
-      (['overview', 'shipped', 'flow', 'efficiency'] satisfies ReadonlyArray<ImpactScopeId>).map(
-        (scope) => loadScope({ scope, activeGeneration }),
-      ),
+      (
+        ['overview', 'shipped', 'flow', 'efficiency'] satisfies ReadonlyArray<ImpactMetricGroup>
+      ).map((scope) => loadScope({ scope, activeGeneration })),
     );
     return () => {
       generation.current += 1;
@@ -219,7 +224,7 @@ export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetri
   }, [loadScope]);
 
   const retry = useCallback(
-    (scope: ImpactScopeId) => {
+    (scope: ImpactMetricGroup) => {
       void loadScope({ scope, activeGeneration: generation.current });
     },
     [loadScope],

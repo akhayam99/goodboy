@@ -1,4 +1,5 @@
 import type { ExternalTaskOutcomes, PullRequestOutcomes, ReviewOutcomes } from '@goodboy/db';
+import type { ReactElement } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { ArrowUpRight } from 'lucide-react';
 import { ErrorStrip } from '@goodboy/ui';
@@ -14,6 +15,7 @@ import { EmptyState, StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
+  readonly header: ReactElement;
   readonly pullRequests: QueryResult<PullRequestOutcomes>;
   readonly reviews: QueryResult<ReviewOutcomes>;
   readonly externalTasks: QueryResult<ExternalTaskOutcomes>;
@@ -23,6 +25,7 @@ type Props = {
 };
 
 export const ShippedPanel = ({
+  header,
   pullRequests,
   reviews,
   externalTasks,
@@ -39,7 +42,7 @@ export const ShippedPanel = ({
     reviewData?.resolutionDurationsHours.filter((hours) => hours >= 1 && hours < 24).length ?? 0;
   const slowReviews = Math.max(totalReviews - fastReviews - sameDayReviews, 0);
   return (
-    <PaneShell scroll="body" title="Shipped">
+    <PaneShell scroll="body" header={header}>
       <ErrorStrip label="pull requests" error={pullRequests.error} onRetry={onRetry} />
       <ErrorStrip label="review throughput" error={reviews.error} onRetry={onRetry} />
       <ErrorStrip label="linked issues" error={externalTasks.error} onRetry={onRetry} />

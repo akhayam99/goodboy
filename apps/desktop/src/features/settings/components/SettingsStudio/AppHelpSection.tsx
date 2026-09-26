@@ -16,7 +16,10 @@ export const AppHelpSection = ({ requestClose }: Props) => {
 
   return (
     <div className="flex flex-col">
-      <FieldRow label="First-run setup" help="Walk through providers, workspace and profile again.">
+      <FieldRow
+        label="First-run setup"
+        help="Walk through providers, project, code host and tasks again."
+      >
         <Button variant="secondary" size="sm" onClick={closeThen(reopenWizard)}>
           <RotateCcw size={ICON_SIZE.control} aria-hidden /> Run setup again
         </Button>

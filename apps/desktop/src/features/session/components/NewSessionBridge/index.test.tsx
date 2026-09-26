@@ -1,70 +1,41 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 
-const { state, toastMock } = vi.hoisted(() => ({
+const { state } = vi.hoisted(() => ({
   state: {
-    currentWorkspaceId: null as string | null,
-    createUntitledSession: vi.fn(async () => ({ session: { id: 's-1' }, worktree: {} })),
-    reportError: vi.fn(async () => undefined),
+    openSessionDraft: vi.fn(),
+    createSession: vi.fn(),
   },
-  toastMock: vi.fn(),
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: toastMock }),
-}));
-
 import { NewSessionBridge } from './index';
 
-const WS_ID = 'ws-1' as WorkspaceId;
-
 beforeEach(() => {
-  state.currentWorkspaceId = WS_ID;
-  state.createUntitledSession.mockClear();
-  state.createUntitledSession.mockResolvedValue({ session: { id: 's-1' }, worktree: {} });
-  toastMock.mockReset();
-  state.reportError.mockClear();
+  state.openSessionDraft.mockClear();
+  state.createSession.mockClear();
 });
 afterEach(cleanup);
 
 const requestNewSession = () => fireEvent(window, new CustomEvent('goodboy:new-session'));
 
 describe('NewSessionBridge', () => {
-  it('creates the session immediately, with no project attached', async () => {
+  it('opens the draft and creates no session', () => {
     render(<NewSessionBridge />);
     requestNewSession();
-    await waitFor(() =>
-      expect(state.createUntitledSession).toHaveBeenCalledWith({ workspaceId: WS_ID }),
-    );
-    expect(toastMock).not.toHaveBeenCalled();
+    expect(state.openSessionDraft).toHaveBeenCalledTimes(1);
+    expect(state.createSession).not.toHaveBeenCalled();
   });
 
-  it('does nothing without a current workspace', () => {
-    state.currentWorkspaceId = null;
-    render(<NewSessionBridge />);
+  it('stops listening once unmounted', () => {
+    const { unmount } = render(<NewSessionBridge />);
+    unmount();
     requestNewSession();
-    expect(state.createUntitledSession).not.toHaveBeenCalled();
-    expect(toastMock).not.toHaveBeenCalled();
-  });
-
-  it('reports a creation failure to the log', async () => {
-    const failure = new Error('disk full');
-    state.createUntitledSession.mockRejectedValueOnce(failure);
-    render(<NewSessionBridge />);
-    requestNewSession();
-    await waitFor(() =>
-      expect(state.reportError).toHaveBeenCalledWith({
-        title: "Couldn't start a new session",
-        error: failure,
-        workspaceId: WS_ID,
-      }),
-    );
+    expect(state.openSessionDraft).not.toHaveBeenCalled();
   });
 });

@@ -9,20 +9,24 @@ import {
   Pencil,
 } from 'lucide-react';
 import { Button, formatError } from '@goodboy/ui';
-import type { GitUnknownReason, Project, WorkspaceGitStatus } from '@goodboy/types';
+import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openInEditor } from '../../../../shared/lib/editor';
 import { BaseBranchSelect } from '../../../worktree/BaseBranchSelect';
+import { commitBaseBranch as commitProjectBaseBranch } from '../../../worktree/commitBaseBranch';
 import {
   changedCount,
   distanceAhead,
   distanceBehind,
-  isWorkingTreeClean,
   operationLabel,
   unknownReasonLabel,
   unmergedCount,
 } from '../../../../shared/lib/gitStatus';
 import { InitGuide } from './InitGuide';
+import {
+  hasReadFailure,
+  projectUpdateBlockReasonOf,
+} from '../../../../shared/lib/projectGitPresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -36,10 +40,6 @@ type Detail = {
   readonly icon: typeof ArrowDown;
 };
 
-type ReasonParams = {
-  readonly reason: GitUnknownReason;
-};
-
 type StatusParams = {
   readonly status: WorkspaceGitStatus;
 };
@@ -51,28 +51,6 @@ type CapitalizeParams = {
 type CommitBaseBranchParams = {
   readonly candidate: string | null;
 };
-
-const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
-  switch (reason) {
-    case 'no-upstream':
-    case 'detached-head':
-      return false;
-    case 'rev-list-failed':
-    case 'main-ref-unresolved':
-    case 'status-read-failed':
-      return true;
-    default: {
-      const exhaustive: never = reason;
-      return exhaustive;
-    }
-  }
-};
-
-const hasReadFailure = ({ status }: StatusParams): boolean =>
-  (status.upstreamDistance.kind === 'unknown' &&
-    isReadFailureReason({ reason: status.upstreamDistance.reason })) ||
-  (status.workingTree.kind === 'unknown' &&
-    isReadFailureReason({ reason: status.workingTree.reason }));
 
 const unknownNotesOf = ({ status }: StatusParams): ReadonlyArray<string> => {
   const notes: Array<string> = [];
@@ -89,31 +67,6 @@ const unknownNotesOf = ({ status }: StatusParams): ReadonlyArray<string> => {
     notes.push(`a ${operationLabel({ operation: status.inProgress })} is in progress`);
   }
   return notes;
-};
-
-const blockedReasonOf = ({ status }: StatusParams): string | null => {
-  if (status.branch == null) {
-    return unknownReasonLabel({ reason: 'detached-head' });
-  }
-  if (status.upstream == null) {
-    return 'this branch tracks no upstream yet';
-  }
-  if (status.inProgress != null) {
-    return `finish the ${operationLabel({ operation: status.inProgress })} in progress first`;
-  }
-  if (status.workingTree.kind === 'unknown') {
-    return unknownReasonLabel({ reason: status.workingTree.reason });
-  }
-  if (!isWorkingTreeClean({ workingTree: status.workingTree })) {
-    return 'commit or stash the uncommitted changes first';
-  }
-  if (status.upstreamDistance.kind === 'unknown') {
-    return unknownReasonLabel({ reason: status.upstreamDistance.reason });
-  }
-  if (status.upstreamDistance.behind === 0) {
-    return 'already up to date';
-  }
-  return null;
 };
 
 const detailsOf = ({ status }: StatusParams): ReadonlyArray<Detail> => {
@@ -152,7 +105,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const notes = isReady ? unknownNotesOf({ status }) : [];
   const readFailure = isReady && hasReadFailure({ status });
   const branch = isReady ? (status.branch ?? 'detached HEAD') : '';
-  const blockedReason = isReady ? blockedReasonOf({ status }) : null;
+  const blockedReason = isReady ? projectUpdateBlockReasonOf({ status }) : null;
   const canPull = isReady && blockedReason == null && !pulling;
   const pullLabel = isReady
     ? status.upstream != null
@@ -163,7 +116,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const onOpen = async () => {
     setOpenError(null);
     try {
-      await openInEditor(project.rootPath);
+      await openInEditor({ path: project.rootPath });
     } catch (error) {
       setOpenError(formatError(error));
     }
@@ -177,14 +130,14 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
     }
   };
   const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
-    const trimmedBaseBranch = candidate?.trim() ?? '';
-    const nextBaseBranch = trimmedBaseBranch === '' ? null : trimmedBaseBranch;
-    if (nextBaseBranch === (project.baseBranch ?? null)) {
-      return;
-    }
     setBaseBranchError(null);
     try {
-      await updateProjectBaseBranch({ projectId: project.id, baseBranch: nextBaseBranch });
+      await commitProjectBaseBranch({
+        projectId: project.id,
+        currentBaseBranch: project.baseBranch ?? null,
+        candidate,
+        updateProjectBaseBranch,
+      });
     } catch (error) {
       setBaseBranchError(formatError(error));
     }

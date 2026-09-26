@@ -401,13 +401,13 @@ describe('No workspace yet', () => {
 });
 
 describe('Footer to settings and Goodboy chip reachability', () => {
-  it('opens settings on the current workspace from the footer settings launcher', () => {
+  it('opens settings on App even with a workspace open, from the footer settings launcher', () => {
     render(<App />);
 
     expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
 
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('workspace');
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 
   it('opens the shortcuts list from the Goodboy chip', () => {
@@ -418,15 +418,13 @@ describe('Footer to settings and Goodboy chip reachability', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 
-  it('lands the top bar spend chip on the impact studio overview', async () => {
+  it('lands the top bar spend chip on the impact spend tab', async () => {
     render(<App />);
 
     expect(screen.queryByTestId('impact-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open spend' }));
 
-    expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe(
-      'overview',
-    );
+    expect((await screen.findByTestId('impact-studio')).getAttribute('data-scope')).toBe('spend');
   });
 
   it('opens changelog from the Goodboy chip', async () => {

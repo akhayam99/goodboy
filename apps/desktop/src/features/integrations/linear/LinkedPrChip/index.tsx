@@ -16,16 +16,15 @@ type Props = {
 };
 
 export const LinkedPrChip = ({ pr }: Props) => {
-  const workspaceId = useAppStore((s) => s.currentWorkspaceId);
-  const sessionMatch = useAppStore((s) =>
-    workspaceId == null ? null : selectSessionForPr({ state: s, workspaceId, url: pr.url }),
-  );
   const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const navigate = useAppStore((s) => s.navigate);
-  const isUnderStudio = useAppStore((s) => s.appStudio !== null);
 
   const open = () => {
-    if (sessionMatch == null || isUnderStudio) {
+    const state = useAppStore.getState();
+    const workspaceId = state.currentWorkspaceId;
+    const sessionMatch =
+      workspaceId == null ? null : selectSessionForPr({ state, workspaceId, url: pr.url });
+    if (sessionMatch == null || state.appStudio !== null) {
       void openUrl(pr.url);
       return;
     }

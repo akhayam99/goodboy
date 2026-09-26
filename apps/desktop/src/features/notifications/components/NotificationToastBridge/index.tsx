@@ -127,21 +127,25 @@ export const mapNotificationAction = (
     const { workspaceId } = action;
     return {
       label: 'Review storage',
-      onClick: () => openStorage({ workspaceId }),
+      onClick: () => openStorage({ scope: { kind: 'workspace', id: workspaceId } }),
     };
   }
   if (action.kind === 'open-storage') {
     const { filter, workspaceId } = action;
     return {
       label: 'Review storage',
-      onClick: () => openStorage({ filter: filter ?? 'review', workspaceId: workspaceId ?? null }),
+      onClick: () =>
+        openStorage({
+          filter: filter ?? 'review',
+          scope: workspaceId == null ? { kind: 'all' } : { kind: 'workspace', id: workspaceId },
+        }),
     };
   }
   if (action.kind === 'retry-update') {
     return {
       label: 'Retry',
       onClick: () => {
-        void store.installUpdate();
+        void store.applyUpdate();
       },
     };
   }

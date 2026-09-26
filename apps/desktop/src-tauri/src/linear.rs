@@ -178,6 +178,8 @@ pub struct LinearIssue {
     #[serde(rename = "priorityLabel")]
     pub priority_label: Option<String>,
     pub assignee: Option<LinearIssuePerson>,
+    #[serde(default)]
+    pub creator: Option<LinearIssuePerson>,
     pub project: Option<LinearIssueProject>,
     pub labels: LinearIssueLabelNodes,
     #[serde(rename = "updatedAt")]
@@ -201,6 +203,7 @@ query AssignedIssues($filter: IssueFilter!) {
       priority
       priorityLabel
       assignee { name }
+      creator { name }
       project { name }
       labels { nodes { name color } }
       updatedAt
@@ -226,6 +229,7 @@ query Issue($issueId: String!) {
     priority
     priorityLabel
     assignee { name }
+    creator { name }
     project { name }
     labels { nodes { name color } }
     updatedAt
@@ -336,6 +340,50 @@ mutation IssueUpdate($issueId: String!, $input: IssueUpdateInput!) {
   }
 }
 "#;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LinearWorkflowState {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub position: f64,
+}
+
+const TEAM_STATES_QUERY: &str = r#"
+query IssueTeamStates($issueId: String!) {
+  issue(id: $issueId) {
+    team {
+      states { nodes { id name type position } }
+    }
+  }
+}
+"#;
+
+const ISSUE_STATE_UPDATE_MUTATION: &str = r#"
+mutation IssueStateUpdate($issueId: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $issueId, input: $input) {
+    success
+    issue { state { name type } }
+  }
+}
+"#;
+
+fn ordered_states(mut states: Vec<LinearWorkflowState>) -> Vec<LinearWorkflowState> {
+    states.sort_by(|a, b| {
+        a.position
+            .partial_cmp(&b.position)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    states
+}
+
+fn issue_state_update_variables(issue_id: &str, state_id: &str) -> serde_json::Value {
+    serde_json::json!({
+        "issueId": issue_id,
+        "input": { "stateId": state_id }
+    })
+}
 
 /// Verifies the key a credential holds through the /viewer query and writes
 /// nothing. A key already stored is verified without the webview ever seeing
@@ -499,6 +547,85 @@ pub async fn linear_update_issue(
     Ok(issue.description.unwrap_or_default())
 }
 
+#[tauri::command]
+pub async fn linear_fetch_team_states(
+    workspace_id: String,
+    project_id: Option<String>,
+    issue_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Vec<LinearWorkflowState>, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: TeamStatesResponse = graphql(
+        &token,
+        TEAM_STATES_QUERY,
+        Some(serde_json::json!({ "issueId": issue_id })),
+    )
+    .await?;
+    let issue = resp
+        .issue
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))?;
+    Ok(ordered_states(issue.team.states.nodes))
+}
+
+#[tauri::command]
+pub async fn linear_update_issue_state(
+    workspace_id: String,
+    project_id: Option<String>,
+    issue_id: String,
+    state_id: String,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<LinearIssueState, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: IssueStateUpdateResponse = graphql(
+        &token,
+        ISSUE_STATE_UPDATE_MUTATION,
+        Some(issue_state_update_variables(&issue_id, &state_id)),
+    )
+    .await?;
+    if !resp.issue_update.success {
+        return Err(LinearError::GraphQl(format!(
+            "issueUpdate rejected for {}",
+            issue_id
+        )));
+    }
+    resp.issue_update
+        .issue
+        .map(|issue| issue.state)
+        .ok_or_else(|| LinearError::InvalidShape("missing issue".into()))
+}
+
+#[derive(Deserialize)]
+struct TeamStates {
+    states: Nodes<LinearWorkflowState>,
+}
+
+#[derive(Deserialize)]
+struct IssueTeam {
+    team: TeamStates,
+}
+
+#[derive(Deserialize)]
+struct TeamStatesResponse {
+    issue: Option<IssueTeam>,
+}
+
+#[derive(Deserialize)]
+struct IssueWithState {
+    state: LinearIssueState,
+}
+
+#[derive(Deserialize)]
+struct IssueStateUpdatePayload {
+    success: bool,
+    issue: Option<IssueWithState>,
+}
+
+#[derive(Deserialize)]
+struct IssueStateUpdateResponse {
+    #[serde(rename = "issueUpdate")]
+    issue_update: IssueStateUpdatePayload,
+}
+
 #[derive(Deserialize)]
 struct ViewerResponse {
     viewer: LinearViewer,
@@ -650,5 +777,58 @@ mod tests {
         assert!(COMMENT_CREATE_MUTATION.contains("$input: CommentCreateInput!"));
         assert!(COMMENT_CREATE_MUTATION.contains("commentCreate(input: $input)"));
         assert!(COMMENT_CREATE_MUTATION.contains("createdAt"));
+    }
+
+    #[test]
+    fn issue_state_update_sends_only_the_state_under_input() {
+        let variables = issue_state_update_variables("issue-42", "state-7");
+
+        assert_eq!(variables["issueId"], "issue-42");
+        assert_eq!(variables["input"]["stateId"], "state-7");
+        assert!(variables["input"].get("description").is_none());
+        assert!(ISSUE_STATE_UPDATE_MUTATION.contains("issue { state { name type } }"));
+    }
+
+    #[test]
+    fn team_states_come_back_in_the_order_linear_draws_them() {
+        let state = |id: &str, position: f64| LinearWorkflowState {
+            id: id.into(),
+            name: id.into(),
+            kind: "started".into(),
+            position,
+        };
+
+        let ordered = ordered_states(vec![
+            state("done", 3.0),
+            state("todo", 1.0),
+            state("doing", 2.0),
+        ]);
+
+        assert_eq!(
+            ordered.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(),
+            vec!["todo", "doing", "done"]
+        );
+    }
+
+    #[test]
+    fn issue_parses_its_creator_and_tolerates_a_missing_one() {
+        let base = r#"{
+            "id": "i1", "identifier": "NW-214", "title": "Retry the webhook",
+            "description": null, "url": "https://linear.example/NW-214",
+            "state": { "name": "Todo", "type": "unstarted" }, "team": { "key": "NW" },
+            "priority": 0, "priorityLabel": "No priority", "assignee": null,
+            "project": null, "labels": { "nodes": [] }, "updatedAt": "2026-09-20T10:00:00Z",
+            "branchName": "nw-214", "attachments": { "nodes": [] }CREATOR
+        }"#;
+        let with: LinearIssue = serde_json::from_str(
+            &base.replace("CREATOR", r#", "creator": { "name": "Mara Lin" }"#),
+        )
+        .unwrap();
+        let without: LinearIssue = serde_json::from_str(&base.replace("CREATOR", "")).unwrap();
+
+        assert_eq!(with.creator.map(|c| c.name), Some("Mara Lin".to_string()));
+        assert!(without.creator.is_none());
+        assert!(ISSUE_QUERY.contains("creator { name }"));
+        assert!(ISSUES_QUERY.contains("creator { name }"));
     }
 }

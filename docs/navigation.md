@@ -37,7 +37,7 @@
   Forward, Board and Search, clustered in the centre. Destinations (studios)
   stay in the footer, and the bar never edits a record in place. The spend
   chip is the one exception: it is state that opens the studio that owns that
-  number, the impact overview. Board is not a destination like Inbox: it is
+  number, on Impact's Spend tab. Board is not a destination like Inbox: it is
   home, and home sits with the arrows.
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
@@ -58,7 +58,9 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised sidebar control. Navigation rows, Board included, are
-  neutral at rest, and so is the footer's Goodboy chip.
+  neutral at rest, and so is the footer's Goodboy chip, with one exception: a
+  downloaded update tints the chip into a pill until you act on it. A ready
+  update is an event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
   Save/Cancel footer, and no settings surface stacked on another.
@@ -223,26 +225,46 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**An empty session asks one question.** Until the session has any activity,
-the overview body is the kickoff: "How do you want to start?" with three
-options in a single-select list.
+**New session is a draft, not a session.** New, ⌘N, the board, the palette
+and the checklist open the `New session` draft (the `session-draft` place,
+address `new`). Nothing is written: no row in the database, the sidebar or
+the board. The trail and the title say `New session`, the title is faint and
+cannot be renamed, and there is no `⋯`, no chip and no projects section. The
+sidebar's New button stays selected while the draft is open. Each workspace
+keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
+leaving it keeps it intact, New brings it back, and the button shows a primary
+dot with `Draft in progress` while a written draft waits. `Discard draft` in
+the header empties it; Esc never does. Back returns to the draft like any
+other place.
+
+The draft asks one question, "How do you want to start?", with three options
+in a single-select list.
 
 - **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** links it and proposes the
-  brief, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Without a tracker it shows the connect links.
-- **Run a workflow** asks for the goal and a workflow, then **Run workflow**
+  search field. Picking one and pressing **Pick up** proposes the brief under
+  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Use brief, Edit or Use issue text starts the session. Without a tracker it
+  shows the connect links.
+- **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
   that reads the project and suggests where to start.
 
-Only the selected option's primary shows. **Draw a wireframe**, and **Write a
-report** once an agent has finished, sit in a quiet **More ways to start**
-menu. The list preselects Pick up a task when a tracker has open issues and
-Run a workflow otherwise, and it remembers the last choice per workspace in
-local UI storage. A new session puts focus on the question, not on the title.
-The empty header keeps the title, faint while it is still the placeholder, and
-one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
+Only the selected option's primary shows. The list preselects Pick up a task
+when a tracker has open issues and Run a workflow otherwise, and it never
+remembers the last choice. Opening the draft puts focus on the question.
+
+**Start is the only way a session is born from the draft.** The primary
+creates the session and starts the work in one gesture
+(`startSessionFromDraft`): the title and the goal come from the issue, the
+workflow goal or the first sentence of the Scout focus, a picked issue is
+linked, and the column moves to the new session. The header marks that title
+`Named by Goodboy` until you rename it or open the session again, and a better
+title that arrives later fades in without moving the layout. If the start fails, the
+session is removed again, the draft stays as it was and the reason shows
+inline above the primary. A session that exists always has a real title, so
+its header never has an empty state. Sessions created elsewhere with no
+activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 
@@ -305,10 +327,17 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
-  newest first; an artifact lists the session's artifacts by kind.
+  newest first; an artifact lists the session's artifacts by kind. Actions
+  exist only where a real action backs them: `Start agent`, `Start a workflow`
+  and `New artifact` (opens the kind picker) on their pages, `Stop this step`
+  while a step runs and `Retry step` when it failed or is blocked
+  (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
+  artifact. An attempt offers no `Resolve again`: a new attempt needs the
+  instruction the Review page asks for.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
-  lists the session's branches by repo with one state word each (`Local only`,
-  `Behind main by N`, `On origin`) and `All branches in Overview`. It never
+  lists the session's branches by repo with one state word each, the first
+  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
+N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **The resolver's page reads Review, the comment, Agent.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
@@ -366,8 +395,8 @@ covered.
 - Right: the Now chip (needs you, running, scripts, each only when above
   zero), today's spend and the bell. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
-  session and opens that run's output in the right drawer. Spend opens Impact;
-  it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
+  session and opens that run's output in the right drawer. Spend opens Impact
+  on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and a bar of
   the provider's most used window; the number shows from 80%, `Out` with the
@@ -400,9 +429,18 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. Workspace settings is the popover's
-  last row for the current workspace, so the bar holds no second settings
-  control.
+  lists workspaces as rows of its own. `Find a workspace or project` filters by
+  workspace name and by project name. The current workspace sits in its own
+  `This window` row (a check mark and `Current`, plus the only gear icon into
+  Workspace settings); every other workspace shows one verb, `Open`, that
+  replaces the workspace in this window (`⌘Enter` always opens a new window
+  instead, and a row already open elsewhere says `In another window`). Open
+  replacing a window with agents running here asks first, inline under the
+  row, never in a modal: the primary keeps them going in a new window, the
+  ghost alternative stops them and opens here. A closed `Disconnected` group
+  lists workspaces removed from disk, each with a small `Reconnect`. Settings
+  opens on App > General; only Workspace settings lives behind this popover,
+  so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
@@ -440,11 +478,36 @@ order: an update is ready, setup is unfinished (with its progress), or
 the setup checklist, Report a bug (the draft survives closing), What's new,
 keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
 form, and its primary action opens the full form instead of sending. The
-popover opens by itself once, when the first project is added; the checklist
-has no floating card.
+popover opens by itself once, when the first agent finishes a turn, and never
+while the setup wizard is open; the checklist has no floating card.
 
-Right: Inbox, Workflows and Settings. Settings opens on the current workspace
-when there is one. Providers & models is a Settings scope, reached from the
+First-run setup is a full-screen wizard in one shell that never moves: a top
+bar with a labelled stepper (Provider, Project, Code host, Tasks, First
+session) and Skip setup, a body that starts at the same line on every step,
+and a footer pinned at the bottom (Back left, Skip for now and the primary
+right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
+motion); the footer is disabled while they do. Welcome says what the five
+steps take. Provider needs one usable route (a CLI login, a saved key or
+OpenCode's free models). Project picks one folder, with or without version
+control, names the workspace after its parent folder and finds the
+repositories inside one. Code host is skipped by itself when no project is a
+repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
+live in Settings › Integrations. There is no permissions question: every
+workspace starts on Full access. The last step offers the same three ways as
+a new session, with Ask an agent picked and three starters: Start Scout
+starts the session from a Scout draft (`startSessionFromDraft`) with that
+starter as its focus, and Scout running. Pick up a task and Run a workflow
+close the wizard on the new session draft with that choice picked. Either
+way the draft carries the project picked in the Project step, so the session
+lands in it. With no
+issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
+items (provider, project, code host, task manager, first session, profile); a
+skipped code host or task manager reopens its own step, and the first session
+ticks when an agent finishes a turn, not when a session row exists.
+
+Right: Inbox, Workflows and Settings. Settings always opens App > General,
+with or without a workspace; Workspace settings opens only from the gear on
+the current-workspace row of the workspace popover. Providers & models is a Settings scope, reached from the
 Settings rail and the palette, so it has no footer launcher. Impact opens from
 the spend figure and the palette, Changelog from the Goodboy chip and the
 palette, so neither earns a footer entry.
@@ -526,8 +589,8 @@ one is open at a time.
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Inbox, Notifications, Report an issue, Add workspace), `rail` (Settings,
-  Impact) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
+  (Inbox, Notifications, Report an issue, Add workspace, Impact), `rail`
+  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
   open), the agent overlay and the delete confirm all register with
@@ -565,10 +628,11 @@ one is open at a time.
   studio. Below a 720px list column the rail folds into a Filters button in
   the list header.
 - **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Help, Danger zone) always sit under the App row as indented
+  Backup, Storage, Security findings, Help, Danger zone) always sit under the
+  App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
   the pointer. The panel shows one item at a time. Providers & models nests
-  Defaults and one row per provider, and Tools nests one row per tool. Those
+  Defaults and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
   detail into slots it owns, and keeps a closing scope mounted until its list
@@ -576,15 +640,25 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Storage is the one place for disk space.** App > Storage lists every
-  worktree folder Goodboy made, grouped by repository, disconnected projects
-  and removed workspaces included, under three filters: To review, In use and
-  Kept. It is app scope because the disk belongs to the machine. The workspace
-  page only shows a Notice that points to Storage filtered on that workspace,
-  and the `open-orphan-worktrees` notification action opens Storage too
-  (`openStorage`). The only bulk action removes clean folders idle past "Suggest
-  cleanup after"; a folder with changes, an operation in progress, a writer
-  lease or no git registration never joins it and says why on its row.
+- **Storage is the one place for disk space, scoped by a picker.** App >
+  Storage lists every worktree folder Goodboy made, grouped by repository,
+  under three filters: To review, In use and Kept. A scope picker
+  (`StorageScopePicker`, `Listbox`) sits above the summary: the current
+  window's workspace, every other workspace with its own weight, `Removed
+workspaces` (folders whose owning workspace is gone or was never linked),
+  and `All workspaces` with the machine total. The scope drives the summary
+  numbers, the worktree list and the artifact list together
+  (`storageScope`, `resolveStorageScope`); it defaults to the current
+  window's workspace, or to all workspaces without one. A scope other than
+  all drops App data out of the bar into its own line (`state.storageScope`
+  never splits app data by workspace) and keeps a faint, clickable `All
+workspaces: <total>, <can go> can go` line under the numbers. The
+  workspace page's own Notice, and the `open-orphan-worktrees` notification
+  action, both open Storage already scoped to that workspace
+  (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
+  scoped to all. The only bulk action removes clean folders idle past
+  "Suggest cleanup after"; a folder with changes, an operation in progress, a
+  writer lease or no git registration never joins it and says why on its row.
   Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
   sends a `storage-reclaimable` notification (action `open-storage`) when that
   amount passes 10 GB, then stays quiet for 14 days and speaks again only after
@@ -596,20 +670,42 @@ one is open at a time.
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
+- **Security findings is its own App page, workspace-scoped.** It scans the
+  text Goodboy keeps for a workspace (saved scripts today; workflow steps,
+  the profile, reply templates and permission rules are named in the design
+  but not wired to a scan call yet) for known token shapes
+  (`scanTextForSecrets`, packages/core), fingerprints each hit with sha256,
+  and never stores the value (`security_findings` table,
+  `recordSecurityFindings`). A save reconciles that subject's findings: new
+  fingerprints open, missing ones resolve, and a finding marked "Not a
+  secret" (`dismissSecurityFinding`) stays dismissed even if the exact same
+  value is scanned again, until "Flag again" clears it. The page needs a
+  workspace; without one it says so instead of scanning anything.
 - **Settings rail tone is state, never decoration.** Each row carries its
-  concept icon from `CONCEPT_ICONS`. A dot appears only when something needs
-  doing: warning on Providers & models when a connected CLI is too old for a
-  model it serves or no provider is connected (`selectProviderAttention`, with
-  the reason as the row subtitle), info on General while an app update is
-  ready, info on Storage with "N GB can go" as its subtitle once clean idle
-  folders pass 10 GB (warning when the disk has under 10 GB free and at least
-  1 GB can go, `selectStorageAttention`). Danger zone reads in `text-danger`. Panel sections sit on
+  concept icon from `CONCEPT_ICONS`. One reader, `railSubtitles({ state,
+workspaceId })`, owns every row's subtitle and tone (it replaced three
+  separate selectors read straight from `SettingsRail`, and a regression test
+  spies on `invoke` to keep it invoke-free at render). A dot appears only
+  when something needs doing: warning on Providers & models when a connected
+  CLI is too old for a model it serves or no provider is connected
+  (`selectProviderAttention`, with the reason as the row subtitle), info on
+  General while an app update is ready, info on Storage with "N GB can go" as
+  its subtitle once clean idle folders pass 10 GB (warning when the disk has
+  under 10 GB free and at least 1 GB can go, `selectStorageAttention`),
+  warning on Security findings with "N open" once the current workspace has
+  an undismissed finding (`selectSecurityFindingsAttention`), and warning on
+  Workspace with "N folders not found" once one of its projects reads
+  `missing` in `projectGitStatus` (otherwise the row just names the
+  workspace). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
-  renamed in place. Projects are 36px rows (`ProjectLinkList density="compact"`)
-  with the path in the name's tooltip, open, copy and unlink under `⋯`, and
-  adding behind one `Add project` popover. New session defaults sit in a
+  renamed in place. Projects group Starred ahead of All (never in both), each
+  a 32px grid row (star, kind, name, description, a base-branch chip only
+  when set by hand, a Folder-not-found flag) with Open in editor, Copy path
+  and Unlink in a reserved column, dim at rest; clicking the name opens an
+  inline editor below the row for the rest (description, base branch,
+  folder, facts, footer actions). New session defaults sit in a
   two-column grid with each help behind an info mark, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.
@@ -679,7 +775,7 @@ one is open at a time.
   slot.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
-  the work. Slot and goal history and the Explore file preview open there.
+  the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
@@ -712,8 +808,9 @@ one is open at a time.
   opens the queue with that comment. There are no return pills: the Diff, the
   publication and the resolver page all come back through Back.
 - **The switcher and the palette list only destinations the session can
-  use.** One function feeds both. Context is one entry (its goal, decisions and
-  summary parts open through their shortcuts). Explore is always listed and
+  use.** One function feeds both. Context is a drawer, not a destination: the
+  palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  Explore is always listed and
   browses the active working directory. Diff and the other branch lenses need a
   branch. The code-host lens hides on GitHub. A tool lens appears once that
   tool is connected.
@@ -771,6 +868,22 @@ one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
 frame instead. A new kind adds a variant to `DrawerContent` and a case to the
 host.
+
+The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
+`summary`, in that order, and `view` is `current` or `versions` (the old
+versions of that slot, inside the same drawer, with Restore; Escape leaves the
+view before the drawer). The **Context** chip in the session header toggles it
+on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
+Decisions and Summary. The first open shows Summary, later ones the last tab
+used in that session. The chip says `2 new` when decisions were added since the
+Decisions tab was last shown (`sessions.context_seen_at`, counted from the
+`added` of `decisions_changed` events), and opens on Decisions then; it shows
+a pulsing dot while the summarizer writes and a danger glyph when it failed,
+with Retry in the drawer's status line. The old addresses `s/{session}/context`
+and `context/goal`, `context/decisions`, `context/summary` resolve in
+`canonicalLocation` to the overview with this drawer open on the matching tab.
+The drawer header has one action, **Copy as brief**, which copies Goal,
+Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;

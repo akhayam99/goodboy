@@ -7,10 +7,12 @@ import type {
   SessionId,
   SessionMountView,
 } from '@goodboy/types';
+import type { SessionProjectMount } from '@goodboy/types';
 import {
   isMountBranchBlocked,
   selectActiveMount,
   selectActiveMountId,
+  selectAlsoOnBranchSessionId,
   selectMountById,
   selectMountForPath,
   selectUnambiguousProjectMount,
@@ -212,5 +214,87 @@ describe('routing two mounts of one project', () => {
         ?.mountId,
     ).toBe(SECOND);
     expect(selectMountForPath({ state, sessionId: SESSION_ID, path: '/elsewhere' })).toBeNull();
+  });
+});
+
+describe('selectAlsoOnBranchSessionId', () => {
+  const OTHER_SESSION_ID = 'session-2' as SessionId;
+
+  const projectMount = ({
+    sessionId,
+    branch,
+  }: {
+    readonly sessionId: SessionId;
+    readonly branch: string;
+  }): SessionProjectMount => ({
+    mountId: 'mount-1' as MountId,
+    sessionId,
+    projectId: PROJECT_ID,
+    mountName: 'goodboy',
+    worktreePath: '/repos/goodboy/wt/first',
+    lastWorktreePath: null,
+    repoRoot: '/repos/goodboy',
+    branch,
+    baseBranch: 'main',
+    parallelIndex: 1,
+    isAttached: true,
+    diskState: 'present',
+    revision: 0,
+  });
+
+  it('finds another session mounted on the same project and branch', () => {
+    const state = {
+      sessionMounts: {},
+      sessionProjectMounts: {
+        [SESSION_ID]: [projectMount({ sessionId: SESSION_ID, branch: 'ak/shared' })],
+        [OTHER_SESSION_ID]: [projectMount({ sessionId: OTHER_SESSION_ID, branch: 'ak/shared' })],
+      },
+    };
+
+    expect(
+      selectAlsoOnBranchSessionId({
+        state,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        branch: 'ak/shared',
+      }),
+    ).toBe(OTHER_SESSION_ID);
+  });
+
+  it('never reports the session itself as also on the branch', () => {
+    const state = {
+      sessionMounts: {},
+      sessionProjectMounts: {
+        [SESSION_ID]: [projectMount({ sessionId: SESSION_ID, branch: 'ak/shared' })],
+      },
+    };
+
+    expect(
+      selectAlsoOnBranchSessionId({
+        state,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        branch: 'ak/shared',
+      }),
+    ).toBeNull();
+  });
+
+  it('ignores another session on a different branch of the same project', () => {
+    const state = {
+      sessionMounts: {},
+      sessionProjectMounts: {
+        [SESSION_ID]: [projectMount({ sessionId: SESSION_ID, branch: 'ak/shared' })],
+        [OTHER_SESSION_ID]: [projectMount({ sessionId: OTHER_SESSION_ID, branch: 'ak/other' })],
+      },
+    };
+
+    expect(
+      selectAlsoOnBranchSessionId({
+        state,
+        sessionId: SESSION_ID,
+        projectId: PROJECT_ID,
+        branch: 'ak/shared',
+      }),
+    ).toBeNull();
   });
 });

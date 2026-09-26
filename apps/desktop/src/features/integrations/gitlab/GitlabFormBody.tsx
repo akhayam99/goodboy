@@ -31,7 +31,7 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         credentialId={gitlab?.credentialId ?? null}
         primary={`Connected as ${config.userName}`}
         secondary={config.host}
-        disconnectDescription="Unlinks this project from the GitLab personal API key. The key stays saved for your other projects."
+        disconnectDescription="Unlinks this workspace from the GitLab personal API key. The key stays saved for your other workspaces."
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'gitlab' })}
       />
     );

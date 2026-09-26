@@ -11,6 +11,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- `check-ignore -v --no-index` on a bare `.goodboy` answers "not ignored"
+  for a directory-only rule (`.goodboy/`) whenever the folder does not exist
+  yet on disk, because git cannot tell the probe is meant to be a directory.
+  The probe that answers correctly either way is a path clearly inside the
+  folder, `.goodboy/worktrees/probe`. `repo.rs::IGNORE_PROBE_PATHS` and
+  `goodboy_ignore.rs` both use only that form, on purpose; adding the bare
+  name back reintroduces false "not ignored" results.
 - Claude and Cursor report a turn's total billing usage on the final
   `result`. The live context size comes from the last `assistant` message
   instead. A turn with many tool calls sends several assistant messages. Using
@@ -84,6 +91,19 @@ fails silently at runtime.
   replaced by the default, and overwritten.
 - `SIMPLE_LENSES` marks the lenses that still work without a branch. A lens
   left out of it is hidden or cleared for sessions with no branch.
+
+## Traps in the store
+
+- A store helper named `select*` is not always safe as a `useAppStore`
+  selector. `selectWritableMounts` maps `sessionMounts` views through
+  `toProjectMounts`, so it and every helper built on it (`selectMountForPath`,
+  `selectMountById`, `selectActiveMount`) return new objects on each read once
+  a session's mounts load. `selectSessionForPr` builds its match object too.
+  Subscribing to one of those objects re-renders forever and crashes with
+  React #185. Select a primitive field (`?.mountName`), wrap the selector in
+  `useShallow`, or read `useAppStore.getState()` inside the handler that needs
+  it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
+  the main surfaces on the real store to catch this.
 
 ## Traps in the toolchain
 

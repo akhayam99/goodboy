@@ -4,16 +4,24 @@ import { useAppStore } from '../../../../store';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { StorageScope } from '../../../../store/slices/storage/types';
 import { useStorageSummary } from '../../useStorageSummary';
 import { StorageLegendItem, type StorageSegment } from './StorageLegendItem';
 
 const LOW_DISK_BYTES = 10 * 1024 ** 3;
 
-export const StorageSummary = () => {
+type Props = {
+  readonly scope: StorageScope;
+  readonly onScopeToAll: () => void;
+};
+
+export const StorageSummary = ({ scope, onScopeToAll }: Props) => {
   const stats = useAppStore((state) => state.storageStats);
   const isLoading = useAppStore((state) => state.storageStatsLoading);
   const artifacts = useAppStore((state) => state.storageArtifacts);
-  const { summary } = useStorageSummary();
+  const { summary } = useStorageSummary({ scope });
+  const { summary: allSummary } = useStorageSummary();
+  const isScoped = scope.kind !== 'all';
 
   if (stats === null) {
     return isLoading ? <Skeleton className="h-24 w-full" /> : null;
@@ -46,14 +54,18 @@ export const StorageSummary = () => {
       swatch: 'bg-warning',
       target: 'storage-worktrees',
     },
-    {
-      key: 'app-data',
-      label: 'App data',
-      bytes: appDataBytes,
-      detail: 'database',
-      swatch: 'bg-faint-foreground',
-      target: 'storage-history',
-    },
+    ...(isScoped
+      ? []
+      : [
+          {
+            key: 'app-data' as const,
+            label: 'App data',
+            bytes: appDataBytes,
+            detail: 'database',
+            swatch: 'bg-faint-foreground',
+            target: 'storage-history' as const,
+          },
+        ]),
     {
       key: 'transcripts',
       label: 'Transcripts',
@@ -102,6 +114,19 @@ export const StorageSummary = () => {
           </span>
         )}
       </div>
+      {isScoped ? (
+        <button
+          type="button"
+          onClick={onScopeToAll}
+          className="self-start text-label text-faint-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          All workspaces:{' '}
+          {formatBytes({
+            bytes: allSummary.inUse.bytes + allSummary.review.bytes + allSummary.kept.bytes,
+          })}
+          , {formatBytes({ bytes: allSummary.canGo.bytes })} can go
+        </button>
+      ) : null}
       <div
         role="img"
         aria-label="Storage by category"
@@ -122,6 +147,11 @@ export const StorageSummary = () => {
           <StorageLegendItem key={segment.key} segment={segment} />
         ))}
       </div>
+      {isScoped ? (
+        <p className="text-secondary text-faint-foreground">
+          Plus {formatBytes({ bytes: appDataBytes })} of app data shared by every workspace.
+        </p>
+      ) : null}
     </section>
   );
 };

@@ -3,6 +3,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { RemoteImage } from '../components/RemoteImage';
+import {
+  RemoteImageAutoLoadContext,
+  RemoteImageToolContext,
+} from '../components/RemoteImage/loaderContext';
 
 afterEach(cleanup);
 
@@ -33,7 +37,7 @@ describe('RemoteImage', () => {
     const load = vi.fn().mockResolvedValue(PNG_DATA_URI);
     const { container } = render(<RemoteImage url={REMOTE_URL} alt="board" load={load} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
     await flush();
 
     expect(load).toHaveBeenCalledTimes(1);
@@ -45,7 +49,7 @@ describe('RemoteImage', () => {
     const load = vi.fn().mockRejectedValue(new Error('could not reach the host'));
     const { container } = render(<RemoteImage url={REMOTE_URL} alt="board" load={load} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
     await flush();
 
     expect(container.querySelector('img')).toBeNull();
@@ -60,7 +64,7 @@ describe('RemoteImage', () => {
     const load = vi.fn().mockResolvedValue(REMOTE_URL);
     const { container } = render(<RemoteImage url={REMOTE_URL} alt="board" load={load} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
     await flush();
 
     expect(container.querySelector('img')).toBeNull();
@@ -72,5 +76,26 @@ describe('RemoteImage', () => {
 
     expect(screen.queryByRole('button')).toBeNull();
     expect(container.textContent).toContain('user-images.githubusercontent.com');
+  });
+
+  it('opens the connected tool instead of retrying a tool image that fails', async () => {
+    const load = vi.fn().mockRejectedValue(new Error('401'));
+    const open = vi.fn();
+    const { container } = render(
+      <RemoteImageAutoLoadContext.Provider value={() => true}>
+        <RemoteImageToolContext.Provider value={{ label: 'Linear', open }}>
+          <RemoteImage url={REMOTE_URL} alt="board" load={load} />
+        </RemoteImageToolContext.Provider>
+      </RemoteImageAutoLoadContext.Provider>,
+    );
+
+    await flush();
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Linear' }));
+
+    expect(open).toHaveBeenCalledWith(REMOTE_URL);
+    expect(load).toHaveBeenCalledTimes(1);
   });
 });

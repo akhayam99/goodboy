@@ -5,10 +5,10 @@ import { StepRow } from './StepRow';
 
 const GROUP_LABEL: Record<OnboardingGroup, string> = {
   setup: 'Setup',
-  build: 'First steps',
+  next: 'Next',
 };
 
-const GROUP_ORDER: ReadonlyArray<OnboardingGroup> = ['setup', 'build'];
+const GROUP_ORDER: ReadonlyArray<OnboardingGroup> = ['setup', 'next'];
 
 type Props = {
   readonly progress: OnboardingProgress;

@@ -224,6 +224,13 @@ about its effect is a worse defect than one that reads badly.
   fill: the neutral elevation ramp (`bg-elevated` panels and insets), a choice
   the user made (the picked answer), and a badge or pill small enough to read
   as a label.
+- **A row that needs you or went wrong carries a tone bar. A neutral row
+  carries no bar: its kind lives in the icon column.** The transcript's
+  status column (`packages/ui/DESIGN-SYSTEM.md` → WorkNode) is where this
+  applies: a small `WorkNode` in the icon slot carries a lifecycle (running,
+  done, failed, waiting on your approval, stopped, denied), or a muted type
+  icon when the row has none. The bar stays for a Notice, an open question
+  and a pending permission, because their tone is the thing that matters.
 
 ## Status & signals
 
@@ -316,7 +323,10 @@ second home for them.
 - **One creation grammar, one card action grammar.** There is only one of
   each. A second shape for either is a defect, not a variant. A stepper is
   only for information that truly does not fit one screen. Only the workflow
-  builder, the first-run wizard and the question answer flow have one.
+  builder, the first-run wizard and the question answer flow have one. The
+  first-run wizard's shell never moves: the labelled stepper is there from
+  Welcome, the body starts at the same line on every step, the footer is
+  pinned, and steps crossfade in one grid cell instead of re-centering.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
   Never a dead end, never a "start chatting" prompt. An empty Activity shows

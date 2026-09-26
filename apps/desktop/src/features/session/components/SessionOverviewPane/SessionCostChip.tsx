@@ -1,119 +1,111 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Pause } from 'lucide-react';
 import {
   AnchoredPopover,
-  Button,
-  cn,
-  Divider,
-  formatUsd,
-  formatUsdPrecise,
-  ScrollFade,
   chipClasses,
+  cn,
+  formatUsdPrecise,
+  tintClasses,
   useDropdown,
-  InlineMarkdown,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
-import { SessionBudgetContent } from '../../../budget/components/spend/SessionBudgetContent';
-import type { WorkspaceTurn } from '../../../budget/components/spend/lib';
-import { EMPTY_ARRAY, useAppStore, useSessionCost } from '../../../../store';
-import { sessionTitle } from '../../sessionTitle';
+import { SessionSpendPopover } from '../../../budget/components/SessionSpendPopover';
+import { sessionSpendByAgent } from '../../../budget/sessionSpendByAgent';
+import { sessionSpendPresentation } from '../../../budget/sessionSpendPresentation';
+import { SESSION_SPEND_LIMIT_EDIT_EVENT } from '../../../budget/requestSessionSpendLimitEdit';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 
 type Props = {
   readonly sessionId: SessionId;
 };
 
-const CAP_TONE = { near: 'warning', exceeded: 'danger' } as const;
+const EMPTY_KIND_OVERRIDES = {};
+const EMPTY_RUN_HISTORY = {};
 
-const CAP_NOTE = {
-  clear: '',
-  near: ', close to the cap',
-  exceeded: ', over the cap',
-} as const;
+type EditRequestParams = {
+  readonly event: Event;
+  readonly sessionId: SessionId;
+};
+
+const isEditRequestFor = ({ event, sessionId }: EditRequestParams): boolean => {
+  if (!(event instanceof CustomEvent)) {
+    return false;
+  }
+  const detail: unknown = event.detail;
+  return (
+    typeof detail === 'object' &&
+    detail !== null &&
+    'sessionId' in detail &&
+    detail.sessionId === sessionId
+  );
+};
 
 export const SessionCostChip = ({ sessionId }: Props) => {
-  const sessionCost = useSessionCost(sessionId);
-  const capState = useAppStore((state) => {
-    const alerts = state.budgetAlerts.filter(
-      (alert) => alert.sessionId === sessionId && alert.dismissedAt === undefined,
-    );
-    if (alerts.some((alert) => alert.kind === 'session-exceeded')) {
-      return 'exceeded';
-    }
-    if (alerts.some((alert) => alert.kind === 'session-threshold')) {
-      return 'near';
-    }
-    return 'clear';
-  });
-  const telemetry = useAppStore((state) => state.sessionTelemetry[sessionId]);
-  const session = useAppStore(
-    (state) => state.sessions.find((candidate) => candidate.id === sessionId) ?? null,
-  );
-  const sessionBudget = useAppStore((state) => state.sessionBudgets[sessionId]?.softCapUsd ?? null);
+  const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_ARRAY);
+  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
+  const agentRunHistory = useAppStore((state) => state.agentRunHistory ?? EMPTY_RUN_HISTORY);
+  const agentKindOverride = useAppStore((state) => state.agentKindOverride ?? EMPTY_KIND_OVERRIDES);
+  const limit = useAppStore((state) => state.sessionBudgets[sessionId] ?? null);
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const loadSessionBudget = useAppStore((state) => state.loadSessionBudget);
-  const setSessionBudget = useAppStore((state) => state.setSessionBudget);
   const dropdown = useDropdown({
     align: 'end',
-    expectedHeight: 520,
-    expectedWidth: 640,
-    width: 'w-[40rem] max-w-[calc(100vw-2rem)]',
+    expectedHeight: 480,
+    expectedWidth: 400,
+    width: 'w-[25rem] max-w-[calc(100vw-2rem)]',
   });
-  const { open, toggle, popupRef } = dropdown;
-  const capTone = capState === 'clear' ? 'neutral' : CAP_TONE[capState];
-  const spent = formatUsd(sessionCost);
-  const label = sessionBudget != null ? `${spent} / ${formatUsd(sessionBudget)}` : spent;
-  const capNote = CAP_NOTE[capState];
-  const summariesSpend = (telemetry ?? EMPTY_ARRAY)
-    .filter((record) => record.kind === 'summarizer')
-    .reduce((sum, record) => sum + record.estimatedCostUsd, 0);
-  const summariesLine = summariesSpend > 0 ? `\nSummaries ${formatUsdPrecise(summariesSpend)}` : '';
-  const title =
-    sessionBudget != null
-      ? `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} of a ${formatUsdPrecise(sessionBudget)} cap${capNote} (excluding summaries)${summariesLine}\nClick for budget details`
-      : `Estimated cost for this session: ${formatUsdPrecise(sessionCost)} (excluding summaries)${summariesLine}\nClick for budget details`;
-  const sessionLabel = sessionTitle({ session });
-  const turns = useMemo<ReadonlyArray<WorkspaceTurn>>(
-    () =>
-      (telemetry ?? EMPTY_ARRAY).map((record) => ({
-        record,
-        sessionId,
-        sessionGoal: sessionLabel,
-      })),
-    [sessionLabel, sessionId, telemetry],
-  );
-  const [pulse, setPulse] = useState(false);
-  const prevCostRef = useRef(sessionCost);
-  const prevSessionIdRef = useRef(sessionId);
+  const { open, toggle, close, popupRef } = dropdown;
+  const [isEditing, setIsEditing] = useState(false);
+  const [tick, setTick] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const previousTotalRef = useRef<number | null>(null);
+
+  const spend = useMemo(
+    () => sessionSpendByAgent({ records, agents, agentRunHistory, agentKindOverride }),
+    [agentKindOverride, agentRunHistory, agents, records],
+  );
+  const presentation = sessionSpendPresentation({ totalUsd: spend.totalUsd, limit });
+  const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
 
   useEffect(() => {
-    if (prevSessionIdRef.current !== sessionId) {
-      prevSessionIdRef.current = sessionId;
-      prevCostRef.current = sessionCost;
-      setPulse(false);
+    const previous = previousTotalRef.current;
+    previousTotalRef.current = spend.totalUsd;
+    if (previous === null || previous === spend.totalUsd) {
       return;
     }
-    if (prevCostRef.current === sessionCost) {
-      return;
-    }
-    prevCostRef.current = sessionCost;
-    setPulse(true);
-  }, [sessionCost, sessionId]);
+    setTick((count) => count + 1);
+  }, [spend.totalUsd]);
 
   useEffect(() => {
     void loadSessionBudget(sessionId);
   }, [loadSessionBudget, sessionId]);
 
   useEffect(() => {
-    if (open === false) {
+    if (!open) {
+      setIsEditing(false);
       return;
     }
     void loadSessionTelemetry(sessionId);
   }, [loadSessionTelemetry, open, sessionId]);
 
   useEffect(() => {
-    if (open === false || popupRef.current == null || triggerRef.current == null) {
+    const onEditRequest = (event: Event) => {
+      if (!isEditRequestFor({ event, sessionId })) {
+        return;
+      }
+      if (!open) {
+        toggle();
+      }
+      requestAnimationFrame(() => setIsEditing(true));
+    };
+    window.addEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
+    return () => window.removeEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
+  }, [open, sessionId, toggle]);
+
+  useEffect(() => {
+    if (!open || popupRef.current == null || triggerRef.current == null) {
       return;
     }
     return manageDialogFocus({
@@ -122,22 +114,22 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     });
   }, [open, popupRef]);
 
-  const isSilent = sessionCost <= 0 && sessionBudget == null && capState === 'clear';
-
-  const openSpendScope = () => {
+  const openInImpact = () => {
     openImpactStudio({ scope: { kind: 'session', sessionId } });
-    toggle();
+    close();
   };
 
-  if (isSilent) {
-    return null;
-  }
+  const glyph = presentation.isPaused ? (
+    <Pause size={11} aria-hidden className="shrink-0" />
+  ) : presentation.level === 'near' || presentation.level === 'over' ? (
+    <AlertTriangle size={11} aria-hidden className="shrink-0" />
+  ) : null;
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Session budget details"
+      ariaLabel="Session spend"
       tabIndex={-1}
       className="flex max-h-[32rem] flex-col bg-subtle"
       trigger={
@@ -147,40 +139,51 @@ export const SessionCostChip = ({ sessionId }: Props) => {
           onClick={toggle}
           aria-haspopup="dialog"
           aria-expanded={open}
-          title={title}
-          onAnimationEnd={() => setPulse(false)}
+          aria-label={`Spend ${presentation.label}`}
+          title={`${formatUsdPrecise(spend.totalUsd)} spent in this session`}
+          data-level={presentation.level}
           className={cn(
-            chipClasses({ tone: capTone, shape: 'badge', size: 'control', isInteractive: true }),
-            'font-mono tabular-nums',
-            pulse && 'cost-chip-pulse',
+            chipClasses({
+              tone: presentation.tone,
+              shape: 'badge',
+              size: 'control',
+              isInteractive: true,
+            }),
+            'overflow-hidden font-mono tabular-nums',
           )}
         >
-          {label}
+          {glyph}
+          <span key={tick} className={tick > 0 ? 'cost-tick' : undefined}>
+            {presentation.label}
+          </span>
+          {presentation.ratio === null ? null : (
+            <span
+              aria-hidden
+              data-slot="spend-bar"
+              className="h-[3px] w-7 shrink-0 overflow-hidden rounded-full bg-fill"
+            >
+              <span
+                className={cn(
+                  'block h-full rounded-full',
+                  presentation.tone === 'neutral'
+                    ? 'bg-primary'
+                    : tintClasses(presentation.tone).solid,
+                )}
+                style={{ width: `${fill}%` }}
+              />
+            </span>
+          )}
         </button>
       }
     >
-      <div className="flex flex-col gap-0.5 px-4 py-3">
-        <span className="text-heading text-foreground">Session budget</span>
-        <InlineMarkdown
-          text={sessionLabel}
-          className="truncate text-secondary text-muted-foreground"
-        />
-      </div>
-      <Divider />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="p-4">
-        <SessionBudgetContent
-          turns={turns}
-          softCapUsd={sessionBudget}
-          onSaveCap={(nextCapUsd) => setSessionBudget(sessionId, nextCapUsd)}
-          density="glance"
-        />
-      </ScrollFade>
-      <Divider />
-      <div className="p-3">
-        <Button variant="ghost" size="sm" onClick={openSpendScope}>
-          Open full spend details
-        </Button>
-      </div>
+      <SessionSpendPopover
+        sessionId={sessionId}
+        spend={spend}
+        limit={limit}
+        isEditing={isEditing}
+        onEditingChange={setIsEditing}
+        onOpenImpact={openInImpact}
+      />
     </AnchoredPopover>
   );
 };

@@ -36,6 +36,8 @@ export type WorkspaceProfile = Readonly<{
   explainMore: ReadonlyArray<string>;
 }>;
 
+export type GoodboyIgnoreMode = 'existing' | 'this-mac' | 'project' | 'global';
+
 export type Project = Readonly<{
   id: ProjectId;
   workspaceId: WorkspaceId;
@@ -50,6 +52,9 @@ export type Project = Readonly<{
   updatedAt: IsoDateTime;
   disconnectedAt?: IsoDateTime;
   lastAccessedAt?: IsoDateTime;
+  goodboyIgnore?: GoodboyIgnoreMode;
+  goodboyIgnoreSource?: string;
+  goodboyIgnoreCheckedAt?: IsoDateTime;
 }>;
 
 export type Workspace = Readonly<{
@@ -58,6 +63,7 @@ export type Workspace = Readonly<{
   slug: string;
   profile?: WorkspaceProfile;
   overrides: OverrideSettings;
+  defaultPermissionMode?: ClaudePermissionMode;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
   deletedAt?: IsoDateTime;
@@ -97,7 +103,7 @@ export type WorkflowExecutionMode = 'static' | 'dynamic';
 export type WorkflowOrchestrationOutcome = 'done' | 'blocked';
 
 export type WorkflowOrchestrationStopKind =
-  'failure' | 'budget' | 'questions' | 'operator' | 'closed';
+  'failure' | 'budget' | 'questions' | 'operator' | 'closed' | 'needs-approval';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;

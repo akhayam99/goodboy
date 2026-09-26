@@ -15,7 +15,10 @@ vi.mock('../../../store', async () => {
     readonly setFocusedArtifactId: () => void;
     readonly openDiffLens: () => void;
     readonly setCurrentWorkspace: (id: string) => Promise<void>;
-    readonly openWorkspace: (id: string, title: string) => Promise<void>;
+    readonly openWorkspace: (params: {
+      readonly id: string;
+      readonly title: string;
+    }) => Promise<{ readonly kind: 'opened' }>;
     readonly workspaces: ReadonlyArray<{ readonly id: string; readonly name: string }>;
     readonly openStudio: (params: { readonly studio: Studio }) => void;
     readonly amendStudio: (params: { readonly studio: Studio }) => void;
@@ -29,7 +32,10 @@ vi.mock('../../../store', async () => {
     setFocusedArtifactId: () => undefined,
     openDiffLens: () => undefined,
     setCurrentWorkspace: async (id) => set({ currentWorkspaceId: id, appStudio: null }),
-    openWorkspace: async (id) => set({ currentWorkspaceId: id }),
+    openWorkspace: async ({ id }) => {
+      set({ currentWorkspaceId: id });
+      return { kind: 'opened' };
+    },
     openStudio: ({ studio }) => set({ appStudio: studio }),
     amendStudio: ({ studio }) =>
       set((state) => (state.appStudio?.kind === studio.kind ? { appStudio: studio } : state)),
@@ -44,7 +50,6 @@ vi.mock('../../../store/slices/worktrees/resolveSessionRepo', () => ({
 vi.mock('../../../shared/hooks/useCommitLinkInterceptor', () => ({
   useCommitLinkInterceptor: () => ({ commitDiff: null, setCommitDiff: () => undefined }),
 }));
-vi.mock('../../../features/onboarding/onboarding-store', () => ({ markStepComplete: vi.fn() }));
 vi.mock('../../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
@@ -88,7 +93,9 @@ vi.mock('../../../features/inbox/components/InboxStudio', () => ({
   ),
 }));
 vi.mock('../../../features/impact/components/ImpactStudio', () => ({
-  ImpactStudio: () => <div data-testid="studio" data-kind="impact" />,
+  ImpactStudio: ({ initialScope }: { readonly initialScope?: { readonly kind: string } }) => (
+    <div data-testid="studio" data-kind="impact" data-scope={initialScope?.kind ?? ''} />
+  ),
 }));
 vi.mock('../../../features/changelog/components/ChangelogStudio', () => ({
   ChangelogStudio: () => <div data-testid="studio" data-kind="changelog" />,
@@ -220,6 +227,24 @@ describe('app overlay hook, navigation', () => {
     expect(frame?.getAttribute('data-studio')).toBe('workflow');
   });
 
+  it('footer Settings opens App > General with a workspace', async () => {
+    renderHarness();
+    act(() => overlays().openSettings());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
+  });
+
+  it('footer Settings opens App > General without a workspace', async () => {
+    render(<Harness connectedGithub={false} isLauncher />);
+    act(() => overlays().openSettings());
+
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('app');
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('general');
+  });
+
   it('changes the settings scope in place', async () => {
     renderHarness();
     act(() => overlays().openSettings());
@@ -243,7 +268,7 @@ describe('app overlay hook, navigation', () => {
   });
 
   it('does not open the inbox here when the other workspace opens in its own window', async () => {
-    useAppStore.setState({ openWorkspace: async () => undefined });
+    useAppStore.setState({ openWorkspace: async () => ({ kind: 'opened' }) });
     renderHarness();
     act(() => overlays().openSettings());
 
@@ -288,6 +313,26 @@ describe('app overlay hook', () => {
 
     expect(await openStudios()).toEqual(['inbox']);
     expect(screen.getByTestId('studio').getAttribute('data-provider')).toBe('linear');
+  });
+
+  it('opens impact on spend from the spend figure and on overview from the footer', async () => {
+    renderHarness();
+
+    act(() => overlays().openSpend());
+    expect(await openStudios()).toEqual(['impact']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
+
+    act(() => overlays().openImpact());
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('');
+  });
+
+  it('lands an old efficiency scope from an event on spend', async () => {
+    renderHarness();
+
+    fire({ name: 'goodboy:open-impact-studio', detail: { scope: { kind: 'efficiency' } } });
+
+    expect(await openStudios()).toEqual(['impact']);
+    expect(screen.getByTestId('studio').getAttribute('data-scope')).toBe('spend');
   });
 
   it('replaces the open studio when a footer opener runs', async () => {

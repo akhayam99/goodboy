@@ -9,10 +9,7 @@ import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
-import {
-  deriveSessionSuggestions,
-  type SuggestionRebaseRequest,
-} from '../deriveSessionSuggestions';
+import { deriveNextSteps, type SuggestionRebaseRequest } from '../deriveNextSteps';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
 import { toMountEvents } from '../../../store/materializationProposals';
 
@@ -146,7 +143,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       }
     }
     const rebaseRequests = latestRebaseRequests({ events, agents: effectiveAgents });
-    return deriveSessionSuggestions({
+    return deriveNextSteps({
       sessionId,
       workflowRuns: active.map(({ run, workflow }) => {
         const advance = advanceByRunId.get(run.id);

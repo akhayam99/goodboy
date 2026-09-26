@@ -719,6 +719,72 @@ dialog[open]::backdrop {
   --spin-border-color: var(--color-identity-8);
 }
 
+.wizard-step-in {
+  animation: wizard-fade-in 80ms linear both;
+}
+
+.wizard-step-out {
+  animation: wizard-fade-out 80ms linear forwards;
+}
+
+@keyframes wizard-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wizard-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wizard-step-in {
+    animation: wizard-step-in 180ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+  }
+
+  .wizard-step-out {
+    animation: wizard-step-out 120ms ease-out forwards;
+  }
+
+  .wizard-stepper-fill {
+    transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .wizard-stepper-check {
+    animation: wizard-fade-in 120ms ease-out both;
+  }
+
+  @keyframes wizard-step-in {
+    from {
+      opacity: 0;
+      transform: translateX(var(--wizard-step-shift, 8px));
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes wizard-step-out {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(calc(var(--wizard-step-shift, 8px) * -1));
+    }
+  }
+}
+
 .density-trigger-label {
   display: inline-block;
   max-width: 10rem;
@@ -740,33 +806,22 @@ dialog[open]::backdrop {
   }
 }
 
-/* Slot-machine cost chip, outer success-tinted halo + a brief inner lift that
-   sells the "the meter just ticked" moment. Paired in JS with a per-digit roll
-   so the glow peaks while the numbers are still settling, then fades as they
-   lock in. Duration must match the JS roll (1100ms). */
-@keyframes cost-chip-pulse {
-  0% {
-    box-shadow:
-      0 0 0 0 oklch(from var(--color-success) l c h / 0),
-      0 0 0 0 oklch(from var(--color-success) l c h / 0);
-    background-color: oklch(from var(--color-success) l c h / 0.1);
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes cost-tick {
+    from {
+      transform: translateY(6px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
-  25% {
-    box-shadow:
-      0 0 0 2px oklch(from var(--color-success) l c h / 0.45),
-      0 0 14px 2px oklch(from var(--color-success) l c h / 0.55);
-    background-color: oklch(from var(--color-success) l c h / 0.22);
-  }
-  100% {
-    box-shadow:
-      0 0 0 0 oklch(from var(--color-success) l c h / 0),
-      0 0 0 0 oklch(from var(--color-success) l c h / 0);
-    background-color: oklch(from var(--color-success) l c h / 0.1);
-  }
-}
 
-.cost-chip-pulse {
-  animation: cost-chip-pulse 1100ms cubic-bezier(0.2, 0, 0, 1);
+  .cost-tick {
+    display: inline-block;
+    animation: cost-tick 160ms cubic-bezier(0.2, 0, 0, 1);
+  }
 }
 
 /* Attention halo for a chip that is waiting on the user, not working: the ring
@@ -811,6 +866,24 @@ dialog[open]::backdrop {
 @keyframes text-shimmer {
   to {
     background-position: -200% center;
+  }
+}
+
+/* A new version arrived: one light sweep across the update pill, on arrival
+   and again when the window regains focus at least an hour after the last
+   one (see updateSweepGate.ts). Never loops, never wraps the pill in a ring. */
+@keyframes update-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .update-sweep {
+    animation: update-sweep 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 1;
   }
 }
 

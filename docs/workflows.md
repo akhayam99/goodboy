@@ -211,8 +211,16 @@ Asking for a certain provider or model on a step is a hint too.
 
 Each run can have a spending limit in dollars. You set it on the run, in the
 orchestrator strip or in the creation form. You also choose what happens when
-the run reaches it: Goodboy notifies you, or pauses the run. The limit starts
-at unlimited. The orchestrator decides how many steps to plan based on the goal.
+the run reaches it: **Pause workflows** or **Only warn me**, the same editor
+and words as the session's spend limit. The limit starts at unlimited. The
+orchestrator decides how many steps to plan based on the goal.
+
+A session has its own spend limit, set from the spend chip in its header. With
+**Pause workflows** (the default) every workflow of the session stops at the
+limit and its strip says `Paused at the $10.00 spend limit for this session.`
+with **Raise limit**, which opens the chip on the editor. With **Only warn me**
+nothing stops: one notification says the session passed its limit. Single
+agents are never stopped by it.
 
 ## How a run advances
 
@@ -532,7 +540,9 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
 - **One decision at a time.** A request that comes in while the run is
   deciding waits in a queue and runs once the current decision settles.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
-  for a budget-blocked session, the run's spend limit in pause mode, and open
+  for a session paused by its spend limit (`sessionBudgetBlockAfterLoad`,
+  which reads `session_budgets.on_exceed` first), the run's spend limit in
+  pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`. **Stop now** saves `operator`,
   turns autorun off and skips the running steps, keeping what they wrote.

@@ -5,6 +5,7 @@ import { readMockMountDiffStat } from './mock-data';
 import { selectNonResolverStandaloneAgents, type AgentKind } from '../features/session/agent-kind';
 import type {
   Agent,
+  AgentId,
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
@@ -20,6 +21,7 @@ import type {
   SessionStageInfo,
   SessionViewPrefs,
   TelemetryRecord,
+  TurnState,
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -42,6 +44,7 @@ import {
 } from './slices/session-view';
 import { summarizeMountWork } from './slices/project-mounts/mountCompletion';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
+import { countRunningSessions } from './slices/presence/openWorkspace';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
@@ -207,6 +210,22 @@ const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
 const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
+function blockedAgentTurnStateOf(
+  sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>,
+  agentTurnState: Readonly<Record<AgentId, TurnState>>,
+): Readonly<Record<AgentId, TurnState>> {
+  const entries: Record<AgentId, TurnState> = {};
+  for (const runs of Object.values(sessionPhaseRuns)) {
+    for (const run of runs) {
+      const turnState = agentTurnState[run.id];
+      if (turnState?.kind === 'blocked') {
+        entries[run.id] = turnState;
+      }
+    }
+  }
+  return entries;
+}
+
 type StageInfoState = Pick<
   AppState,
   | 'sessions'
@@ -230,6 +249,7 @@ type StageInfoState = Pick<
   | 'selectedAgentId'
   | 'currentSessionId'
   | 'githubStatus'
+  | 'agentTurnState'
 >;
 
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
@@ -253,6 +273,11 @@ function sessionHasUnreadIn(state: StageInfoState, sessionId: SessionId): boolea
 function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
   const runs = state.sessionPhaseRuns[sessionId];
   return runs ? runs.some((r) => r.status === 'running') : false;
+}
+
+function sessionHasBlockedAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  return runs ? runs.some((r) => state.agentTurnState[r.id]?.kind === 'blocked') : false;
 }
 
 function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
@@ -291,6 +316,7 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
+    hasBlockedAgent: sessionHasBlockedAgentIn(state, sessionId),
     isDecidingWorkflow: sessionIsDecidingIn(state, session),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
@@ -330,6 +356,13 @@ export const useSortedGroupedSessions = (
   );
   const sessionPhaseRuns = useAppStore((s) =>
     needsStage ? s.sessionPhaseRuns : (EMPTY_GITHUB_STATE as typeof s.sessionPhaseRuns),
+  );
+  const agentTurnState = useAppStore(
+    useShallow((s) =>
+      needsStage
+        ? blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)
+        : (EMPTY_GITHUB_STATE as Readonly<Record<AgentId, TurnState>>),
+    ),
   );
   const orchestratingWorkflowRuns = useAppStore((s) =>
     needsStage
@@ -392,6 +425,7 @@ export const useSortedGroupedSessions = (
       sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
+      agentTurnState,
       orchestratingWorkflowRuns,
       selectedAgentId,
       currentSessionId,
@@ -420,6 +454,7 @@ export const useSortedGroupedSessions = (
     sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
+    agentTurnState,
     orchestratingWorkflowRuns,
     selectedAgentId,
     currentSessionId,
@@ -465,6 +500,9 @@ export const useStageGroupedSessions = (
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
+  const agentTurnState = useAppStore(
+    useShallow((s) => blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)),
+  );
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
@@ -501,6 +539,7 @@ export const useStageGroupedSessions = (
       sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
+      agentTurnState,
       orchestratingWorkflowRuns,
       selectedAgentId,
       currentSessionId,
@@ -531,6 +570,7 @@ export const useStageGroupedSessions = (
     sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
+    agentTurnState,
     orchestratingWorkflowRuns,
     selectedAgentId,
     currentSessionId,
@@ -670,8 +710,14 @@ function findSessionInAnyPool(state: AppState, id: string | null): Session | nul
 
 const selectCurrentSession = (state: AppState): Session | null =>
   findSessionInAnyPool(state, state.currentSessionId);
+const selectRunningHere = (state: AppState): number => countRunningSessions(state.sessions);
+const selectDisconnectedWorkspaces = (state: AppState): ReadonlyArray<Workspace> =>
+  state.disconnectedWorkspaces;
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
+export const useDisconnectedWorkspaces = (): ReadonlyArray<Workspace> =>
+  useAppStore(selectDisconnectedWorkspaces);
 export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
+export const useRunningHere = (): number => useAppStore(selectRunningHere);
 export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
 export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
 

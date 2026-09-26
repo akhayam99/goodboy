@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Archive, ChevronRight, Plus } from 'lucide-react';
+import { Archive, ChevronRight } from 'lucide-react';
 import {
-  Button,
   CountToggle,
   Eyebrow,
   FilledEmptyState,
-  KbdPill,
   PANE_RHYTHM,
   cn,
   ScrollFade,
@@ -21,9 +19,9 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { BulkActionBar } from '../BulkActionBar';
 import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionViewMenu } from './SessionViewMenu';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { ProjectFilter } from '../ProjectFilter';
 import { SessionActivityItem } from './SessionActivityItem';
+import { NewSessionButton } from './NewSessionButton';
 
 type ActivityTab = 'active' | 'archived';
 
@@ -135,24 +133,7 @@ export const SessionActivityBar = ({
   return (
     <div className="flex h-full min-h-0 w-full shrink-0 flex-col gap-2">
       <div className="flex shrink-0 items-center justify-end gap-1 px-2 py-2">
-        {!isArchivedView ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
-            aria-label="Create new session"
-            className="group relative min-w-0 flex-1 justify-center gap-1.5 px-2 text-label"
-          >
-            <Plus size={ICON_SIZE.row} aria-hidden />
-            New
-            <KbdPill
-              aria-hidden
-              className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-meta opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-            >
-              {shortcutGlyphs('session.new')}
-            </KbdPill>
-          </Button>
-        ) : null}
+        {!isArchivedView ? <NewSessionButton workspaceId={workspaceId} /> : null}
 
         <div className="flex shrink-0 items-center gap-0.5">
           <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />

@@ -1,4 +1,3 @@
-import type { SlotKey } from '@goodboy/core';
 import type { ArtifactId, MountId, SessionId } from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 
@@ -6,10 +5,14 @@ export type ArtifactDrawerTab = 'details' | 'chat';
 
 export type ConversationTab = 'comment' | 'agent';
 
+export type ContextDrawerTab = 'goal' | 'decisions' | 'summary';
+
+export type ContextDrawerView = 'current' | 'versions';
+
 export type DrawerContent =
   | {
-      readonly kind: 'slot-history';
-      readonly payload: { readonly slotKey: SlotKey };
+      readonly kind: 'context';
+      readonly payload: { readonly tab: ContextDrawerTab; readonly view: ContextDrawerView };
     }
   | {
       readonly kind: 'explore-file';

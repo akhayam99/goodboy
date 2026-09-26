@@ -1,3 +1,4 @@
+import { githubStateCategory } from '../../../shared/detail-fields/githubIssueFields';
 import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
 import type { InboxRecord } from '../types';
 import { stateWord } from '../stateWord';
@@ -21,7 +22,7 @@ export const adaptGithubIssues = ({ groups }: Params): InboxRecord[] =>
       kind: 'issue',
       identifier: `#${issue.number}`,
       title: issue.title,
-      state: issue.state.toUpperCase() === 'CLOSED' ? 'done' : 'open',
+      state: githubStateCategory({ state: issue.state }),
       stateLabel: stateWord({ value: issue.state }),
       updatedAt: issue.updatedAt,
       url: issue.url,

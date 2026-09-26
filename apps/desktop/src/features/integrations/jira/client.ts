@@ -79,6 +79,25 @@ export const jiraValidateConnection = async ({
 }: ValidateParams): Promise<JiraUser> =>
   invoke<JiraUser>('jira_validate_connection', { credentialId, siteUrl, email, apiToken });
 
+export type JiraProject = {
+  readonly id: string;
+  readonly key: string;
+  readonly name: string;
+};
+
+export const jiraListProjects = async ({
+  credentialId,
+  siteUrl,
+  email,
+  apiToken,
+}: ValidateParams): Promise<ReadonlyArray<JiraProject>> =>
+  invoke<ReadonlyArray<JiraProject>>('jira_list_projects', {
+    credentialId,
+    siteUrl,
+    email,
+    apiToken,
+  });
+
 type ConnectParams = {
   readonly credentialId: IntegrationCredentialId;
   readonly apiToken: string | null;

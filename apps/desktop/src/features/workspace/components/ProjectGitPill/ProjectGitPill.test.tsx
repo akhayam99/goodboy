@@ -2,20 +2,33 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Project, ProjectId, WorkspaceGitStatus, WorkspaceGitState } from '@goodboy/types';
+import type {
+  Project,
+  ProjectId,
+  WorkspaceGitStatus,
+  WorkspaceGitState,
+  WorkspaceId,
+} from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   invoke: vi.fn(async () => undefined),
   fastForward: vi.fn(async () => undefined),
+  showToast: vi.fn(),
   store: {
     projectCheckoutPulling: {} as Record<string, boolean>,
+    projectCheckoutResult: {} as Record<string, unknown>,
     fastForwardProjectCheckout: vi.fn(async () => undefined),
+    fetchProjectCheckouts: vi.fn(async () => undefined),
+    fastForwardProjectCheckouts: vi.fn(async () => ({ updated: 0, failed: 0 })),
   },
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof h.store) => T) => selector(h.store),
+}));
+vi.mock('../../../../app/components/Toast', () => ({
+  useToast: () => ({ showToast: h.showToast }),
 }));
 
 import { ProjectGitPill } from './ProjectGitPill';
@@ -26,6 +39,7 @@ const project = {
   name: 'Web',
   rootPath: '/repo/web',
   kind: 'repo',
+  workspaceId: 'workspace-1' as WorkspaceId,
 } as Project;
 
 const statusOf = ({
@@ -58,6 +72,10 @@ beforeEach(() => {
   h.fastForward.mockReset();
   h.fastForward.mockResolvedValue(undefined);
   h.store.projectCheckoutPulling = {};
+  h.store.projectCheckoutResult = {};
+  h.store.fetchProjectCheckouts = vi.fn(async () => undefined);
+  h.store.fastForwardProjectCheckouts = vi.fn(async () => ({ updated: 0, failed: 0 }));
+  h.showToast.mockReset();
 });
 
 afterEach(cleanup);
@@ -100,9 +118,11 @@ describe('ProjectGitPill', () => {
   });
 
   it('renders an editor launch error as an alert', async () => {
-    h.invoke.mockRejectedValueOnce(new Error('editor unavailable'));
     renderPill({ status: statusOf({}) });
     fireEvent.click(screen.getByRole('button', { name: /Web git status/ }));
+    await waitFor(() => expect(h.invoke).toHaveBeenCalled());
+
+    h.invoke.mockRejectedValueOnce(new Error('editor unavailable'));
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('editor unavailable'),
@@ -175,13 +195,84 @@ describe('ProjectGitPills', () => {
         ['Warning', 'Beta', 'Alpha'].some((name) => button.textContent?.includes(name) === true),
       );
     expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining('Warning'),
-      expect.stringContaining('Beta'),
       expect.stringContaining('Alpha'),
+      expect.stringContaining('Beta'),
+      expect.stringContaining('Warning'),
     ]);
     fireEvent.click(screen.getByRole('button', { name: /Beta/ }));
     expect(screen.getByText('3 uncommitted')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
     expect(screen.getByRole('button', { name: /Warning/ })).toBeDefined();
+  });
+
+  it('checks origin as soon as the popover opens, once', async () => {
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({}) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({}) }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 repository git statuses' }));
+    await waitFor(() => expect(h.store.fetchProjectCheckouts).toHaveBeenCalledTimes(1));
+    expect(h.store.fetchProjectCheckouts).toHaveBeenCalledWith({
+      workspaceId: project.workspaceId,
+    });
+  });
+
+  it('offers Update N for the repos behind and up to date otherwise', () => {
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({ behind: 1 }) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({}) }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 repository git statuses' }));
+    expect(screen.getByRole('button', { name: 'Update 2' })).toBeDefined();
+
+    cleanup();
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({}) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({}) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({}) }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 repository git statuses' }));
+    expect(screen.queryByRole('button', { name: /Update/ })).toBeNull();
+    expect(screen.getByText('All up to date')).toBeDefined();
+  });
+
+  it('fast-forwards every updatable repo in one action and reports the outcome', async () => {
+    h.store.fastForwardProjectCheckouts = vi.fn(async () => ({ updated: 2, failed: 0 }));
+    render(
+      <ProjectGitPills
+        entries={[
+          entryOf({ id: 'one', name: 'One', status: statusOf({ behind: 2 }) }),
+          entryOf({ id: 'two', name: 'Two', status: statusOf({ behind: 1 }) }),
+          entryOf({ id: 'three', name: 'Three', status: statusOf({}) }),
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '3 repository git statuses' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Update 2' }));
+
+    await waitFor(() =>
+      expect(h.store.fastForwardProjectCheckouts).toHaveBeenCalledWith({
+        workspaceId: project.workspaceId,
+      }),
+    );
+    await waitFor(() =>
+      expect(h.showToast).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Updated 2 repos' }),
+      ),
+    );
   });
 });

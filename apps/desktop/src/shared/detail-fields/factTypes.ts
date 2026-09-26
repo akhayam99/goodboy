@@ -1,17 +1,23 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-export type FactSlot = 'person' | 'weight' | 'place' | 'labels' | 'measure' | 'links' | 'time';
+export type FactSlot =
+  'state' | 'person' | 'weight' | 'place' | 'labels' | 'measure' | 'links' | 'time';
 
 export const FACT_SLOTS: ReadonlyArray<FactSlot> = [
-  'person',
+  'state',
   'weight',
+  'person',
   'place',
   'labels',
-  'measure',
   'links',
+  'measure',
   'time',
 ];
+
+export type FactEditorParams = {
+  readonly close: () => void;
+};
 
 export type Fact = {
   readonly key: string;
@@ -19,6 +25,7 @@ export type Fact = {
   readonly icon: LucideIcon | null;
   readonly node: ReactNode;
   readonly hint?: string;
+  readonly editor?: (params: FactEditorParams) => ReactNode;
 };
 
 export type ResolvedFact = Fact & {

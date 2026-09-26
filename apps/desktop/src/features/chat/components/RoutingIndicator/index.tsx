@@ -9,7 +9,6 @@ import type {
 } from '@goodboy/types';
 import { resolveProviderForTurn } from '../../../../features/providers/routing';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
-import { SESSION_FEATURES } from '../../../../shared/lib/features';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { tintClasses } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
@@ -49,9 +48,6 @@ export const RoutingIndicator = ({
   }, [sessionPreference, turnOverride, connectedProviders]);
 
   if (!decision) {
-    return null;
-  }
-  if (!SESSION_FEATURES.budget) {
     return null;
   }
 

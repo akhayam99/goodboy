@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   sessionSidebarCollapsed: `${PREFIX}sessions-sidebar-collapsed`,
   leftSidebarWidth: `${PREFIX}left-sidebar-width:v2`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
+  updateSweep: `${PREFIX}update-sweep:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {
@@ -18,7 +19,6 @@ export const STORAGE_PREFIXES = {
   inboxKindFilter: `${PREFIX}inbox-kind-filter:`,
   artifactDrafts: `${PREFIX}artifact-drafts:`,
   workflowBuilderMode: `${PREFIX}workflow-builder-mode:`,
-  kickoffStartChoice: `${PREFIX}kickoff-start-choice:`,
   boardCollapsed: `${PREFIX}board-collapsed:v1:`,
 } as const;
 
