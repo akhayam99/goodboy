@@ -409,3 +409,4 @@ export type {
   ResolvePublicationThread,
   PublicationBlocker,
 } from './resolve';
+export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
