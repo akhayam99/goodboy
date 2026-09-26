@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { Button, InlineConfirm } from '@goodboy/ui';
 import { Unplug } from 'lucide-react';
 import { SkillsPanel } from '../../../../features/skills/components/SkillsPanel';
+import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
@@ -83,7 +84,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         )}
 
         <div id="general" ref={anchor({ id: 'general' })}>
-          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
+          <div className="flex flex-col gap-4">
+            <WorkspaceDefaultsGrid workspaceId={workspaceId} />
+            <WorkspaceAfterMergeSection workspaceId={workspaceId} />
+          </div>
         </div>
 
         <div ref={anchor({ id: REVIEW_REPLIES_SECTION_ID })}>

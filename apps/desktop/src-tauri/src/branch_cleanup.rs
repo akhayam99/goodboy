@@ -94,7 +94,12 @@ fn worktree_holding(cwd: &Path, branch: &str) -> Option<String> {
 fn local_sha(cwd: &Path, branch: &str) -> Option<String> {
     git(
         cwd,
-        &["rev-parse", "--verify", "--quiet", &format!("refs/heads/{branch}")],
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("refs/heads/{branch}"),
+        ],
     )
     .ok()
     .map(|raw| raw.trim().to_string())
@@ -292,8 +297,7 @@ mod tests {
         let root = init_repo("delete");
         let sha = feature_branch(&root, "goodboy/fx-rates");
 
-        let outcome =
-            delete_checked(&delete_args(&root, "goodboy/fx-rates", &sha, false)).unwrap();
+        let outcome = delete_checked(&delete_args(&root, "goodboy/fx-rates", &sha, false)).unwrap();
 
         assert_eq!(outcome.keep_ref, "refs/goodboy/deleted/goodboy/fx-rates");
         assert_eq!(local_sha(&root, "goodboy/fx-rates"), None);
@@ -342,7 +346,10 @@ mod tests {
         let root = init_repo("lease");
         let remote = root.join("remote.git");
         git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
-        git_ok(&root, &["remote", "add", "origin", remote.to_str().unwrap()]);
+        git_ok(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
         let sha = feature_branch(&root, "goodboy/leased");
         git_ok(&root, &["push", "origin", "goodboy/leased"]);
         let main_sha = git_ok(&root, &["rev-parse", "main"]);
@@ -365,15 +372,21 @@ mod tests {
         let root = init_repo("origin");
         let remote = root.join("remote.git");
         git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
-        git_ok(&root, &["remote", "add", "origin", remote.to_str().unwrap()]);
+        git_ok(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
         let sha = feature_branch(&root, "goodboy/gone");
         git_ok(&root, &["push", "origin", "goodboy/gone"]);
 
-        let outcome =
-            delete_checked(&delete_args(&root, "goodboy/gone", &sha, true)).unwrap();
+        let outcome = delete_checked(&delete_args(&root, "goodboy/gone", &sha, true)).unwrap();
 
         assert!(outcome.deleted_on_origin);
-        assert!(git(&remote, &["rev-parse", "--verify", "refs/heads/goodboy/gone"]).is_err());
+        assert!(git(
+            &remote,
+            &["rev-parse", "--verify", "refs/heads/goodboy/gone"]
+        )
+        .is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -381,8 +394,7 @@ mod tests {
     fn restore_brings_the_branch_back_and_drops_the_keep_ref() {
         let root = init_repo("restore");
         let sha = feature_branch(&root, "goodboy/back");
-        let outcome =
-            delete_checked(&delete_args(&root, "goodboy/back", &sha, false)).unwrap();
+        let outcome = delete_checked(&delete_args(&root, "goodboy/back", &sha, false)).unwrap();
 
         restore(&BranchRestoreArgs {
             repo_root: root.to_string_lossy().into_owned(),

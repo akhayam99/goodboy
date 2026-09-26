@@ -706,9 +706,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   a 32px grid row (star, kind, name, description, a base-branch chip only
   when set by hand, a Folder-not-found flag) with Open in editor, Copy path
   and Unlink in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch,
-  folder, facts, footer actions). New session defaults sit in a
-  two-column grid with each help behind an info mark, and disconnecting is a
+  inline editor below the row for the rest (description, base branch, After
+  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  two-column grid with each help behind an info mark, followed by the
+  `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail

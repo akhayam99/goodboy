@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
 import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
+  AfterMergeRule,
   AgentId,
   AgentSourceKind,
   ArtifactId,
@@ -439,6 +440,10 @@ type AppActions = {
   updateProjectBaseBranch(input: {
     projectId: ProjectId;
     baseBranch: string | null;
+  }): Promise<void>;
+  updateProjectAfterMerge(input: {
+    projectId: ProjectId;
+    afterMerge: AfterMergeRule | null;
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;

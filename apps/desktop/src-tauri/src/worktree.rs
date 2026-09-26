@@ -1533,7 +1533,14 @@ fn is_squash_merged(cwd: &Path, base_ref: &str, tip: &str) -> bool {
     };
     let Ok(base_log) = git(
         cwd,
-        &["log", "-p", "--full-index", "--no-merges", "--format=commit %H", &range],
+        &[
+            "log",
+            "-p",
+            "--full-index",
+            "--no-merges",
+            "--format=commit %H",
+            &range,
+        ],
     ) else {
         return false;
     };

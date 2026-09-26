@@ -41,7 +41,6 @@ const RESET_PATCH: WorkspaceOverridesPatch = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
-  afterMerge: null,
 };
 
 type Props = {
