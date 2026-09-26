@@ -11,4 +11,6 @@ export type ProviderLimitsSlice = ProviderLimitsState & {
   loadProviderLimits(): Promise<void>;
   recordProviderLimits(params: RecordProviderLimitsParams): Promise<void>;
   refreshCodexLimits(): Promise<void>;
+  refreshClaudeUsage(): Promise<void>;
+  probeProviderLimits(): Promise<void>;
 };

@@ -47,6 +47,7 @@ mod storage;
 mod summarize;
 mod terminal;
 mod turn;
+mod usage_probe;
 mod util;
 mod workflows;
 mod worktree;
@@ -301,6 +302,7 @@ pub fn run() {
             planner::planner_run,
             codex_rollout::codex_rollout_context,
             codex_rollout::codex_rate_limits_latest,
+            usage_probe::claude_usage_probe,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,

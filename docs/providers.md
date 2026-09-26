@@ -223,8 +223,8 @@ pays for every turn.
 - **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
   the 5-hour window above, the week below. From 80% it adds the worse window's
   number with its short name (`5h 86%`, `wk 94%`). Hover one for every window and
-  its reset, click it for the provider page. Claude updates its numbers only while
-  a Claude agent runs
+  its reset, click it for the provider page. Claude's numbers update at boot,
+  every 15 minutes, and during a turn
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
@@ -577,28 +577,41 @@ When a provider ships or retires a model, update three files under
 
 ### Usage limits
 
-Goodboy reads the usage limits a provider reports on its own. It never makes a
-network call for them and never reads a sign-in token or the keychain.
+Goodboy asks each provider's own CLI for your usage, the same way you would.
+It never reads your sign-in: the CLI authenticates with its own stored
+credentials, Goodboy only spawns it and reads what it prints.
 
-- **Claude**: during a turn, `claude -p` emits a `rate_limit_event` line in the
-  stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and keeps it out
-  of the transcript. Every event carries `rate_limit_info.unifiedWindows` with
-  `five_hour` and `seven_day` (`utilization` 0 to 1, `resetsAt` in epoch seconds),
-  so both windows arrive together, 5-hour first. The top-level `rateLimitType`
-  names the window that limits you (`five_hour`, `seven_day`, `seven_day_opus`,
-  `seven_day_sonnet`) and its `status` (`allowed`, `allowed_warning`, `rejected`).
-  The status goes to that window, and a per-model type adds its own window. An
-  unknown type drops only its window, never the event. `mergeProviderLimits`
-  keeps windows it saw until their reset. The numbers change only while a Claude
-  agent runs
+- **Claude**: two sources, most recent observation wins per window.
+  - **Probe** (`usage_probe.rs`, `claude_usage_probe`): a free, read-only
+    side-spawn of `claude -p "/usage" --output-format json --setting-sources
+project,local --no-session-persistence` in an empty scratch directory,
+    15 s timeout. It is not a turn: it never goes through `sendTurn`, never
+    enters telemetry or spend. `useProviderLimitsProbe` runs it at boot,
+    every 15 minutes, and on the next focus once 15 minutes have passed.
+    `parseClaudeUsageText` reads the envelope's `result` text for lines like
+    `Current session: 4% used · resets Sep 26 at 7:40am (Europe/Rome)` and
+    `Current week (Fable): 11% used · resets ...`. The percentage is the only
+    number treated as ground truth; the reset time is converted using the
+    timezone in parentheses, and a line it cannot parse contributes no
+    `resetsAt` rather than a guessed one. An unrecognized line is skipped, not
+    fatal to the rest of the probe.
+  - **Turn**: during a turn, `claude -p` emits a `rate_limit_event` line in
+    the stream. `parseStreamJsonLine` hands it to `ctx.onProviderLimits` and
+    keeps it out of the transcript. Every event carries
+    `rate_limit_info.unifiedWindows` with `five_hour` and `seven_day`
+    (`utilization` 0 to 1, `resetsAt` in epoch seconds). The top-level
+    `rateLimitType` names the window that limits you and its `status`
+    (`allowed`, `allowed_warning`, `rejected`); a per-model type adds its own
+    window. An unknown type drops only its window, never the event.
+    `mergeProviderLimits` keeps windows it saw until their reset.
 - **Codex**: the `token_count` lines of the rollout files under
   `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
   `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
   `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
   also sees Codex use outside Goodboy. A reading with neither window is skipped:
   Codex writes an empty `premium` bucket after the real `codex` one, and taking
-  it left the boot read with no data. The desktop asks for it at boot and after
-  every Codex usage event
+  it left the boot read with no data. The desktop asks for it at boot, every 15
+  minutes alongside the Claude probe, and after every Codex usage event
 - **Antigravity and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the
   `providerLimits` store slice. A write never replaces a newer observation.

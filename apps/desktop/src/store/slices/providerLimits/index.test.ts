@@ -132,4 +132,43 @@ describe('providerLimits slice', () => {
 
     expect(read().providerLimits).toEqual({});
   });
+
+  it('probes claude usage through the backend and records the parsed windows', async () => {
+    invokeSpy.mockResolvedValue({
+      stdout: JSON.stringify({
+        result: 'Current session: 4% used · resets Sep 26 at 7:40am (Europe/Rome)',
+      }),
+      stderr: '',
+    });
+    const { slice, read } = harness();
+
+    await slice.refreshClaudeUsage();
+
+    expect(invokeSpy).toHaveBeenCalledWith('claude_usage_probe');
+    expect((read().providerLimits as Record<string, ProviderLimits>).anthropic).toMatchObject({
+      providerId: 'anthropic',
+      windows: [expect.objectContaining({ kind: 'fiveHour', usedFraction: 0.04 })],
+    });
+  });
+
+  it('skips the claude usage probe when the CLI is known to be signed out', async () => {
+    const { slice, read } = harness();
+    (read() as { authResults: unknown }).authResults = {
+      anthropic: { state: 'disconnected', identity: null },
+    };
+
+    await slice.refreshClaudeUsage();
+
+    expect(invokeSpy).not.toHaveBeenCalled();
+  });
+
+  it('probes both claude and codex together', async () => {
+    invokeSpy.mockResolvedValue(null);
+    const { slice } = harness();
+
+    await slice.probeProviderLimits();
+
+    expect(invokeSpy).toHaveBeenCalledWith('claude_usage_probe');
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_latest');
+  });
 });

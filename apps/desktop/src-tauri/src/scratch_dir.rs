@@ -75,6 +75,16 @@ pub fn scratch_dir_prepare(session_id: String) -> Result<String, ScratchDirError
     prepare_in(&goodboy_root()?, &session_id)
 }
 
+fn probe_path(root: &Path, name: &str) -> PathBuf {
+    root.join("scratch").join("probe").join(name)
+}
+
+pub(crate) fn prepare_probe_dir(name: &str) -> Result<String, ScratchDirError> {
+    let target = probe_path(&goodboy_root()?, name);
+    std::fs::create_dir_all(&target)?;
+    Ok(target.to_string_lossy().into_owned())
+}
+
 #[tauri::command]
 pub async fn scratch_dir_remove(session_id: String) -> Result<(), ScratchDirError> {
     tauri::async_runtime::spawn_blocking(move || scratch_dir_remove_blocking(session_id))

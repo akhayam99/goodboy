@@ -29,6 +29,7 @@ import { listenMountCommands } from './features/session/mountQueryBridge';
 import { startWorktreeWriterBridge } from './features/session/resolve/worktreeWriterBridge';
 import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
+import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
@@ -120,6 +121,7 @@ export const App = () => {
 
   useGithubPolling();
   useProviderRefreshOnFocus();
+  useProviderLimitsProbe();
   useUpdaterPolling();
   useWindowPresence();
   useWindowShortcuts();

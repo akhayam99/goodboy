@@ -61,7 +61,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .catch(() => {});
         void get()
           .loadProviderLimits()
-          .then(() => get().refreshCodexLimits())
+          .then(() => get().probeProviderLimits())
           .catch(() => {});
         recordBootBreadcrumb({
           phase: 'migrating',
