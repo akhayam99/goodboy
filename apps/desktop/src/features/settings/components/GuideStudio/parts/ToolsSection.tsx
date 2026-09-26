@@ -27,9 +27,9 @@ export const ToolsSection = ({}: Props) => (
 
     <Block title="Permissions">
       <p className="text-prose text-muted-foreground">
-        Goodboy proxies the CLI's own permission system. Above the input you see{' '}
-        <InlineCode>permissions: X allow / Y deny</InlineCode>, the rule set the next turn will run
-        under. Click it to manage rules in settings.
+        The mode picker under the input says what agents may do in this session. Rules and the
+        default for new sessions live in Settings, Workspace, Permissions, next to what each
+        provider really does with them.
       </p>
     </Block>
 
