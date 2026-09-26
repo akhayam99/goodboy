@@ -1,4 +1,5 @@
 import { addWorkspace } from './addWorkspace';
+import { checkReconnectCandidate } from './checkReconnectCandidate';
 import { createWorkspace } from './createWorkspace';
 import { disconnectWorkspace } from './disconnectWorkspace';
 import { mergeWorkspaces } from './mergeWorkspaces';
@@ -12,6 +13,7 @@ import type { GetFn, SetFn } from './types';
 export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
   return {
     addWorkspace: addWorkspace(set, get),
+    checkReconnectCandidate: checkReconnectCandidate(get),
     createWorkspace: createWorkspace(set, get),
     disconnectWorkspace: disconnectWorkspace(set, get),
     mergeWorkspaces: mergeWorkspaces(set, get),

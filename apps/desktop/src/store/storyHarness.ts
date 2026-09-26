@@ -634,6 +634,8 @@ export const worktreeModuleMock = () => ({
 
 export const repoModuleMock = () => ({
   validateGitRepo: vi.fn(async () => ({ isRepo: true, rootPath: '/tmp/repo' })),
+  repoIdentity: vi.fn(async () => null),
+  findMovedProjects: vi.fn(async () => []),
 });
 
 export const editorModuleMock = () => ({ detectEditors: vi.fn(async () => []) });

@@ -9,6 +9,14 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
       id: 'ws-direct',
       name: 'alpha',
     })),
+    checkReconnectCandidate: vi.fn<
+      (input: { rootPath: string }) => Promise<{
+        workspaceId: string;
+        workspaceName: string;
+        disconnectedAt: string;
+        sessionCount: number;
+      } | null>
+    >(async () => null),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
@@ -178,6 +186,52 @@ describe('WorkspaceLinkForm', () => {
 
     await waitFor(() => screen.getByRole('alert'));
     expect(screen.getByRole('alert').textContent).toContain('No git repository at /empty');
+    expect(state.addWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('offers to reconnect a disconnected workspace found at the picked folder', async () => {
+    const onComplete = vi.fn();
+    state.checkReconnectCandidate.mockResolvedValueOnce({
+      workspaceId: 'ws-gone',
+      workspaceName: 'Harborline',
+      disconnectedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      sessionCount: 48,
+    });
+    state.addWorkspace.mockResolvedValueOnce({ id: 'ws-gone', name: 'Harborline' });
+    renderForm({ onComplete });
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+
+    await waitFor(() => screen.getByText(/This folder was part of Harborline, disconnected/));
+    expect(screen.getByText(/with 48 sessions/)).toBeDefined();
+    expect(state.addWorkspace).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect Harborline' }));
+
+    await waitFor(() =>
+      expect(state.addWorkspace).toHaveBeenCalledWith({ rootPath: '/repos/alpha' }),
+    );
+    expect(onComplete).toHaveBeenCalledWith({
+      mode: 'project',
+      workspace: expect.objectContaining({ id: 'ws-gone' }),
+    });
+  });
+
+  it('clears the reconnect card when a different folder is chosen instead', async () => {
+    state.checkReconnectCandidate.mockResolvedValueOnce({
+      workspaceId: 'ws-gone',
+      workspaceName: 'Harborline',
+      disconnectedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      sessionCount: 48,
+    });
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+    await waitFor(() => screen.getByRole('button', { name: 'Choose a different folder' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose a different folder' }));
+
+    expect(screen.queryByText(/This folder was part of Harborline/)).toBeNull();
     expect(state.addWorkspace).not.toHaveBeenCalled();
   });
 

@@ -416,6 +416,9 @@ type AppActions = {
   hydrateCliRequirements(): Promise<void>;
   learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  checkReconnectCandidate(input: {
+    rootPath: string;
+  }): Promise<import('./slices/workspaces/checkReconnectCandidate').ReconnectCandidate | null>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
     workspaceId: WorkspaceId;

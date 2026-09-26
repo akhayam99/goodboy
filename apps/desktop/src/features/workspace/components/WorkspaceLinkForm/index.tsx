@@ -7,6 +7,7 @@ import {
   Divider,
   formatError,
   Input,
+  Notice,
   SectionHeader,
   Tooltip,
   tintClasses,
@@ -20,6 +21,8 @@ import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption'
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
 import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
+import type { ReconnectCandidate } from '../../../../store/slices/workspaces/checkReconnectCandidate';
+import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { lastPathSegment } from './lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -50,6 +53,7 @@ const CHOICE_OPTIONS = [
 export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
+  const checkReconnectCandidate = useAppStore((state) => state.checkReconnectCandidate);
   const createWorkspace = useAppStore((state) => state.createWorkspace);
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
@@ -65,6 +69,10 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const [projectPath, setProjectPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reconnectCandidate, setReconnectCandidate] = useState<{
+    readonly rootPath: string;
+    readonly candidate: ReconnectCandidate;
+  } | null>(null);
   const detectedPaths = useMemo(() => detected?.repos.map((repo) => repo.path) ?? [], [detected]);
   const adoption = useProjectAdoption({ workspaceId: created?.id ?? null, detectedPaths });
 
@@ -125,8 +133,12 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       clear();
+      setReconnectCandidate(null);
       const check = await validateGitRepo(picked);
       if (check.isRepo && check.rootPath != null && check.rootPath !== '') {
+        if (await offerReconnect({ rootPath: check.rootPath })) {
+          return;
+        }
         const workspace = await addWorkspace({ rootPath: check.rootPath });
         await completeWithWorkspace({ mode: 'project', workspace });
         return;
@@ -146,6 +158,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       clear();
+      setReconnectCandidate(null);
       const initialized = await initRepo({ path: picked });
       const workspace = await addWorkspace({ rootPath: initialized.rootPath });
       await completeWithWorkspace({ mode: 'project', workspace });
@@ -158,6 +171,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       clear();
+      setReconnectCandidate(null);
       if (created !== null) {
         handleLinkResult(
           await addProject({
@@ -168,9 +182,33 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         );
         return;
       }
+      if (await offerReconnect({ rootPath: picked })) {
+        return;
+      }
       const workspace = await addWorkspace({ rootPath: picked });
       await completeWithWorkspace({ mode: 'project', workspace });
     });
+
+  const offerReconnect = async ({ rootPath }: { readonly rootPath: string }): Promise<boolean> => {
+    const candidate = await checkReconnectCandidate({ rootPath });
+    if (candidate === null) {
+      return false;
+    }
+    setReconnectCandidate({ rootPath, candidate });
+    return true;
+  };
+
+  const onReconnect = () =>
+    run(async () => {
+      if (reconnectCandidate === null) {
+        return;
+      }
+      const workspace = await addWorkspace({ rootPath: reconnectCandidate.rootPath });
+      setReconnectCandidate(null);
+      await completeWithWorkspace({ mode: 'project', workspace });
+    });
+
+  const onCancelReconnect = () => setReconnectCandidate(null);
 
   const linkProject = ({ rootPath }: { readonly rootPath: string }) =>
     run(async () => {
@@ -320,6 +358,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 onClick={() => {
                   setChoice(option.value);
                   setError(null);
+                  setReconnectCandidate(null);
                   clear();
                 }}
                 className={cn(
@@ -367,6 +406,28 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 Pick a folder with a git repository, or let New project run git init in an empty
                 one.
               </p>
+              {reconnectCandidate !== null ? (
+                <Notice
+                  tone="info"
+                  placement="inline"
+                  title={`This folder was part of ${reconnectCandidate.candidate.workspaceName}, disconnected ${formatRelativeAge({ fromIso: reconnectCandidate.candidate.disconnectedAt })}, with ${reconnectCandidate.candidate.sessionCount} ${reconnectCandidate.candidate.sessionCount === 1 ? 'session' : 'sessions'}.`}
+                  actions={
+                    <>
+                      <Button size="sm" disabled={busy} onClick={onReconnect}>
+                        Reconnect {reconnectCandidate.candidate.workspaceName}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onClick={onCancelReconnect}
+                      >
+                        Choose a different folder
+                      </Button>
+                    </>
+                  }
+                />
+              ) : null}
               {detected !== null ? (
                 <DetectedRepoList
                   repos={detected.repos}
