@@ -17,6 +17,7 @@ const { state } = vi.hoisted(() => ({
     skipStuckStepAndAdvance: vi.fn(async () => undefined),
     ensureProjectMounted: vi.fn(async () => undefined),
     emitNotification: vi.fn(async () => undefined),
+    activateWorkflowAgent: vi.fn(async () => undefined),
     hasUnread: false,
     runHasOpenQuestions: false,
   },
@@ -251,6 +252,29 @@ describe('useDynamicActions', () => {
     const action = result.current.find((a) => a.key === 'run');
     expect(action?.label).toBe('Continue');
     expect(action?.icon).toBe(SUGGESTION_ICONS['workflow-next-step']);
+  });
+
+  it('starts the ready step directly on Continue, the same action the Next surface uses', async () => {
+    state.sessionWorkflows = { 'sess-1': [twoStepWorkflow] };
+    state.sessionPhaseRuns = {
+      'sess-1': [agent('step-1', 'completed', 0), agent('step-2', 'pending', 1)],
+    };
+    const { result } = renderHook(() =>
+      useDynamicActions(sessionWith([staticRun]), nav, 'building'),
+    );
+    const action = result.current.find((a) => a.key === 'run');
+
+    await act(async () => {
+      action?.onClick();
+    });
+
+    expect(state.activateWorkflowAgent).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      agentId: 'a-step-2',
+      focus: 'none',
+      bypassGate: false,
+    });
+    expect(nav.openWorkflows).not.toHaveBeenCalled();
   });
 
   it('suppresses the run action while an agent is running', () => {

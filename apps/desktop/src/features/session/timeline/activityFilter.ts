@@ -7,7 +7,6 @@ export const ACTIVITY_CATEGORIES = [
   'questions',
   'artifacts',
   'pullRequests',
-  'suggestions',
   'worktree',
   'issues',
   'resolver',
@@ -52,7 +51,6 @@ export const ACTIVITY_CHILD: Record<ActivityChildToggle, ActivityChild> = {
 export type ActivityFilter = Readonly<Record<ActivityToggle, boolean>>;
 
 export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
-  suggestions: 'Suggestions',
   worktree: 'Branches and worktrees',
   issues: 'Issues',
   pullRequests: 'Pull requests',
@@ -66,7 +64,6 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
 };
 
 export const DEFAULT_ACTIVITY_FILTER: ActivityFilter = {
-  suggestions: true,
   worktree: true,
   issues: true,
   pullRequests: true,
@@ -91,7 +88,7 @@ type ActivityGroup = {
 };
 
 export const ACTIVITY_GROUPS = [
-  { id: 'work', label: 'Work', categories: ['agents', 'workflows', 'questions', 'suggestions'] },
+  { id: 'work', label: 'Work', categories: ['agents', 'workflows', 'questions'] },
   { id: 'outputs', label: 'Outputs', categories: ['artifacts', 'pullRequests', 'issues'] },
   {
     id: 'log',
@@ -172,7 +169,6 @@ export type ActivityCounts = Readonly<Record<ActivityToggle, number>>;
 
 type CountsParams = {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
-  readonly suggestionCount: number;
 };
 
 type AgentTreeParams = {
@@ -182,12 +178,11 @@ type AgentTreeParams = {
 const agentTreeSize = ({ children }: AgentTreeParams): number =>
   children.reduce((total, child) => total + 1 + agentTreeSize({ children: child.children }), 0);
 
-export const activityCounts = ({ entries, suggestionCount }: CountsParams): ActivityCounts => {
+export const activityCounts = ({ entries }: CountsParams): ActivityCounts => {
   const counts = Object.fromEntries(ACTIVITY_TOGGLES.map((toggle) => [toggle, 0])) as Record<
     ActivityToggle,
     number
   >;
-  counts.suggestions = suggestionCount;
   const countChild = ({ entry }: EntryParams) => {
     const child = activityChildOf({ entry });
     if (child != null) {

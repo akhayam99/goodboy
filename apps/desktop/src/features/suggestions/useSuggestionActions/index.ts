@@ -84,6 +84,7 @@ export const useSuggestionActions = ({
   const setActiveLens = useAppStore((state) => state.setActiveLens);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
+  const runPlan = useAppStore((state) => state.runPlan);
 
   const reportError = (title: string) => (message: string) => {
     void emitNotification({
@@ -223,6 +224,18 @@ export const useSuggestionActions = ({
                   onAct: () => startRebase({ target }),
                 }))
               : undefined,
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'plan-ready') {
+      return {
+        primary: {
+          label: 'Start implementer',
+          isDisabled: false,
+          onAct: () => {
+            void runPlan(sessionId, suggestion.payload.planId);
+          },
         },
         onDismiss: null,
       };

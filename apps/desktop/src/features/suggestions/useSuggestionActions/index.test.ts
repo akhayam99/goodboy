@@ -4,6 +4,7 @@ import type {
   Agent,
   AgentId,
   MountId,
+  PlanId,
   ProjectId,
   Session,
   SessionEventId,
@@ -35,6 +36,7 @@ const { storeState, spies } = vi.hoisted(() => {
   });
   const setActiveLens = vi.fn();
   const rebaseRun = vi.fn(async () => undefined);
+  const runPlan = vi.fn(async () => 'agent-implementer');
   return {
     spies: {
       ensureProjectMounted,
@@ -46,6 +48,7 @@ const { storeState, spies } = vi.hoisted(() => {
       setAgentConfig,
       setActiveLens,
       rebaseRun,
+      runPlan,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseAgent: vi.fn((_params: unknown) => ({
         canRebase: false,
@@ -69,6 +72,7 @@ const { storeState, spies } = vi.hoisted(() => {
       spawnAgent,
       setAgentConfig,
       setActiveLens,
+      runPlan,
     },
   };
 });
@@ -127,7 +131,14 @@ const actionsFor = ({ suggestion }: { readonly suggestion: SessionSuggestion }) 
   return result.current({ suggestion });
 };
 
-const suggestionBase = { sessionId: SESSION_ID, priority: 0, title: 'Do it' };
+const suggestionBase = {
+  sessionId: SESSION_ID,
+  priority: 0,
+  title: 'Do it',
+  band: 1 as const,
+  fingerprint: 'test-fingerprint',
+  targetKey: null,
+};
 
 beforeEach(() => {
   storeState.sessionGithub = {};
@@ -400,6 +411,22 @@ describe('useSuggestionActions', () => {
     );
   });
 
+  it('starts the implementer with the plan behind a plan-ready suggestion', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'plan-ready:plan-1',
+        kind: 'plan-ready',
+        payload: { planId: 'plan-1' as PlanId },
+      },
+    });
+
+    expect(actions.primary?.label).toBe('Start implementer');
+    actions.primary?.onAct();
+
+    expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
+  });
+
   it('hands the questions lens the answer action', () => {
     const actions = actionsFor({
       suggestion: {
@@ -465,19 +492,5 @@ describe('useSuggestionActions', () => {
       kind: 'project_materialization_dismissed',
       payload: { projectId: WEB_ID, projectName: 'web', reason: 'needs the router' },
     });
-  });
-
-  it('leaves the plan-ready suggestion to the composer', () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'plan-ready:plan-1',
-        kind: 'plan-ready',
-        payload: { planId: 'plan-1' as never },
-      },
-    });
-
-    expect(actions.primary).toBeNull();
-    expect(actions.onDismiss).toBeNull();
   });
 });

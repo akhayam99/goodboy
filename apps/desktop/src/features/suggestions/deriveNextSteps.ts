@@ -3,7 +3,8 @@ import {
   pendingMountEvents,
   type SuggestionMountEvent,
 } from '../../store/materializationProposals';
-import type { RebaseSuggestionTarget, SessionSuggestion } from './types';
+import { applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
+import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
 
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
@@ -58,9 +59,11 @@ type Params = {
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
   readonly mountEvents: ReadonlyArray<SuggestionMountEvent>;
+  readonly dismissedFingerprints?: ReadonlySet<string>;
+  readonly demotedKinds?: ReadonlySet<SuggestionKind>;
 };
 
-export const deriveSessionSuggestions = ({
+export const deriveNextSteps = ({
   sessionId,
   workflowRuns,
   plans,
@@ -70,6 +73,8 @@ export const deriveSessionSuggestions = ({
   eligibleThreadCount,
   projects,
   mountEvents,
+  dismissedFingerprints,
+  demotedKinds,
 }: Params): ReadonlyArray<SessionSuggestion> => {
   const suggestions: SessionSuggestion[] = [];
   for (const event of pendingMountEvents({ mountEvents })) {
@@ -77,9 +82,12 @@ export const deriveSessionSuggestions = ({
       id: `mount-project:${event.projectId}`,
       kind: 'mount-project',
       priority: 5,
+      band: 1,
       title: `Add ${event.projectName}`,
       detail: event.reason,
       sessionId,
+      targetKey: `project:${event.projectId}`,
+      fingerprint: `mount-project:${event.projectId}:${event.eventId}`,
       payload: {
         projectId: event.projectId,
         projectName: event.projectName,
@@ -94,9 +102,12 @@ export const deriveSessionSuggestions = ({
       id: `answer-questions:${sessionId}`,
       kind: 'answer-questions',
       priority: 0,
+      band: 0,
       title: 'Answer open questions',
       detail: `${openQuestionCount} ${openQuestionCount === 1 ? 'question' : 'questions'} blocking progress`,
       sessionId,
+      targetKey: null,
+      fingerprint: `answer-questions:${sessionId}:${openQuestionCount}`,
       payload: { count: openQuestionCount },
     });
   }
@@ -108,8 +119,12 @@ export const deriveSessionSuggestions = ({
       id: `workflow-next-step:${run.id}`,
       kind: 'workflow-next-step',
       priority: 10,
+      band: 1,
       title: `Continue ${run.title}`,
+      detail: 'The next step is ready to run',
       sessionId,
+      targetKey: `workflow-run:${run.id}`,
+      fingerprint: `workflow-next-step:${run.id}:${run.advanceState.stepId}`,
       payload: { runId: run.id, stepId: run.advanceState.stepId },
     });
   }
@@ -125,9 +140,12 @@ export const deriveSessionSuggestions = ({
       id: `plan-ready:${activePlan.id}`,
       kind: 'plan-ready',
       priority: 20,
+      band: 3,
       title: activePlan.title,
       detail: 'Ready to implement',
       sessionId,
+      targetKey: `plan:${activePlan.id}`,
+      fingerprint: `plan-ready:${activePlan.id}`,
       payload: { planId: activePlan.id },
     });
   }
@@ -136,9 +154,12 @@ export const deriveSessionSuggestions = ({
       id: `resolve-threads:${sessionId}`,
       kind: 'resolve-threads',
       priority: 30,
+      band: 1,
       title: 'Fix review conversations',
       detail: `${eligibleThreadCount} ${eligibleThreadCount === 1 ? 'conversation' : 'conversations'}`,
       sessionId,
+      targetKey: `pr:${sessionId}`,
+      fingerprint: `resolve-threads:${sessionId}:${eligibleThreadCount}`,
       payload: { eligibleThreadCount },
     });
   }
@@ -179,6 +200,7 @@ export const deriveSessionSuggestions = ({
       id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',
       priority: 40,
+      band: 2,
       title: isSingleTarget
         ? `Rebase ${firstRebaseTarget.projectName} on ${firstRebaseTarget.baseBranch}`
         : isSingleProject
@@ -190,10 +212,12 @@ export const deriveSessionSuggestions = ({
           ? `${rebaseTargets.length} branches behind`
           : `${projectCount} projects behind`,
       sessionId,
+      targetKey: null,
+      fingerprint: `rebase-project:${sessionId}:${rebaseTargets.map((target) => `${target.id}:${target.behind}`).join(',')}`,
       payload: { targets: rebaseTargets },
     });
   }
-  return suggestions.sort(
-    (first, second) => first.priority - second.priority || first.id.localeCompare(second.id),
-  );
+  const deduped = dedupeByTargetKey({ suggestions });
+  const kept = applyDismissals({ suggestions: deduped, dismissedFingerprints });
+  return sortNextSteps({ suggestions: kept, demotedKinds });
 };

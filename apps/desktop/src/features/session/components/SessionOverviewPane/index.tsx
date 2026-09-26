@@ -20,6 +20,7 @@ import { useIssueBriefProposal } from './useIssueBriefProposal';
 import { OverviewActions } from './OverviewActions';
 import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { AttentionCallout } from './AttentionCallout';
+import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 
 type Props = {
   readonly session: Session;
@@ -89,6 +90,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       {proposal !== null ? (
         <IssueBriefProposal key={proposal.source.externalId} {...proposal} />
       ) : null}
+      {isKickoffShown ? null : <NextStepSlot session={session} />}
       <TimelinePane
         session={session}
         actions={

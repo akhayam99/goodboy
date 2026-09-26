@@ -14,8 +14,6 @@ import {
   activityChildOf,
   filterTimelineEntries,
   parseActivityFilter,
-  readActivityFilter,
-  writeActivityFilter,
   type ActivityFilter,
 } from './activityFilter';
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
@@ -225,26 +223,16 @@ describe('filterTimelineEntries', () => {
   });
 });
 
-describe('the suggestions category', () => {
-  it('sits in the category list, labelled and on by default', () => {
-    expect(ACTIVITY_CATEGORIES).toContain('suggestions');
-    expect(ACTIVITY_CATEGORY_LABEL.suggestions).toBe('Suggestions');
-    expect(DEFAULT_ACTIVITY_FILTER.suggestions).toBe(true);
+describe('the removed suggestions category', () => {
+  it('is gone from the category list, its toggle and label with it', () => {
+    expect(ACTIVITY_CATEGORIES).not.toContain('suggestions');
+    expect('suggestions' in ACTIVITY_CATEGORY_LABEL).toBe(false);
+    expect('suggestions' in DEFAULT_ACTIVITY_FILTER).toBe(false);
   });
 
-  it('defaults to on for a payload stored before it existed', () => {
-    expect(parseActivityFilter({ raw: '{"worktree":false}' }).suggestions).toBe(true);
-  });
-
-  it('round trips a hidden choice through storage', () => {
-    localStorage.clear();
-    writeActivityFilter({ filter: { ...DEFAULT_ACTIVITY_FILTER, suggestions: false } });
-
-    const stored = readActivityFilter();
-
-    expect(stored.suggestions).toBe(false);
-    expect(stored.worktree).toBe(true);
-    localStorage.clear();
+  it('tolerates a payload stored before the toggle was removed, ignoring the stray key', () => {
+    const parsed = parseActivityFilter({ raw: '{"worktree":false,"suggestions":false}' });
+    expect(parsed).toEqual({ ...DEFAULT_ACTIVITY_FILTER, worktree: false });
   });
 
   it('keeps the mount proposal events with the worktree category', () => {
@@ -351,7 +339,7 @@ describe('activity presets', () => {
     const work = ACTIVITY_FILTER_PRESETS.work;
 
     expect(work.agents && work.agentSubagents && work.workflowSubagents).toBe(true);
-    expect(work.questions && work.suggestions).toBe(true);
+    expect(work.questions).toBe(true);
     expect(work.artifacts || work.plans || work.pullRequests || work.decisions).toBe(false);
     expect(activityFilterPresetOf({ filter: work })).toBe('work');
   });
@@ -427,7 +415,6 @@ describe('activityCounts', () => {
         artifactEntry({ kind: 'report' }),
         eventEntry({ id: 'e1', kind: 'pr_created' }),
       ],
-      suggestionCount: 2,
     });
 
     expect(counts.agents).toBe(1);
@@ -440,6 +427,5 @@ describe('activityCounts', () => {
     expect(counts.reports).toBe(1);
     expect(counts.wireframes).toBe(0);
     expect(counts.pullRequests).toBe(1);
-    expect(counts.suggestions).toBe(2);
   });
 });

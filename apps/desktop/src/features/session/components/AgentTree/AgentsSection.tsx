@@ -5,7 +5,6 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { StandaloneAgentsLane } from '../StandaloneAgentsLane';
 import { WorkflowAttachButton } from '../../../workflows/components/WorkflowAttachButton';
 import { SectionToggle } from './SectionToggle';
-import { PlanReadySuggestion } from './PlanReadySuggestion';
 import { WorkflowStartButton } from './WorkflowStartButton';
 import { CollapsedSummary } from './CollapsedSummary';
 import { WorkflowRow } from './WorkflowRow';
@@ -126,7 +125,6 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
           {section.spawnError != null && (
             <p className="px-2 text-2xs text-danger">{section.spawnError}</p>
           )}
-          <PlanReadySuggestion task={task} />
         </>
       )}
     </section>

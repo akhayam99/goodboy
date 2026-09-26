@@ -55,13 +55,8 @@ import { useOpenQuestions } from '../../../../../context/components/QuestionsTab
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
-import { useSessionSuggestions } from '../../../../../suggestions';
-import { useSuggestionActions } from '../../../../../suggestions/useSuggestionActions';
-import { useTranscriptMountProposals } from '../../../../../suggestions/useTranscriptMountProposals';
-import { transcriptOwnedProjectIds } from '../../../../../suggestions/transcriptMountProposals';
 import { ActivityFilterPanel } from './ActivityFilterPanel';
 import { NeedsYouChip } from './NeedsYouChip';
-import { TimelineSuggestionStrip } from './TimelineSuggestionStrip';
 import { TimelineDayRule } from './TimelineDayRule';
 import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
@@ -109,17 +104,6 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   const openTargetFor = useTimelineOpen({ sessionId });
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const activity = useActivityFilter();
-  const suggestions = useSessionSuggestions({ session, agents });
-  const transcriptProposals = useTranscriptMountProposals({ session });
-  const transcriptOwned = useMemo(
-    () => transcriptOwnedProjectIds({ proposals: transcriptProposals }),
-    [transcriptProposals],
-  );
-  const suggestionActions = useSuggestionActions({
-    session,
-    agents,
-    onSelectQuestions: () => setActiveLens(sessionId, 'questions'),
-  });
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
   const roleModels = useSessionRoleModels({ sessionId });
@@ -474,16 +458,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
   };
 
   const hasUnreadAgents = unreadAgentIds.size > 0;
-  const feedSuggestions = suggestions.filter(
-    (suggestion) =>
-      suggestion.kind !== 'plan-ready' &&
-      (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
-  );
-  const visibleSuggestions = activity.filter.suggestions && !isNeedsYou ? feedSuggestions : [];
-  const counts = activityCounts({
-    entries: model.entries,
-    suggestionCount: feedSuggestions.length,
-  });
+  const counts = activityCounts({ entries: model.entries });
   const rowKindCount = new Set(model.entries.map((entry) => activityCategoryOf({ entry }))).size;
   const hasFilter = rowKindCount >= 2 || activity.hidden.length > 0 || isNeedsYou;
   const isLoading = (!areEventsLoaded || !areAgentsLoaded) && model.entries.length === 0;
@@ -547,11 +522,6 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          <TimelineSuggestionStrip
-            suggestions={visibleSuggestions}
-            railWidth={rail.width}
-            actionsFor={suggestionActions}
-          />
           <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
             <div ref={listRef} className="@container flex flex-col">
               {stream.items.map((item, index) => {

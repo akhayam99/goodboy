@@ -14,70 +14,51 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-type FakeSuggestion = {
-  readonly id: string;
-  readonly kind: string;
-  readonly title: string;
-  readonly detail?: string;
-  readonly payload?: { readonly projectId: string };
-};
-
-const { storeState, diffStats, unread, questions, suggestionState, agentsLoaded, attachedRuns } =
-  vi.hoisted(() => ({
-    attachedRuns: { list: [] as ReadonlyArray<unknown> },
-    unread: { current: false },
-    agentsLoaded: { current: true },
-    suggestionState: {
-      list: [] as ReadonlyArray<{
-        readonly id: string;
-        readonly kind: string;
-        readonly title: string;
-        readonly detail?: string;
-      }>,
-      onAct: vi.fn(),
-      onDismiss: vi.fn(),
-    },
-    diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
-    questions: {
-      open: [] as ReadonlyArray<unknown>,
-      answered: [] as ReadonlyArray<unknown>,
-      dismissed: [] as ReadonlyArray<unknown>,
-    },
-    storeState: {
-      sessionPhaseRuns: {},
-      sessionPlans: {},
-      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-      sessionExternalTasks: {},
-      sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
-      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-      selectedAgentId: {} as Record<string, string | null>,
-      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-      projects: [] as ReadonlyArray<unknown>,
-      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-      agentKindOverride: {},
-      agentProviderOverride: {} as Record<string, string>,
-      agentModelOverride: {} as Record<string, string>,
-      agentEffortOverride: {} as Record<string, string>,
-      agentRunHistory: {},
-      sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-      executed: new Map<string, { provider: string; model: string }>(),
-      sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
-      workspaceDurationHistory: {} as Record<string, unknown>,
-      agentTurnState: {} as Record<string, unknown>,
-      loadSessionTurnSpans: vi.fn(async () => undefined),
-      loadWorkspaceDurationHistory: vi.fn(async () => undefined),
-      loadSessionEvents: vi.fn(async () => undefined),
-      loadSessionArtifacts: vi.fn(async () => undefined),
-      loadSessionAnsweredQuestions: vi.fn(async () => undefined),
-      loadSessionDismissedQuestions: vi.fn(async () => undefined),
-      markAllAgentsSeen: vi.fn(),
-      openArtifactCreation: vi.fn(),
-      setActiveLens: vi.fn(),
-      setFocusedArtifactId: vi.fn(),
-      openMountDiff: vi.fn(),
-      closeWorkflowRun: vi.fn(async () => undefined),
-    },
-  }));
+const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns } = vi.hoisted(() => ({
+  attachedRuns: { list: [] as ReadonlyArray<unknown> },
+  unread: { current: false },
+  agentsLoaded: { current: true },
+  diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+  questions: {
+    open: [] as ReadonlyArray<unknown>,
+    answered: [] as ReadonlyArray<unknown>,
+    dismissed: [] as ReadonlyArray<unknown>,
+  },
+  storeState: {
+    sessionPhaseRuns: {},
+    sessionPlans: {},
+    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionExternalTasks: {},
+    sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    selectedAgentId: {} as Record<string, string | null>,
+    transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+    projects: [] as ReadonlyArray<unknown>,
+    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+    agentKindOverride: {},
+    agentProviderOverride: {} as Record<string, string>,
+    agentModelOverride: {} as Record<string, string>,
+    agentEffortOverride: {} as Record<string, string>,
+    agentRunHistory: {},
+    sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
+    executed: new Map<string, { provider: string; model: string }>(),
+    sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
+    workspaceDurationHistory: {} as Record<string, unknown>,
+    agentTurnState: {} as Record<string, unknown>,
+    loadSessionTurnSpans: vi.fn(async () => undefined),
+    loadWorkspaceDurationHistory: vi.fn(async () => undefined),
+    loadSessionEvents: vi.fn(async () => undefined),
+    loadSessionArtifacts: vi.fn(async () => undefined),
+    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+    loadSessionDismissedQuestions: vi.fn(async () => undefined),
+    markAllAgentsSeen: vi.fn(),
+    openArtifactCreation: vi.fn(),
+    setActiveLens: vi.fn(),
+    setFocusedArtifactId: vi.fn(),
+    openMountDiff: vi.fn(),
+    closeWorkflowRun: vi.fn(async () => undefined),
+  },
+}));
 
 vi.mock('../../../../../../store', () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -116,23 +97,6 @@ vi.mock('../../../../../../app/components/Toast', () => ({
 vi.mock('./ActivityFilterPanel', () => ({
   ActivityFilterPanel: () => <button type="button">Filter</button>,
 }));
-vi.mock('../../../../../suggestions', () => ({
-  useSessionSuggestions: () => suggestionState.list,
-}));
-vi.mock('../../../../../suggestions/useSuggestionActions', () => ({
-  useSuggestionActions:
-    () =>
-    ({ suggestion }: { readonly suggestion: FakeSuggestion }) => ({
-      primary: {
-        label: `Act on ${suggestion.id}`,
-        isDisabled: false,
-        onAct: () => suggestionState.onAct(suggestion.id),
-      },
-      onDismiss:
-        suggestion.kind === 'mount-project' ? () => suggestionState.onDismiss(suggestion.id) : null,
-    }),
-}));
-
 import { TimelinePane } from './index';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
@@ -179,9 +143,6 @@ beforeEach(() => {
   questions.open = [];
   questions.answered = [];
   questions.dismissed = [];
-  suggestionState.list = [];
-  suggestionState.onAct.mockReset();
-  suggestionState.onDismiss.mockReset();
   agentsLoaded.current = true;
   attachedRuns.list = [];
   useOpenQuestions.setState({ focusedQuestionId: null });
@@ -402,150 +363,6 @@ describe('TimelinePane unread affordance', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
-  });
-});
-
-describe('TimelinePane suggestions', () => {
-  const ANSWER: FakeSuggestion = {
-    id: 'answer-questions:session-1',
-    kind: 'answer-questions',
-    title: 'Answer open questions',
-    detail: '2 questions blocking progress',
-  };
-  const MOUNT: FakeSuggestion = {
-    id: 'mount-project:project-web',
-    kind: 'mount-project',
-    title: 'Add web',
-    detail: 'needs the router',
-    payload: { projectId: 'project-web' },
-  };
-  const PLAN: FakeSuggestion = {
-    id: 'plan-ready:plan-1',
-    kind: 'plan-ready',
-    title: 'Plan',
-  };
-
-  const renderWithActivity = () => {
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    return render(<TimelinePane session={SESSION} actions={null} />);
-  };
-
-  it('seats every suggestion row above the NOW rule', () => {
-    suggestionState.list = [ANSWER, MOUNT];
-
-    renderWithActivity();
-
-    const row = screen.getByTestId(`timeline-suggestion-${ANSWER.id}`);
-    const now = screen.getByTestId('timeline-now-dot');
-    expect(screen.getByText('Answer open questions')).not.toBeNull();
-    expect(screen.getByText('needs the router')).not.toBeNull();
-    expect(row.compareDocumentPosition(now) & Node.DOCUMENT_POSITION_FOLLOWING).toBeGreaterThan(0);
-  });
-
-  it('leaves the plan-ready suggestion to the composer', () => {
-    suggestionState.list = [ANSWER, PLAN];
-
-    renderWithActivity();
-
-    expect(screen.queryByTestId(`timeline-suggestion-${PLAN.id}`)).toBeNull();
-    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
-  });
-
-  it('hides every suggestion row once the category is filtered out', () => {
-    suggestionState.list = [ANSWER, MOUNT];
-    localStorage.setItem('goodboy:activity-filter', JSON.stringify({ suggestions: false }));
-
-    renderWithActivity();
-
-    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).toBeNull();
-    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).toBeNull();
-    expect(screen.getByTestId('timeline-now-dot')).not.toBeNull();
-  });
-
-  it('wires the primary action and the dismiss the proposal carries', () => {
-    suggestionState.list = [MOUNT];
-
-    renderWithActivity();
-
-    fireEvent.click(screen.getByRole('button', { name: `Act on ${MOUNT.id}` }));
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this suggestion' }));
-
-    expect(suggestionState.onAct).toHaveBeenCalledWith(MOUNT.id);
-    expect(suggestionState.onDismiss).toHaveBeenCalledWith(MOUNT.id);
-  });
-
-  it('drops its actions once the displayed transcript owns the proposal', () => {
-    suggestionState.list = [ANSWER, MOUNT];
-    storeState.selectedAgentId = { 'session-1': 'agent-1' };
-    storeState.transcripts = { 'agent-1': [{ kind: 'assistant_text', runId: 'run-1' }] };
-    storeState.projects = [{ id: 'project-web', workspaceId: 'ws-1' }];
-    storeState.sessionEvents = {
-      'session-1': [
-        {
-          id: 'ev-1',
-          kind: 'project_materialization_proposed',
-          payload: {
-            projectId: 'project-web',
-            projectName: 'web',
-            reason: 'needs the router',
-            agentId: 'agent-1',
-            turnRunId: 'run-1',
-            deferralCause: 'scope',
-          },
-        },
-      ],
-    };
-
-    renderWithActivity();
-
-    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).toBeNull();
-    expect(screen.queryByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
-  });
-
-  it('keeps its actions when no transcript can claim the proposal', () => {
-    suggestionState.list = [MOUNT];
-    storeState.selectedAgentId = { 'session-1': 'agent-2' };
-    storeState.transcripts = { 'agent-2': [{ kind: 'assistant_text', runId: 'run-1' }] };
-    storeState.projects = [{ id: 'project-web', workspaceId: 'ws-1' }];
-    storeState.sessionEvents = {
-      'session-1': [
-        {
-          id: 'ev-1',
-          kind: 'project_materialization_proposed',
-          payload: {
-            projectId: 'project-web',
-            projectName: 'web',
-            reason: 'needs the router',
-            agentId: 'agent-1',
-            turnRunId: 'run-1',
-            deferralCause: 'scope',
-          },
-        },
-      ],
-    };
-
-    renderWithActivity();
-
-    expect(screen.queryByTestId(`timeline-suggestion-${MOUNT.id}`)).not.toBeNull();
-  });
-
-  it('gathers suggestions in one Suggested next strip that draws no rail', () => {
-    suggestionState.list = [ANSWER, MOUNT];
-
-    const { container } = renderWithActivity();
-
-    const strip = screen.getByRole('region', { name: 'Suggested next' });
-    expect(within(strip).getByText('Suggested next')).not.toBeNull();
-    expect(within(strip).getByTestId(`timeline-suggestion-${ANSWER.id}`)).not.toBeNull();
-    expect(within(strip).getByTestId(`timeline-suggestion-${MOUNT.id}`)).not.toBeNull();
-    expect(strip.querySelectorAll('svg line, svg path[stroke-dasharray]').length).toBe(0);
-    expect(container.querySelectorAll('line[stroke-dasharray="3 3"]').length).toBe(0);
-  });
-
-  it('renders no strip when nothing is suggested', () => {
-    renderWithActivity();
-
-    expect(screen.queryByRole('region', { name: 'Suggested next' })).toBeNull();
   });
 });
 

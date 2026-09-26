@@ -22,6 +22,7 @@ import { workflowRunHasOpenQuestions } from '../../../../../context/openQuestion
 import { eligibleReviewThreadCount } from '../../../../../suggestions/eligibleThreads';
 import { pendingMountProposals } from '../../../../../../store/materializationProposals';
 import { SUGGESTION_ICONS } from '../../../../../suggestions/suggestionIcons';
+import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import type { BoardNavigation } from '../../useBoardNavigation';
 
 export type DynamicAction = {
@@ -63,6 +64,7 @@ export const useDynamicActions = (
   const emitNotification = useAppStore((s) => s.emitNotification);
   const hasUnread = useSessionHasUnread(id);
   const [isConfirmingSkip, setIsConfirmingSkip] = useState(false);
+  const advanceAgent = useAdvanceWorkflowAgent({ sessionId: id });
 
   const mountProposals = useMemo(() => pendingMountProposals({ events }), [events]);
   const eligibleThreads = useMemo(
@@ -115,8 +117,19 @@ export const useDynamicActions = (
 
   return useMemo(() => {
     const openCount = openQuestions.filter((q) => q.status === 'open').length;
-    const nextStepReady =
-      stage !== 'running' && advances.some((advance) => advance.hasStartableStep);
+    const readyAdvance =
+      stage !== 'running' ? (advances.find((advance) => advance.hasStartableStep) ?? null) : null;
+    const nextStepReady = readyAdvance != null;
+    const manualStepId = readyAdvance?.view.manualStep?.id ?? null;
+    const readyAgent =
+      readyAdvance == null
+        ? null
+        : (runs.find(
+            (agent) =>
+              agent.workflowRunId === readyAdvance.runId &&
+              agent.stepId === manualStepId &&
+              agent.status === 'pending',
+          ) ?? null);
 
     const actions: DynamicAction[] = [];
     if (blockedRunId != null && isConfirmingSkip) {
@@ -190,7 +203,13 @@ export const useDynamicActions = (
         icon: SUGGESTION_ICONS['workflow-next-step'],
         tone: 'primary',
         label: 'Continue',
-        onClick: () => nav.openWorkflows(session),
+        onClick: () => {
+          if (readyAgent == null) {
+            nav.openWorkflows(session);
+            return;
+          }
+          void advanceAgent({ agent: readyAgent });
+        },
       });
     }
     if (hasUnread) {
@@ -210,6 +229,8 @@ export const useDynamicActions = (
     openQuestions,
     hasUnread,
     advances,
+    runs,
+    advanceAgent,
     blockedRunId,
     blockedStepName,
     isConfirmingSkip,
