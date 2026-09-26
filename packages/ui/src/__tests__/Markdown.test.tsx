@@ -605,4 +605,54 @@ describe('Markdown report kit', () => {
       'text-muted-foreground',
     );
   });
+
+  it('splits a compare block into a before and an after column, each holding markdown', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '<<compare>>',
+          'Before:',
+          '- every posting rounds its own share',
+          'After:',
+          '- one rounding per batch',
+          '<</compare>>',
+        ].join('\n')}
+      />,
+    );
+    const compare = container.querySelector('[data-block="compare"]');
+    const before = compare?.querySelector('[data-side="before"]');
+    const after = compare?.querySelector('[data-side="after"]');
+    expect(before?.querySelector('li')?.textContent).toBe('every posting rounds its own share');
+    expect(after?.querySelector('li')?.textContent).toBe('one rounding per batch');
+  });
+
+  it('reads a lowercase before and after label the same way', () => {
+    const { container } = render(
+      <Markdown text={['<<compare>>', 'before: old', 'after: new', '<</compare>>'].join('\n')} />,
+    );
+    const compare = container.querySelector('[data-block="compare"]');
+    expect(compare?.querySelector('[data-side="before"]')?.textContent).toContain('old');
+    expect(compare?.querySelector('[data-side="after"]')?.textContent).toContain('new');
+  });
+
+  it('draws bars as svg rects sized by their value, never a style attribute', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '<<bars>>',
+          'Batch 4471: 2 | 128 postings',
+          'Batch 4469: 1 | 204 postings',
+          '<</bars>>',
+        ].join('\n')}
+      />,
+    );
+    const bars = container.querySelectorAll('[data-block="bar"]');
+    expect(bars).toHaveLength(2);
+    const fills = container.querySelectorAll('[data-block="bar-fill"]');
+    expect(fills[0]?.getAttribute('width')).toBe('300');
+    expect(fills[1]?.getAttribute('width')).toBe('150');
+    expect(container.querySelector('[data-block="bars"] svg')?.getAttribute('style')).toBeNull();
+    expect(bars[0]?.textContent).toContain('Batch 4471');
+    expect(bars[0]?.textContent).toContain('128 postings');
+  });
 });
