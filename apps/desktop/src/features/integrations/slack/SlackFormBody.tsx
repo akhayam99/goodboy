@@ -71,6 +71,11 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
       }}
       shouldAutoFocus={shouldAutoFocus}
       onSubmit={async ({ token, credentialId }) => {
+        if (credentialId === null && token.startsWith('xoxb-')) {
+          throw new Error(
+            'This is a bot token. Goodboy needs your user token, the one that starts with xoxp-.',
+          );
+        }
         await connectSlack({ workspaceId, botToken: token, credentialId });
         onConnected?.();
       }}
