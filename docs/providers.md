@@ -468,6 +468,22 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   A new session takes its workspace's default, which Settings, Workspace,
   Permissions can lower; a running session keeps its mode
 
+#### Why Ask first asks after the fact
+
+- Claude answers a permission prompt in `--print` only through a host. With
+  `--input-format stream-json` and `--permission-prompts host` (the default in
+  2.1.282) it writes a `control_request` whose `subtype` is `can_use_tool`
+  (tool name, input, tool use id, suggested rules) and waits for a
+  `control_response` with `behavior` `allow` or `deny`. That shape is read from
+  the 2.1.282 binary and `claude --help`; no real turn has exercised it
+- `turn.rs` starts Claude with `-p <prompt>` and no input stream, so no host
+  exists: every call the mode doesn't allow is denied, the turn stops, and the
+  approval card takes it from there
+- Cursor's help describes `--mode plan` as read-only planning with no edits.
+  Goodboy passes it without `--force`. Whether read-only shell commands still
+  run in that mode has not been checked on a real turn, so the table keeps
+  Cursor's Read only at Partly
+
 ### API keys
 
 - `PROVIDER_API_KEY_ENV` in `packages/types/src/provider-registry.ts` maps each
