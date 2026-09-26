@@ -9,6 +9,7 @@ export const ROW_NODE_LABEL: Record<Exclude<WorkNodeState, 'marker'>, string> = 
   running: 'Running',
   question: 'Waiting on your answer',
   budget: 'Paused at the spend limit',
+  approval: 'Waiting for your approval',
   failed: 'Failed',
   done: 'Done',
   closed: 'Closed by you',
@@ -166,11 +167,16 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       if (isRowStoppedByUser({ state })) {
         return 'stopped';
       }
-      return state.reason?.kind === 'ready'
-        ? 'ready'
-        : state.reason?.kind === 'budget'
-          ? 'budget'
-          : 'question';
+      if (state.reason?.kind === 'ready') {
+        return 'ready';
+      }
+      if (state.reason?.kind === 'budget') {
+        return 'budget';
+      }
+      if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
+        return 'approval';
+      }
+      return 'question';
     case 'failed':
       return 'failed';
     case 'done':

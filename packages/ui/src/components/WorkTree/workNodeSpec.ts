@@ -6,6 +6,7 @@ export type WorkNodeState =
   | 'running'
   | 'question'
   | 'budget'
+  | 'approval'
   | 'failed'
   | 'done'
   | 'closed'
@@ -18,9 +19,30 @@ export type WorkNodeMark =
   | { readonly kind: 'dot' }
   | { readonly kind: 'glyph'; readonly glyph: ReactNode };
 
+export type WorkNodeSize = 'md' | 'sm';
+
 export const WORK_NODE_SIZE = 20;
 
+export const WORK_NODE_SIZE_SM = 14;
+
 export const WORK_NODE_GLYPH_SIZE = 12;
+
+export const WORK_NODE_GLYPH_SIZE_SM = 9;
+
+export const WORK_NODE_SIZE_FOR: Record<WorkNodeSize, number> = {
+  md: WORK_NODE_SIZE,
+  sm: WORK_NODE_SIZE_SM,
+};
+
+export const WORK_NODE_GLYPH_SIZE_FOR: Record<WorkNodeSize, number> = {
+  md: WORK_NODE_GLYPH_SIZE,
+  sm: WORK_NODE_GLYPH_SIZE_SM,
+};
+
+export const WORK_NODE_SCALE_FOR: Record<WorkNodeSize, number> = {
+  md: 1,
+  sm: WORK_NODE_SIZE_SM / WORK_NODE_SIZE,
+};
 
 export const WORK_NODE_ARC = {
   radius: 9,
@@ -68,6 +90,13 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker'>, RingSpec> 
     dashArray: null,
   },
   budget: {
+    radius: 9.25,
+    strokeWidth: 1.5,
+    strokeClassName: 'stroke-warning',
+    fillClassName: 'fill-none',
+    dashArray: null,
+  },
+  approval: {
     radius: 9.25,
     strokeWidth: 1.5,
     strokeClassName: 'stroke-warning',

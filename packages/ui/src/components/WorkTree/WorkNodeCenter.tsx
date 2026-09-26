@@ -1,4 +1,4 @@
-import { Check, Minus } from 'lucide-react';
+import { Check, Minus, Shield } from 'lucide-react';
 import { cn } from '../../cn';
 import { WORK_NODE_GLYPH_SIZE, type WorkNodeMark, type WorkNodeState } from './workNodeSpec';
 
@@ -6,6 +6,7 @@ type Props = {
   readonly state: WorkNodeState;
   readonly mark: WorkNodeMark;
   readonly hasArc: boolean;
+  readonly glyphSize?: number;
 };
 
 const SIGN_CLASS = 'text-2xs font-bold leading-none tabular-nums';
@@ -54,7 +55,12 @@ const markOf = ({ mark, tone }: MarkParams) => {
   );
 };
 
-export const WorkNodeCenter = ({ state, mark, hasArc }: Props) => {
+export const WorkNodeCenter = ({
+  state,
+  mark,
+  hasArc,
+  glyphSize = WORK_NODE_GLYPH_SIZE,
+}: Props) => {
   switch (state) {
     case 'queued':
       return markOf({ mark, tone: 'faint' });
@@ -72,20 +78,18 @@ export const WorkNodeCenter = ({ state, mark, hasArc }: Props) => {
       return signOf({ sign: '?', className: 'text-warning' });
     case 'budget':
       return signOf({ sign: '$', className: 'text-warning' });
+    case 'approval':
+      return <Shield size={glyphSize} strokeWidth={2.5} className="text-warning" />;
     case 'failed':
       return signOf({ sign: '!', className: 'text-danger' });
     case 'done':
-      return <Check size={WORK_NODE_GLYPH_SIZE} strokeWidth={2.5} className="text-success" />;
+      return <Check size={glyphSize} strokeWidth={2.5} className="text-success" />;
     case 'closed':
-      return (
-        <Check size={WORK_NODE_GLYPH_SIZE} strokeWidth={2.5} className="text-muted-foreground" />
-      );
+      return <Check size={glyphSize} strokeWidth={2.5} className="text-muted-foreground" />;
     case 'stopped':
       return <span className="size-1.5 rounded-xs bg-muted-foreground" />;
     case 'skipped':
-      return (
-        <Minus size={WORK_NODE_GLYPH_SIZE} strokeWidth={2.5} className="text-faint-foreground" />
-      );
+      return <Minus size={glyphSize} strokeWidth={2.5} className="text-faint-foreground" />;
     default: {
       const exhaustive: never = state;
       return exhaustive;

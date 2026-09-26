@@ -3,9 +3,12 @@ import { tintClasses, type Tone } from '../../tint';
 import { WorkNodeArc } from './WorkNodeArc';
 import { WorkNodeCenter } from './WorkNodeCenter';
 import {
+  WORK_NODE_GLYPH_SIZE_FOR,
   WORK_NODE_RING,
-  WORK_NODE_SIZE,
+  WORK_NODE_SCALE_FOR,
+  WORK_NODE_SIZE_FOR,
   type WorkNodeMark,
+  type WorkNodeSize,
   type WorkNodeState,
 } from './workNodeSpec';
 
@@ -17,40 +20,51 @@ type Props = {
   readonly spinClassName?: string;
   readonly hasUnread?: boolean;
   readonly progress?: number | null;
+  readonly size?: WorkNodeSize;
 };
-
-const CENTER = WORK_NODE_SIZE / 2;
 
 type RingParams = {
   readonly state: WorkNodeState;
   readonly progress: number | null;
+  readonly size: WorkNodeSize;
 };
 
 const isArcState = ({ state }: { readonly state: WorkNodeState }): boolean =>
   state === 'running' || state === 'question' || state === 'budget';
 
-const ringOf = ({ state, progress }: RingParams) => {
+const scaleDashArray = (dashArray: string, scale: number): string =>
+  dashArray
+    .split(' ')
+    .map((token) => (Number(token) * scale).toFixed(2))
+    .join(' ');
+
+const ringOf = ({ state, progress, size }: RingParams) => {
   if (state === 'marker') {
     return null;
   }
+  const nodeSize = WORK_NODE_SIZE_FOR[size];
+  const center = nodeSize / 2;
+  const scale = WORK_NODE_SCALE_FOR[size];
   if (progress !== null && isArcState({ state })) {
-    return <WorkNodeArc progress={progress} isPaused={state !== 'running'} />;
+    return <WorkNodeArc progress={progress} isPaused={state !== 'running'} size={size} />;
   }
   const ring = WORK_NODE_RING[state];
   return (
     <svg
       aria-hidden
-      width={WORK_NODE_SIZE}
-      height={WORK_NODE_SIZE}
-      viewBox={`0 0 ${WORK_NODE_SIZE} ${WORK_NODE_SIZE}`}
+      width={nodeSize}
+      height={nodeSize}
+      viewBox={`0 0 ${nodeSize} ${nodeSize}`}
       className="absolute inset-0"
     >
       <circle
-        cx={CENTER}
-        cy={CENTER}
-        r={ring.radius}
-        strokeWidth={ring.strokeWidth}
-        strokeDasharray={ring.dashArray ?? undefined}
+        cx={center}
+        cy={center}
+        r={ring.radius * scale}
+        strokeWidth={ring.strokeWidth * scale}
+        strokeDasharray={
+          ring.dashArray === null ? undefined : scaleDashArray(ring.dashArray, scale)
+        }
         className={cn(ring.strokeClassName, ring.fillClassName)}
       />
     </svg>
@@ -65,38 +79,45 @@ export const WorkNode = ({
   spinClassName = 'spin-border-info',
   hasUnread = false,
   progress = null,
-}: Props) => (
-  <span
-    role="img"
-    aria-label={hasUnread ? `${label}, unseen` : label}
-    data-node-state={state}
-    className={cn(
-      'relative inline-flex shrink-0 items-center justify-center rounded-full bg-background',
-      state === 'running' && progress === null && cn('spin-border', spinClassName),
-      state === 'marker' && cn('ring-1', tintClasses(tone).ring),
-    )}
-    style={{ width: WORK_NODE_SIZE, height: WORK_NODE_SIZE }}
-  >
-    {ringOf({ state, progress })}
+  size = 'md',
+}: Props) => {
+  const nodeSize = WORK_NODE_SIZE_FOR[size];
+  const glyphSize = WORK_NODE_GLYPH_SIZE_FOR[size];
+  return (
     <span
-      aria-hidden
-      data-testid="work-node-glyph"
-      className="relative flex size-full items-center justify-center leading-none [&_svg]:block [&_svg]:shrink-0"
+      role="img"
+      aria-label={hasUnread ? `${label}, unseen` : label}
+      data-node-state={state}
+      data-node-size={size}
+      className={cn(
+        'relative inline-flex shrink-0 items-center justify-center rounded-full bg-background',
+        state === 'running' && progress === null && cn('spin-border', spinClassName),
+        state === 'marker' && cn('ring-1', tintClasses(tone).ring),
+      )}
+      style={{ width: nodeSize, height: nodeSize }}
     >
-      <WorkNodeCenter
-        state={state}
-        mark={mark}
-        hasArc={progress !== null && isArcState({ state })}
-      />
-    </span>
-    {hasUnread && (
+      {ringOf({ state, progress, size })}
       <span
         aria-hidden
-        className={cn(
-          'absolute -right-0.5 -top-0.5 size-1.5 rounded-full ring-1 ring-background',
-          tintClasses('primary').dot,
-        )}
-      />
-    )}
-  </span>
-);
+        data-testid="work-node-glyph"
+        className="relative flex size-full items-center justify-center leading-none [&_svg]:block [&_svg]:shrink-0"
+      >
+        <WorkNodeCenter
+          state={state}
+          mark={mark}
+          hasArc={progress !== null && isArcState({ state })}
+          glyphSize={glyphSize}
+        />
+      </span>
+      {hasUnread && (
+        <span
+          aria-hidden
+          className={cn(
+            'absolute -right-0.5 -top-0.5 size-1.5 rounded-full ring-1 ring-background',
+            tintClasses('primary').dot,
+          )}
+        />
+      )}
+    </span>
+  );
+};
