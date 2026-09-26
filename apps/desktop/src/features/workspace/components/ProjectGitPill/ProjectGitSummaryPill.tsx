@@ -4,7 +4,7 @@ import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
-import { projectGitPresentationOf } from './projectGitPresentationOf';
+import { projectGitPresentationOf } from '../../../../shared/lib/projectGitPresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

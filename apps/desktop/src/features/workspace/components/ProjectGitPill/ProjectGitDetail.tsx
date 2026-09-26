@@ -17,13 +17,15 @@ import {
   changedCount,
   distanceAhead,
   distanceBehind,
-  isWorkingTreeClean,
   operationLabel,
   unknownReasonLabel,
   unmergedCount,
 } from '../../../../shared/lib/gitStatus';
 import { InitGuide } from './InitGuide';
-import { hasReadFailure } from './projectGitPresentationOf';
+import {
+  hasReadFailure,
+  projectUpdateBlockReasonOf,
+} from '../../../../shared/lib/projectGitPresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -66,31 +68,6 @@ const unknownNotesOf = ({ status }: StatusParams): ReadonlyArray<string> => {
   return notes;
 };
 
-const blockedReasonOf = ({ status }: StatusParams): string | null => {
-  if (status.branch == null) {
-    return unknownReasonLabel({ reason: 'detached-head' });
-  }
-  if (status.upstream == null) {
-    return 'this branch tracks no upstream yet';
-  }
-  if (status.inProgress != null) {
-    return `finish the ${operationLabel({ operation: status.inProgress })} in progress first`;
-  }
-  if (status.workingTree.kind === 'unknown') {
-    return unknownReasonLabel({ reason: status.workingTree.reason });
-  }
-  if (!isWorkingTreeClean({ workingTree: status.workingTree })) {
-    return 'commit or stash the uncommitted changes first';
-  }
-  if (status.upstreamDistance.kind === 'unknown') {
-    return unknownReasonLabel({ reason: status.upstreamDistance.reason });
-  }
-  if (status.upstreamDistance.behind === 0) {
-    return 'already up to date';
-  }
-  return null;
-};
-
 const detailsOf = ({ status }: StatusParams): ReadonlyArray<Detail> => {
   const details: Array<Detail> = [];
   const behind = distanceBehind({ distance: status.upstreamDistance });
@@ -127,7 +104,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
   const notes = isReady ? unknownNotesOf({ status }) : [];
   const readFailure = isReady && hasReadFailure({ status });
   const branch = isReady ? (status.branch ?? 'detached HEAD') : '';
-  const blockedReason = isReady ? blockedReasonOf({ status }) : null;
+  const blockedReason = isReady ? projectUpdateBlockReasonOf({ status }) : null;
   const canPull = isReady && blockedReason == null && !pulling;
   const pullLabel = isReady
     ? status.upstream != null
