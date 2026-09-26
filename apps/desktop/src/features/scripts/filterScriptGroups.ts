@@ -17,10 +17,10 @@ export const filterScriptGroups = ({
     const isProjectMatch = group.projectName.toLocaleLowerCase().includes(needle);
     const scripts = isProjectMatch
       ? group.scripts
-      : group.scripts.filter(
-          (script) =>
-            script.name.toLocaleLowerCase().includes(needle) ||
-            script.command.toLocaleLowerCase().includes(needle),
+      : group.scripts.filter((script) =>
+          [script.name, script.command, script.packageName, script.relDir].some((field) =>
+            field.toLocaleLowerCase().includes(needle),
+          ),
         );
     return scripts.length === 0 ? [] : [{ ...group, scripts }];
   });

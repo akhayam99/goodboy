@@ -3,14 +3,25 @@ import type { MountId, ProjectId } from '@goodboy/types';
 import type { RunnableScript, SessionScriptGroup } from './buildSessionScripts';
 import { filterScriptGroups } from './filterScriptGroups';
 
-const script = ({ name, command }: { readonly name: string; readonly command: string }) =>
+const script = ({
+  name,
+  command,
+  packageName = 'ledger-core',
+  relDir = '',
+}: {
+  readonly name: string;
+  readonly command: string;
+  readonly packageName?: string;
+  readonly relDir?: string;
+}) =>
   ({
-    key: name,
+    key: `${relDir}:${name}`,
     kind: 'manifest',
     name,
     command,
     source: 'package-json',
-    relDir: '',
+    packageName,
+    relDir,
     category: 'other',
     savedId: null,
   }) satisfies RunnableScript;
@@ -31,6 +42,7 @@ const group = ({
     branch: 'nw/settlement',
     worktreePath: `/work/${projectName}`,
     isReady: true,
+    packageCount: new Set(scripts.map((entry) => entry.relDir)).size,
     scripts,
   }) satisfies SessionScriptGroup;
 
@@ -46,6 +58,20 @@ const RELAY = group({
   mountId: 'mount-relay',
   projectName: 'notify-relay',
   scripts: [script({ name: 'dev', command: 'node --watch src/' })],
+});
+const NORTHWIND = group({
+  mountId: 'mount-northwind',
+  projectName: 'northwind',
+  scripts: [
+    script({ name: 'dev', command: 'yarn run dev', packageName: 'northwind' }),
+    script({
+      name: 'dev',
+      command: 'yarn run dev',
+      packageName: '@northwind/web',
+      relDir: 'apps/web',
+    }),
+    script({ name: 'dev', command: 'yarn run dev', packageName: '@acme/api', relDir: 'apps/api' }),
+  ],
 });
 
 describe('filterScriptGroups', () => {
@@ -64,5 +90,14 @@ describe('filterScriptGroups', () => {
     const result = filterScriptGroups({ groups: [LEDGER, RELAY], query: 'relay' });
 
     expect(result).toEqual([RELAY]);
+  });
+
+  it('matches the package name or folder of a workspace package', () => {
+    const byName = filterScriptGroups({ groups: [NORTHWIND], query: '@acme' });
+    const byFolder = filterScriptGroups({ groups: [NORTHWIND], query: 'apps/web' });
+
+    expect(byName[0]?.scripts.map((entry) => entry.packageName)).toEqual(['@acme/api']);
+    expect(byFolder[0]?.scripts.map((entry) => entry.packageName)).toEqual(['@northwind/web']);
+    expect(byName[0]?.packageCount).toBe(3);
   });
 });
