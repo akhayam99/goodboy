@@ -358,12 +358,7 @@ export const WizardFrame = ({
       </ScrollFade>
 
       <footer className="flex items-center justify-center border-t border-border-soft px-6">
-        <div
-          className={cn(
-            'flex w-full items-center justify-between gap-3',
-            step === 'first-session' ? 'max-w-[604px]' : 'max-w-[540px]',
-          )}
-        >
+        <div className="flex w-full max-w-[604px] items-center justify-between gap-3">
           {step === 'welcome' ? (
             <button
               type="button"
