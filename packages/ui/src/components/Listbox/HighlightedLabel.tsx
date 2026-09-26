@@ -31,15 +31,18 @@ export const HighlightedLabel = ({ label, match }: Props) => {
   }
   return (
     <>
-      {segmentsOf({ label, match }).map((segment, index) =>
-        segment.isMatch ? (
-          <span key={index} data-match className="underline underline-offset-2">
-            {segment.text}
-          </span>
-        ) : (
-          <span key={index}>{segment.text}</span>
-        ),
-      )}
+      <span className="sr-only">{label}</span>
+      <span aria-hidden>
+        {segmentsOf({ label, match }).map((segment, index) =>
+          segment.isMatch ? (
+            <span key={index} data-match className="underline underline-offset-2">
+              {segment.text}
+            </span>
+          ) : (
+            <span key={index}>{segment.text}</span>
+          ),
+        )}
+      </span>
     </>
   );
 };

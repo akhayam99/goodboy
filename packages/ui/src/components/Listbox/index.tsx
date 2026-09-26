@@ -312,7 +312,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
             {hasQuery ? `No ${noun} matches "${trimmedQuery}"` : `No ${noun}s yet`}
           </div>
         ) : null}
-        {status === undefined && hasList ? (
+        {hasList ? (
           <ScrollFade
             className="flex min-h-0 flex-1 flex-col"
             viewportClassName="h-auto min-h-0 flex-1 p-1"
