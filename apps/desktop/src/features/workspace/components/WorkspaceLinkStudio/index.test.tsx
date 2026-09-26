@@ -13,7 +13,7 @@ const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
     addProject: vi.fn(async () => ({ id: 'proj-1', rootPath: '/some/repo' })),
     addProjects: vi.fn(async () => []),
     removeProject: vi.fn(async () => undefined),
-    setCurrentWorkspace: vi.fn(async () => undefined),
+    openWorkspace: vi.fn(async () => undefined),
     projects: [] as ReadonlyArray<{ id: string; workspaceId: string; kind: string }>,
     workspaces: [] as ReadonlyArray<{ id: string; name: string }>,
     currentWorkspaceId: null as string | null,
