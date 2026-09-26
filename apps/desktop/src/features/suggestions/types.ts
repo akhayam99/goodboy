@@ -10,6 +10,7 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
+import type { AgentKind } from '../session/agent-kind';
 
 export const SUGGESTION_KINDS = [
   'workflow-next-step',
@@ -117,7 +118,7 @@ export type SessionSuggestion =
     })
   | (SuggestionBase & {
       readonly kind: 'retry-agent';
-      readonly payload: { readonly agentId: AgentId; readonly agentKind: string };
+      readonly payload: { readonly agentId: AgentId; readonly agentKind: AgentKind };
     })
   | (SuggestionBase & {
       readonly kind: 'fix-checks';

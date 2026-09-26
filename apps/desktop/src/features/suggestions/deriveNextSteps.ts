@@ -17,6 +17,7 @@ import {
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
+import type { AgentKind } from '../session/agent-kind';
 import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
 
 export type SuggestionFailedStep = {
@@ -35,7 +36,7 @@ export type SuggestionWorkflowRun = {
 export type SuggestionAgent = {
   readonly id: AgentId;
   readonly label: string;
-  readonly roleKind: string;
+  readonly roleKind: AgentKind;
   readonly status: string;
   readonly workflowRunId: WorkflowRunId | null;
   readonly ordinal: number;
