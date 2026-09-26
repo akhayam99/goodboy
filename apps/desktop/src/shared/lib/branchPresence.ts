@@ -35,6 +35,45 @@ export const branchPresenceOf = ({ status, isMerged }: PresenceParams): BranchPr
   };
 };
 
+type MergedParams = {
+  readonly status: WorktreeStatus | null;
+  readonly baseBranch: string | null;
+  readonly isMainCheckout: boolean;
+  readonly isRequestMerged: boolean;
+};
+
+const tracksOwnBranch = ({ status }: { readonly status: WorktreeStatus }): boolean => {
+  if (status.branch === null || status.upstream === null) {
+    return false;
+  }
+  const slash = status.upstream.indexOf('/');
+  return slash >= 0 && status.upstream.slice(slash + 1) === status.branch;
+};
+
+export const isBranchMergedOf = ({
+  status,
+  baseBranch,
+  isMainCheckout,
+  isRequestMerged,
+}: MergedParams): boolean => {
+  if (isRequestMerged) {
+    return true;
+  }
+  if (status === null || isMainCheckout || status.inProgress !== null) {
+    return false;
+  }
+  if (status.branch === null || status.branch === (baseBranch ?? 'main')) {
+    return false;
+  }
+  if (status.workingTree.kind !== 'known' || status.workingTree.changed > 0) {
+    return false;
+  }
+  if (status.mainDistance.kind !== 'known' || status.mainDistance.ahead > 0) {
+    return false;
+  }
+  return tracksOwnBranch({ status });
+};
+
 export type MainPresenceKind = 'behind-main' | 'up-to-date' | 'rebasing-on-main' | 'rebase-stopped';
 
 export type MainPresence = {
@@ -67,18 +106,19 @@ type PriorityParams = {
   readonly main: MainPresence;
 };
 
-export const branchPriorityWordOf = ({ presence, main }: PriorityParams): string => {
-  if (presence.kind === 'merged') {
-    return 'Merged';
-  }
-  if (presence.kind === 'gone-on-origin') {
-    return 'Gone on origin';
-  }
-  if (presence.kind === 'local-only') {
-    return 'Local only';
+export type BranchPriorityKind = BranchPresenceKind | 'behind-main';
+
+export type BranchPriority = {
+  readonly kind: BranchPriorityKind;
+  readonly word: string;
+};
+
+export const branchPriorityOf = ({ presence, main }: PriorityParams): BranchPriority => {
+  if (presence.kind !== 'on-origin') {
+    return { kind: presence.kind, word: presence.label };
   }
   if (main.kind === 'behind-main') {
-    return main.label;
+    return { kind: 'behind-main', word: main.label };
   }
-  return 'On origin';
+  return { kind: 'on-origin', word: presence.label };
 };

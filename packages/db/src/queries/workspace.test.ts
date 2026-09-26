@@ -6,6 +6,7 @@ import {
   disconnectWorkspace,
   getWorkspaceById,
   insertWorkspace,
+  listDisconnectedWorkspaces,
   listWorkspaces,
   reconnectWorkspace,
   renameWorkspace,
@@ -95,6 +96,9 @@ describe('workspace queries', () => {
     await insertWorkspace({ db, workspace: disconnected });
 
     expect((await listWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([active.id]);
+    expect((await listDisconnectedWorkspaces({ db })).map((workspace) => workspace.id)).toEqual([
+      disconnected.id,
+    ]);
   });
 
   it('updates container identity and presence timestamps', async () => {

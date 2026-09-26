@@ -770,6 +770,48 @@ pub async fn worktree_list_branch_names(repo_path: String) -> Result<Vec<String>
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[tauri::command]
+pub async fn worktree_repo_default_base_branch(
+    repo_path: String,
+) -> Result<Option<String>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || repo_default_base_branch_blocking(repo_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn repo_default_base_branch_blocking(repo_path: String) -> Result<Option<String>, WorktreeError> {
+    let p = Path::new(&repo_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    Ok(resolve_origin_head(p))
+}
+
+#[tauri::command]
+pub async fn worktree_branch_merge_state(
+    repo_path: String,
+    branch: String,
+    base: Option<String>,
+) -> Result<BranchMergeState, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        branch_merge_state_blocking(repo_path, branch, base)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn branch_merge_state_blocking(
+    repo_path: String,
+    branch: String,
+    base: Option<String>,
+) -> Result<BranchMergeState, WorktreeError> {
+    let p = Path::new(&repo_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(repo_path));
+    }
+    Ok(branch_merge_state(p, &branch, base.as_deref()))
+}
+
 fn list_branch_names_blocking(repo_path: String) -> Result<Vec<String>, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
@@ -1392,6 +1434,83 @@ fn branch_integration(cwd: &Path, base_branch: Option<&str>, has_head: bool) -> 
         0 => BranchIntegration::Merged { base },
         _ => BranchIntegration::Unmerged { base, ahead },
     }
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum BranchMergeState {
+    Unknown,
+    Protected,
+    MergedViaMerge,
+    MergedViaRebase,
+    NoOwnCommits,
+    NotMerged { ahead: u32 },
+}
+
+const PROTECTED_BRANCH_NAMES: [&str; 3] = ["main", "master", "develop"];
+
+fn is_protected_branch(cwd: &Path, branch: &str, base_label: &str) -> bool {
+    if branch == base_label || PROTECTED_BRANCH_NAMES.contains(&branch) {
+        return true;
+    }
+    let Ok(raw) = git(cwd, &["worktree", "list", "--porcelain"]) else {
+        return false;
+    };
+    parse_porcelain(&raw)
+        .into_iter()
+        .filter(|entry| !entry.is_main)
+        .any(|entry| entry.branch.as_deref() == Some(branch))
+}
+
+fn is_on_first_parent_line(cwd: &Path, base_ref: &str, tip_sha: &str) -> bool {
+    let Ok(raw) = git(cwd, &["rev-list", "--first-parent", base_ref]) else {
+        return false;
+    };
+    raw.lines().any(|line| line.trim() == tip_sha)
+}
+
+fn is_rebase_merged(cwd: &Path, base_ref: &str, branch_ref: &str) -> bool {
+    let Ok(raw) = git(cwd, &["cherry", base_ref, branch_ref]) else {
+        return false;
+    };
+    raw.lines().all(|line| !line.trim_start().starts_with('+'))
+}
+
+pub(crate) fn branch_merge_state(
+    cwd: &Path,
+    branch: &str,
+    base_branch: Option<&str>,
+) -> BranchMergeState {
+    let Some(base_ref) = resolve_base_ref(cwd, base_branch) else {
+        return BranchMergeState::Unknown;
+    };
+    let base = base_label(&base_ref);
+    if is_protected_branch(cwd, branch, &base) {
+        return BranchMergeState::Protected;
+    }
+    let Ok(tip_raw) = git(cwd, &["rev-parse", branch]) else {
+        return BranchMergeState::Unknown;
+    };
+    let tip = tip_raw.trim().to_string();
+    if is_ancestor(cwd, &tip, &base_ref) {
+        return match is_on_first_parent_line(cwd, &base_ref, &tip) {
+            true => BranchMergeState::NoOwnCommits,
+            false => BranchMergeState::MergedViaMerge,
+        };
+    }
+    if is_rebase_merged(cwd, &base_ref, branch) {
+        return BranchMergeState::MergedViaRebase;
+    }
+    let Ok(raw) = git(
+        cwd,
+        &["rev-list", "--count", &format!("{base_ref}..{branch}")],
+    ) else {
+        return BranchMergeState::Unknown;
+    };
+    let Ok(ahead) = raw.trim().parse::<u32>() else {
+        return BranchMergeState::Unknown;
+    };
+    BranchMergeState::NotMerged { ahead }
 }
 
 const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
@@ -2415,6 +2534,26 @@ fn worktree_is_ancestor_blocking(
     Ok(output.status.success())
 }
 
+#[tauri::command]
+pub async fn worktree_abort_rebase(worktree_path: String) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_abort_rebase_blocking(&worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_abort_rebase_blocking(worktree_path: &str) -> Result<(), WorktreeError> {
+    let p = Path::new(worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path.to_string()));
+    }
+    if in_progress_operation(p) != Some(GitOperation::Rebase) {
+        return Err(WorktreeError::Git {
+            message: "no rebase is stopped in this worktree".to_string(),
+        });
+    }
+    git(p, &["rebase", "--abort"]).map(|_| ())
+}
+
 #[derive(Debug, Serialize, PartialEq)]
 pub struct RangeCommit {
     pub sha: String,
@@ -2896,14 +3035,38 @@ fn ff_merge_args(upstream: &str) -> Vec<&str> {
 #[tauri::command]
 pub async fn checkout_fast_forward(
     checkout_path: String,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> Result<FastForwardResult, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || checkout_fast_forward_blocking(checkout_path))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    tauri::async_runtime::spawn_blocking(move || {
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        checkout_fast_forward_blocking(checkout_path, token.as_deref())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn fetch_remote_authenticated(
+    checkout_path: &str,
+    remote: &str,
+    token: Option<&str>,
+) -> Result<(), WorktreeError> {
+    let result =
+        crate::github::run_git_authenticated(&["fetch", "--no-tags", remote], checkout_path, token)
+            .map_err(|error| WorktreeError::Git {
+                message: error.to_string(),
+            })?;
+    if result.exit_code != 0 {
+        return Err(WorktreeError::Git {
+            message: result.stderr.trim().to_string(),
+        });
+    }
+    Ok(())
 }
 
 fn checkout_fast_forward_blocking(
     checkout_path: String,
+    token: Option<&str>,
 ) -> Result<FastForwardResult, WorktreeError> {
     let p = Path::new(&checkout_path);
     if !p.exists() {
@@ -2962,7 +3125,7 @@ fn checkout_fast_forward_blocking(
             message: format!("cannot tell which remote {upstream} belongs to"),
         });
     };
-    git(p, &["fetch", "--no-tags", remote])?;
+    fetch_remote_authenticated(&checkout_path, remote, token)?;
     let behind = match distance_between(p, &upstream, "HEAD") {
         GitDistance::Known { behind, .. } => behind,
         GitDistance::Unknown { .. } => {
@@ -3901,6 +4064,28 @@ mod rewrite_tests {
     }
 
     #[test]
+    fn aborting_a_stopped_rebase_puts_the_branch_back() {
+        let root = init_repo("abort-stopped-rebase");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        let before = commit(&root, "shared.txt", "feature\n", "feature change");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main change\n", "main change");
+        git_ok(&root, &["checkout", "feature"]);
+        assert!(super::git(&root, &["rebase", "main"]).is_err());
+
+        super::worktree_abort_rebase_blocking(root.to_str().unwrap()).unwrap();
+
+        assert_eq!(super::in_progress_operation(&root), None);
+        assert_eq!(
+            super::git(&root, &["rev-parse", "HEAD"]).unwrap().trim(),
+            before
+        );
+        assert!(super::worktree_abort_rebase_blocking(root.to_str().unwrap()).is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn resolves_master_when_the_repository_has_no_main_branch() {
         let root = temp_root("resolve-main-master");
         git_ok(&root, &["init", "-b", "master"]);
@@ -3949,7 +4134,8 @@ mod rewrite_tests {
 
         super::git_argv_log::reset();
         let pulled =
-            super::checkout_fast_forward_blocking(copy.to_string_lossy().into_owned()).unwrap();
+            super::checkout_fast_forward_blocking(copy.to_string_lossy().into_owned(), None)
+                .unwrap();
         let merge_invocations: Vec<Vec<String>> = super::git_argv_log::recorded()
             .into_iter()
             .filter(|argv| argv.iter().any(|arg| arg == "merge"))
@@ -3985,7 +4171,8 @@ mod rewrite_tests {
         let before = git_ok(&root, &["rev-parse", "HEAD"]);
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("uncommitted changes"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
@@ -3997,12 +4184,39 @@ mod rewrite_tests {
     }
 
     #[test]
+    fn fast_forward_reports_the_fetch_failure_and_moves_nothing() {
+        let root = init_repo("fast-forward-fetch-fails");
+        let base = commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        git_ok(
+            &root,
+            &[
+                "remote",
+                "set-url",
+                "origin",
+                root.join("missing.git").to_str().unwrap(),
+            ],
+        );
+
+        let error = super::checkout_fast_forward_blocking(
+            root.to_string_lossy().into_owned(),
+            Some("token-for-test"),
+        )
+        .unwrap_err();
+
+        assert!(matches!(error, super::WorktreeError::Git { ref message } if !message.is_empty()));
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), base);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn fast_forward_refuses_a_branch_without_an_upstream() {
         let root = init_repo("fast-forward-no-upstream");
         commit(&root, "base.txt", "base", "base");
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("no upstream"));
         std::fs::remove_dir_all(root).unwrap();
@@ -4020,7 +4234,8 @@ mod rewrite_tests {
         let merge = super::git(&root, &["merge", "feature"]);
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(merge.is_err());
         assert!(format!("{refusal}").contains("merge in progress"));
@@ -4036,7 +4251,8 @@ mod rewrite_tests {
         std::fs::write(root.join(".git").join("index"), "not an index").unwrap();
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("git status could not be read"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
@@ -4591,6 +4807,153 @@ mod rewrite_tests {
             exclude.lines().filter(|line| *line == ".goodboy/").count(),
             1
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_reads_origin_head() {
+        let root = init_repo("default-base-branch");
+        commit(&root, "a.txt", "hello", "init");
+        push_to_new_remote(&root);
+        git_ok(
+            &root,
+            &[
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/main",
+            ],
+        );
+
+        let resolved = super::repo_default_base_branch_blocking(root.to_str().unwrap().to_string());
+
+        assert_eq!(resolved.unwrap(), Some("main".to_string()));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_is_none_without_an_origin_head() {
+        let root = init_repo("default-base-branch-none");
+        commit(&root, "a.txt", "hello", "init");
+
+        let resolved = super::repo_default_base_branch_blocking(root.to_str().unwrap().to_string());
+
+        assert_eq!(resolved.unwrap(), None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn repo_default_base_branch_refuses_a_missing_repo() {
+        let missing = std::env::temp_dir().join("goodboy-missing-repo-for-default-base");
+
+        let resolved =
+            super::repo_default_base_branch_blocking(missing.to_str().unwrap().to_string());
+
+        assert!(resolved.is_err());
+    }
+
+    #[test]
+    fn branch_merge_state_flags_a_branch_with_no_own_commits() {
+        let root = init_repo("merge-state-empty");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["branch", "goodboy/empty"]);
+
+        let state = super::branch_merge_state(&root, "goodboy/empty", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::NoOwnCommits);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_reports_merged_via_merge_commit() {
+        let root = init_repo("merge-state-merged");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["checkout", "-b", "goodboy/feature"]);
+        commit(&root, "b.txt", "feature", "feature work");
+        git_ok(&root, &["checkout", "main"]);
+        git_ok(
+            &root,
+            &["merge", "--no-ff", "-m", "merge feature", "goodboy/feature"],
+        );
+
+        let state = super::branch_merge_state(&root, "goodboy/feature", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::MergedViaMerge);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_reports_merged_via_rebase() {
+        let root = init_repo("merge-state-rebased");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["checkout", "-b", "goodboy/rebased"]);
+        std::fs::write(root.join("b.txt"), "feature").unwrap();
+        git_ok(&root, &["add", "b.txt"]);
+        git_ok(&root, &["commit", "-m", "feature work"]);
+        let feature_sha = git_ok(&root, &["rev-parse", "HEAD"]);
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "c.txt", "main moved on", "main work");
+        git_ok(&root, &["cherry-pick", &feature_sha]);
+
+        let state = super::branch_merge_state(&root, "goodboy/rebased", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::MergedViaRebase);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_reports_not_merged_when_ahead() {
+        let root = init_repo("merge-state-unmerged");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["checkout", "-b", "goodboy/reused"]);
+        commit(&root, "b.txt", "feature", "feature work");
+
+        let state = super::branch_merge_state(&root, "goodboy/reused", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::NotMerged { ahead: 1 });
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_protects_the_base_branch_itself() {
+        let root = init_repo("merge-state-protected");
+        commit(&root, "a.txt", "hello", "init");
+
+        let state = super::branch_merge_state(&root, "main", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::Protected);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_protects_a_branch_held_by_another_worktree() {
+        let root = init_repo("merge-state-held");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["branch", "goodboy/held"]);
+        let other = root.join("other-worktree");
+        git_ok(
+            &root,
+            &["worktree", "add", other.to_str().unwrap(), "goodboy/held"],
+        );
+
+        let state = super::branch_merge_state(&root, "goodboy/held", Some("main"));
+
+        assert_eq!(state, super::BranchMergeState::Protected);
+        git_ok(
+            &root,
+            &["worktree", "remove", "--force", other.to_str().unwrap()],
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_is_unknown_without_a_resolvable_base() {
+        let root = init_repo("merge-state-unknown-base");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["branch", "goodboy/orphan"]);
+
+        let state = super::branch_merge_state(&root, "goodboy/orphan", None);
+
+        assert_eq!(state, super::BranchMergeState::Unknown);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

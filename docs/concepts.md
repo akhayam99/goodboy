@@ -83,6 +83,15 @@ one-line **description**. Both live on the project row in workspace settings.
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
+**One workspace per window.** Switching a window to another workspace cancels
+every turn running in the one it had, so opening a workspace only switches
+this window in place when nothing is running here. When agents are running,
+the workspace popover asks first and offers a new window, which keeps them
+going; a side door that used to switch silently (a notification, an inbox
+item, Add workspace) now opens that workspace's own window instead of
+touching this one. `⌘Enter` on a workspace row always opens a new window,
+no question asked.
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes
@@ -156,7 +165,10 @@ touched from there. **To review** belongs to an archived or deleted session, or
 to no session at all. **Kept** is what you chose to keep, for good or for 30
 days. A clean folder idle longer than "Suggest cleanup after" (30 days by
 default) can go in one bulk step. Its branch stays, even with commits that were
-never pushed.
+never pushed. A scope picker filters all of this to one workspace, to
+**Removed workspaces** (folders whose owning workspace is gone or never had
+one), or to **All workspaces** (the machine total); it defaults to the
+current window's workspace.
 
 Storage also lists **artifacts from deleted sessions**: the plans, reports and
 wireframes whose session is gone, with their saved copy on disk. Each row says
@@ -705,7 +717,8 @@ specific rule that fits wins.
 
 - Rules reach Claude only. The session's permission mode reaches every
   provider, and a mode a provider can't honor runs as a stricter one
-  ([providers.md](providers.md#permission-modes-per-cli))
+  ([providers.md](providers.md#permission-modes-per-cli)); the agent's row
+  then says so (`Read only · Ask first isn't available on Codex`)
 - When a call is denied in a run with no one watching, the turn stops. The
   agent's row, its session card and the top bar's Needs you all read **Needs
   approval**, not running, until you answer
@@ -713,6 +726,10 @@ specific rule that fits wins.
   exact call once and resumes the turn by itself; the secondary "Always
   allow" actions write a rule (command-prefix for Bash, the whole tool for an
   edit) and need a manual retry
+- Settings › Workspace › Permissions lists the rules and adds one inline
+  (`Add rule`: Allow or Deny, a command prefix, this workspace or all of
+  them), then the last 50 decisions of the workspace's sessions from the
+  audit log (`permission_audit_list`)
 - A workflow step that was denied pauses the run instead of finishing the
   step with whatever text the model produced meanwhile
 
@@ -803,7 +820,8 @@ Merge and pull requests launch with their text as it is.
 - **Jira**: read full issues and act on them. Comment, assign, move to another
   status, edit the description.
 - **Linear**: read issues and turn them into sessions. The description and
-  comments are written back.
+  comments are written back, and the status row moves the issue to another
+  state of its team.
 - **Sentry**: read issues and events and turn them into sessions.
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own

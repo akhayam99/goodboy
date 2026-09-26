@@ -192,6 +192,15 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   adopts the observed branch on the existing mount; `fork` adopts it on the
   existing directory and creates a second mount for the recorded branch. An
   in-progress merge, rebase or cherry-pick is finished first.
+- **A stopped rebase says so under its row.** Only `rebase-merge/` or
+  `rebase-apply/` count, as git reads them. The Projects block shows a
+  `Rebase stopped` notice with `Hand it to an agent` (a `Rebase on <base>`
+  agent on that mount finishes it), `Open terminal`, and `Abort rebase`
+  behind an inline confirm (`worktree_abort_rebase`, which refuses when no
+  rebase is stopped).
+- **Merged rows move under `Show completed`.** A row is merged when its
+  request merged, or when a pushed branch that tracks its own name has a
+  clean tree and nothing past the base.
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts

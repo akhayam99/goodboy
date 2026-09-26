@@ -3,7 +3,7 @@ import { providerLimitsStatus, windowStatus } from './providerLimitsStatus';
 import { monthNumberOf, zonedTimeToIso, zonedToday } from './zonedTimeToIso';
 
 const LINE_RE =
-  /^Current (session|week)(?:\s*\(([^)]+)\))?:\s*(\d+)%\s*used\s*[·-]\s*resets\s+(.+)$/i;
+  /^Current (session|week)(?:\s*\(([^)]+)\))?:\s*(\d+)%\s*used\s*[·-]\s*resets\s+(\S.*)$/i;
 
 const RESET_RE =
   /^(?:([A-Za-z]{3,9})\s+(\d{1,2})\s+at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\s*\(([^)]+)\)\s*$/i;

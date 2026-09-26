@@ -7,7 +7,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { pluralize } from '../../../../shared/utils/pluralize';
-import { revealInFileManager } from '../../storage';
+import { revealInFileManager } from '../../../../shared/lib/reveal';
 
 const PRUNE_CONFIRM =
   'Deletes the streamed transcript of every archived session: tool calls, streaming output, subagent activity. Final messages stay. This cannot be undone.';

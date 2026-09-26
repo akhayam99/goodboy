@@ -184,6 +184,7 @@ const resetState = () => {
     diffMountPath: {},
     diffPage: {},
     sessions: [],
+    workspaces: [],
     focusedArtifactId: {},
     sessionArtifacts: {},
     sessionProjectMounts: {},

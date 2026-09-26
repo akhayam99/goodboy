@@ -64,4 +64,10 @@ describe('BranchPresenceLabel', () => {
 
     expect(container.innerHTML).toBe('');
   });
+
+  it('names a merged branch', () => {
+    render(<BranchPresenceLabel status={statusOf()} isMerged />);
+
+    expect(screen.getByText('Merged')).toBeDefined();
+  });
 });

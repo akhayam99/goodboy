@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { WorktreeStatus } from '@goodboy/types';
-import { branchPresenceOf, branchPriorityWordOf, mainPresenceOf } from './branchPresence';
+import {
+  branchPresenceOf,
+  branchPriorityOf,
+  isBranchMergedOf,
+  mainPresenceOf,
+} from './branchPresence';
 
 const statusOf = (overrides: Partial<WorktreeStatus> = {}): WorktreeStatus => ({
   branch: 'feature/x',
@@ -111,12 +116,12 @@ describe('mainPresenceOf', () => {
   });
 });
 
-describe('branchPriorityWordOf', () => {
+describe('branchPriorityOf', () => {
   it('orders merged above everything else', () => {
     const presence = branchPresenceOf({ status: statusOf(), isMerged: true });
     const main = mainPresenceOf({ status: statusOf(), isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Merged');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Merged');
   });
 
   it('orders gone on origin above local only and behind main', () => {
@@ -124,7 +129,7 @@ describe('branchPriorityWordOf', () => {
     const presence = branchPresenceOf({ status, isMerged: false });
     const main = mainPresenceOf({ status, isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Gone on origin');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Gone on origin');
   });
 
   it('orders local only above behind main by N', () => {
@@ -136,22 +141,79 @@ describe('branchPriorityWordOf', () => {
     const presence = branchPresenceOf({ status, isMerged: false });
     const main = mainPresenceOf({ status, isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Local only');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Local only');
   });
 
   it('falls back to behind main by N, then on origin', () => {
     const behind = statusOf({ mainDistance: { kind: 'known', ahead: 0, behind: 5 } });
     const presenceBehind = branchPresenceOf({ status: behind, isMerged: false });
     const mainBehind = mainPresenceOf({ status: behind, isRebasingAgent: false });
-    expect(branchPriorityWordOf({ presence: presenceBehind, main: mainBehind })).toBe(
+    expect(branchPriorityOf({ presence: presenceBehind, main: mainBehind }).word).toBe(
       'Behind main by 5',
     );
 
     const upToDate = statusOf();
     const presenceUpToDate = branchPresenceOf({ status: upToDate, isMerged: false });
     const mainUpToDate = mainPresenceOf({ status: upToDate, isRebasingAgent: false });
-    expect(branchPriorityWordOf({ presence: presenceUpToDate, main: mainUpToDate })).toBe(
+    expect(branchPriorityOf({ presence: presenceUpToDate, main: mainUpToDate }).word).toBe(
       'On origin',
     );
+  });
+});
+
+describe('isBranchMergedOf', () => {
+  const merged = (overrides: Partial<WorktreeStatus>, isMainCheckout = false) =>
+    isBranchMergedOf({
+      status: statusOf(overrides),
+      baseBranch: 'main',
+      isMainCheckout,
+      isRequestMerged: false,
+    });
+
+  it('trusts a merged pull request whatever git says', () => {
+    expect(
+      isBranchMergedOf({
+        status: null,
+        baseBranch: 'main',
+        isMainCheckout: false,
+        isRequestMerged: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('calls a pushed branch with nothing past the base merged', () => {
+    expect(merged({ mainDistance: { kind: 'known', ahead: 0, behind: 3 } })).toBe(true);
+  });
+
+  it('keeps a branch with commits past the base open', () => {
+    expect(merged({ mainDistance: { kind: 'known', ahead: 1, behind: 0 } })).toBe(false);
+  });
+
+  it('keeps a fresh worktree that still tracks the base open', () => {
+    expect(merged({ upstream: 'origin/main' })).toBe(false);
+  });
+
+  it('keeps a branch never pushed open', () => {
+    expect(merged({ upstream: null })).toBe(false);
+  });
+
+  it('keeps a branch with uncommitted files open', () => {
+    expect(
+      merged({
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 1,
+          untracked: 0,
+          unmerged: 0,
+          changed: 1,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('never calls the main checkout or the base branch merged', () => {
+    expect(merged({}, true)).toBe(false);
+    expect(merged({ branch: 'main', upstream: 'origin/main' })).toBe(false);
   });
 });

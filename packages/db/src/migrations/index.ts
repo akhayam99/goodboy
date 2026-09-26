@@ -55,13 +55,14 @@ import { m193WorkspacePermissionDefault } from './m193-workspace-permission-defa
 import { m194ProjectSentryLinks } from './m194-project-sentry-links';
 import { m195SessionBudgetMode } from './m195-session-budget-mode';
 import { m196SessionContextSeen } from './m196-session-context-seen';
-import { m197SessionDecisions } from './m197-session-decisions';
-import { m198HistoryPlans } from './m198-history-plans';
-import { m199SessionEventHistoryKinds } from './m199-session-event-history-kinds';
-import { m200ArtifactRevisions } from './m200-artifact-revisions';
-import { m201SlackBindingSettings } from './m201-slack-binding-settings';
-import { m202IntegrationDrafts } from './m202-integration-drafts';
-import { m203ResolveThreadsWithoutPr } from './m203-resolve-threads-without-pr';
+import { m197PrMergedHead } from './m197-pr-merged-head';
+import { m198SessionDecisions } from './m198-session-decisions';
+import { m199HistoryPlans } from './m199-history-plans';
+import { m200SessionEventHistoryKinds } from './m200-session-event-history-kinds';
+import { m201ArtifactRevisions } from './m201-artifact-revisions';
+import { m202SlackBindingSettings } from './m202-slack-binding-settings';
+import { m203IntegrationDrafts } from './m203-integration-drafts';
+import { m204ResolveThreadsWithoutPr } from './m204-resolve-threads-without-pr';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -404,11 +405,12 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 194, sql: m194ProjectSentryLinks },
   { version: 195, sql: m195SessionBudgetMode },
   { version: 196, sql: m196SessionContextSeen },
-  { version: 197, sql: m197SessionDecisions },
-  { version: 198, sql: m198HistoryPlans },
-  { version: 199, sql: m199SessionEventHistoryKinds },
-  { version: 200, sql: m200ArtifactRevisions },
-  { version: 201, sql: m201SlackBindingSettings },
-  { version: 202, sql: m202IntegrationDrafts },
-  { version: 203, sql: m203ResolveThreadsWithoutPr },
+  { version: 197, sql: m197PrMergedHead },
+  { version: 198, sql: m198SessionDecisions },
+  { version: 199, sql: m199HistoryPlans },
+  { version: 200, sql: m200SessionEventHistoryKinds },
+  { version: 201, sql: m201ArtifactRevisions },
+  { version: 202, sql: m202SlackBindingSettings },
+  { version: 203, sql: m203IntegrationDrafts },
+  { version: 204, sql: m204ResolveThreadsWithoutPr },
 ];

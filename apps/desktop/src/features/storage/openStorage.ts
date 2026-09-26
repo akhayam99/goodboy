@@ -1,14 +1,17 @@
-import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import type { StorageFilter } from '../../store/slices/storage/types';
+import type { StorageFilter, StorageScope } from '../../store/slices/storage/types';
 
 type Params = {
   readonly filter?: StorageFilter;
-  readonly workspaceId?: WorkspaceId | null;
+  readonly scope?: StorageScope;
 };
 
-export const openStorage = ({ filter = 'review', workspaceId = null }: Params = {}) => {
-  useAppStore.getState().focusStorage({ filter, workspaceId });
+export const openStorage = ({ filter = 'review', scope }: Params = {}) => {
+  const store = useAppStore.getState();
+  store.focusStorage({ filter });
+  if (scope !== undefined) {
+    store.setStorageScope(scope);
+  }
   window.dispatchEvent(
     new CustomEvent('goodboy:open-settings', { detail: { scope: 'app', section: 'storage' } }),
   );

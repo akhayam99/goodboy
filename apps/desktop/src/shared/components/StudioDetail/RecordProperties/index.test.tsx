@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { Flag } from 'lucide-react';
 import { RecordProperties } from './index';
 
@@ -49,5 +49,44 @@ describe('RecordProperties', () => {
     );
 
     expect(screen.getByText('High')).toBeTruthy();
+  });
+
+  it('keeps a row without an editor inert', () => {
+    render(
+      <RecordProperties
+        facts={[{ slot: 'place', key: 'place', label: 'Team', icon: null, node: 'Cascadia' }]}
+      />,
+    );
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('opens the editor of an editable row and closes it from inside', () => {
+    render(
+      <RecordProperties
+        facts={[
+          {
+            slot: 'state',
+            key: 'state',
+            label: 'Status',
+            icon: null,
+            node: 'Todo',
+            editor: ({ close }) => (
+              <button type="button" onClick={close}>
+                Done
+              </button>
+            ),
+          },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Change status' });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
   });
 });

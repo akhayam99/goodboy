@@ -29,6 +29,7 @@ import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
+import { RebaseStoppedNotice } from './RebaseStoppedNotice';
 import { MountActionsMenu } from './MountActionsMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useMountPresence } from './useMountPresence';
@@ -43,6 +44,7 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
+  readonly isMerged?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -75,6 +77,7 @@ export const ProjectMountRow = ({
   diffStat,
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
+  isMerged = false,
   onSelectLens,
 }: Props) => {
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
@@ -207,7 +210,9 @@ export const ProjectMountRow = ({
               className="shrink-0"
             />
           )}
-          {isRepo && row.branch !== '' ? <BranchPresenceLabel status={worktreeStatus} /> : null}
+          {isRepo && row.branch !== '' ? (
+            <BranchPresenceLabel status={worktreeStatus} isMerged={isMerged} />
+          ) : null}
           {isRepo && row.branch !== '' ? (
             <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
           ) : null}
@@ -361,6 +366,18 @@ export const ProjectMountRow = ({
           />
         </div>
       </div>
+      {isRepo && hasTools && worktreeStatus?.inProgress === 'rebase' ? (
+        <div className="col-span-full flex flex-col px-2 pb-2">
+          <RebaseStoppedNotice
+            sessionId={sessionId}
+            mountId={row.mountId}
+            worktreePath={worktreePath}
+            baseBranch={row.baseBranch}
+            status={worktreeStatus}
+            onOpenTerminal={() => openLens({ lens: 'terminal' })}
+          />
+        </div>
+      ) : null}
       {observation === null ? null : (
         <div className="col-span-full flex flex-col px-2 pb-2">
           <MountBranchDecision

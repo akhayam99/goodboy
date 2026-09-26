@@ -16,7 +16,11 @@ export const fastForwardProjectCheckout = (set: SetFn, get: GetFn) => {
       projectCheckoutPulling: { ...state.projectCheckoutPulling, [projectId]: true },
     }));
     try {
-      await checkoutFastForward({ checkoutPath: project.rootPath });
+      await checkoutFastForward({
+        checkoutPath: project.rootPath,
+        workspaceId: project.workspaceId,
+        projectId: project.id,
+      });
       await get().loadProjectGitStatus({ projectId });
     } finally {
       set((state) => ({

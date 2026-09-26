@@ -9,7 +9,7 @@ import { openStorageArtifact } from './openStorageArtifact';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeStorageFolders } from './removeStorageFolders';
 import { scanStorageRepository } from './scanStorageRepository';
-import type { GetFn, SetFn, StorageFocus } from './types';
+import type { GetFn, SetFn, StorageFocus, StorageScope } from './types';
 
 export const createStorageSlice = (set: SetFn, get: GetFn) => {
   return {
@@ -25,6 +25,7 @@ export const createStorageSlice = (set: SetFn, get: GetFn) => {
     scanStorageRepository: scanStorageRepository(set, get),
     checkStorageNudge: checkStorageNudge(set, get),
     focusStorage: (focus: StorageFocus | null) => set({ storageFocus: focus }),
+    setStorageScope: (scope: StorageScope) => set({ storageScope: scope }),
     dismissStorageOutcome: () => set({ storageOutcome: null }),
   };
 };

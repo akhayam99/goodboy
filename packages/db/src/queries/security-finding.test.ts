@@ -168,4 +168,60 @@ describe('security finding queries', () => {
     const [finding] = await listOpenSecurityFindings({ db, workspaceId });
     expect(finding?.projectId).toBe(projectId);
   });
+
+  it('keeps the same subject and secret apart in two workspaces', async () => {
+    const db = await seed();
+    const otherWorkspaceId = 'workspace-2' as WorkspaceId;
+    const now = Date.now();
+    await db.execute(
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES (?, 'Northwind', 'northwind', ?, ?)`,
+      [otherWorkspaceId, now, now],
+    );
+    const finding = { secretKind: 'github-token', fingerprint: 'fp-5', last4: 'cccc' } as const;
+
+    await recordSecurityFindings({
+      db,
+      workspaceId,
+      projectId: null,
+      subjectKind: 'profile',
+      subjectId: 'default',
+      findings: [finding],
+      at: at({ value: '2026-09-25T09:00:00Z' }),
+    });
+    await recordSecurityFindings({
+      db,
+      workspaceId: otherWorkspaceId,
+      projectId: null,
+      subjectKind: 'profile',
+      subjectId: 'default',
+      findings: [finding],
+      at: at({ value: '2026-09-25T09:01:00Z' }),
+    });
+    await recordSecurityFindings({
+      db,
+      workspaceId: otherWorkspaceId,
+      projectId: null,
+      subjectKind: 'profile',
+      subjectId: 'default',
+      findings: [],
+      at: at({ value: '2026-09-25T09:02:00Z' }),
+    });
+
+    expect(await countOpenSecurityFindings({ db, workspaceId })).toBe(1);
+    expect(await countOpenSecurityFindings({ db, workspaceId: otherWorkspaceId })).toBe(0);
+  });
+
+  it('refuses a second row for the same finding in the same scope', async () => {
+    const db = await seed();
+    const insert = () =>
+      db.execute(
+        `INSERT INTO security_findings
+          (id, workspace_id, project_id, subject_kind, subject_id, secret_kind, fingerprint, last4, first_seen_at)
+         VALUES (?, ?, NULL, 'script', 'script-9', 'github-token', 'fp-9', '9999', 1)`,
+        [crypto.randomUUID(), workspaceId],
+      );
+
+    await insert();
+    await expect(insert()).rejects.toThrow(/UNIQUE/);
+  });
 });

@@ -1,10 +1,11 @@
-import { Cloud, CloudOff, House } from 'lucide-react';
+import { Cloud, CloudOff, GitMerge, House } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { branchPresenceOf, type BranchPresence } from '../../../../../shared/lib/branchPresence';
 
 type Props = {
   readonly status: WorktreeStatus | null;
+  readonly isMerged?: boolean;
 };
 
 type GlyphParams = {
@@ -20,7 +21,7 @@ const presenceGlyphOf = ({ kind }: GlyphParams) => {
     case 'on-origin':
       return <Cloud size={11} aria-hidden />;
     case 'merged':
-      return null;
+      return <GitMerge size={11} aria-hidden />;
     default: {
       const exhaustive: never = kind;
       return exhaustive;
@@ -28,11 +29,11 @@ const presenceGlyphOf = ({ kind }: GlyphParams) => {
   }
 };
 
-export const BranchPresenceLabel = ({ status }: Props) => {
+export const BranchPresenceLabel = ({ status, isMerged = false }: Props) => {
   if (status === null) {
     return null;
   }
-  const presence = branchPresenceOf({ status, isMerged: false });
+  const presence = branchPresenceOf({ status, isMerged });
   if (presence.kind === 'on-origin' && presence.toPush === null) {
     return null;
   }

@@ -7,7 +7,6 @@ import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
 import { GoodboyIgnoreField } from './GoodboyIgnoreField';
 import { SentryLinkedBadge } from '../../../integrations/sentry/SentryLinkedBadge';
-import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
 import { Eyebrow } from '@goodboy/ui';
 
 type Props = {
@@ -45,13 +44,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           </h2>
         )}
         emptyHint="No projects linked yet. Add a repository or a folder."
-        rowAccessory={({ project }) => (
-          <span className="flex items-center gap-2">
-            <SentryLinkedBadge project={project} />
-            {project.kind === 'repo' && <ProjectBaseBranchInput project={project} />}
-            {project.kind === 'repo' && <GoodboyIgnoreField project={project} />}
-          </span>
-        )}
+        editorExtra={({ project }) =>
+          project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
+        }
+        rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
       />
       {hasProjects && (
         <p className="flex items-center gap-1.5 px-2 text-label text-faint-foreground">

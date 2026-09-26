@@ -326,6 +326,56 @@ describe('ProjectMountRows', () => {
     ]);
   });
 
+  it('moves a branch git already merged into the base under show completed', () => {
+    store.sessionMounts = {
+      'session-1': [
+        mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' }),
+        mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
+      ],
+    };
+    const clean = { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 };
+    useWorktreeStatuses.mockReturnValue(
+      new Map([
+        [
+          '/api-one',
+          {
+            branch: 'feat/one',
+            head: 'aaa',
+            headSubject: 'one',
+            upstream: 'origin/feat/one',
+            upstreamDistance: { kind: 'unknown', reason: 'upstream-gone' },
+            mainDistance: { kind: 'known', ahead: 0, behind: 4 },
+            workingTree: clean,
+            inProgress: null,
+          },
+        ],
+        [
+          '/api-two',
+          {
+            branch: 'feat/two',
+            head: 'bbb',
+            headSubject: 'two',
+            upstream: 'origin/main',
+            upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+            mainDistance: { kind: 'known', ahead: 0, behind: 0 },
+            workingTree: clean,
+            inProgress: null,
+          },
+        ],
+      ]),
+    );
+    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+
+    expect(
+      screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
+    ).toEqual(['API on feat/two']);
+    fireEvent.click(screen.getByRole('button', { name: /Show completed \(1\)/ }));
+
+    const merged = screen.getByRole('listitem', { name: 'API on feat/one' });
+    expect(within(merged).getByText('Merged')).toBeDefined();
+    useWorktreeStatuses.mockReturnValue(new Map());
+  });
+
   it('orders the mounts of a series by the position it declares', () => {
     store.sessionMounts = {
       'session-1': [

@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { ChevronDown, FileJson, Plus } from 'lucide-react';
 import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
+import { newArtifactEventName } from '../../newArtifactEventName';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -18,6 +20,19 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
     expectedHeight: 170,
     expectedWidth: 288,
   });
+  const isOpen = dropdown.open;
+  const toggle = dropdown.toggle;
+
+  useEffect(() => {
+    const name = newArtifactEventName(sessionId);
+    const listener = () => {
+      if (!isOpen) {
+        toggle();
+      }
+    };
+    window.addEventListener(name, listener);
+    return () => window.removeEventListener(name, listener);
+  }, [isOpen, toggle, sessionId]);
 
   return (
     <AnchoredPopover
