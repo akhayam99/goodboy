@@ -245,12 +245,28 @@ whether you clicked it on the board or in the session overview.
   the moment one of that kind is accepted. Every act or dismiss writes a
   `next:<kind>` row to `nudge_events` (`useNextStepOutcomes`); the demotion
   window reads the session's own history, not the workspace's.
-- Six suggestion kinds ship today: answer open questions, continue a
-  workflow's ready step, fix review conversations, rebase a project, run a
-  ready plan, add a proposed project. Eleven more (approve a permission,
-  sign in, retry a failed run, fix CI, push, open or ready a pull request,
-  merge, close a finished worktree, and more) are a later addition to the
-  same engine, not a second one.
+- Seventeen suggestion kinds ship: the original six (answer open questions,
+  continue a workflow's ready step, fix review conversations, rebase a
+  project, run a ready plan, add a proposed project) plus eleven more that
+  landed on the same engine, not a second one: approve a pending permission,
+  sign back in after `auth_required`, unblock a failed workflow step, retry
+  the last standalone agent that failed, fix a pull request's failing checks,
+  push unpushed commits on a clean worktree, open a pull request once a
+  mount is ahead with none yet, mark a green draft ready, merge an approved
+  and green pull request, review the changes once a standalone implementer
+  finishes clean, and close a merged worktree's cleanup proposal. Merge,
+  close-worktree and unblock-step's Skip arm a confirm on the row before
+  they act; the other new kinds run on one click, like the original six.
+  Two simplifications from the design: the "never while an agent works on
+  the same mount" rule (E7-6) is session-wide, not per-mount, for the new
+  push/open-pr/mark-ready/merge-pr/fix-checks kinds only - rebase-project
+  keeps its own narrower per-request check; and the demotion window
+  (above) reads the session, not the workspace. unblock-step only ships
+  Skip; retrying the step itself needs a per-step retry action the
+  workflow engine does not expose yet. approve-tool opens the agent's
+  chat rather than the permission card directly; sign-in dispatches the
+  same `goodboy:open-settings` event the palette's "Connect a provider"
+  uses.
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
