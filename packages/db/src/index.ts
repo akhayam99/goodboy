@@ -432,6 +432,12 @@ export {
 } from './queries/open-question';
 
 export {
+  listPendingSlackDrafts,
+  listPendingIntegrationDraftsForWorkspace,
+  decideIntegrationDraft,
+} from './queries/integration-draft';
+
+export {
   listResolveThreads,
   setResolveThreadReplyDraft,
   setResolveThreadStage,

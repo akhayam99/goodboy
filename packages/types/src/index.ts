@@ -25,6 +25,7 @@ export type {
   WorkflowRunId,
   WorkspaceId,
   IntegrationBindingId,
+  IntegrationDraftId,
 } from './ids';
 export type {
   MountBranchObservation,
@@ -63,6 +64,11 @@ export type {
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
 export type { OpenQuestion, OpenQuestionSelectMode, OpenQuestionStatus } from './open-question';
+export type {
+  IntegrationDraft,
+  IntegrationDraftStatus,
+  IntegrationDraftTarget,
+} from './integration-draft';
 export { MATERIALIZATION_DEFERRAL_CAUSES, SESSION_EVENT_KINDS } from './session-event';
 export type {
   MaterializationDeferralCause,
