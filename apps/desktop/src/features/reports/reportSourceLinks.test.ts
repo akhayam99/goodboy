@@ -65,6 +65,39 @@ describe('collectReportSourceLinks', () => {
     ]);
   });
 
+  it('never links an agent whose name only appears as the role of another citation', () => {
+    const links = collectReportSourceLinks({
+      sourceText: '- Apply the fix (Implementer)',
+      agents: [
+        { ...agent, id: 'agent-1' as AgentId, name: 'Implementer' },
+        { ...agent, id: 'agent-2' as AgentId, name: 'Apply the fix', kind: 'implementer' },
+      ],
+      artifacts: [],
+      excludeArtifactId: 'report-1',
+    });
+    expect(links).toEqual([{ kind: 'agent', id: 'agent-2', label: 'Apply the fix' }]);
+  });
+
+  it('never links an artifact whose title only appears as the kind of another citation', () => {
+    const links = collectReportSourceLinks({
+      sourceText: '- Rollout plan (Plan)',
+      agents: [],
+      artifacts: [plan, { ...plan, id: 'plan-4' as ArtifactId, title: 'Plan' }],
+      excludeArtifactId: 'report-1',
+    });
+    expect(links).toEqual([{ kind: 'artifact', id: 'plan-3', label: 'Rollout plan' }]);
+  });
+
+  it('needs the role when the agent is cited by name', () => {
+    const links = collectReportSourceLinks({
+      sourceText: 'Apply the fix did the work',
+      agents: [{ ...agent, name: 'Apply the fix', kind: 'implementer' }],
+      artifacts: [],
+      excludeArtifactId: 'report-1',
+    });
+    expect(links).toEqual([]);
+  });
+
   it('matches a name only on word boundaries', () => {
     const links = collectReportSourceLinks({
       sourceText: 'agent 12 did the work, see agent-70',
