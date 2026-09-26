@@ -230,6 +230,7 @@ type StageInfoState = Pick<
   | 'selectedAgentId'
   | 'currentSessionId'
   | 'githubStatus'
+  | 'agentTurnState'
 >;
 
 function countOpenQuestions(state: StageInfoState, sessionId: SessionId): number {
@@ -253,6 +254,11 @@ function sessionHasUnreadIn(state: StageInfoState, sessionId: SessionId): boolea
 function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
   const runs = state.sessionPhaseRuns[sessionId];
   return runs ? runs.some((r) => r.status === 'running') : false;
+}
+
+function sessionHasBlockedAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
+  const runs = state.sessionPhaseRuns[sessionId];
+  return runs ? runs.some((r) => state.agentTurnState[r.id]?.kind === 'blocked') : false;
 }
 
 function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
@@ -291,6 +297,7 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
     hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
+    hasBlockedAgent: sessionHasBlockedAgentIn(state, sessionId),
     isDecidingWorkflow: sessionIsDecidingIn(state, session),
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
@@ -330,6 +337,9 @@ export const useSortedGroupedSessions = (
   );
   const sessionPhaseRuns = useAppStore((s) =>
     needsStage ? s.sessionPhaseRuns : (EMPTY_GITHUB_STATE as typeof s.sessionPhaseRuns),
+  );
+  const agentTurnState = useAppStore((s) =>
+    needsStage ? s.agentTurnState : (EMPTY_GITHUB_STATE as typeof s.agentTurnState),
   );
   const orchestratingWorkflowRuns = useAppStore((s) =>
     needsStage
@@ -392,6 +402,7 @@ export const useSortedGroupedSessions = (
       sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
+      agentTurnState,
       orchestratingWorkflowRuns,
       selectedAgentId,
       currentSessionId,
@@ -420,6 +431,7 @@ export const useSortedGroupedSessions = (
     sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
+    agentTurnState,
     orchestratingWorkflowRuns,
     selectedAgentId,
     currentSessionId,
@@ -465,6 +477,7 @@ export const useStageGroupedSessions = (
   const sessionGitlabMr = useAppStore((s) => s.sessionGitlabMr);
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
+  const agentTurnState = useAppStore((s) => s.agentTurnState);
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
   const currentSessionId = useAppStore((s) => s.currentSessionId);
@@ -501,6 +514,7 @@ export const useStageGroupedSessions = (
       sessionGitlabMr,
       sessionOpenQuestions,
       sessionPhaseRuns,
+      agentTurnState,
       orchestratingWorkflowRuns,
       selectedAgentId,
       currentSessionId,
@@ -531,6 +545,7 @@ export const useStageGroupedSessions = (
     sessionGitlabMr,
     sessionOpenQuestions,
     sessionPhaseRuns,
+    agentTurnState,
     orchestratingWorkflowRuns,
     selectedAgentId,
     currentSessionId,

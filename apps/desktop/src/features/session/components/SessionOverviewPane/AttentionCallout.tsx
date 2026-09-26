@@ -18,11 +18,14 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
   const stage = useSessionStageInfo(session);
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+  const blockedAgentId = useAppStore(
+    (s) => agents.find((agent) => s.agentTurnState[agent.id]?.kind === 'blocked')?.id ?? null,
+  );
   const selectAgent = useAppStore((s) => s.selectAgent);
   const setActiveLens = useAppStore((s) => s.setActiveLens);
 
   const target = useMemo(() => {
-    const agentId = attentionAgentId({ stage, agents });
+    const agentId = attentionAgentId({ stage, agents, blockedAgentId });
     if (agentId === null) {
       return resolveAttentionTarget({ stage, agent: null });
     }
@@ -35,7 +38,7 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
             kind: classifyAgent({ agent: root, override: agentKindOverride[root.id] ?? null }),
           });
     return resolveAttentionTarget({ stage, agent: { agentId, home } });
-  }, [agentKindOverride, agents, stage]);
+  }, [agentKindOverride, blockedAgentId, agents, stage]);
 
   if (stage.stage !== 'attention' || target === null) {
     return null;

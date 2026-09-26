@@ -20,14 +20,22 @@ export type AttentionTarget =
 type PickParams = {
   readonly stage: SessionStageInfo;
   readonly agents: ReadonlyArray<Agent>;
+  readonly blockedAgentId?: AgentId | null;
 };
 
-export const attentionAgentId = ({ stage, agents }: PickParams): AgentId | null => {
+export const attentionAgentId = ({
+  stage,
+  agents,
+  blockedAgentId = null,
+}: PickParams): AgentId | null => {
   if (stage.attention === 'agent-error') {
     return agents.filter((agent) => agent.status === 'failed').at(-1)?.id ?? null;
   }
   if (stage.attention === 'unread-reply') {
     return agents.filter((agent) => agentHasUnread(agent, false)).at(-1)?.id ?? null;
+  }
+  if (stage.attention === 'needs-approval') {
+    return blockedAgentId;
   }
   return null;
 };
@@ -61,6 +69,11 @@ export const resolveAttentionTarget = ({ stage, agent }: TargetParams): Attentio
     return agent === null
       ? { kind: 'lens', lens: 'agents', label: 'Open the agents' }
       : { kind: 'agent', agentId: agent.agentId, home: agent.home, label: 'Read the reply' };
+  }
+  if (attention === 'needs-approval') {
+    return agent === null
+      ? { kind: 'lens', lens: 'agents', label: 'Open the agents' }
+      : { kind: 'agent', agentId: agent.agentId, home: agent.home, label: 'Answer the approval' };
   }
   const exhaustive: never = attention;
   return exhaustive;

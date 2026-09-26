@@ -38,6 +38,7 @@ import {
   GitCommit,
   GitCommitVertical,
   GitPullRequest,
+  Hand,
   Highlighter,
   History,
   Inbox,
@@ -95,6 +96,7 @@ export const ICON_SIZE = {
 export const CONCEPT_ICONS = {
   agents: Bot,
   appearance: Palette,
+  approval: Hand,
   archive: Archive,
   artifacts: Shapes,
   autoRouting: Route,
@@ -181,6 +183,7 @@ type Concept = keyof typeof CONCEPT_ICONS;
 export const CONCEPT_TONE = {
   agents: 'primary',
   appearance: 'neutral',
+  approval: 'warning',
   archive: 'neutral',
   artifacts: 'draft',
   autoRouting: 'neutral',

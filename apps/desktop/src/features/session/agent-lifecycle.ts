@@ -22,7 +22,7 @@ type ClosableParams = AgentParams & {
 };
 
 export const isTurnStateLive = ({ turnState }: TurnParams): boolean =>
-  turnState?.kind === 'starting' || turnState?.kind === 'running' || turnState?.kind === 'blocked';
+  turnState?.kind === 'starting' || turnState?.kind === 'running';
 
 export const isAgentClosedByUser = ({ agent }: AgentParams): boolean =>
   agent.doneAt != null && agent.status !== 'completed' && agent.status !== 'skipped';
