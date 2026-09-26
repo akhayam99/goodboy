@@ -35,6 +35,45 @@ export const branchPresenceOf = ({ status, isMerged }: PresenceParams): BranchPr
   };
 };
 
+type MergedParams = {
+  readonly status: WorktreeStatus | null;
+  readonly baseBranch: string | null;
+  readonly isMainCheckout: boolean;
+  readonly isRequestMerged: boolean;
+};
+
+const tracksOwnBranch = ({ status }: { readonly status: WorktreeStatus }): boolean => {
+  if (status.branch === null || status.upstream === null) {
+    return false;
+  }
+  const slash = status.upstream.indexOf('/');
+  return slash >= 0 && status.upstream.slice(slash + 1) === status.branch;
+};
+
+export const isBranchMergedOf = ({
+  status,
+  baseBranch,
+  isMainCheckout,
+  isRequestMerged,
+}: MergedParams): boolean => {
+  if (isRequestMerged) {
+    return true;
+  }
+  if (status === null || isMainCheckout || status.inProgress !== null) {
+    return false;
+  }
+  if (status.branch === null || status.branch === (baseBranch ?? 'main')) {
+    return false;
+  }
+  if (status.workingTree.kind !== 'known' || status.workingTree.changed > 0) {
+    return false;
+  }
+  if (status.mainDistance.kind !== 'known' || status.mainDistance.ahead > 0) {
+    return false;
+  }
+  return tracksOwnBranch({ status });
+};
+
 export type MainPresenceKind = 'behind-main' | 'up-to-date' | 'rebasing-on-main' | 'rebase-stopped';
 
 export type MainPresence = {

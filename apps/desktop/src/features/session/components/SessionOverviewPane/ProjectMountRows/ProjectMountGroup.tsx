@@ -8,6 +8,7 @@ import type {
   MountRowView,
 } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
+import { isBranchMergedOf } from '../../../../../shared/lib/branchPresence';
 import { NewBranchMountAction } from './NewBranchMountAction';
 import { MountActionsMenu } from './MountActionsMenu';
 import { ProjectMountRow } from './ProjectMountRow';
@@ -37,6 +38,21 @@ export const ProjectMountGroup = ({
   onSelectLens,
 }: Props) => {
   const [isCompletedShown, setIsCompletedShown] = useState(false);
+  const statusOf = (row: MountRowView): WorktreeStatus | null =>
+    row.worktreePath === null ? null : (worktreeStatuses.get(row.worktreePath) ?? null);
+  const isMergedRow = (row: MountRowView): boolean =>
+    row.projectKind === 'repo' &&
+    isBranchMergedOf({
+      status: statusOf(row),
+      baseBranch: row.baseBranch,
+      isMainCheckout: row.isMainCheckout,
+      isRequestMerged: row.request?.state === 'merged',
+    });
+  const openRows = group.rows.filter((row) => !isMergedRow(row));
+  const completedRows = [
+    ...group.rows.filter(isMergedRow).map((row) => ({ ...row, isCompleted: true })),
+    ...group.completedRows,
+  ];
   const canFork = group.projectKind === 'repo';
   const GlyphIcon = projectGlyph({ kind: group.projectKind });
   const headPath =
@@ -52,9 +68,8 @@ export const ProjectMountGroup = ({
       label={rowLabel({ row })}
       workspaceId={group.workspaceId}
       diffStat={row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)}
-      worktreeStatus={
-        row.worktreePath === null ? null : (worktreeStatuses.get(row.worktreePath) ?? null)
-      }
+      worktreeStatus={statusOf(row)}
+      isMerged={isMergedRow(row)}
       isStatusPending={row.worktreePath !== null && pendingWorktrees.has(row.worktreePath)}
       onSelectLens={onSelectLens}
     />
@@ -79,7 +94,7 @@ export const ProjectMountGroup = ({
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <CountToggle
             label="completed"
-            count={group.completedRows.length}
+            count={completedRows.length}
             isShown={isCompletedShown}
             icon={ChevronDown}
             onChange={setIsCompletedShown}
@@ -105,8 +120,8 @@ export const ProjectMountGroup = ({
         aria-label={`${group.projectName} worktrees`}
         className="col-span-full grid grid-cols-subgrid gap-y-0.5 pl-2"
       >
-        {group.rows.map(renderRow)}
-        {isCompletedShown ? group.completedRows.map(renderRow) : null}
+        {openRows.map(renderRow)}
+        {isCompletedShown ? completedRows.map(renderRow) : null}
       </ul>
     </div>
   );

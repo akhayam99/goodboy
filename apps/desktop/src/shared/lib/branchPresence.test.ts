@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { WorktreeStatus } from '@goodboy/types';
-import { branchPresenceOf, branchPriorityWordOf, mainPresenceOf } from './branchPresence';
+import {
+  branchPresenceOf,
+  branchPriorityWordOf,
+  isBranchMergedOf,
+  mainPresenceOf,
+} from './branchPresence';
 
 const statusOf = (overrides: Partial<WorktreeStatus> = {}): WorktreeStatus => ({
   branch: 'feature/x',
@@ -153,5 +158,62 @@ describe('branchPriorityWordOf', () => {
     expect(branchPriorityWordOf({ presence: presenceUpToDate, main: mainUpToDate })).toBe(
       'On origin',
     );
+  });
+});
+
+describe('isBranchMergedOf', () => {
+  const merged = (overrides: Partial<WorktreeStatus>, isMainCheckout = false) =>
+    isBranchMergedOf({
+      status: statusOf(overrides),
+      baseBranch: 'main',
+      isMainCheckout,
+      isRequestMerged: false,
+    });
+
+  it('trusts a merged pull request whatever git says', () => {
+    expect(
+      isBranchMergedOf({
+        status: null,
+        baseBranch: 'main',
+        isMainCheckout: false,
+        isRequestMerged: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('calls a pushed branch with nothing past the base merged', () => {
+    expect(merged({ mainDistance: { kind: 'known', ahead: 0, behind: 3 } })).toBe(true);
+  });
+
+  it('keeps a branch with commits past the base open', () => {
+    expect(merged({ mainDistance: { kind: 'known', ahead: 1, behind: 0 } })).toBe(false);
+  });
+
+  it('keeps a fresh worktree that still tracks the base open', () => {
+    expect(merged({ upstream: 'origin/main' })).toBe(false);
+  });
+
+  it('keeps a branch never pushed open', () => {
+    expect(merged({ upstream: null })).toBe(false);
+  });
+
+  it('keeps a branch with uncommitted files open', () => {
+    expect(
+      merged({
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 1,
+          untracked: 0,
+          unmerged: 0,
+          changed: 1,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('never calls the main checkout or the base branch merged', () => {
+    expect(merged({}, true)).toBe(false);
+    expect(merged({ branch: 'main', upstream: 'origin/main' })).toBe(false);
   });
 });

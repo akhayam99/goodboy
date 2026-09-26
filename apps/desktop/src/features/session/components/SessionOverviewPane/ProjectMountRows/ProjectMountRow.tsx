@@ -43,6 +43,7 @@ type Props = {
   readonly diffStat: MountDiffStat | null;
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
+  readonly isMerged?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -75,6 +76,7 @@ export const ProjectMountRow = ({
   diffStat,
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
+  isMerged = false,
   onSelectLens,
 }: Props) => {
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
@@ -207,7 +209,9 @@ export const ProjectMountRow = ({
               className="shrink-0"
             />
           )}
-          {isRepo && row.branch !== '' ? <BranchPresenceLabel status={worktreeStatus} /> : null}
+          {isRepo && row.branch !== '' ? (
+            <BranchPresenceLabel status={worktreeStatus} isMerged={isMerged} />
+          ) : null}
           {isRepo && row.branch !== '' ? (
             <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />
           ) : null}
