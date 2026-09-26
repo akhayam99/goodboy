@@ -413,6 +413,7 @@ mod tests {
         assert_eq!(staged_leftovers(&dir), Vec::<String>::new());
 
         drop(listener);
+        wait_until_nobody_listens(&path);
         sweep_abandoned_sockets(&dir);
 
         assert!(!path.exists());
@@ -421,6 +422,14 @@ mod tests {
         sweep_abandoned_sockets(&dir);
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn wait_until_nobody_listens(path: &Path) {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while has_listener(path) && std::time::Instant::now() < deadline {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
     }
 
     #[cfg(unix)]
