@@ -6,6 +6,67 @@
   const post = (message) => host.postMessage({ channel: 'gbframe', ...message }, '*');
   const pagePath = () => location.pathname.split('/').filter(Boolean).slice(1).join('/');
   const byId = (nodeId) => document.querySelector(`[data-node="${CSS.escape(nodeId)}"]`);
+  const nodeOf = (target) => (target instanceof Element ? target.closest('[data-node]') : null);
+  const labelOf = (node) => {
+    const text = (node.getAttribute('aria-label') || node.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 48);
+    return text.length > 0 ? text : node.getAttribute('data-node');
+  };
+  let picking = false;
+  let hovered = null;
+  const unhover = () => {
+    if (hovered !== null) {
+      hovered.classList.remove('gb-pick-hover');
+    }
+    hovered = null;
+  };
+  const setPicking = (isOn) => {
+    picking = isOn;
+    if (!isOn) {
+      unhover();
+    }
+  };
+  document.addEventListener(
+    'mouseover',
+    (event) => {
+      if (!picking) {
+        return;
+      }
+      const node = nodeOf(event.target);
+      if (node === hovered) {
+        return;
+      }
+      unhover();
+      if (node !== null) {
+        node.classList.add('gb-pick-hover');
+        hovered = node;
+      }
+    },
+    true,
+  );
+  document.addEventListener(
+    'click',
+    (event) => {
+      if (!picking) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      const node = nodeOf(event.target);
+      if (node !== null) {
+        post({ type: 'picked', nodeId: node.getAttribute('data-node'), label: labelOf(node) });
+      }
+    },
+    true,
+  );
+  document.addEventListener('keydown', (event) => {
+    if (picking && event.key === 'Escape') {
+      setPicking(false);
+      post({ type: 'pickEnded' });
+    }
+  });
   let revealed = null;
   let revealTimer = 0;
   const reveal = (nodeId) => {
@@ -32,6 +93,9 @@
     }
     if (data.type === 'reveal' && typeof data.nodeId === 'string') {
       reveal(data.nodeId);
+    }
+    if (data.type === 'pick') {
+      setPicking(data.isOn === true);
     }
     if (data.type === 'variant') {
       const root = document.documentElement;

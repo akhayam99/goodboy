@@ -106,7 +106,8 @@ on macOS and Linux.
   (`src-tauri/src/frame_stage.*`) in `<head>`. The file never holds them. The
   stylesheet hides the page chrome (`.wf-page-chrome`) so the stage shows the
   screen alone. The script talks to the parent only with `postMessage`:
-  `navigated { path, height }` on load; from the parent, `reveal { nodeId }`
+  `navigated { path, height }` on load, `picked { nodeId, label }` and
+  `pickEnded` while Pick is on; from the parent, `pick { isOn }`, `reveal { nodeId }`
   and `variant { variantId }` (sets `data-variant` on the page, which the
   generated stylesheet uses to hide nodes outside that release cut).
   The parent accepts a message only when `event.source` is that iframe's

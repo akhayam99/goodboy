@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { WireframeAdjustment, WireframeDocument, WireframeScreen } from '@goodboy/core';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  walkWireframeNodes,
+  type WireframeAdjustment,
+  type WireframeDocument,
+  type WireframeNode,
+  type WireframeScreen,
+} from '@goodboy/core';
 import { Button, cn, Eyebrow, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
@@ -8,6 +14,8 @@ import { useFrameStage } from '../../useFrameStage';
 import { buildWireframeIndex } from '../../wireframeIndex';
 import { screenLinks, screenNodeNotes } from '../../wireframeNotes';
 import { pageOfPath, screenPagePath, type WireframePage } from '../../wireframePagePath';
+import type { WireframePickedNode } from '../../buildWireframeChangeRequest';
+import { wireframeNodeLabel } from '../../wireframeNodeLabel';
 import { wireframeStageFiles } from '../../wireframeStageFiles';
 import { NotesPanel } from './NotesPanel';
 import { ScreenGrid } from './ScreenGrid';
@@ -48,14 +56,56 @@ const stateOptions = ({
   ];
 };
 
+const nodeLabelOf = ({
+  document,
+  nodeId,
+}: {
+  readonly document: WireframeDocument;
+  readonly nodeId: string;
+}): string | null => {
+  let found: WireframeNode | null = null;
+  for (const screen of document.screens) {
+    walkWireframeNodes({
+      node: screen.root,
+      visit: (node) => {
+        if (node.id === nodeId) {
+          found = node;
+        }
+      },
+    });
+  }
+  return found === null ? null : wireframeNodeLabel({ node: found });
+};
+
 type Props = {
   readonly artifact: WireframeArtifact;
   readonly document: WireframeDocument;
   readonly adjustments: ReadonlyArray<WireframeAdjustment>;
   readonly onScreenChange?: (screenId: string | null) => void;
+  readonly stageTitle?: string;
+  readonly revisionKey?: number;
+  readonly leading?: ReactNode;
+  readonly banner?: ReactNode;
+  readonly renderComposer?: (screen: WireframeScreen) => ReactNode;
+  readonly isPicking?: boolean;
+  readonly onPicked?: (node: WireframePickedNode) => void;
+  readonly onPickEnded?: () => void;
 };
 
-export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenChange }: Props) => {
+export const WireframeViewerBody = ({
+  artifact,
+  document,
+  adjustments,
+  onScreenChange,
+  stageTitle,
+  revisionKey = 0,
+  leading,
+  banner,
+  renderComposer,
+  isPicking = false,
+  onPicked,
+  onPickEnded,
+}: Props) => {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [view, setView] = useState<WireframeView>('flow');
   const [zoom, setZoom] = useState<WireframeZoom>('fit');
@@ -69,13 +119,21 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
   const variantRef = useRef(variant);
   variantRef.current = variant;
   const index = useMemo(() => buildWireframeIndex({ document }), [document]);
-  const stageKey = `${artifact.id}|${artifact.title}|${String(artifact.metadata.fidelity)}`;
+  const title = stageTitle ?? artifact.title;
+  const stageKey = `${artifact.id}|${title}|${String(artifact.metadata.fidelity)}`;
   const stagedArtifact = useRef(artifact);
-  stagedArtifact.current = artifact;
+  stagedArtifact.current = { ...artifact, title };
   const files = useMemo(
     () => wireframeStageFiles({ artifact: stagedArtifact.current, document }),
     [stageKey, document],
   );
+  const pickingRef = useRef(isPicking);
+  pickingRef.current = isPicking;
+  const pickHandlers = useRef({ onPicked, onPickEnded, document });
+  pickHandlers.current = { onPicked, onPickEnded, document };
+  useEffect(() => {
+    postToFrame({ frame: frameRef.current, command: { type: 'pick', isOn: isPicking } });
+  }, [isPicking]);
   const stage = useFrameStage({ files });
 
   const screen =
@@ -88,8 +146,21 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
   }, []);
 
   const onMessage = useCallback((message: FrameMessage) => {
-    if (message.type !== 'navigated') {
+    if (message.type === 'picked') {
+      const handlers = pickHandlers.current;
+      handlers.onPicked?.({
+        nodeId: message.nodeId,
+        label:
+          nodeLabelOf({ document: handlers.document, nodeId: message.nodeId }) ?? message.label,
+      });
       return;
+    }
+    if (message.type === 'pickEnded') {
+      pickHandlers.current.onPickEnded?.();
+      return;
+    }
+    if (pickingRef.current) {
+      postToFrame({ frame: frameRef.current, command: { type: 'pick', isOn: true } });
     }
     if (variantRef.current !== null) {
       postToFrame({
@@ -140,6 +211,7 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
       className="@container flex min-w-0 flex-col gap-3"
     >
       <div data-testid="wireframe-toolbar" className="flex min-w-0 flex-wrap items-center gap-2">
+        {leading ?? null}
         <StudioDetailTabs
           ariaLabel="Wireframe view"
           options={VIEW_OPTIONS}
@@ -188,6 +260,7 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
           </Button>
         ) : null}
       </div>
+      {banner ?? null}
       {stage.status === 'failed' ? (
         <span role="alert" className="text-secondary text-danger">
           The pages could not be shown: {stage.message}
@@ -227,20 +300,28 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
           )}
         >
           <ScreenRail entries={railEntries} current={shown} onOpen={open} />
-          {stage.status === 'ready' ? (
-            <WireframeStage
-              frameRef={frameRef}
-              stageId={stage.stageId}
-              path={screenPagePath(request.page)}
-              loadKey={request.nonce}
-              viewport={screen.viewport}
-              zoom={zoom}
-              contentHeight={contentHeight}
-              title={`${screen.title} wireframe`}
-            />
-          ) : (
-            <div data-testid="wireframe-stage-pending" className="min-h-40 rounded-md bg-subtle" />
-          )}
+          <div className="flex min-w-0 flex-col gap-3">
+            {stage.status === 'ready' ? (
+              <div key={revisionKey} className="min-w-0 motion-safe:animate-fade-in">
+                <WireframeStage
+                  frameRef={frameRef}
+                  stageId={stage.stageId}
+                  path={screenPagePath(request.page)}
+                  loadKey={request.nonce}
+                  viewport={screen.viewport}
+                  zoom={zoom}
+                  contentHeight={contentHeight}
+                  title={`${screen.title} wireframe`}
+                />
+              </div>
+            ) : (
+              <div
+                data-testid="wireframe-stage-pending"
+                className="min-h-40 rounded-md bg-subtle"
+              />
+            )}
+            {renderComposer === undefined ? null : renderComposer(screen)}
+          </div>
           {isNotesOpen ? (
             <NotesPanel
               screenNote={screen.note ?? null}

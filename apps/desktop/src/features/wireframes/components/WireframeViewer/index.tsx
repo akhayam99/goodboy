@@ -4,7 +4,7 @@ import type { SessionId, WireframeArtifact } from '@goodboy/types';
 import { asWireframeFidelity, type WireframeFidelity } from '../../wireframeFidelity';
 import { useWireframeRespawn } from '../../useWireframeRespawn';
 import { WireframeIssues } from './WireframeIssues';
-import { WireframeViewerBody } from './WireframeViewerBody';
+import { WireframeWorkspace } from './WireframeWorkspace';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -40,7 +40,8 @@ export const WireframeViewer = ({ sessionId, artifact, onScreenChange }: Props) 
   }
 
   return (
-    <WireframeViewerBody
+    <WireframeWorkspace
+      sessionId={sessionId}
       artifact={artifact}
       document={parsed.document}
       adjustments={parsed.adjustments}

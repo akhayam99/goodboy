@@ -433,6 +433,19 @@ marker on the page. A version 1 spec is upgraded when it is read: its
 `artifact_revisions` (who made it, what was asked, the nodes picked), and the
 saved copy holds one folder per version.
 
+You change a wireframe from the **Screens** view, not from a chat. Under the
+stage, **Ask for a change** takes a request; **Pick** outlines the element under
+the pointer and turns a click into a chip, and the scope is **This screen** or
+**All screens**. ⌘↵ sends the spec, the request, the picked node ids and the
+scope to the agent that drew it. While it works, the version pill reads
+`v4 · Drafting` and the stage stays on the current version. A version that
+lands takes the request as its label; a spec that fails the checks is **not
+kept**: a warning says why, the request stays, and **Ask again** resends it.
+The version pill opens every version (who, when, what was asked and what
+changed) with **View**, **Compare** and **Restore**. Viewing an older one says
+so above the stage, and Restore writes it back as a new version, `Restored vN`,
+so the history is never rewritten.
+
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
 

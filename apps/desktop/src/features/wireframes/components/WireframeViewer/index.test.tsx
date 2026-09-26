@@ -4,10 +4,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
-const { state, frame } = vi.hoisted(() => ({
+const { state, frame, revisions } = vi.hoisted(() => ({
+  revisions: { rows: [] as Array<Record<string, unknown>> },
   state: {
     transcripts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     spawnWireframeAgent: vi.fn(async () => 'agent-wireframe'),
+    wireframeDrafts: {} as Record<string, Record<string, unknown>>,
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    requestWireframeChange: vi.fn(async (_params: Record<string, unknown>) => undefined),
+    settleWireframeDraft: vi.fn(),
+    restoreArtifactRevision: vi.fn(async (_params: Record<string, unknown>) => undefined),
   },
   frame: {
     staged: [] as Array<ReadonlyArray<Readonly<{ path: string; contents: string }>>>,
@@ -18,6 +24,10 @@ const { state, frame } = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+}));
+
+vi.mock('../../../artifacts/artifacts', () => ({
+  listArtifactRevisions: vi.fn(async () => revisions.rows),
 }));
 
 vi.mock('../../frame/frameInvoke', () => ({
@@ -117,6 +127,10 @@ const postFromFrame = ({ source, data }: { readonly source: unknown; readonly da
 beforeEach(() => {
   frame.staged = [];
   frame.released = [];
+  revisions.rows = [];
+  state.wireframeDrafts = {};
+  state.requestWireframeChange.mockClear();
+  state.restoreArtifactRevision.mockClear();
 });
 afterEach(cleanup);
 
@@ -230,6 +244,116 @@ describe('WireframeViewer', () => {
       expect(screen.getByTestId('wireframe-frame').getAttribute('src')).toMatch(
         /screens\/batches--error\.html$/,
       ),
+    );
+  });
+
+  it('picks an element on the page and sends it with the request', async () => {
+    renderViewer();
+    const iframe = (await openScreens()) as HTMLIFrameElement;
+    fireEvent.click(screen.getByTestId('wireframe-pick'));
+    expect(screen.getByTestId('wireframe-pick').getAttribute('aria-pressed')).toBe('true');
+    await postFromFrame({
+      source: iframe.contentWindow,
+      data: { channel: 'gbframe', type: 'picked', nodeId: 'review', label: 'stage label' },
+    });
+    expect(screen.getByTestId('wireframe-picked-chip').textContent).toContain(
+      'Settlement batches › Review',
+    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Ask for a change' }), {
+      target: { value: 'Make Review the only primary' },
+    });
+    fireEvent.click(screen.getByTestId('wireframe-change-send'));
+    expect(state.requestWireframeChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ask: 'Make Review the only primary',
+        scope: 'screen',
+        screenId: 'batches',
+        picked: [{ nodeId: 'review', label: 'Review' }],
+      }),
+    );
+  });
+
+  it('keeps the current version on stage while the next one is drafting', async () => {
+    state.wireframeDrafts = {
+      'wireframe-1': {
+        status: 'drafting',
+        fromRevision: 1,
+        startedAt: 1,
+        ask: 'Show who owns each exception',
+        scope: 'screen',
+        screenId: 'batches',
+        picked: [],
+      },
+    };
+    renderViewer();
+    await openScreens();
+    expect(screen.getByTestId('wireframe-version-pill').textContent).toContain('v2 · Drafting');
+    expect(screen.getByTestId('wireframe-draft-progress')).toBeDefined();
+    expect(screen.getByTestId('wireframe-frame')).toBeDefined();
+    expect(
+      (screen.getByRole('textbox', { name: 'Ask for a change' }) as HTMLTextAreaElement).disabled,
+    ).toBe(true);
+  });
+
+  it('says a version was not kept and asks again with the same request', async () => {
+    state.wireframeDrafts = {
+      'wireframe-1': {
+        status: 'failed',
+        fromRevision: 1,
+        startedAt: 1,
+        ask: 'Link Approve to a summary',
+        scope: 'screen',
+        screenId: 'batches',
+        picked: [],
+        reason: 'It linked to a screen that does not exist.',
+        detail: 'no screen with id "summary"',
+      },
+    };
+    renderViewer();
+    const alert = await waitFor(() => screen.getByText(/v2 was not kept/));
+    expect(alert.textContent).toContain('You are still on v1.');
+    fireEvent.click(screen.getByRole('button', { name: 'Ask again' }));
+    expect(state.requestWireframeChange).toHaveBeenCalledWith(
+      expect.objectContaining({ ask: 'Link Approve to a summary' }),
+    );
+  });
+
+  it('shows an older version with the way back and restores it', async () => {
+    revisions.rows = [
+      {
+        revision: 2,
+        title: 'Settlement review flow',
+        sourceText: JSON.stringify(document),
+        author: 'agent',
+        ask: 'Split exceptions out',
+        createdAt: '2026-09-15T11:00:00.000Z',
+        summary: { screensChanged: 1 },
+      },
+      {
+        revision: 1,
+        title: 'Settlement review flow',
+        sourceText: JSON.stringify(document),
+        author: 'agent',
+        ask: null,
+        createdAt: '2026-09-15T10:00:00.000Z',
+        summary: null,
+      },
+    ];
+    renderViewer({ revision: 2 });
+    fireEvent.click(screen.getByTestId('wireframe-version-pill'));
+    const rows = await waitFor(() => {
+      const found = screen.getAllByTestId('wireframe-version-row');
+      expect(found).toHaveLength(2);
+      return found;
+    });
+    expect(rows[0]?.textContent).toContain('Split exceptions out');
+    expect(rows[0]?.textContent).toContain('1 screen changed');
+    expect(rows[1]?.textContent).toContain('First draft');
+    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'View' }));
+    expect(screen.getByText('You are viewing v1 of 2.')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Restore v1' }));
+    expect(state.restoreArtifactRevision).toHaveBeenCalledWith(
+      expect.objectContaining({ revision: 1 }),
     );
   });
 

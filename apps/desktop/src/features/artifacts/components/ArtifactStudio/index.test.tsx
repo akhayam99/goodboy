@@ -19,6 +19,7 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       drawer: null as unknown,
       sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
       sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      wireframeDrafts: {} as Record<string, unknown>,
       planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
       agentTurnState: {} as Record<string, { readonly kind: string }>,
       transcripts: {} as Record<string, ReadonlyArray<unknown>>,
