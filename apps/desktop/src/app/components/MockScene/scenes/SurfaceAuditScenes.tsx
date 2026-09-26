@@ -68,6 +68,8 @@ const SCRIPTS_SESSION_ID = 'mock-scripts-session-settlement' as SessionId;
 const LEDGER_PROJECT_ID = 'mock-scripts-project-ledger-core' as ProjectId;
 const RELAY_PROJECT_ID = 'mock-scripts-project-notify-relay' as ProjectId;
 const PAYMENTS_PROJECT_ID = 'mock-scripts-project-payments-api' as ProjectId;
+const NORTHWIND_PROJECT_ID = 'mock-scripts-project-northwind-storefront' as ProjectId;
+const LEDGER_MOUNT_ID = 'mock-scripts-mount-ledger' as MountId;
 
 const SCRIPTS_NOW = scriptsClock.iso({ at: '2026-09-16T11:24:00.000Z' });
 const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
@@ -75,6 +77,7 @@ const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
 const LEDGER_WORKTREE = '/mock/harborline/ledger-core-settlement';
 const RELAY_WORKTREE = '/mock/harborline/notify-relay-settlement';
 const PAYMENTS_WORKTREE = '/mock/harborline/payments-api-settlement';
+const NORTHWIND_WORKTREE = '/mock/northwind/storefront-settlement';
 
 const SCRIPTS_WORKSPACE: Workspace = {
   id: SCRIPTS_WORKSPACE_ID,
@@ -119,6 +122,11 @@ const SCRIPTS_PROJECTS: ReadonlyArray<Project> = [
     name: 'payments-api',
     rootPath: '/mock/harborline/payments-api',
   }),
+  makeProject({
+    id: NORTHWIND_PROJECT_ID,
+    name: 'northwind-storefront',
+    rootPath: '/mock/northwind/storefront',
+  }),
 ];
 
 type MountSeed = Readonly<{
@@ -157,7 +165,16 @@ const makeScriptsMount = ({
 
 const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   makeScriptsMount({
-    mountId: 'mock-scripts-mount-ledger',
+    mountId: 'mock-scripts-mount-northwind',
+    projectId: NORTHWIND_PROJECT_ID,
+    mountName: 'northwind-storefront',
+    worktreePath: NORTHWIND_WORKTREE,
+    repoRoot: '/mock/northwind/storefront',
+    branch: 'nw/fix-settlement-replay',
+    parallelIndex: 3,
+  }),
+  makeScriptsMount({
+    mountId: LEDGER_MOUNT_ID,
     projectId: LEDGER_PROJECT_ID,
     mountName: 'ledger-core',
     worktreePath: LEDGER_WORKTREE,
@@ -348,6 +365,43 @@ const PAYMENTS_GROUP: ScriptGroup = {
   ],
 };
 
+type NorthwindPackageSeed = Readonly<{
+  packageName: string;
+  relDir: string;
+  names: ReadonlyArray<string>;
+}>;
+
+const makeNorthwindGroup = ({ packageName, relDir, names }: NorthwindPackageSeed): ScriptGroup => ({
+  source: 'package-json',
+  packageName,
+  relDir,
+  manager: 'yarn',
+  scripts: names.map((name) => ({ name, command: `yarn run ${name}` })),
+});
+
+const NORTHWIND_GROUPS: ReadonlyArray<ScriptGroup> = [
+  makeNorthwindGroup({
+    packageName: 'northwind-storefront',
+    relDir: '',
+    names: ['dev', 'build', 'lint'],
+  }),
+  makeNorthwindGroup({
+    packageName: '@northwind/api',
+    relDir: 'apps/api',
+    names: ['dev', 'test', 'db:migrate'],
+  }),
+  makeNorthwindGroup({
+    packageName: '@northwind/web',
+    relDir: 'apps/web',
+    names: ['dev', 'build', 'test'],
+  }),
+  makeNorthwindGroup({
+    packageName: '@acme/ui',
+    relDir: 'packages/ui',
+    names: ['dev', 'build', 'storybook'],
+  }),
+];
+
 const DRIFT_OUTPUT = [
   '> ledger-core@2.14.0 test',
   '> vitest run postings/rounding --reporter=dot',
@@ -437,7 +491,7 @@ const seedScriptsScene = (): void => {
     sessions: [SCRIPTS_SESSION],
     currentSessionId: SCRIPTS_SESSION_ID,
     sessionProjectMounts: { [SCRIPTS_SESSION_ID]: SCRIPTS_MOUNTS },
-    sessionActiveMount: { [SCRIPTS_SESSION_ID]: SCRIPTS_MOUNTS[0]?.mountId ?? null },
+    sessionActiveMount: { [SCRIPTS_SESSION_ID]: LEDGER_MOUNT_ID },
     sessionActiveProject: { [SCRIPTS_SESSION_ID]: LEDGER_PROJECT_ID },
     projectScripts: { [SCRIPTS_WORKSPACE_ID]: USER_SCRIPTS },
     scriptRuns: { [SCRIPTS_SESSION_ID]: SCRIPT_RUNS },
@@ -446,10 +500,12 @@ const seedScriptsScene = (): void => {
         [LEDGER_WORKTREE]: [LEDGER_ROOT_GROUP, POSTINGS_GROUP],
         [RELAY_WORKTREE]: [RELAY_GROUP],
         [PAYMENTS_WORKTREE]: [PAYMENTS_GROUP],
+        [NORTHWIND_WORKTREE]: NORTHWIND_GROUPS,
       },
     },
     discoveredScriptScans: {
       [SCRIPTS_SESSION_ID]: {
+        [NORTHWIND_WORKTREE]: READY_SCAN,
         [LEDGER_WORKTREE]: READY_SCAN,
         [RELAY_WORKTREE]: READY_SCAN,
         [PAYMENTS_WORKTREE]: READY_SCAN,
