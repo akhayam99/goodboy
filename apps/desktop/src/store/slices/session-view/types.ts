@@ -219,6 +219,7 @@ type SessionViewSliceActions = {
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
   setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
+  replaceActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   lensGo(sessionId: SessionId, delta: number): void;
   toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;

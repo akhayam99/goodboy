@@ -63,6 +63,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       ? null
       : storedActiveLens;
   const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const replaceActiveLens = useAppStore((s) => s.replaceActiveLens);
   const focusedGithubIssueNumber = useAppStore(
     (s) => s.focusedGithubIssueNumber[sessionId] ?? null,
   );
@@ -119,8 +120,8 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     if (activeLens !== 'pr' || !isGithubCodeHost) {
       return;
     }
-    setActiveLens(sessionId, 'review');
-  }, [activeLens, isGithubCodeHost, sessionId, setActiveLens]);
+    replaceActiveLens(sessionId, 'review');
+  }, [activeLens, isGithubCodeHost, sessionId, replaceActiveLens]);
 
   const lens: LensKind | null = activeLens ?? null;
   const surface = resolveLensSurface({ lens });

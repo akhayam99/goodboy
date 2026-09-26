@@ -6,52 +6,35 @@ import type { PullRequestState } from '@goodboy/types';
 
 type Store = {
   currentSessionId: string | null;
-  sessions: ReadonlyArray<{ id: string; activeProjectId?: string }>;
-  projects: ReadonlyArray<{ id: string; kind: string }>;
-  sessionProjectMounts: Record<
-    string,
-    ReadonlyArray<{
-      projectId: string;
-      mountName: string | null;
-      worktreePath: string;
-      repoRoot: string;
-      branch: string;
-    }>
-  >;
-  sessionActiveProject: Record<string, string>;
+  currentWorkspaceId: string | null;
+  sessions: ReadonlyArray<{ id: string; workspaceId: string }>;
   sessionProjectPrs: Record<string, Readonly<Record<string, ReadonlyArray<PullRequestState>>>>;
   sessionGithub: Record<string, { pr: PullRequestState | null }>;
   readonly selectSessionPr: ReturnType<typeof vi.fn>;
   readonly setActiveLens: ReturnType<typeof vi.fn>;
+  readonly setCurrentSession: ReturnType<typeof vi.fn>;
+  readonly reportError: ReturnType<typeof vi.fn>;
 };
 
 const h = vi.hoisted(() => ({
   store: {
     currentSessionId: 'session-1',
-    sessions: [{ id: 'session-1', activeProjectId: 'project-1' }],
-    projects: [{ id: 'project-1', kind: 'repo' }],
-    sessionProjectMounts: {
-      'session-1': [
-        {
-          projectId: 'project-1',
-          mountName: null,
-          worktreePath: '/wt',
-          repoRoot: '/repo',
-          branch: 'ak/current',
-        },
-      ],
-    },
-    sessionActiveProject: { 'session-1': 'project-1' },
+    currentWorkspaceId: 'workspace-1',
+    sessions: [
+      { id: 'session-1', workspaceId: 'workspace-1' },
+      { id: 'session-2', workspaceId: 'workspace-1' },
+    ],
     sessionProjectPrs: {},
     sessionGithub: {},
     selectSessionPr: vi.fn(async () => undefined),
     setActiveLens: vi.fn(),
+    setCurrentSession: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   } as Store,
   openUrl: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
 }));
 
@@ -78,17 +61,20 @@ const SESSION_PR: PullRequestState = {
 
 beforeEach(() => {
   h.store.currentSessionId = 'session-1';
+  h.store.currentWorkspaceId = 'workspace-1';
   h.store.sessionProjectPrs = {};
   h.store.sessionGithub = {};
   h.store.selectSessionPr.mockClear();
   h.store.setActiveLens.mockClear();
+  h.store.setCurrentSession.mockClear();
+  h.store.reportError.mockClear();
   h.openUrl.mockClear();
 });
 
 afterEach(cleanup);
 
 describe('LinkedPrChip', () => {
-  it('opens the pull request the session already holds in the pull request lens', () => {
+  it('opens the pull request the current session already holds in the pull request lens', () => {
     h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
 
     render(
@@ -100,10 +86,29 @@ describe('LinkedPrChip', () => {
 
     expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
     expect(h.store.setActiveLens).toHaveBeenCalledWith('session-1', 'pr');
+    expect(h.store.setCurrentSession).not.toHaveBeenCalled();
     expect(h.openUrl).not.toHaveBeenCalled();
   });
 
-  it('falls back to the browser for a pull request this session does not track', () => {
+  it('switches to another session of the workspace that holds the pull request', async () => {
+    h.store.sessionProjectPrs = { 'session-2': { 'project-1': [SESSION_PR] } };
+
+    render(
+      <LinkedPrChip
+        pr={{ url: SESSION_PR.url, number: 42, repo: 'acme/goodboy', status: 'open' }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(h.store.setCurrentSession).toHaveBeenCalledWith('session-2');
+    expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-2', 42);
+    expect(h.store.setActiveLens).toHaveBeenCalledWith('session-2', 'pr');
+    expect(h.openUrl).not.toHaveBeenCalled();
+  });
+
+  it('opens the browser for a pull request no session in the workspace tracks', () => {
     h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
 
     render(
@@ -120,9 +125,10 @@ describe('LinkedPrChip', () => {
 
     expect(h.openUrl).toHaveBeenCalledWith('https://github.com/acme/other/pull/9');
     expect(h.store.setActiveLens).not.toHaveBeenCalled();
+    expect(h.store.setCurrentSession).not.toHaveBeenCalled();
   });
 
-  it('falls back to the browser while a studio overlay covers the session', () => {
+  it('opens the pull request inside Goodboy even while a studio overlay is showing', () => {
     h.store.sessionProjectPrs = { 'session-1': { 'project-1': [SESSION_PR] } };
     const overlay = document.createElement('div');
     overlay.setAttribute('data-studio-overlay', '');
@@ -135,9 +141,9 @@ describe('LinkedPrChip', () => {
     );
     fireEvent.click(screen.getByRole('button'));
 
-    expect(h.openUrl).toHaveBeenCalledWith(SESSION_PR.url);
-    expect(h.store.setActiveLens).not.toHaveBeenCalled();
-    expect(h.store.selectSessionPr).not.toHaveBeenCalled();
+    expect(h.store.selectSessionPr).toHaveBeenCalledWith('session-1', 42);
+    expect(h.store.setActiveLens).toHaveBeenCalledWith('session-1', 'pr');
+    expect(h.openUrl).not.toHaveBeenCalled();
     overlay.remove();
   });
 });

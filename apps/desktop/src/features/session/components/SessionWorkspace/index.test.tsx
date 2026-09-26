@@ -39,6 +39,7 @@ type Store = {
   setReviewMode: ReturnType<typeof vi.fn>;
   selectAgent: ReturnType<typeof vi.fn>;
   setActiveLens: ReturnType<typeof vi.fn>;
+  replaceActiveLens: ReturnType<typeof vi.fn>;
   setSessionStudio: ReturnType<typeof vi.fn>;
   setFocusedWorkflowRun: ReturnType<typeof vi.fn>;
   reconcileSessionBranch: ReturnType<typeof vi.fn>;
@@ -90,6 +91,7 @@ const { store, hooks } = vi.hoisted(() => ({
     setReviewMode: vi.fn(),
     selectAgent: vi.fn(),
     setActiveLens: vi.fn(),
+    replaceActiveLens: vi.fn(),
     returnFromResolveAgent: vi.fn(),
     setSessionStudio: vi.fn(),
     setFocusedWorkflowRun: vi.fn(),
@@ -319,6 +321,7 @@ beforeEach(() => {
   store.agentKindOverride = {};
   store.sessionLoading = {};
   store.setActiveLens.mockReset();
+  store.replaceActiveLens.mockReset();
   store.loadPhaseRunsForSession.mockClear();
   store.loadSessionPlans.mockClear();
   hooks.agentHome = 'workflows';
@@ -489,7 +492,7 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(store.replaceActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
   });
 
   it('sends a pr lens to Review when a GitHub pull request is loaded on an unnamed remote', () => {
@@ -500,7 +503,7 @@ describe('SessionWorkspace code host routing', () => {
 
     render(<SessionWorkspace session={session} isActive />);
 
-    expect(store.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(store.replaceActiveLens).toHaveBeenCalledWith(SESSION_ID, 'review');
   });
 
   it('keeps the code host lens for a GitLab session', () => {
@@ -512,7 +515,7 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(store.setActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(store.replaceActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
   });
 
   it('keeps the code host lens for a Bitbucket session', () => {
@@ -524,7 +527,7 @@ describe('SessionWorkspace code host routing', () => {
     render(<SessionWorkspace session={session} isActive />);
 
     expect(screen.getByTestId('code-host-pane')).toBeDefined();
-    expect(store.setActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
+    expect(store.replaceActiveLens).not.toHaveBeenCalledWith(SESSION_ID, 'review');
   });
 });
 
