@@ -169,7 +169,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'spend' } });
 
     fireEvent.click(screen.getByRole('button', { name: /build the feature/i }));
-    expect(screen.getByText(/session cost/i)).toBeDefined();
+    expect(screen.getByText('Session spend')).toBeDefined();
   });
 
   it('opens the provider panel when the studio is asked for a provider scope', () => {

@@ -43,10 +43,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/budget/components/spend/SessionBudgetContent.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
     count: 1,

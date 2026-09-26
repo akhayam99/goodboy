@@ -100,7 +100,7 @@ describe('ProviderPage', () => {
 
     const permissions = within(screen.getByRole('region', { name: 'Permissions with Codex' }));
     const rows = permissions.getAllByRole('listitem').map((row) => row.textContent);
-    expect(rows).toContain('DefaultNot availableRuns as Plan');
+    expect(rows).toContain('Ask firstNot availableRuns as Read only');
     expect(rows).toContain('RulesNot followedOnly Claude follows Allow and Deny rules.');
   });
 
