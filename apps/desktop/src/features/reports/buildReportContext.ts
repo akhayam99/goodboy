@@ -37,6 +37,7 @@ import { SESSION_GOAL_CLIP_NOTE, type SessionGoalText } from '../artifacts/sessi
 import type { ScriptRunRecord } from '../scripts/scripts';
 import { buildWireframeIndex } from '../wireframes/wireframeIndex';
 import { buildReportOutline } from './reportOutline';
+import { reportSourceName } from './reportSourceName';
 import { REPORT_TYPE_HINT, REPORT_TYPE_LABEL, type ReportType } from './reportTypes';
 
 export const REPORT_CONTEXT_LIMITS = {
@@ -243,7 +244,7 @@ const renderAgents = ({
   let clippedCount = 0;
   let droppedCount = 0;
   const rows = kept.flatMap((agent) => {
-    const name = redactSecrets({ text: agent.name });
+    const name = redactSecrets({ text: reportSourceName({ source: { kind: 'agent', agent } }) });
     const message = messages.get(agent.id);
     if (message === null || message === undefined) {
       silent += 1;

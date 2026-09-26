@@ -771,6 +771,17 @@ describe('buildReportContext agent budget allocation', () => {
     );
   });
 
+  it('heads an agent with its name and role ahead of its id', () => {
+    const context = buildReportContext({
+      ...baseParams,
+      agents: [agent({ name: 'Apply the rounding fix', kind: 'implementer' })],
+      transcripts: {},
+    });
+    expect(context.text).toContain(
+      `### Apply the rounding fix (Implementer) (agent ${AGENT_ID}, completed)`,
+    );
+  });
+
   it('cuts the newest message on a boundary and says so when nothing else can give room', () => {
     const NEWEST_ID = 'agent-newest' as AgentId;
     const olderIds = Array.from({ length: 3 }, (_, index) => `agent-older-${index}` as AgentId);

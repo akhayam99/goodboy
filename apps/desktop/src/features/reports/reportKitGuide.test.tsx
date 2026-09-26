@@ -34,6 +34,14 @@ describe('report kit guide', () => {
     expect(REPORT_KIT_GUIDE).toContain('language of the request');
   });
 
+  it('asks for sources by name and kind, the id only as a fallback', () => {
+    expect(REPORT_KIT_GUIDE).toContain('cites each source by its name and kind');
+    expect(REPORT_KIT_GUIDE).not.toContain('cites sources by id');
+    expect(AGENT_KIND_DEFAULTS.report.systemPrompt).toContain(
+      'cite each source you were given by its name and kind, never by its raw id unless it has no name',
+    );
+  });
+
   it.each(BLOCK_MARKERS)(
     'teaches only blocks the renderer really draws: %s',
     (source, selector) => {

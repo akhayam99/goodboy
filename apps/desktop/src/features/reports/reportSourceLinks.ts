@@ -11,6 +11,30 @@ export type ReportSourceLinkParams = Readonly<{
   excludeArtifactId: string;
 }>;
 
+type CitesParams = Readonly<{
+  sourceText: string;
+  needles: ReadonlyArray<string>;
+}>;
+
+type EscapeRegExpParams = Readonly<{
+  text: string;
+}>;
+
+const escapeRegExp = ({ text }: EscapeRegExpParams): string =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const WORD_EDGE = '[\\p{L}\\p{N}_-]';
+
+const cites = ({ sourceText, needles }: CitesParams): boolean =>
+  needles
+    .map((needle) => needle.trim())
+    .filter((needle) => needle !== '')
+    .some((needle) =>
+      new RegExp(`(?<!${WORD_EDGE})${escapeRegExp({ text: needle })}(?!${WORD_EDGE})`, 'u').test(
+        sourceText,
+      ),
+    );
+
 export const collectReportSourceLinks = ({
   sourceText,
   agents,
@@ -18,10 +42,14 @@ export const collectReportSourceLinks = ({
   excludeArtifactId,
 }: ReportSourceLinkParams): ReadonlyArray<ReportSourceLink> => {
   const agentLinks: ReadonlyArray<ReportSourceLink> = agents
-    .filter((agent) => sourceText.includes(agent.id))
+    .filter((agent) => cites({ sourceText, needles: [agent.id, agent.name] }))
     .map((agent) => ({ kind: 'agent', id: agent.id, label: agent.name }));
   const artifactLinks: ReadonlyArray<ReportSourceLink> = artifacts
-    .filter((artifact) => artifact.id !== excludeArtifactId && sourceText.includes(artifact.id))
+    .filter(
+      (artifact) =>
+        artifact.id !== excludeArtifactId &&
+        cites({ sourceText, needles: [artifact.id, artifact.title] }),
+    )
     .map((artifact) => ({ kind: 'artifact', id: artifact.id, label: artifact.title }));
   return [...agentLinks, ...artifactLinks];
 };
