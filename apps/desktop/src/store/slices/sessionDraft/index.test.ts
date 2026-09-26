@@ -123,6 +123,7 @@ describe('session draft slice', () => {
     });
     expect(h.getState().openSessionDraftWorkspaceId).toBeNull();
     expect(h.getState().sessionDrafts).toEqual({});
+    expect(h.getState().goodboyNamedSessionId).toBe(SESSION_ID);
   });
 
   it('names a Scout session from the first sentence of its focus', async () => {

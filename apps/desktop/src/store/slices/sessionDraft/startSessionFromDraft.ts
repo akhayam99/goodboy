@@ -109,6 +109,7 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
       throw error;
     }
     get().discardSessionDraft({ workspaceId });
+    set({ goodboyNamedSessionId: session.id });
     return session;
   };
 };

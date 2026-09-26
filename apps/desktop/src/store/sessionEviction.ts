@@ -217,6 +217,7 @@ export const NON_SESSION_STATE_KEYS = [
   'bugReportDraft',
   'sessionDrafts',
   'openSessionDraftWorkspaceId',
+  'goodboyNamedSessionId',
   'drawer',
   'navigation',
   'appStudio',

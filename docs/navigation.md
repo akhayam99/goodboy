@@ -256,7 +256,9 @@ remembers the last choice. Opening the draft puts focus on the question.
 creates the session and starts the work in one gesture
 (`startSessionFromDraft`): the title and the goal come from the issue, the
 workflow goal or the first sentence of the Scout focus, a picked issue is
-linked, and the column moves to the new session. If the start fails, the
+linked, and the column moves to the new session. The header marks that title
+`Named by Goodboy` until you rename it or open the session again, and a better
+title that arrives later fades in without moving the layout. If the start fails, the
 session is removed again, the draft stays as it was and the reason shows
 inline above the primary. A session that exists always has a real title, so
 its header never has an empty state. Sessions created elsewhere with no

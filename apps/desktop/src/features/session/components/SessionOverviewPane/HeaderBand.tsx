@@ -33,6 +33,9 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
   });
 
   const titleText = sessionTitle({ session });
+  const isNamedByGoodboy = useAppStore(
+    (s) => s.goodboyNamedSessionId === sessionId && !session.titleUserEdited,
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -73,10 +76,15 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
                 title={inlineMarkdownText({ text: titleText })}
                 className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
-                <InlineMarkdown text={titleText} />
+                <span key={titleText} className="motion-safe:animate-fade-in">
+                  <InlineMarkdown text={titleText} />
+                </span>
               </h1>
             </Tooltip>
           )}
+          {isNamedByGoodboy && !rename.editing ? (
+            <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
+          ) : null}
           <div className="flex shrink-0 items-center gap-1">
             {titleAction}
             <SessionDestructiveActions session={session} />

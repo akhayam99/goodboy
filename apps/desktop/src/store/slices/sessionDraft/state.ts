@@ -1,4 +1,4 @@
-import type { WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 
 export type StartChoice = 'task' | 'workflow' | 'scout';
@@ -26,9 +26,11 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
 export type SessionDraftState = {
   readonly sessionDrafts: Readonly<Record<WorkspaceId, SessionDraft>>;
   readonly openSessionDraftWorkspaceId: WorkspaceId | null;
+  readonly goodboyNamedSessionId: SessionId | null;
 };
 
 export const initialSessionDraftState: SessionDraftState = {
   sessionDrafts: {},
   openSessionDraftWorkspaceId: null,
+  goodboyNamedSessionId: null,
 };

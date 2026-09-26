@@ -20,6 +20,7 @@ const { store } = vi.hoisted(() => ({
     sessionResolveAttempts: {},
     sessionResolvePublications: {},
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
+    goodboyNamedSessionId: null as string | null,
   },
 }));
 
@@ -82,6 +83,25 @@ describe('HeaderBand', () => {
     store.sessionArtifacts = {};
     store.sessionOpenQuestions = {};
     store.sessionResolveQueueItems = {};
+    store.goodboyNamedSessionId = null;
+  });
+
+  it('marks a title Goodboy wrote at the start until the user renames it', () => {
+    store.goodboyNamedSessionId = 'session-1';
+    const { unmount } = render(
+      <HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />,
+    );
+    expect(screen.getByText('Named by Goodboy')).toBeDefined();
+    unmount();
+
+    render(
+      <HeaderBand
+        session={{ ...session, titleUserEdited: true }}
+        onSelectLens={vi.fn()}
+        goal={<div>Goal</div>}
+      />,
+    );
+    expect(screen.queryByText('Named by Goodboy')).toBeNull();
   });
 
   it('stays clear of attention chips when nothing is waiting', () => {
