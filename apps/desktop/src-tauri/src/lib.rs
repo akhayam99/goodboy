@@ -17,6 +17,7 @@ mod explore;
 mod external_terminal;
 mod file_versions;
 mod github;
+mod history;
 mod gitlab;
 mod goodboy_ignore;
 mod integration_credentials;
@@ -253,6 +254,12 @@ pub fn run() {
             worktree::worktree_diff_range,
             worktree::worktree_scratch_add,
             worktree::worktree_scratch_remove,
+            history::history_plan_predict,
+            history::history_plan_try,
+            history::history_plan_apply,
+            history::history_restore,
+            history::history_backups_list,
+            history::history_git_supported,
             worktree::worktree_amend_commit,
             worktree::worktree_squash_commits,
             worktree::worktree_diff_working,
@@ -379,6 +386,7 @@ pub fn run() {
             github::gh_clear_token,
             github::gh_run,
             github::git_push,
+            github::git_push_with_lease,
             github::gh_pr_diff,
             integration_credentials::integration_credentials_adopt,
             integration_credentials::integration_credential_forget,

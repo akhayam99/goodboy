@@ -1550,6 +1550,7 @@ pub async fn worktree_tidy_goodboy(repo_path: String) -> Result<(), WorktreeErro
 
 fn worktree_tidy_goodboy_blocking(repo_path: String) -> Result<(), WorktreeError> {
     tidy_goodboy_dir(Path::new(&repo_path));
+    crate::history::prune_backups(Path::new(&repo_path));
     Ok(())
 }
 
@@ -2635,7 +2636,7 @@ fn require_message(message: &str) -> Result<String, WorktreeError> {
     Ok(trimmed.to_string())
 }
 
-fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
+pub(crate) fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
     let trimmed = sha.trim();
     if trimmed.is_empty() {
         return Err(WorktreeError::Git {
@@ -3345,7 +3346,7 @@ pub(crate) fn parse_working_tree(raw: &str) -> GitWorkingTree {
     }
 }
 
-fn git_dir_of(cwd: &Path) -> Option<PathBuf> {
+pub(crate) fn git_dir_of(cwd: &Path) -> Option<PathBuf> {
     let dot_git = cwd.join(".git");
     if dot_git.is_dir() {
         return Some(dot_git);
