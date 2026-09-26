@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type {
-  IsoDateTime,
   MountId,
   OverrideSettings,
   Project,
@@ -14,9 +13,12 @@ import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WorkspaceFrame } from './WorkspaceFrame';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from './workspaceChrome';
 import { sceneParam } from './sceneParams';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
 const FRESH_ID = 'mock-states-fresh-session' as SessionId;
-const T0 = '2026-08-25T17:59:00.000Z' as IsoDateTime;
+const T0 = clock.iso({ at: '2026-08-25T17:59:00.000Z' });
 
 const LONG_TITLE =
   'Stop notify-relay from retrying settlement webhooks forever when payments-api returns a 409 for an already-settled invoice, and surface the stuck deliveries in the Harborline web-console';

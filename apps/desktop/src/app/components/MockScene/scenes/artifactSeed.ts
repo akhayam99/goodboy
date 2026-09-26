@@ -28,6 +28,9 @@ import type {
   WireframeTransition,
 } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const WORKSPACE_ID = 'mock-artifact-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-artifact-session-ledger' as SessionId;
@@ -53,8 +56,8 @@ const PLAN_ARTIFACT_ID = 'mock-artifact-plan-rounding' as ArtifactId;
 const PLAN_ID = 'mock-artifact-plan-rounding' as PlanId;
 const OLD_PLAN_ID = 'mock-artifact-plan-backfill' as PlanId;
 
-const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
-const EARLIER = '2026-09-14T15:02:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
+const EARLIER = clock.iso({ at: '2026-09-14T15:02:00.000Z' });
 
 const OVERRIDES = {
   defaultProviderId: null,
@@ -167,11 +170,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary: 'Found the drift in the per-posting rounding of split allocations.',
-    startedAt: '2026-09-14T15:04:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T15:19:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T15:19:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T15:04:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T15:19:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T15:19:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T15:19:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T15:19:00.000Z' }),
   },
   {
     id: PLANNER_AGENT_ID,
@@ -181,11 +184,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'planner',
     status: 'completed',
     outputSummary: 'Drafted a banker rounding plan with a backfill for settled batches.',
-    startedAt: '2026-09-14T15:20:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T15:20:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
   },
   {
     id: IMPLEMENTER_AGENT_ID,
@@ -195,11 +198,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'implementer',
     status: 'completed',
     outputSummary: 'Moved allocation rounding to the batch total and kept postings balanced.',
-    startedAt: '2026-09-14T15:32:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:04:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:04:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T15:32:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:04:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:04:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T16:04:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T16:04:00.000Z' }),
   },
   {
     id: TESTER_AGENT_ID,
@@ -209,11 +212,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'tester',
     status: 'completed',
     outputSummary: 'Added 14 allocation cases, including the three cent split that drifted.',
-    startedAt: '2026-09-14T16:05:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:18:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:18:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:05:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T16:18:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
   },
   {
     id: CHANGE_REPORT_AGENT_ID,
@@ -223,11 +226,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'report',
     status: 'completed',
     outputSummary: 'Read both worktrees and wrote the local change report.',
-    startedAt: '2026-09-14T16:19:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:22:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:22:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:19:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T16:22:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
   },
   {
     id: REPORT_AGENT_ID,
@@ -237,11 +240,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'report',
     status: 'completed',
     outputSummary: 'Wrote the session summary from the run evidence.',
-    startedAt: '2026-09-14T16:24:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:24:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
   },
   {
     id: WIREFRAME_AGENT_ID,
@@ -251,11 +254,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'wireframe',
     status: 'completed',
     outputSummary: 'Drew four screens for reviewing and releasing a settlement batch.',
-    startedAt: '2026-09-14T16:28:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:28:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
   },
   {
     id: SCOUTING_WIREFRAME_AGENT_ID,
@@ -264,7 +267,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: SCOUTING_WIREFRAME_RUN_TITLE,
     kind: 'wireframe',
     status: 'running',
-    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:39:00.000Z' }),
     providerOverride: 'anthropic',
     modelOverride: 'claude-sonnet-5',
   },
@@ -277,9 +280,9 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary: 'the batch list already renders the totals apps/web/src/Batches.tsx',
-    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-14T16:39:14.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-14T16:39:14.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:39:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-14T16:39:14.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-14T16:39:14.000Z' }),
   },
   {
     id: DATA_SCOUT_AGENT_ID,
@@ -289,7 +292,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: 'data and contracts',
     kind: 'scout',
     status: 'running',
-    startedAt: '2026-09-14T16:39:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-14T16:39:00.000Z' }),
   },
 ];
 
@@ -420,7 +423,7 @@ leaves dry run.
 const REPORT_KICKOFF = `# evidence pack: Session summary
 
 write a session summary: what the session set out to do, what landed, what is still open.
-scope: the whole session. captured at 2026-09-14T16:20:00.000Z.
+scope: the whole session. captured at ${clock.iso({ at: '2026-09-14T16:20:00.000Z' })}.
 session ${SESSION_ID}: ${SESSION.goal}
 
 this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.
@@ -447,7 +450,7 @@ nothing was truncated.`;
 const CHANGE_REPORT_KICKOFF = `# evidence pack: Local change report
 
 write a local change report: the local change as a reviewer reads it: branch commits, diff, checks that ran, risk.
-scope: the whole session. captured at 2026-09-14T16:19:00.000Z.
+scope: the whole session. captured at ${clock.iso({ at: '2026-09-14T16:19:00.000Z' })}.
 session ${SESSION_ID}: ${SESSION.goal}
 
 this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.
@@ -464,7 +467,7 @@ nothing was truncated.`;
 const WIREFRAME_KICKOFF = `# evidence pack: Wireframe
 
 draft a plain wireframe of the flow this session produced.
-scope: the whole session. captured at 2026-09-14T16:28:00.000Z.
+scope: the whole session. captured at ${clock.iso({ at: '2026-09-14T16:28:00.000Z' })}.
 session ${SESSION_ID}: ${SESSION.goal}
 
 this pack is the only evidence you have. it carries final agent messages, not tool calls or tool output. never invent a fact that is not here; say plainly what is missing.
@@ -518,8 +521,8 @@ const REPORT_ARTIFACT: ReportArtifact = {
   status: 'active',
   revision: 2,
   sourceTurnId: 'mock-artifact-turn-report',
-  createdAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-14T16:27:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-14T16:27:00.000Z' }),
 };
 
 const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
@@ -536,8 +539,8 @@ const CHANGE_REPORT_ARTIFACT: ReportArtifact = {
   status: 'active',
   revision: 1,
   sourceTurnId: 'mock-artifact-turn-change-report',
-  createdAt: '2026-09-14T16:22:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-14T16:22:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-14T16:22:00.000Z' }),
 };
 
 const PLAN_ARTIFACT: SessionArtifact = {
@@ -554,8 +557,8 @@ const PLAN_ARTIFACT: SessionArtifact = {
   status: 'consumed',
   revision: 1,
   sourceTurnId: 'mock-artifact-turn-plan',
-  createdAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
 };
 
 const BATCHES_CHILDREN: ReadonlyArray<WireframeNode> = [
@@ -893,8 +896,8 @@ const WIREFRAME_LOW_ARTIFACT: WireframeArtifact = {
   status: 'active',
   revision: 1,
   sourceTurnId: 'mock-artifact-turn-wireframe-low',
-  createdAt: '2026-09-14T16:34:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-14T16:34:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
 };
 
 const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
@@ -922,8 +925,8 @@ const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
   status: 'active',
   revision: 3,
   sourceTurnId: 'mock-artifact-turn-wireframe-high',
-  createdAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-14T16:38:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
 };
 
 const SESSION_EVENTS = [
@@ -932,14 +935,14 @@ const SESSION_EVENTS = [
     sessionId: SESSION_ID,
     kind: 'branch_created',
     payload: { branch: LEDGER_MOUNT.branch, projectName: LEDGER_MOUNT.mountName },
-    createdAt: '2026-09-14T15:00:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-14T15:00:00.000Z' }),
   },
   {
     id: 'mock-artifact-event-pr',
     sessionId: SESSION_ID,
     kind: 'pr_created',
     payload: { number: 412, title: 'Round once per batch', url: 'https://example.invalid/pr/412' },
-    createdAt: '2026-09-14T16:12:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-14T16:12:00.000Z' }),
   },
 ] as unknown as ReadonlyArray<SessionEvent>;
 
@@ -977,8 +980,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Round once per batch',
     bodyMd: PLAN_BODY,
     status: 'consumed',
-    createdAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-14T15:31:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
     consumptionCount: 1,
   },
   {
@@ -988,8 +991,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Cover the half cent cases',
     bodyMd: 'Add a test for every split where the residual lands on a half cent.',
     status: 'consumed',
-    createdAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-14T15:40:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-14T15:40:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-14T15:40:00.000Z' }),
     consumptionCount: 1,
   },
   {
@@ -999,8 +1002,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Backfill the settled batches',
     bodyMd: ACTIVE_PLAN_BODY,
     status: 'active',
-    createdAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-14T17:34:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),
     consumptionCount: 0,
   },
 ];
@@ -1024,17 +1027,17 @@ export const seedArtifactScene = ({ focusedArtifactId }: SeedParams) => {
       [REPORT_AGENT_ID]: transcriptOf({
         runId: 'mock-artifact-run-report',
         text: REPORT_KICKOFF,
-        at: '2026-09-14T16:24:00.000Z',
+        at: clock.iso({ at: '2026-09-14T16:24:00.000Z' }),
       }),
       [CHANGE_REPORT_AGENT_ID]: transcriptOf({
         runId: 'mock-artifact-run-change-report',
         text: CHANGE_REPORT_KICKOFF,
-        at: '2026-09-14T16:19:00.000Z',
+        at: clock.iso({ at: '2026-09-14T16:19:00.000Z' }),
       }),
       [WIREFRAME_AGENT_ID]: transcriptOf({
         runId: 'mock-artifact-run-wireframe',
         text: WIREFRAME_KICKOFF,
-        at: '2026-09-14T16:28:00.000Z',
+        at: clock.iso({ at: '2026-09-14T16:28:00.000Z' }),
       }),
     },
     sessionArtifacts: { [SESSION_ID]: ARTIFACTS },

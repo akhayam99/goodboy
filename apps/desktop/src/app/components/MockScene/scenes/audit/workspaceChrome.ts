@@ -1,8 +1,11 @@
-import type { AgentId, IsoDateTime, Session, SessionId } from '@goodboy/types';
+import type { AgentId, Session, SessionId } from '@goodboy/types';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { LENS_KINDS } from '../../../../../store/slices/session-view/types';
 import { SESSION } from '../workflowSeed';
 import { sceneParam } from './sceneParams';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
 type SiblingParams = {
   readonly id: string;
@@ -19,25 +22,25 @@ const sibling = ({ id, goal, state }: SiblingParams): Session => ({
   workflowRuns: [],
   autoRun: false,
   titleUserEdited: true,
-  createdAt: '2026-08-25T15:00:00.000Z' as IsoDateTime,
-  updatedAt: '2026-08-25T17:40:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-08-25T15:00:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-08-25T17:40:00.000Z' }),
 });
 
 export const WORKSPACE_SIBLINGS: ReadonlyArray<Session> = [
   sibling({
     id: 'mock-states-sibling-rate',
     goal: 'Fix duplicate retries at the payments-api rate limit boundary',
-    state: { kind: 'idle', lastActivityAt: '2026-08-25T17:48:00.000Z' as IsoDateTime },
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-08-25T17:48:00.000Z' }) },
   }),
   sibling({
     id: 'mock-states-sibling-tax',
     goal: 'Handle tax exemptions for marketplace orders across every billing-api region and currency',
-    state: { kind: 'idle', lastActivityAt: '2026-08-25T17:52:00.000Z' as IsoDateTime },
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-08-25T17:52:00.000Z' }) },
   }),
   sibling({
     id: 'mock-states-sibling-ledger',
     goal: 'Add monthly ledger exports for finance',
-    state: { kind: 'ended', endedAt: '2026-08-25T15:51:00.000Z' as IsoDateTime },
+    state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T15:51:00.000Z' }) },
   }),
 ];
 

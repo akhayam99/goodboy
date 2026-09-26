@@ -33,11 +33,14 @@ import type { ProviderDisplayInfo } from '../../../../../features/providers/prov
 import type { AgentKind } from '../../../../../features/session/agent-kind';
 import type { WorkflowBuilderDraft } from '../../../../../store/slices/workflowDrafts/types';
 import type { TranscriptRow } from '../../../../../features/chat/utils/cluster-operations';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-16T11:20:00.000Z' });
 
 export const noop = () => undefined;
 
-export const NOW = '2026-09-16T11:20:00.000Z' as IsoDateTime;
-export const EARLIER = '2026-09-16T09:05:00.000Z' as IsoDateTime;
+export const NOW = clock.iso({ at: '2026-09-16T11:20:00.000Z' });
+export const EARLIER = clock.iso({ at: '2026-09-16T09:05:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-flow-workspace-harborline' as WorkspaceId;
 export const LEDGER_PROJECT_ID = 'mock-flow-project-ledger-core' as ProjectId;
@@ -93,8 +96,8 @@ export const CHAT_ARTIFACTS = [
     status: 'active',
     revision: 1,
     sourceTurnId: CHAT_REPORT_RUN_ID,
-    createdAt: '2026-09-16T10:36:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-16T10:36:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:36:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-16T10:36:00.000Z' }),
   },
   {
     id: 'mock-flow-artifact-replay-wireframe' as ArtifactId,
@@ -110,8 +113,8 @@ export const CHAT_ARTIFACTS = [
     status: 'active',
     revision: 1,
     sourceTurnId: CHAT_WIREFRAME_RUN_ID,
-    createdAt: '2026-09-16T10:41:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-16T10:41:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:41:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-16T10:41:00.000Z' }),
   },
 ] satisfies ReadonlyArray<SessionArtifact>;
 
@@ -148,7 +151,7 @@ export const WORKSPACE: Workspace = {
   name: 'Harborline',
   slug: 'harborline',
   overrides: OVERRIDES,
-  createdAt: '2026-09-02T08:30:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-02T08:30:00.000Z' }),
   updatedAt: NOW,
 };
 
@@ -317,7 +320,7 @@ const presetOf = ({ id, name, description, goal, steps }: PresetSeedParams): Wor
     name: step.name,
     promptPrefix: step.promptPrefix,
   })),
-  createdAt: '2026-09-04T10:00:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-04T10:00:00.000Z' }),
   updatedAt: EARLIER,
 });
 
@@ -461,7 +464,7 @@ export const DYNAMIC_WORKFLOW: Workflow = {
   origin: 'orchestrated',
   isPreset: false,
   steps: DYNAMIC_STEPS,
-  createdAt: '2026-09-16T09:12:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-16T09:12:00.000Z' }),
   updatedAt: NOW,
 };
 
@@ -477,21 +480,21 @@ const DYNAMIC_RUN: WorkflowRun = {
     {
       id: 'flow-hint-pinned',
       text: 'Open one PR per project and keep the dry run flag off by default.',
-      createdAt: '2026-09-23T09:10:00.000Z' as IsoDateTime,
-      consumedAt: '2026-09-23T09:11:00.000Z' as IsoDateTime,
+      createdAt: clock.iso({ at: '2026-09-16T09:10:00.000Z' }),
+      consumedAt: clock.iso({ at: '2026-09-16T09:11:00.000Z' }),
       consumedAtStep: 1,
     },
     {
       id: 'flow-hint-read',
       text: 'Map ledger-core before touching the payout reader.',
-      createdAt: '2026-09-23T09:12:00.000Z' as IsoDateTime,
-      consumedAt: '2026-09-23T09:13:00.000Z' as IsoDateTime,
+      createdAt: clock.iso({ at: '2026-09-16T09:12:00.000Z' }),
+      consumedAt: clock.iso({ at: '2026-09-16T09:13:00.000Z' }),
       consumedAtStep: 2,
     },
     {
       id: 'flow-hint-queued',
       text: 'Cover the half cent cases before the backfill leaves dry run.',
-      createdAt: '2026-09-23T09:40:00.000Z' as IsoDateTime,
+      createdAt: clock.iso({ at: '2026-09-16T09:40:00.000Z' }),
     },
   ],
   orchestratorSummary:
@@ -500,7 +503,7 @@ const DYNAMIC_RUN: WorkflowRun = {
   spendLimitUsd: 12,
   spendLimitMode: 'pause',
   goal: 'Stop the settlement rounding drift and repair the quarter already settled',
-  createdAt: '2026-09-16T09:12:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-16T09:12:00.000Z' }),
 };
 
 const QUEUED_RUN: WorkflowRun = {
@@ -512,7 +515,7 @@ const QUEUED_RUN: WorkflowRun = {
   triggerMode: 'manual',
   executionMode: 'static',
   goal: 'Harden the payout webhook before the backfill lands',
-  createdAt: '2026-09-16T10:48:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-09-16T10:48:00.000Z' }),
 };
 
 type FlowAgentParams = Readonly<{
@@ -575,8 +578,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     runId: 'mock-flow-provider-run-scout' as ProviderRunId,
     outputSummary:
       'Three rounding sites: the line posting, the batch total, and the payout reader.',
-    startedAt: '2026-09-16T09:14:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T09:29:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:14:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T09:29:00.000Z' }),
   }),
   flowAgentOf({
     id: AGENT_SCOUT_LEDGER_ID,
@@ -587,8 +590,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     status: 'completed',
     runId: 'mock-flow-provider-run-scout-ledger' as ProviderRunId,
     outputSummary: 'postLine rounds every amount before the batch total is ever computed.',
-    startedAt: '2026-09-16T09:15:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T09:24:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:15:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T09:24:00.000Z' }),
     parentAgentId: AGENT_SCOUT_ID,
   }),
   flowAgentOf({
@@ -601,8 +604,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     runId: 'mock-flow-provider-run-scout-reports' as ProviderRunId,
     outputSummary:
       'The payout reader rounds again for display only, so it is not part of the drift.',
-    startedAt: '2026-09-16T09:15:30.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T09:26:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:15:30.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T09:26:00.000Z' }),
     parentAgentId: AGENT_SCOUT_ID,
   }),
   flowAgentOf({
@@ -615,8 +618,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     runId: 'mock-flow-provider-run-scout-relay' as ProviderRunId,
     outputSummary:
       'Notices quote the batch total verbatim, so they inherit whatever the ledger writes.',
-    startedAt: '2026-09-16T09:16:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T09:27:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:16:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T09:27:00.000Z' }),
     parentAgentId: AGENT_SCOUT_ID,
   }),
   flowAgentOf({
@@ -629,8 +632,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     runId: 'mock-flow-provider-run-plan' as ProviderRunId,
     outputSummary:
       'Round once on the batch total, half even, and leave the display rounding alone.',
-    startedAt: '2026-09-16T09:31:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T09:41:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:31:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T09:41:00.000Z' }),
   }),
   flowAgentOf({
     id: AGENT_ROUNDING_ID,
@@ -641,8 +644,8 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     status: 'completed',
     runId: 'mock-flow-provider-run-rounding' as ProviderRunId,
     outputSummary: 'Rounding moved to settleBatch, 41 call sites unchanged, ledger tests green.',
-    startedAt: '2026-09-16T09:44:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T10:31:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T09:44:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),
   }),
   flowAgentOf({
     id: AGENT_BACKFILL_ID,
@@ -654,7 +657,7 @@ export const FLOW_AGENTS: ReadonlyArray<Agent> = [
     runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
     outputSummary:
       'Replaying the settled quarter with the dry run flag on and diffing each payout.',
-    startedAt: '2026-09-16T10:34:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T10:34:00.000Z' }),
   }),
   flowAgentOf({
     id: AGENT_TESTS_ID,
@@ -741,7 +744,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-scout' as ProviderRunId,
     provider: 'cursor',
     model: 'composer-2.5',
-    recordedAt: '2026-09-16T09:29:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T09:29:00.000Z' }),
     inputTokens: 38_420,
     outputTokens: 5_120,
     estimatedCostUsd: 0.031,
@@ -751,7 +754,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-scout-ledger' as ProviderRunId,
     provider: 'anthropic',
     model: 'claude-haiku-4-5',
-    recordedAt: '2026-09-16T09:24:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T09:24:00.000Z' }),
     inputTokens: 21_050,
     outputTokens: 2_980,
     estimatedCostUsd: 0.024,
@@ -761,7 +764,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-scout-reports' as ProviderRunId,
     provider: 'codex',
     model: 'gpt-5.6-terra',
-    recordedAt: '2026-09-16T09:26:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T09:26:00.000Z' }),
     inputTokens: 18_640,
     outputTokens: 2_410,
     estimatedCostUsd: 0.058,
@@ -771,7 +774,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-scout-relay' as ProviderRunId,
     provider: 'cursor',
     model: 'composer-2.5',
-    recordedAt: '2026-09-16T09:27:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T09:27:00.000Z' }),
     inputTokens: 14_880,
     outputTokens: 1_960,
     estimatedCostUsd: 0.012,
@@ -781,7 +784,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-plan' as ProviderRunId,
     provider: 'codex',
     model: 'gpt-6-astra',
-    recordedAt: '2026-09-16T09:41:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T09:41:00.000Z' }),
     inputTokens: 26_310,
     outputTokens: 4_470,
     estimatedCostUsd: 1.284,
@@ -791,7 +794,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-rounding' as ProviderRunId,
     provider: 'codex',
     model: 'gpt-5.6-sol',
-    recordedAt: '2026-09-16T10:31:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),
     inputTokens: 92_740,
     outputTokens: 16_220,
     estimatedCostUsd: 1.864,
@@ -801,7 +804,7 @@ export const FLOW_TELEMETRY: ReadonlyArray<TelemetryRecord> = [
     runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
     provider: 'cursor',
     model: 'kimi-k3',
-    recordedAt: '2026-09-16T11:18:00.000Z',
+    recordedAt: clock.iso({ at: '2026-09-16T11:18:00.000Z' }),
     inputTokens: 61_180,
     outputTokens: 9_340,
     estimatedCostUsd: 0.392,
@@ -846,7 +849,7 @@ export const FLOW_SESSION: Session = sessionOf({
   state: {
     kind: 'running',
     runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
-    startedAt: '2026-09-16T10:34:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T10:34:00.000Z' }),
   },
   workflowRuns: [DYNAMIC_RUN, QUEUED_RUN],
   activeProjectId: LEDGER_PROJECT_ID,
@@ -856,28 +859,28 @@ export const FLOW_SESSION: Session = sessionOf({
 export const CHAT_SESSION: Session = sessionOf({
   id: CHAT_SESSION_ID,
   goal: 'Hold the retry storm at the relay without dropping a settlement notice',
-  state: { kind: 'idle', lastActivityAt: '2026-09-16T11:06:00.000Z' as IsoDateTime },
+  state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }) },
   workflowRuns: [],
   activeProjectId: RELAY_PROJECT_ID,
-  updatedAt: '2026-09-16T11:06:00.000Z' as IsoDateTime,
+  updatedAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }),
 });
 
 const OTHER_SESSIONS: ReadonlyArray<Session> = [
   sessionOf({
     id: EXPORT_SESSION_ID,
     goal: 'Add monthly ledger exports for the finance close',
-    state: { kind: 'idle', lastActivityAt: '2026-09-16T08:41:00.000Z' as IsoDateTime },
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-09-16T08:41:00.000Z' }) },
     workflowRuns: [],
     activeProjectId: LEDGER_PROJECT_ID,
-    updatedAt: '2026-09-16T08:41:00.000Z' as IsoDateTime,
+    updatedAt: clock.iso({ at: '2026-09-16T08:41:00.000Z' }),
   }),
   sessionOf({
     id: PRICING_SESSION_ID,
     goal: 'Move tiered pricing behind the new rate table',
-    state: { kind: 'ended', endedAt: '2026-09-15T18:22:00.000Z' as IsoDateTime },
+    state: { kind: 'ended', endedAt: clock.iso({ at: '2026-09-15T18:22:00.000Z' }) },
     workflowRuns: [],
     activeProjectId: PAYMENTS_PROJECT_ID,
-    updatedAt: '2026-09-15T18:22:00.000Z' as IsoDateTime,
+    updatedAt: clock.iso({ at: '2026-09-15T18:22:00.000Z' }),
   }),
 ];
 
@@ -893,11 +896,11 @@ export const CHAT_AGENTS: ReadonlyArray<Agent> = [
     status: 'completed',
     runId: 'mock-flow-provider-run-triage' as ProviderRunId,
     outputSummary: 'Every failed notice retries on a fixed 200ms timer with no jitter and no cap.',
-    startedAt: '2026-09-16T10:02:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T10:14:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-16T10:14:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T10:02:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T10:14:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-16T10:14:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-16T10:14:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-16T10:14:00.000Z' }),
     modelOverride: 'gpt-5.6-luna',
     providerOverride: 'codex',
   },
@@ -910,11 +913,11 @@ export const CHAT_AGENTS: ReadonlyArray<Agent> = [
     status: 'completed',
     runId: 'mock-flow-provider-run-relay-backoff' as ProviderRunId,
     outputSummary: 'Exponential backoff with full jitter, capped at eight attempts and 90 seconds.',
-    startedAt: '2026-09-16T10:18:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T10:55:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-16T10:55:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T10:18:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T10:55:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-16T10:55:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-16T10:55:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-16T10:55:00.000Z' }),
     modelOverride: 'gpt-5.6-sol',
     providerOverride: 'codex',
   },
@@ -927,11 +930,11 @@ export const CHAT_AGENTS: ReadonlyArray<Agent> = [
     status: 'completed',
     runId: 'mock-flow-provider-run-relay-resolver' as ProviderRunId,
     outputSummary: 'Three review threads triaged, one fix committed, one explained, one declined.',
-    startedAt: '2026-09-16T11:00:00.000Z' as IsoDateTime,
-    completedAt: '2026-09-16T11:06:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-09-16T11:06:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-09-16T11:00:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-09-16T11:06:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-09-16T11:06:00.000Z' }),
     modelOverride: 'claude-sonnet-4-5',
     providerOverride: 'anthropic',
   },
@@ -1003,7 +1006,7 @@ export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-09-16T10:12:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:12:00.000Z' }),
   },
   {
     id: QUESTION_SIGNALS_ID,
@@ -1021,7 +1024,7 @@ export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-09-16T10:44:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:44:00.000Z' }),
   },
   {
     id: QUESTION_ANSWERED_ID,
@@ -1034,8 +1037,8 @@ export const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: 'Dead letter queue with a daily digest, and page only when the queue passes 50.',
     status: 'answered',
-    createdAt: '2026-09-16T10:06:00.000Z' as IsoDateTime,
-    answeredAt: '2026-09-16T10:09:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:06:00.000Z' }),
+    answeredAt: clock.iso({ at: '2026-09-16T10:09:00.000Z' }),
   },
 ];
 
@@ -1069,8 +1072,8 @@ export const CHAT_PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Round once per settlement batch',
     bodyMd: PLAN_MESSAGE,
     status: 'active',
-    createdAt: '2026-09-16T10:31:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-16T10:31:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-16T10:31:00.000Z' }),
     consumptionCount: 0,
   },
 ];
@@ -1083,7 +1086,7 @@ export const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
       kind: 'user_text',
       key: 'mock-flow-transcript-user',
       text: 'Settlement totals are off by a few cents per batch. Find it, then clean up the review on payments-api#412.',
-      at: '2026-09-16T10:00:00.000Z' as IsoDateTime,
+      at: clock.iso({ at: '2026-09-16T10:00:00.000Z' }),
       provider: 'codex',
       model: 'gpt-5.6-sol',
     },
@@ -1125,7 +1128,7 @@ export const TRANSCRIPT_ROWS: ReadonlyArray<TranscriptRow> = [
 ];
 
 const answeredAt = (minute: number): IsoDateTime =>
-  `2026-09-16T09:${String(minute).padStart(2, '0')}:00.000Z` as IsoDateTime;
+  clock.iso({ at: `2026-09-16T09:${String(minute).padStart(2, '0')}:00.000Z` });
 
 export const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   {
@@ -1135,7 +1138,7 @@ export const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     answerSource: 'agent',
     answeredByAgentId: CHAT_AGENT_RESOLVER_ID,
     status: 'answered',
-    answeredAt: '2026-09-16T10:18:00.000Z' as IsoDateTime,
+    answeredAt: clock.iso({ at: '2026-09-16T10:18:00.000Z' }),
   },
   ...OPEN_QUESTIONS.filter((question) => question.status === 'answered'),
   {

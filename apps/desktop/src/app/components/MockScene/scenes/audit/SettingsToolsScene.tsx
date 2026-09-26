@@ -2,15 +2,17 @@ import type {
   IntegrationBinding,
   IntegrationBindingId,
   IntegrationCredentialId,
-  IsoDateTime,
 } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../../../features/integrations/components/IntegrationGlyph';
 import { useAppStore } from '../../../../../store';
 import { SettingsFrame } from './SettingsFrame';
 import { SETTINGS_WORKSPACE_ID } from './settingsSeed';
 import { sceneParam } from './sceneParams';
+import { sceneClock } from '../../sceneClock';
 
-const AT = '2026-09-20T08:00:00.000Z' as IsoDateTime;
+const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
+
+const AT = clock.iso({ at: '2026-09-20T08:00:00.000Z' });
 
 const BINDINGS: ReadonlyArray<IntegrationBinding> = [
   {

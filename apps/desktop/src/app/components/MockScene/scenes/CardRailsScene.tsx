@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { PANE_RHYTHM, cn, Eyebrow } from '@goodboy/ui';
-import type { AgentId, IsoDateTime, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../../features/chat/utils/transcript-items';
 import { AnsweredCard } from '../../../../features/chat/components/ChatView/AnsweredCard';
 import { AuthRequiredCallout } from '../../../../features/chat/components/AuthRequiredCallout';
@@ -12,8 +12,11 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { QuestionCard } from '../../../../features/context/components/QuestionsTab/QuestionCard';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sceneClock } from '../sceneClock';
 
-const NOW = '2026-09-22T09:12:00.000Z' as IsoDateTime;
+const clock = sceneClock({ anchor: '2026-09-22T09:12:00.000Z' });
+
+const NOW = clock.iso({ at: '2026-09-22T09:12:00.000Z' });
 const noop = () => undefined;
 
 const OPEN_QUESTION = {

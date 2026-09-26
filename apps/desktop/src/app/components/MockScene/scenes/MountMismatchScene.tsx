@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type {
-  IsoDateTime,
   MountBranchObservation,
   MountId,
   Project,
@@ -14,12 +13,15 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-09T09:12:00.000Z' });
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-mismatch' as SessionId;
 const LEDGER_ID = 'mock-project-ledger-core' as ProjectId;
 const RELAY_ID = 'mock-project-notify-relay' as ProjectId;
-const NOW = '2026-09-09T09:12:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-09T09:12:00.000Z' });
 
 const ROUNDING_MOUNT = 'mock-mount-ledger-rounding' as MountId;
 const POSTINGS_MOUNT = 'mock-mount-ledger-postings' as MountId;

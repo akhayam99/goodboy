@@ -23,7 +23,9 @@ const WORKSPACE_NAME = 'Northwind';
 const NOW = Date.now();
 
 const iso = (daysAgo: number, hour = 10): IsoDateTime =>
-  new Date(NOW - daysAgo * 86_400_000 + hour * 3_600_000).toISOString() as IsoDateTime;
+  new Date(
+    Math.min(NOW, NOW - daysAgo * 86_400_000 + hour * 3_600_000),
+  ).toISOString() as IsoDateTime;
 
 const PAYMENTS_ID = 'mock-impact-session-payments-rounding' as SessionId;
 const NOTIFY_ID = 'mock-impact-session-notify-ratelimit' as SessionId;

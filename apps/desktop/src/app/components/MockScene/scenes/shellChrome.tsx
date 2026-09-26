@@ -19,6 +19,9 @@ import { PageCrumbContext } from '../../../../shared/components/PaneShell/PageCr
 import { useAppStore, type LensKind } from '../../../../store';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { shellArrangement } from '../../../shellArrangement';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
 const noop = () => undefined;
 
@@ -202,6 +205,6 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
     resolveOnGithub: null,
     resolveCommitStyle: null,
   },
-  createdAt: '2026-08-01T09:00:00.000Z' as IsoDateTime,
-  updatedAt: '2026-09-20T09:00:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-08-01T09:00:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-09-20T09:00:00.000Z' }),
 });

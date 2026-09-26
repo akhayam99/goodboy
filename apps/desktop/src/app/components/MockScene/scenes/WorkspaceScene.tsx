@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type {
-  IsoDateTime,
   MountId,
   Project,
   ProjectId,
@@ -13,13 +12,16 @@ import type {
 } from '@goodboy/types';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T10:30:00.000Z' });
 
 const WORKSPACE_ID = 'mock-workspace-northwind' as WorkspaceId;
 const SESSION_ID = 'mock-session-multi-project' as SessionId;
 const API_ID = 'mock-project-api' as ProjectId;
 const STOREFRONT_WEB_ID = 'mock-project-storefront-web' as ProjectId;
 const WEBSITE_ID = 'mock-project-website' as ProjectId;
-const NOW = '2026-08-25T10:30:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-08-25T10:30:00.000Z' });
 
 const OVERRIDES = {
   defaultProviderId: null,

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type {
   Agent,
   AgentId,
-  IsoDateTime,
   MountId,
   Project,
   ProjectId,
@@ -17,6 +16,9 @@ import type {
 } from '@goodboy/types';
 import { ChatView } from '../../../../features/chat/components/ChatView';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-07T09:12:00.000Z' });
 
 const WORKSPACE_ID = 'mock-transcript-workspace' as WorkspaceId;
 const SESSION_ID = 'mock-transcript-session' as SessionId;
@@ -24,7 +26,7 @@ const AGENT_ID = 'mock-transcript-agent' as AgentId;
 const RUN_ID = 'mock-transcript-run' as ProviderRunId;
 const API_ID = 'mock-transcript-project-api' as ProjectId;
 const STOREFRONT_WEB_ID = 'mock-transcript-project-storefront-web' as ProjectId;
-const NOW = '2026-09-07T09:12:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
 const OVERRIDES = {
   defaultProviderId: null,
