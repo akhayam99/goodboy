@@ -316,6 +316,7 @@ export {
   consumeDiffComments,
   reopenDiffComment,
   deleteDiffComment,
+  type DiffCommentAuthor,
 } from './queries/diff-comment';
 export {
   insertPrReviewDraft,

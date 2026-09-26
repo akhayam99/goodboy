@@ -2,6 +2,8 @@ import type { AgentId, IsoDateTime, SessionId } from './ids';
 
 export type DiffCommentStatus = 'open' | 'resolved' | 'consumed';
 
+export type DiffCommentAuthorKind = 'user' | 'agent';
+
 export type DiffCommentSide = 'old' | 'new';
 
 export type DiffCommentAnchor = Readonly<{
@@ -21,4 +23,6 @@ export type DiffComment = Readonly<{
   consumedAt?: IsoDateTime;
   consumedByAgentId?: AgentId;
   anchor?: DiffCommentAnchor;
+  authorKind: DiffCommentAuthorKind;
+  authorAgentId?: AgentId;
 }>;

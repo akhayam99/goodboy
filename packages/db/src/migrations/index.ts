@@ -55,6 +55,7 @@ import { m193WorkspacePermissionDefault } from './m193-workspace-permission-defa
 import { m194ProjectSentryLinks } from './m194-project-sentry-links';
 import { m195SessionBudgetMode } from './m195-session-budget-mode';
 import { m196SessionContextSeen } from './m196-session-context-seen';
+import { m197ResolveThreadsWithoutPr } from './m197-resolve-threads-without-pr';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -397,4 +398,5 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 194, sql: m194ProjectSentryLinks },
   { version: 195, sql: m195SessionBudgetMode },
   { version: 196, sql: m196SessionContextSeen },
+  { version: 197, sql: m197ResolveThreadsWithoutPr },
 ];

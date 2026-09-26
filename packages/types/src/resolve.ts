@@ -21,9 +21,10 @@ export type ResolveThread = Readonly<{
   id: string;
   sessionId: SessionId;
   projectId: ProjectId | null;
-  prNumber: number;
+  prNumber: number | null;
   threadId: string;
   originKind: AgentSourceKind;
+  diffCommentId: string | null;
   state: ResolveThreadState;
   stage: ResolveStage;
   stateReason: string | null;
@@ -48,7 +49,7 @@ export type ResolveAttempt = Readonly<{
   id: string;
   sessionId: SessionId;
   agentId: AgentId;
-  prNumber: number;
+  prNumber: number | null;
   threadIds: ReadonlyArray<string>;
   provider: string;
   model: string;

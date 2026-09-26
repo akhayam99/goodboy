@@ -78,7 +78,7 @@ export type UpdateParams = SessionParams & {
   >;
   readonly initialPatch?: UpdateParams['patch'];
   readonly revision?: number;
-  readonly prNumber?: number;
+  readonly prNumber?: number | null;
 };
 
 export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revision' | 'patch'>>;

@@ -96,6 +96,7 @@ const threadOf = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   prNumber: 248,
   threadId: 'PRRT_1',
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'open',
   stage: 'new',
   stateReason: null,
