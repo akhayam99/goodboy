@@ -663,4 +663,19 @@ describe('the resolve item view', () => {
     expect(screen.getByText('Reply posted · Left open on GitHub')).toBeDefined();
     expect(screen.queryByLabelText('Reply to reviewer')).toBeNull();
   });
+
+  it('resolves a note with no reply to write and says the fix stays on the branch', () => {
+    renderView({ isNote: true, mode: 'resolve' });
+
+    expect(screen.getByText('Keeps the fix on this branch and closes the note')).toBeDefined();
+    expect(screen.queryByLabelText('Reply to reviewer')).toBeNull();
+    expect(screen.queryByText('Edit reply')).toBeNull();
+  });
+
+  it('closes a note without asking for a reply', () => {
+    renderView({ isNote: true, mode: 'close' });
+
+    const close = screen.getByRole('button', { name: 'Close note' });
+    expect(close.hasAttribute('disabled')).toBe(false);
+  });
 });

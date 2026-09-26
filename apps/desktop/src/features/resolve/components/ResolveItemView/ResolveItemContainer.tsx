@@ -16,7 +16,11 @@ import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
 import { selectResolveCheckScript } from '../../selectResolveCheckScript';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
-import { resolveItemActions, type ResolveItemActionId } from '../../resolveItemActions';
+import {
+  noteActions,
+  resolveItemActions,
+  type ResolveItemActionId,
+} from '../../resolveItemActions';
 import {
   PARTIAL_ACCEPTANCE,
   PARTIAL_REFUSAL,
@@ -136,6 +140,7 @@ export const ResolveItemContainer = ({
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const discussResolveThread = useAppStore((s) => s.discussResolveThread);
   const publishResolveThread = useAppStore((s) => s.publishResolveThread);
+  const closeResolvedNote = useAppStore((s) => s.closeResolvedNote);
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
   const reopenResolveQueueItem = useAppStore((s) => s.reopenResolveQueueItem);
   const runResolveCheck = useAppStore((s) => s.runResolveCheck);
@@ -143,6 +148,7 @@ export const ResolveItemContainer = ({
   const loadDiscoveredScripts = useAppStore((s) => s.loadDiscoveredScripts);
   const metrics = useAgentMetrics({ sessionId });
   const threadId = row.thread.threadId;
+  const isNote = row.thread.originKind === 'diff_comment';
   const { reply, instruction, mode, setReply, setInstruction, setMode } = useResolveItemDraft({
     sessionId,
     threadId,
@@ -272,6 +278,10 @@ export const ResolveItemContainer = ({
         } else if (row.item.approvalState !== 'accepted' || isRewritten) {
           await acceptResolveQueueItem(decision);
         }
+        if (isNote) {
+          await closeResolvedNote({ sessionId, threadId });
+          return;
+        }
         await publishResolveThread({ sessionId, threadId });
       },
       onSuccess: () => {
@@ -295,6 +305,16 @@ export const ResolveItemContainer = ({
     });
   };
   const onRefuse = (): void => {
+    if (isNote) {
+      void guard({
+        run: () => closeResolvedNote({ sessionId, threadId }),
+        onSuccess: () => {
+          setMode('read');
+          onSelect(null);
+        },
+      });
+      return;
+    }
     void guard({
       run: () =>
         refuseResolveQueueItem({
@@ -335,7 +355,7 @@ export const ResolveItemContainer = ({
       .finally(() => isStillSelected() && setIsCheckRunning(false));
   };
 
-  const actions = resolveItemActions({
+  const actionSet = resolveItemActions({
     status: row.status,
     proposalKind: row.proposalKind,
     failedStep: row.rowState.failedStep,
@@ -351,6 +371,7 @@ export const ResolveItemContainer = ({
     isEditing: mode !== 'read',
     isBusy,
   });
+  const actions = isNote ? noteActions({ set: actionSet }) : actionSet;
   const onSendToAgent = (): void => {
     const typed = instruction.trim();
     const params = {
@@ -440,6 +461,7 @@ export const ResolveItemContainer = ({
     <ResolveItemView
       sessionId={sessionId}
       row={row}
+      isNote={isNote}
       position={position}
       tab={tab}
       onTabChange={onTabChange}

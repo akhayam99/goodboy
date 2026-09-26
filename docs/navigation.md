@@ -748,7 +748,9 @@ one is open at a time.
 - **Review is the pull request destination for GitHub, and it has no second
   copy.** The lens is Review, its list of review threads is Conversations
   (heading, back links and the overview action say so), and Resolve stays a
-  verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
+  verb on the actions that settle a thread. Review exists without a pull
+  request too: then it is one root with a `No pull request` header and the
+  session's notes (see Pull request review in `docs/concepts.md`). One lens holds the review conversations, the PR details, the PR
   activity, the checks, the create-a-PR form and the reviewer's own draft
   review. They are detail modes of that one surface, switched from its dock,
   and each mode swaps in for the conversation list like any other detail. An
@@ -918,8 +920,8 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N open notes`, the resolver routing chip and
-`Propose fixes`; Write review docks `N drafts` and `Submit review`, whose
+The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
+the same notes; Write review docks `N drafts` and `Submit review`, whose
 popover holds the summary and the verdict. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 

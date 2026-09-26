@@ -448,11 +448,26 @@ everything that streams in between.
 
 ## Pull request review
 
-A **diff comment** is your note on a line of the code under review.
+A **note** is a comment on a line of the diff that stays in Goodboy: yours, or
+one an agent reviewer left. A note never publishes on its own.
 
 A **review conversation** is Goodboy's saved record of one review, issue or
-diff comment. It keeps its state, its verdict, its draft reply and the commits
-that answer it.
+note. It keeps its state, its verdict, its draft reply and the commits that
+answer it.
+
+Review exists with or without a pull request. Without one, its header reads the
+session title and `branch → base · No pull request`, with `Open pull request`,
+and Conversations lists the notes. With a pull request, Conversations mixes the
+GitHub threads and the notes, and a filter `All · GitHub · Notes` appears when
+both are there. Every open note gets a conversation, and deleting or resolving
+the note closes it. An agent reviewer's comments on a branch without a pull
+request are kept as notes. When a pull request arrives the notes stay notes;
+`Post open notes to the PR` in the Conversations menu turns them into draft
+review comments, never on its own.
+
+A note resolves like a review thread, with the same resolver and the same
+panel, but there is no reply to write: `Resolve` keeps the fix on the branch
+and closes the note, and `Close note` closes it without a change.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy

@@ -180,7 +180,6 @@ vi.mock('@goodboy/db', () => ({
   insertDiffComment: vi.fn(async () => undefined),
   resolveDiffComment: vi.fn(async () => undefined),
   reopenDiffComment: vi.fn(async () => undefined),
-  consumeDiffComments: vi.fn(async () => undefined),
   deleteDiffComment: vi.fn(async () => undefined),
   listIntegrationBindingsForWorkspace: vi.fn(async () => []),
   getIntegrationBinding: vi.fn(async () => null),

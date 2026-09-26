@@ -7,7 +7,7 @@ import type {
   Session,
   SessionId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useDiffComments, sessionPlace } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../../store';
 import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { selectPrWrite } from '../../../../store/slices/pr-writes/selectPrWrite';
@@ -33,8 +33,8 @@ import type { ReviewMode } from '../../reviewMode';
 import { PrActionsMenu } from './PrActionsMenu';
 import { PrContextRow } from './PrContextRow';
 import { PublishConversationsBar } from './PublishConversationsBar';
-import { NoPullRequestState } from './ReviewEmptyStates';
-import { openDiffComments } from '../../../session/resolve/openDiffComments';
+import { NoPullRequestHeader } from './NoPullRequestHeader';
+import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
 import { ResolveQueueHome } from '../../../resolve/components/ResolveQueueHome';
 import { ChecksMode } from './modes/ChecksMode';
 import { CreatePrMode } from './modes/CreatePrMode';
@@ -90,10 +90,11 @@ export const ReviewPane = ({ session }: Props) => {
   const navigate = useAppStore((s) => s.navigate);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
-  const openDiffLens = useAppStore((s) => s.openDiffLens);
 
-  const diffComments = useDiffComments(sessionId);
   const repo = useSessionRepo({ sessionId });
+  const baseBranch = useAppStore(
+    (s) => selectActiveMount({ state: s, sessionId })?.baseBranch ?? null,
+  );
   const worktreePath = repo?.worktreePath ?? null;
   const roleModels = useSessionRoleModels({ sessionId });
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
@@ -223,11 +224,10 @@ export const ReviewPane = ({ session }: Props) => {
   );
 
   const openDrafts = useMemo(() => drafts.filter((draft) => draft.status === 'draft'), [drafts]);
-  const localNotes = useMemo(() => openDiffComments({ comments: diffComments }), [diffComments]);
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
 
-  if (pr === null && (!isGithubConnected || repo === null)) {
+  if (pr === null && repo === null) {
     return (
       <PaneShell title={REVIEW_TITLE} icon={CONCEPT_ICONS.review}>
         <GithubConnectionEmptyState
@@ -258,16 +258,23 @@ export const ReviewPane = ({ session }: Props) => {
 
   if (pr === null) {
     return (
-      <PaneShell title={REVIEW_TITLE} icon={CONCEPT_ICONS.review}>
-        <NoPullRequestState
-          isDraftAgentRunning={isDraftAgentRunning}
-          onDraft={() =>
-            isDraftAgentRunning
-              ? navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) })
-              : setMode('create_pr')
-          }
-        />
-      </PaneShell>
+      <ResolveQueueHome
+        session={session}
+        header={
+          <NoPullRequestHeader
+            title={session.goal}
+            branch={repo?.branch ?? null}
+            baseBranch={baseBranch}
+            canOpenPullRequest={isGithubConnected}
+            isDraftAgentRunning={isDraftAgentRunning}
+            onOpenPullRequest={() =>
+              isDraftAgentRunning
+                ? navigate({ to: sessionPlace({ sessionId, lens: 'agents' }) })
+                : setMode('create_pr')
+            }
+          />
+        }
+      />
     );
   }
 
@@ -322,10 +329,8 @@ export const ReviewPane = ({ session }: Props) => {
       <PrActivityMode
         pr={pr}
         comments={comments}
-        localNotes={localNotes}
         onOpenUrl={(url) => void openUrl(url)}
         onOpenConversations={() => setMode('queue')}
-        onOpenLocalNotes={() => openDiffLens(sessionId, { kind: 'working', path: null })}
         onFix={startGeneralFix}
       />
     ) : mode === 'checks' ? (

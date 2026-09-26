@@ -608,13 +608,24 @@ describe('ReviewPane', () => {
     });
   });
 
-  it('drafts a pull request inline when the session has none', () => {
+  it('keeps Review on the notes when the session has no pull request', () => {
     h.state.sessionGithub = {
       [SESSION_ID]: { pr: null, detail: null, detailLoading: false, detailError: null },
     };
     render(<ReviewPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Draft a pull request' }));
+    expect(screen.getByTestId('resolve-queue')).toBeDefined();
+    expect(screen.getByText('No pull request')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'PR details' })).toBeNull();
+  });
+
+  it('opens a pull request from the header when the session has none', () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, detail: null, detailLoading: false, detailError: null },
+    };
+    render(<ReviewPane session={SESSION} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request' }));
 
     expect(screen.getByTestId('create-pr')).toBeDefined();
   });

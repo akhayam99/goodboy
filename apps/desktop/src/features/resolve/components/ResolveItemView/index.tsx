@@ -43,6 +43,7 @@ import { ResolveAgentActivity } from '../ResolveAgentActivity';
 type Props = {
   readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
+  readonly isNote?: boolean;
   readonly position: PanelPosition | null;
   readonly tab: ConversationTab;
   readonly onTabChange: (tab: ConversationTab) => void;
@@ -109,9 +110,16 @@ type FooterParams = {
   readonly mode: ResolveDecisionMode;
   readonly isAnswering: boolean;
   readonly isReplyBlank: boolean;
+  readonly isNote: boolean;
 };
 
-const FOOTER_NOTE = ({ mode, isAnswering, isReplyBlank }: FooterParams): string => {
+const FOOTER_NOTE = ({ mode, isAnswering, isReplyBlank, isNote }: FooterParams): string => {
+  if (isNote && mode === 'resolve') {
+    return RESOLVE_ITEM_LABEL.resolveLocalNote;
+  }
+  if (isNote && mode === 'close') {
+    return RESOLVE_ITEM_LABEL.closeLocalNote;
+  }
   if (isReplyBlank && mode === 'close') {
     return EMPTY_REFUSAL_REPLY;
   }
@@ -133,7 +141,14 @@ const FOOTER_NOTE = ({ mode, isAnswering, isReplyBlank }: FooterParams): string 
   return '';
 };
 
-const COMMIT_LABEL = ({ mode, isAnswering }: Omit<FooterParams, 'isReplyBlank'>): string => {
+const COMMIT_LABEL = ({
+  mode,
+  isAnswering,
+  isNote,
+}: Omit<FooterParams, 'isReplyBlank'>): string => {
+  if (isNote && mode === 'close') {
+    return RESOLVE_ITEM_LABEL.closeLocalNoteAction;
+  }
   if (mode === 'discuss') {
     return RESOLVE_ITEM_LABEL.sendReply;
   }
@@ -149,6 +164,7 @@ const COMMIT_LABEL = ({ mode, isAnswering }: Omit<FooterParams, 'isReplyBlank'>)
 export const ResolveItemView = ({
   sessionId,
   row,
+  isNote = false,
   position,
   tab,
   onTabChange,
@@ -203,14 +219,15 @@ export const ResolveItemView = ({
   const hasAgentTab = row.attempt !== null && agentPanel !== null;
   const location = threadLocationOf({ row });
   const isAgentShown = hasAgentTab && tab === 'agent';
-  const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank });
+  const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank, isNote });
   const commitLabel =
     mode === 'resolve'
       ? (actions.primary?.label ?? RESOLVE_ITEM_LABEL.resolve)
-      : COMMIT_LABEL({ mode, isAnswering });
+      : COMMIT_LABEL({ mode, isAnswering, isNote });
   const isCommitBlocked =
     (mode === 'fix' && isAnswering && instruction.trim() === '') ||
-    ((mode === 'discuss' || mode === 'close') && isReplyBlank);
+    (!isNote && (mode === 'discuss' || mode === 'close') && isReplyBlank);
+  const isReplyShown = !isNote || mode === 'fix';
 
   return (
     <div
@@ -267,22 +284,24 @@ export const ResolveItemView = ({
                 {!isDelivered && (mode === 'read' || mode === 'resolve') && !isAnswering && (
                   <SharedCandidateNote members={sharedMembers} onSelectMember={onSelectRelated} />
                 )}
-                <DecisionBlock
-                  fieldId={fieldId}
-                  reply={reply}
-                  instruction={instruction}
-                  mode={mode}
-                  proposalKind={proposalKind}
-                  isAnswering={isAnswering}
-                  isDelivered={isDelivered}
-                  deliveredReply={row.delivery?.replyBody ?? null}
-                  deliverySupport={deliverySupportLine({ row })}
-                  isBusy={isBusy}
-                  onChangeReply={onChangeReply}
-                  onChangeInstruction={onChangeInstruction}
-                  onEditReply={onEditReply}
-                  settingsLine={<ReplySettingsLine sessionId={sessionId} />}
-                />
+                {isReplyShown && (
+                  <DecisionBlock
+                    fieldId={fieldId}
+                    reply={reply}
+                    instruction={instruction}
+                    mode={mode}
+                    proposalKind={proposalKind}
+                    isAnswering={isAnswering}
+                    isDelivered={isDelivered}
+                    deliveredReply={row.delivery?.replyBody ?? null}
+                    deliverySupport={deliverySupportLine({ row })}
+                    isBusy={isBusy}
+                    onChangeReply={onChangeReply}
+                    onChangeInstruction={onChangeInstruction}
+                    onEditReply={onEditReply}
+                    settingsLine={<ReplySettingsLine sessionId={sessionId} />}
+                  />
+                )}
                 {note !== null && <p className="text-secondary text-warning">{note}</p>}
                 {error !== null && <p className="text-secondary text-danger">{error}</p>}
               </div>
