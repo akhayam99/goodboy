@@ -1,6 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import type { SessionArtifact } from '@goodboy/types';
 import { artifactMirrorFiles } from './artifactMirrorFiles';
+import { ARTIFACT_RENDERER_VERSION } from './artifactMirrorMeta';
 import { artifactFolderName } from '../artifactFolderName';
 import { pendingArtifactMirrors, writeArtifactMirror } from './artifactMirrorInvoke';
 
@@ -21,7 +22,7 @@ const appVersion = (): Promise<string | null> => {
 };
 
 export const artifactMirrorKey = ({ artifact }: { readonly artifact: SessionArtifact }): string =>
-  `${artifact.revision}|${artifact.updatedAt}|${artifact.status}|${artifact.title}`;
+  `${artifact.revision}|${artifact.updatedAt}|${artifact.status}|${artifact.title}|${ARTIFACT_RENDERER_VERSION}`;
 
 export const markArtifactMirrored = ({
   artifact,
@@ -63,6 +64,7 @@ const staleItems = async ({
           folder: folders[index] ?? '',
           revision: artifact.revision,
           updatedAt: artifact.updatedAt,
+          rendererVersion: ARTIFACT_RENDERER_VERSION,
         })),
       }),
     );

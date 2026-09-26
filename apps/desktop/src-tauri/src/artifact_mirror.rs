@@ -132,6 +132,7 @@ pub struct MirrorEntry {
     pub folder: String,
     pub revision: i64,
     pub updated_at: String,
+    pub renderer_version: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -139,6 +140,7 @@ pub struct MirrorEntry {
 struct MirrorMeta {
     revision: Option<i64>,
     updated_at: Option<String>,
+    renderer_version: Option<String>,
 }
 
 fn is_current(home: &Path, entry: &MirrorEntry) -> bool {
@@ -151,7 +153,9 @@ fn is_current(home: &Path, entry: &MirrorEntry) -> bool {
     let Ok(meta) = serde_json::from_str::<MirrorMeta>(&text) else {
         return false;
     };
-    meta.revision == Some(entry.revision) && meta.updated_at.as_deref() == Some(&entry.updated_at)
+    meta.revision == Some(entry.revision)
+        && meta.updated_at.as_deref() == Some(&entry.updated_at)
+        && meta.renderer_version.as_deref() == Some(&entry.renderer_version)
 }
 
 pub(crate) fn pending_mirrors(home: &Path, entries: &[MirrorEntry]) -> Vec<String> {
@@ -311,7 +315,19 @@ mod tests {
     }
 
     fn meta(revision: i64, updated_at: &str) -> String {
-        format!("{{\"revision\":{revision},\"updatedAt\":\"{updated_at}\"}}")
+        format!(
+            "{{\"revision\":{revision},\"updatedAt\":\"{updated_at}\",\"rendererVersion\":\"1\"}}"
+        )
+    }
+
+    fn entry(revision: i64, updated_at: &str) -> MirrorEntry {
+        MirrorEntry {
+            workspace_slug: "harborline".into(),
+            folder: "report".into(),
+            revision,
+            updated_at: updated_at.into(),
+            renderer_version: "1".into(),
+        }
     }
 
     #[test]
@@ -363,13 +379,8 @@ mod tests {
     #[test]
     fn reports_a_mirror_as_pending_until_its_meta_matches() {
         let home = scratch_home();
-        let entry = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
-        assert_eq!(pending_mirrors(&home, &[entry]), vec!["report".to_string()]);
+        let want = entry(2, "2026-09-25T10:00:00.000Z");
+        assert_eq!(pending_mirrors(&home, &[want]), vec!["report".to_string()]);
         write_mirror(
             &home,
             "harborline",
@@ -377,12 +388,7 @@ mod tests {
             &[file("meta.json", &meta(1, "2026-09-24T10:00:00.000Z"))],
         )
         .expect("old");
-        let stale = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
+        let stale = entry(2, "2026-09-25T10:00:00.000Z");
         assert_eq!(pending_mirrors(&home, &[stale]).len(), 1);
         write_mirror(
             &home,
@@ -391,15 +397,33 @@ mod tests {
             &[file("meta.json", &meta(2, "2026-09-25T10:00:00.000Z"))],
         )
         .expect("new");
-        let current = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
+        let current = entry(2, "2026-09-25T10:00:00.000Z");
         assert!(pending_mirrors(&home, &[current]).is_empty());
         let located = locate_mirror(&home, "harborline", "report").expect("locate");
         assert!(located.exists);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn reports_a_mirror_as_pending_when_only_the_renderer_version_moves() {
+        let home = scratch_home();
+        write_mirror(
+            &home,
+            "harborline",
+            "report",
+            &[file("meta.json", &meta(2, "2026-09-25T10:00:00.000Z"))],
+        )
+        .expect("write");
+        let same = entry(2, "2026-09-25T10:00:00.000Z");
+        assert!(pending_mirrors(&home, &[same]).is_empty());
+        let newer_renderer = MirrorEntry {
+            renderer_version: "2".into(),
+            ..entry(2, "2026-09-25T10:00:00.000Z")
+        };
+        assert_eq!(
+            pending_mirrors(&home, &[newer_renderer]),
+            vec!["report".to_string()]
+        );
         let _ = std::fs::remove_dir_all(home);
     }
 
@@ -463,13 +487,11 @@ mod tests {
         .expect("second");
         assert_eq!(second, first);
         assert!(!first.with_file_name(renamed).exists());
-        let entry = MirrorEntry {
-            workspace_slug: "harborline".into(),
+        let renamed_entry = MirrorEntry {
             folder: renamed.into(),
-            revision: 2,
-            updated_at: "2026-09-26T10:00:00.000Z".into(),
+            ..entry(2, "2026-09-26T10:00:00.000Z")
         };
-        assert!(pending_mirrors(&home, &[entry]).is_empty());
+        assert!(pending_mirrors(&home, &[renamed_entry]).is_empty());
         let located = locate_mirror(&home, "harborline", renamed).expect("locate");
         assert_eq!(located.path, first.to_string_lossy());
         assert!(remove_mirror(&home, "harborline", renamed).expect("remove"));

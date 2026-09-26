@@ -6,6 +6,7 @@ export type ArtifactMirrorEntry = Readonly<{
   folder: string;
   revision: number;
   updatedAt: string;
+  rendererVersion: string;
 }>;
 
 export type ArtifactMirrorLocation = Readonly<{
