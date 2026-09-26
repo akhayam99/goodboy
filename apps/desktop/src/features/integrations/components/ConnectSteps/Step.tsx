@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn, tintClasses } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type StepStatus = 'done' | 'current' | 'later';
 
@@ -36,7 +37,7 @@ export const ConnectStepsStep = ({ step, ordinal, isLast }: Props) => {
           )}
           style={{ width: NODE_SIZE, height: NODE_SIZE }}
         >
-          {step.status === 'done' ? <Check size={12} aria-hidden /> : ordinal}
+          {step.status === 'done' ? <Check size={ICON_SIZE.row} aria-hidden /> : ordinal}
         </span>
         {isLast ? null : (
           <span
