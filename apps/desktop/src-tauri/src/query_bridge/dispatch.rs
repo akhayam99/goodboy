@@ -226,6 +226,7 @@ async fn run_read(
                 scope.project.clone(),
                 optional_text(args, "query"),
                 optional_text(args, "cursor"),
+                optional_text(args, "sentry_project"),
                 app.state(),
             )
             .await

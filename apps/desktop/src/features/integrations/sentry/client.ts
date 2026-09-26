@@ -17,8 +17,14 @@ type SentryIssueMetadata = {
   value: string | null;
 };
 
+type SentryIssueProject = {
+  slug: string;
+  name: string | null;
+};
+
 export type SentryIssue = {
   id: string;
+  project?: SentryIssueProject | null;
   shortId: string | null;
   title: string;
   culprit: string | null;
@@ -127,14 +133,30 @@ export const sentryFetchIssues = async (
   query?: string,
   cursor?: string,
   projectId?: ProjectId,
+  sentryProject?: string,
 ): Promise<SentryIssuesPage> => {
   return invoke<SentryIssuesPage>('sentry_fetch_issues', {
     workspaceId,
     query: query ?? null,
     cursor: cursor ?? null,
+    sentryProject: sentryProject ?? null,
     ...(projectId != null ? { projectId } : {}),
   });
 };
+
+export type SentryCodeMapping = {
+  readonly projectSlug: string | null;
+  readonly repoName: string | null;
+  readonly stackRoot: string | null;
+  readonly sourceRoot: string | null;
+};
+
+export const sentryListCodeMappings = async ({
+  workspaceId,
+}: {
+  readonly workspaceId: WorkspaceId;
+}): Promise<ReadonlyArray<SentryCodeMapping>> =>
+  invoke<ReadonlyArray<SentryCodeMapping>>('sentry_list_code_mappings', { workspaceId });
 
 export const sentryFetchIssueDetail = async (
   workspaceId: WorkspaceId,

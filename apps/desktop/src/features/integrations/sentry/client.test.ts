@@ -7,6 +7,7 @@ import {
   sentryFetchIssueDetail,
   sentryFetchIssues,
   sentryListOrganizations,
+  sentryListCodeMappings,
   sentryListProjects,
 } from './client';
 
@@ -62,6 +63,7 @@ describe('sentryFetchIssues', () => {
       workspaceId: WS,
       query: null,
       cursor: null,
+      sentryProject: null,
     });
   });
 
@@ -72,6 +74,7 @@ describe('sentryFetchIssues', () => {
       workspaceId: WS,
       query: 'is:unresolved',
       cursor: 'cur-1',
+      sentryProject: null,
     });
   });
 });
@@ -118,5 +121,26 @@ describe('sentry lookups', () => {
       token: null,
       org: 'northwind',
     });
+  });
+});
+
+describe('sentry project links', () => {
+  it('reads issues of a linked sentry project and the org code mappings', async () => {
+    mockInvoke.mockResolvedValueOnce({ issues: [], next_cursor: null });
+    mockInvoke.mockResolvedValueOnce([
+      { projectSlug: 'payments-api', repoName: 'northwind/ledger-core' },
+    ]);
+
+    await sentryFetchIssues(WS, undefined, undefined, undefined, 'payments-api');
+    const mappings = await sentryListCodeMappings({ workspaceId: WS });
+
+    expect(mockInvoke).toHaveBeenNthCalledWith(1, 'sentry_fetch_issues', {
+      workspaceId: WS,
+      query: null,
+      cursor: null,
+      sentryProject: 'payments-api',
+    });
+    expect(mockInvoke).toHaveBeenNthCalledWith(2, 'sentry_list_code_mappings', { workspaceId: WS });
+    expect(mappings[0]?.repoName).toBe('northwind/ledger-core');
   });
 });

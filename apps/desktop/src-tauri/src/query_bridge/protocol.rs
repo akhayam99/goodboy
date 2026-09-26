@@ -364,9 +364,9 @@ pub const CATALOG: &[VerbSpec] = &[
     VerbSpec {
         provider: "sentry",
         verb: "issues",
-        params: &[opt("query"), opt("cursor")],
+        params: &[opt("query"), opt("cursor"), opt("sentry_project")],
         access: Access::Read,
-        summary: "issues in the connected project",
+        summary: "issues in the connected project, or in another sentry_project slug of the org",
     },
     VerbSpec {
         provider: "sentry",

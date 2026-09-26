@@ -37,7 +37,7 @@ They can also act on them, the same way you can from Goodboy:
 | Bitbucket | PRs, diffs, comments, build statuses       | comment, approve, request changes, merge, decline |
 | Jira      | issues, comments, transitions              | comment, update, transition                       |
 | Linear    | issues, comment threads                    | comment, reply, update description                |
-| Sentry    | issues and issue detail                    |                                                   |
+| Sentry    | issues (any linked project), issue detail  |                                                   |
 | Slack     | channels, threads, users, permalinks       | reply, add reaction                               |
 
 ## What you control

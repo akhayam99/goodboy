@@ -388,6 +388,7 @@ pub fn run() {
             sentry::sentry_connect,
             sentry::sentry_list_organizations,
             sentry::sentry_list_projects,
+            sentry::sentry_list_code_mappings,
             sentry::sentry_fetch_issues,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
