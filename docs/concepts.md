@@ -566,7 +566,8 @@ specific rule that fits wins.
 
 - Rules reach Claude only. The session's permission mode reaches every
   provider, and a mode a provider can't honor runs as a stricter one
-  ([providers.md](providers.md#permission-modes-per-cli))
+  ([providers.md](providers.md#permission-modes-per-cli)); the agent's row
+  then says so (`Read only · Ask first isn't available on Codex`)
 - When a call is denied in a run with no one watching, the turn stops. The
   agent's row, its session card and the top bar's Needs you all read **Needs
   approval**, not running, until you answer

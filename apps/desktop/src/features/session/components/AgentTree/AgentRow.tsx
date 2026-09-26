@@ -4,7 +4,8 @@ import { Chip, InlineConfirm } from '@goodboy/ui';
 import { contextTokensForUsage } from '@goodboy/core';
 import type { Agent, TelemetryRecord } from '@goodboy/types';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import { agentHasUnread } from '../../../../store';
+import { agentHasUnread, useAppStore } from '../../../../store';
+import { fallbackModeLine } from '../../../permissions/utils/fallbackModeLine';
 import { formatCost } from '../../agent-row-format';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 import { isAgentClosedByUser } from '../../agent-lifecycle';
@@ -92,6 +93,17 @@ export const AgentRow = ({
     telemetry != null ? `Model: ${modelLabel(telemetry.model)}` : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
+  const modeLine =
+    useAppStore((state) => {
+      const session = state.sessions.find((candidate) => candidate.id === run.sessionId);
+      if (session === undefined) {
+        return null;
+      }
+      return fallbackModeLine({
+        provider: run.providerOverride ?? session.providerPreference.defaultProvider,
+        mode: session.permissionMode,
+      });
+    }) ?? null;
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
   const hoverMarkViewed = useHoverMarkViewed({
     sessionId: run.sessionId,
@@ -183,6 +195,9 @@ export const AgentRow = ({
             ) : (
               <Chip tone="success" size="xs" bordered={false} label="completed" />
             ))}
+          {modeLine === null ? null : (
+            <span className="min-w-0 truncate text-meta text-muted-foreground">{modeLine}</span>
+          )}
         </>
       }
       meta={
