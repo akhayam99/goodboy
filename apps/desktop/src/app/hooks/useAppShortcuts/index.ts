@@ -57,7 +57,7 @@ export const useAppShortcuts = ({
       if (workspace === undefined) {
         return;
       }
-      void openWorkspace(workspace.id, workspace.name);
+      void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
     },
     [workspaces, openWorkspace],
   );

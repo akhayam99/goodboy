@@ -268,6 +268,7 @@ import type {
 } from './slices/project-mounts/removeMountWorktree';
 import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
+import type { OpenWorkspaceParams, OpenWorkspaceResult } from './slices/presence/openWorkspace';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
@@ -373,7 +374,8 @@ type AppActions = {
   closeStudio(): void;
   loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  openWorkspace(id: WorkspaceId, title: string): Promise<void>;
+  switchWorkspaceHere(params: { readonly id: WorkspaceId; readonly title: string }): Promise<void>;
+  openWorkspace(params: OpenWorkspaceParams): Promise<OpenWorkspaceResult>;
   setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
   removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
@@ -427,6 +429,8 @@ type AppActions = {
     profile: WorkspaceProfile;
   }): Promise<Workspace>;
   disconnectWorkspace(id: WorkspaceId): Promise<void>;
+  loadDisconnectedWorkspaces(): Promise<void>;
+  reconnectWorkspaceById(id: WorkspaceId): Promise<void>;
   mergeWorkspaces(input: {
     sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
     targetWorkspaceId: WorkspaceId;
@@ -1063,6 +1067,7 @@ export const initialState: AppState = {
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
+  disconnectedWorkspaces: [],
   projects: [],
   workspaceIntegrations: {},
   integrationCredentials: [],

@@ -178,7 +178,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         label: w.name,
         sublabel: linkedProjectsLabel({ projects, workspaceId: w.id }),
         group: 'workspace',
-        onSelect: () => void openWorkspace(w.id, w.name),
+        onSelect: () => void openWorkspace({ id: w.id, title: w.name, onRunning: 'new-window' }),
       });
     }
 

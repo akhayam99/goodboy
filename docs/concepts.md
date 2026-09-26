@@ -83,6 +83,15 @@ one-line **description**. Both live on the project row in workspace settings.
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
+**One workspace per window.** Switching a window to another workspace cancels
+every turn running in the one it had, so opening a workspace only switches
+this window in place when nothing is running here. When agents are running,
+the workspace popover asks first and offers a new window, which keeps them
+going; a side door that used to switch silently (a notification, an inbox
+item, Add workspace) now opens that workspace's own window instead of
+touching this one. `⌘Enter` on a workspace row always opens a new window,
+no question asked.
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes

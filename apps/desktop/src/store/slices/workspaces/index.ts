@@ -1,7 +1,9 @@
 import { addWorkspace } from './addWorkspace';
 import { createWorkspace } from './createWorkspace';
 import { disconnectWorkspace } from './disconnectWorkspace';
+import { loadDisconnectedWorkspaces } from './loadDisconnectedWorkspaces';
 import { mergeWorkspaces } from './mergeWorkspaces';
+import { reconnectWorkspaceById } from './reconnectWorkspaceById';
 import { renameWorkspace } from './renameWorkspace';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 import { updateWorkspaceProfile } from './updateWorkspaceProfile';
@@ -13,6 +15,8 @@ export const createWorkspacesSlice = (set: SetFn, get: GetFn) => {
     addWorkspace: addWorkspace(set, get),
     createWorkspace: createWorkspace(set, get),
     disconnectWorkspace: disconnectWorkspace(set, get),
+    loadDisconnectedWorkspaces: loadDisconnectedWorkspaces(set),
+    reconnectWorkspaceById: reconnectWorkspaceById(set, get),
     mergeWorkspaces: mergeWorkspaces(set, get),
     renameWorkspace: renameWorkspace(set, get),
     updateWorkspaceProfile: updateWorkspaceProfile(set, get),

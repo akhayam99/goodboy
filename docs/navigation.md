@@ -400,9 +400,18 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. Workspace settings is the popover's
-  last row for the current workspace, so the bar holds no second settings
-  control.
+  lists workspaces as rows of its own. `Find a workspace or project` filters by
+  workspace name and by project name. The current workspace sits in its own
+  `This window` row (a check mark and `Current`, plus the only gear icon into
+  Workspace settings); every other workspace shows one verb, `Open`, that
+  replaces the workspace in this window (`⌘Enter` always opens a new window
+  instead, and a row already open elsewhere says `In another window`). Open
+  replacing a window with agents running here asks first, inline under the
+  row, never in a modal: the primary keeps them going in a new window, the
+  ghost alternative stops them and opens here. A closed `Disconnected` group
+  lists workspaces removed from disk, each with a small `Reconnect`. Settings
+  opens on App > General; only Workspace settings lives behind this popover,
+  so the bar holds no second settings control.
 - **Identity is pinned and mounted once.** Workspace identity stays at the left
   of the top bar on the board, inside sessions, and under studios. Exactly one
   switcher is live, and ⌘O opens its single anchored popover.
@@ -443,8 +452,9 @@ form, and its primary action opens the full form instead of sending. The
 popover opens by itself once, when the first project is added; the checklist
 has no floating card.
 
-Right: Inbox, Workflows and Settings. Settings opens on the current workspace
-when there is one. Providers & models is a Settings scope, reached from the
+Right: Inbox, Workflows and Settings. Settings always opens App > General,
+with or without a workspace; Workspace settings opens only from the gear on
+the current-workspace row of the workspace popover. Providers & models is a Settings scope, reached from the
 Settings rail and the palette, so it has no footer launcher. Impact opens from
 the spend figure and the palette, Changelog from the Goodboy chip and the
 palette, so neither earns a footer entry.

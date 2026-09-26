@@ -18,7 +18,11 @@ export const openNotificationSession = ({
     const store = useAppStore.getState();
     if (workspaceId != null && workspaceId !== store.currentWorkspaceId) {
       const workspace = store.workspaces.find((candidate) => candidate.id === workspaceId);
-      await store.openWorkspace(workspaceId, workspace?.name ?? '');
+      await store.openWorkspace({
+        id: workspaceId,
+        title: workspace?.name ?? '',
+        onRunning: 'new-window',
+      });
     }
     const state = useAppStore.getState();
     if (!state.sessions.some((candidate) => candidate.id === sessionId)) {

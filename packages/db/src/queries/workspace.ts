@@ -188,6 +188,21 @@ export const listWorkspaces = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
+type ListDisconnectedWorkspacesParams = {
+  readonly db: Database;
+};
+
+export const listDisconnectedWorkspaces = async ({
+  db,
+}: ListDisconnectedWorkspacesParams): Promise<ReadonlyArray<Workspace>> => {
+  const rows = await db.select<WorkspaceRow>(
+    `${WORKSPACE_SELECT}
+     WHERE w.deleted_at IS NULL AND w.disconnected_at IS NOT NULL
+     ORDER BY w.disconnected_at DESC`,
+  );
+  return rows.map((row) => toDomain({ row }));
+};
+
 type WorkspaceTimestampParams = {
   readonly db: Database;
   readonly id: WorkspaceId;

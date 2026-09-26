@@ -1,14 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderGit2, Plus, SlidersHorizontal } from 'lucide-react';
-import { Divider, EmptyState, ScrollFade } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
-import { useAppStore, useCurrentWorkspace, useWorkspaces } from '../../../../store';
-import { WorkspaceRow } from '../WorkspaceRow';
+import { FolderGit2, Plus, Search } from 'lucide-react';
+import { Divider, EmptyState, KbdPill, ScrollFade } from '@goodboy/ui';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
+import {
+  useAppStore,
+  useCurrentWorkspace,
+  useDisconnectedWorkspaces,
+  useWorkspaces,
+} from '../../../../store';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
+import { openSettings } from '../../../settings/openSettings';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
+import { OtherWorkspaceRow } from './OtherWorkspaceRow';
+import { DisconnectedWorkspaces } from './DisconnectedWorkspaces';
+import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
 
 type Props = {
   readonly onClose: () => void;
+};
+
+type PendingConfirm = {
+  readonly id: WorkspaceId;
+  readonly title: string;
+  readonly running: number;
 };
 
 const actionClass =
@@ -16,87 +31,176 @@ const actionClass =
 
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
+  const disconnectedWorkspaces = useDisconnectedWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
+  const switchWorkspaceHere = useAppStore((s) => s.switchWorkspaceHere);
+  const reconnectWorkspaceById = useAppStore((s) => s.reconnectWorkspaceById);
+  const loadDisconnectedWorkspaces = useAppStore((s) => s.loadDisconnectedWorkspaces);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+    void loadDisconnectedWorkspaces();
+  }, [loadDisconnectedWorkspaces]);
+
+  const otherWorkspaces = useMemo(
+    () => workspaces.filter((w) => w.id !== currentWorkspace?.id),
+    [workspaces, currentWorkspace],
+  );
 
   const filtered = useMemo(
-    () => filterWorkspaces({ workspaces: sortWorkspacesByRecent(workspaces), projects, query }),
-    [workspaces, projects, query],
+    () =>
+      filterWorkspaces({ workspaces: sortWorkspacesByRecent(otherWorkspaces), projects, query }),
+    [otherWorkspaces, projects, query],
   );
 
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
 
-  const select = (workspace: Workspace) => {
-    void openWorkspace(workspace.id, workspace.name);
+  const open = async (workspace: Workspace) => {
+    const result = await openWorkspace({ id: workspace.id, title: workspace.name });
+    if (result.kind === 'needs-confirm') {
+      setPendingConfirm({ id: workspace.id, title: workspace.name, running: result.running });
+      return;
+    }
+    onClose();
+  };
+
+  const openNewWindow = async (workspace: Workspace) => {
+    await openWorkspace({ id: workspace.id, title: workspace.name, target: 'new-window' });
+    onClose();
+  };
+
+  const cancelConfirm = () => setPendingConfirm(null);
+
+  const confirmOpenNewWindow = async () => {
+    if (pendingConfirm === null) {
+      return;
+    }
+    await openWorkspace({
+      id: pendingConfirm.id,
+      title: pendingConfirm.title,
+      target: 'new-window',
+    });
+    onClose();
+  };
+
+  const confirmStopAndOpenHere = async () => {
+    if (pendingConfirm === null) {
+      return;
+    }
+    await switchWorkspaceHere({ id: pendingConfirm.id, title: pendingConfirm.title });
     onClose();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && pendingConfirm !== null) {
+      e.preventDefault();
+      cancelConfirm();
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
+      return;
+    }
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
+      return;
+    }
+    if (e.key === 'Enter' && e.metaKey) {
       e.preventDefault();
       const picked = filtered[activeIndex];
-      if (picked) {
-        select(picked);
+      if (picked !== undefined) {
+        void openNewWindow(picked);
       }
-    } else if (e.key === 'Escape') {
+      return;
+    }
+    if (e.key === 'Enter') {
       e.preventDefault();
-      onClose();
+      const picked = filtered[activeIndex];
+      if (picked !== undefined) {
+        void open(picked);
+      }
     }
   };
 
   return (
     <>
-      <input
-        ref={inputRef}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Switch or open a workspace…"
-        aria-label="Filter workspaces"
-        className="w-full bg-transparent px-3 py-2.5 text-label focus-visible:outline-none"
-      />
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Search size={ICON_SIZE.control} aria-hidden className="text-faint-foreground" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Find a workspace or project"
+          aria-label="Find a workspace or project"
+          className="flex-1 bg-transparent text-label focus-visible:outline-none"
+        />
+        <KbdPill>⌘O</KbdPill>
+      </div>
       <Divider />
-      <ScrollFade className="max-h-96" viewportClassName="p-1" fadeFrom="elevated">
-        <ul>
-          {filtered.length === 0 ? (
-            <li>
-              <EmptyState
-                icon={CONCEPT_ICONS.workspace}
-                tone={CONCEPT_TONE.workspace}
-                title="No workspaces"
-                size="inline"
-                className="px-3 py-5"
+      <ScrollFade
+        className="max-h-96"
+        viewportClassName="flex flex-col gap-1 p-1"
+        fadeFrom="elevated"
+      >
+        {currentWorkspace !== null ? (
+          <CurrentWorkspaceRow
+            workspace={currentWorkspace}
+            onOpenSettings={() => {
+              openSettings({ scope: 'workspace' });
+              onClose();
+            }}
+          />
+        ) : null}
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={CONCEPT_ICONS.workspace}
+            tone={CONCEPT_TONE.workspace}
+            title="No workspaces"
+            size="inline"
+            className="px-3 py-5"
+          />
+        ) : (
+          filtered.map((w, i) => (
+            <div key={w.id}>
+              <OtherWorkspaceRow
+                workspace={w}
+                highlighted={i === activeIndex}
+                onOpen={() => void open(w)}
+                onOpenNewWindow={() => void openNewWindow(w)}
               />
-            </li>
-          ) : (
-            filtered.map((w, i) => (
-              <li key={w.id}>
-                <WorkspaceRow
-                  workspace={w}
-                  density="row"
-                  highlighted={i === activeIndex}
-                  onOpen={() => select(w)}
+              {pendingConfirm?.id === w.id ? (
+                <WorkspaceOpenConfirm
+                  targetName={w.name}
+                  currentName={currentWorkspace?.name ?? 'this workspace'}
+                  running={pendingConfirm.running}
+                  onOpenNewWindow={() => void confirmOpenNewWindow()}
+                  onStopAndOpenHere={() => void confirmStopAndOpenHere()}
+                  onCancel={cancelConfirm}
                 />
-              </li>
-            ))
-          )}
-        </ul>
+              ) : null}
+            </div>
+          ))
+        )}
+        <DisconnectedWorkspaces
+          workspaces={disconnectedWorkspaces}
+          onReconnect={(id) => void reconnectWorkspaceById(id)}
+        />
       </ScrollFade>
       <Divider />
       <button
@@ -110,34 +214,17 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         <Plus size={ICON_SIZE.row} aria-hidden />
         Add workspace
       </button>
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(
-            new CustomEvent('goodboy:open-settings', {
-              detail: { scope: 'workspace', section: 'projects' },
-            }),
-          );
-          onClose();
-        }}
-        className={actionClass}
-      >
-        <FolderGit2 size={ICON_SIZE.row} aria-hidden />
-        Manage projects
-      </button>
-      {currentWorkspace != null ? (
+      {currentWorkspace !== null ? (
         <button
           type="button"
           onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent('goodboy:open-settings', { detail: { scope: 'workspace' } }),
-            );
+            openSettings({ scope: 'workspace', section: 'projects' });
             onClose();
           }}
           className={actionClass}
         >
-          <SlidersHorizontal size={ICON_SIZE.row} aria-hidden />
-          Workspace settings
+          <FolderGit2 size={ICON_SIZE.row} aria-hidden />
+          Manage projects
         </button>
       ) : null}
     </>

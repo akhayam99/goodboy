@@ -130,6 +130,7 @@ export const SESSION_EVICTION = [
 export const NON_SESSION_STATE_KEYS = [
   'selectedProjectIds',
   'workspaces',
+  'disconnectedWorkspaces',
   'projects',
   'workspaceIntegrations',
   'integrationCredentials',

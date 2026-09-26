@@ -76,7 +76,11 @@ describe('WorkspaceLauncher', () => {
   it('opens a recent workspace on click', () => {
     render(<WorkspaceLauncher />);
     fireEvent.click(screen.getByText('alpha'));
-    expect(state.openWorkspace).toHaveBeenCalledWith('ws-a', 'alpha');
+    expect(state.openWorkspace).toHaveBeenCalledWith({
+      id: 'ws-a',
+      title: 'alpha',
+      onRunning: 'new-window',
+    });
   });
 
   it('persists the reopen-last preference', () => {

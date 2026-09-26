@@ -259,6 +259,7 @@ export type NotificationScope = 'workspace' | 'all';
 export type AppState = AppSliceState & {
   readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
   readonly workspaces: ReadonlyArray<Workspace>;
+  readonly disconnectedWorkspaces: ReadonlyArray<Workspace>;
   readonly projects: ReadonlyArray<Project>;
   readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
   readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;

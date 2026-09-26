@@ -224,7 +224,11 @@ describe('CommandPalette', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    expect(state.openWorkspace).toHaveBeenCalledWith('workspace-1', 'Harborline');
+    expect(state.openWorkspace).toHaveBeenCalledWith({
+      id: 'workspace-1',
+      title: 'Harborline',
+      onRunning: 'new-window',
+    });
     expect(state.navigate).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledOnce();
   });
