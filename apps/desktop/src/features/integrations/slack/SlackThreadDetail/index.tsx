@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Notice } from '@goodboy/ui';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SlackIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
@@ -60,14 +61,20 @@ export const SlackThreadDetail = ({
     };
   }, [workspaceId, channelId, threadTs, fallbackUrl, isEnabled]);
 
+  const selfUserId = useAppStore(
+    (state) =>
+      (state.workspaceIntegrations[workspaceId] ?? []).find(
+        (integration): integration is SlackIntegrationBinding => integration.provider === 'slack',
+      )?.config.botUserId ?? null,
+  );
   const users = thread.users;
   const channelName = thread.channelName !== channelId ? thread.channelName : fallbackChannelName;
   const messages =
     thread.messages.length > 0 ? thread.messages : fallbackMessage == null ? [] : [fallbackMessage];
   const userNames = useMemo(() => slackUserNames({ users }), [users]);
   const threadProperties = useMemo(
-    () => buildThreadProperties({ channelName, messages, userNames }),
-    [channelName, messages, userNames],
+    () => buildThreadProperties({ channelName, messages, userNames, selfUserId }),
+    [channelName, messages, userNames, selfUserId],
   );
   const facts = useMemo(
     () => resolveFacts({ registry: slackThreadFields, entity: threadProperties }),
