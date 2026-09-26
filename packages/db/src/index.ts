@@ -42,6 +42,7 @@ export {
   insertProject,
   getProjectById,
   listProjectsForWorkspace,
+  listAllProjectsForWorkspace,
   findProjectByRootPath,
   disconnectProject,
   reconnectProject,

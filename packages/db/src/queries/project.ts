@@ -143,6 +143,17 @@ export const listProjectsForWorkspace = async ({
   return rows.map((row) => toDomain({ row }));
 };
 
+export const listAllProjectsForWorkspace = async ({
+  db,
+  workspaceId,
+}: ListProjectsParams): Promise<ReadonlyArray<Project>> => {
+  const rows = await db.select<ProjectRow>(
+    `SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at ASC`,
+    [workspaceId],
+  );
+  return rows.map((row) => toDomain({ row }));
+};
+
 type NormalizeRootPathParams = {
   readonly path: string;
 };

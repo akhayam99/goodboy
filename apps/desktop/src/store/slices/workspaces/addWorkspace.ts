@@ -13,6 +13,7 @@ import {
   getWorkspaceById,
   insertProject,
   insertWorkspace,
+  listAllProjectsForWorkspace,
   reconnectProject,
   reconnectWorkspace,
 } from '@goodboy/db';
@@ -62,32 +63,49 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       rootPath: resolvedRoot,
     });
     if (existingProject != null) {
-      if (existingProject.disconnectedAt === undefined) {
-        const owner = get().workspaces.find(
-          (workspace) => workspace.id === existingProject.workspaceId,
-        );
+      const owningWorkspace = await getWorkspaceById({
+        db: tauriDatabase,
+        id: existingProject.workspaceId,
+      });
+      if (owningWorkspace === null || owningWorkspace.disconnectedAt === undefined) {
+        const owner =
+          get().workspaces.find((workspace) => workspace.id === existingProject.workspaceId) ??
+          owningWorkspace;
         throw new Error(
           `${existingProject.name} is already linked in ${owner?.name ?? 'another workspace'}`,
         );
       }
       const now = new Date().toISOString() as IsoDateTime;
-      await reconnectWorkspace({ db: tauriDatabase, id: existingProject.workspaceId, at: now });
-      await reconnectProject({ db: tauriDatabase, id: existingProject.id, at: now });
-      const workspace = await getWorkspaceById({
+      await reconnectWorkspace({ db: tauriDatabase, id: owningWorkspace.id, at: now });
+      const siblingProjects = await listAllProjectsForWorkspace({
         db: tauriDatabase,
-        id: existingProject.workspaceId,
+        workspaceId: owningWorkspace.id,
       });
-      if (workspace === null) {
-        throw new Error(`workspace not found: ${existingProject.workspaceId}`);
-      }
-      const project: Project = {
-        ...existingProject,
+      await Promise.all(
+        siblingProjects.map((project) =>
+          reconnectProject({ db: tauriDatabase, id: project.id, at: now }),
+        ),
+      );
+      const workspace: Workspace = {
+        ...owningWorkspace,
+        disconnectedAt: undefined,
         updatedAt: now,
         lastAccessedAt: now,
       };
+      const reconnectedProjects: ReadonlyArray<Project> = siblingProjects.map((project) => ({
+        ...project,
+        disconnectedAt: undefined,
+        updatedAt: now,
+        lastAccessedAt: now,
+      }));
       set((state) => ({
         workspaces: [workspace, ...state.workspaces.filter((item) => item.id !== workspace.id)],
-        projects: [project, ...state.projects.filter((item) => item.id !== project.id)],
+        projects: [
+          ...reconnectedProjects,
+          ...state.projects.filter(
+            (item) => !reconnectedProjects.some((reconnected) => reconnected.id === item.id),
+          ),
+        ],
       }));
       return workspace;
     }

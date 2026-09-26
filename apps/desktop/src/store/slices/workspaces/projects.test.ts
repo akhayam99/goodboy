@@ -16,8 +16,10 @@ const h = vi.hoisted(() => ({
   getWorkspaceById: vi.fn(),
   insertProject: vi.fn(async () => undefined),
   insertWorkspace: vi.fn(async () => undefined),
+  listAllProjectsForWorkspace: vi.fn(async (): Promise<Project[]> => []),
   reconnectProject: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
+  disconnectProject: vi.fn(async () => undefined),
   disconnectWorkspace: vi.fn(async () => undefined),
   upsertWorkspaceProfile: vi.fn(async () => undefined),
   describeProjectAdoption: vi.fn(async () => null),
@@ -31,8 +33,10 @@ vi.mock('@goodboy/db', () => ({
   getWorkspaceById: h.getWorkspaceById,
   insertProject: h.insertProject,
   insertWorkspace: h.insertWorkspace,
+  listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
   reconnectProject: h.reconnectProject,
   reconnectWorkspace: h.reconnectWorkspace,
+  disconnectProject: h.disconnectProject,
   disconnectWorkspace: h.disconnectWorkspace,
   upsertWorkspaceProfile: h.upsertWorkspaceProfile,
   describeProjectAdoption: h.describeProjectAdoption,
@@ -187,6 +191,63 @@ describe('workspace and project slices', () => {
     expect(store.state.projects).toEqual([result.project]);
   });
 
+  it('reconnects a disconnected workspace and its project when its folder is added again', async () => {
+    const disconnectedWorkspace: Workspace = { ...workspace(), disconnectedAt: NOW };
+    const disconnectedProject = project({ disconnectedAt: NOW });
+    h.findProjectByRootPath.mockResolvedValueOnce(disconnectedProject);
+    h.getWorkspaceById.mockResolvedValueOnce(disconnectedWorkspace);
+    h.listAllProjectsForWorkspace.mockResolvedValueOnce([disconnectedProject]);
+    const store = harness({});
+
+    const result = await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
+
+    expect(h.reconnectWorkspace).toHaveBeenCalledWith(
+      expect.objectContaining({ id: WORKSPACE_ID }),
+    );
+    expect(h.reconnectProject).toHaveBeenCalledWith(expect.objectContaining({ id: PROJECT_ID }));
+    expect(h.insertWorkspace).not.toHaveBeenCalled();
+    expect(result.disconnectedAt).toBeUndefined();
+    expect(store.state.workspaces).toEqual([result]);
+    expect(store.state.projects.map((entry) => entry.disconnectedAt)).toEqual([undefined]);
+  });
+
+  it('reconnects every sibling project of a disconnected multi-repo workspace', async () => {
+    const disconnectedWorkspace: Workspace = { ...workspace(), disconnectedAt: NOW };
+    const projectA = project({ disconnectedAt: NOW });
+    const projectB = project({
+      id: 'project-2' as ProjectId,
+      name: 'web',
+      rootPath: '/repos/web',
+      disconnectedAt: NOW,
+    });
+    h.findProjectByRootPath.mockResolvedValueOnce(projectA);
+    h.getWorkspaceById.mockResolvedValueOnce(disconnectedWorkspace);
+    h.listAllProjectsForWorkspace.mockResolvedValueOnce([projectA, projectB]);
+    const store = harness({});
+
+    await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
+
+    expect(h.reconnectProject).toHaveBeenCalledTimes(2);
+    expect(store.state.projects.map((entry) => entry.id).sort()).toEqual(
+      ['project-1', 'project-2'].sort(),
+    );
+    expect(store.state.projects.every((entry) => entry.disconnectedAt === undefined)).toBe(true);
+  });
+
+  it('still refuses a path linked to a workspace that is not disconnected', async () => {
+    const owner: Workspace = { ...workspace(), id: 'workspace-2' as WorkspaceId, name: 'Other' };
+    const owned = project({ workspaceId: owner.id });
+    h.findProjectByRootPath.mockResolvedValueOnce(owned);
+    h.getWorkspaceById.mockResolvedValueOnce(owner);
+    const store = harness({ workspaces: [owner] });
+
+    await expect(addWorkspace(store.set, store.get)({ rootPath: '/repos/api' })).rejects.toThrow(
+      'api is already linked in Other',
+    );
+
+    expect(h.reconnectWorkspace).not.toHaveBeenCalled();
+  });
+
   it('returns a typed conflict when the path already belongs to another workspace', async () => {
     const otherWorkspace: Workspace = {
       ...workspace(),
@@ -220,6 +281,41 @@ describe('workspace and project slices', () => {
     expect(result.conflict.isShell).toBe(true);
     expect(h.insertProject).not.toHaveBeenCalled();
     expect(store.state.projects).toEqual([]);
+  });
+
+  it('reads the disconnected source workspace from the database instead of crashing', async () => {
+    const disconnectedWorkspace: Workspace = {
+      ...workspace(),
+      id: 'workspace-2' as WorkspaceId,
+      name: 'Other Team',
+      disconnectedAt: NOW,
+    };
+    const owned = project({ workspaceId: disconnectedWorkspace.id });
+    h.findProjectByRootPath.mockResolvedValueOnce(owned);
+    h.getWorkspaceById.mockResolvedValueOnce(disconnectedWorkspace);
+    h.describeProjectAdoption.mockResolvedValueOnce({
+      sourceWorkspaceId: disconnectedWorkspace.id,
+      isShell: true,
+      sessionCount: 2,
+    } as never);
+    const store = harness({ workspaces: [workspace()] });
+
+    const result = await addProject(
+      store.set,
+      store.get,
+    )({
+      workspaceId: WORKSPACE_ID,
+      rootPath: '/repos/api',
+    });
+
+    expect(result.kind).toBe('conflict');
+    if (result.kind !== 'conflict') {
+      throw new Error('expected conflict result');
+    }
+    expect(result.conflict.sourceWorkspace).toEqual(disconnectedWorkspace);
+    expect(h.getWorkspaceById).toHaveBeenCalledWith(
+      expect.objectContaining({ id: disconnectedWorkspace.id }),
+    );
   });
 
   it('refuses a path already linked to the same workspace with plain copy', async () => {
@@ -372,6 +468,7 @@ describe('workspace and project slices', () => {
     await disconnectWorkspace(store.set, store.get)(WORKSPACE_ID);
 
     expect(h.disconnectWorkspace).toHaveBeenCalledOnce();
+    expect(h.disconnectProject).toHaveBeenCalledWith(expect.objectContaining({ id: PROJECT_ID }));
     expect(store.state.workspaces).toEqual([]);
     expect(store.state.projects).toEqual([]);
     expect(store.state.workspaceIntegrations[WORKSPACE_ID]).toBeUndefined();

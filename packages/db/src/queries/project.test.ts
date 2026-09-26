@@ -12,6 +12,7 @@ import {
   findProjectByRootPath,
   getProjectById,
   insertProject,
+  listAllProjectsForWorkspace,
   listProjectsForWorkspace,
   reconnectProject,
   updateProjectKind,
@@ -117,6 +118,20 @@ describe('project queries', () => {
     expect(
       (await listProjectsForWorkspace({ db, workspaceId })).map((project) => project.id),
     ).toEqual([active.id]);
+  });
+
+  it('lists every project of a container, disconnected ones included', async () => {
+    const db = await makeDb();
+    const active = makeProject({ id: 'active' });
+    const disconnected = makeProject({
+      id: 'disconnected',
+      overrides: { disconnectedAt: at({ value: '2026-08-22T11:00:00Z' }) },
+    });
+    await insertProject({ db, project: active });
+    await insertProject({ db, project: disconnected });
+    expect(
+      (await listAllProjectsForWorkspace({ db, workspaceId })).map((project) => project.id),
+    ).toEqual([active.id, disconnected.id]);
   });
 
   it('converts a folder project and updates its canonical path', async () => {
