@@ -27,6 +27,8 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
   const [query, setQuery] = useState('');
   const rowCount = model.groups.reduce((sum, group) => sum + group.rows.length, 0);
   const hasFilter = model.filterPlaceholder != null && rowCount >= FILTER_THRESHOLD;
+  const showMeta = model.groups.some((group) => group.rows.some((item) => item.metaA != null));
+  const showState = model.groups.some((group) => group.rows.some((item) => item.state != null));
   const needle = query.trim().toLowerCase();
   const groups = model.groups
     .map((group) => ({
@@ -160,6 +162,8 @@ export const CrumbMenu = ({ model, confirmingId, onConfirmingChange, onClose }: 
                   key={row.id}
                   row={row}
                   metaWidthClass={META_WIDTH[model.width]}
+                  showMeta={showMeta}
+                  showState={showState}
                   onActivate={activate}
                 />
               ))}

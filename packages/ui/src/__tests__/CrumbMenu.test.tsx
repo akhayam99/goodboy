@@ -74,6 +74,27 @@ const stepMenu = (onStop: () => void): CrumbMenuModel => ({
   ],
 });
 
+const pageLikeMenu = (): CrumbMenuModel => ({
+  title: 'Pages',
+  context: 'Ship a fix',
+  count: null,
+  triggerLabel: 'Switch page',
+  width: 'narrow',
+  filterPlaceholder: null,
+  groups: [
+    {
+      id: 'pages',
+      label: null,
+      rows: [
+        row({ id: 'overview', label: 'Overview' }),
+        row({ id: 'workflows', label: 'Workflows', metaA: '2 runs', isCurrent: true }),
+        row({ id: 'agents', label: 'Agents', metaA: '5 agents' }),
+      ],
+    },
+  ],
+  actions: [],
+});
+
 const renderTrail = (menu: CrumbMenuModel) =>
   render(
     <Trail
@@ -191,5 +212,32 @@ describe('CrumbMenu', () => {
     expect(onUp).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Switch run: Ship a fix' }));
     expect(screen.getByRole('menu', { name: 'Switch run' })).toBeDefined();
+  });
+
+  it('renders each row with a visible label slot and a right-aligned meta slot', () => {
+    renderTrail(pageLikeMenu());
+    openLast();
+
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    const workflowsRow = within(menu).getByRole('menuitemradio', { name: /Workflows/ });
+    const label = within(workflowsRow).getByText('Workflows');
+    const meta = within(workflowsRow).getByText('2 runs');
+    expect(label).toBeDefined();
+    expect(meta).toBeDefined();
+    expect(label).not.toBe(meta);
+    expect(label.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('never reserves the state column for a menu that has no state word, and highlights only one row', () => {
+    renderTrail(pageLikeMenu());
+    openLast();
+
+    const menu = screen.getByRole('menu', { name: 'Switch page' });
+    expect(menu.querySelector('.w-24')).toBeNull();
+
+    const rows = within(menu).getAllByRole('menuitemradio');
+    expect(rows.filter((item) => item.className.includes('bg-overlay-selected'))).toHaveLength(0);
+    const current = rows.find((item) => item.getAttribute('aria-checked') === 'true');
+    expect(current?.textContent).toContain('Workflows');
   });
 });
