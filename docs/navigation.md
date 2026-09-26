@@ -237,8 +237,8 @@ dot with `Draft in progress` while a written draft waits. `Discard draft` in
 the header empties it; Esc never does. Back returns to the draft like any
 other place.
 
-The draft asks one question, "How do you want to start?", with three options
-in a single-select list.
+The draft asks one question, "How do you want to start?", with three choices
+on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one and pressing **Pick up** proposes the brief under
@@ -247,12 +247,18 @@ in a single-select list.
   shows the connect links.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
-- **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
-  that reads the project and suggests where to start.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
+  model sit below it as chips (`AgentStartFields`), opening the same role grid
+  and model picker `Start agent` uses. The role defaults to Scout every time,
+  never the last one picked, because a habitual Implementer writes code you
+  did not ask for. Scout alone can start with an empty field ("Start Scout on
+  the whole project", which reads the project and changes nothing); every
+  other role needs a prompt first. The model chip reads Auto until pinned.
 
-Only the selected option's primary shows. The list preselects Pick up a task
-when a tracker has open issues and Run a workflow otherwise, and it never
-remembers the last choice. Opening the draft puts focus on the question.
+Only the selected tab's panel, and only its primary, shows. The tabs
+preselect Pick up a task when a tracker has open issues and Run a workflow
+otherwise, and they never remember the last choice. Opening the draft puts
+focus on the selected tab.
 
 **Start is the only way a session is born from the draft.** The primary
 creates the session and starts the work in one gesture

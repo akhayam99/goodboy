@@ -3,15 +3,24 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
-import { distanceBehind } from '../../../shared/lib/gitStatus';
+import { distanceAhead, distanceBehind, isWorkingTreeClean } from '../../../shared/lib/gitStatus';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
-import { deriveNextSteps, type SuggestionRebaseRequest } from '../deriveNextSteps';
+import { AGENT_KIND_META, classifyAgent } from '../../session/agent-kind';
+import {
+  deriveNextSteps,
+  type SuggestionAgent,
+  type SuggestionRebaseRequest,
+} from '../deriveNextSteps';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
 import { toMountEvents } from '../../../store/materializationProposals';
+import { pendingAgentSignal } from '../pendingAgentSignal';
+import { useNextStepOutcomes } from '../useNextStepOutcomes';
+import { shouldDemote } from '../nextStepGates';
+import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
 
 type Params = {
   readonly session: Session;
@@ -90,6 +99,38 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     (state) =>
       state.sessionProjectMounts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionProjectMount>),
   );
+  const recommendedWorkflow = useAppStore(
+    useShallow((state) => {
+      const templates = state.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY;
+      const library = templates.find((template) => template.origin === 'library');
+      return library == null ? null : { id: library.id, name: library.name };
+    }),
+  );
+  const agentKindOverride = useAppStore((state) => state.agentKindOverride);
+  const blockedAgentIds = useAppStore(
+    useShallow((state) =>
+      effectiveAgents
+        .filter((agent) => state.agentTurnState[agent.id]?.kind === 'blocked')
+        .map((agent) => agent.id),
+    ),
+  );
+  const blockedTranscripts = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        blockedAgentIds.map((agentId) => [agentId, state.transcripts[agentId] ?? EMPTY_ARRAY]),
+      ),
+    ),
+  );
+  const mountGithubByMountId = useAppStore(
+    useShallow((state) =>
+      Object.fromEntries(
+        mounts.map((mount) => [mount.mountId, state.mountGithub[mount.mountId] ?? null]),
+      ),
+    ),
+  );
+  const cleanupProposals = useAppStore(
+    (state) => state.mountCleanupProposals[sessionId] ?? EMPTY_ARRAY,
+  );
   const completedMountIds = useAppStore(
     useShallow((state) =>
       mounts.flatMap((mount) =>
@@ -123,6 +164,17 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
+  const { outcomes, dismissedFingerprints } = useNextStepOutcomes({ sessionId });
+  const demotedKinds = useMemo(() => {
+    const now = () => Date.now();
+    const demoted = new Set<SuggestionKind>();
+    for (const kind of SUGGESTION_KINDS) {
+      if (shouldDemote({ kind, outcomes, now })) {
+        demoted.add(kind);
+      }
+    }
+    return demoted;
+  }, [outcomes]);
 
   return useMemo(() => {
     const consumedPlanIds = new Set<PlanId>();
@@ -205,16 +257,82 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
             };
           })
         : [],
+      agents: effectiveAgents.map((agent) => {
+        const kind = classifyAgent({
+          agent: { kind: agent.kind, name: agent.name ?? agent.id },
+          override: agentKindOverride[agent.id] ?? null,
+        });
+        return {
+          id: agent.id,
+          label: AGENT_KIND_META[kind].noun,
+          roleKind: kind,
+          status: agent.status,
+          workflowRunId: agent.workflowRunId ?? null,
+          ordinal: agent.ordinal,
+          pendingSignal: pendingAgentSignal({
+            events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
+          }),
+        };
+      }) satisfies ReadonlyArray<SuggestionAgent>,
+      mounts: withRebase
+        ? rebaseMounts.map((mount) => {
+            const project = projects.find((candidate) => candidate.id === mount.projectId) ?? null;
+            const status = worktreeStatuses.get(mount.worktreePath) ?? null;
+            const githubState = mountGithubByMountId[mount.mountId] ?? null;
+            return {
+              mountId: mount.mountId,
+              projectId: mount.projectId,
+              projectName: project?.name ?? mount.mountName,
+              branch: mount.branch,
+              worktreePath: mount.worktreePath,
+              aheadOfUpstream:
+                status == null ? null : distanceAhead({ distance: status.upstreamDistance }),
+              aheadOfBase: status == null ? null : distanceAhead({ distance: status.mainDistance }),
+              isClean:
+                status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),
+              pr: githubState?.pr ?? null,
+              fetchedAt: githubState?.fetchedAt ?? null,
+            };
+          })
+        : [],
+      cleanupProposals: cleanupProposals.flatMap((proposal) => {
+        if (proposal.request === null) {
+          return [];
+        }
+        const project = projects.find((candidate) => candidate.id === proposal.projectId) ?? null;
+        return [
+          {
+            requestId: proposal.requestId,
+            mountId: proposal.mountId,
+            projectName: project?.name ?? proposal.branch,
+            branch: proposal.branch,
+            prNumber: proposal.request.prNumber,
+          },
+        ];
+      }),
+      hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
+      hasGoal: session.goal.trim() !== '',
+      recommendedWorkflow,
+      dismissedFingerprints,
+      demotedKinds,
     });
   }, [
+    dismissedFingerprints,
     active,
     advanceByRunId,
+    agentKindOverride,
     agentsByRunId,
     attachedRuns,
+    blockedTranscripts,
+    cleanupProposals,
+    demotedKinds,
     effectiveAgents,
     events,
     github,
+    mountGithubByMountId,
     openQuestions,
+    recommendedWorkflow,
+    session.goal,
     planConsumptions,
     plans,
     projects,

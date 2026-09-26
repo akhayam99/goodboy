@@ -353,9 +353,12 @@ export {
 } from './queries/notification';
 export {
   insertNudgeEvent,
+  listNudgeEvents,
   updateNudgeEventOutcome,
   type ListNudgeEventsOptions,
+  type NextStepNudgeKind,
   type NudgeEvent,
+  type NudgeEventKind,
   type NudgeKind,
   type NudgeOutcome,
 } from './queries/nudge-event';

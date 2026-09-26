@@ -66,4 +66,44 @@ describe('SegmentedTabs', () => {
     expect(icon?.nextElementSibling?.textContent).toBe('Bug');
     expect(icon?.parentElement?.textContent).toBe('Bug');
   });
+
+  it('card variant: marks the selected card with a check and no other one', () => {
+    render(
+      <SegmentedTabs
+        variant="card"
+        ariaLabel="How do you want to start?"
+        options={[
+          { value: 'first', label: 'First', hint: 'One' },
+          { value: 'second', label: 'Second', hint: 'Two' },
+        ]}
+        value="first"
+        onChange={vi.fn()}
+      />,
+    );
+
+    const first = screen.getByRole('tab', { name: /First/ });
+    const second = screen.getByRole('tab', { name: /Second/ });
+    expect(first.textContent).toContain('One');
+    expect(first.getAttribute('aria-selected')).toBe('true');
+    expect(second.getAttribute('aria-selected')).toBe('false');
+    expect(first.querySelectorAll('svg').length).toBeGreaterThan(
+      second.querySelectorAll('svg').length,
+    );
+  });
+
+  it('card variant: still moves with arrow keys and calls onChange on click', () => {
+    const onChange = vi.fn();
+    render(
+      <SegmentedTabs
+        variant="card"
+        ariaLabel="How do you want to start?"
+        options={OPTIONS}
+        value="first"
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Second' }));
+    expect(onChange).toHaveBeenCalledWith('second');
+  });
 });

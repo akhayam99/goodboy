@@ -1,6 +1,6 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
-import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/ScoutStart';
+import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
 import type { FirstSessionChoice } from './steps/FirstSessionStep';
 
 type ScoutParams = {
@@ -14,7 +14,13 @@ export const startFirstScout = async ({ workspaceId, projectId, prompt }: ScoutP
   state.patchSessionDraft({ workspaceId, patch: { projectId } });
   await state.startSessionFromDraft({
     workspaceId,
-    start: { kind: 'scout', focus: prompt, prompt: scoutKickoffPrompt({ focus: prompt }) },
+    start: {
+      kind: 'scout',
+      agentKind: 'scout',
+      focus: prompt,
+      prompt: scoutKickoffPrompt({ focus: prompt }),
+      routing: null,
+    },
   });
 };
 

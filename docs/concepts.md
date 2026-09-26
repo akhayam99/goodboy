@@ -250,20 +250,54 @@ whether you clicked it on the board or in the session overview.
   suggestion per target key survives per render: `dedupeByTargetKey` keeps
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
-  "Not now" is scoped the same way. Three "Not now" on the same kind inside
-  a workspace in 14 days, with no acceptance between them, moves that kind
-  behind everything else instead of leading (`shouldDemote`,
-  `nextStepGates.ts`): the only learning this engine does, and it resets
-  the moment one of that kind is accepted.
-- Six suggestion kinds ship today: answer open questions, continue a
-  workflow's ready step, fix review conversations, rebase a project, run a
-  ready plan, add a proposed project. Eleven more (approve a permission,
-  sign in, retry a failed run, fix CI, push, open or ready a pull request,
-  merge, close a finished worktree, and more) are a later addition to the
-  same engine, not a second one.
+  "Not now" is scoped the same way, and both persist: the fingerprint rides
+  along in the same `next:<kind>` row's `contextJson`
+  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), so a reload
+  or a remount does not resurrect what you just dismissed or acted on,
+  inside the same 14-day window the demotion rule below reads. Three "Not
+  now" on the same kind inside a session in 14 days, with no acceptance
+  between them, moves that kind behind everything else instead of leading
+  (`shouldDemote`, `nextStepGates.ts`): the only learning this engine does,
+  and it resets the moment one of that kind is accepted. Every act or
+  dismiss writes a `next:<kind>` row to `nudge_events`
+  (`useNextStepOutcomes`); the demotion window reads the session's own
+  history, not the workspace's.
+- Eighteen suggestion kinds ship: the original six (answer open questions,
+  continue a workflow's ready step, fix review conversations, rebase a
+  project, run a ready plan, add a proposed project) plus twelve more that
+  landed on the same engine, not a second one: approve a pending permission,
+  sign back in after `auth_required`, unblock a failed workflow step, retry
+  the last standalone agent that failed, fix a pull request's failing checks,
+  push unpushed commits on a clean worktree, open a pull request once a
+  mount is ahead with none yet, mark a green draft ready, merge an approved
+  and green pull request, review the changes once a standalone implementer
+  finishes clean, close a merged worktree's cleanup proposal, and continue
+  with a workflow once a standalone scout or generic agent finishes clean
+  with a goal set and no workflow attached yet - its "Set up" action attaches
+  the workspace's first library workflow with the session's own goal in one
+  click, no form. Merge, close-worktree and unblock-step's Skip arm a
+  confirm on the row before they act; the other new kinds run on one click,
+  like the original six. Two simplifications from the design: the "never
+  while an agent works on the same mount" rule (E7-6) is session-wide, not
+  per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
+  only - rebase-project keeps its own narrower per-request check; and the
+  demotion window (above) reads the session, not the workspace. unblock-step
+  only ships Skip; retrying the step itself needs a per-step retry action the
+  workflow engine does not expose yet. approve-tool opens the agent's
+  chat rather than the permission card directly; sign-in dispatches the
+  same `goodboy:open-settings` event the palette's "Connect a provider"
+  uses. continue-with-workflow always offers the workspace's first library
+  workflow, not a goal-aware recommendation - `recommendPreset.ts` (design's
+  name for that ranking) was not built, since nothing else in this pass
+  needed it.
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
+- Accepting plan-ready announces the started implementer with the same
+  `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
+  started", with an "Open the agent" action) - the toast the standalone
+  `PlanReadySuggestion` used to show before the unified resolver replaced it
+  in E7-5, restored here.
 
 ## Agents
 

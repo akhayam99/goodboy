@@ -2,10 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
+import type { NudgeEvent } from '@goodboy/db';
 
-const { store, worktreeStatus } = vi.hoisted(() => ({
+const { store, worktreeStatus, listNudgeEvents } = vi.hoisted(() => ({
   worktreeStatus: vi.fn(),
+  listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
   store: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
@@ -14,6 +16,9 @@ const { store, worktreeStatus } = vi.hoisted(() => ({
     mountGithub: {} as Record<string, unknown>,
     mountGitlabMr: {} as Record<string, unknown>,
     mountBitbucketPr: {} as Record<string, unknown>,
+    mountCleanupProposals: {} as Record<string, ReadonlyArray<unknown>>,
+    agentTurnState: {} as Record<string, { readonly kind: string } | undefined>,
+    agentKindOverride: {} as Record<string, string | null>,
     sessionProjectMounts: {
       'session-1': [
         {
@@ -29,6 +34,10 @@ const { store, worktreeStatus } = vi.hoisted(() => ({
       { id: 'api', name: 'API', baseBranch: 'main', workspaceId: 'ws-1' },
     ] as ReadonlyArray<Record<string, string>>,
     sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    phaseTemplates: {} as Record<
+      string,
+      ReadonlyArray<{ origin: string; id: string; name: string }>
+    >,
   },
 }));
 
@@ -49,10 +58,13 @@ vi.mock('../../workflows/useWorkflowAdvanceStates', () => ({
 
 vi.mock('../../worktree/worktree', () => ({ worktreeStatus }));
 
+vi.mock('@goodboy/db', () => ({ listNudgeEvents, insertNudgeEvent: vi.fn(async () => undefined) }));
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+
 import { resetWorktreeStatusCache } from '../../session/hooks/useWorktreeStatuses/cache';
 import { useSessionSuggestions } from '.';
 
-const session = { id: 'session-1', workspaceId: 'ws-1' } as Session;
+const session = { id: 'session-1', workspaceId: 'ws-1', goal: 'Ship the thing' } as Session;
 
 beforeEach(() => {
   store.sessionProjectMounts = {
@@ -75,7 +87,10 @@ beforeEach(() => {
     branch: 'feat',
     mainDistance: { kind: 'known', ahead: 0, behind: 4 },
     upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
   });
+  listNudgeEvents.mockReset();
+  listNudgeEvents.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -275,5 +290,70 @@ describe('useSessionSuggestions rebase opt-out', () => {
 
     expect(worktreeStatus).not.toHaveBeenCalled();
     expect(view.result.current.some((s) => s.kind === 'rebase-project')).toBe(false);
+  });
+});
+
+const dismissedNextStep = (kind: string, daysAgo: number): NudgeEvent => {
+  const at = new Date(Date.now() - daysAgo * 86_400_000).toISOString() as IsoDateTime;
+  return {
+    id: `ev-${kind}-${daysAgo}`,
+    sessionId: 'session-1' as SessionId,
+    ts: at,
+    kind: `next:${kind}`,
+    contextJson: null,
+    outcome: 'dismissed',
+    outcomeTs: at,
+  };
+};
+
+const mountProposed = () => ({
+  id: 'ev-mount-proposed',
+  sessionId: 'session-1',
+  kind: 'project_materialization_proposed',
+  payload: { projectId: 'api', projectName: 'API', reason: 'needs write access' },
+  createdAt: '2026-09-04T09:11:00.000Z',
+});
+
+describe('useSessionSuggestions demotion', () => {
+  it('sorts a three-times-dismissed kind behind a suggestion it would normally lead', async () => {
+    store.sessionEvents = {
+      'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' }), mountProposed()],
+    };
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', status: 'failed', workflowRunId: 'run-1' }],
+    };
+    listNudgeEvents.mockResolvedValue([
+      dismissedNextStep('mount-project', 1),
+      dismissedNextStep('mount-project', 2),
+      dismissedNextStep('mount-project', 3),
+    ]);
+
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => {
+      const kinds = view.result.current.map((suggestion) => suggestion.kind);
+      expect(kinds).toEqual(['rebase-project', 'mount-project']);
+    });
+  });
+
+  it('leaves the order alone once one of the three dismissals was instead an accept', async () => {
+    store.sessionEvents = {
+      'session-1': [rebaseRequested({ behind: 4, agentId: 'agent-1' }), mountProposed()],
+    };
+    store.sessionPhaseRuns = {
+      'session-1': [{ id: 'agent-1', status: 'failed', workflowRunId: 'run-1' }],
+    };
+    listNudgeEvents.mockResolvedValue([
+      dismissedNextStep('mount-project', 1),
+      dismissedNextStep('mount-project', 2),
+      { ...dismissedNextStep('mount-project', 3), outcome: 'accepted' },
+    ]);
+
+    const view = renderHook(() => useSessionSuggestions({ session }));
+
+    await waitFor(() => {
+      const kinds = view.result.current.map((suggestion) => suggestion.kind);
+      expect(kinds).toEqual(['mount-project', 'rebase-project']);
+    });
   });
 });
