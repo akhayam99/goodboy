@@ -85,7 +85,8 @@ export const parseIssueCode = (input: string): ParsedIssueCode => {
   if (raw === '') {
     return TEXT;
   }
-  if (/^https?:\/\//i.test(raw)) {
+  const lowered = raw.toLowerCase();
+  if (lowered.startsWith('http://') || lowered.startsWith('https://')) {
     const url = parseUrl(raw);
     return url === null ? TEXT : { kind: 'url', url };
   }

@@ -43,7 +43,7 @@ export const InboxLookupGroup = ({ lookup, workspaceName, selectedKey, onSelect 
             onSelect={() => onSelect(hit)}
           />
           {hit.record.context === '' ? null : (
-            <span className="h-4 truncate pl-[122px] text-2xs text-faint-foreground">
+            <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">
               {hit.record.context}
             </span>
           )}
