@@ -220,6 +220,8 @@ import type { AddProjectsResult } from './slices/projects/addProjects';
 import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
+import { createProjectRelocationSlice } from './slices/project-relocation';
+import { projectRelocationInitialState } from './slices/project-relocation/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
@@ -1101,6 +1103,7 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createProjectRelocationSlice> &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
@@ -1115,6 +1118,7 @@ export const initialState: AppState = {
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
+  ...projectRelocationInitialState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -1324,6 +1328,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
   ...createProjectsSlice(set, get),
+  ...createProjectRelocationSlice(set, get),
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
   ...createPrSeriesSlice(set, get),

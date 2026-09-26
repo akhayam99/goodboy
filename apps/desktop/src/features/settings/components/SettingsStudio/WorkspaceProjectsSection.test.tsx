@@ -7,6 +7,12 @@ import type { WorkspaceId } from '@goodboy/types';
 const { state, repoMocks } = vi.hoisted(() => ({
   state: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
+    projectGitStatus: {} as Readonly<Record<string, Record<string, unknown>>>,
+    projectRelocationWorkspaceId: null as string | null,
+    projectRelocationCandidates: [] as ReadonlyArray<Record<string, unknown>>,
+    projectRelocationCompleted: [] as ReadonlyArray<Record<string, unknown>>,
+    projectRelocationPhase: 'idle',
+    projectRelocationError: null as string | null,
     addProject: vi.fn(async (): Promise<Record<string, unknown>> => ({
       kind: 'linked',
       project: { id: 'proj-1', name: 'api', rootPath: '/repos/api' },
@@ -21,6 +27,12 @@ const { state, repoMocks } = vi.hoisted(() => ({
     removeProject: vi.fn(async () => undefined),
     setProjectStarred: vi.fn(async () => undefined),
     describeProject: vi.fn(async () => undefined),
+    loadProjectGitStatus: vi.fn(async () => undefined),
+    findMovedProjects: vi.fn(async () => undefined),
+    setProjectRelocationSelected: vi.fn(),
+    relocateProjects: vi.fn(async () => undefined),
+    undoRelocation: vi.fn(async () => undefined),
+    clearProjectRelocation: vi.fn(),
     reportError: vi.fn(async () => undefined),
     workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
     projectSentryLinks: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
@@ -35,6 +47,7 @@ const { state, repoMocks } = vi.hoisted(() => ({
     })),
     scanChildRepos: vi.fn(async (): Promise<ReadonlyArray<never>> => []),
     initRepo: vi.fn(async () => ({ rootPath: '/repos/api' })),
+    dialogOpen: vi.fn(async (): Promise<string | null> => null),
   },
 }));
 
@@ -42,7 +55,7 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 vi.mock('../../../../shared/lib/repo', () => repoMocks);
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: repoMocks.dialogOpen }));
 vi.mock('./GoodboyIgnoreField', () => ({
   GoodboyIgnoreField: () => null,
 }));
@@ -71,6 +84,12 @@ const conflict = {
 beforeEach(() => {
   vi.clearAllMocks();
   state.projects = [];
+  state.projectGitStatus = {};
+  state.projectRelocationWorkspaceId = null;
+  state.projectRelocationCandidates = [];
+  state.projectRelocationCompleted = [];
+  state.projectRelocationPhase = 'idle';
+  state.projectRelocationError = null;
   state.workspaceIntegrations = {};
   state.projectSentryLinks = {};
 });
@@ -89,6 +108,65 @@ const armUnlink = (name: string) => {
 };
 
 describe('WorkspaceProjectsSection', () => {
+  it('offers to locate a repository whose saved folder is missing', async () => {
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/old/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+      },
+    ];
+    state.projectGitStatus = { 'proj-ledger': { state: 'missing' } };
+    repoMocks.dialogOpen.mockResolvedValueOnce('/new');
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    screen.getByText('1 project is not where Goodboy left it.');
+    fireEvent.click(screen.getByRole('button', { name: 'Locate folders' }));
+
+    await waitFor(() =>
+      expect(state.findMovedProjects).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        parent: '/new',
+      }),
+    );
+  });
+
+  it('shows repository verdicts and moves only selected candidates', () => {
+    state.projectRelocationWorkspaceId = WORKSPACE_ID;
+    state.projectRelocationPhase = 'preview';
+    state.projectRelocationCandidates = [
+      {
+        projectId: 'proj-ledger',
+        name: 'ledger-core',
+        fromRoot: '/old/ledger-core',
+        toRoot: '/new/ledger-core',
+        verdict: 'same_repository',
+        identity: null,
+        isSelected: true,
+        status: 'ready',
+      },
+      {
+        projectId: 'proj-payments',
+        name: 'payments-api',
+        fromRoot: '/old/payments-api',
+        toRoot: '/new/payments-api',
+        verdict: 'different_repository',
+        identity: null,
+        isSelected: false,
+        status: 'ready',
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    screen.getByText('Same repository');
+    screen.getByText('Different repository');
+    expect((screen.getByLabelText('Move payments-api') as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Move 1 project' }));
+    expect(state.relocateProjects).toHaveBeenCalledOnce();
+  });
+
   it('shows an inline conflict row when the path belongs to another workspace', async () => {
     state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);

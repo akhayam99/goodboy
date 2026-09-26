@@ -12,6 +12,7 @@ import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
   validateGitRepo: vi.fn(),
+  repoIdentity: vi.fn(async () => null),
   findProjectByRootPath: vi.fn(),
   getWorkspaceById: vi.fn(),
   insertProject: vi.fn(async () => undefined),
@@ -28,6 +29,7 @@ const h = vi.hoisted(() => ({
   seedWorkflowLibrary: vi.fn(async () => undefined),
   invokeWorkflowList: vi.fn(async () => []),
   invokeSkillRescan: vi.fn(async () => []),
+  updateProjectIdentity: vi.fn(async () => undefined),
 }));
 
 vi.mock('@goodboy/db', () => ({
@@ -44,11 +46,15 @@ vi.mock('@goodboy/db', () => ({
   disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
   upsertWorkspaceProfile: h.upsertWorkspaceProfile,
   describeProjectAdoption: h.describeProjectAdoption,
+  updateProjectIdentity: h.updateProjectIdentity,
 }));
 
 vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('../../../shared/lib/repo', () => ({ validateGitRepo: h.validateGitRepo }));
+vi.mock('../../../shared/lib/repo', () => ({
+  validateGitRepo: h.validateGitRepo,
+  repoIdentity: h.repoIdentity,
+}));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeWorkflowList: h.invokeWorkflowList,
 }));
