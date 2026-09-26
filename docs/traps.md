@@ -131,7 +131,10 @@ fails silently at runtime.
   view and fails with `error in view <name>: no such table`. So a reset that
   drops tables one by one strands `live_agents` (m156), and the replayed
   chain dies at m015's table rebuild. Reset a database with
-  `reset_database` in `db.rs`, never with a loop of `DROP TABLE`.
+  `reset_database` in `db.rs`, never with a loop of `DROP TABLE`. The
+  launch check that heals such a file needs a missing core table too, on
+  purpose: a broken view alone is not proof of a wipe, and resetting on it
+  would erase a live database.
 - `cargo fmt` formats the whole crate, whatever file you give it, and `main`
   is not fmt-clean (`rust.yml` runs the check as advisory). A local run
   rewrites files the change never touched. Revert those hunks before you

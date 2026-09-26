@@ -154,16 +154,20 @@ plus `VACUUM`), and the chain replays from m001 on the empty file. It never
 drops tables one by one: that leaves views like `live_agents` behind, and the
 first `ALTER TABLE ... RENAME` of the replay fails on them (see
 [traps](traps.md#traps-in-the-toolchain)). Builds before 0.7.1 did exactly
-that, so `db::open` checks every view at launch. A view that reads a table
-that no longer exists can only come from that old wipe, so the file gets the
-same reset before the migrations run, and the wipe the user asked for
-finishes. Any other migration failure still shows the error screen.
+that, so `db::open` checks the file at launch. It finishes the wipe only when
+both signs of that old wipe are there: a view reads a table that no longer
+exists, and one of `schema_version`, `sessions` or `agents` is missing. It
+first checkpoints the WAL and copies the file (with its `-wal` and `-shm`) to
+`data.db.pre-reset-<unix seconds>.bak`. If the copy fails, nothing is reset.
+Then it runs the same reset before the migrations. A broken view on a
+complete schema, and any other migration failure, still show the error
+screen.
 
 ### On-disk data layout
 
 Everything the app saves for itself lives in `~/.goodboy`.
 
-- `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it.
+- `data.db`: the SQLite database. Its copies from before each migration (`data.db.pre-m*.bak`) sit next to it, and so does the copy kept before a half-done wipe is finished (`data.db.pre-reset-*.bak`).
 - `scratch/<session-id>/`: where a session's turns write before any project is mounted.
 - `workspaces/<slug>/artifacts/<date>-<title>-<id>/`: a copy of each plan,
   report and wireframe of that workspace (`artifacts-dev/` for debug builds).
