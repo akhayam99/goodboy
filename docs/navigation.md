@@ -691,8 +691,14 @@ grouped by mount, project plus branch, from `useSessionScripts`. A project
 mounted twice is two groups, and its saved scripts show in both; you pick
 where a script runs by picking the row in the right group. A group header
 collapses it, and the collapsed set is kept per workspace
-(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`). Every row is the same
-`ScriptRow`: category node, name, command, Source (`Saved`, `package.json`,
+(`goodboy:scripts-groups-collapsed:v1:<workspaceId>`). Saved scripts come
+first. When a group holds more than one manifest package (a pnpm, yarn or npm
+workspace, or package.json next to composer.json), its manifest rows sit under
+one `ScriptPackageSection` per package: the package name from its manifest,
+the manifest path and the count. The root package comes first, then workspace
+packages by folder, then composer. A manifest script runs in its package's
+folder, and the filter matches the package name and folder too. Every row is
+the same `ScriptRow`: category node, name, command, Source (`Saved`, `package.json`,
 `composer.json`), Last run in glyph and word, one Run or Stop button and a `⋯`
 menu (saved: Edit, Duplicate, Delete with an inline confirm; manifest: Save as
 script, Copy command). Clicking a row opens its output in the `scriptRun`
