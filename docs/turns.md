@@ -344,6 +344,44 @@ the chat's handoff, as the post-step summarizer is a workflow's
   its summary did.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
 
+## Composer
+
+`ChatInput` is one shell: field, then a 32px action row, no divider between
+them. Focus shows as a stronger border plus a soft shadow, never a full ring:
+the ring the box carried at every focus wrapped the whole thing in a color
+loud enough to compete with the transcript, and the same anti-pattern is
+avoided on `SendControl`'s own buttons.
+
+- The action row's left side is `ComposerPlusMenu` (`+`, `parts/`): the menu
+  is where the prefix syntax (`$` script, `~` workflow, `@` agent) is learned,
+  not the placeholder, and it also holds Attach files. It reads `CHAT_PREFIXES`
+  so a new prefix group appears there on its own. Then `PermissionModePicker`,
+  then an attachment count once files are staged (the attachment chips
+  themselves sit above the field, not in this row).
+- The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
+  passed in rather than living beside it) then `SendControl` (`parts/`): the
+  same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
+  nothing to send, Queue/Send now once there is something to deliver while a
+  turn runs.
+- `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
+  advertised every prefix inline: a role's first turn gets its
+  `firstMessagePrompt`, otherwise `Reply to {role}` idle or `Queue a message
+for {role}` while a turn runs, `{role}` being the agent's own name over its
+  kind label. No prefix syntax appears in it.
+- Queued messages and the agent's own suggestion sit in a tray attached above
+  the shell (`bg-muted`, rounded top corners) when either has something to
+  show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
+  sits above that, since it is a warning rather than composer content.
+- `resolveSkillPrompt` returns the content unresolved when
+  `WORKSPACE_FEATURES.skills` is off, so a message starting with `/` sends as
+  plain text instead of failing with "unknown skill" while skills are
+  disabled.
+- Sending: `Enter` in this composer, because it talks to an agent;
+  `⌘Enter` is for a composer that talks to a person (a PR comment, a Linear
+  or Slack reply). Both are already the rule elsewhere in the app
+  (`ConversationComposer`), this just names it: an agent composer sends on
+  Enter, a people composer on ⌘Enter.
+
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
 a time with a 90 second timeout, and a failure falls back to the deterministic
 summary flagged `degraded`.

@@ -1,23 +1,13 @@
 import { useRef, useCallback, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Paperclip, Send, Square } from 'lucide-react';
-import {
-  Button,
-  cn,
-  Divider,
-  formatUsd,
-  KbdPill,
-  Textarea,
-  Tooltip,
-  tintClasses,
-} from '@goodboy/ui';
+import { Paperclip } from 'lucide-react';
+import { cn, Textarea, tintClasses } from '@goodboy/ui';
 import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
-import { useAppStore, useSessionCost } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../app/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
-import { CostBadge } from '../../../providers/components/CostBadge';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { modelLabel } from '../../utils/chat-constants';
@@ -25,7 +15,7 @@ import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { PermissionModePicker } from '../../../../features/permissions/components/PermissionModePicker';
 import { ATTACHMENT_ACCEPT } from '../../attachment-kinds';
 import { AGENT_KIND_META, classifyAgent, type AgentKind } from '../../../session/agent-kind';
-import { CHAT_PLACEHOLDER, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
+import { composerPlaceholder, RUNNING_KINDS, type PendingAttachment, type QueuedTurn } from './lib';
 import { useAttachments } from './hooks/useAttachments';
 import { useChatPrefix } from './hooks/useChatPrefix';
 import { useMessageQueue } from './hooks/useMessageQueue';
@@ -44,6 +34,8 @@ import { QueuedMessages } from './parts/QueuedMessages';
 import { SuggestionStack } from './parts/SuggestionStack';
 import { ComposerErrorNotice } from './parts/ComposerErrorNotice';
 import { ComposerCliGate } from './parts/ComposerCliGate';
+import { ComposerPlusMenu } from './parts/ComposerPlusMenu';
+import { SendControl } from './parts/SendControl';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 
@@ -83,7 +75,6 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
         })
       : agentKindOverride;
   const sessionWorktree = useAppStore((s) => (s.sessionWorktrees[session.id] ?? [])[0] ?? null);
-  const sessionCost = useSessionCost(session.id);
   const loadScripts = useAppStore((s) => s.loadScripts);
   const loadPhaseTemplates = useAppStore((s) => s.loadPhaseTemplates);
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
@@ -452,6 +443,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     isFirstTurnForAgent && activeAgentKind != null
       ? AGENT_KIND_META[activeAgentKind].firstMessagePrompt
       : null;
+  const roleLabel =
+    selectedAgentName ?? (activeAgentKind != null ? AGENT_KIND_META[activeAgentKind].label : null);
+  const placeholder = isArchived
+    ? ARCHIVED_SESSION_REASON
+    : providerDisconnected
+      ? 'Sign in to send a message'
+      : composerPlaceholder({ isRunning, firstMessagePrompt, roleLabel });
   const shouldFocusFirstMessage = isFirstTurnForAgent && !isBlocked;
 
   useEffect(() => {
@@ -465,8 +463,14 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
     ? 'this session was created without per-turn routing overrides'
     : undefined;
 
+  const hasTray = queue.length > 0 || suggestions.length > 0;
+  const insertPrefix = (symbol: string) => {
+    onValueChange(symbol);
+    wrapperRef.current?.querySelector('textarea')?.focus();
+  };
+
   return (
-    <div className="px-10 pb-4 pt-2">
+    <div className="px-6 pb-4 pt-2 [scrollbar-gutter:stable]">
       <div className={cn('flex flex-col gap-2', PANE_RHYTHM.column)}>
         {!isRunning && !providerDisconnected && (
           <RoutingIndicator
@@ -476,139 +480,107 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
             onSendAnyway={canSend ? () => void onSendAnyway() : undefined}
           />
         )}
-        <SuggestionStack items={suggestions} />
-        <QueuedMessages
-          items={queue}
-          canEdit={value.trim().length === 0 && attachments.length === 0}
-          onEdit={editQueued}
-          onRemove={removeQueued}
-          onSendNow={sendQueued}
-        />
-        <div
-          ref={composerRef}
-          data-drop-composer
-          className={cn(
-            'relative flex flex-col rounded-md ring-1 transition-all focus-within:ring-2 focus-within:ring-focus-ring',
-            isDragging
-              ? cn(tintClasses('primary').bgSoft, 'ring-2 ring-primary')
-              : 'bg-subtle ring-border-soft',
+        <div className="flex flex-col">
+          {hasTray && (
+            <div className="flex flex-col gap-1.5 rounded-t-lg bg-muted px-2 pb-1.5 pt-2">
+              <QueuedMessages
+                items={queue}
+                canEdit={value.trim().length === 0 && attachments.length === 0}
+                onEdit={editQueued}
+                onRemove={removeQueued}
+                onSendNow={sendQueued}
+              />
+              <SuggestionStack items={suggestions} />
+            </div>
           )}
-        >
           <div
+            ref={composerRef}
+            data-drop-composer
             className={cn(
-              'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md transition-opacity duration-150',
-              tintClasses('primary').bgSoft,
-              isDragging ? 'opacity-100' : 'opacity-0',
+              'relative flex flex-col rounded-lg border transition-all',
+              hasTray && 'rounded-t-none',
+              isDragging
+                ? cn(tintClasses('primary').bgSoft, 'border-primary')
+                : cn(
+                    'border-border-soft bg-subtle hover:border-border',
+                    'focus-within:border-border-strong focus-within:shadow-xl',
+                  ),
             )}
-            aria-hidden
           >
             <div
               className={cn(
-                'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
-                tintClasses('primary').ring,
-                isDragging ? 'scale-100' : 'scale-95',
+                'pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed transition-opacity duration-150',
+                tintClasses('primary').bgSoft,
+                tintClasses('primary').border,
+                isDragging ? 'opacity-100' : 'opacity-0',
               )}
+              aria-hidden
             >
-              <Paperclip size={ICON_SIZE.control} aria-hidden />
-              drop to attach
-            </div>
-          </div>
-          <ComposerCliGate
-            provider={routing.effectiveProvider}
-            modelId={routing.effectiveModelId}
-          />
-          {attachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
-              {attachments.map((a) => (
-                <AttachmentChip
-                  key={a.id}
-                  {...pendingAttachmentProps(a)}
-                  onRemove={() => removeAttachment(a.id)}
-                />
-              ))}
-            </div>
-          )}
-          <div className="relative" ref={wrapperRef}>
-            {popoverOpen ? (
-              <QuickActionsPopover
-                items={filteredQuickItems}
-                emptyHint={quickEmptyHint}
-                onSelect={onQuickActionSelect}
-                onDismiss={dismissPopover}
-              />
-            ) : null}
-            <Textarea
-              value={value}
-              onChange={(e) => onValueChange(e.target.value)}
-              onKeyDown={onKeyDown}
-              onPaste={onPaste}
-              placeholder={
-                isArchived
-                  ? ARCHIVED_SESSION_REASON
-                  : providerDisconnected
-                    ? 'Sign in to send a message'
-                    : isRunning
-                      ? queue.length > 0
-                        ? 'Type to queue another message'
-                        : 'Turn running, type to queue a message or send it now'
-                      : (firstMessagePrompt ?? CHAT_PLACEHOLDER)
-              }
-              disabled={isBlocked}
-              autoGrow
-              rows={1}
-              maxRows={12}
-              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
-            />
-            {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
-              <Tooltip content="Cancel turn">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
-                  }
-                  aria-label="Cancel turn"
-                  className={cn(
-                    'absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg',
-                    tintClasses('danger').bg,
-                    'text-danger transition-colors',
-                    tintClasses('danger').hoverBg,
-                  )}
-                >
-                  <Square size={ICON_SIZE.control} aria-hidden fill="currentColor" />
-                </button>
-              </Tooltip>
-            ) : showsDeliveryChoice ? null : (
-              <Tooltip
-                content={sendDisabledTitle ?? 'Send (enter)'}
-                anchorClassName="absolute right-2 top-1/2 -translate-y-1/2"
+              <div
+                className={cn(
+                  'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
+                  tintClasses('primary').ring,
+                  isDragging ? 'scale-100' : 'scale-95',
+                )}
               >
-                <button
-                  type="button"
-                  onClick={() => void onSend()}
-                  disabled={!canSend}
-                  aria-label="Send message"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-on-tone shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-                >
-                  <Send size={ICON_SIZE.control} aria-hidden className="-translate-x-px" />
-                </button>
-              </Tooltip>
+                <Paperclip size={ICON_SIZE.control} aria-hidden />
+                Drop to attach · up to 10 files, 15 MB each
+              </div>
+            </div>
+            <ComposerCliGate
+              provider={routing.effectiveProvider}
+              modelId={routing.effectiveModelId}
+            />
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-3 pb-1 pt-3">
+                {attachments.map((a) => (
+                  <AttachmentChip
+                    key={a.id}
+                    {...pendingAttachmentProps(a)}
+                    onRemove={() => removeAttachment(a.id)}
+                  />
+                ))}
+              </div>
             )}
-          </div>
-          <Divider />
-          <div className="flex h-9 items-center justify-between gap-2 px-2.5">
-            <div className="flex items-center gap-2">
-              <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
-              <Tooltip content="Attach files">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
+            <div className="relative" ref={wrapperRef}>
+              {popoverOpen ? (
+                <QuickActionsPopover
+                  items={filteredQuickItems}
+                  emptyHint={quickEmptyHint}
+                  onSelect={onQuickActionSelect}
+                  onDismiss={dismissPopover}
+                />
+              ) : null}
+              <Textarea
+                value={value}
+                onChange={(e) => onValueChange(e.target.value)}
+                onKeyDown={onKeyDown}
+                onPaste={onPaste}
+                placeholder={placeholder}
+                disabled={isBlocked}
+                autoGrow
+                rows={1}
+                maxRows={12}
+                className="resize-none border-0 bg-transparent px-3 py-2 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <div className="flex h-8 items-center justify-between gap-2 px-2.5 pb-1.5">
+              <div className="flex items-center gap-2">
+                <ComposerPlusMenu
                   disabled={isBlocked}
-                  aria-label="Attach files"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Paperclip size={ICON_SIZE.control} aria-hidden />
-                </button>
-              </Tooltip>
+                  onAttachFiles={() => fileInputRef.current?.click()}
+                  onInsertPrefix={insertPrefix}
+                />
+                <PermissionModePicker
+                  session={session}
+                  activeProvider={routing.effectiveProvider}
+                />
+                {attachments.length > 0 && (
+                  <span className="text-2xs text-faint-foreground">
+                    {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
+                  </span>
+                )}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -619,76 +591,52 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 className="hidden"
                 onChange={onFileInputChange}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  onValueChange('$');
-                  wrapperRef.current?.querySelector('textarea')?.focus();
-                }}
-                disabled={isBlocked}
-                title="Run a project script"
-                aria-label="Run a project script"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                $
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              {sessionCost > 0 && (
-                <CostBadge
-                  value={sessionCost}
-                  title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-                  className="text-xs text-muted-foreground"
+              <div className="flex items-center gap-2">
+                <RoutingPicker
+                  variant="pill"
+                  align="end"
+                  ariaLabel="Model routing"
+                  openEvent="goodboy:open-model-picker"
+                  shortcut="session.model"
+                  provider={routing.effectiveProvider}
+                  model={routing.effectiveModelId}
+                  effort={{
+                    editable: true,
+                    value: routing.effectiveEffort,
+                    onChange: routing.setEffort,
+                  }}
+                  verbosity={routing.verbosity}
+                  connectedProviders={routing.connectedProviderIds}
+                  disabled={!routing.allowOverride}
+                  disabledTitle={overrideDisabledTitle}
+                  overridden={routing.isOverridden}
+                  defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
+                    routing.referenceModel,
+                  )}`}
+                  budget={<ProviderUsagePill provider={routing.effectiveProvider} />}
+                  onProvider={(next) => {
+                    if (next === '') {
+                      return;
+                    }
+                    routing.onSelectProvider(next);
+                  }}
+                  onModel={routing.onSelectModel}
+                  onVerbosity={routing.setVerbosity}
+                  onReset={routing.onResetTurnOverride}
                 />
-              )}
-              <ProviderUsagePill provider={routing.effectiveProvider} />
-              <RoutingPicker
-                variant="pill"
-                align="end"
-                ariaLabel="Model routing"
-                openEvent="goodboy:open-model-picker"
-                shortcut="session.model"
-                provider={routing.effectiveProvider}
-                model={routing.effectiveModelId}
-                effort={{
-                  editable: true,
-                  value: routing.effectiveEffort,
-                  onChange: routing.setEffort,
-                }}
-                verbosity={routing.verbosity}
-                connectedProviders={routing.connectedProviderIds}
-                disabled={!routing.allowOverride}
-                disabledTitle={overrideDisabledTitle}
-                overridden={routing.isOverridden}
-                defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
-                  routing.referenceModel,
-                )}`}
-                onProvider={(next) => {
-                  if (next === '') {
-                    return;
+                <SendControl
+                  isRunning={isRunning}
+                  isEmpty={value.trim().length === 0 && attachments.length === 0}
+                  canSend={canSend}
+                  showsDeliveryChoice={showsDeliveryChoice}
+                  sendDisabledTitle={sendDisabledTitle}
+                  onCancel={() =>
+                    void cancelCurrentTurn(session.id, selectedAgentId ?? undefined, 'user')
                   }
-                  routing.onSelectProvider(next);
-                }}
-                onModel={routing.onSelectModel}
-                onVerbosity={routing.setVerbosity}
-                onReset={routing.onResetTurnOverride}
-              />
-              {showsDeliveryChoice ? (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => void onSend()}>
-                    Queue{' '}
-                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
-                      ↵
-                    </KbdPill>
-                  </Button>
-                  <Button variant="primary" size="sm" onClick={() => void onSendNow()}>
-                    Send now{' '}
-                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
-                      ⌘↵
-                    </KbdPill>
-                  </Button>
-                </>
-              ) : null}
+                  onSend={() => void onSend()}
+                  onSendNow={() => void onSendNow()}
+                />
+              </div>
             </div>
           </div>
         </div>

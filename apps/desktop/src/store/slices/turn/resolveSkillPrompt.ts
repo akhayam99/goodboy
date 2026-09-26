@@ -2,6 +2,7 @@ import type { AgentId, IsoDateTime, ProviderRunId, Session, SessionId } from '@g
 import { formatError } from '@goodboy/ui';
 import { parseSlashCommand } from '@goodboy/core';
 import { resolveSkillInvocation } from '../../../features/skills/skills';
+import { WORKSPACE_FEATURES } from '../../../shared/lib/features';
 import type { AppStore } from '../../store';
 import type { GetFn } from './types';
 import { resolveSessionRepo } from '../worktrees/resolveSessionRepo';
@@ -21,6 +22,9 @@ export const resolveSkillPrompt = async (
   { before, session, sessionId, activeAgentId, workingDir, content, now }: Params,
 ): Promise<{ ok: true; resolvedPrompt: string } | { ok: false }> => {
   let resolvedPrompt = content;
+  if (!WORKSPACE_FEATURES.skills) {
+    return { ok: true, resolvedPrompt };
+  }
   const slashCmd = parseSlashCommand(content);
   if (slashCmd !== null) {
     const workspaceSkills = before.skills[session.workspaceId] ?? [];

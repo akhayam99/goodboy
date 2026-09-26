@@ -38,6 +38,7 @@ export type Props = {
   readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
   readonly presentation?: 'popover' | 'inline';
+  readonly budget?: ReactNode;
 };
 
 export const RoutingPicker = ({
@@ -65,6 +66,7 @@ export const RoutingPicker = ({
   shortcut,
   availability = 'run',
   presentation = 'popover',
+  budget,
 }: Props) => {
   const isInline = presentation === 'inline';
   const [isProviderConnectionInFlight, setIsProviderConnectionInFlight] = useState(false);
@@ -220,6 +222,7 @@ export const RoutingPicker = ({
                 ) : (
                   <TriggerLabel provider={routing.provider} label={triggerLabel} />
                 )}
+                {budget}
               </span>
               <ChevronDown
                 size={11}

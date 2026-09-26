@@ -54,10 +54,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/chat/components/ChatInput/index.tsx': {
-    count: 1,
-    reason: 'control',
-  },
   'apps/desktop/src/features/workflows/components/WorkflowNextStepCta/index.tsx': {
     count: 1,
     reason: 'control',
