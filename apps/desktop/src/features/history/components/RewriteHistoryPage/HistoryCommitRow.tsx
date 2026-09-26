@@ -1,9 +1,10 @@
-import type { KeyboardEvent, ReactNode } from 'react';
-import { Cloud, GitMergeConflict } from 'lucide-react';
+import type { DragEvent, KeyboardEvent, ReactNode } from 'react';
+import { Cloud, GitMergeConflict, GripVertical } from 'lucide-react';
 import { Checkbox, Tooltip, cn } from '@goodboy/ui';
 import type { BranchCommit, HistoryStep, HistoryStepPrediction } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { VERB_LINE } from '../../historyPlan';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly commit: BranchCommit;
@@ -16,6 +17,11 @@ type Props = {
   readonly onToggleSelect: () => void;
   readonly onStartReword: () => void;
   readonly onKey: (key: string, withAlt: boolean) => boolean;
+  readonly isDragTarget: boolean;
+  readonly onDragStart: () => void;
+  readonly onDragEnter: () => void;
+  readonly onDrop: () => void;
+  readonly onDragEnd: () => void;
 };
 
 export const HistoryCommitRow = ({
@@ -29,6 +35,11 @@ export const HistoryCommitRow = ({
   onToggleSelect,
   onStartReword,
   onKey,
+  isDragTarget,
+  onDragStart,
+  onDragEnter,
+  onDrop,
+  onDragEnd,
 }: Props) => {
   const isDropped = step.verb === 'drop';
   const isConflict = prediction?.outcome === 'conflict';
@@ -46,18 +57,44 @@ export const HistoryCommitRow = ({
     }
   };
 
+  const onStart = (event: DragEvent<HTMLLIElement>) => {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', commit.sha);
+    onDragStart();
+  };
+  const onOver = (event: DragEvent<HTMLLIElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  };
+  const onDropHere = (event: DragEvent<HTMLLIElement>) => {
+    event.preventDefault();
+    onDrop();
+  };
+
   return (
     <li
       tabIndex={0}
+      draggable
+      onDragStart={onStart}
+      onDragEnter={onDragEnter}
+      onDragOver={onOver}
+      onDrop={onDropHere}
+      onDragEnd={onDragEnd}
       aria-label={`${commit.shortSha} ${subject}`}
       data-testid={`history-row-${commit.shortSha}`}
       onKeyDown={onKeyDown}
       className={cn(
         'group flex min-w-0 flex-col gap-1.5 rounded-md px-2 py-1.5 outline-none focus-visible:bg-hover hover:bg-hover',
         isSelected && 'bg-selected',
+        isDragTarget && 'ring-1 ring-focus-ring',
       )}
     >
       <div className="flex min-w-0 items-center gap-2">
+        <GripVertical
+          size={ICON_SIZE.row}
+          aria-hidden
+          className="shrink-0 cursor-grab text-faint-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+        />
         <Checkbox
           checked={isSelected}
           onChange={onToggleSelect}

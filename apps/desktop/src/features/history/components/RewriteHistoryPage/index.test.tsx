@@ -188,6 +188,28 @@ describe('RewriteHistoryPage', () => {
     );
   });
 
+  it('reorders by dragging a row onto another, next to the keyboard and the menu', () => {
+    const actions = setup();
+    const dragged = screen.getByTestId('history-row-aaa1111');
+    const target = screen.getByTestId('history-row-ccc3333');
+    fireEvent.dragStart(dragged, { dataTransfer: { setData: () => undefined } });
+    fireEvent.dragEnter(target);
+    fireEvent.dragOver(target, { dataTransfer: {} });
+    fireEvent.drop(target, { dataTransfer: {} });
+
+    expect(actions.editHistoryDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          { sha: 'bbb2222bbbb', verb: 'pick' },
+          { sha: 'ccc3333cccc', verb: 'pick' },
+          { sha: 'aaa1111aaaa', verb: 'pick' },
+        ],
+        edit: { kind: 'move', sha: 'aaa1111aaaa', other: 'ccc3333cccc' },
+      }),
+    );
+    expect(dragged.getAttribute('draggable')).toBe('true');
+  });
+
   it('names the move that breaks the plan and offers the history rewriter', () => {
     const moved: ReadonlyArray<HistoryStep> = [
       { sha: 'aaa1111aaaa', verb: 'pick' },

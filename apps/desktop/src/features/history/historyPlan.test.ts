@@ -6,6 +6,7 @@ import {
   initialPlanItems,
   isContiguous,
   moveStep,
+  moveStepOnto,
   planSummary,
   rewordStep,
   setVerb,
@@ -61,6 +62,18 @@ describe('history plan', () => {
       { sha: 'bbb2222', verb: 'squash', message: 'Both' },
       { sha: 'ccc3333', verb: 'pick' },
     ]);
+  });
+
+  it('drops a dragged commit where the target row was, in either direction', () => {
+    const up = moveStepOnto({ items: base, sha: 'aaa1111', onto: 'ccc3333' });
+    expect(up.items.map((step) => step.sha)).toEqual(['bbb2222', 'ccc3333', 'aaa1111']);
+    expect(up.direction).toBe('newer');
+
+    const down = moveStepOnto({ items: base, sha: 'ccc3333', onto: 'aaa1111' });
+    expect(down.items.map((step) => step.sha)).toEqual(['ccc3333', 'aaa1111', 'bbb2222']);
+    expect(down.direction).toBe('older');
+
+    expect(moveStepOnto({ items: base, sha: 'bbb2222', onto: 'bbb2222' }).direction).toBeNull();
   });
 
   it('moves a commit and names the move that could break', () => {

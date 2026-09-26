@@ -923,7 +923,7 @@ history. The page lists the commits since main, newest first, split into
 row has a verb column (Pick, Reword, Squash into the one below, Fold into,
 Drop, Move up or down) and every verb carries one line that says what happens
 to the code and to the message; the word fixup never shows. The keys are the
-ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move.
+ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
 Nothing touches git while you edit: the plan is a draft saved per worktree in
 `history_plans`, and once the plan rests for a second the engine predicts it in memory
 with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
