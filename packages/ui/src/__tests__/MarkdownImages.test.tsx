@@ -77,7 +77,7 @@ describe('Markdown images', () => {
       </LocalImageLoaderProvider>,
     );
     expect(screen.getByRole('img', { name: 'chart' }).getAttribute('src')).toBe(PNG_DATA_URI);
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
     await screen.findByRole('img', { name: 'remote' });
     expect(remoteLoad).toHaveBeenCalledWith({ url: 'https://example.com/a.png' });
     expect(localLoad).not.toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('Markdown images', () => {
 
     expect(load).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
     await act(async () => {
       await Promise.resolve();
     });
@@ -149,7 +149,7 @@ describe('Markdown images', () => {
       </RemoteImageLoaderProvider>,
     );
 
-    expect(screen.getAllByRole('button', { name: 'Load image' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Load' })).toHaveLength(2);
     expect(screen.getByText('one.example.com')).toBeTruthy();
     expect(screen.getByText('two.example.com')).toBeTruthy();
   });

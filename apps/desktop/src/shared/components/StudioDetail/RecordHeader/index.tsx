@@ -23,6 +23,7 @@ type Props = {
   readonly identifier: string;
   readonly title: string;
   readonly state?: ReactNode;
+  readonly byline?: ReactNode;
   readonly facts?: ReactNode;
   readonly externalRef?: ExternalRef | null;
   readonly verbs?: RecordVerbs;
@@ -35,6 +36,7 @@ export const RecordHeader = ({
   identifier,
   title,
   state,
+  byline,
   facts,
   externalRef = null,
   verbs = NO_RECORD_VERBS,
@@ -89,6 +91,7 @@ export const RecordHeader = ({
         ) : null}
       </div>
       <h1 className="line-clamp-3 text-base font-semibold leading-snug text-foreground">{title}</h1>
+      {byline == null ? null : <p className="truncate text-meta text-faint-foreground">{byline}</p>}
       {facts}
       <RecordActions
         primary={frame?.primary ?? null}

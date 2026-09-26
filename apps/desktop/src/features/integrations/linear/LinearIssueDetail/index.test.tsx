@@ -155,11 +155,18 @@ describe('LinearIssueDetail', () => {
   it('renders the facts in the canonical slot order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
-    const facts = screen.getByRole('list', { name: 'Facts' });
+    const facts = screen.getByRole('list', { name: 'Properties' });
     expect(
       within(facts)
         .getAllByRole('listitem')
         .map((item) => item.getAttribute('data-fact-slot')),
-    ).toEqual(['person', 'weight', 'place', 'labels', 'time']);
+    ).toEqual(['state', 'weight', 'person', 'place', 'labels']);
+    expect(screen.getByText('In Progress')).toBeDefined();
+  });
+
+  it('moves the update time into the byline instead of a fact', () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    expect(screen.getByRole('time')).toBeDefined();
   });
 });

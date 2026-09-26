@@ -24,6 +24,7 @@ const ISSUE: GithubIssue = {
   state: 'OPEN',
   labels: ['feature'],
   updatedAt: '2026-07-22T10:00:00Z',
+  author: 'dvance',
 };
 
 const EDIT_CONTEXT = {
@@ -59,6 +60,14 @@ describe('GithubIssueDetail', () => {
     expect(screen.getByText('Show assigned issues in GitHub Studio.')).toBeDefined();
     expect(screen.getByText('feature')).toBeDefined();
     expect(screen.getByText('#42')).toBeDefined();
+    expect(screen.getByText('Open')).toBeDefined();
+    expect(screen.getByText(/Opened by dvance/)).toBeDefined();
+  });
+
+  it('drops the byline lead when the issue has no known author', () => {
+    render(<GithubIssueDetail issue={{ ...ISSUE, author: null }} />);
+
+    expect(screen.queryByText(/Opened by/)).toBeNull();
   });
 
   it('falls back to a placeholder when the body is empty', () => {

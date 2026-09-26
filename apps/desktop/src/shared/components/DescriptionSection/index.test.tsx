@@ -70,7 +70,7 @@ describe('DescriptionSection', () => {
       </RemoteImageLoaderProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Load image' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Load' }));
 
     expect(screen.queryByRole('textbox', { name: 'Edit description' })).toBeNull();
   });

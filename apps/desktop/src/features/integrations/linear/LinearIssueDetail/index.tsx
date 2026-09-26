@@ -1,14 +1,13 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
-import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
+import { linearIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
 import type { LinearIssue } from '../client';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
@@ -59,9 +58,11 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           provider="linear"
           identifier={issue.identifier}
           title={issue.title}
-          state={<StateBadge>{issue.state.name}</StateBadge>}
+          byline={recordByline({ verb: 'updated', iso: issue.updatedAt })}
           facts={
-            <RecordFacts facts={resolveFacts({ registry: linearIssueFields, entity: issue })} />
+            <RecordProperties
+              facts={resolveFacts({ registry: linearIssueFields, entity: issue })}
+            />
           }
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}

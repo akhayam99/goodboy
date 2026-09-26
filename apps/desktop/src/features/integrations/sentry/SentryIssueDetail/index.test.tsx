@@ -57,12 +57,13 @@ describe('SentryIssueDetail', () => {
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();
 
-    const facts = screen.getByRole('list', { name: 'Facts' });
+    const facts = screen.getByRole('list', { name: 'Properties' });
     expect(
       within(facts)
         .getAllByRole('listitem')
         .map((item) => item.getAttribute('data-fact-slot')),
-    ).toEqual(['weight', 'place', 'labels', 'labels']);
+    ).toEqual(['state', 'weight', 'place', 'labels', 'labels']);
+    expect(within(facts).getByText('Unresolved')).toBeDefined();
     expect(screen.queryByRole('textbox')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /^Breadcrumbs/ }));
@@ -81,10 +82,16 @@ describe('SentryIssueDetail', () => {
     );
 
     expect(screen.getByText('128 events · 9 users')).toBeDefined();
-    expect(screen.queryByText('First seen')).toBeNull();
-    expect(screen.getByRole('list', { name: 'Facts' }).textContent).not.toContain(
+    expect(screen.getByRole('list', { name: 'Properties' }).textContent).not.toContain(
       formatAbsoluteDateTime({ iso: LAST_SEEN }),
     );
+  });
+
+  it('moves first seen and last seen into the byline, once the real error shows them', () => {
+    render(<SentryIssueDetail {...BASE_PROPS} firstSeen={FIRST_SEEN} lastSeen={LAST_SEEN} />);
+
+    expect(screen.getByText(/First seen/)).toBeDefined();
+    expect(screen.getByText(/last seen/)).toBeDefined();
   });
 
   it('keeps the stack trace visible with a skeleton while the summary is still loading', () => {

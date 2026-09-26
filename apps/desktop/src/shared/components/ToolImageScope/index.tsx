@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { RemoteImageLoaderProvider } from '@goodboy/ui';
+import { integrationLabel } from '../../../features/integrations/components/IntegrationGlyph';
 import { useToolImageLoader } from '../../hooks/useToolImageLoader';
+import { openUrl } from '../../lib/editor';
 import type { ToolImageProvider } from '../../lib/remoteImage';
 
 type Props = {
@@ -27,9 +29,13 @@ export const ToolImageScope = ({
     email,
     siteUrl,
   });
+  const tool = useMemo(
+    () => ({ label: integrationLabel({ provider }), open: (url: string) => void openUrl(url) }),
+    [provider],
+  );
 
   return (
-    <RemoteImageLoaderProvider load={load} shouldAutoLoad={shouldAutoLoad}>
+    <RemoteImageLoaderProvider load={load} shouldAutoLoad={shouldAutoLoad} tool={tool}>
       {children}
     </RemoteImageLoaderProvider>
   );

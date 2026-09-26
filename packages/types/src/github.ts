@@ -17,6 +17,7 @@ export type GithubIssue = {
   state: string;
   labels: ReadonlyArray<string>;
   updatedAt: string;
+  author?: string | null;
 };
 
 export type GithubIssueComment = {

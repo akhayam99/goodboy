@@ -1,15 +1,17 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-export type FactSlot = 'person' | 'weight' | 'place' | 'labels' | 'measure' | 'links' | 'time';
+export type FactSlot =
+  'state' | 'person' | 'weight' | 'place' | 'labels' | 'measure' | 'links' | 'time';
 
 export const FACT_SLOTS: ReadonlyArray<FactSlot> = [
-  'person',
+  'state',
   'weight',
+  'person',
   'place',
   'labels',
-  'measure',
   'links',
+  'measure',
   'time',
 ];
 

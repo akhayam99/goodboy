@@ -19,6 +19,7 @@ describe('listAssignedIssues', () => {
           state: 'OPEN',
           labels: [{ name: 'feature' }, { name: 'desktop' }],
           assignees: [{ login: 'octocat' }],
+          author: { login: 'dvance' },
           updatedAt: '2026-07-22T10:00:00Z',
         },
       ]),
@@ -45,7 +46,7 @@ describe('listAssignedIssues', () => {
         '--limit',
         '50',
         '--json',
-        'number,title,body,url,state,labels,assignees,updatedAt',
+        'number,title,body,url,state,labels,assignees,author,updatedAt',
       ],
       {
         cwd: '/repos/goodboy',
@@ -61,6 +62,7 @@ describe('listAssignedIssues', () => {
         state: 'OPEN',
         labels: ['feature', 'desktop'],
         updatedAt: '2026-07-22T10:00:00Z',
+        author: 'dvance',
       },
     ]);
   });
