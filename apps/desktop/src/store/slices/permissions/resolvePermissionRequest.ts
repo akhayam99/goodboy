@@ -2,6 +2,7 @@ import type {
   AgentId,
   IsoDateTime,
   PermissionDecisionKind,
+  PermissionRulePattern,
   PermissionScope,
   ProviderRunId,
   SessionId,
@@ -16,10 +17,11 @@ type Params = {
   toolName: string;
   runId: ProviderRunId;
   scope: PermissionScope;
+  pattern?: PermissionRulePattern;
 };
 
 export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, agentId, toolUseId, toolName, runId, scope }: Params) => {
+  return async ({ sessionId, agentId, toolUseId, toolName, runId, scope, pattern }: Params) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (!session) {
       return;
@@ -33,11 +35,13 @@ export const resolvePermissionRequest = (set: SetFn, get: GetFn) => {
     } else {
       const ruleDecision: PermissionDecisionKind = scope === 'deny' ? 'deny' : 'allow';
       const ruleScope = scope === 'deny' ? 'session' : scope;
+      const rulePattern = pattern ?? { tool: toolName };
       await invokePermissionRuleUpsert({
         scope: ruleScope,
         ...(ruleScope === 'workspace' ? { workspaceId: session.workspaceId } : {}),
         ...(ruleScope === 'session' ? { sessionId } : {}),
-        patternTool: toolName,
+        patternTool: rulePattern.tool,
+        ...(rulePattern.argsMatcher != null && { patternArgsMatcher: rulePattern.argsMatcher }),
         decision: ruleDecision,
         priority: 100,
       });

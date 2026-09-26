@@ -252,5 +252,28 @@ describe('store contract', () => {
       });
       expect(perm.invokePermissionRuleUpsert).not.toHaveBeenCalled();
     });
+
+    it('resolvePermissionRequest(pattern) sends the command-prefix pattern, not a blanket allow', async () => {
+      const store = useAppStore;
+      store.setState({ sessions: [buildSession()] });
+      const perm = await import('../../../features/permissions/permissions');
+      await store.getState().resolvePermissionRequest({
+        sessionId: SESSION_ID,
+        agentId: AGENT_ID,
+        toolUseId: 'tu-4',
+        toolName: 'Bash',
+        runId: RUN_ID,
+        scope: 'workspace',
+        pattern: { tool: 'Bash', argsMatcher: 'pnpm test *' },
+      });
+      expect(perm.invokePermissionRuleUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'workspace',
+          patternTool: 'Bash',
+          patternArgsMatcher: 'pnpm test *',
+          decision: 'allow',
+        }),
+      );
+    });
   });
 });

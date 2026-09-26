@@ -193,6 +193,7 @@ type Input = {
   origin?: 'operator' | 'workflow' | 'mount-continuation';
   handoff?: HandoffDraft;
   sentVia?: UserTurnSentVia;
+  permissionOnceAllow?: string;
   retry?: {
     readonly attempt: number;
     readonly provider: ProviderId;
@@ -236,6 +237,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       origin,
       handoff,
       sentVia,
+      permissionOnceAllow,
       retry,
     }: Input,
     lease: TurnLease,
@@ -835,8 +837,12 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           scope: { workspaceId: session.workspaceId, sessionId },
           permissionMode,
         });
+        const onceAllowedTools =
+          permissionOnceAllow === undefined || flags.allowedTools.includes(permissionOnceAllow)
+            ? flags.allowedTools
+            : [...flags.allowedTools, permissionOnceAllow];
         claudeFlags = {
-          allowedTools: flags.allowedTools,
+          allowedTools: onceAllowedTools,
           disallowedTools: flags.disallowedTools,
           permissionMode: flags.permissionMode,
         };
@@ -846,7 +852,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           err,
         );
         claudeFlags = {
-          allowedTools: [],
+          allowedTools: permissionOnceAllow === undefined ? [] : [permissionOnceAllow],
           disallowedTools: [],
           permissionMode,
         };

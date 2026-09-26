@@ -18,6 +18,7 @@ import type {
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
+  PermissionRulePattern,
   PermissionScope,
   PlanId,
   PlanStatus,
@@ -646,6 +647,7 @@ type AppActions = {
     origin?: 'operator' | 'workflow';
     handoff?: HandoffDraft;
     sentVia?: UserTurnSentVia;
+    permissionOnceAllow?: string;
   }): Promise<SendTurnResult>;
   cancelCurrentTurn(
     sessionId: SessionId,
@@ -874,11 +876,28 @@ type AppActions = {
     toolName: string;
     runId: ProviderRunId;
     scope: PermissionScope;
+    pattern?: PermissionRulePattern;
   }): Promise<void>;
   retryBlockedTool(input: {
     sessionId: SessionId;
     agentId: AgentId;
     toolName: string;
+  }): Promise<void>;
+  allowAndContinue(input: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    toolUseId: string;
+    toolName: string;
+    input: unknown;
+    runId: ProviderRunId;
+  }): Promise<void>;
+  denyWithReason(input: {
+    sessionId: SessionId;
+    agentId: AgentId;
+    toolUseId: string;
+    toolName: string;
+    runId: ProviderRunId;
+    reason: string;
   }): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
