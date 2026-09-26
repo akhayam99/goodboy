@@ -7,7 +7,7 @@ import type { DrawerRequest } from '../drawer/state';
 import { createNavigationSlice } from '.';
 import { dropSession } from './history';
 import { locationKey } from './locationKey';
-import { BOARD_PLACE, agentPlace, sessionPlace } from './place';
+import { BOARD_PLACE, agentPlace, resolverPagePlace, sessionPlace } from './place';
 import { HISTORY_LIMIT } from './types';
 
 const WS = 'ws-harborline' as WorkspaceId;
@@ -51,6 +51,7 @@ const makeStore = () =>
           [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
         },
         agentKindOverride: { [RESOLVER]: 'resolver' },
+        sessionResolveAttempts: {},
         sessionGithub: {},
         sessionGitlabMr: {},
         sessionBitbucketPr: {},
@@ -181,6 +182,63 @@ describe('navigation slice', () => {
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
     expect(store.getState().activeLens[S1]).toBe('review');
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
+  });
+
+  it('opens a resolver in Review with its comment on the Agent tab', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
+
+    expect(store.getState().activeLens[S1]).toBe('review');
+    expect(store.getState().selectedAgentId[S1]).toBeNull();
+    expect(store.getState().drawer).toEqual({
+      kind: 'conversation',
+      sessionId: S1,
+      payload: { threadId: 'gh:PRRT_42', tab: 'agent' },
+    });
+  });
+
+  it('addresses the resolver page under its comment and goes back to the open comment', () => {
+    const store = makeStore();
+    const conversation = {
+      kind: 'conversation' as const,
+      sessionId: S1,
+      payload: { threadId: 'gh:PRRT_42', tab: 'comment' as const },
+    };
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openDrawer(conversation);
+    store.getState().navigate({
+      to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
+    });
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
+    expect(store.getState().drawer).toBeNull();
+
+    store.getState().up();
+    expect(store.getState().drawer).toEqual(conversation);
+    expect(store.getState().selectedAgentId[S1]).toBeNull();
+  });
+
+  it('goes up from a resolver page reached from elsewhere to the queue with its comment', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({
+      to: resolverPagePlace({ sessionId: S1, agentId: RESOLVER, threadId: 'gh:PRRT_42' }),
+    });
+    store.getState().up();
+
+    expect(keyOf(store)).toBe(`s/${S1}/review`);
+    expect(store.getState().drawer).toEqual({
+      kind: 'conversation',
+      sessionId: S1,
+      payload: { threadId: 'gh:PRRT_42', tab: 'comment' },
+    });
   });
 
   it('goes up with a back when the previous voice is the parent', () => {

@@ -75,7 +75,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const navigate = useAppStore((s) => s.navigate);
-  const publicationReturn = useAppStore((s) => s.resolvePublicationReturn?.[sessionId] ?? null);
+  const publicationRequest = useAppStore((s) => s.resolvePublicationRequest?.[sessionId] ?? null);
   const [isBusy, setIsBusy] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
   const entryRef = useRef<HTMLButtonElement | null>(null);
@@ -106,17 +106,17 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
   }, [preview]);
 
   useEffect(() => {
-    if (publicationReturn === null || handledRequestRef.current === publicationReturn.requestId) {
+    if (publicationRequest === null || handledRequestRef.current === publicationRequest.requestId) {
       return;
     }
-    handledRequestRef.current = publicationReturn.requestId;
+    handledRequestRef.current = publicationRequest.requestId;
     entryRef.current?.focus();
-    if (publicationReturn.reconcile) {
+    if (publicationRequest.reconcile) {
       void retryPublication({ sessionId }).catch((error: unknown) =>
         reportError({ title: "Couldn't check the publication", error, sessionId }),
       );
     }
-  }, [publicationReturn, reportError, retryPublication, sessionId]);
+  }, [publicationRequest, reportError, retryPublication, sessionId]);
 
   const run = useCallback(
     async ({

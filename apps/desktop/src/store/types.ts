@@ -114,9 +114,7 @@ import type {
   DiffFocus,
   FocusedExternalTask,
   LensKind,
-  ResolveDiffReturn,
-  ResolveAgentReturn,
-  ResolvePublicationReturn,
+  ResolvePublicationRequest,
   ResolveQueueView,
   SessionCreation,
   SessionStudio,
@@ -437,9 +435,7 @@ export type AppState = AppSliceState & {
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
-  readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
-  readonly resolveAgentReturn: Readonly<Record<SessionId, ResolveAgentReturn | null>>;
+  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;

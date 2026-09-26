@@ -90,7 +90,7 @@ type Params = {
 
 export const applyLocation = ({ set, get, location, isRestore }: Params): void => {
   const { place, studio } = location;
-  const drawer = isRestore ? location.focus.drawer : null;
+  const drawer = location.focus.drawer;
   if (get().appStudio !== studio) {
     set({ appStudio: studio });
   }

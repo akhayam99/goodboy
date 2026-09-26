@@ -55,6 +55,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly session: Session;
   readonly isActive?: boolean;
+  readonly agentId?: AgentId | null;
 };
 
 type RetrySource = {
@@ -106,10 +107,9 @@ const buildRetryOverride = ({
   };
 };
 
-export const ChatView = ({ session, isActive = true }: Props) => {
-  const selectedAgentId = useAppStore(
-    (s) => s.selectedAgentId[session.id] ?? null,
-  ) as AgentId | null;
+export const ChatView = ({ session, isActive = true, agentId }: Props) => {
+  const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
+  const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const sendTurn = useAppStore((s) => s.sendTurn);
   const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);

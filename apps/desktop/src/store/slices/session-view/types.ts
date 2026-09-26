@@ -89,23 +89,9 @@ export type ResolveQueueView = {
   readonly lastRouting: AgentKindRouting | null;
 };
 
-export type ResolvePublicationReturn = {
-  readonly threadId: string;
+export type ResolvePublicationRequest = {
   readonly reconcile: boolean;
   readonly requestId: number;
-};
-
-export type ResolveAgentReturn = {
-  readonly agentId: AgentId;
-  readonly threadId: string;
-  readonly prNumber: number;
-  readonly view: ResolveQueueView;
-};
-
-export type ResolveDiffReturn = {
-  readonly threadId: string;
-  readonly path: string | null;
-  readonly line: number | null;
 };
 
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
@@ -188,9 +174,7 @@ type SessionViewSliceState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolveDiffReturn: Readonly<Record<SessionId, ResolveDiffReturn | null>>;
-  readonly resolvePublicationReturn: Readonly<Record<SessionId, ResolvePublicationReturn | null>>;
-  readonly resolveAgentReturn: Readonly<Record<SessionId, ResolveAgentReturn | null>>;
+  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
@@ -232,27 +216,15 @@ type SessionViewSliceActions = {
   }): void;
   openResolveDiff(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly sha: string;
     readonly path: string | null;
-    readonly line: number | null;
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  returnFromResolveDiff(params: { readonly sessionId: SessionId }): void;
   openResolvePublication(params: {
     readonly sessionId: SessionId;
-    readonly threadId: string;
     readonly reconcile: boolean;
   }): void;
-  returnFromResolvePublication(params: { readonly sessionId: SessionId }): void;
-  openResolveAgent(params: {
-    readonly sessionId: SessionId;
-    readonly agentId: AgentId;
-    readonly threadId: string;
-    readonly prNumber: number;
-  }): void;
-  returnFromResolveAgent(params: { readonly sessionId: SessionId }): void;
   setResolveItemDraft(params: {
     readonly sessionId: SessionId;
     readonly threadId: string;

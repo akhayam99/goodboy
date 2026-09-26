@@ -128,8 +128,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
     () => selectResolverAgentIds({ agents: phaseRuns, kindOverride: agentKindOverride }),
     [phaseRuns, agentKindOverride],
   );
-  const resolveAgentOrigin = useAppStore((s) => s.resolveAgentReturn[sessionId] ?? null);
-  const returnFromResolveAgent = useAppStore((s) => s.returnFromResolveAgent);
   const githubTask = useMemo(
     () => sessionExternalTasks.find((task) => task.provider === 'github') ?? null,
     [sessionExternalTasks],
@@ -156,13 +154,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
       : `${agentCounts.running} running, ${agentCounts.done} done${
           agentCounts.failed > 0 ? `, ${agentCounts.failed} failed` : ''
         }`;
-  const leaveAgentOverlay = useCallback(() => {
-    if (resolveAgentOrigin !== null && resolveAgentOrigin.agentId === selectedAgentId) {
-      returnFromResolveAgent({ sessionId });
-      return;
-    }
-    up();
-  }, [resolveAgentOrigin, returnFromResolveAgent, selectedAgentId, sessionId, up]);
+  const leaveAgentOverlay = useCallback(() => up(), [up]);
 
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 

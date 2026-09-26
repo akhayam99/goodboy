@@ -20,7 +20,8 @@ export type SessionTarget =
       readonly mountPath: string | null;
       readonly focus: DiffFocus | null;
     }
-  | { readonly kind: 'terminal'; readonly mountPath: string };
+  | { readonly kind: 'terminal'; readonly mountPath: string }
+  | { readonly kind: 'thread'; readonly threadId: string };
 
 export type SessionView = {
   readonly lens: LensKind | null;
@@ -60,6 +61,12 @@ export type NavigateMode = 'push' | 'replace';
 export type NavigateParams = {
   readonly to: PlaceRequest;
   readonly mode?: NavigateMode;
+  readonly drawer?: OpenDrawer | null;
+};
+
+export type CanonicalPlace = {
+  readonly place: Place;
+  readonly drawer: OpenDrawer | null;
 };
 
 export type AmendFocusParams = {

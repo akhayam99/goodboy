@@ -47,6 +47,8 @@ const targetAddress = ({ target }: TargetParams): string => {
     }
     case 'terminal':
       return target.mountPath;
+    case 'thread':
+      return `t/${target.threadId}`;
     default: {
       const unreachable: never = target;
       return unreachable;
@@ -66,7 +68,10 @@ const sessionViewAddress = ({ view }: ViewParams): string => {
   if (view.target !== null) {
     parts.push(targetAddress({ target: view.target }));
   }
-  if (view.agentId !== null) {
+  if (view.agentId !== null && view.target?.kind === 'thread') {
+    parts.push('agent');
+  }
+  if (view.agentId !== null && view.target?.kind !== 'thread') {
     parts.push('agent', view.agentId);
   }
   if (view.studio !== null) {

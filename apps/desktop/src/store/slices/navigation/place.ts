@@ -34,3 +34,10 @@ export const agentPlace = ({ sessionId, agentId }: AgentPlaceParams): PlaceReque
   sessionId,
   agentId,
 });
+
+type ResolverPageParams = AgentPlaceParams & {
+  readonly threadId: string;
+};
+
+export const resolverPagePlace = ({ sessionId, agentId, threadId }: ResolverPageParams): Place =>
+  sessionPlace({ sessionId, lens: 'review', agentId, target: { kind: 'thread', threadId } });

@@ -269,9 +269,9 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   are shortcuts into a place that already has a parent. None of them may
   rewrite it. History is what Back is for.
 - **A child hangs off the overview section that owns it**: a step under its
-  run under Workflows, an ad-hoc agent under Agents, a fix attempt under Review.
-  The overlay's back target still prefers the surface the user was standing
-  in. So Back returns where you were, while the trail says where you are.
+  run under Workflows, an ad-hoc agent under Agents, a resolver under its
+  comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
+  you were, while the trail says where you are.
 - **A crumb with siblings is a switcher.** It is plain text when the agent is
   alone in its home lens. Otherwise it is a popover that switches the open
   agent in place.
@@ -641,6 +641,17 @@ one is open at a time.
   one durable conversation model. Everything it sends goes out through one
   publisher. So a restart finds the same rows in the same states, and no second
   path pushes a reply or closes a thread.
+- **The resolver stays in Review.** A resolver exists for one comment, so its
+  home is that comment, never the Agents lens. The conversation panel has two
+  tabs, `Comment` and `Agent`; `Agent` shows the resolver's live transcript and
+  composer, with a dot while it works. View agent, a notification, the
+  agent-started toast and the palette all land on Review with that comment's
+  panel open on `Agent` (`canonicalLocation` maps the resolver to the first
+  thread of its attempt). `…` → Open agent full page opens the resolver as a
+  child page of Review; Back, or Up when the queue is the entry below, returns
+  to the queue with the panel open, and Up from a page reached any other way
+  opens the queue with that comment. There are no return pills: the Diff, the
+  publication and the resolver page all come back through Back.
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is one entry (its goal, decisions and
   summary parts open through their shortcuts). Explore is always listed and
@@ -713,7 +724,7 @@ record opens in the same `DrawerColumn` inside the studio body
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
 
-`conversation` (payload `{ threadId }`) is a Review conversation. The queue
+`conversation` (payload `{ threadId, tab }`) is a Review conversation. The queue
 stays the page and the conversation opens in the shell drawer: `DrawerHost`
 renders `ConversationDrawerSlot`, and `ResolveQueueHome` portals the panel
 into it, so the panel keeps the queue's order and keys. Back from the Diff or

@@ -699,7 +699,7 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
         : {
             kind: 'conversation',
             sessionId: SESSION_ID,
-            payload: { threadId: expandedThreadId },
+            payload: { threadId: expandedThreadId, tab: 'comment' },
           },
     sessionGithub: {
       [SESSION_ID]: {

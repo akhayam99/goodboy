@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
+import { resolverThread } from './resolverThread';
 import type { LensKind } from '../session-view/types';
 import { EMPTY_FOCUS, type Focus, type Location, type SessionTarget } from './types';
 
@@ -18,6 +19,11 @@ type TargetParams = {
 };
 
 const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget | null => {
+  const agentId = state.selectedAgentId[sessionId] ?? null;
+  if (lens === 'review' && agentId !== null) {
+    const threadId = resolverThread({ state, sessionId, agentId });
+    return threadId === null ? null : { kind: 'thread', threadId };
+  }
   if (lens === 'plans') {
     const artifactId = state.focusedArtifactId[sessionId] ?? null;
     return artifactId === null ? null : { kind: 'artifact', artifactId };

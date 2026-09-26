@@ -59,6 +59,9 @@ import {
 } from '../../resolveQueueCopy';
 import { ResolveWithPopover } from '../ResolveWithPopover';
 import { useConversationSlot } from '../ConversationDrawerSlot/slotNode';
+import { ChatView } from '../../../chat/components/ChatView';
+import { resolverPagePlace } from '../../../../store/slices/navigation/place';
+import type { ConversationTab } from '../../../../store/slices/drawer/state';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
 import { ResolveSelectionBar } from '../ResolveSelectionBar';
 import { ConversationTree } from '../ConversationTree';
@@ -131,7 +134,13 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       ? s.drawer.payload.threadId
       : null,
   );
+  const conversationTab = useAppStore((s) =>
+    s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
+      ? s.drawer.payload.tab
+      : 'comment',
+  );
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const navigate = useAppStore((s) => s.navigate);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
   const conversationSlot = useConversationSlot();
   const publicationPreview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
@@ -236,7 +245,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         closeDrawer();
       }
       if (threadId !== null) {
-        openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
+        openDrawer({ kind: 'conversation', sessionId, payload: { threadId, tab: 'comment' } });
       }
       setResolveQueueView({
         sessionId,
@@ -328,10 +337,8 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     }): void => {
       openResolveDiff({
         sessionId,
-        threadId,
         sha,
         path,
-        line,
         order: listed.map((row) => row.thread.threadId),
         scrollTop: scrollableAncestor(listRef.current)?.scrollTop ?? 0,
       });
@@ -741,6 +748,32 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       })}
     </div>
   );
+  const selectedAgentId = selectedRow?.attempt?.agentId ?? null;
+  const changeTab = (tab: ConversationTab): void => {
+    if (expandedThreadId === null) {
+      return;
+    }
+    openDrawer({ kind: 'conversation', sessionId, payload: { threadId: expandedThreadId, tab } });
+  };
+  const agentPanel =
+    selectedAgentId === null ? null : (
+      <ChatView
+        session={session}
+        agentId={selectedAgentId}
+        isActive={conversationTab === 'agent'}
+      />
+    );
+  const openAgentPage =
+    selectedAgentId === null || expandedThreadId === null
+      ? null
+      : () =>
+          navigate({
+            to: resolverPagePlace({
+              sessionId,
+              agentId: selectedAgentId,
+              threadId: expandedThreadId,
+            }),
+          });
   const selectedIndex =
     selectedRow === null
       ? -1
@@ -804,11 +837,16 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
                 delta: 1,
               }) !== null
             }
+            tab={conversationTab}
+            onTabChange={changeTab}
+            agentPanel={agentPanel}
+            onOpenAgentPage={openAgentPage}
+            onViewAgent={() => changeTab('agent')}
             position={
               selectedIndex === -1 ? null : { index: selectedIndex + 1, total: listed.length }
             }
             onReviewPublication={({ threadId, reconcile }) =>
-              openResolvePublication({ sessionId, threadId, reconcile })
+              openResolvePublication({ sessionId, reconcile })
             }
           />
         </section>

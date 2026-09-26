@@ -20,8 +20,11 @@ type Props = {
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly onAction: (id: ResolveItemActionId) => void;
+  readonly onOpenAgentPage: (() => void) | null;
   readonly onClose: () => void;
 };
+
+export const OPEN_AGENT_PAGE_LABEL = 'Open agent full page';
 
 export const ResolvePanelHeader = ({
   status,
@@ -33,9 +36,10 @@ export const ResolvePanelHeader = ({
   onPrevious,
   onNext,
   onAction,
+  onOpenAgentPage,
   onClose,
 }: Props) => {
-  const menuItems: ReadonlyArray<OverflowMenuItem> = overflow.map((item) => ({
+  const actionItems: ReadonlyArray<OverflowMenuItem> = overflow.map((item) => ({
     kind: 'item',
     key: item.id,
     label: item.label,
@@ -43,6 +47,18 @@ export const ResolvePanelHeader = ({
     hint: item.disabledReason ?? undefined,
     onClick: () => onAction(item.id),
   }));
+  const menuItems: ReadonlyArray<OverflowMenuItem> =
+    onOpenAgentPage === null
+      ? actionItems
+      : [
+          ...actionItems,
+          {
+            kind: 'item',
+            key: 'open_agent_page',
+            label: OPEN_AGENT_PAGE_LABEL,
+            onClick: onOpenAgentPage,
+          },
+        ];
   return (
     <>
       <header

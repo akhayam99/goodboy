@@ -192,7 +192,7 @@ const seed = () => {
 const conversationOn = (threadId: string) => ({
   kind: 'conversation' as const,
   sessionId: SESSION_ID,
-  payload: { threadId },
+  payload: { threadId, tab: 'comment' as const },
 });
 
 beforeEach(() => {

@@ -4,6 +4,8 @@ import type { ExploreEntry } from '../../../features/explore/explore';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
 
+export type ConversationTab = 'comment' | 'agent';
+
 export type DrawerContent =
   | {
       readonly kind: 'slot-history';
@@ -35,7 +37,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'conversation';
-      readonly payload: { readonly threadId: string };
+      readonly payload: { readonly threadId: string; readonly tab: ConversationTab };
     }
   | {
       readonly kind: 'file-diff';

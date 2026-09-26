@@ -1,4 +1,16 @@
-import { Button, Divider, Markdown, PANE_RHYTHM, ScrollFade, SectionHeader, cn } from '@goodboy/ui';
+import {
+  Button,
+  Divider,
+  Markdown,
+  PANE_RHYTHM,
+  ScrollFade,
+  SectionHeader,
+  SegmentedTabs,
+  cn,
+  type SegmentedTabOption,
+} from '@goodboy/ui';
+import type { ReactNode } from 'react';
+import type { ConversationTab } from '../../../../store/slices/drawer/state';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
@@ -31,6 +43,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
   readonly position: PanelPosition | null;
+  readonly tab: ConversationTab;
+  readonly onTabChange: (tab: ConversationTab) => void;
+  readonly agentPanel: ReactNode;
+  readonly onOpenAgentPage: (() => void) | null;
   readonly coveredRows: ReadonlyArray<ResolveQueueRow>;
   readonly files: ReadonlyArray<FileDiff>;
   readonly isDiffLoading: boolean;
@@ -68,6 +84,24 @@ type Props = {
   readonly onSelectRelated: (threadId: string) => void;
   readonly onOpenUrl: (url: string) => void;
 };
+
+type TabParams = {
+  readonly isWorking: boolean;
+};
+
+const conversationTabs = ({
+  isWorking,
+}: TabParams): ReadonlyArray<SegmentedTabOption<ConversationTab>> => [
+  { value: 'comment', label: RESOLVE_ITEM_LABEL.comment },
+  {
+    value: 'agent',
+    label: 'Agent',
+    ...(isWorking && {
+      hint: 'Working',
+      badge: <span aria-hidden className="size-1.5 rounded-full bg-primary" />,
+    }),
+  },
+];
 
 type FooterParams = {
   readonly mode: ResolveDecisionMode;
@@ -114,6 +148,10 @@ export const ResolveItemView = ({
   sessionId,
   row,
   position,
+  tab,
+  onTabChange,
+  agentPanel,
+  onOpenAgentPage,
   coveredRows,
   files,
   isDiffLoading,
@@ -159,6 +197,8 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'needs_you';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
+  const hasAgentTab = row.attempt !== null && agentPanel !== null;
+  const isAgentShown = hasAgentTab && tab === 'agent';
   const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank });
   const commitLabel =
     mode === 'resolve'
@@ -183,143 +223,174 @@ export const ResolveItemView = ({
         onPrevious={onPrevious}
         onNext={onNext}
         onAction={onAction}
+        onOpenAgentPage={onOpenAgentPage}
         onClose={onBack}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-4" fadeFrom="subtle">
-        <div className="@container flex min-w-0 max-w-[68ch] flex-col gap-6">
-          <div className="flex min-w-0 flex-col gap-5">
-            <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
-            {question != null && question !== '' && (
-              <div className="flex min-w-0 flex-col gap-2">
-                <SectionHeader label={RESOLVE_ITEM_LABEL.agentQuestion} headingLevel={3} />
-                <Markdown text={question} variant="preview" className="text-sm text-foreground" />
-              </div>
-            )}
-            {!isDelivered && (mode === 'read' || mode === 'resolve') && !isAnswering && (
-              <SharedCandidateNote members={sharedMembers} onSelectMember={onSelectRelated} />
-            )}
-            <DecisionBlock
-              fieldId={fieldId}
-              reply={reply}
-              instruction={instruction}
-              mode={mode}
-              proposalKind={proposalKind}
-              isAnswering={isAnswering}
-              isDelivered={isDelivered}
-              deliveredReply={row.delivery?.replyBody ?? null}
-              deliverySupport={deliverySupportLine({ row })}
-              isBusy={isBusy}
-              onChangeReply={onChangeReply}
-              onChangeInstruction={onChangeInstruction}
-              onEditReply={onEditReply}
-              settingsLine={<ReplySettingsLine sessionId={sessionId} />}
-            />
-            {note !== null && <p className="text-2xs text-warning">{note}</p>}
-            {error !== null && <p className="text-2xs text-danger">{error}</p>}
-          </div>
-          <section
-            aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
-            className="flex min-w-0 flex-col gap-5"
-          >
-            {shownSha !== null && <ResolveCommitLine sha={shownSha} onOpenCommit={onOpenCommit} />}
-            {(candidateSha !== null || files.length > 0 || isDiffLoading || diffError !== null) && (
-              <ChangeBlock
-                files={files}
-                isLoading={isDiffLoading}
-                error={diffError}
-                onOpenInDiff={onOpenInDiff}
-              />
-            )}
-            {(canRunCheck || checks.receipts.length > 0) && (
-              <ChecksBlock
-                checks={checks}
-                canRunCheck={canRunCheck}
-                isRunning={isCheckRunning}
-                note={checksNote}
-                onRunCheck={onRunCheck}
-              />
-            )}
-            {row.attempt !== null && (
-              <ResolveAgentActivity
-                sessionId={sessionId}
-                attempt={row.attempt}
-                costUsd={costUsd}
-                runThreadCount={row.attempt.threadIds.length}
-                isViewActionShown={
-                  actions.primary?.id !== 'view_agent' && actions.secondary?.id !== 'view_agent'
-                }
-                onStop={onStopRun}
-                onViewAgent={onViewWork}
-              />
-            )}
-            {coveredRows.length > 0 && (
-              <div className="flex min-w-0 flex-col gap-2">
-                <SectionHeader
-                  label={RESOLVE_ITEM_LABEL.relatedComments}
-                  headingLevel={3}
-                  hint={sharedRunHeading({ count: coveredRows.length + 1 })}
-                />
-                <ul className="flex min-w-0 flex-col gap-1.5">
-                  {coveredRows.map((covered) => (
-                    <li key={covered.thread.threadId} className="min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => onSelectRelated(covered.thread.threadId)}
-                        className="block w-full truncate rounded-sm text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                      >
-                        {covered.reviewerNote?.body ?? RESOLVE_COMMENT_UNAVAILABLE}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
+      {hasAgentTab && (
+        <div className="flex shrink-0 px-4 pt-3">
+          <SegmentedTabs
+            ariaLabel="Conversation view"
+            size="sm"
+            options={conversationTabs({ isWorking: row.attempt?.phase === 'running' })}
+            value={tab}
+            onChange={onTabChange}
+          />
         </div>
-      </ScrollFade>
-      {mode === 'read' && (actions.primary !== null || actions.secondary !== null) && (
-        <>
-          <Divider />
-          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-            <p className="min-w-0 text-2xs text-muted-foreground">{nextStep ?? ''}</p>
-            <div className="flex items-center gap-2">
-              {actions.secondary !== null && (
-                <ActionButton action={actions.secondary} isPrimary={false} onAction={onAction} />
-              )}
-              {actions.primary !== null && (
-                <ActionButton action={actions.primary} isPrimary onAction={onAction} />
-              )}
-            </div>
-          </div>
-        </>
       )}
-      {mode !== 'read' && (
+      {isAgentShown ? (
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">{agentPanel}</div>
+      ) : (
         <>
-          <Divider />
-          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-            <p
-              className={cn(
-                'min-w-0 text-2xs',
-                isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
-              )}
-            >
-              {footerNote}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" disabled={isBusy} onClick={onCancelEditing}>
-                {RESOLVE_QUEUE_ACTION_LABEL.cancel}
-              </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                data-resolve-primary
-                disabled={isBusy || isCommitBlocked}
-                onClick={onCommitEditing}
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-4" fadeFrom="subtle">
+            <div className="@container flex min-w-0 max-w-[68ch] flex-col gap-6">
+              <div className="flex min-w-0 flex-col gap-5">
+                <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
+                {question != null && question !== '' && (
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <SectionHeader label={RESOLVE_ITEM_LABEL.agentQuestion} headingLevel={3} />
+                    <Markdown
+                      text={question}
+                      variant="preview"
+                      className="text-sm text-foreground"
+                    />
+                  </div>
+                )}
+                {!isDelivered && (mode === 'read' || mode === 'resolve') && !isAnswering && (
+                  <SharedCandidateNote members={sharedMembers} onSelectMember={onSelectRelated} />
+                )}
+                <DecisionBlock
+                  fieldId={fieldId}
+                  reply={reply}
+                  instruction={instruction}
+                  mode={mode}
+                  proposalKind={proposalKind}
+                  isAnswering={isAnswering}
+                  isDelivered={isDelivered}
+                  deliveredReply={row.delivery?.replyBody ?? null}
+                  deliverySupport={deliverySupportLine({ row })}
+                  isBusy={isBusy}
+                  onChangeReply={onChangeReply}
+                  onChangeInstruction={onChangeInstruction}
+                  onEditReply={onEditReply}
+                  settingsLine={<ReplySettingsLine sessionId={sessionId} />}
+                />
+                {note !== null && <p className="text-2xs text-warning">{note}</p>}
+                {error !== null && <p className="text-2xs text-danger">{error}</p>}
+              </div>
+              <section
+                aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
+                className="flex min-w-0 flex-col gap-5"
               >
-                {commitLabel}
-              </Button>
+                {shownSha !== null && (
+                  <ResolveCommitLine sha={shownSha} onOpenCommit={onOpenCommit} />
+                )}
+                {(candidateSha !== null ||
+                  files.length > 0 ||
+                  isDiffLoading ||
+                  diffError !== null) && (
+                  <ChangeBlock
+                    files={files}
+                    isLoading={isDiffLoading}
+                    error={diffError}
+                    onOpenInDiff={onOpenInDiff}
+                  />
+                )}
+                {(canRunCheck || checks.receipts.length > 0) && (
+                  <ChecksBlock
+                    checks={checks}
+                    canRunCheck={canRunCheck}
+                    isRunning={isCheckRunning}
+                    note={checksNote}
+                    onRunCheck={onRunCheck}
+                  />
+                )}
+                {row.attempt !== null && (
+                  <ResolveAgentActivity
+                    sessionId={sessionId}
+                    attempt={row.attempt}
+                    costUsd={costUsd}
+                    runThreadCount={row.attempt.threadIds.length}
+                    isViewActionShown={
+                      actions.primary?.id !== 'view_agent' && actions.secondary?.id !== 'view_agent'
+                    }
+                    onStop={onStopRun}
+                    onViewAgent={onViewWork}
+                  />
+                )}
+                {coveredRows.length > 0 && (
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <SectionHeader
+                      label={RESOLVE_ITEM_LABEL.relatedComments}
+                      headingLevel={3}
+                      hint={sharedRunHeading({ count: coveredRows.length + 1 })}
+                    />
+                    <ul className="flex min-w-0 flex-col gap-1.5">
+                      {coveredRows.map((covered) => (
+                        <li key={covered.thread.threadId} className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => onSelectRelated(covered.thread.threadId)}
+                            className="block w-full truncate rounded-sm text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                          >
+                            {covered.reviewerNote?.body ?? RESOLVE_COMMENT_UNAVAILABLE}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
             </div>
-          </div>
+          </ScrollFade>
+          {mode === 'read' && (actions.primary !== null || actions.secondary !== null) && (
+            <>
+              <Divider />
+              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+                <p className="min-w-0 text-2xs text-muted-foreground">{nextStep ?? ''}</p>
+                <div className="flex items-center gap-2">
+                  {actions.secondary !== null && (
+                    <ActionButton
+                      action={actions.secondary}
+                      isPrimary={false}
+                      onAction={onAction}
+                    />
+                  )}
+                  {actions.primary !== null && (
+                    <ActionButton action={actions.primary} isPrimary onAction={onAction} />
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+          {mode !== 'read' && (
+            <>
+              <Divider />
+              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+                <p
+                  className={cn(
+                    'min-w-0 text-2xs',
+                    isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
+                  )}
+                >
+                  {footerNote}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost" disabled={isBusy} onClick={onCancelEditing}>
+                    {RESOLVE_QUEUE_ACTION_LABEL.cancel}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    data-resolve-primary
+                    disabled={isBusy || isCommitBlocked}
+                    onClick={onCommitEditing}
+                  >
+                    {commitLabel}
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

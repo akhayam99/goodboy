@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { FileDiff, SessionId } from '@goodboy/types';
+import type { ResolveAttempt, FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { CommentThread } from '../../../github/comment-threads';
 import type { ResolveQueueRow, ResolveQueueReviewerNote } from '../../buildResolveQueueRows';
@@ -161,6 +161,10 @@ const renderView = (
     <ResolveItemView
       sessionId={'session-1' as SessionId}
       position={{ index: 1, total: 2 }}
+      tab="comment"
+      onTabChange={() => undefined}
+      agentPanel={null}
+      onOpenAgentPage={null}
       coveredRows={[COVERED]}
       files={[]}
       isDiffLoading={false}
@@ -221,6 +225,28 @@ describe('the resolve item view', () => {
     expect(within(header).getByText('1 of 2')).toBeDefined();
     expect(within(header).getByRole('button', { name: 'Close conversation' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Back to conversations' })).toBeNull();
+  });
+
+  it('shows the resolver on the Agent tab and switches back to the comment', () => {
+    const onTabChange = vi.fn();
+    const attempt = {
+      id: 'attempt-1',
+      agentId: 'agent-resolver',
+      threadIds: ['PRRT_1'],
+      phase: 'running',
+    } as unknown as ResolveAttempt;
+    renderView({
+      row: { ...LEAD, attempt },
+      tab: 'agent',
+      onTabChange,
+      agentPanel: <p>resolver transcript</p>,
+    });
+
+    expect(screen.getByText('resolver transcript')).toBeDefined();
+    expect(screen.queryByText('This retries forever on a 500.')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Comment' }));
+
+    expect(onTabChange).toHaveBeenCalledWith('comment');
   });
 
   it('lays the panel out in one column, measured by its container', () => {
