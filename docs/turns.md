@@ -333,8 +333,15 @@ the session's context slots, which the next turn reads as its preamble. It is
 the chat's handoff, as the post-step summarizer is a workflow's
 ([workflows.md](workflows.md#the-post-step-summarizer)).
 
-- One summarization runs per session, and at most one waits: a newer turn
-  replaces the waiting one. It runs when the app is idle.
+- One summarization runs per session. Turns that finish while it runs wait
+  together and the next pass reads them all (the oldest drop out past 20,000
+  characters, with a note saying how many). It runs when the app is idle.
+- A consolidation pass waits behind them, at most one per session. It is
+  queued when a run finishes, when a pull request merges (`pr_merged`), and
+  when the active decisions go over their budget after a pass. It applies its
+  operations like any pass and records `decisions_changed` with
+  `consolidatedAfter` (`#612 merged`, `the run finished`, `decisions went over
+budget`).
 - It runs on the summarizer task model, routed around cooldowns. When every
   candidate is cooling down it pauses and offers a retry.
 - Slot writes are compare-and-set against the snapshot it read. A slot the
@@ -382,6 +389,14 @@ snapshot keep reading one string.
   is state, not a decision. Operations that do not parse fail the answer, which
   is asked again once. Its summary is three sections, `Learned`, `State`,
   `Next`; an old `Problem` section is dropped on the next pass.
+- The desktop applies every write through `applySessionDecisionOps`
+  (`store/slices/decisions/`), which records one `decisions_changed` event with
+  `{ added, replaced, withdrawn, merged, restored, decisionChanges }`. A reword
+  records no event. Writing the `decisions` slot from the editor or the mobile
+  companion goes through `reconcileDecisionsText`: numbered lines keep their
+  decision, a missing number is a withdrawal of yours, a new line an addition.
+- The preamble shows the decisions with their numbers and teaches the two
+  attributes. Over budget it keeps the top lines, which are the newest.
 - A consolidation pass (`mode: 'consolidate'`) has no turn and keeps only
   `merge` and `withdraw`. `packages/core/src/summarizer/decisions-eval.test.ts`
   is the fixed eval: rewording, merge, contradiction, state dressed as a

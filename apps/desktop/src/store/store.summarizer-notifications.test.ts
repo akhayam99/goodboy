@@ -167,6 +167,8 @@ vi.mock('@goodboy/db', () => ({
   upsertProjectScript: vi.fn(async () => undefined),
   deleteProjectScript: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
+  listSessionDecisions: vi.fn(async () => []),
+  saveSessionDecisions: vi.fn(async () => undefined),
   listOpenQuestionsForSession: vi.fn(async () => []),
   insertNudgeEvent: vi.fn(async () => undefined),
   updateNudgeEventOutcome: vi.fn(async () => undefined),
@@ -223,7 +225,7 @@ describe('summarizer notifications', () => {
 
   it('a successful summary notifies nobody', async () => {
     summarizeSpy.mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'claude-haiku-4-5',
     });
@@ -519,7 +521,7 @@ describe('summarizer provider fallback', () => {
 
   it('moves to another provider when the first one is out of tokens', async () => {
     summarizeSpy.mockRejectedValueOnce(new Error('Claude usage limit reached')).mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });
@@ -538,7 +540,7 @@ describe('summarizer provider fallback', () => {
 
   it('records a cooldown for the provider that ran out', async () => {
     summarizeSpy.mockRejectedValueOnce(new Error('Claude usage limit reached')).mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });
@@ -556,7 +558,7 @@ describe('summarizer provider fallback', () => {
 
   it('moves to another provider on an authentication failure', async () => {
     summarizeSpy.mockRejectedValueOnce(new Error('401 unauthorized')).mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });
@@ -574,7 +576,7 @@ describe('summarizer provider fallback', () => {
 
   it('records a cooldown for a provider that is unauthenticated', async () => {
     summarizeSpy.mockRejectedValueOnce(new Error('401 unauthorized')).mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });
@@ -592,7 +594,7 @@ describe('summarizer provider fallback', () => {
 
   it('records a cooldown for a provider that is rate limited', async () => {
     summarizeSpy.mockRejectedValueOnce(new Error('429 too many requests')).mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });
@@ -625,7 +627,7 @@ describe('summarizer provider fallback', () => {
 
   it('skips a cooling-down provider on the next enqueue', async () => {
     summarizeSpy.mockResolvedValue({
-      delta: { upserts: [] },
+      delta: { upserts: [], decisionOps: [] },
       usage: { inputTokens: 4, outputTokens: 2, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'gpt-5.6-terra',
     });

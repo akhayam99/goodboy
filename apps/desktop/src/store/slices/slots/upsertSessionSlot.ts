@@ -1,21 +1,30 @@
 import type { ContextSlot, ContextSlotHistoryEntry, SessionId } from '@goodboy/types';
-import type { SlotKey } from '@goodboy/core';
+import { loadDecisionLedger, reconcileDecisionsText, type SlotKey } from '@goodboy/core';
 import {
   countContextSlotHistoryForSession,
   listContextSlotHistory,
   upsertContextSlot,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { decisionsDelta } from '../session-events';
 import { mergeSlots, type GetFn, type SetFn } from './types';
 
 export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, key: SlotKey, value: string) => {
+    const wasHistoryLoaded = get().slotHistory[sessionId]?.[key] !== undefined;
+    if (key === 'decisions') {
+      const ledger = await loadDecisionLedger({ db: tauriDatabase, sessionId });
+      await get().applySessionDecisionOps({
+        sessionId,
+        ops: reconcileDecisionsText({ ledger, text: value }),
+        actor: { author: 'user', agentId: null, turnOrdinal: null },
+      });
+    }
     const existing = get().sessionSlots[sessionId] ?? [];
     const prev = existing.find((s) => s.key === key);
     const next: ContextSlot = { key, value, enabled: prev?.enabled ?? true };
-    await upsertContextSlot(tauriDatabase, sessionId, next, 'user');
-    const wasHistoryLoaded = get().slotHistory[sessionId]?.[key] !== undefined;
+    if (key !== 'decisions') {
+      await upsertContextSlot(tauriDatabase, sessionId, next, 'user');
+    }
     const [counts, refreshedHistory] = await Promise.all([
       countContextSlotHistoryForSession(tauriDatabase, sessionId),
       wasHistoryLoaded
@@ -23,10 +32,13 @@ export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
         : Promise.resolve<ReadonlyArray<ContextSlotHistoryEntry> | null>(null),
     ]);
     set((state) => ({
-      sessionSlots: {
-        ...state.sessionSlots,
-        [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
-      },
+      sessionSlots:
+        key === 'decisions'
+          ? state.sessionSlots
+          : {
+              ...state.sessionSlots,
+              [sessionId]: mergeSlots(state.sessionSlots[sessionId] ?? [], next),
+            },
       slotHistory:
         refreshedHistory === null
           ? state.slotHistory
@@ -39,17 +51,5 @@ export const upsertSessionSlot = (set: SetFn, get: GetFn) => {
             },
       slotHistoryCounts: { ...state.slotHistoryCounts, [sessionId]: counts },
     }));
-    if (key !== 'decisions') {
-      return;
-    }
-    const delta = decisionsDelta({ previous: prev?.value ?? '', next: value });
-    if (delta.added === 0 && delta.removed === 0) {
-      return;
-    }
-    await get().recordSessionEvent({
-      sessionId,
-      kind: 'decisions_changed',
-      payload: { added: delta.added, removed: delta.removed },
-    });
   };
 };

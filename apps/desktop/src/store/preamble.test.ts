@@ -51,7 +51,7 @@ describe('buildContextPreamble', () => {
   it('budget-compacts oversized slots before rendering the preamble, keeping the newest', () => {
     const decisions = Array.from(
       { length: 20 },
-      (_, index) => `- decision-${index}-${'x'.repeat(80)}`,
+      (_, index) => `- D${20 - index} decision-${19 - index}-${'x'.repeat(80)}`,
     ).join('\n');
     const out = buildContextPreamble([slot('decisions', decisions)]);
     expect(out).toContain('- ...');

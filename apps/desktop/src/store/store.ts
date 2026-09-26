@@ -3,7 +3,7 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import { type SlotKey } from '@goodboy/core';
+import { type AppliedDecisionOps, type SlotKey } from '@goodboy/core';
 import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
   AgentId,
@@ -289,6 +289,11 @@ import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
+import { createDecisionsSlice } from './slices/decisions';
+import { initialDecisionsState } from './slices/decisions/state';
+import type { ApplySessionDecisionOpsParams } from './slices/decisions/applySessionDecisionOps';
+import type { NoteDecisionChangesParams } from './slices/decisions/noteDecisionChanges';
+import type { ConsolidateSessionContextParams } from './slices/decisions/consolidateSessionContext';
 import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
 import { initialSessionDraftState } from './slices/sessionDraft/state';
 import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
@@ -379,6 +384,10 @@ type AppActions = {
   toggleContextDrawer(params: OpenContextDrawerParams): void;
   loadSessionContextSeen(sessionId: SessionId): Promise<void>;
   markSessionContextSeen(sessionId: SessionId): Promise<void>;
+  loadSessionDecisions(sessionId: SessionId): Promise<void>;
+  applySessionDecisionOps(params: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps>;
+  noteDecisionChanges(params: NoteDecisionChangesParams): Promise<void>;
+  consolidateSessionContext(params: ConsolidateSessionContextParams): void;
   patchSessionDraft(params: PatchSessionDraftParams): void;
   discardSessionDraft(params: DiscardSessionDraftParams): void;
   startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
@@ -1112,6 +1121,7 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
+  ...initialDecisionsState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
@@ -1343,6 +1353,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBugReportDraftSlice(set, get),
   ...createSessionDraftSlice(set, get),
   ...createContextDrawerSlice(set, get),
+  ...createDecisionsSlice(set, get),
   ...createDrawerSlice(set, get),
   ...createNavigationSlice(set, get),
 }));

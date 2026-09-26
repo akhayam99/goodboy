@@ -10,6 +10,7 @@ import type {
   ContextSlot,
   IsoDateTime,
   Session,
+  SessionDecision,
   SessionId,
   TelemetryRecord,
   TelemetryRecordId,
@@ -101,6 +102,7 @@ let resolveSummarize: (() => void) | null = null;
 type SummarizerUpsert = { readonly key: SlotKey; readonly value: string };
 let summarizerUpserts: ReadonlyArray<SummarizerUpsert> = [];
 let summarizerUpsertSequence: Array<ReadonlyArray<SummarizerUpsert>> = [];
+let summarizerDecisionOps: ReadonlyArray<unknown> = [];
 let summarizerConstructorCalls: Array<unknown> = [];
 let summarizeInputCalls: Array<{ readonly turnInput: string; readonly turnOutput: string }> = [];
 const summarizeSpy = vi.fn(
@@ -123,7 +125,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
         summarizeInputCalls.push({ turnInput: input.turnInput, turnOutput: input.turnOutput });
         const upserts = summarizerUpsertSequence.shift() ?? summarizerUpserts;
         return summarizeSpy().then(() => ({
-          delta: { upserts },
+          delta: { upserts, decisionOps: summarizerDecisionOps },
           usage: { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, estimatedCostUsd: 0 },
           model: 'claude-haiku-4-5',
         }));
@@ -133,6 +135,7 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 });
 
 let dbSlots: ReadonlyArray<ContextSlot> = [];
+let dbDecisions: ReadonlyArray<SessionDecision> = [];
 let resolveTelemetryList: ((records: ReadonlyArray<TelemetryRecord>) => void) | null = null;
 const listTelemetryForSessionSpy = vi.fn(async () => [] as ReadonlyArray<TelemetryRecord>);
 const upsertContextSlotSpy = vi.fn(
@@ -172,6 +175,14 @@ vi.mock('@goodboy/db', () => ({
   updateProviderRunStatus: vi.fn(async () => undefined),
   updateSessionState: vi.fn(),
   upsertContextSlot: upsertContextSlotSpy,
+  listSessionDecisions: vi.fn(async () => dbDecisions),
+  saveSessionDecisions: vi.fn(
+    async ({ decisions }: { readonly decisions: ReadonlyArray<SessionDecision> }) => {
+      const touched = new Map(decisions.map((row) => [row.number, row]));
+      const kept = dbDecisions.filter((row) => !touched.has(row.number));
+      dbDecisions = [...kept, ...touched.values()].sort((a, b) => a.number - b.number);
+    },
+  ),
   insertOpenQuestion: vi.fn(async () => undefined),
   markOpenQuestionsResolvedByText: vi.fn(async () => 0),
   listResolvedQuestionTextsForSession: vi.fn(async () => []),
@@ -236,6 +247,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
     summarizeSpy.mockReset();
     resolveSummarize = null;
     summarizerUpserts = [];
+    summarizerDecisionOps = [];
+    dbDecisions = [];
     insertSessionEventSpy.mockClear();
     summarizerUpsertSequence = [];
     summarizerConstructorCalls = [];
@@ -785,11 +798,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
       .mockResolvedValue(undefined);
     summarizerUpserts = [
       { key: 'goal', value: 'summarized goal' },
-      { key: 'decisions', value: '- summarized decision' },
+      { key: 'open_questions', value: '- summarized question' },
     ];
     dbSlots = [
       { key: 'goal', value: 'original goal', enabled: true },
-      { key: 'decisions', value: '- original decision', enabled: true },
+      { key: 'open_questions', value: '- original question', enabled: true },
     ];
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
@@ -840,7 +853,10 @@ describe('summarizer queue, coalescing and no-stack', () => {
       value: 'concurrent user goal',
       enabled: true,
     };
-    dbSlots = [concurrentGoal, { key: 'decisions', value: '- original decision', enabled: true }];
+    dbSlots = [
+      concurrentGoal,
+      { key: 'open_questions', value: '- original question', enabled: true },
+    ];
     useAppStore.setState({ sessionSlots: { [SESSION_ID]: dbSlots } });
     summarizerUpserts = [];
     resolveFirst();
@@ -849,21 +865,42 @@ describe('summarizer queue, coalescing and no-stack', () => {
     await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(upsertContextSlotSpy).toHaveBeenCalledTimes(1);
     expect(upsertContextSlotSpy.mock.calls[0]?.[2]).toMatchObject({
-      key: 'decisions',
-      value: '- summarized decision',
+      key: 'open_questions',
+      value: '- summarized question',
     });
     expect(useAppStore.getState().sessionSlots[SESSION_ID]).toContainEqual(concurrentGoal);
   });
 
-  it('logs a decisions_changed event when the summarizer rewrites decisions', async () => {
+  it('applies the decision operations and logs what really changed', async () => {
     summarizeSpy.mockResolvedValue(undefined);
-    summarizerUpserts = [
-      { key: 'goal', value: 'same goal' },
-      { key: 'decisions', value: '- kept decision\n- new decision' },
+    summarizerUpserts = [{ key: 'goal', value: 'same goal' }];
+    summarizerDecisionOps = [
+      { kind: 'add', text: 'new decision' },
+      { kind: 'reword', number: 1, text: 'kept decision, reworded' },
     ];
     dbSlots = [
       { key: 'goal', value: 'same goal', enabled: true },
-      { key: 'decisions', value: '- kept decision', enabled: true },
+      { key: 'decisions', value: '- D1 kept decision', enabled: true },
+    ];
+    dbDecisions = [
+      {
+        id: 'd1',
+        sessionId: SESSION_ID,
+        number: 1,
+        text: 'kept decision',
+        status: 'active',
+        replacedBy: null,
+        author: 'agent',
+        agentId: null,
+        turnOrdinal: null,
+        reason: null,
+        closedBy: null,
+        closedByAgentId: null,
+        previousText: null,
+        rewordedAt: null,
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
     ];
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
@@ -913,7 +950,16 @@ describe('summarizer queue, coalescing and no-stack', () => {
       .map(([params]) => params.event)
       .filter((event) => event.kind === 'decisions_changed');
     expect(decisionEvents).toHaveLength(1);
-    expect(decisionEvents[0]?.payload).toEqual({ added: 1, removed: 0 });
+    expect(decisionEvents[0]?.payload).toMatchObject({
+      added: 1,
+      replaced: 0,
+      withdrawn: 0,
+      merged: 0,
+      decisionChanges: [{ kind: 'added', number: 2, text: 'new decision' }],
+    });
+    expect(dbSlots.find((slot) => slot.key === 'decisions')?.value).toBe(
+      '- D2 new decision\n- D1 kept decision, reworded',
+    );
   });
 
   it('coalesces multiple conflicts into one follow-up pass', async () => {
@@ -928,11 +974,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
       .mockResolvedValue(undefined);
     summarizerUpserts = [
       { key: 'goal', value: 'summarized goal' },
-      { key: 'decisions', value: '- summarized decision' },
+      { key: 'open_questions', value: '- summarized question' },
     ];
     dbSlots = [
       { key: 'goal', value: 'original goal', enabled: true },
-      { key: 'decisions', value: '- original decision', enabled: true },
+      { key: 'open_questions', value: '- original question', enabled: true },
     ];
     const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
     queues.clear();
@@ -979,7 +1025,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
     await vi.waitFor(() => expect(summarizeSpy).toHaveBeenCalledTimes(1));
     dbSlots = [
       { key: 'goal', value: 'concurrent goal', enabled: true },
-      { key: 'decisions', value: '- concurrent decision', enabled: true },
+      { key: 'open_questions', value: '- concurrent question', enabled: true },
     ];
     useAppStore.setState({ sessionSlots: { [SESSION_ID]: dbSlots } });
     summarizerUpserts = [];
