@@ -11,24 +11,27 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 
-export type SuggestionKind =
-  | 'workflow-next-step'
-  | 'plan-ready'
-  | 'resolve-threads'
-  | 'rebase-project'
-  | 'answer-questions'
-  | 'mount-project'
-  | 'approve-tool'
-  | 'sign-in'
-  | 'unblock-step'
-  | 'retry-agent'
-  | 'fix-checks'
-  | 'push-branch'
-  | 'open-pr'
-  | 'mark-ready'
-  | 'merge-pr'
-  | 'check-changes'
-  | 'close-worktree';
+export const SUGGESTION_KINDS = [
+  'workflow-next-step',
+  'plan-ready',
+  'resolve-threads',
+  'rebase-project',
+  'answer-questions',
+  'mount-project',
+  'approve-tool',
+  'sign-in',
+  'unblock-step',
+  'retry-agent',
+  'fix-checks',
+  'push-branch',
+  'open-pr',
+  'mark-ready',
+  'merge-pr',
+  'check-changes',
+  'close-worktree',
+] as const;
+
+export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
 
 export type NextStepBand = 0 | 1 | 2 | 3;
 
