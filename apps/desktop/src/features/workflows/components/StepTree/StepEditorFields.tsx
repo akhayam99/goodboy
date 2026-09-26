@@ -94,13 +94,10 @@ export const StepEditorFields = ({
                 onClick={polish.onPolish}
                 disabled={disabled || polish.isPolishing || step.prompt.trim().length === 0}
                 aria-label="Polish step instruction"
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50',
-                  polish.isPolishing && 'animate-border-pulse',
-                )}
+                className="inline-flex items-center gap-1 rounded-sm px-1 text-secondary text-faint-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
-                Polish
+                <span className={cn(polish.isPolishing && 'text-shimmer')}>Polish</span>
               </button>
             )}
           </div>

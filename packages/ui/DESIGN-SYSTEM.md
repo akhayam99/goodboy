@@ -822,7 +822,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 ## Motion registry
 
-Seven animations, one meaning each. Transition keyframes (`fade-in`,
+Six animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`) move content between
 states and sit outside the registry.
 
@@ -833,10 +833,10 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
-- `spin-border`: working. A card that carries its tone on a left rail runs the
-  same signal down that rail instead (`spin-rail`), so the tone never wraps the
-  box. Under reduced motion the rail holds still at full tone.
-- `border-pulse`: a warning-stage card needs you.
+- `spin-border`: working, on an element whose own edge carries the signal
+  (a `WorkNode`'s ring). A session card or row carries its tone in a
+  `ToneBar` instead, a bar inside the surface rather than a border around it,
+  breathing through `soft-pulse` while running.
 - `attention-ring`: something new arrived. It is a short outward breath (three
   cycles, then rest) on an element that now needs the user, never one that
   is working.
@@ -844,9 +844,9 @@ never mounts and unmounts its panel by hand.
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
   progress arc (which then replaces the centre dot), a running tool icon or
-  scout dot, and the boot splash status. On the rail it sits inside the
-  `spin-border` ring, or on the arc, so the pair reads as one running state,
-  not two claims. The bar for another lasting-state
+  scout dot, a running session's `ToneBar`, and the boot splash status. On the
+  rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
+  as one running state, not two claims. The bar for another lasting-state
   animation is high.
 - `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
   the digit roll.

@@ -250,12 +250,13 @@ export const WorkflowStepCard = ({
                   disabled={disabled || polishing || promptPrefix.trim().length === 0}
                   aria-label="Polish step instruction"
                   title="Polish step instruction"
-                  className={cn(
-                    'absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded-sm p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40',
-                    polishing && 'animate-border-pulse',
-                  )}
+                  className="absolute right-1.5 top-1.5 inline-flex items-center justify-center rounded-sm p-1 text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <CONCEPT_ICONS.enhance size={ICON_SIZE.row} aria-hidden />
+                  <CONCEPT_ICONS.enhance
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className={cn(polishing && 'motion-safe:animate-soft-pulse')}
+                  />
                 </button>
               ) : null}
             </div>

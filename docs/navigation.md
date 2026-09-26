@@ -153,8 +153,9 @@ waits on you (open questions, then review drafts), the first linked task with a
 `+n` for the rest, the agent count. The row starts with a 20px node: the pull
 request glyph in its state colour when there is a request, otherwise the stage
 icon, a ring while an agent runs, and `?` or `!` when the session needs you.
-Running and needs-you rows carry the same left rail as their card
-(`sessionRail`). Nothing the row knows hides in a tooltip.
+Every row carries a `ToneBar`, the same tone primitive as its card
+(`sessionTone`), never only running and needs-you rows. Nothing the row knows
+hides in a tooltip.
 
 **Peek is a way of showing the sidebar, not a second sidebar.** The overlay
 renders the same sidebar component, and the codebase has one sessions list.

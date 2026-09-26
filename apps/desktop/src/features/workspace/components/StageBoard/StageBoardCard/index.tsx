@@ -8,6 +8,7 @@ import {
   InlineMarkdown,
   inlineMarkdownText,
   OverflowMenu,
+  ToneBar,
   type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
@@ -23,7 +24,7 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { sessionCardShell } from '../../../../session/components/sessionCardShell';
+import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
@@ -175,6 +176,8 @@ export const StageBoardCard = memo(function StageBoardCard({
     return false;
   };
 
+  const tone = sessionTone({ stage, attention });
+
   return (
     <article
       data-archived={archived || undefined}
@@ -186,10 +189,11 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 text-left',
-        sessionCardShell({ stage, attention, selected }),
+        'group/session-card grid h-28 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 p-3 pl-4.5 text-left',
+        sessionCardShell({ selected }),
       )}
     >
+      <ToneBar tone={tone.tone} density="card" isBreathing={tone.isBreathing} />
       <span className="flex min-w-0 flex-col justify-between">
         <span className="flex min-h-10 items-start gap-2">
           <PrRequestSlot

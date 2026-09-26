@@ -186,6 +186,8 @@ export { Switch } from './components/Switch';
 export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';
 export type { TextareaProps } from './components/Textarea';
+export { ToneBar } from './components/ToneBar';
+export type { ToneBarDensity } from './components/ToneBar';
 export { Tooltip } from './components/Tooltip';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';

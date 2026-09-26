@@ -3,7 +3,6 @@ import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   Button,
   Checkbox,
-  cn,
   Divider,
   FieldRow,
   Input,
@@ -374,10 +373,9 @@ export const CreatePrPanel = ({
             <Button
               onClick={() => void onCreate()}
               disabled={busy !== null || isDraftAgentRunning || title.trim().length === 0}
-              className={cn(busy === 'create' && 'animate-border-pulse')}
             >
               {busy === 'create' ? (
-                'Creating…'
+                <span className="text-shimmer">Creating…</span>
               ) : (
                 <>
                   Create PR
@@ -389,10 +387,9 @@ export const CreatePrPanel = ({
             <Button
               onClick={() => void onCreateWithAi()}
               disabled={busy !== null || isDraftAgentRunning}
-              className={cn(busy === 'ai' && 'animate-border-pulse')}
             >
               {busy === 'ai' ? (
-                'Drafting…'
+                <span className="text-shimmer">Drafting…</span>
               ) : (
                 <>
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />

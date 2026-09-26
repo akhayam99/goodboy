@@ -185,13 +185,10 @@ export const LaunchSessionPanel = ({
             Edited text is never replaced by the brief.
           </p>
         )}
-        <Button
-          size="sm"
-          onClick={() => void launch()}
-          disabled={!canLaunch}
-          className={cn('shrink-0', isBusy && 'animate-border-pulse')}
-        >
-          {isBusy ? 'Launching…' : 'Launch session'}
+        <Button size="sm" onClick={() => void launch()} disabled={!canLaunch} className="shrink-0">
+          <span className={cn(isBusy && 'text-shimmer')}>
+            {isBusy ? 'Launching…' : 'Launch session'}
+          </span>
           {!isBusy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
         </Button>
       </footer>

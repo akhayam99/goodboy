@@ -159,7 +159,7 @@ describe('StageBoardCard layout', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    const metaRow = card.children[2];
+    const metaRow = card.children[3];
     expect(card.className).toContain('h-28');
     expect(card.className).not.toContain('min-h-28');
     expect(card.className).toContain('gap-y-1');

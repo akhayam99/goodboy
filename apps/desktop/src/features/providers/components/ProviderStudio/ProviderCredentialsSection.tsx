@@ -177,13 +177,10 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <Button variant="ghost" size="sm" onClick={reset} disabled={busy}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={() => void onSave()}
-              disabled={busy || !apiKey.trim()}
-              className={busy ? 'animate-border-pulse' : undefined}
-            >
-              {busy ? 'Validating' : 'Save key'}
+            <Button size="sm" onClick={() => void onSave()} disabled={busy || !apiKey.trim()}>
+              <span className={busy ? 'text-shimmer' : undefined}>
+                {busy ? 'Validating' : 'Save key'}
+              </span>
             </Button>
           </div>
         </div>
