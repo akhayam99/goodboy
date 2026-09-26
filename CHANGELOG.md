@@ -1,234 +1,309 @@
 # Changelog
 
-Release notes for Goodboy, newest first. `.github/workflows/release.yml` reads
-the section for the version being tagged and uses it verbatim as the GitHub
-release body and the in-app updater's notes. Add the entry for the next
-version in the same PR that bumps the version numbers (see
-`docs/release-command.md`), before the tag is pushed: the release build fails
-if it can't find a matching `## Goodboy vX.Y.Z` heading.
+Release notes for Goodboy, newest first. Entries from v0.5.0 on follow the
+format in `docs/release-command.md` (Format): an opening sentence, New,
+Improved and Fixed sections, and a hidden comment with each entry's area
+and reference. `.github/workflows/release.yml` reads the section for the
+version being tagged and uses it verbatim as the GitHub release body and
+the in-app updater's notes. Add the entry for the next version in the same
+PR that bumps the version numbers, before the tag is pushed: the release
+build fails if it can't find a matching `## Goodboy vX.Y.Z` heading. This
+file is in `.prettierignore`: the meta comment sits on the line right below
+each entry's heading, with no blank line, and a formatter would push it down
+onto its own paragraph.
 
 ## Goodboy v0.7.0
 
-Goodboy now keeps a copy of your plans, reports and wireframes on disk, fixes to review comments land even when the branch has moved on, and replies to reviewers follow a template in the voice your workspace picks.
+Plans and reports are saved as files you can open, review fixes land on a branch that moved, and replies to reviewers sound like you.
 
-This release updates the database, and the change is one way: to go back to 0.6.x you need to restore the backup of your data, and the older version tells you so if you open it.
+This version updates your data in one direction. To go back to 0.6, restore the backup Goodboy made before updating.
 
-### [#1886] Three built-in workflows
+### New
 
-Goodboy comes with three ready workflows: Refactor (scout, plan, implement, test), Plan and ship (scout, plan, implement, review) and Fix a bug (investigate, implement, test). Workspaces you already have get the new ones at the next launch, unless one of your own workflows already uses that name, and a built-in you deleted stays deleted. Restore built-in workflows now lists only the built-ins you edited or removed in that workspace and puts back their name and steps. When nothing changed, it is off and says so.
+#### Plans, reports and wireframes saved as files
+<!-- gb area=artifacts pr=1886 -->
 
-### [#1886] A copy of each artifact on disk
+Each plan, report and wireframe is also saved as a folder inside its workspace folder, with a page you can open in a browser. The folder follows each new revision, and artifacts made before this version are copied after the first launch. Show in Finder, in the Details panel, opens it.
 
-Each plan, report and wireframe is saved as a folder inside its workspace folder: a page you can open in a browser, with its stylesheet and source, or the folder a wireframe export writes. The copy is updated at each new revision, and artifacts made before this version are copied after launch. The Details panel shows where the copy lives, and Show in Finder opens it.
+#### Replies to reviewers in your voice
+<!-- gb area=review screen=settings/workspace/review-replies pr=1886 -->
 
-### [#1886] Fixes that land on a moved branch
+Replies to review comments follow two templates, one for a fix and one for a change you decline, and the agent writes only the reason. In Settings, under Review replies, pick Terse, Friendly, Formal or Like my replies, which reads your last 20 replies and writes a short style note you can edit.
 
-When you approve a fix and the branch has moved on since the agent started, Goodboy applies the fix on top of the latest commit instead of giving up, so a second round on the same pull request still lands. If the fix no longer applies, the branch stays as it was and Goodboy tells you. If Goodboy quits in the middle of an approval, approving again finds the fix already on the branch instead of failing. Goodboy reads what each commit is from git: a commit that fixes up an earlier one shows "fixup of" that commit, and a fix that rewrote an earlier one shows "replaces". With the fixup commit style, the agent adds its fix to the commit that introduced the commented line.
+You also choose whether replies are signed, whether the thread is resolved after the reply, and how fix commits are written. A preview updates as you type.
 
-### [#1886] Replies in your voice
+#### Three built-in workflows
+<!-- gb area=workflows screen=workflows pr=1886 -->
 
-Replies to reviewers are built from two templates, When fixed and When not changing, and the agent writes only the reason. In Settings, Workspace, Review replies you pick the voice (Terse, Friendly, Formal or Like my replies), edit the templates with a live preview, choose whether replies are signed, whether the thread is resolved after replying, and which commit style fixes use. Learn from my replies reads your last 20 review replies in the workspace's repositories and writes a short style note that you can edit.
+Refactor, Plan and ship, and Fix a bug come with the app, with their steps ready to run. Your workspaces get them at the next launch, unless you already have a workflow with that name. If you edit or delete one, Restore built-in workflows puts it back.
 
-### [#1886] Artifacts from deleted sessions
+### Improved
 
-The Storage page lists plans, reports and wireframes whose session was deleted, with the size of their saved copy, when the session went and when you last used them. Open one in the reader, keep it for 30 days or for good, or delete it along with its copy. Artifacts you have not used for a long time are suggested for one bulk delete.
+#### Review fixes land on a branch that moved
+<!-- gb area=review pr=1886 -->
 
-### Fixes
+When you approve a fix and the branch got new commits in the meantime, Goodboy applies the fix on top of the latest one, so a second review round on the same pull request goes through. If the fix no longer fits, the branch stays as it was and Goodboy says so.
 
-- Learning your reply style skips a provider at its usage limit, like other tasks on Auto. [#1886]
-- Built-in workflow names keep their capital letters in run titles and in the path at the top. [#1886]
+In the commit list, a fix made for an earlier commit shows which one, as fixup of or replaces.
+
+#### Artifacts from deleted sessions in Storage
+<!-- gb area=storage screen=settings/app/storage pr=1886 -->
+
+Storage lists the plans, reports and wireframes left behind by deleted sessions, with their size and when you last opened them. Open one, keep it for 30 days or for good, or delete it with its files. The ones you have not opened in a long time are grouped for one bulk delete.
+
+### Fixed
+
+- Learning your reply style skips a provider that reached its usage limit, like other tasks on Auto. <!-- gb area=review pr=1886 -->
+- Built-in workflow names keep their capital letters in run titles and in the path at the top of the window. <!-- gb area=workflows pr=1886 -->
 
 ## Goodboy v0.6.0
 
-Resolving review comments now reads as one list with eight clear states, you can stop an agent and pick it up again, and Goodboy shows how close each provider is to its usage limit.
+Review comments move through eight clear states, you can stop an agent and continue later, and each provider shows how close you are to its limit.
 
-This release updates the database, and the change is one way: to go back to 0.5.x you need to restore the backup of your data, and the older version tells you so if you open it.
+This version updates your data in one direction. To go back to 0.5, restore the backup Goodboy made before updating.
 
-### [#1884] Projects you star, and a profile in parts
+### New
 
-Star the projects you work on most and give each one a short description. Agents and the planner see starred projects first, and pickers put them on top. Your profile is now split into your roles, your work, your working rules and topics you want explained in more detail, and each agent role reads only the parts it needs. The same form appears in settings and during onboarding.
+#### Usage limits for each provider
+<!-- gb area=providers screen=settings/providers pr=1884 -->
 
-### [#1884] Usage limits for each provider
+A chip in the top bar shows how much of each plan provider you have used, from 80% on, and the reset day once you run out. The provider page opens on Usage, with each window, when it resets, and what you spent in Goodboy today, over the last 7 days and this month.
 
-The top bar shows a chip for each connected plan provider, with the share used from 80% on and the reset day once you run out. The provider page opens on a Usage section with each window, when it resets, and what you spent in Goodboy today, over the last 7 days and this month. When a provider reaches its limit, Auto picks another one and says which.
+When a provider reaches its limit, Auto moves to another one and names it.
 
-### [#1884] Threaded replies on Linear and GitLab
+#### Stop an agent and continue later
+<!-- gb area=agents pr=1884 -->
 
-Comments on Linear and GitLab issues show replies under the comment they answer, and Reply posts into that thread. Every tool now shows its comments the same way, with one box to write in at the bottom of the drawer.
+A stopped agent shows as stopped, not failed, with a Continue button, and an agent that was running when Goodboy quit comes back as stopped. While an agent works, Enter queues your message for when it finishes and `⌘Enter` sends it right away. Queued messages can be edited, removed or sent.
 
-### [#1884] Steps, estimates and questions that wait
+The top of each chat shows what the agent was given when it started, and the exact text is one click away.
 
-Built-in steps come with the app, and the steps you save have their own tab in Workflows. Time estimates now draw on your past runs, so they show up from your first day on this version. When an agent asks you something in plain text instead of through a question card, the step waits for your answer. Failed now only means the agent crashed or could not run; an agent that is still alive but stuck shows as Blocked.
+#### Starred projects and a profile in parts
+<!-- gb area=settings screen=settings/workspace/projects pr=1884 -->
 
-### [#1884] Plans, reports and wireframes
+Star the projects you work on most and add a short description. Agents and the planner look at starred projects first, and pickers list them on top. Your profile is split into roles, work, working rules and topics you want explained, and each agent reads only the parts it needs.
 
-The planner writes plans in a fixed shape, with each part listing how you know it is done and which files it touches. Any plan or report can open in its own reader window with Print and Copy. A wireframe can be exported as a folder with one page per screen, a stylesheet and its data.
+#### Storage for worktree folders
+<!-- gb area=storage screen=settings/app/storage pr=1884 -->
 
-### [#1884] One view for every diff
+Storage lists the worktree folders on disk by repository, with size and state, and removes the safe ones in bulk while skipping folders with unsaved work. Goodboy lets you know once when idle folders pass 10 GB, and sooner when the disk is nearly full.
 
-Reviewing changes, writing a review and opening a single file all use the same diff view, with syntax colors, sticky file headers, `T` to jump to a file and `[` `]` to move between files. Notes and draft comments sit inline and open in the side drawer. Code blocks in chat and documents use the same colors.
+### Improved
 
-### [#1884] Resolving review comments
+#### Review comments in eight states
+<!-- gb area=review pr=1884 -->
 
-Every comment moves through one set of states you can read at a glance: New, Working, Needs you, Ready, Approved, Resolved, Failed and Later, each with one sentence and one action. Open comments are grouped by file, with the agent working on each one shown underneath. Select several and choose Approve or Later, then close them on GitHub in one go. If Goodboy quits while posting replies, it checks GitHub before trying again, so nothing is posted twice. Commits you asked the resolver for stay on the branch.
+Each comment is New, Working, Needs you, Ready, Approved, Resolved, Failed or Later, with one sentence and one action. Open comments are grouped by file, with the agent working on each one underneath. Select several to approve them or set them aside, then close them on GitHub in one go.
 
-### [#1884] Storage for worktree folders
+If Goodboy quits while posting replies, it checks GitHub before trying again, so a reply is not posted twice.
 
-A Storage page lists every worktree folder on disk by repository, with its size and state, and removes the safe ones in bulk while skipping folders with unsaved work. You can keep a folder, see what was removed and set when Goodboy should speak up. Goodboy lets you know once when idle folders take up more than 10 GB, and sooner when the disk is nearly full.
+#### One diff view
+<!-- gb area=review pr=1884 -->
 
-### [#1884] Talking to a running agent
+Changes under review, the review you are writing and a single open file share one diff view, with syntax colors and file headers that stay in view. Press `T` to jump to a file and `[` or `]` to move between files. Code in chat uses the same colors.
 
-Stop an agent and it shows as stopped, not failed, with a Continue button. An agent still running when Goodboy quits comes back as stopped. While an agent works, Enter queues your message for when it finishes, and `⌘Enter` sends it now. You can edit, remove or send any queued message. The top of each chat shows what the agent was given when it started, with a way to view the exact text.
+#### Comment threads on Linear and GitLab
+<!-- gb area=integrations pr=1884 -->
 
-### Fixes
+Replies on Linear and GitLab issues sit under the comment they answer, and Reply posts into that thread. Each tool shows comments the same way, with one box to write in at the bottom.
 
-- Every task Goodboy runs on Auto, from titles to pull request drafts, skips a provider at its limit. [#1884]
-- Every step tells the agent where it can ask you questions. [#1884]
-- The agent summary leads with who started it and what it is doing now. [#1884]
+#### Plans, reports and wireframes
+<!-- gb area=artifacts pr=1884 -->
+
+Plans follow a fixed shape: each part says how you know it is done and which files it touches. Plans and reports open in their own window with Print and Copy, and a wireframe exports as a folder with one page per screen.
+
+#### Steps, estimates and waiting for answers
+<!-- gb area=workflows screen=workflows pr=1884 -->
+
+Steps you save have their own tab in Workflows, and time estimates use your past runs from the first day. When an agent asks a question in plain text, the step waits for your answer. Failed now means the agent crashed or could not start; an agent that is alive but stuck shows as Blocked.
+
+### Fixed
+
+- Tasks on Auto, from titles to pull request drafts, skip a provider that reached its limit. <!-- gb area=providers pr=1884 -->
+- Each workflow step gives its agent a place to ask you questions. <!-- gb area=workflows pr=1884 -->
+- The agent summary starts with who started the agent and what it is doing now. <!-- gb area=agents pr=1884 -->
 
 ## Goodboy v0.5.3
 
-Every screen now reads the same way: one column, one header, one main action, and details in a side drawer.
+Screens share one layout: a centered column, one header, one main action, and details in a side drawer.
 
-### [#1882] Start a session your way
+### New
 
-An empty session asks how you want to start: pick up a task from your tracker, run a workflow with a goal, or let a Scout look around when you are not sure yet. Goodboy remembers your last choice for each workspace.
+#### Choose how a session starts
+<!-- gb area=sessions pr=1882 -->
 
-### [#1882] One home for every artifact
+An empty session asks how you want to begin: from a task in your tracker, with a workflow and a goal, or with a Scout that looks around first. Goodboy keeps your last choice for each workspace.
 
-Plans, reports and wireframes open in the same view, with details and the chat in a drawer at the side. A plan lists its parts, with what done means and which files each one touches, and each part follows its run. A wireframe opens on its flow, and Export sits in one popover.
+### Improved
 
-### [#1882] An inbox you can scan
+#### One view for plans, reports and wireframes
+<!-- gb area=artifacts pr=1882 -->
 
-The inbox lists items by day, newest first, with filters in a side rail and keyboard shortcuts. Every record has the same header, one main action and the rest under `⋯`. Merge, Close and Decline ask before acting everywhere.
+Plans, reports and wireframes open in the same view, with details and chat in a side drawer. A plan lists its parts with what done means and which files each one touches, and a wireframe opens on its flow.
 
-### [#1882] Workflows built on steps
+#### An inbox you can scan
+<!-- gb area=inbox screen=inbox pr=1882 -->
 
-The Workflows studio shows each workflow as a tree of steps you edit in place. You can import several workflows from other workspaces at once.
+The inbox lists items by day, newest first, with filters on the side and keyboard shortcuts. Each item has the same header and one main action, with the rest under `⋯`. Merge, Close and Decline ask before acting.
 
-### [#1882] Models you choose to see
+#### Workflows as a tree of steps
+<!-- gb area=workflows screen=workflows pr=1882 -->
 
-The picker says Auto when Goodboy picks for you, and a Suggested row explains why, next to the model you last used here. You choose which models show in the picker.
+The Workflows page shows each workflow as a tree of steps you edit in place, and imports several workflows from other workspaces at once.
 
-### [#1882] Scripts in a drawer
+#### A clearer model picker
+<!-- gb area=agents pr=1882 -->
 
-Script output opens in a drawer from the top bar or from `$`, with Stop, Run again and the exit code. The Scripts page lists every script grouped by project, with an inline editor.
+The picker says Auto when Goodboy chooses for you, with a Suggested row that says why, next to the model you last used here. You pick which models the picker shows.
 
-### Fixes
+#### Script output in a drawer
+<!-- gb area=scripts pr=1882 -->
 
-- Start agent no longer asks for instructions and opens the agent's chat. [#1882]
-- Sidebar rows and board cards show the same step progress and marks. [#1882]
-- The workspace page is denser: rename it in place and add projects from one popover. [#1882]
-- Chips, idle states and control borders are easier to tell apart. [#1882]
+Script output opens in a side drawer from the top bar or from `$`, with Stop, Run again and the exit code. The Scripts page groups scripts by project, with an inline editor.
+
+### Fixed
+
+- Start agent opens the agent's chat right away instead of asking for instructions first. <!-- gb area=agents pr=1882 -->
+- Sidebar rows and board cards show the same step progress. <!-- gb area=sessions pr=1882 -->
+- The workspace page is more compact: rename it in place and add projects from one menu. <!-- gb area=settings pr=1882 -->
+- Chips, idle states and borders are easier to tell apart. <!-- gb area=app pr=1882 -->
 
 ## Goodboy v0.5.2
 
-A new top bar and footer, one reading column for every pane, and time left on everything that runs.
+A new top bar and footer, one reading column in each pane, and time left on the work that runs.
 
-### [#1880] A top bar for what is happening now
+### New
 
-On macOS the window buttons sit inside the top bar, and the whole bar drags the window. In the middle, a ⌘K box opens the palette. The Now chip lists what needs you, what is running and the scripts in progress. Spend is its own button and opens Impact. Workspace settings is the last row of the workspace switcher.
+#### Time left on agents and runs
+<!-- gb area=agents pr=1880 -->
 
-### [#1880] A footer for places, and a Goodboy chip
+A running agent or workflow run shows how much time it has left, with the time spent in the tooltip. Start agent and the workflow run banner show an estimate before you launch, and a finished run says when it took longer than usual.
 
-The footer holds Inbox, Workflows and Settings. The Goodboy chip next to them has the version, the update, the setup checklist, bug reports, shortcuts and sponsor. Providers live in Settings and the palette. Settings opens on the current workspace.
+### Improved
 
-### [#1880] Time left on agents and runs
+#### A top bar for what is happening now
+<!-- gb area=app pr=1880 -->
 
-A running agent or workflow run shows how long it has left, with the elapsed time in the tooltip. Start agent and the workflow run banner show the estimate before you launch. A finished run says when it took longer than usual.
+On macOS the window buttons sit in the top bar, and you can drag the window from anywhere on it. The search box in the middle opens the palette, also with `⌘K`. The Now chip lists what needs you, what is running and the scripts in progress, and Spend opens Impact.
 
-### [#1880] One column and a side drawer
+#### A footer for places
+<!-- gb area=app pr=1880 -->
 
-Every pane reads in the same centered column, and details open in a drawer at the right of the window instead of over the page.
+The footer holds Inbox, Workflows and Settings. The Goodboy chip next to them has the version, updates, the setup checklist, bug reports and shortcuts. Settings opens on the current workspace.
 
-### [#1880] Auto picks per provider
+#### One column and a side drawer
+<!-- gb area=app pr=1880 -->
 
-Auto now starts each role and task on the default provider of the workspace, with a chosen model for every provider. Custom agents and reports run on Sonnet 5 Medium, and plan drafting on Sonnet 5.
+Each pane reads in the same centered column, and details open in a drawer on the right instead of covering the page.
 
-### Fixes
+#### Auto picks per provider
+<!-- gb area=providers screen=settings/providers pr=1880 -->
 
-- Agent rows show model and effort in one cell, and keep the model name visible longest when the window narrows. [#1880]
-- Popovers, dialogs, toasts and the palette float above the page with one consistent surface, and the frame of the window has its own. [#1880]
+Auto starts each role and task on the workspace's default provider, with a chosen model for each provider. Custom agents and reports run on Sonnet 5 Medium, and plan drafting on Sonnet 5.
+
+### Fixed
+
+- Agent rows show model and effort in one cell, and keep the model name visible as the window narrows. <!-- gb area=agents pr=1880 -->
+- Popovers, dialogs, toasts and the palette share one floating surface. <!-- gb area=app pr=1880 -->
 
 ## Goodboy v0.5.1
 
-Resolve does what it says on GitHub, and removing a leftover folder never takes work with it.
+Resolve closes threads on GitHub, and removing a leftover folder keeps your work.
 
-### [#1878] Resolve closes threads on GitHub
+### Improved
 
-After Goodboy replies to a review comment, it resolves the thread on GitHub when your account is allowed to. The result says how many replies went out, how many threads GitHub resolved and how many stayed open for the reviewer. Confirming twice publishes once, and a failure halfway keeps what already reached GitHub.
+#### Resolve closes threads on GitHub
+<!-- gb area=review pr=1878 -->
 
-### [#1878] Every review comment in the list
+After Goodboy replies to a review comment, it resolves the thread on GitHub when your account is allowed to. The result says how many replies went out, how many threads closed and how many stayed open for the reviewer. Confirming twice posts once.
 
-Conversations reads every open review thread on the pull request, not only the first page. When reading from GitHub fails, the error shows with a retry, instead of an empty list.
+#### All review comments in the list
+<!-- gb area=review pr=1878 -->
 
-### [#1878] Start a resolve from a selection
+Conversations shows the open review threads of the whole pull request, not only the first page. If GitHub cannot be reached, you see the error and a Retry button instead of an empty list.
 
-Tick the comments you want and press Resolve, or resolve every new comment from the header. Both open one popover that lists every connected provider and model.
+#### Resolve from a selection
+<!-- gb area=review pr=1878 -->
 
-### [#1878] Leftover worktree folders stay safe
+Tick the comments you want and press Resolve, or resolve the new comments from the header. Both open one menu with your connected providers and models.
 
-Removing a leftover worktree folder keeps any folder with uncommitted changes or commits that were never pushed, and says why. You can still remove it after an inline confirm.
+#### Leftover worktree folders stay safe
+<!-- gb area=storage pr=1878 -->
 
-### [#1878] Older builds leave a newer database alone
+Removing a leftover worktree folder skips folders with uncommitted changes or unpushed commits, and says why. You can still remove one after confirming.
 
-If you open an older Goodboy after a newer one upgraded your data, it stops and offers the backup taken before the upgrade, instead of opening data it doesn't understand.
+#### Older versions leave newer data alone
+<!-- gb area=app pr=1878 -->
 
-### [#1878] Done and Archived fold into the board dock
+If you open an older Goodboy after a newer one updated your data, it stops and offers the backup made before the update, instead of opening data it cannot read.
 
-Done and Archived collapse into two icons with a count at the side of the board. Hover to preview, click to open.
+#### Done and Archived in the board dock
+<!-- gb area=sessions pr=1878 -->
 
-### Fixes
+Done and Archived fold into two icons with a count at the side of the board. Hover to preview, click to open.
 
-- `$` in the composer lists the scripts from each mounted project's `package.json` and `composer.json`, next to your saved scripts. [#1878]
-- Time estimates now count chat turns and use the same model and effort from your other workspaces, so they show up sooner. [#1878]
-- Editing a built-in workflow step saves one copy instead of a new one each time you leave the field. [#1878]
-- The restore confirm names the workspace it resets. [#1878]
-- Merge and Close on GitLab ask before acting, like Bitbucket. [#1878]
+### Fixed
+
+- `$` in the composer lists the scripts from each project's `package.json` and `composer.json`, next to your saved scripts. <!-- gb area=scripts pr=1878 -->
+- Time estimates show up sooner: they count chat turns and reuse the same model and effort from your other workspaces. <!-- gb area=workflows pr=1878 -->
+- Editing a built-in workflow step saves one copy instead of a new one each time you leave the field. <!-- gb area=workflows pr=1878 -->
+- The restore confirmation names the workspace it resets. <!-- gb area=settings pr=1878 -->
+- Merge and Close on GitLab ask before acting, as on Bitbucket. <!-- gb area=integrations pr=1878 -->
 
 ## Goodboy v0.5.0
 
-Every piece of work now reads as one tree, from the overview to the workflow run to an agent's brief.
+Work reads as one tree, from the session overview down to a single agent.
 
-### [#1875] One tree for sessions, workflow runs and agents
+### New
 
-The overview activity, a workflow run, the subagents in an agent's brief and the workflow builder draw work the same way: numbered steps growing from the bottom, with provider, model, effort, time and cost in the same columns on every row. Click the colored line to open the workflow, click a row to open that agent, question or artifact.
+#### Time left on a running step
+<!-- gb area=workflows pr=1875 -->
 
-States read the same everywhere. A step waiting on your answer, a failed step and a queued step look different at a glance, and the next action for a stuck step sits above the tabs instead of only in the transcript. Agents that finished their work show as done without a manual click.
+A running step fills its ring as it works, based on how long similar steps took. Paused time and time waiting on you are left out, and the workflow builder shows an estimate before you start.
 
-### [#1875] See how long a step has left
+#### Sessions from an issue, with a written brief
+<!-- gb area=sessions pr=1875 -->
 
-A running step fills its ring as it works, based on how long similar steps actually ran. Time spent paused or waiting on you does not count. The workflow builder shows an estimate before you start.
+Starting from an issue, Goodboy drafts a short title and goal with a link back to the issue, instead of copying its text. Accept it, edit it or discard it.
 
-### [#1875] A workflow builder that previews the run
+#### Outdated provider CLIs
+<!-- gb area=providers screen=settings/providers pr=1875 -->
 
-The builder shows the plan as the tree it will become. Orchestrated comes first and shows agents arriving one at a time. Custom and preset plans let you edit each step's provider, model, effort, role and instructions in place. Autorun is a toggle, intent and constraints are optional, and every run gets a generated title.
+When a model needs a newer CLI than the one installed, Goodboy shows both versions and an Update button, in Providers and in the chat.
 
-### [#1875] Start a session from an issue with a written brief
+### Improved
 
-Instead of copying the issue text, Goodboy drafts a short title and goal from the issue, with a link back to it. Accept it, edit it or discard it.
+#### One tree for sessions, runs and agents
+<!-- gb area=sessions pr=1875 -->
 
-### [#1875] Notifications you can scan
+The overview, a workflow run, an agent's subagents and the workflow builder draw work the same way: numbered steps with provider, model, effort, time and cost in the same columns. Click the colored line to open the workflow, or a row to open that agent, question or artifact.
 
-One compact row per notification, filters with counts, a "This workspace" default with the full count one click away, and j, k and e to move through them.
+A step waiting on your answer, a failed step and a queued one look different at a glance. The next action for a stuck step sits above the tabs, and agents that finished show as done on their own.
 
-### [#1875] Know when a provider CLI is too old
+#### A workflow builder that previews the run
+<!-- gb area=workflows screen=workflows pr=1875 -->
 
-When a model needs a newer CLI than the one installed, Goodboy says which version you have and which one it needs, with an update button in Providers and in the chat.
+The builder shows the plan as a tree before the run starts. In custom and preset plans you change each step's provider, model, effort, role and instructions in place. Autorun is a toggle, and each run gets a generated title.
 
-### [#1875] Cleaner screens at every window size
+#### Notifications you can scan
+<!-- gb area=inbox screen=notifications pr=1875 -->
 
-Errors and warnings use one notice with a colored edge and an icon instead of a full colored background. Dividers only separate the app frame from its content. The top bar keeps the Goodboy mascot and its right side in place on small windows, and rows keep their titles readable as the window narrows. Settings gained icons, status dots and smooth transitions, and shortcuts are grouped by task.
+Notifications show as one compact row each, with filters and counts. The list opens on this workspace, and `j`, `k` and `e` move through it.
 
-### Fixes
+#### Cleaner screens at any window size
+<!-- gb area=app pr=1875 -->
 
-- Queued nested steps no longer appear above later steps in the overview [#1875]
-- A hint sent with Read now shows as being read, the composer stays open while the orchestrator runs, and the input clears after sending [#1875]
-- Long issue descriptions no longer cut the session goal mid-sentence [#1875]
-- Workflow rows show a title instead of the raw goal text [#1875]
-- Open questions from an agent inside a workflow show in the workflow too [#1875]
-- The collapsed sidebar avatar and the footer pill line up, and the logo follows the light and dark theme [#1875]
-- Close a workflow from its header or from its row in the activity feed [#1875]
+Errors and warnings use one notice with a colored edge and an icon. The top bar keeps its right side in place on small windows, row titles stay readable as the window narrows, and shortcuts are grouped by task.
+
+### Fixed
+
+- Queued nested steps no longer show above later steps in the overview. <!-- gb area=sessions pr=1875 -->
+- A hint sent with Read shows as read, and the input clears after sending. <!-- gb area=agents pr=1875 -->
+- Long issue descriptions no longer cut the session goal mid-sentence. <!-- gb area=sessions pr=1875 -->
+- Workflow rows show a title instead of the raw goal. <!-- gb area=workflows pr=1875 -->
+- Questions from an agent inside a workflow show on the workflow too. <!-- gb area=workflows pr=1875 -->
+- The collapsed sidebar avatar and the footer chip line up, and the logo follows the light and dark theme. <!-- gb area=app pr=1875 -->
+- You can close a workflow from its header or from its row in the activity feed. <!-- gb area=workflows pr=1875 -->
 
 ## Goodboy v0.4.3
 

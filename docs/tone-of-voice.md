@@ -110,6 +110,9 @@ talking to a market. There are two voices:
 
 The changelog is the one place allowed to sell a little, and it earns that by
 being short. The lead line is the pitch. Everything under it is plain fact.
+The exact contract Goodboy reads (headings, the one-way paragraph, the hidden
+`area`/`screen`/`image`/`pr` meta) is [release-command.md](release-command.md)
+Format; this section is about how the words in it should read.
 
 - **The heading names the capability, not a mood.** "Pull requests carry the
   queued check state" not "The pull request tells the truth". Objects do not
