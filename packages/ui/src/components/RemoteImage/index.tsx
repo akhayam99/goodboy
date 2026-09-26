@@ -7,6 +7,7 @@ import { Tooltip } from '../Tooltip';
 import {
   RemoteImageAutoLoadContext,
   RemoteImageLoaderContext,
+  RemoteImageToolContext,
   type RemoteImageLoader,
 } from './loaderContext';
 
@@ -42,6 +43,7 @@ const hostOf = (url: string): string => {
 export const RemoteImage = ({ url, alt, load, className }: Props) => {
   const contextLoad = useContext(RemoteImageLoaderContext);
   const shouldAutoLoad = useContext(RemoteImageAutoLoadContext);
+  const tool = useContext(RemoteImageToolContext);
   const loader = load ?? contextLoad;
   const isAutoLoad = shouldAutoLoad?.(url) ?? false;
   const [state, setState] = useState<State>({ kind: 'blocked' });
@@ -94,6 +96,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
   }
 
   const isFailed = state.kind === 'failed';
+  const openInTool = isFailed && isAutoLoad ? tool : null;
 
   return (
     <div className={cn(BLOCK_CLASS, className)}>
@@ -101,18 +104,26 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
         <span className="text-xs leading-relaxed text-muted-foreground">
-          {isFailed ? 'Could not load this image from ' : 'An image lives at '}
+          {isFailed ? "Couldn't load this image from " : 'Image from '}
           <Tooltip content={url}>
             <code className={HOST_CLASS}>{host}</code>
           </Tooltip>
-          {isFailed ? '.' : '. Nothing has been fetched yet.'}
         </span>
       </div>
-      {loader != null && (
-        <Button size="sm" variant="secondary" className="shrink-0" onClick={requestImage}>
-          {isFailed ? 'Try again' : 'Load image'}
+      {openInTool != null ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          className="shrink-0"
+          onClick={() => openInTool.open(url)}
+        >
+          Open in {openInTool.label}
         </Button>
-      )}
+      ) : loader != null ? (
+        <Button size="sm" variant="secondary" className="shrink-0" onClick={requestImage}>
+          {isFailed ? 'Try again' : 'Load'}
+        </Button>
+      ) : null}
     </div>
   );
 };

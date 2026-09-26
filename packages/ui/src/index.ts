@@ -163,6 +163,7 @@ export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageL
 export type {
   RemoteImageAutoLoad,
   RemoteImageLoader,
+  RemoteImageTool,
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
