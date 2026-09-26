@@ -107,7 +107,7 @@ export const PaneShell = (props: Props) => {
 
   return (
     <div className="@container flex h-full min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0 overflow-hidden [scrollbar-gutter:stable]">
+      <div className="shrink-0 overflow-hidden">
         <PageColumn>{header}</PageColumn>
       </div>
       {scroll === 'self' ? (
@@ -115,11 +115,7 @@ export const PaneShell = (props: Props) => {
           {children}
         </div>
       ) : (
-        <ScrollFade
-          className="min-h-0 flex-1"
-          viewportClassName="[scrollbar-gutter:stable]"
-          fadeSize={24}
-        >
+        <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <PageColumn className="pb-5">
             <div data-slot="pane-body" className={cn(PANE_RHYTHM.stack, animationClassName)}>
               {children}

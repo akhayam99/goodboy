@@ -6,13 +6,15 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { cn } from '../cn';
+import { cn } from '../../cn';
+import { OverlayThumb } from './OverlayThumb';
 
 const FADE_FROM = {
   background: 'from-background',
   subtle: 'from-subtle',
   muted: 'from-muted',
   elevated: 'from-elevated',
+  floating: 'from-floating',
 } as const;
 
 export type ScrollFadeProps = {
@@ -24,6 +26,7 @@ export type ScrollFadeProps = {
   readonly orientation?: 'vertical' | 'horizontal';
   readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly onViewportScroll?: () => void;
+  readonly scrollbar?: 'overlay' | 'none';
 };
 
 export const ScrollFade = ({
@@ -35,6 +38,7 @@ export const ScrollFade = ({
   orientation = 'vertical',
   viewportRef,
   onViewportScroll,
+  scrollbar = 'overlay',
 }: ScrollFadeProps) => {
   const ownRef = useRef<HTMLDivElement>(null);
   const ref = viewportRef ?? ownRef;
@@ -117,6 +121,9 @@ export const ScrollFade = ({
           edges.end ? 'opacity-100' : 'opacity-0',
         )}
       />
+      {scrollbar === 'overlay' ? (
+        <OverlayThumb viewportRef={ref} orientation={orientation} />
+      ) : null}
     </div>
   );
 };

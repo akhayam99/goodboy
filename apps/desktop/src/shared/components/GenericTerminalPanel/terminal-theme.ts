@@ -72,10 +72,19 @@ export const resolveTerminalTheme = (theme: 'dark' | 'light'): ITheme => {
   const background = readToken(styles, '--color-background');
   const foreground = readToken(styles, '--color-foreground');
   const cursor = readToken(styles, '--color-primary');
+  const scrollbarSliderBackground = readToken(styles, '--color-scrollbar-thumb');
+  const scrollbarSliderActiveBackground = readToken(styles, '--color-scrollbar-thumb-active');
   return {
     ...base,
     ...(background ? { background } : {}),
     ...(foreground ? { foreground } : {}),
     ...(cursor ? { cursor } : {}),
+    ...(scrollbarSliderBackground ? { scrollbarSliderBackground } : {}),
+    ...(scrollbarSliderActiveBackground
+      ? {
+          scrollbarSliderHoverBackground: scrollbarSliderActiveBackground,
+          scrollbarSliderActiveBackground,
+        }
+      : {}),
   };
 };

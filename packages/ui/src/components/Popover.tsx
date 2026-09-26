@@ -53,7 +53,7 @@ export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
     className={cn('flex min-h-0 flex-1 flex-col', className)}
     viewportClassName="h-auto min-h-0 flex-1"
     fadeSize={12}
-    fadeFrom="elevated"
+    fadeFrom="floating"
   >
     {children}
   </ScrollFade>

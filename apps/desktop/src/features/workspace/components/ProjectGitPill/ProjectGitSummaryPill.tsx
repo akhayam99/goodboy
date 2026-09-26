@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, GitBranch } from 'lucide-react';
-import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
@@ -55,7 +55,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
       dropdown={dropdown}
       role="dialog"
       ariaLabel="Repository git statuses"
-      className="w-80 max-h-[min(32rem,calc(100vh-2rem))] overflow-y-auto"
+      className="flex w-80 max-h-[min(32rem,calc(100vh-2rem))] flex-col"
       trigger={
         <button
           type="button"
@@ -91,7 +91,7 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
       }
     >
       {selectedEntry == null ? (
-        <div className="flex flex-col">
+        <PopoverBody>
           {summaryEntries.map((entry) => (
             <button
               key={entry.project.id}
@@ -116,19 +116,21 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
               </span>
             </button>
           ))}
-        </div>
+        </PopoverBody>
       ) : (
-        <div className="flex flex-col">
+        <>
           <button
             type="button"
             onClick={() => setSelectedProjectId(null)}
-            className="flex h-9 items-center gap-1.5 border-b border-border-soft px-3 text-label font-medium transition-colors hover:bg-hover"
+            className="flex h-9 shrink-0 items-center gap-1.5 border-b border-border-soft px-3 text-label font-medium transition-colors hover:bg-hover"
           >
             <ChevronLeft size={ICON_SIZE.row} aria-hidden />
             <span className="truncate">{selectedEntry.project.name}</span>
           </button>
-          <ProjectGitDetail project={selectedEntry.project} status={selectedEntry.status} />
-        </div>
+          <PopoverBody>
+            <ProjectGitDetail project={selectedEntry.project} status={selectedEntry.status} />
+          </PopoverBody>
+        </>
       )}
     </AnchoredPopover>
   );

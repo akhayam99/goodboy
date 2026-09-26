@@ -332,15 +332,10 @@ export const DiffView = ({
 
   return (
     <div data-slot="diff-view" className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0 [scrollbar-gutter:stable]">
+      <div className="shrink-0">
         <PageColumn className="pb-3">{toolbar}</PageColumn>
       </div>
-      <ScrollFade
-        className="min-h-0 flex-1"
-        viewportRef={viewportRef}
-        viewportClassName="[scrollbar-gutter:stable]"
-        fadeSize={24}
-      >
+      <ScrollFade className="min-h-0 flex-1" viewportRef={viewportRef} fadeSize={24}>
         <PageColumn>{body}</PageColumn>
       </ScrollFade>
     </div>

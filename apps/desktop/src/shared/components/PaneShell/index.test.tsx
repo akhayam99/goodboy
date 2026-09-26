@@ -105,7 +105,6 @@ describe('PaneShell', () => {
 
     expect(viewport.contains(screen.getByRole('heading', { name: 'Resolve' }))).toBe(false);
     expect(viewport.contains(screen.getByRole('button', { name: 'Start run' }))).toBe(false);
-    expect(viewport.className).toContain('[scrollbar-gutter:stable]');
   });
 
   it('draws no divider under the header', () => {

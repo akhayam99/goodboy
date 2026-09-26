@@ -129,7 +129,7 @@ const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
 const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?![\w-])/;
 const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
-const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade.tsx';
+const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 
 type ClassLineParams = {
   readonly file: SourceFile;

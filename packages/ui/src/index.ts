@@ -155,6 +155,8 @@ export type { ScrollAreaProps } from './components/ScrollArea';
 export { PageColumn, PAGE_COLUMN_CLASS } from './components/PageColumn';
 export { ScrollFade } from './components/ScrollFade';
 export type { ScrollFadeProps } from './components/ScrollFade';
+export { ScrollerStyleContext } from './components/ScrollFade/scrollerStyleContext';
+export type { ScrollerStyle } from './components/ScrollFade/scrollerStyleContext';
 export { SegmentedTabs } from './components/SegmentedTabs';
 export type { Props as SegmentedTabsProps, SegmentedTabOption } from './components/SegmentedTabs';
 export { SectionHeader } from './components/SectionHeader';
