@@ -43,6 +43,7 @@ import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
+import { PullRequestPage } from '../../features/review/components/PullRequestPage';
 import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
 
 const LINKED_PR_URL = 'https://example.invalid/cascade/pull/231';
@@ -241,11 +242,17 @@ const expectNoRenderLoop = (): void => {
   expect(consoleErrors.filter((line) => line.includes('Maximum update depth'))).toEqual([]);
 };
 
-const seedSessionWithMounts = (): SessionId => {
+type SeedSessionWithMountsParams = {
+  readonly hasPr?: boolean;
+};
+
+const seedSessionWithMounts = ({ hasPr = false }: SeedSessionWithMountsParams = {}): SessionId => {
   seedBoardScene();
   const state = useAppStore.getState();
   const session = state.sessions.find(
-    (candidate) => (state.sessionProjectMounts[candidate.id]?.length ?? 0) > 0,
+    (candidate) =>
+      (state.sessionProjectMounts[candidate.id]?.length ?? 0) > 0 &&
+      (!hasPr || state.sessionGithub[candidate.id]?.pr != null),
   );
   if (session === undefined) {
     throw new Error('the board seed has no session with a mount');
@@ -347,6 +354,21 @@ describe('primary surfaces mount on real store selectors', () => {
     });
 
     expect(screen.getAllByText('Diff').length).toBeGreaterThan(0);
+    expectNoRenderLoop();
+  });
+
+  it('opens the pull request page', async () => {
+    const sessionId = seedSessionWithMounts({ hasPr: true });
+    const state = useAppStore.getState();
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const pr = state.sessionGithub[sessionId]?.pr ?? null;
+    if (session === undefined || pr === null) {
+      throw new Error('the board seed has no session with a tracked pull request');
+    }
+
+    await mountSurface({ ui: <PullRequestPage session={session} /> });
+
+    expect(screen.getAllByText(pr.title).length).toBeGreaterThan(0);
     expectNoRenderLoop();
   });
 
