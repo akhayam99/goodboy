@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
@@ -229,6 +230,155 @@ pub(crate) fn remove_mirror(
     }
     std::fs::remove_dir_all(&path)?;
     Ok(true)
+}
+
+#[cfg(target_os = "macos")]
+fn macos_default_browser_bundle_id() -> Option<String> {
+    let output = Command::new("defaults")
+        .args([
+            "read",
+            "com.apple.LaunchServices/com.apple.launchservices.secure",
+            "LSHandlers",
+        ])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(output.stdout).ok()?;
+    let scheme_at = text.find("LSHandlerURLScheme = https;")?;
+    let before = &text[..scheme_at];
+    let marker = "LSHandlerRoleAll = \"";
+    let start = before.rfind(marker)? + marker.len();
+    let end = before[start..].find('"')? + start;
+    let bundle_id = &before[start..end];
+    if bundle_id.is_empty() {
+        return None;
+    }
+    Some(bundle_id.to_string())
+}
+
+#[cfg(target_os = "windows")]
+fn windows_default_browser_command() -> Option<String> {
+    let prog_id_output = Command::new("reg")
+        .args([
+            "query",
+            "HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
+            "/v",
+            "ProgId",
+        ])
+        .output()
+        .ok()?;
+    if !prog_id_output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(prog_id_output.stdout).ok()?;
+    let prog_id = text.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed.strip_prefix("ProgId").map(|rest| {
+            rest.trim()
+                .rsplit_once(char::is_whitespace)
+                .map(|(_, v)| v)
+                .unwrap_or(rest.trim())
+                .to_string()
+        })
+    })?;
+    let command_output = Command::new("reg")
+        .args([
+            "query",
+            &format!("HKCR\\{prog_id}\\shell\\open\\command"),
+            "/ve",
+        ])
+        .output()
+        .ok()?;
+    if !command_output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(command_output.stdout).ok()?;
+    text.lines()
+        .find_map(|line| {
+            let trimmed = line.trim();
+            trimmed
+                .rsplit_once("REG_SZ")
+                .map(|(_, value)| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+}
+
+fn open_with_browser(path: &Path) -> std::io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(bundle_id) = macos_default_browser_bundle_id() {
+            let status = Command::new("open")
+                .arg("-b")
+                .arg(&bundle_id)
+                .arg(path)
+                .status();
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(template) = windows_default_browser_command() {
+            let path_str = path.to_string_lossy();
+            let invocation = if template.contains("%1") {
+                template.replace("%1", &format!("\"{path_str}\""))
+            } else {
+                format!("{template} \"{path_str}\"")
+            };
+            let status = Command::new("cmd").args(["/C", &invocation]).status();
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+    }
+    crate::explore::spawn_open(path, false)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MirrorOpenRef {
+    pub workspace_slug: String,
+    pub folder: String,
+    pub file: String,
+}
+
+pub(crate) fn open_mirror(
+    home: &Path,
+    reference: &MirrorOpenRef,
+) -> Result<(), ArtifactExportError> {
+    if !is_safe_segment(&reference.file) {
+        return Err(destination("the file name is not a plain name"));
+    }
+    let folder = mirror_folder(home, &reference.workspace_slug, &reference.folder)?;
+    let path = folder.join(&reference.file);
+    if !path.is_file() {
+        return Err(destination("the file is not on disk yet"));
+    }
+    open_with_browser(&path)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_open(
+    workspace_slug: String,
+    folder: String,
+    file: String,
+) -> Result<(), ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        open_mirror(
+            &home()?,
+            &MirrorOpenRef {
+                workspace_slug,
+                folder,
+                file,
+            },
+        )
+    })
+    .await
+    .map_err(|error| destination(&error.to_string()))?
 }
 
 #[tauri::command]
@@ -515,6 +665,43 @@ mod tests {
         assert!(!remove_mirror(&home, "harborline", "gone").expect("again"));
         assert!(remove_mirror(&home, "harborline", "..").is_err());
         assert!(remove_mirror(&home, "harborline", "a/b").is_err());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn refuses_to_open_a_file_name_that_is_not_a_plain_segment() {
+        let home = scratch_home();
+        let reference = MirrorOpenRef {
+            workspace_slug: "harborline".into(),
+            folder: "report".into(),
+            file: "../../etc/passwd".into(),
+        };
+        assert!(open_mirror(&home, &reference).is_err());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn refuses_to_open_a_file_that_is_not_on_disk_yet() {
+        let home = scratch_home();
+        write_mirror(&home, "harborline", "report", &[file("meta.json", "{}")]).expect("write");
+        let reference = MirrorOpenRef {
+            workspace_slug: "harborline".into(),
+            folder: "report".into(),
+            file: "index.html".into(),
+        };
+        assert!(open_mirror(&home, &reference).is_err());
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn refuses_to_open_a_folder_outside_the_mirror_root() {
+        let home = scratch_home();
+        let reference = MirrorOpenRef {
+            workspace_slug: "harborline".into(),
+            folder: "..".into(),
+            file: "index.html".into(),
+        };
+        assert!(open_mirror(&home, &reference).is_err());
         let _ = std::fs::remove_dir_all(home);
     }
 }

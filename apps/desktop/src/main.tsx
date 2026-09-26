@@ -12,9 +12,6 @@ import { App } from './App';
 import { MockScene } from './app/components/MockScene';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
 import { MOCK_ENABLED } from './store/mock-data';
-import { artifactPrintRequest } from './features/reports/artifactPrintRequest';
-import { ArtifactReaderView } from './features/reports/components/ArtifactReaderView';
-import { removeBootShell } from './features/reports/components/ArtifactReaderView/removeBootShell';
 import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './features/diff/lib/highlight/codeHighlighter';
@@ -45,26 +42,12 @@ if (!container) {
   throw new Error('root element not found');
 }
 
-const printRequest = artifactPrintRequest({ hash: globalThis.location?.hash ?? '' });
-
-if (printRequest !== null) {
-  removeBootShell();
-}
-
 createRoot(container).render(
   <StrictMode>
     <ErrorBoundary onReport={reportCrash} reportSummary={REPORT_SUMMARY}>
       <RemoteImageLoaderProvider load={loadRemoteImage}>
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
-          <ScrollerStyleProvider>
-            {printRequest !== null ? (
-              <ArtifactReaderView request={printRequest} />
-            ) : MOCK_ENABLED ? (
-              <MockScene />
-            ) : (
-              <App />
-            )}
-          </ScrollerStyleProvider>
+          <ScrollerStyleProvider>{MOCK_ENABLED ? <MockScene /> : <App />}</ScrollerStyleProvider>
         </CodeHighlighterContext.Provider>
       </RemoteImageLoaderProvider>
     </ErrorBoundary>

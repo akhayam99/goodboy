@@ -13,8 +13,6 @@ const noteOf = ({ status }: { readonly status: Status }): string | null => {
       return 'Copied to the clipboard';
     case 'cancelled':
       return 'Save cancelled';
-    case 'printing':
-      return 'The print window is open';
     case 'failed':
       return status.message;
     case 'idle':
