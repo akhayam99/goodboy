@@ -125,7 +125,6 @@ export type SessionSuggestion =
         readonly mountId: MountId;
         readonly projectName: string;
         readonly prNumber: number;
-        readonly failingChecks: ReadonlyArray<string>;
       };
     })
   | (SuggestionBase & {

@@ -4,12 +4,18 @@ import type {
   MountId,
   PlanId,
   ProjectId,
+  PullRequestState,
   SessionEventId,
   SessionId,
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { deriveNextSteps } from './deriveNextSteps';
+import {
+  deriveNextSteps,
+  type SuggestionAgent,
+  type SuggestionCleanupProposal,
+  type SuggestionMount,
+} from './deriveNextSteps';
 import type {
   SuggestionMountEvent,
   SuggestionMountEventKind,
@@ -357,5 +363,288 @@ describe('deriveNextSteps', () => {
       'mount-alpha-second',
       'mount-zulu',
     ]);
+  });
+});
+
+const BASE_PARAMS = {
+  sessionId,
+  workflowRuns: [],
+  plans: [],
+  consumedPlanIds: new Set<PlanId>(),
+  openQuestionCount: 0,
+  hasPullRequest: false,
+  eligibleThreadCount: 0,
+  mountEvents: [],
+  projects: [],
+};
+
+const agent = (overrides: Partial<SuggestionAgent> = {}): SuggestionAgent => ({
+  id: 'agent-1' as AgentId,
+  label: 'Implementer',
+  roleKind: 'implementer',
+  status: 'completed',
+  workflowRunId: null,
+  ordinal: 1,
+  pendingSignal: null,
+  ...overrides,
+});
+
+const pr = (overrides: Partial<PullRequestState> = {}): PullRequestState => ({
+  number: 618,
+  title: 'Fix it',
+  url: 'https://github.com/acme/repo/pull/618',
+  state: 'open',
+  mergeable: true,
+  checks: 'success',
+  baseBranch: 'main',
+  headBranch: 'feature',
+  isDraft: false,
+  reviewDecision: null,
+  body: '',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
+const mount = (overrides: Partial<SuggestionMount> = {}): SuggestionMount => ({
+  mountId: webMountId,
+  projectId: webId,
+  projectName: 'web',
+  branch: 'feature/web',
+  worktreePath: '/tmp/web',
+  aheadOfUpstream: null,
+  aheadOfBase: null,
+  isClean: true,
+  pr: null,
+  fetchedAt: null,
+  ...overrides,
+});
+
+const cleanupProposal = (
+  overrides: Partial<SuggestionCleanupProposal> = {},
+): SuggestionCleanupProposal => ({
+  requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
+  mountId: webMountId,
+  projectName: 'web',
+  branch: 'feature/web',
+  prNumber: 612,
+  ...overrides,
+});
+
+describe('deriveNextSteps eleven new kinds', () => {
+  it('suggests approving a pending permission request', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [
+        agent({
+          pendingSignal: { kind: 'permission', toolUseId: 'tool-1', toolName: 'pnpm test' },
+        }),
+      ],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'approve-tool');
+    expect(suggestion?.title).toBe('Approve a command');
+    expect(suggestion?.detail).toBe('Implementer wants to run pnpm test');
+    expect(suggestion?.band).toBe(0);
+  });
+
+  it('suggests signing back in when the last run hit auth_required', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ pendingSignal: { kind: 'auth', providerId: 'anthropic' } })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'sign-in');
+    expect(suggestion?.title).toBe('Sign in to Claude');
+    expect(suggestion?.detail).toBe('Implementer stopped: signed out');
+  });
+
+  it('suggests unblocking a failed workflow step, ahead of the ready-step suggestion for the same run', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      workflowRuns: [
+        {
+          id: 'run-1' as WorkflowRunId,
+          title: 'Settlement fix',
+          advanceState: { kind: 'ready', stepId: 'step-2' as StepId },
+          isRunning: false,
+          failedStep: { stepId: 'step-1' as StepId, label: 'Tester' },
+        },
+      ],
+    });
+    expect(suggestions.map((candidate) => candidate.kind)).toEqual(['unblock-step']);
+    const suggestion = suggestions[0];
+    expect(suggestion?.title).toBe('Step failed: Tester');
+    expect(suggestion?.band).toBe(0);
+  });
+
+  it('suggests retrying the last standalone agent when it failed', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [
+        agent({ id: 'agent-1' as AgentId, ordinal: 1, status: 'completed' }),
+        agent({ id: 'agent-2' as AgentId, ordinal: 2, status: 'failed', label: 'Debugger' }),
+      ],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'retry-agent');
+    expect(suggestion?.title).toBe('Retry Debugger');
+    expect(suggestion?.payload).toEqual({ agentId: 'agent-2', agentKind: 'implementer' });
+  });
+
+  it('suggests reviewing the changes when the last standalone implementer finished clean', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'implementer' })],
+    });
+    expect(suggestions.map((candidate) => candidate.kind)).toEqual(['check-changes']);
+  });
+
+  it('never suggests both retry and review for the same last agent', () => {
+    const retrySuggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'failed' })],
+    });
+    expect(retrySuggestions.some((candidate) => candidate.kind === 'check-changes')).toBe(false);
+
+    const reviewerAlreadyRan = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [
+        agent({ id: 'agent-1' as AgentId, ordinal: 1, roleKind: 'implementer' }),
+        agent({ id: 'agent-2' as AgentId, ordinal: 2, roleKind: 'reviewer' }),
+      ],
+    });
+    expect(reviewerAlreadyRan.some((candidate) => candidate.kind === 'check-changes')).toBe(false);
+  });
+
+  it('leaves a workflow agent out of the standalone retry/review pick', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'failed', workflowRunId: 'run-1' as WorkflowRunId })],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'retry-agent')).toBe(false);
+  });
+
+  it('suggests fixing failing checks on an open PR', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ pr: pr({ checks: 'failure' }) })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'fix-checks');
+    expect(suggestion?.title).toBe('Fix failing checks on #618');
+  });
+
+  it('suggests marking a green draft PR ready for review', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ pr: pr({ isDraft: true, checks: 'success' }) })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'mark-ready');
+    expect(suggestion?.title).toBe('Mark #618 ready for review');
+  });
+
+  it('suggests merging an approved, green, mergeable PR', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [
+        mount({ pr: pr({ reviewDecision: 'approved', checks: 'success', mergeable: true }) }),
+      ],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'merge-pr');
+    expect(suggestion?.title).toBe('Merge #618');
+    expect(suggestion?.payload).toMatchObject({ defaultMethod: 'squash' });
+  });
+
+  it('never suggests merging a PR that is not actually mergeable', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [
+        mount({ pr: pr({ reviewDecision: 'approved', checks: 'success', mergeable: false }) }),
+      ],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'merge-pr')).toBe(false);
+  });
+
+  it('suggests opening a pull request once a mount is ahead of base with no PR yet', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ pr: null, aheadOfBase: 7 })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
+    expect(suggestion?.title).toBe('Open a pull request for web');
+    expect(suggestion?.detail).toBe('7 commits ahead');
+  });
+
+  it('suggests pushing unpushed commits on a clean worktree', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ aheadOfUpstream: 4, isClean: true })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'push-branch');
+    expect(suggestion?.title).toBe('Push 4 commits');
+  });
+
+  it('never suggests pushing a dirty worktree', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ aheadOfUpstream: 4, isClean: false })],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
+  });
+
+  it('skips every push/PR/merge/rebase suggestion while an agent is running', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      hasRunningAgent: true,
+      mounts: [
+        mount({ aheadOfUpstream: 4, pr: null, aheadOfBase: 7 }),
+        mount({ mountId: 'mount-other' as MountId, pr: pr({ checks: 'failure' }) }),
+      ],
+      projects: [
+        {
+          id: 'mount:mount-behind',
+          mountId: 'mount-behind' as MountId,
+          projectId: webId,
+          projectName: 'web',
+          branch: 'feature/web',
+          worktreePath: '/tmp/web',
+          baseBranch: 'main',
+          mainDistance: 3,
+        },
+      ],
+    });
+    expect(
+      suggestions.some((candidate) =>
+        ['push-branch', 'open-pr', 'mark-ready', 'merge-pr', 'rebase-project'].includes(
+          candidate.kind,
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it('ignores mount data older than five minutes', () => {
+    const now = () => Date.parse('2026-01-01T00:10:00.000Z');
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      now,
+      mounts: [mount({ aheadOfUpstream: 4, fetchedAt: '2026-01-01T00:00:00.000Z' })],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
+  });
+
+  it('keeps mount data fetched within the last five minutes', () => {
+    const now = () => Date.parse('2026-01-01T00:03:00.000Z');
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      now,
+      mounts: [mount({ aheadOfUpstream: 4, fetchedAt: '2026-01-01T00:00:00.000Z' })],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(true);
+  });
+
+  it('suggests closing a worktree once its cleanup proposal is pending', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      cleanupProposals: [cleanupProposal()],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'close-worktree');
+    expect(suggestion?.title).toBe('Close the web worktree');
+    expect(suggestion?.detail).toBe('#612 merged');
   });
 });
