@@ -604,14 +604,31 @@ project,local --no-session-persistence` in an empty scratch directory,
     (`allowed`, `allowed_warning`, `rejected`); a per-model type adds its own
     window. An unknown type drops only its window, never the event.
     `mergeProviderLimits` keeps windows it saw until their reset.
-- **Codex**: the `token_count` lines of the rollout files under
-  `$CODEX_HOME/sessions` carry `payload.rate_limits` (`primary` is the 5-hour window,
-  `secondary` the week, plus `plan_type`). `codex_rate_limits_latest` in
-  `codex_rollout.rs` reads the newest reading among the five newest rollouts, so it
-  also sees Codex use outside Goodboy. A reading with neither window is skipped:
-  Codex writes an empty `premium` bucket after the real `codex` one, and taking
-  it left the boot read with no data. The desktop asks for it at boot, every 15
-  minutes alongside the Claude probe, and after every Codex usage event
+- **Codex**: two sources, the app server first and the rollout files after.
+  - **App server** (`codex_app_server.rs`, `codex_rate_limits_probe`): spawns
+    `codex app-server` on stdio in an empty scratch directory, sends
+    `initialize`, then `initialized` and `account/rateLimits/read`, reads
+    newline-delimited JSON until the answer or 15 s, and kills the server. Zero
+    tokens. `parseCodexAppServerLimits` takes the `codex` bucket of
+    `rateLimitsByLimitId` (or `rateLimits`): `primary` is the 5-hour window,
+    `secondary` the week, `planType` the plan. `parseCodexResetCredits` reads
+    `rateLimitResetCredits` (count, and the first available credit's id and
+    expiry) into `codexResetCredits`. Background polls pass
+    `excludeResetCreditDetails`; the provider page asks with details and a poll
+    keeps the details it already had while the count is unchanged. Verified
+    against codex 0.156.0 and its `codex app-server generate-json-schema`
+    output. The app server is marked experimental: when it fails, the rollout
+    read below runs instead
+  - **Rollout**: the `token_count` lines of the rollout files under
+    `$CODEX_HOME/sessions` carry `payload.rate_limits` (same windows in snake
+    case, plus `plan_type`). `codex_rate_limits_latest` in `codex_rollout.rs`
+    reads the newest reading among the five newest rollouts, so it also sees
+    Codex use outside Goodboy. A reading with neither window is skipped: Codex
+    writes an empty `premium` bucket after the real `codex` one, and taking it
+    left the boot read with no data
+  - The desktop asks at boot, every 15 minutes alongside the Claude probe, and
+    after every Codex usage event. `providerLimitsProbe` keeps, per provider,
+    whether a probe is running, when one last worked and how many failed in a row
 - **Antigravity and Cursor** report nothing Goodboy can read
 - The last observation per provider lives in `provider_limits` (m176) and in the
   `providerLimits` store slice. A write never replaces a newer observation.

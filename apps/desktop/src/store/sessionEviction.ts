@@ -156,6 +156,8 @@ export const NON_SESSION_STATE_KEYS = [
   'providerCredentials',
   'providerCooldowns',
   'providerLimits',
+  'providerLimitsProbe',
+  'codexResetCredits',
   'hydrated',
   'bootPhase',
   'bootFailedPhase',

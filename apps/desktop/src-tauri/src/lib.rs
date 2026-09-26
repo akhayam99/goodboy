@@ -48,6 +48,7 @@ mod storage;
 mod summarize;
 mod terminal;
 mod turn;
+mod codex_app_server;
 mod usage_probe;
 mod util;
 mod workflows;
@@ -305,6 +306,7 @@ pub fn run() {
             codex_rollout::codex_rollout_context,
             codex_rollout::codex_rate_limits_latest,
             usage_probe::claude_usage_probe,
+            codex_app_server::codex_rate_limits_probe,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,

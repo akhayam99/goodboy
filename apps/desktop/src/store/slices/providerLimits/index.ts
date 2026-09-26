@@ -10,7 +10,7 @@ export const createProviderLimitsSlice = (set: SetFn, get: GetFn): ProviderLimit
   ...providerLimitsInitialState,
   loadProviderLimits: loadProviderLimits(set),
   recordProviderLimits: recordProviderLimits(set, get),
-  refreshCodexLimits: refreshCodexLimits(get),
-  refreshClaudeUsage: refreshClaudeUsage(get),
+  refreshCodexLimits: refreshCodexLimits(set, get),
+  refreshClaudeUsage: refreshClaudeUsage(set, get),
   probeProviderLimits: probeProviderLimits(get),
 });

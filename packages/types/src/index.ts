@@ -221,6 +221,7 @@ export type {
   ProviderLimitWindow,
   ProviderLimitWindowKind,
   ProviderLimits,
+  CodexResetCredits,
 } from './provider-limits';
 export type {
   Agent,

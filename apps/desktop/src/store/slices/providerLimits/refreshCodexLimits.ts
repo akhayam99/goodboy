@@ -1,7 +1,12 @@
-import { parseCodexRateLimits } from '@goodboy/core';
-import type { IsoDateTime } from '@goodboy/types';
+import {
+  parseCodexAppServerLimits,
+  parseCodexRateLimits,
+  parseCodexResetCredits,
+} from '@goodboy/core';
+import type { CodexResetCredits, IsoDateTime } from '@goodboy/types';
 import { invoke } from '@tauri-apps/api/core';
-import type { GetFn } from './types';
+import { markProbe } from './markProbe';
+import type { GetFn, RefreshCodexLimitsParams, SetFn } from './types';
 
 type CodexRateLimitsReading = {
   readonly observedAt: string | null;
@@ -19,7 +24,7 @@ const observedAtOf = ({ value }: ObservedAtParams): IsoDateTime | null => {
   return new Date(Date.parse(value)).toISOString() as IsoDateTime;
 };
 
-export const refreshCodexLimits = (get: GetFn) => async (): Promise<void> => {
+const readRollout = async (get: GetFn): Promise<void> => {
   const reading = await invoke<CodexRateLimitsReading | null>('codex_rate_limits_latest').catch(
     () => null,
   );
@@ -36,3 +41,47 @@ export const refreshCodexLimits = (get: GetFn) => async (): Promise<void> => {
   }
   await get().recordProviderLimits({ limits });
 };
+
+type MergeCreditsParams = {
+  readonly previous: CodexResetCredits | null;
+  readonly next: CodexResetCredits | null;
+};
+
+const mergeCredits = ({ previous, next }: MergeCreditsParams): CodexResetCredits | null => {
+  if (next === null || next.creditId !== null || previous === null) {
+    return next;
+  }
+  if (previous.availableCount !== next.availableCount) {
+    return next;
+  }
+  return { ...next, creditId: previous.creditId, expiresAt: previous.expiresAt };
+};
+
+export const refreshCodexLimits =
+  (set: SetFn, get: GetFn) =>
+  async ({ withResetDetails = false }: RefreshCodexLimitsParams = {}): Promise<void> => {
+    const authState = get().authResults?.codex ?? null;
+    if (authState !== null && authState.state === 'disconnected') {
+      return;
+    }
+    markProbe({ set, providerId: 'codex', outcome: 'checking' });
+    const response = await invoke<unknown>('codex_rate_limits_probe', {
+      includeResetCreditDetails: withResetDetails,
+    }).catch(() => null);
+    const observedAt = new Date().toISOString() as IsoDateTime;
+    const limits =
+      response == null ? null : parseCodexAppServerLimits({ value: response, observedAt });
+    if (limits === null) {
+      markProbe({ set, providerId: 'codex', outcome: 'failed' });
+      await readRollout(get);
+      return;
+    }
+    set({
+      codexResetCredits: mergeCredits({
+        previous: get().codexResetCredits,
+        next: parseCodexResetCredits({ value: response, observedAt }),
+      }),
+    });
+    markProbe({ set, providerId: 'codex', outcome: 'ok' });
+    await get().recordProviderLimits({ limits });
+  };

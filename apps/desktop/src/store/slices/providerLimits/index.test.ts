@@ -104,14 +104,76 @@ describe('providerLimits slice', () => {
     expect(upsertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('reads the latest Codex rollout through the backend', async () => {
-    invokeSpy.mockResolvedValue({
-      observedAt: '2099-01-01T10:59:20.919Z',
+  it('reads codex limits and free resets from the app server', async () => {
+    invokeSpy.mockImplementation(async (command: string) =>
+      command === 'codex_rate_limits_probe'
+        ? {
+            rateLimitsByLimitId: {
+              codex: {
+                primary: { usedPercent: 100, windowDurationMins: 300, resetsAt: 4070937600 },
+                secondary: { usedPercent: 40, windowDurationMins: 10080, resetsAt: 4071024000 },
+                planType: 'plus',
+                rateLimitReachedType: 'primary',
+              },
+            },
+            rateLimitResetCredits: {
+              availableCount: 1,
+              credits: [{ id: 'credit-1', status: 'available', expiresAt: 4071024000 }],
+            },
+          }
+        : null,
+    );
+    const { slice, read } = harness();
+
+    await slice.refreshCodexLimits({ withResetDetails: true });
+
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_probe', {
+      includeResetCreditDetails: true,
+    });
+    expect(invokeSpy).not.toHaveBeenCalledWith('codex_rate_limits_latest');
+    expect((read().providerLimits as Record<string, ProviderLimits>).codex).toMatchObject({
+      plan: 'Plus',
+      status: 'reached',
+    });
+    expect(read().codexResetCredits).toMatchObject({ availableCount: 1, creditId: 'credit-1' });
+    expect(read().providerLimitsProbe).toMatchObject({
+      codex: { isChecking: false, failures: 0 },
+    });
+  });
+
+  it('keeps the credit details a background poll skipped', async () => {
+    const withCredits = (credits: unknown) => ({
       rateLimits: {
-        primary: { used_percent: 12, window_minutes: 300, resets_at: 4070937600 },
-        secondary: { used_percent: 100, window_minutes: 10080, resets_at: 4071024000 },
-        plan_type: 'plus',
+        primary: { usedPercent: 10, windowDurationMins: 300, resetsAt: 4070937600 },
+        planType: 'plus',
       },
+      rateLimitResetCredits: { availableCount: 1, credits },
+    });
+    invokeSpy.mockResolvedValueOnce(
+      withCredits([{ id: 'credit-1', status: 'available', expiresAt: 4071024000 }]),
+    );
+    const { slice, read } = harness();
+    await slice.refreshCodexLimits({ withResetDetails: true });
+
+    invokeSpy.mockResolvedValueOnce(withCredits(null));
+    await slice.refreshCodexLimits();
+
+    expect(read().codexResetCredits).toMatchObject({ availableCount: 1, creditId: 'credit-1' });
+  });
+
+  it('falls back to the latest Codex rollout when the app server fails', async () => {
+    invokeSpy.mockImplementation(async (command: string) => {
+      if (command === 'codex_rate_limits_probe') {
+        throw new Error('spawn failed');
+      }
+      return {
+        observedAt: '2099-01-01T10:59:20.919Z',
+        rateLimits: {
+          primary: { used_percent: 12, window_minutes: 300, resets_at: 4070937600 },
+          secondary: { used_percent: 100, window_minutes: 10080, resets_at: 4071024000 },
+          plan_type: 'plus',
+        },
+      };
     });
     const { slice, read } = harness();
 
@@ -122,6 +184,7 @@ describe('providerLimits slice', () => {
       plan: 'Plus',
       status: 'reached',
     });
+    expect(read().providerLimitsProbe).toMatchObject({ codex: { failures: 1 } });
   });
 
   it('keeps quiet when Codex never wrote a rollout', async () => {
@@ -169,6 +232,9 @@ describe('providerLimits slice', () => {
     await slice.probeProviderLimits();
 
     expect(invokeSpy).toHaveBeenCalledWith('claude_usage_probe');
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_probe', {
+      includeResetCreditDetails: false,
+    });
     expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_latest');
   });
 });
