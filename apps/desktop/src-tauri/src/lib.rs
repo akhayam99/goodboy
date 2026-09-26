@@ -7,6 +7,7 @@ mod bitbucket;
 mod boot_breadcrumb;
 mod bridge;
 mod budget;
+mod changelog_images;
 mod codex_app_server;
 mod codex_rollout;
 mod config_export;
@@ -194,6 +195,7 @@ pub fn run() {
             remote_image::load_tool_image,
             local_image::local_image_read,
             releases::releases_list,
+            changelog_images::changelog_image,
             explore::explore_list,
             explore::explore_read,
             explore::explore_open,
