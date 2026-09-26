@@ -1,10 +1,26 @@
-import { useMemo, useState } from 'react';
-import { AlertTriangle, ChevronLeft, GitBranch } from 'lucide-react';
-import { AnchoredPopover, PopoverBody, cn, useDropdown } from '@goodboy/ui';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUpDown,
+  Check,
+  CheckCheck,
+  ChevronLeft,
+  Circle,
+  GitBranch,
+  RefreshCw,
+} from 'lucide-react';
+import { AnchoredPopover, Button, IconButton, PopoverBody, cn, useDropdown } from '@goodboy/ui';
 import type { ProjectId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../app/components/Toast';
 import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { ProjectGitDetail } from './ProjectGitDetail';
-import { projectGitPresentationOf } from '../../../../shared/lib/projectGitPresentation';
+import {
+  projectGitPresentationOf,
+  projectGitRowStatusOf,
+  type ProjectGitRowStatus,
+} from '../../../../shared/lib/projectGitPresentation';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -16,6 +32,83 @@ type SummaryEntry = ProjectGitStatusEntry & {
   readonly uncommittedCount: number;
   readonly branch: string;
   readonly isWarning: boolean;
+  readonly rowStatus: ProjectGitRowStatus | null;
+};
+
+type RowGlyphParams = {
+  readonly kind: ProjectGitRowStatus['kind'];
+};
+
+const rowTierOf = (entry: SummaryEntry): number => {
+  if (entry.rowStatus?.kind === 'behind') {
+    return 0;
+  }
+  if (entry.rowStatus?.kind === 'up-to-date') {
+    return 2;
+  }
+  if (entry.rowStatus == null && !entry.isWarning) {
+    return 2;
+  }
+  return 1;
+};
+
+const RowGlyph = ({ kind }: RowGlyphParams) => {
+  switch (kind) {
+    case 'behind':
+      return <ArrowDown size={11} aria-hidden className="text-info" />;
+    case 'up-to-date':
+      return <Check size={11} aria-hidden className="text-faint-foreground" />;
+    case 'uncommitted':
+      return <Circle size={8} aria-hidden className="fill-current text-warning" />;
+    case 'diverged':
+      return <ArrowUpDown size={11} aria-hidden className="text-warning" />;
+    case 'rebase-stopped':
+      return <AlertTriangle size={11} aria-hidden className="text-warning" />;
+    case 'cant-read':
+      return <AlertTriangle size={11} aria-hidden className="text-danger" />;
+    case 'no-upstream':
+    case 'detached':
+      return null;
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
+};
+
+const rowToneClass = (kind: ProjectGitRowStatus['kind']): string => {
+  switch (kind) {
+    case 'behind':
+      return 'text-info';
+    case 'up-to-date':
+      return 'text-faint-foreground';
+    case 'uncommitted':
+    case 'diverged':
+    case 'rebase-stopped':
+      return 'text-warning';
+    case 'cant-read':
+      return 'text-danger';
+    case 'no-upstream':
+    case 'detached':
+      return 'text-muted-foreground';
+    default: {
+      const exhaustive: never = kind;
+      return exhaustive;
+    }
+  }
+};
+
+const summaryPhraseOf = (entries: ReadonlyArray<SummaryEntry>): string | null => {
+  const countOf = (kind: ProjectGitRowStatus['kind']) =>
+    entries.filter((entry) => entry.rowStatus?.kind === kind).length;
+  const parts = [
+    { count: countOf('behind'), label: 'behind' },
+    { count: countOf('uncommitted'), label: 'uncommitted' },
+    { count: countOf('diverged'), label: 'diverged' },
+  ]
+    .filter((part) => part.count > 0)
+    .map((part) => `${part.count} ${part.label}`);
+  return parts.length === 0 ? null : parts.join(' · ');
 };
 
 export const ProjectGitSummaryPill = ({ entries }: Props) => {
@@ -26,16 +119,45 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
     align: 'end',
   });
   const [selectedProjectId, setSelectedProjectId] = useState<ProjectId | null>(null);
+  const [isCheckingOrigin, setIsCheckingOrigin] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const fetchProjectCheckouts = useAppStore((state) => state.fetchProjectCheckouts);
+  const fastForwardProjectCheckouts = useAppStore((state) => state.fastForwardProjectCheckouts);
+  const checkoutResults = useAppStore((state) => state.projectCheckoutResult);
+  const { showToast } = useToast();
+  const hasOpenedRef = useRef(false);
+  const workspaceId = entries[0]?.project.workspaceId ?? null;
+
+  useEffect(() => {
+    if (!dropdown.open || workspaceId === null || hasOpenedRef.current) {
+      return;
+    }
+    hasOpenedRef.current = true;
+    setIsCheckingOrigin(true);
+    void fetchProjectCheckouts({ workspaceId }).finally(() => setIsCheckingOrigin(false));
+  }, [dropdown.open, fetchProjectCheckouts, workspaceId]);
+
+  useEffect(() => {
+    if (!dropdown.open) {
+      hasOpenedRef.current = false;
+    }
+  }, [dropdown.open]);
+
   const summaryEntries = useMemo<ReadonlyArray<SummaryEntry>>(
     () =>
       entries
-        .map((entry) => ({ ...entry, ...projectGitPresentationOf({ status: entry.status }) }))
+        .map((entry) => ({
+          ...entry,
+          ...projectGitPresentationOf({ status: entry.status }),
+          rowStatus:
+            entry.status?.state === 'ready'
+              ? projectGitRowStatusOf({ status: entry.status })
+              : null,
+        }))
         .sort((left, right) => {
-          if (left.isWarning !== right.isWarning) {
-            return left.isWarning ? -1 : 1;
-          }
-          if (left.actionableCount !== right.actionableCount) {
-            return right.actionableCount - left.actionableCount;
+          const tierDelta = rowTierOf(left) - rowTierOf(right);
+          if (tierDelta !== 0) {
+            return tierDelta;
           }
           return left.project.name.localeCompare(right.project.name);
         }),
@@ -49,6 +171,43 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
     (total, entry) => total + entry.uncommittedCount,
     0,
   );
+  const updatableProjects = summaryEntries.filter((entry) => entry.rowStatus?.updatable === true);
+  const summaryPhrase = summaryPhraseOf(summaryEntries);
+  const updatingCount = updatableProjects.filter(
+    (entry) => checkoutResults[entry.project.id]?.kind === 'updating',
+  ).length;
+
+  const onCheckOrigin = async () => {
+    if (workspaceId === null || isCheckingOrigin) {
+      return;
+    }
+    setIsCheckingOrigin(true);
+    try {
+      await fetchProjectCheckouts({ workspaceId });
+    } finally {
+      setIsCheckingOrigin(false);
+    }
+  };
+
+  const onUpdateAll = async () => {
+    if (workspaceId === null || isUpdating || updatableProjects.length === 0) {
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const { updated, failed } = await fastForwardProjectCheckouts({ workspaceId });
+      showToast({
+        kind: failed > 0 ? 'info' : 'success',
+        title: 'Repositories updated',
+        message:
+          failed === 0
+            ? `Updated ${updated} ${updated === 1 ? 'repo' : 'repos'}`
+            : `Updated ${updated} ${updated === 1 ? 'repo' : 'repos'} · ${failed} failed`,
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <AnchoredPopover
@@ -91,32 +250,90 @@ export const ProjectGitSummaryPill = ({ entries }: Props) => {
       }
     >
       {selectedEntry == null ? (
-        <PopoverBody>
-          {summaryEntries.map((entry) => (
-            <button
-              key={entry.project.id}
-              type="button"
-              onClick={() => setSelectedProjectId(entry.project.id)}
-              className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-hover"
-            >
-              <span className="min-w-0 flex-1 truncate text-label font-medium">
-                {entry.project.name}
+        <>
+          <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border-soft px-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-label font-medium text-foreground">{entries.length} repos</div>
+              {summaryPhrase != null ? (
+                <div className="truncate text-2xs text-muted-foreground">{summaryPhrase}</div>
+              ) : null}
+            </div>
+            <IconButton
+              variant="ghost"
+              icon={RefreshCw}
+              iconSize={ICON_SIZE.row}
+              label="Check origin"
+              tooltip="Check origin"
+              onClick={() => void onCheckOrigin()}
+              className={cn('size-7 shrink-0', isCheckingOrigin && 'animate-spin')}
+            />
+            {updatableProjects.length === 0 ? (
+              <span className="flex shrink-0 items-center gap-1 text-label text-muted-foreground">
+                <CheckCheck size={12} aria-hidden />
+                All up to date
               </span>
-              <span className="shrink-0 font-mono text-secondary text-muted-foreground">
-                {entry.branch}
-              </span>
-              <span className="flex shrink-0 justify-end">
-                {entry.isWarning ? (
-                  <AlertTriangle size={11} aria-label="Warning" className="text-warning" />
-                ) : entry.uncommittedCount > 0 ? (
-                  <span className="text-secondary tabular-nums text-warning">
-                    {entry.uncommittedCount} uncommitted
+            ) : (
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={isUpdating}
+                onClick={() => void onUpdateAll()}
+              >
+                {isUpdating
+                  ? `Updating ${updatingCount} of ${updatableProjects.length}`
+                  : `Update ${updatableProjects.length}`}
+              </Button>
+            )}
+          </div>
+          <PopoverBody>
+            {summaryEntries.map((entry) => {
+              const result = checkoutResults[entry.project.id];
+              return (
+                <button
+                  key={entry.project.id}
+                  type="button"
+                  onClick={() => setSelectedProjectId(entry.project.id)}
+                  className="flex h-9 w-full items-center gap-2 px-3 text-left transition-colors hover:bg-hover"
+                >
+                  <span className="min-w-0 flex-1 truncate text-label font-medium">
+                    {entry.project.name}
                   </span>
-                ) : null}
-              </span>
-            </button>
-          ))}
-        </PopoverBody>
+                  <span className="shrink-0 font-mono text-secondary text-muted-foreground">
+                    {entry.branch}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 justify-end text-2xs">
+                    {result?.kind === 'updating' ? (
+                      <span className="text-muted-foreground">Updating…</span>
+                    ) : result?.kind === 'updated' ? (
+                      <span className="flex items-center gap-1 text-success">
+                        <Check size={11} aria-hidden />
+                        {`Updated · ${result.commits} ${result.commits === 1 ? 'commit' : 'commits'}`}
+                      </span>
+                    ) : result?.kind === 'failed' ? (
+                      <span className="text-danger">Failed</span>
+                    ) : entry.rowStatus != null ? (
+                      <span
+                        className={cn(
+                          'flex items-center gap-1',
+                          rowToneClass(entry.rowStatus.kind),
+                        )}
+                      >
+                        <RowGlyph kind={entry.rowStatus.kind} />
+                        {entry.rowStatus.label}
+                      </span>
+                    ) : entry.isWarning ? (
+                      <AlertTriangle size={11} aria-label="Warning" className="text-warning" />
+                    ) : entry.uncommittedCount > 0 ? (
+                      <span className="tabular-nums text-warning">
+                        {entry.uncommittedCount} uncommitted
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              );
+            })}
+          </PopoverBody>
+        </>
       ) : (
         <>
           <button

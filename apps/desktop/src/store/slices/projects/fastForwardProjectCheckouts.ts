@@ -8,6 +8,11 @@ type Input = {
   readonly workspaceId: WorkspaceId;
 };
 
+type Summary = {
+  readonly updated: number;
+  readonly failed: number;
+};
+
 const UPDATE_CONCURRENCY = 4;
 
 const isUpdatable = ({ project, get }: { readonly project: Project; readonly get: GetFn }) => {
@@ -16,7 +21,7 @@ const isUpdatable = ({ project, get }: { readonly project: Project; readonly get
 };
 
 export const fastForwardProjectCheckouts = (set: SetFn, get: GetFn) => {
-  return async ({ workspaceId }: Input): Promise<void> => {
+  return async ({ workspaceId }: Input): Promise<Summary> => {
     const projects = get().projects.filter(
       (project) =>
         project.workspaceId === workspaceId &&
@@ -24,7 +29,7 @@ export const fastForwardProjectCheckouts = (set: SetFn, get: GetFn) => {
         isUpdatable({ project, get }),
     );
     if (projects.length === 0) {
-      return;
+      return { updated: 0, failed: 0 };
     }
     for (const project of projects) {
       set((state) => ({
@@ -61,5 +66,11 @@ export const fastForwardProjectCheckouts = (set: SetFn, get: GetFn) => {
         }
       },
     });
+    const finalResults = get().projectCheckoutResult;
+    const updated = projects.filter(
+      (project) => finalResults[project.id]?.kind === 'updated',
+    ).length;
+    const failed = projects.filter((project) => finalResults[project.id]?.kind === 'failed').length;
+    return { updated, failed };
   };
 };
